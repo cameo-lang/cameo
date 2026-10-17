@@ -81,21 +81,41 @@ you made. Format the files you edited, not every file in a directory.
 **Push review fixes as new commits.** Pull requests are squash-merged, so the
 merge makes the history tidy, not amending.
 
+### Do not wait for CI needlessly
+
+Every push starts a CI run, but a pull request does not wait for its run to
+finish, or to start, before it is merged. What it needs before it is pushed is
+local evidence: unit tests cover the change, and `make check` passed. Then
+merge it while its run is still going or only scheduled.
+
+Work goes out as a stack, so ten pull requests start ten runs, and only the
+run on the top of the stack tests everything together. Waiting for each of the
+nine below it costs time and tells you nothing the top run does not. Read the
+top run to its conclusion; when it fails, fix the failure with a new pull
+request on top of the stack.
+
+### One stack, no branches
+
+Keep all work in flight in one stack that does not branch: each new pull
+request goes on top of the last one, not on `main` or on a pull request lower
+down. Every change in flight is then tested together, in the top run, and
+merge conflicts are less likely.
+
 ### Every task ends on a pull request
 
 Always, without being asked: a pushed branch is not a deliverable. Open it to
 the template in [WRITING.md](WRITING.md) (GitHub pre-fills it from
-`.github/pull_request_template.md`), then **follow CI to a conclusion**: read
-a failure, fix it, push again. Handing back a red pull request is handing back
-the task. An empty list of checks means the run has not started, not that it
+`.github/pull_request_template.md`), then **follow CI to a conclusion** on the
+top of the stack (see above): read a failure, fix it, push again. Handing back
+a red pull request is handing back the task. An empty list of checks means the run has not started, not that it
 passed.
 
 ### Stacked pull requests
 
 Split a task that is not one concern into small pull requests that each leave
-`main` green, and stack the ones that depend on each other: each is based on
-the branch of the one below it. Merge bottom-up; a pull request above waits
-for the one below it.
+`main` green, and stack them, whether they depend on each other or not: each
+is based on the branch of the one below it. Merge bottom-up; a pull request
+above waits for the one below it.
 
 Because merges are squashes, the branch above still holds the original
 commits of the one merged below it. Move it onto `main` by hand:
