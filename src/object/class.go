@@ -326,6 +326,8 @@ var (
 	Comparable = NewModule("Comparable")
 	// MathModule is Math: module functions and constants.
 	MathModule = NewModule("Math")
+	// ProcessModule is Process, which reads the clocks.
+	ProcessModule = NewModule("Process")
 
 	StandardError     = NewClass("StandardError", ExceptionClass)
 	RuntimeError      = NewClass("RuntimeError", StandardError)
@@ -378,7 +380,7 @@ func init() {
 	BasicClasses = []*Class{
 		ObjectClass, ModuleClass, ClassClass, NilClass, BoolClass, IntegerClass, FloatClass,
 		StringClass, SymbolClass, ListClass, MapClass, SetClass, RangeClass, TimeClass, RegexpClass, MatchDataClass, EnumeratorClass, EncodingClass, PathnameClass, ProcClass,
-		ProcessClass, ExceptionClass, Enumerable, Comparable, MathModule,
+		ProcessClass, ExceptionClass, Enumerable, Comparable, MathModule, ProcessModule,
 		StandardError, RuntimeError, ArgumentError, TypeError, NameError, NoMethodError, KeyError,
 		IndexError, RangeError, ZeroDivisionError, StopIteration, NoMatchingPattern, FrozenError,
 		NotImplementedErr, LocalJumpError, AmberError, RegexpError, FloatDomainError, ScriptError, LoadError, EncodingError,

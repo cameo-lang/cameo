@@ -552,6 +552,9 @@ re-opened by accident:
     the block returns the default instead. The default travels with the
     copies `[]=`, `merge` and `compact` make, and a hash built anew has
     none, as in Ruby.
+  - `Process.clock_gettime` reads the realtime and the monotonic clock, in
+    any of Ruby's units, so a script can time itself; the rest of `Process`
+    stays out, since amber starts no processes.
   - Left out: `Struct` (its members are untyped and its point is setters;
     amber classes declare typed fields), `Rational` and `Complex` (with
     their literals), and `RUBY_VERSION`.
