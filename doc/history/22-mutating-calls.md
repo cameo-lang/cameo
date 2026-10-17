@@ -19,12 +19,12 @@ The call's value is Ruby's, so code that uses it keeps working: `<<` and
 return the removed element; a bang method returns `nil` when it changed
 nothing, as `compact!` and `uniq!` do in Ruby. Each method's mutation is a
 small function from the current value to the new receiver and the value
-to return ([src/eval/mutate.go:101](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/eval/mutate.go#L101-L118)).
+to return ([src/eval/mutate.go:101](https://github.com/radiospiel/amber/blob/f3caa2004a997b083696a06214b25645923a40a9/src/eval/mutate.go#L101-L118)).
 
 Whether a call mutates depends on the receiver's kind, which only the
 evaluator knows: `delete` on an Array removes an element, and on a String
 it is a different method. So the checker accepts a possibly mutating call
-on a local ([src/syntax/convert.go:1128](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/syntax/convert.go#L1128)), and the
+on a local ([src/syntax/convert.go:1128](https://github.com/radiospiel/amber/blob/f3caa2004a997b083696a06214b25645923a40a9/src/syntax/convert.go#L1128)), and the
 evaluator decides when it runs.
 
 ## Where it does not apply
