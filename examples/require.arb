@@ -1,0 +1,30 @@
+# require of a library amber builds in answers whether it loaded it just
+# now; any other is a LoadError, since a script is one file. time and cgi
+# bring parsing and escaping, whether or not a script requires them.
+p require("cgi")
+p require("set"), require("cgi/escape"), require("time"), require("time")
+begin
+  require "nope"
+rescue LoadError => e
+  p e.message
+end
+
+p CGI.escape("a b*~-_.!/é"), CGI.unescape("a+b%2A%7e%c3%a9")
+p CGI.escapeHTML(%q(<a href="x">'&</a>)), CGI.escape_html("<")
+p CGI.unescapeHTML("&lt;&#39;&#x41;&#65;&amp;&quot;&gt;&apos;&nbsp;")
+p CGI.escapeURIComponent("a b+"), CGI.unescapeURIComponent("a+b%20")
+
+p Time.iso8601("2021-08-23T09:57:02+09:00"), Time.iso8601("2021-08-23T09:57:02.123Z")
+p Time.parse("2021-08-23T09:57:02+09:00"), Time.parse("2021-08-23 09:57:02 +0900")
+p Time.parse("Mon, 23 Aug 2021 09:57:02 GMT"), Time.parse("Aug 23 2021 10:00 -0500")
+p Time.new("2021-08-23T09:57:02+09:00"), Time.new("2021-08-23 09:57:02.25 Z")
+p Time.strptime("28/Aug/2005:06:54:20 +0000", "%d/%b/%Y:%T %z")
+p Time.strptime("0 +0100", "%s %z"), Time.strptime("0 UTC", "%s %z")
+p Time.strptime("20010203 -0200", "%Y%m%d %z"), Time.strptime("2018-091 UTC", "%Y-%j %Z")
+p Time.strptime("03/04/21 11:05 PM +01:00", "%m/%d/%y %I:%M %p %z")
+p Time.at(0).utc.iso8601, Time.at(1.5, in: "+09:00").iso8601(3)
+begin
+  Time.parse("nothing")
+rescue ArgumentError => e
+  p e.message
+end

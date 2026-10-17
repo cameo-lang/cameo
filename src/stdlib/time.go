@@ -90,6 +90,13 @@ func installTime() {
 			if len(args) == 0 {
 				return object.TimeValue(time.Now().Round(0).In(loc)), nil
 			}
+			if s, ok := args[0].AsString(); ok && len(args) == 1 {
+				t, err := parseCivil(ctx, s, loc)
+				if err != nil {
+					return object.Value{}, err
+				}
+				return object.TimeValue(t), nil
+			}
 			t, err := civilTime(ctx, args, loc)
 			if err != nil {
 				return object.Value{}, err

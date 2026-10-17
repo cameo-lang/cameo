@@ -51,6 +51,9 @@ func init() {
 	object.ClassClass.Define("new", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return ctx.(*Interp).newInstance(self.Cls(), args, kw, block)
 	})
+	object.ObjectClass.Define("require", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return ctx.(*Interp).require(args[0])
+	})
 	object.ClassClass.Define("allocate", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Value{}, ctx.Raise(object.NoMethodError, "allocate is not supported: use new")
 	})
@@ -120,4 +123,40 @@ func (in *Interp) newInstance(cls *object.Class, args []object.Value, kw *object
 // hashProc is the proc of a hash: a lambda that returns hash[key].
 func hashProc(h object.Value) object.Value {
 	return procValue(&Proc{Sym: "[]", Recv: h, Strict: true})
+}
+
+// builtinLibraries are what require loads without a file: libraries
+// amber builds in, each with the ones it loads along with it.
+var builtinLibraries = map[string][]string{
+	"set":        nil,
+	"time":       nil,
+	"pp":         nil,
+	"cgi":        {"cgi/escape", "cgi/util"},
+	"cgi/escape": nil,
+	"cgi/util":   {"cgi/escape"},
+}
+
+// require loads a library amber builds in, true the first time and false
+// after, as Ruby's does; any other name is a LoadError, since a script is
+// one file.
+func (in *Interp) require(name object.Value) (object.Value, error) {
+	s, ok := name.AsString()
+	if !ok {
+		return object.Value{}, in.raise(object.TypeError, 0, "no implicit conversion of %s into String", typeName(name))
+	}
+	also, builtin := builtinLibraries[s]
+	if !builtin {
+		return object.Value{}, in.raise(object.LoadError, 0, "cannot load such file -- %s", s)
+	}
+	if in.loaded[s] {
+		return object.False, nil
+	}
+	if in.loaded == nil {
+		in.loaded = map[string]bool{}
+	}
+	in.loaded[s] = true
+	for _, lib := range also {
+		in.loaded[lib] = true
+	}
+	return object.True, nil
 }
