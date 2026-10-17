@@ -10,7 +10,7 @@ made of: `map`, `select`, `reduce`, `sort_by`, `group_by` and the rest of
 Ruby's `Enumerable` is a module whose methods are written in terms of
 `each`. amber's is one Go implementation over the elements of whatever
 includes it: an array's elements, a set's members, a range's integers, a
-hash's `[key, value]` pairs ([src/stdlib/enumerable.go:12](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/stdlib/enumerable.go#L12-L31)).
+hash's `[key, value]` pairs ([src/stdlib/enumerable.go:12](https://github.com/radiospiel/amber/blob/b2dc615825a51f30127139e3fbf14b4333d50a17/src/stdlib/enumerable.go#L12-L31)).
 Every method collects the receiver's elements into a Go slice and works on
 that, so it is written once and holds for all four classes.
 
@@ -46,7 +46,7 @@ and that the receiver is unchanged afterwards.
 `each_with_object` is where immutability shows most. Ruby's passes one
 object to every iteration and expects the block to change it. In amber the
 object cannot change, so the memo the next iteration sees is what the block
-returns ([src/stdlib/enumerable.go:39](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/stdlib/enumerable.go#L39)):
+returns ([src/stdlib/enumerable.go:39](https://github.com/radiospiel/amber/blob/b2dc615825a51f30127139e3fbf14b4333d50a17/src/stdlib/enumerable.go#L39)):
 `list.each_with_object([]) { |n, acc| acc.prepend(n) }` reverses a list.
 It is `reduce` with Ruby's argument order.
 
@@ -55,6 +55,6 @@ It is `reduce` with Ruby's argument order.
 [examples/collections.arb](../../examples/collections.arb) is plain Ruby,
 134 lines over the four classes, and its expected output is what ruby 3.3
 prints; amber matches it exactly. The sorts amber needs are Go's, with
-`<=>` dispatched for each comparison ([src/stdlib/enumerable.go:705](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/stdlib/enumerable.go#L705-L736)),
+`<=>` dispatched for each comparison ([src/stdlib/enumerable.go:705](https://github.com/radiospiel/amber/blob/b2dc615825a51f30127139e3fbf14b4333d50a17/src/stdlib/enumerable.go#L705-L736)),
 which is correct for every value and slow for integers; step 35 adds a
 path for arrays that hold only integers.
