@@ -1,0 +1,30 @@
+# A class can describe itself as a protobuf message.
+class Address
+  string :street, :city
+  int :zip
+
+  def initialize(street, city, zip)
+    @street = street
+    @city = city
+    @zip = zip
+  end
+end
+
+class Person
+  string :name
+  reserved 2, :nickname
+  ref :address, Address
+  list :emails, of: :string
+  map :scores, key: :string, value: :int
+  enum :role, values: [:admin, :user]
+
+  def initialize(name, address, emails: [], scores: {}, role: :user)
+    @name = name
+    @address = address
+    @emails = emails
+    @scores = scores
+    @role = role
+  end
+end
+
+puts Person.proto

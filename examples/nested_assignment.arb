@@ -1,0 +1,27 @@
+# a.x.y = 3 is sugar for a = a.tap { |a0| { x: a0.x.tap { |a1| { y: 3 } } } }
+class Inner
+  int :y
+
+  def initialize(y)
+    @y = y
+  end
+end
+
+class Outer
+  ref :x, Inner
+  list :tags, of: :string
+
+  def initialize(x, tags)
+    @x = x
+    @tags = tags
+  end
+end
+
+a = Outer.new(Inner.new(1), ["one"])
+before = a
+a.x.y = 3
+a.tags[0] = "uno"
+puts a.x.y
+puts a.tags[0]
+puts before.x.y
+puts before.tags[0]

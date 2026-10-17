@@ -1,0 +1,25 @@
+# A method is defined once per class: a child may override, super reaches up.
+class Animal
+  string :name
+
+  def initialize(name)
+    @name = name
+  end
+
+  def speak = "..."
+  def intro = "#{name} says #{speak}"
+end
+
+class Dog < Animal
+  def speak = "woof"
+end
+
+class Puppy < Dog
+  def speak = "#{super}!"
+end
+
+puts Animal.new("generic").intro
+puts Dog.new("rex").intro
+puts Puppy.new("bit").intro
+puts Puppy.new("bit").is_a?(Animal)
+puts Puppy.new("bit") == Dog.new("bit")

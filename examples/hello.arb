@@ -1,0 +1,6 @@
+# Standard output and standard error are the whole of amber's I/O.
+puts "hello, amber"
+print "no newline"
+print "\n"
+p [1, "two", :three, nil]
+warn "this goes to stderr"

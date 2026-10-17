@@ -1,1 +1,3 @@
-bin/
+# build output: `go build ./...` writes the single main package here
+/amber
+/bin/

@@ -1,0 +1,40 @@
+# async starts recv.meth(*args) on a goroutine over copies of the arguments.
+class Worker
+  int :factor
+
+  def initialize(factor)
+    @factor = factor
+  end
+
+  def times(n) = n * factor
+
+  def fail(msg)
+    raise ArgumentError, msg
+  end
+end
+
+w = Worker.new(3)
+
+job = async w, :times, 4
+puts await job
+
+puts await w, :times, 5
+
+jobs = [1, 2, 3].map { |n| async w, :times, n }
+puts jobs.map { |j| await j }.inspect
+
+async w, :times, 10
+async w, :times, 20
+puts (await :all).inspect
+
+begin
+  await w, :fail, "boom"
+rescue ArgumentError => e
+  puts "job raised: #{e.message}"
+end
+
+begin
+  async w, :times, -> { 1 }
+rescue TypeError => e
+  puts "not serialisable: #{e.message}"
+end

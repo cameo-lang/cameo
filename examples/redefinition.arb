@@ -1,0 +1,40 @@
+# A class is a value bound to its name. The same body binds the same class;
+# a different body binds a new class, and instances of the old one keep it.
+class Greeter
+  string :name
+
+  def initialize(name)
+    @name = name
+  end
+
+  def greet = "hi #{name}"
+end
+
+first = Greeter.new("amber")
+
+class Greeter
+  string :name
+
+  def initialize(name)
+    @name = name
+  end
+
+  def greet = "hi #{name}"
+end
+
+puts first.greet
+puts first.class == Greeter
+
+class Greeter
+  string :name
+
+  def initialize(name)
+    @name = name
+  end
+
+  def greet = "hello #{name}"
+end
+
+puts first.greet
+puts Greeter.new("amber").greet
+puts first.class == Greeter

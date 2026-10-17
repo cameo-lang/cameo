@@ -1,0 +1,4 @@
+Geo::Point: (1, 2)
+Geo::Point
+true
+package geo;
