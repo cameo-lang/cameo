@@ -1,0 +1,284 @@
+# -*- encoding: utf-8 -*-
+# frozen_string_literal: false
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+
+describe "String#tr" do
+  it "returns a new string with the characters from from_string replaced by the ones in to_string" do
+    "hello".tr('aeiou', '*').should == "h*ll*"
+    "hello".tr('el', 'ip').should == "hippo"
+    "Lisp".tr("Lisp", "Ruby").should == "Ruby"
+  end
+
+  it "accepts c1-c2 notation to denote ranges of characters" do
+    "hello".tr('a-y', 'b-z').should == "ifmmp"
+    "123456789".tr("2-5","abcdefg").should == "1abcd6789"
+    "hello ^-^".tr("e-", "__").should == "h_llo ^_^"
+    "hello ^-^".tr("---", "_").should == "hello ^_^"
+    "hello ^-^".tr("-e", "_a").should == "hallo ^_^"
+    "hel-012".tr("--2", "a-f").should == "heladef"
+    "hel-()".tr("(--", "a-f").should == "helfab"
+  end
+
+  it "accepts c1-c1 notation to denote range of one character" do
+    "hello".tr('e-e', 'x').should == "hxllo"
+    "123456789".tr("2-23","xy").should == "1xy456789"
+    "hello ^-^".tr("e-", "a-a_").should == "hallo ^_^"
+    "hello ^-^".tr("---o", "_a").should == "hella ^_^"
+  end
+
+  it "pads to_str with its last char if it is shorter than from_string" do
+    "this".tr("this", "x").should == "xxxx"
+    "hello".tr("a-z", "A-H.").should == "HE..."
+  end
+
+  it "raises an ArgumentError when the receiver has broken encoding" do
+    -> { "\xFF".tr("€", "b") }.should.raise(ArgumentError)
+    -> { "\xFF".tr("", "") }.should.raise(ArgumentError)
+  end
+
+  it "raises an ArgumentError when given wrong number of arguments" do
+    -> { "hello".tr }.should.raise(ArgumentError)
+    -> { "hello".tr("a", "b", "c") }.should.raise(ArgumentError)
+  end
+
+  ruby_version_is ""..."4.1" do
+    it "raises an ArgumentError when given 1 argument" do
+      -> { "hello".tr("a") }.should.raise(ArgumentError)
+    end
+  end
+
+  ruby_version_is "4.1" do
+    it "raises an ArgumentError when given 1 argument" do
+      -> { "hello".tr("a") }.should.raise(TypeError)
+    end
+  end
+
+  it "raises an ArgumentError when the replacement contains a descending range" do
+    -> { "hello".tr("a-y", "z-b") }.should.raise(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the source contains a descending range" do
+    -> { "hello".tr("l-a", "z") }.should.raise(ArgumentError)
+  end
+
+  it "returns self (or a copy) when from_string or to_string is empty" do
+    "hello".tr("", "a").should == "hello"
+    "hello".tr("a", "").should == "hello"
+    "hello".tr("", "").should == "hello"
+  end
+
+  it "translates chars not in from_string when it starts with a ^" do
+    "hello".tr('^aeiou', '*').should == "*e**o"
+    "123456789".tr("^345", "abc").should == "cc345cccc"
+    "abcdefghijk".tr("^d-g", "9131").should == "111defg1111"
+
+    "hello ^_^".tr("a-e^e", ".").should == "h.llo ._."
+    "hello ^_^".tr("^^", ".").should == "......^.^"
+    "hello ^_^".tr("^", "x").should == "hello x_x"
+    "hello ^-^".tr("^-^", "x").should == "xxxxxx^-^"
+    "hello ^-^".tr("^^-^", "x").should == "xxxxxx^x^"
+    "hello ^-^".tr("^---", "x").should == "xxxxxxx-x"
+    "hello ^-^".tr("^---l-o", "x").should == "xxlloxx-x"
+  end
+
+  it "supports non-injective replacements" do
+    "hello".tr("helo", "1212").should == "12112"
+  end
+
+  it "tries to convert each argument to a string using to_str" do
+    from_str = mock('ab')
+    from_str.should_receive(:to_str).and_return("ab")
+
+    to_str = mock('AB')
+    to_str.should_receive(:to_str).and_return("AB")
+
+    "bla".tr(from_str, to_str).should == "BlA"
+  end
+
+  it "returns String instances when called on a subclass" do
+    StringSpecs::MyString.new("hello").tr("e", "a").should.instance_of?(String)
+  end
+
+  # http://redmine.ruby-lang.org/issues/show/1839
+  it "can replace a 7-bit ASCII character with a multibyte one" do
+    a = "uber"
+    a.encoding.should == Encoding::UTF_8
+    b = a.tr("u","ü")
+    b.should == "über"
+    b.encoding.should == Encoding::UTF_8
+  end
+
+  it "can replace a multibyte character with a single byte one" do
+    a = "über"
+    a.encoding.should == Encoding::UTF_8
+    b = a.tr("ü","u")
+    b.should == "uber"
+    b.encoding.should == Encoding::UTF_8
+  end
+
+  it "does not replace a multibyte character where part of the bytes match the tr string" do
+    str = "椎名深夏"
+    a = "\u0080\u0082\u0083\u0084\u0085\u0086\u0087\u0088\u0089\u008A\u008B\u008C\u008E\u0091\u0092\u0093\u0094\u0095\u0096\u0097\u0098\u0099\u009A\u009B\u009C\u009E\u009F"
+    b = "€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ"
+    str.tr(a, b).should == "椎名深夏"
+  end
+
+  it "respects backslash for escaping" do
+    "a-b".tr("a\\-b", "123").should == "123"
+    "^".tr("\\^", "1").should == "1"
+    "\\".tr("\\\\", "1").should == "1"
+  end
+
+  it "raises a TypeError when an argument can't be converted to a string" do
+    -> { "hello".tr(100, "a") }.should.raise(TypeError)
+    -> { "hello".tr("a", [])  }.should.raise(TypeError)
+  end
+
+  it "returns a String in the same encoding as self" do
+    "hello".encode("US-ASCII").tr("l", "r").encoding.should == Encoding::US_ASCII
+  end
+
+  it "raises an Encoding::CompatibilityError when the encodings are incompatible" do
+    -> { "hello".tr("e".encode("UTF-16LE"), "a") }.should.raise(Encoding::CompatibilityError)
+    -> { "hello".encode("UTF-16LE").tr("e", "a") }.should.raise(Encoding::CompatibilityError)
+  end
+
+  it "deletes the characters in from_str if to_str is empty" do
+    "hello".tr("el", "").should == "ho"
+  end
+
+  ruby_version_is "4.1" do
+    describe "hash form" do
+      it "returns a new strings with characters from keys replaced by the associated strings" do
+        "hello".tr("e" => "EH! ", "o" => "OH!", "l" => "").should == "hEH! OH!"
+        "h€llø".tr("€" => "e", "ø" => "o").should == "hello"
+      end
+
+      it "returns a copy of self if the translation hash is empty" do
+        "hello".tr({}).should == "hello"
+      end
+
+      it "returns a string in the combined encoding" do
+        str = "hello".encode(Encoding::US_ASCII).tr("e" => "é")
+        str.should == "héllo"
+        str.encoding.should == Encoding::UTF_8
+      end
+
+      it "works with multi-byte encodings" do
+        "hello".encode(Encoding::UTF_16LE).tr(
+          "e".encode(Encoding::UTF_16LE) => "EH! ".encode(Encoding::UTF_16LE),
+          "o".encode(Encoding::UTF_16LE) => "OH!".encode(Encoding::UTF_16LE),
+          "l".encode(Encoding::UTF_16LE) => "".encode(Encoding::UTF_16LE),
+        ).should == "hEH! OH!".encode(Encoding::UTF_16LE)
+
+        "h€llø".encode(Encoding::UTF_16LE).tr(
+          "€".encode(Encoding::UTF_16LE) => "e".encode(Encoding::UTF_16LE),
+          "ø".encode(Encoding::UTF_16LE) => "o".encode(Encoding::UTF_16LE),
+        ).should == "hello".encode(Encoding::UTF_16LE)
+      end
+
+      it "raises ArgumentError the string encoding is broken" do
+        -> { "\xFF".tr("€" => "b") }.should.raise(ArgumentError)
+        -> { "\xFF".tr({}) }.should.raise(ArgumentError)
+      end
+
+      it "raises ArgumentError if a key is more than one codepoint" do
+        -> { "hello".tr("hel" => "") }.should.raise(ArgumentError)
+        -> { "🤦🏼‍♂️".tr("🤦🏼‍♂️" => "") }.should.raise(ArgumentError)
+      end
+
+      it "raises Encoding::CompatibilityError when either keys or values have an incompatible encoding" do
+        -> { "fée".tr("é".encode(Encoding::ISO_8859_1) => "e") }.should.raise(Encoding::CompatibilityError)
+        -> { "fée".tr("e" => "é".encode(Encoding::ISO_8859_1)) }.should.raise(Encoding::CompatibilityError)
+
+        -> { "ab".encode(Encoding::US_ASCII).tr("a" => "à".encode(Encoding::ISO_8859_1), "b" => "é") }.should.raise(Encoding::CompatibilityError)
+      end
+    end
+  end
+end
+
+describe "String#tr!" do
+  it "modifies self in place" do
+    s = "abcdefghijklmnopqR"
+    s.tr!("cdefg", "12").should == "ab12222hijklmnopqR"
+    s.should == "ab12222hijklmnopqR"
+  end
+
+  it "returns nil if no modification was made" do
+    s = "hello"
+    s.tr!("za", "yb").should == nil
+    s.tr!("", "").should == nil
+    s.should == "hello"
+  end
+
+  it "does not modify self if from_str is empty" do
+    s = "hello"
+    s.tr!("", "").should == nil
+    s.should == "hello"
+    s.tr!("", "yb").should == nil
+    s.should == "hello"
+  end
+
+  it "raises a FrozenError if self is frozen" do
+    s = "abcdefghijklmnopqR".freeze
+    -> { s.tr!("cdefg", "12") }.should.raise(FrozenError)
+    -> { s.tr!("R", "S")      }.should.raise(FrozenError)
+    -> { s.tr!("", "")        }.should.raise(FrozenError)
+  end
+
+  ruby_version_is "4.1" do
+    describe "hash form" do
+      it "returns a new strings with characters from keys replaced by the associated strings" do
+        "hello".tr!("e" => "EH! ", "o" => "OH!", "l" => "").should == "hEH! OH!"
+        "h€llø".tr!("€" => "e", "ø" => "o").should == "hello"
+      end
+
+      it "returns a string in the combined encoding" do
+        str = "hello".encode(Encoding::US_ASCII).tr!("e" => "é")
+        str.should == "héllo"
+        str.encoding.should == Encoding::UTF_8
+      end
+
+      it "works with multi-byte encodings" do
+        "hello".encode(Encoding::UTF_16LE).tr!(
+          "e".encode(Encoding::UTF_16LE) => "EH! ".encode(Encoding::UTF_16LE),
+          "o".encode(Encoding::UTF_16LE) => "OH!".encode(Encoding::UTF_16LE),
+          "l".encode(Encoding::UTF_16LE) => "".encode(Encoding::UTF_16LE),
+        ).should == "hEH! OH!".encode(Encoding::UTF_16LE)
+
+        "h€llø".encode(Encoding::UTF_16LE).tr!(
+          "€".encode(Encoding::UTF_16LE) => "e".encode(Encoding::UTF_16LE),
+          "ø".encode(Encoding::UTF_16LE) => "o".encode(Encoding::UTF_16LE),
+        ).should == "hello".encode(Encoding::UTF_16LE)
+      end
+
+      it "returns nil if the string wasn't modified" do
+        s = "hello"
+        s.tr!({}).should == nil
+        s.should == "hello"
+
+        s = "hello"
+        s.tr!("€" => "", "Ø" => "").should == nil
+        s.should == "hello"
+      end
+
+      it "raises ArgumentError the string encoding is broken" do
+        -> { "\xFF".tr!("€" => "b") }.should.raise(ArgumentError)
+        -> { "\xFF".tr!({}) }.should.raise(ArgumentError)
+      end
+
+      it "raises ArgumentError if a key is more than one codepoint" do
+        -> { "hello".tr!("hel" => "") }.should.raise(ArgumentError)
+        -> { "🤦🏼‍♂️".tr!("🤦🏼‍♂️" => "") }.should.raise(ArgumentError)
+      end
+
+      it "raises Encoding::CompatibilityError when either keys or values have an incompatible encoding" do
+        -> { "fée".tr!("é".encode(Encoding::ISO_8859_1) => "e") }.should.raise(Encoding::CompatibilityError)
+        -> { "fée".tr!("e" => "é".encode(Encoding::ISO_8859_1)) }.should.raise(Encoding::CompatibilityError)
+
+        -> { "ab".encode(Encoding::US_ASCII).tr!("a" => "à".encode(Encoding::ISO_8859_1), "b" => "é") }.should.raise(Encoding::CompatibilityError)
+      end
+    end
+  end
+end

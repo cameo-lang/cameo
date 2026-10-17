@@ -1,0 +1,36 @@
+require_relative '../../../spec_helper'
+require_relative 'shared/null_and_empty'
+
+describe "IO::Buffer#null?" do
+  after :each do
+    @buffer&.free
+    @buffer = nil
+  end
+
+  it_behaves_like :io_buffer_null_and_empty, :null?
+
+  it "is false for a 0-length String-backed buffer created with .for" do
+    @buffer = IO::Buffer.for("")
+    @buffer.null?.should == false
+  end
+
+  it "is false for a 0-length String-backed buffer created with .string" do
+    IO::Buffer.string(0) do |buffer|
+      buffer.null?.should == false
+    end
+  end
+
+  it "is false for a 0-length slice of a buffer with size > 0" do
+    @buffer = IO::Buffer.new(4)
+    @buffer.slice(3, 0).null?.should == false
+  end
+
+  it "is false for an invalid slice with a recorded address" do
+    @buffer = IO::Buffer.new(4)
+    slice = @buffer.slice(0, 2)
+    @buffer.free
+
+    slice.valid?.should == false
+    slice.null?.should == false
+  end
+end
