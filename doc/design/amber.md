@@ -392,7 +392,7 @@ One Go module, `github.com/radiospiel/amber`, with the packages under `src/`:
 |---|---|
 | `amber` | the host API: `Load`, `Run`, `Program`, `Value` |
 | `syntax` | wraps the parser; normalises its tree into amber's own AST, rewrites `a.x.y =` and index assignment into `tap`, rejects what amber leaves out, with line numbers; hashes class bodies so equal definitions are one class |
-| `object` | the value model: kinds, structural equality, hashing, the class table, dynamic messages, conversion to and from `amber.Value` and Go values |
+| `object` | the value model: a `Value` is a tagged 24-byte struct (kind, integer payload, pointer), so an integer, a float, a boolean and nil never touch the heap and a string shares its bytes; kinds, structural equality, hashing, the class table, dynamic messages, conversion to and from `amber.Value` and Go values |
 | `eval` | the evaluator: compiles each node to a closure on first use (`compile.go`), with a tree walker for the rare kinds; scopes, method dispatch with a per-class lookup cache, blocks, exceptions, intrinsics (`tap`, `async`, `await`, the field helpers) |
 | `stdlib` | Kernel, Integer, Float, String, Symbol, Array, Hash, Set, Range, Enumerable, Proc, the exception classes |
 | `eval/async.go` | the scheduler: `AsyncProcess`, the per-scope process list, the worker interpreter a process runs in, goroutine lifecycle |

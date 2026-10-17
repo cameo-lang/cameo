@@ -99,7 +99,7 @@ func (p *Program) Call(recv any, method string, args ...any) (any, error) {
 	if recv == nil {
 		// A nil receiver is the script's top level, where its own methods
 		// are called without a receiver.
-		out, err = p.in.CallTop(method, values, nil, nil)
+		out, err = p.in.CallTop(method, values, nil, object.Value{})
 	} else {
 		r, convErr := p.ToValue(recv)
 		if convErr != nil {
@@ -107,7 +107,7 @@ func (p *Program) Call(recv any, method string, args ...any) (any, error) {
 		}
 		if s, ok := recv.(string); ok {
 			if cls := p.Class(s); cls != nil {
-				r = cls
+				r = object.ClassValue(cls)
 			}
 		}
 		out, err = p.in.Call(r, method, values...)
@@ -193,27 +193,27 @@ func (p *Program) ToValue(v any) (object.Value, error) {
 	case bool:
 		return object.Bool(v), nil
 	case int:
-		return object.IntValue(v), nil
+		return object.Int(v), nil
 	case int8:
-		return object.IntValue(v), nil
+		return object.Int(v), nil
 	case int16:
-		return object.IntValue(v), nil
+		return object.Int(v), nil
 	case int32:
-		return object.IntValue(v), nil
+		return object.Int(v), nil
 	case int64:
-		return object.IntValue(v), nil
+		return object.Int(v), nil
 	case uint:
-		return object.IntValue(v), nil
+		return object.Int(v), nil
 	case uint8:
-		return object.IntValue(v), nil
+		return object.Int(v), nil
 	case uint16:
-		return object.IntValue(v), nil
+		return object.Int(v), nil
 	case uint32:
-		return object.IntValue(v), nil
+		return object.Int(v), nil
 	case uint64:
-		return object.IntValue(v), nil
+		return object.Int(v), nil
 	case float32:
-		return object.Float(v), nil
+		return object.Float(float64(v)), nil
 	case float64:
 		return object.Float(v), nil
 	case string:
@@ -225,7 +225,7 @@ func (p *Program) ToValue(v any) (object.Value, error) {
 		for i, e := range v {
 			val, err := p.ToValue(e)
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			elems[i] = val
 		}
@@ -246,25 +246,25 @@ func (p *Program) ToValue(v any) (object.Value, error) {
 		for _, k := range keys {
 			val, err := p.ToValue(v[k])
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			b.Set(object.String(k), val)
 		}
-		return b.Map(), nil
+		return object.MapValue(b.Map()), nil
 	case map[any]any:
 		b := object.NewMapBuilder()
 		for k, e := range v {
 			key, err := p.ToValue(k)
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			val, err := p.ToValue(e)
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			b.Set(key, val)
 		}
-		return b.Map(), nil
+		return object.MapValue(b.Map()), nil
 	case proto.Message:
 		full := string(v.ProtoReflect().Descriptor().FullName())
 		for _, cls := range p.Classes() {
@@ -273,31 +273,41 @@ func (p *Program) ToValue(v any) (object.Value, error) {
 			}
 			data, err := proto.Marshal(v)
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
-			return p.in.Proto().Unmarshal(cls, data)
+			inst, err := p.in.Proto().Unmarshal(cls, data)
+			if err != nil {
+				return object.Value{}, err
+			}
+			return object.InstanceValue(inst), nil
 		}
-		return nil, fmt.Errorf("no loaded class has the message %s", full)
+		return object.Value{}, fmt.Errorf("no loaded class has the message %s", full)
 	}
-	return nil, fmt.Errorf("cannot convert %T to an amber value", v)
+	return object.Value{}, fmt.Errorf("cannot convert %T to an amber value", v)
 }
 
 // ToGo converts an amber value to a Go value: nil, bool, int64, float64,
 // string, []byte, []any, map[any]any, a proto.Message for an instance, and
 // the object.Value itself for everything else (symbols, ranges, classes).
 func (p *Program) ToGo(v object.Value) (any, error) {
-	switch v := v.(type) {
-	case object.Bool:
+	switch v.Kind() {
+	case object.KindBool:
+		v := v.Bool()
 		return bool(v), nil
-	case object.Int:
+	case object.KindInt:
+		v := v.Int()
 		return int64(v), nil
-	case object.Float:
+	case object.KindFloat:
+		v := v.Float()
 		return float64(v), nil
-	case object.String:
+	case object.KindString:
+		v := v.Str()
 		return string(v), nil
-	case object.Bytes:
+	case object.KindBytes:
+		v := v.Bytes()
 		return []byte(v), nil
-	case *object.List:
+	case object.KindList:
+		v := v.List()
 		out := make([]any, len(v.Elems))
 		for i, e := range v.Elems {
 			g, err := p.ToGo(e)
@@ -307,7 +317,8 @@ func (p *Program) ToGo(v object.Value) (any, error) {
 			out[i] = g
 		}
 		return out, nil
-	case *object.Set:
+	case object.KindSet:
+		v := v.Set()
 		out := make([]any, v.Len())
 		for i, e := range v.Elems() {
 			g, err := p.ToGo(e)
@@ -317,7 +328,8 @@ func (p *Program) ToGo(v object.Value) (any, error) {
 			out[i] = g
 		}
 		return out, nil
-	case *object.Map:
+	case object.KindMap:
+		v := v.Map()
 		out := make(map[any]any, v.Len())
 		for i, k := range v.Keys() {
 			key, err := p.ToGo(k)
@@ -337,13 +349,14 @@ func (p *Program) ToGo(v object.Value) (any, error) {
 			out[key] = val
 		}
 		return out, nil
-	case *object.Instance:
+	case object.KindInstance:
+		v := v.Instance()
 		if v.Cls.Digest == "" {
 			return v, nil
 		}
 		return p.in.Proto().ToMessage(v)
 	}
-	if v == object.Nil {
+	if v.IsNil() {
 		return nil, nil
 	}
 	return v, nil

@@ -173,32 +173,41 @@ func (e *Encoder) message(fd protoreflect.FileDescriptor, v object.Value) (*dyna
 	set := func(name string, pv protoreflect.Value) {
 		msg.Set(md.Fields().ByName(protoreflect.Name(name)), pv)
 	}
-	switch v := v.(type) {
-	case object.Bool:
+	switch v.Kind() {
+	case object.KindBool:
+		v := v.Bool()
 		set("bool_value", protoreflect.ValueOfBool(bool(v)))
-	case object.Int:
+	case object.KindInt:
+		v := v.Int()
 		set("int_value", protoreflect.ValueOfInt64(int64(v)))
-	case object.Float:
+	case object.KindFloat:
+		v := v.Float()
 		set("float_value", protoreflect.ValueOfFloat64(float64(v)))
-	case object.String:
+	case object.KindString:
+		v := v.Str()
 		set("string_value", protoreflect.ValueOfString(string(v)))
-	case object.Symbol:
+	case object.KindSymbol:
+		v := v.Str()
 		set("string_value", protoreflect.ValueOfString(string(v)))
-	case object.Bytes:
+	case object.KindBytes:
+		v := v.Bytes()
 		set("bytes_value", protoreflect.ValueOfBytes([]byte(v)))
-	case *object.List:
+	case object.KindList:
+		v := v.List()
 		items, err := e.items(fd, "List", v.Elems)
 		if err != nil {
 			return nil, err
 		}
 		set("list", protoreflect.ValueOfMessage(items))
-	case *object.Set:
+	case object.KindSet:
+		v := v.Set()
 		items, err := e.items(fd, "Set", v.Elems())
 		if err != nil {
 			return nil, err
 		}
 		set("set", protoreflect.ValueOfMessage(items))
-	case *object.Map:
+	case object.KindMap:
+		v := v.Map()
 		mapMd := fd.Messages().ByName("Map")
 		entryMd := mapMd.Messages().ByName("Entry")
 		m := dynamicpb.NewMessage(mapMd)
@@ -218,17 +227,18 @@ func (e *Encoder) message(fd protoreflect.FileDescriptor, v object.Value) (*dyna
 			entries.Append(protoreflect.ValueOfMessage(entry))
 		}
 		set("map", protoreflect.ValueOfMessage(m))
-	case *object.Range:
+	case object.KindRange:
+		v := v.Range()
 		rangeMd := fd.Messages().ByName("Range")
 		r := dynamicpb.NewMessage(rangeMd)
-		if v.Lo != nil {
+		if !v.Lo.IsZero() {
 			lo, err := e.message(fd, v.Lo)
 			if err != nil {
 				return nil, err
 			}
 			r.Set(rangeMd.Fields().ByName("lo"), protoreflect.ValueOfMessage(lo))
 		}
-		if v.Hi != nil {
+		if !v.Hi.IsZero() {
 			hi, err := e.message(fd, v.Hi)
 			if err != nil {
 				return nil, err
@@ -237,7 +247,8 @@ func (e *Encoder) message(fd protoreflect.FileDescriptor, v object.Value) (*dyna
 		}
 		r.Set(rangeMd.Fields().ByName("exclusive"), protoreflect.ValueOfBool(v.Exclusive))
 		set("range", protoreflect.ValueOfMessage(r))
-	case *object.Instance:
+	case object.KindInstance:
+		v := v.Instance()
 		data, err := e.reg.Marshal(v)
 		if err != nil {
 			return nil, err
@@ -249,7 +260,7 @@ func (e *Encoder) message(fd protoreflect.FileDescriptor, v object.Value) (*dyna
 		o.Set(objMd.Fields().ByName("message"), protoreflect.ValueOfBytes(data))
 		set("object", protoreflect.ValueOfMessage(o))
 	default:
-		if v == object.Nil {
+		if v.IsNil() {
 			break
 		}
 		return nil, &NotSerialisable{Kind: kindName(v)}
@@ -296,11 +307,11 @@ func NewDecoder(reg *Registry, resolve ClassResolver) *Decoder {
 func (d *Decoder) Decode(data []byte) (object.Value, error) {
 	fd, err := envelope()
 	if err != nil {
-		return nil, err
+		return object.Value{}, err
 	}
 	msg := dynamicpb.NewMessage(fd.Messages().ByName("Value"))
 	if err := proto.Unmarshal(data, msg); err != nil {
-		return nil, err
+		return object.Value{}, err
 	}
 	return d.value(msg)
 }
@@ -319,7 +330,7 @@ func (d *Decoder) value(msg protoreflect.Message) (object.Value, error) {
 	case "bool_value":
 		return object.Bool(pv.Bool()), nil
 	case "int_value":
-		return object.IntValue(pv.Int()), nil
+		return object.Int(pv.Int()), nil
 	case "float_value":
 		return object.Float(pv.Float()), nil
 	case "string_value":
@@ -329,10 +340,10 @@ func (d *Decoder) value(msg protoreflect.Message) (object.Value, error) {
 	case "list", "set":
 		items, err := d.items(pv.Message())
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		if kind.Name() == "set" {
-			return object.NewSet(items...), nil
+			return object.SetValue(object.NewSet(items...)), nil
 		}
 		return object.NewList(items...), nil
 	case "map":
@@ -343,15 +354,15 @@ func (d *Decoder) value(msg protoreflect.Message) (object.Value, error) {
 			entry := entries.Get(i).Message()
 			k, err := d.value(entry.Get(entry.Descriptor().Fields().ByName("key")).Message())
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			v, err := d.value(entry.Get(entry.Descriptor().Fields().ByName("value")).Message())
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			b.Set(k, v)
 		}
-		return b.Map(), nil
+		return object.MapValue(b.Map()), nil
 	case "range":
 		r := pv.Message()
 		fields := r.Descriptor().Fields()
@@ -359,18 +370,18 @@ func (d *Decoder) value(msg protoreflect.Message) (object.Value, error) {
 		if r.Has(fields.ByName("lo")) {
 			lo, err := d.value(r.Get(fields.ByName("lo")).Message())
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			out.Lo = lo
 		}
 		if r.Has(fields.ByName("hi")) {
 			hi, err := d.value(r.Get(fields.ByName("hi")).Message())
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			out.Hi = hi
 		}
-		return out, nil
+		return object.RangeValue(out), nil
 	case "object":
 		o := pv.Message()
 		fields := o.Descriptor().Fields()
@@ -378,11 +389,15 @@ func (d *Decoder) value(msg protoreflect.Message) (object.Value, error) {
 		digest := o.Get(fields.ByName("digest")).String()
 		cls := d.resolve(name, digest)
 		if cls == nil {
-			return nil, fmt.Errorf("no class %s (digest %s) is loaded", name, digest)
+			return object.Value{}, fmt.Errorf("no class %s (digest %s) is loaded", name, digest)
 		}
-		return d.reg.Unmarshal(cls, o.Get(fields.ByName("message")).Bytes())
+		inst, err := d.reg.Unmarshal(cls, o.Get(fields.ByName("message")).Bytes())
+		if err != nil {
+			return object.Value{}, err
+		}
+		return object.InstanceValue(inst), nil
 	}
-	return nil, fmt.Errorf("unknown envelope kind %s", kind.Name())
+	return object.Value{}, fmt.Errorf("unknown envelope kind %s", kind.Name())
 }
 
 func (d *Decoder) items(m protoreflect.Message) ([]object.Value, error) {
@@ -399,7 +414,7 @@ func (d *Decoder) items(m protoreflect.Message) ([]object.Value, error) {
 }
 
 func kindName(v object.Value) string {
-	if v == object.Nil {
+	if v.IsNil() {
 		return "nil"
 	}
 	return v.Class().QualifiedName()

@@ -13,8 +13,6 @@ type Map struct {
 	index map[string]int
 }
 
-func (*Map) Class() *Class { return MapClass }
-
 // NewMap makes an empty map.
 func NewMap() *Map {
 	return &Map{index: map[string]int{}}
@@ -54,6 +52,9 @@ func (b *MapBuilder) Set(k, v Value) *MapBuilder { b.m.set(k, v); return b }
 // Map finishes the map; the builder must not be used afterwards.
 func (b *MapBuilder) Map() *Map { return b.m }
 
+// Value finishes the map as a value.
+func (b *MapBuilder) Value() Value { return MapValue(b.m) }
+
 // Len returns the number of entries.
 func (m *Map) Len() int { return len(m.keys) }
 
@@ -61,7 +62,7 @@ func (m *Map) Len() int { return len(m.keys) }
 func (m *Map) Get(k Value) (Value, bool) {
 	i, ok := m.index[Key(k)]
 	if !ok {
-		return nil, false
+		return Value{}, false
 	}
 	return m.vals[i], true
 }
@@ -125,8 +126,6 @@ type Set struct {
 	elems []Value
 	index map[string]bool
 }
-
-func (*Set) Class() *Class { return SetClass }
 
 // NewSet makes a set of the elements, dropping duplicates.
 func NewSet(elems ...Value) *Set {
@@ -194,48 +193,48 @@ func Key(v Value) string {
 }
 
 func writeKey(b *strings.Builder, v Value) {
-	switch v := v.(type) {
-	case nilValue:
+	switch v.kind {
+	case KindNone, KindNil:
 		b.WriteString("n")
-	case Bool:
-		if v {
+	case KindBool:
+		if v.n != 0 {
 			b.WriteString("t")
 		} else {
 			b.WriteString("f")
 		}
-	case Int:
+	case KindInt:
 		b.WriteString("i")
-		b.WriteString(strconv.FormatInt(int64(v), 10))
-	case Float:
+		b.WriteString(strconv.FormatInt(v.n, 10))
+	case KindFloat:
 		b.WriteString("d")
-		b.WriteString(strconv.FormatFloat(float64(v), 'g', -1, 64))
-	case String:
-		b.WriteString("s")
-		b.WriteString(strconv.Itoa(len(v)))
+		b.WriteString(strconv.FormatFloat(v.Float(), 'g', -1, 64))
+	case KindString, KindSymbol:
+		if v.kind == KindString {
+			b.WriteString("s")
+		} else {
+			b.WriteString("y")
+		}
+		b.WriteString(strconv.Itoa(int(v.n)))
 		b.WriteByte(':')
-		b.WriteString(string(v))
-	case Symbol:
-		b.WriteString("y")
-		b.WriteString(strconv.Itoa(len(v)))
-		b.WriteByte(':')
-		b.WriteString(string(v))
-	case Bytes:
+		b.WriteString(v.Str())
+	case KindBytes:
 		b.WriteString("b")
-		b.WriteString(strconv.Itoa(len(v)))
+		b.WriteString(strconv.Itoa(int(v.n)))
 		b.WriteByte(':')
-		b.Write(v)
-	case *List:
+		b.Write(v.Bytes())
+	case KindList:
 		b.WriteString("[")
-		for _, e := range v.Elems {
+		for _, e := range v.List().Elems {
 			writeKey(b, e)
 			b.WriteByte(',')
 		}
 		b.WriteString("]")
-	case *Map:
+	case KindMap:
 		// A map's identity does not depend on insertion order.
-		entries := make([]string, 0, len(v.keys))
-		for i, k := range v.keys {
-			entries = append(entries, Key(k)+">"+Key(v.vals[i]))
+		m := v.Map()
+		entries := make([]string, 0, len(m.keys))
+		for i, k := range m.keys {
+			entries = append(entries, Key(k)+">"+Key(m.vals[i]))
 		}
 		sortStrings(entries)
 		b.WriteString("{")
@@ -244,10 +243,11 @@ func writeKey(b *strings.Builder, v Value) {
 			b.WriteByte(',')
 		}
 		b.WriteString("}")
-	case *Set:
+	case KindSet:
 		// A set's identity does not depend on insertion order.
-		keys := make([]string, 0, len(v.elems))
-		for _, e := range v.elems {
+		s := v.Set()
+		keys := make([]string, 0, len(s.elems))
+		for _, e := range s.elems {
 			keys = append(keys, Key(e))
 		}
 		sortStrings(keys)
@@ -257,36 +257,40 @@ func writeKey(b *strings.Builder, v Value) {
 			b.WriteByte(',')
 		}
 		b.WriteString(">")
-	case *Range:
+	case KindRange:
+		r := v.Range()
 		b.WriteString("r")
-		writeKey(b, orNil(v.Lo))
-		if v.Exclusive {
+		writeKey(b, r.Lo)
+		if r.Exclusive {
 			b.WriteString("...")
 		} else {
 			b.WriteString("..")
 		}
-		writeKey(b, orNil(v.Hi))
-	case *Instance:
+		writeKey(b, r.Hi)
+	case KindInstance:
+		i := v.Instance()
 		b.WriteString("o")
-		b.WriteString(v.Cls.QualifiedName())
+		b.WriteString(i.Cls.QualifiedName())
 		b.WriteByte('#')
-		b.WriteString(v.Cls.Digest)
+		b.WriteString(i.Cls.Digest)
 		b.WriteString("(")
-		for _, f := range v.Fields {
-			writeKey(b, orNil(f))
+		for _, f := range i.Fields {
+			writeKey(b, f)
 			b.WriteByte(',')
 		}
 		b.WriteString(")")
-	case *Class:
+	case KindClass:
+		c := (*Class)(v.p)
 		b.WriteString("c")
-		b.WriteString(v.QualifiedName())
+		b.WriteString(c.QualifiedName())
 		b.WriteByte('#')
-		b.WriteString(v.Digest)
-	case *Exception:
+		b.WriteString(c.Digest)
+	case KindException:
+		e := v.Exception()
 		b.WriteString("e")
-		b.WriteString(v.Cls.QualifiedName())
+		b.WriteString(e.Cls.QualifiedName())
 		b.WriteByte(':')
-		b.WriteString(v.Message)
+		b.WriteString(e.Message)
 	default:
 		// Procs and processes have identity, not structure.
 		b.WriteString("p")
@@ -294,8 +298,9 @@ func writeKey(b *strings.Builder, v Value) {
 	}
 }
 
-func orNil(v Value) Value {
-	if v == nil {
+// OrNil returns v, or nil for the zero Value.
+func OrNil(v Value) Value {
+	if v.kind == KindNone {
 		return Nil
 	}
 	return v
@@ -303,26 +308,20 @@ func orNil(v Value) Value {
 
 // Equal is structural equality for every builtin kind. For instances it
 // compares class and fields; user-defined == is the evaluator's business.
+// An integer and a float compare by magnitude.
 func Equal(a, b Value) bool {
-	switch a := a.(type) {
-	case Int:
-		switch b := b.(type) {
-		case Int:
-			return a == b
-		case Float:
-			return float64(a) == float64(b)
+	if a.kind == KindInt || a.kind == KindFloat {
+		if b.kind != KindInt && b.kind != KindFloat {
+			return false
 		}
-		return false
-	case Float:
-		switch b := b.(type) {
-		case Int:
-			return float64(a) == float64(b)
-		case Float:
-			return a == b
+		if a.kind == KindInt && b.kind == KindInt {
+			return a.n == b.n
 		}
-		return false
+		x, _ := a.AsNumber()
+		y, _ := b.AsNumber()
+		return x == y
 	}
-	if a.Class() != b.Class() {
+	if a.kind != b.kind || a.Class() != b.Class() {
 		return false
 	}
 	return Key(a) == Key(b)

@@ -10,27 +10,27 @@ import (
 
 func installString() {
 	c := object.StringClass
-	str := func(self object.Value) string { return string(self.(object.String)) }
+	str := func(self object.Value) string { return string(self.Str()) }
 	def(c, "+", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		o, ok := args[0].(object.String)
+		o, ok := args[0].AsString()
 		if !ok {
-			return nil, ctx.Raise(object.TypeError, "no implicit conversion of %s into String", kindName(args[0]))
+			return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into String", kindName(args[0]))
 		}
 		return object.String(str(self) + string(o)), nil
 	})
 	def(c, "*", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		n, err := wantInt(ctx, args[0], "")
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		if n < 0 {
-			return nil, ctx.Raise(object.ArgumentError, "negative argument")
+			return object.Value{}, ctx.Raise(object.ArgumentError, "negative argument")
 		}
 		return object.String(strings.Repeat(str(self), int(n))), nil
 	})
 	def(c, "%", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		var fargs []object.Value
-		if l, ok := args[0].(*object.List); ok {
+		if l, ok := args[0].AsList(); ok {
 			fargs = l.Elems
 		} else {
 			fargs = args
@@ -39,27 +39,27 @@ func installString() {
 		return object.String(s), err
 	})
 	def(c, "==", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		o, ok := args[0].(object.String)
-		return object.BoolOf(ok && o == self.(object.String)), nil
+		o, ok := args[0].AsString()
+		return object.Bool(ok && o == self.Str()), nil
 	})
 	def(c, "<=>", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		o, ok := args[0].(object.String)
+		o, ok := args[0].AsString()
 		if !ok {
 			return object.Nil, nil
 		}
-		return object.IntValue(strings.Compare(str(self), string(o))), nil
+		return object.Int(strings.Compare(str(self), string(o))), nil
 	})
 	def(c, "eql?", 1, c.Methods["=="].Native)
 	def(c, "===", 1, c.Methods["=="].Native)
 	def(c, "length", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.IntValue(utf8.RuneCountInString(str(self))), nil
+		return object.Int(utf8.RuneCountInString(str(self))), nil
 	})
 	def(c, "size", 0, c.Methods["length"].Native)
 	def(c, "bytesize", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.IntValue(len(str(self))), nil
+		return object.Int(len(str(self))), nil
 	})
 	def(c, "empty?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.BoolOf(str(self) == ""), nil
+		return object.Bool(str(self) == ""), nil
 	})
 	mapStr := func(name string, f func(string) string) {
 		def(c, name, 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -128,33 +128,33 @@ func installString() {
 		if len(args) == 1 {
 			base, err := wantInt(ctx, args[0], "")
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			i, ok := parseIntBase(strings.TrimSpace(str(self)), int(base))
 			if !ok {
-				return object.IntValue(0), nil
+				return object.Int(0), nil
 			}
-			return object.IntValue(i), nil
+			return object.Int(i), nil
 		}
-		return object.IntValue(leadingInt(str(self))), nil
+		return object.Int(leadingInt(str(self))), nil
 	})
 	def(c, "to_f", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Float(leadingFloat(str(self))), nil
 	})
 	def(c, "hex", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		i, _ := parseIntBase(strings.TrimPrefix(strings.TrimSpace(str(self)), "0x"), 16)
-		return object.IntValue(i), nil
+		return object.Int(i), nil
 	})
 	def(c, "oct", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		i, _ := parseIntBase(strings.TrimSpace(str(self)), 8)
-		return object.IntValue(i), nil
+		return object.Int(i), nil
 	})
 	def(c, "ord", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if str(self) == "" {
-			return nil, ctx.Raise(object.ArgumentError, "empty string")
+			return object.Value{}, ctx.Raise(object.ArgumentError, "empty string")
 		}
 		r, _ := utf8.DecodeRuneInString(str(self))
-		return object.IntValue(r), nil
+		return object.Int(r), nil
 	})
 	def(c, "chr", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if str(self) == "" {
@@ -164,7 +164,7 @@ func installString() {
 		return object.String(string(r)), nil
 	})
 	def(c, "hash", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.IntValue(hashString(object.Key(self))), nil
+		return object.Int(hashString(object.Key(self))), nil
 	})
 	def(c, "chars", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		elems := []object.Value{}
@@ -175,11 +175,11 @@ func installString() {
 	})
 	def(c, "each_char", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if err := needBlock(ctx, block, "each_char"); err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		for _, r := range str(self) {
 			if _, err := ctx.Yield(block, object.String(string(r))); err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 		}
 		return self, nil
@@ -187,7 +187,7 @@ func installString() {
 	def(c, "bytes", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		elems := make([]object.Value, len(str(self)))
 		for i := 0; i < len(str(self)); i++ {
-			elems[i] = object.IntValue(str(self)[i])
+			elems[i] = object.Int(str(self)[i])
 		}
 		return object.NewList(elems...), nil
 	})
@@ -196,11 +196,11 @@ func installString() {
 	})
 	def(c, "each_line", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if err := needBlock(ctx, block, "each_line"); err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		for _, l := range lines(str(self)) {
 			if _, err := ctx.Yield(block, l); err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 		}
 		return self, nil
@@ -209,17 +209,17 @@ func installString() {
 		s := str(self)
 		limit := 0
 		sep := " "
-		if len(args) >= 1 && args[0] != object.Nil {
+		if len(args) >= 1 && !args[0].IsNil() {
 			v, err := wantString(ctx, args[0])
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			sep = v
 		}
 		if len(args) >= 2 {
 			n, err := wantInt(ctx, args[1], "")
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			limit = int(n)
 		}
@@ -263,14 +263,14 @@ func installString() {
 		def(c, name, 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			arg, err := wantString(ctx, args[0])
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			return f(str(self), arg), nil
 		})
 	}
-	strArg("include?", func(s, a string) object.Value { return object.BoolOf(strings.Contains(s, a)) })
-	strArg("start_with?", func(s, a string) object.Value { return object.BoolOf(strings.HasPrefix(s, a)) })
-	strArg("end_with?", func(s, a string) object.Value { return object.BoolOf(strings.HasSuffix(s, a)) })
+	strArg("include?", func(s, a string) object.Value { return object.Bool(strings.Contains(s, a)) })
+	strArg("start_with?", func(s, a string) object.Value { return object.Bool(strings.HasPrefix(s, a)) })
+	strArg("end_with?", func(s, a string) object.Value { return object.Bool(strings.HasSuffix(s, a)) })
 	strArg("delete_prefix", func(s, a string) object.Value { return object.String(strings.TrimPrefix(s, a)) })
 	strArg("delete_suffix", func(s, a string) object.Value { return object.String(strings.TrimSuffix(s, a)) })
 	strArg("count", func(s, a string) object.Value {
@@ -280,25 +280,25 @@ func installString() {
 				n++
 			}
 		}
-		return object.IntValue(n)
+		return object.Int(n)
 	})
-	strArg("casecmp?", func(s, a string) object.Value { return object.BoolOf(strings.EqualFold(s, a)) })
+	strArg("casecmp?", func(s, a string) object.Value { return object.Bool(strings.EqualFold(s, a)) })
 	strArg("casecmp", func(s, a string) object.Value {
-		return object.IntValue(strings.Compare(strings.ToLower(s), strings.ToLower(a)))
+		return object.Int(strings.Compare(strings.ToLower(s), strings.ToLower(a)))
 	})
 	strArg("index", func(s, a string) object.Value {
 		i := strings.Index(s, a)
 		if i < 0 {
 			return object.Nil
 		}
-		return object.IntValue(utf8.RuneCountInString(s[:i]))
+		return object.Int(utf8.RuneCountInString(s[:i]))
 	})
 	strArg("rindex", func(s, a string) object.Value {
 		i := strings.LastIndex(s, a)
 		if i < 0 {
 			return object.Nil
 		}
-		return object.IntValue(utf8.RuneCountInString(s[:i]))
+		return object.Int(utf8.RuneCountInString(s[:i]))
 	})
 	def(c, "sub", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return substitute(ctx, str(self), args, block, 1)
@@ -309,30 +309,30 @@ func installString() {
 	def(c, "tr", 2, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		from, err := wantString(ctx, args[0])
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		to, err := wantString(ctx, args[1])
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		return object.String(translate(str(self), from, to)), nil
 	})
 	pad := func(name string, place func(s, fill string, n int) string) {
 		def(c, name, -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			if len(args) < 1 || len(args) > 2 {
-				return nil, argError(ctx, len(args), "1..2")
+				return object.Value{}, argError(ctx, len(args), "1..2")
 			}
 			n, err := wantInt(ctx, args[0], "")
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			fill := " "
 			if len(args) == 2 {
 				if fill, err = wantString(ctx, args[1]); err != nil {
-					return nil, err
+					return object.Value{}, err
 				}
 				if fill == "" {
-					return nil, ctx.Raise(object.ArgumentError, "zero width padding")
+					return object.Value{}, ctx.Raise(object.ArgumentError, "zero width padding")
 				}
 			}
 			return object.String(place(str(self), fill, int(n))), nil
@@ -372,7 +372,7 @@ func installString() {
 	def(c, "partition", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		sep, err := wantString(ctx, args[0])
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		before, after, found := strings.Cut(str(self), sep)
 		if !found {
@@ -411,12 +411,12 @@ func lines(s string) []object.Value {
 // substitute is sub and gsub with a string pattern, a replacement string or
 // map, or a block. limit is the number of replacements, -1 for all.
 func substitute(ctx object.Context, s string, args []object.Value, block object.Value, limit int) (object.Value, error) {
-	if len(args) < 1 || len(args) > 2 || (len(args) == 1 && block == nil) {
-		return nil, argError(ctx, len(args), "2")
+	if len(args) < 1 || len(args) > 2 || (len(args) == 1 && block.IsZero()) {
+		return object.Value{}, argError(ctx, len(args), "2")
 	}
 	pattern, err := wantString(ctx, args[0])
 	if err != nil {
-		return nil, err
+		return object.Value{}, err
 	}
 	var b strings.Builder
 	rest := s
@@ -430,26 +430,28 @@ func substitute(ctx object.Context, s string, args []object.Value, block object.
 		var repl string
 		switch {
 		case len(args) == 2:
-			switch r := args[1].(type) {
-			case object.String:
+			switch args[1].Kind() {
+			case object.KindString:
+				r := args[1].Str()
 				repl = string(r)
-			case *object.Map:
+			case object.KindMap:
+				r := args[1].Map()
 				v, ok := r.Get(object.String(pattern))
 				if ok {
 					if repl, err = ctx.ToS(v); err != nil {
-						return nil, err
+						return object.Value{}, err
 					}
 				}
 			default:
-				return nil, ctx.Raise(object.TypeError, "no implicit conversion of %s into String", kindName(args[1]))
+				return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into String", kindName(args[1]))
 			}
 		default:
 			v, err := ctx.Yield(block, object.String(pattern))
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			if repl, err = ctx.ToS(v); err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 		}
 		b.WriteString(repl)
@@ -519,8 +521,9 @@ func stringIndex(ctx object.Context, s string, args []object.Value) (object.Valu
 	n := len(runes)
 	switch len(args) {
 	case 1:
-		switch a := args[0].(type) {
-		case object.Int:
+		switch args[0].Kind() {
+		case object.KindInt:
+			a := args[0].Int()
 			i := int(a)
 			if i < 0 {
 				i += n
@@ -529,27 +532,29 @@ func stringIndex(ctx object.Context, s string, args []object.Value) (object.Valu
 				return object.Nil, nil
 			}
 			return object.String(string(runes[i])), nil
-		case object.String:
+		case object.KindString:
+			a := args[0].Str()
 			if strings.Contains(s, string(a)) {
-				return a, nil
+				return object.String(a), nil
 			}
 			return object.Nil, nil
-		case *object.Range:
+		case object.KindRange:
+			a := args[0].Range()
 			start, length, ok := rangeBounds(ctx, a, n)
 			if !ok {
 				return object.Nil, nil
 			}
 			return object.String(string(runes[start : start+length])), nil
 		}
-		return nil, ctx.Raise(object.TypeError, "no implicit conversion of %s into Integer", kindName(args[0]))
+		return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into Integer", kindName(args[0]))
 	case 2:
 		start, err := wantInt(ctx, args[0], "")
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		length, err := wantInt(ctx, args[1], "")
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		if start < 0 {
 			start += int64(n)
@@ -563,22 +568,22 @@ func stringIndex(ctx object.Context, s string, args []object.Value) (object.Valu
 		}
 		return object.String(string(runes[start:end])), nil
 	}
-	return nil, argError(ctx, len(args), "1..2")
+	return object.Value{}, argError(ctx, len(args), "1..2")
 }
 
 // rangeBounds resolves a range over a sequence of length n into a start and
 // a length, false when it is out of bounds.
 func rangeBounds(ctx object.Context, r *object.Range, n int) (start, length int, ok bool) {
 	lo, hi := 0, n-1
-	if r.Lo != nil {
-		v, isInt := r.Lo.(object.Int)
+	if !r.Lo.IsZero() {
+		v, isInt := r.Lo.AsInt()
 		if !isInt {
 			return 0, 0, false
 		}
 		lo = int(v)
 	}
-	if r.Hi != nil {
-		v, isInt := r.Hi.(object.Int)
+	if !r.Hi.IsZero() {
+		v, isInt := r.Hi.AsInt()
 		if !isInt {
 			return 0, 0, false
 		}

@@ -82,7 +82,7 @@ type Field struct {
 	Name    string
 	Number  int64 // the protobuf field number
 	Type    *FieldType
-	Default Value // nil when the field has no default (then it reads as nil)
+	Default Value // zero when the field has no default (then it reads as nil)
 	// Owner is the class that declared the field, which may be a superclass.
 	Owner *Class
 }
@@ -340,7 +340,7 @@ func init() {
 	}
 	for _, c := range BasicClasses {
 		if c != ObjectClass {
-			ObjectClass.Consts[c.Name] = c
+			ObjectClass.Consts[c.Name] = ClassValue(c)
 		}
 	}
 }

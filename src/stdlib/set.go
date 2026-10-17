@@ -4,9 +4,9 @@ import "github.com/radiospiel/amber/src/object"
 
 func installSet() {
 	c := object.SetClass
-	set := func(self object.Value) *object.Set { return self.(*object.Set) }
+	set := func(self object.Value) *object.Set { return self.Set() }
 	other := func(ctx object.Context, v object.Value) (*object.Set, error) {
-		if s, ok := v.(*object.Set); ok {
+		if s, ok := v.AsSet(); ok {
 			return s, nil
 		}
 		elems, err := toList(ctx, v)
@@ -16,47 +16,47 @@ func installSet() {
 		return object.NewSet(elems...), nil
 	}
 	def(c, "size", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.IntValue(set(self).Len()), nil
+		return object.Int(set(self).Len()), nil
 	})
 	def(c, "length", 0, c.Methods["size"].Native)
 	def(c, "count", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Enumerable.Methods["count"].Native(ctx, self, args, kw, block)
 	})
 	def(c, "empty?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.BoolOf(set(self).Len() == 0), nil
+		return object.Bool(set(self).Len() == 0), nil
 	})
 	has := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.BoolOf(set(self).Has(args[0])), nil
+		return object.Bool(set(self).Has(args[0])), nil
 	}
 	def(c, "include?", 1, has)
 	def(c, "member?", 1, has)
 	def(c, "===", 1, has)
 	def(c, "contain?", 1, has)
 	def(c, "each", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if block == nil {
+		if block.IsZero() {
 			return self, nil
 		}
 		for _, e := range set(self).Elems() {
 			if _, err := ctx.Yield(block, e); err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 		}
 		return self, nil
 	})
 	def(c, "add", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.NewSet(append(append([]object.Value{}, set(self).Elems()...), args...)...), nil
+		return object.SetValue(object.NewSet(append(append([]object.Value{}, set(self).Elems()...), args...)...)), nil
 	})
 	def(c, "without", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return set(self).Difference(object.NewSet(args...)), nil
+		return object.SetValue(set(self).Difference(object.NewSet(args...))), nil
 	})
 	binary := func(names []string, f func(a, b *object.Set) *object.Set) {
 		for _, name := range names {
 			def(c, name, 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 				o, err := other(ctx, args[0])
 				if err != nil {
-					return nil, err
+					return object.Value{}, err
 				}
-				return f(set(self), o), nil
+				return object.SetValue(f(set(self), o)), nil
 			})
 		}
 	}
@@ -69,9 +69,9 @@ func installSet() {
 			def(c, name, 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 				o, err := other(ctx, args[0])
 				if err != nil {
-					return nil, err
+					return object.Value{}, err
 				}
-				return object.BoolOf(f(set(self), o)), nil
+				return object.Bool(f(set(self), o)), nil
 			})
 		}
 	}
@@ -93,19 +93,19 @@ func installSet() {
 	filter := func(name string, keep bool) {
 		def(c, name, 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			if err := needBlock(ctx, block, name); err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			out := []object.Value{}
 			for _, e := range set(self).Elems() {
 				r, err := ctx.Yield(block, e)
 				if err != nil {
-					return nil, err
+					return object.Value{}, err
 				}
-				if object.Truthy(r) == keep {
+				if r.Truthy() == keep {
 					out = append(out, e)
 				}
 			}
-			return object.NewSet(out...), nil
+			return object.SetValue(object.NewSet(out...)), nil
 		})
 	}
 	filter("select", true)
@@ -118,19 +118,19 @@ func installSet() {
 		return self, nil
 	})
 	def(c, "hash", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.IntValue(hashString(object.Key(self))), nil
+		return object.Int(hashString(object.Key(self))), nil
 	})
 	object.SetClass.DefineSingleton("new", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) == 0 {
-			return object.NewSet(), nil
+			return object.SetValue(object.NewSet()), nil
 		}
 		elems, err := toList(ctx, args[0])
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
-		return object.NewSet(elems...), nil
+		return object.SetValue(object.NewSet(elems...)), nil
 	})
 	object.SetClass.DefineSingleton("[]", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.NewSet(args...), nil
+		return object.SetValue(object.NewSet(args...)), nil
 	})
 }

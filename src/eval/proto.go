@@ -24,7 +24,7 @@ func (in *Interp) FindClass(name, digest string) *object.Class {
 	var walk func(consts map[string]object.Value, prefix string) *object.Class
 	walk = func(consts map[string]object.Value, prefix string) *object.Class {
 		for n, v := range consts {
-			cls, ok := v.(*object.Class)
+			cls, ok := v.AsClass()
 			if !ok {
 				continue
 			}
@@ -47,7 +47,7 @@ func (in *Interp) Classes() []*object.Class {
 	var walk func(consts map[string]object.Value)
 	walk = func(consts map[string]object.Value) {
 		for _, name := range sortedKeys(consts) {
-			cls, ok := consts[name].(*object.Class)
+			cls, ok := consts[name].AsClass()
 			if !ok || cls.Digest == "" {
 				continue
 			}
@@ -77,58 +77,60 @@ func sortedKeys(m map[string]object.Value) []string {
 func init() {
 	cls := object.ClassClass
 	cls.Define("proto", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		c := self.(*object.Class)
+		c := self.Cls()
 		if c.Digest == "" || c.IsModule {
-			return nil, ctx.Raise(object.TypeError, "%s is not a class with fields", c.QualifiedName())
+			return object.Value{}, ctx.Raise(object.TypeError, "%s is not a class with fields", c.QualifiedName())
 		}
 		if _, err := ctx.(*Interp).proto.Message(c); err != nil {
-			return nil, ctx.Raise(object.AmberError, "%s", err.Error())
+			return object.Value{}, ctx.Raise(object.AmberError, "%s", err.Error())
 		}
 		return object.String(protogen.Text(c)), nil
 	})
 	cls.Define("from_proto", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		c := self.(*object.Class)
+		c := self.Cls()
 		var data []byte
-		switch v := args[0].(type) {
-		case object.Bytes:
+		switch args[0].Kind() {
+		case object.KindBytes:
+			v := args[0].Bytes()
 			data = v
-		case object.String:
+		case object.KindString:
+			v := args[0].Str()
 			data = []byte(v)
 		default:
-			return nil, ctx.Raise(object.TypeError, "from_proto takes bytes, not %s", typeName(args[0]))
+			return object.Value{}, ctx.Raise(object.TypeError, "from_proto takes bytes, not %s", typeName(args[0]))
 		}
 		inst, err := ctx.(*Interp).proto.Unmarshal(c, data)
 		if err != nil {
-			return nil, ctx.Raise(object.ArgumentError, "%s", err.Error())
+			return object.Value{}, ctx.Raise(object.ArgumentError, "%s", err.Error())
 		}
-		return inst, nil
+		return object.InstanceValue(inst), nil
 	})
 	object.ObjectClass.Define("to_proto", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		inst, ok := self.(*object.Instance)
+		inst, ok := self.AsInstance()
 		if !ok || inst.Cls.Digest == "" || inst.Cls == ctx.(*Interp).mainClass {
-			return nil, ctx.Raise(object.TypeError, "%s is not an instance of a class with fields", typeName(self))
+			return object.Value{}, ctx.Raise(object.TypeError, "%s is not an instance of a class with fields", typeName(self))
 		}
 		data, err := ctx.(*Interp).proto.Marshal(inst)
 		if err != nil {
-			return nil, ctx.Raise(object.AmberError, "%s", err.Error())
+			return object.Value{}, ctx.Raise(object.AmberError, "%s", err.Error())
 		}
 		return object.Bytes(data), nil
 	})
 	object.ObjectClass.Define("to_value_proto", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		data, err := ctx.(*Interp).Encoder().Encode(self)
 		if err != nil {
-			return nil, ctx.Raise(object.TypeError, "%s", err.Error())
+			return object.Value{}, ctx.Raise(object.TypeError, "%s", err.Error())
 		}
 		return object.Bytes(data), nil
 	})
 	object.ObjectClass.Define("from_value_proto", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		data, ok := args[0].(object.Bytes)
+		data, ok := args[0].AsBytes()
 		if !ok {
-			return nil, ctx.Raise(object.TypeError, "from_value_proto takes bytes, not %s", typeName(args[0]))
+			return object.Value{}, ctx.Raise(object.TypeError, "from_value_proto takes bytes, not %s", typeName(args[0]))
 		}
 		v, err := ctx.(*Interp).Decoder().Decode(data)
 		if err != nil {
-			return nil, ctx.Raise(object.ArgumentError, "%s", err.Error())
+			return object.Value{}, ctx.Raise(object.ArgumentError, "%s", err.Error())
 		}
 		return v, nil
 	})

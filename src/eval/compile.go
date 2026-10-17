@@ -68,7 +68,7 @@ func compileBody(body []syntax.Node) thunk {
 		for _, t := range thunks {
 			v, err := t(in, env, fr)
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			last = v
 		}
@@ -92,10 +92,10 @@ func compile(n syntax.Node) thunk {
 	case *syntax.Nil:
 		return func(*Interp, *Env, *Frame) (object.Value, error) { return object.Nil, nil }
 	case *syntax.Bool:
-		v := object.BoolOf(n.Value)
+		v := object.Bool(n.Value)
 		return func(*Interp, *Env, *Frame) (object.Value, error) { return v, nil }
 	case *syntax.Int:
-		v := object.IntValue(n.Value)
+		v := object.Int(n.Value)
 		return func(*Interp, *Env, *Frame) (object.Value, error) { return v, nil }
 	case *syntax.Float:
 		v := object.Float(n.Value)
@@ -121,7 +121,7 @@ func compile(n syntax.Node) thunk {
 		return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 			v, err := value(in, env, fr)
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			env.Set(name, v)
 			return v, nil
@@ -136,7 +136,7 @@ func compile(n syntax.Node) thunk {
 		return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 			v, err := value(in, env, fr)
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			return v, in.writeIVar(name, v, fr, line)
 		}
@@ -156,11 +156,11 @@ func compile(n syntax.Node) thunk {
 			for _, part := range parts {
 				v, err := part(in, env, fr)
 				if err != nil {
-					return nil, err
+					return object.Value{}, err
 				}
 				s, err := in.ToS(v)
 				if err != nil {
-					return nil, withLine(err, line)
+					return object.Value{}, withLine(err, line)
 				}
 				b.WriteString(s)
 			}
@@ -171,7 +171,7 @@ func compile(n syntax.Node) thunk {
 			return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 				values, err := elems(in, env, fr)
 				if err != nil {
-					return nil, err
+					return object.Value{}, err
 				}
 				return object.NewList(values...), nil
 			}
@@ -181,7 +181,7 @@ func compile(n syntax.Node) thunk {
 	case *syntax.Lambda:
 		block, strict := n.Block, n.Strict
 		return func(_ *Interp, env *Env, fr *Frame) (object.Value, error) {
-			return &Proc{Block: block, Env: env, Frame: fr, Strict: strict}, nil
+			return procValue(&Proc{Block: block, Env: env, Frame: fr, Strict: strict}), nil
 		}
 	case *syntax.Yield:
 		args, ok := compileArgs(n.Args)
@@ -190,14 +190,14 @@ func compile(n syntax.Node) thunk {
 		}
 		line := n.Line()
 		return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
-			if fr.Block == nil {
-				return nil, in.raise(object.LocalJumpError, line, "no block given (yield)")
+			if fr.Block.IsZero() {
+				return object.Value{}, in.raise(object.LocalJumpError, line, "no block given (yield)")
 			}
 			values, err := args(in, env, fr)
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
-			v, err := in.callBlock(fr.Block, values, nil, nil)
+			v, err := in.callBlock(fr.Block, values, nil, object.Value{})
 			return v, withLine(err, line)
 		}
 	case *syntax.Return:
@@ -205,36 +205,36 @@ func compile(n syntax.Node) thunk {
 		return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 			v, err := value(in, env, fr)
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
-			return nil, &control{kind: ctrlReturn, value: v, target: fr, line: line}
+			return object.Value{}, &control{kind: ctrlReturn, value: v, target: fr, line: line}
 		}
 	case *syntax.Break:
 		value, line := compileOptional(n.Value), n.Line()
 		return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 			v, err := value(in, env, fr)
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
-			return nil, &control{kind: ctrlBreak, value: v, line: line}
+			return object.Value{}, &control{kind: ctrlBreak, value: v, line: line}
 		}
 	case *syntax.Next:
 		value, line := compileOptional(n.Value), n.Line()
 		return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 			v, err := value(in, env, fr)
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
-			return nil, &control{kind: ctrlNext, value: v, line: line}
+			return object.Value{}, &control{kind: ctrlNext, value: v, line: line}
 		}
 	case *syntax.If:
 		cond, then, els := compile(n.Cond), compileBody(n.Then), compileBody(n.Else)
 		return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 			c, err := cond(in, env, fr)
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
-			if object.Truthy(c) {
+			if c.Truthy() {
 				return then(in, env, fr)
 			}
 			return els(in, env, fr)
@@ -245,9 +245,9 @@ func compile(n syntax.Node) thunk {
 			for {
 				c, err := cond(in, env, fr)
 				if err != nil {
-					return nil, err
+					return object.Value{}, err
 				}
-				if !object.Truthy(c) {
+				if !c.Truthy() {
 					return object.Nil, nil
 				}
 				if _, err := body(in, env, fr); err != nil {
@@ -259,7 +259,7 @@ func compile(n syntax.Node) thunk {
 							continue
 						}
 					}
-					return nil, err
+					return object.Value{}, err
 				}
 			}
 		}
@@ -267,7 +267,7 @@ func compile(n syntax.Node) thunk {
 		left, right := compile(n.Left), compile(n.Right)
 		return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 			l, err := left(in, env, fr)
-			if err != nil || !object.Truthy(l) {
+			if err != nil || !l.Truthy() {
 				return l, err
 			}
 			return right(in, env, fr)
@@ -276,7 +276,7 @@ func compile(n syntax.Node) thunk {
 		left, right := compile(n.Left), compile(n.Right)
 		return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 			l, err := left(in, env, fr)
-			if err != nil || object.Truthy(l) {
+			if err != nil || l.Truthy() {
 				return l, err
 			}
 			return right(in, env, fr)
@@ -286,9 +286,9 @@ func compile(n syntax.Node) thunk {
 		return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 			v, err := value(in, env, fr)
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
-			return object.BoolOf(!object.Truthy(v)), nil
+			return object.Bool(!v.Truthy()), nil
 		}
 	case *syntax.Begin:
 		return compileBegin(n)
@@ -344,7 +344,7 @@ func compileCall(n *syntax.Call) thunk {
 	selfCall := n.Recv == nil
 	if selfCall && name == "block_given?" && len(n.Args) == 0 {
 		return func(_ *Interp, _ *Env, fr *Frame) (object.Value, error) {
-			return object.BoolOf(fr.Block != nil), nil
+			return object.Bool(!fr.Block.IsZero()), nil
 		}
 	}
 	args, simple := compileArgs(n.Args)
@@ -366,24 +366,24 @@ func compileCall(n *syntax.Call) thunk {
 		if recv != nil {
 			v, err := recv(in, env, fr)
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			r = v
-			if safe && r == object.Nil {
+			if safe && r.IsNil() {
 				return object.Nil, nil
 			}
 		}
 		values, err := args(in, env, fr)
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		var blk object.Value
 		if block != nil {
-			blk = &Proc{Block: block, Env: env, Frame: fr}
+			blk = procValue(&Proc{Block: block, Env: env, Frame: fr})
 		}
 		v, err := in.call(fr, r, name, values, nil, blk, selfCall, line)
 		if err != nil {
-			return nil, withLine(err, line)
+			return object.Value{}, withLine(err, line)
 		}
 		return v, nil
 	}
@@ -413,17 +413,17 @@ func compileBegin(n *syntax.Begin) thunk {
 			}
 			exc, ok := err.(*object.Exception)
 			if !ok {
-				return nil, err
+				return object.Value{}, err
 			}
 			i, err := in.matchRescue(n.Rescues, exc, env, fr)
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			if i < 0 {
-				return nil, exc
+				return object.Value{}, exc
 			}
 			if v := n.Rescues[i].Var; v != "" {
-				env.Set(v, exc)
+				env.Set(v, object.ExceptionValue(exc))
 			}
 			result, err = clauses[i](in, env, fr)
 			if c, ok := err.(*control); ok && c.kind == ctrlRetry {
@@ -438,7 +438,7 @@ func compileBegin(n *syntax.Begin) thunk {
 	return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 		result, err := run(in, env, fr)
 		if _, ensureErr := ensure(in, env, fr); ensureErr != nil {
-			return nil, ensureErr
+			return object.Value{}, ensureErr
 		}
 		return result, err
 	}
@@ -446,11 +446,12 @@ func compileBegin(n *syntax.Begin) thunk {
 
 // Operators on integers.
 //
-// An intThunk evaluates an expression and returns an integer result
-// unboxed: v is nil and i holds the integer. Any other result, nil
-// included, comes back boxed in v. An arithmetic expression over integers
-// compiles to a tree of these, so its intermediate results are never
-// boxed; only the value the tree is finally used as is.
+// An intThunk evaluates an expression and returns an integer result as a
+// raw int64: v is the zero Value and i holds the integer. Any other
+// result, nil included, comes back as v. An arithmetic expression over
+// integers compiles to a tree of these, so its intermediate results skip
+// the Value and its kind checks; only the value the tree is finally used
+// as is made.
 type intThunk func(in *Interp, env *Env, fr *Frame) (i int64, v object.Value, err error)
 
 // compileInt compiles n for an operator that wants an integer operand.
@@ -458,7 +459,7 @@ func compileInt(n syntax.Node) intThunk {
 	switch n := n.(type) {
 	case *syntax.Int:
 		c := n.Value
-		return func(*Interp, *Env, *Frame) (int64, object.Value, error) { return c, nil, nil }
+		return func(*Interp, *Env, *Frame) (int64, object.Value, error) { return c, object.Value{}, nil }
 	case *syntax.Var:
 		name := n.Name
 		return func(_ *Interp, env *Env, _ *Frame) (int64, object.Value, error) {
@@ -466,8 +467,8 @@ func compileInt(n syntax.Node) intThunk {
 			if !ok {
 				return 0, object.Nil, nil
 			}
-			if i, ok := v.(object.Int); ok {
-				return int64(i), nil, nil
+			if i, ok := v.AsInt(); ok {
+				return int64(i), object.Value{}, nil
 			}
 			return 0, v, nil
 		}
@@ -482,10 +483,10 @@ func compileInt(n syntax.Node) intThunk {
 	return func(in *Interp, env *Env, fr *Frame) (int64, object.Value, error) {
 		v, err := t(in, env, fr)
 		if err != nil {
-			return 0, nil, err
+			return 0, object.Value{}, err
 		}
-		if i, ok := v.(object.Int); ok {
-			return int64(i), nil, nil
+		if i, ok := v.AsInt(); ok {
+			return int64(i), object.Value{}, nil
 		}
 		return 0, v, nil
 	}
@@ -558,7 +559,7 @@ func operatorCall(n *syntax.Call) bool {
 }
 
 // operands compiles the two operands of an operator call and evaluates
-// them, left first; both come back unboxed when both are integers.
+// them, left first; both come back as raw integers when both are integers.
 type operands func(in *Interp, env *Env, fr *Frame) (x, y int64, xv, yv object.Value, err error)
 
 func compileOperands(n *syntax.Call) operands {
@@ -566,31 +567,31 @@ func compileOperands(n *syntax.Call) operands {
 	return func(in *Interp, env *Env, fr *Frame) (int64, int64, object.Value, object.Value, error) {
 		x, xv, err := left(in, env, fr)
 		if err != nil {
-			return 0, 0, nil, nil, err
+			return 0, 0, object.Value{}, object.Value{}, err
 		}
 		y, yv, err := right(in, env, fr)
 		if err != nil {
-			return 0, 0, nil, nil, err
+			return 0, 0, object.Value{}, object.Value{}, err
 		}
 		return x, y, xv, yv, nil
 	}
 }
 
 // dispatch is the ordinary call for operands the fast path does not
-// cover: boxes what is unboxed, tries the boxed fast path (two floats),
-// then dispatches.
+// cover: makes Values of the raw integers, tries the Value fast path (two
+// floats), then dispatches.
 func dispatch(in *Interp, fr *Frame, name string, op func(a, b object.Value) object.Value, line int, x, y int64, xv, yv object.Value) (object.Value, error) {
 	a, b := xv, yv
-	if a == nil {
-		a = object.IntValue(x)
+	if a.IsZero() {
+		a = object.Int(x)
 	}
-	if b == nil {
-		b = object.IntValue(y)
+	if b.IsZero() {
+		b = object.Int(y)
 	}
-	if v := op(a, b); v != nil {
+	if v := op(a, b); !v.IsZero() {
 		return v, nil
 	}
-	v, err := in.call(fr, a, name, []object.Value{b}, nil, nil, false, line)
+	v, err := in.call(fr, a, name, []object.Value{b}, nil, object.Value{}, false, line)
 	return v, withLine(err, line)
 }
 
@@ -605,11 +606,11 @@ func compileIntArith(n *syntax.Call) intThunk {
 	return func(in *Interp, env *Env, fr *Frame) (int64, object.Value, error) {
 		x, y, xv, yv, err := ops(in, env, fr)
 		if err != nil {
-			return 0, nil, err
+			return 0, object.Value{}, err
 		}
-		if xv == nil && yv == nil {
+		if xv.IsZero() && yv.IsZero() {
 			if r, ok := arith(x, y); ok {
-				return r, nil, nil
+				return r, object.Value{}, nil
 			}
 		}
 		v, err := dispatch(in, fr, name, op, line, x, y, xv, yv)
@@ -619,8 +620,8 @@ func compileIntArith(n *syntax.Call) intThunk {
 
 // compileBinary compiles an operator call with one argument to a thunk,
 // or nil when the operator has no fast path. Arithmetic keeps its
-// operands' intermediate results unboxed; a comparison reads them
-// unboxed and returns a boolean.
+// operands' intermediate results as raw integers; a comparison reads them
+// the same way and returns a boolean.
 func compileBinary(n *syntax.Call) thunk {
 	if !operatorCall(n) {
 		return nil
@@ -628,10 +629,10 @@ func compileBinary(n *syntax.Call) thunk {
 	if arith := compileIntArith(n); arith != nil {
 		return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 			i, v, err := arith(in, env, fr)
-			if err != nil || v != nil {
+			if err != nil || !v.IsZero() {
 				return v, err
 			}
-			return object.IntValue(i), nil
+			return object.Int(i), nil
 		}
 	}
 	cmp := intCompare(n.Name)
@@ -642,10 +643,10 @@ func compileBinary(n *syntax.Call) thunk {
 	return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 		x, y, xv, yv, err := ops(in, env, fr)
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
-		if xv == nil && yv == nil {
-			return object.BoolOf(cmp(x, y)), nil
+		if xv.IsZero() && yv.IsZero() {
+			return object.Bool(cmp(x, y)), nil
 		}
 		return dispatch(in, fr, name, op, line, x, y, xv, yv)
 	}

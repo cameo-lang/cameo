@@ -11,34 +11,34 @@ func (in *Interp) evalCall(n *syntax.Call, env *Env, fr *Frame) (object.Value, e
 	recv := fr.Self
 	selfCall := n.Recv == nil
 	if selfCall && n.Name == "block_given?" && len(n.Args) == 0 {
-		return object.BoolOf(fr.Block != nil), nil
+		return object.Bool(!fr.Block.IsZero()), nil
 	}
 	if n.Recv != nil {
 		v, err := in.eval(n.Recv, env, fr)
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		recv = v
-		if n.Safe && recv == object.Nil {
+		if n.Safe && recv.IsNil() {
 			return object.Nil, nil
 		}
 	}
 	args, kw, err := in.evalCallArgs(n.Args, n.KwArgs, env, fr, n.Line())
 	if err != nil {
-		return nil, err
+		return object.Value{}, err
 	}
 	var block object.Value
 	switch {
 	case n.Block != nil:
-		block = &Proc{Block: n.Block, Env: env, Frame: fr}
+		block = procValue(&Proc{Block: n.Block, Env: env, Frame: fr})
 	case n.BlockArg != nil:
 		v, err := in.eval(n.BlockArg, env, fr)
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		block, err = in.toProc(v, n.Line())
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 	}
 	v, err := in.call(fr, recv, n.Name, args, kw, block, selfCall, n.Line())
@@ -46,43 +46,43 @@ func (in *Interp) evalCall(n *syntax.Call, env *Env, fr *Frame) (object.Value, e
 }
 
 // binaryOp returns the fast path for an arithmetic or comparison operator
-// on two boxed integers or two floats, or nil for any other name. The
+// on two integers or two floats, or nil for any other name. The
 // fast path returns nil when the operands are not both integers or both
 // floats, and the call goes the ordinary way. It is sound because Integer
 // and Float are builtin classes, which a script can neither reopen nor
 // replace a method of, so `+` on an integer can only ever mean this. The
-// compiler reaches it after its unboxed integer path (compile.go).
+// compiler reaches it after its raw integer path (compile.go).
 func binaryOp(name string) func(a, b object.Value) object.Value {
 	switch name {
 	case "+":
 		return func(a, b object.Value) object.Value {
 			if x, y, ok := ints(a, b); ok {
-				return object.IntValue(x + y)
+				return object.Int(x + y)
 			}
 			if x, y, ok := floats(a, b); ok {
 				return object.Float(x + y)
 			}
-			return nil
+			return object.Value{}
 		}
 	case "-":
 		return func(a, b object.Value) object.Value {
 			if x, y, ok := ints(a, b); ok {
-				return object.IntValue(x - y)
+				return object.Int(x - y)
 			}
 			if x, y, ok := floats(a, b); ok {
 				return object.Float(x - y)
 			}
-			return nil
+			return object.Value{}
 		}
 	case "*":
 		return func(a, b object.Value) object.Value {
 			if x, y, ok := ints(a, b); ok {
-				return object.IntValue(x * y)
+				return object.Int(x * y)
 			}
 			if x, y, ok := floats(a, b); ok {
 				return object.Float(x * y)
 			}
-			return nil
+			return object.Value{}
 		}
 	case "/":
 		// Integer division floors, as Ruby's does; a zero divisor and the
@@ -93,9 +93,9 @@ func binaryOp(name string) func(a, b object.Value) object.Value {
 				if x%y != 0 && (x < 0) != (y < 0) {
 					q--
 				}
-				return object.IntValue(q)
+				return object.Int(q)
 			}
-			return nil
+			return object.Value{}
 		}
 	case "%":
 		return func(a, b object.Value) object.Value {
@@ -104,116 +104,118 @@ func binaryOp(name string) func(a, b object.Value) object.Value {
 				if m != 0 && (m < 0) != (y < 0) {
 					m += y
 				}
-				return object.IntValue(m)
+				return object.Int(m)
 			}
-			return nil
+			return object.Value{}
 		}
 	case "<":
 		return func(a, b object.Value) object.Value {
 			if x, y, ok := ints(a, b); ok {
-				return object.BoolOf(x < y)
+				return object.Bool(x < y)
 			}
 			if x, y, ok := floats(a, b); ok {
-				return object.BoolOf(x < y)
+				return object.Bool(x < y)
 			}
-			return nil
+			return object.Value{}
 		}
 	case "<=":
 		return func(a, b object.Value) object.Value {
 			if x, y, ok := ints(a, b); ok {
-				return object.BoolOf(x <= y)
+				return object.Bool(x <= y)
 			}
 			if x, y, ok := floats(a, b); ok {
-				return object.BoolOf(x <= y)
+				return object.Bool(x <= y)
 			}
-			return nil
+			return object.Value{}
 		}
 	case ">":
 		return func(a, b object.Value) object.Value {
 			if x, y, ok := ints(a, b); ok {
-				return object.BoolOf(x > y)
+				return object.Bool(x > y)
 			}
 			if x, y, ok := floats(a, b); ok {
-				return object.BoolOf(x > y)
+				return object.Bool(x > y)
 			}
-			return nil
+			return object.Value{}
 		}
 	case ">=":
 		return func(a, b object.Value) object.Value {
 			if x, y, ok := ints(a, b); ok {
-				return object.BoolOf(x >= y)
+				return object.Bool(x >= y)
 			}
 			if x, y, ok := floats(a, b); ok {
-				return object.BoolOf(x >= y)
+				return object.Bool(x >= y)
 			}
-			return nil
+			return object.Value{}
 		}
 	case "==":
 		return func(a, b object.Value) object.Value {
 			if x, y, ok := ints(a, b); ok {
-				return object.BoolOf(x == y)
+				return object.Bool(x == y)
 			}
 			if x, y, ok := floats(a, b); ok {
-				return object.BoolOf(x == y)
+				return object.Bool(x == y)
 			}
-			return nil
+			return object.Value{}
 		}
 	case "!=":
 		return func(a, b object.Value) object.Value {
 			if x, y, ok := ints(a, b); ok {
-				return object.BoolOf(x != y)
+				return object.Bool(x != y)
 			}
 			if x, y, ok := floats(a, b); ok {
-				return object.BoolOf(x != y)
+				return object.Bool(x != y)
 			}
-			return nil
+			return object.Value{}
 		}
 	}
 	return nil
 }
 
 func ints(a, b object.Value) (int64, int64, bool) {
-	x, ok := a.(object.Int)
+	x, ok := a.AsInt()
 	if !ok {
 		return 0, 0, false
 	}
-	y, ok := b.(object.Int)
+	y, ok := b.AsInt()
 	return int64(x), int64(y), ok
 }
 
 func floats(a, b object.Value) (float64, float64, bool) {
-	x, ok := a.(object.Float)
+	x, ok := a.AsFloat()
 	if !ok {
 		return 0, 0, false
 	}
-	y, ok := b.(object.Float)
+	y, ok := b.AsFloat()
 	return float64(x), float64(y), ok
 }
 
 // toProc turns a &argument into a block: a proc as it is, a symbol into a
 // proc calling that method, nil into no block.
 func (in *Interp) toProc(v object.Value, line int) (object.Value, error) {
-	switch v := v.(type) {
-	case *Proc:
-		return v, nil
-	case object.Symbol:
-		return &Proc{Sym: string(v)}, nil
+	switch v.Kind() {
+	case object.KindProc:
+		v := proc(v)
+		return procValue(v), nil
+	case object.KindSymbol:
+		v := v.Str()
+		return procValue(&Proc{Sym: v}), nil
 	}
-	if v == object.Nil {
-		return nil, nil
+	if v.IsNil() {
+		return object.Value{}, nil
 	}
-	return nil, in.raise(object.TypeError, line, "wrong argument type %s (expected Proc)", v.Class().Name)
+	return object.Value{}, in.raise(object.TypeError, line, "wrong argument type %s (expected Proc)", v.Class().Name)
 }
 
 // Call implements object.Context.
 func (in *Interp) Call(recv object.Value, name string, args ...object.Value) (object.Value, error) {
-	return in.call(nil, recv, name, args, nil, nil, false, 0)
+	return in.call(nil, recv, name, args, nil, object.Value{}, false, 0)
 }
 
 // CallTop invokes a method the way a bare call in the script would: on the
 // top-level self, reaching the script's top-level methods.
 func (in *Interp) CallTop(name string, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-	return in.call(nil, in.main, name, args, kw, block, true, 0)
+	return in.call(nil, object.InstanceValue(in.main), name, args, kw, block, true, 0)
 }
 
 // CallWith implements object.Context.
@@ -229,7 +231,7 @@ func (in *Interp) RespondsTo(v object.Value, name string) bool {
 // findMethod resolves name on a receiver: class methods for a class, then
 // the instance methods of its class.
 func (in *Interp) findMethod(recv object.Value, name string) *object.Method {
-	if cls, ok := recv.(*object.Class); ok {
+	if cls, ok := recv.AsClass(); ok {
 		if m := cls.LookupSingleton(name); m != nil {
 			return m
 		}
@@ -248,18 +250,18 @@ func (in *Interp) call(fr *Frame, recv object.Value, name string, args []object.
 		if name == "initialize" {
 			return object.Nil, nil
 		}
-		return nil, in.raise(object.NoMethodError, line, "undefined method '%s' for %s", name, typeName(recv))
+		return object.Value{}, in.raise(object.NoMethodError, line, "undefined method '%s' for %s", name, typeName(recv))
 	}
 	if m.Native != nil {
 		if m.Arity >= 0 && len(args) != m.Arity {
-			return nil, in.raise(object.ArgumentError, line, "wrong number of arguments (given %d, expected %d)", len(args), m.Arity)
+			return object.Value{}, in.raise(object.ArgumentError, line, "wrong number of arguments (given %d, expected %d)", len(args), m.Arity)
 		}
 		v, err := m.Native(in, recv, args, kw, block)
 		if err != nil {
-			if c, ok := err.(*control); ok && c.kind == ctrlBreak && c.target != nil && c.target == block {
+			if c, ok := err.(*control); ok && c.kind == ctrlBreak && c.target != nil && c.target == blockTarget(block) {
 				return c.value, nil
 			}
-			return nil, err
+			return object.Value{}, err
 		}
 		return v, nil
 	}
@@ -285,11 +287,11 @@ func (in *Interp) invoke(m *object.Method, recv object.Value, args []object.Valu
 	} else {
 		fr.DefTarget = object.ObjectClass
 	}
-	if inst, ok := recv.(*object.Instance); ok && def.Name == "initialize" {
+	if inst, ok := recv.AsInstance(); ok && def.Name == "initialize" {
 		fr.Building = inst
 	}
 	if err := in.bindParams(&def.Params, args, kw, block, env, fr, true, m.Name, line); err != nil {
-		return nil, err
+		return object.Value{}, err
 	}
 	v, err := cd.body(in, env, fr)
 	if err != nil {
@@ -297,11 +299,11 @@ func (in *Interp) invoke(m *object.Method, recv object.Value, args []object.Valu
 			switch {
 			case c.kind == ctrlReturn && c.target == fr:
 				return c.value, nil
-			case c.kind == ctrlBreak && c.target != nil && c.target == block:
+			case c.kind == ctrlBreak && c.target != nil && c.target == blockTarget(block):
 				return c.value, nil
 			}
 		}
-		return nil, err
+		return object.Value{}, err
 	}
 	return v, nil
 }
@@ -312,7 +314,7 @@ func (in *Interp) bindParams(p *syntax.Params, args []object.Value, kw *object.M
 	// Keywords given to a method with no keyword parameters are one more
 	// positional argument, a map.
 	if kw != nil && len(p.Keywords) == 0 && p.KwRest == "" {
-		args = append(append([]object.Value(nil), args...), kw)
+		args = append(append([]object.Value(nil), args...), object.MapValue(kw))
 		kw = nil
 	}
 	required, optional, splat := 0, 0, -1
@@ -327,7 +329,7 @@ func (in *Interp) bindParams(p *syntax.Params, args []object.Value, kw *object.M
 		}
 	}
 	if !strict && len(args) == 1 && len(p.Positional) > 1 {
-		if l, ok := args[0].(*object.List); ok {
+		if l, ok := args[0].AsList(); ok {
 			args = l.Elems
 		}
 	}
@@ -417,7 +419,7 @@ func (in *Interp) bindParams(p *syntax.Params, args []object.Value, kw *object.M
 		rest := object.NewMapBuilder()
 		if kw != nil {
 			for i, key := range kw.Keys() {
-				s, isSym := key.(object.Symbol)
+				s, isSym := key.AsSymbol()
 				if isSym && used[string(s)] {
 					continue
 				}
@@ -434,11 +436,11 @@ func (in *Interp) bindParams(p *syntax.Params, args []object.Value, kw *object.M
 			}
 		}
 		if p.KwRest != "" {
-			env.Define(p.KwRest, rest.Map())
+			env.Define(p.KwRest, object.MapValue(rest.Map()))
 		}
 	}
 	if p.BlockParam != "" {
-		if block == nil {
+		if block.IsZero() {
 			env.Define(p.BlockParam, object.Nil)
 		} else {
 			env.Define(p.BlockParam, block)
@@ -459,18 +461,18 @@ func expected(required, optional int, splat bool) string {
 
 // Yield implements object.Context.
 func (in *Interp) Yield(block object.Value, args ...object.Value) (object.Value, error) {
-	return in.callBlock(block, args, nil, nil)
+	return in.callBlock(block, args, nil, object.Value{})
 }
 
 // callBlock runs a block or lambda with arguments.
 func (in *Interp) callBlock(block object.Value, args []object.Value, kw *object.Map, inner object.Value) (object.Value, error) {
-	p, ok := block.(*Proc)
+	p, ok := asProc(block)
 	if !ok {
-		return nil, in.raise(object.TypeError, 0, "no block given")
+		return object.Value{}, in.raise(object.TypeError, 0, "no block given")
 	}
 	if p.Sym != "" {
 		if len(args) == 0 {
-			return nil, in.raise(object.ArgumentError, 0, "no receiver given")
+			return object.Value{}, in.raise(object.ArgumentError, 0, "no receiver given")
 		}
 		return in.call(nil, args[0], p.Sym, args[1:], kw, inner, false, 0)
 	}
@@ -482,7 +484,7 @@ func (in *Interp) callBlock(block object.Value, args []object.Value, kw *object.
 		fr = &copy
 	}
 	if err := in.bindParams(&p.Block.Params, args, kw, inner, env, fr, p.Strict, "block", p.Block.Line()); err != nil {
-		return nil, err
+		return object.Value{}, err
 	}
 	v, err := in.code.body(p.Block, p.Block.Body)(in, env, fr)
 	if err != nil {
@@ -495,7 +497,7 @@ func (in *Interp) callBlock(block object.Value, args []object.Value, kw *object.
 					return c.value, nil
 				}
 				c.target = p
-				return nil, c
+				return object.Value{}, c
 			case c.kind == ctrlReturn && p.Strict && c.target == p.Frame:
 				// A return inside a lambda body targets the lambda's own
 				// frame copy; the body saw the copy, so this is unreachable
@@ -506,14 +508,14 @@ func (in *Interp) callBlock(block object.Value, args []object.Value, kw *object.
 				return c.value, nil
 			}
 		}
-		return nil, err
+		return object.Value{}, err
 	}
 	return v, nil
 }
 
 func (in *Interp) evalSuper(n *syntax.Super, env *Env, fr *Frame) (object.Value, error) {
 	if fr.Method == nil {
-		return nil, in.raise(object.LocalJumpError, n.Line(), "super called outside of method")
+		return object.Value{}, in.raise(object.LocalJumpError, n.Line(), "super called outside of method")
 	}
 	var args []object.Value
 	var kw *object.Map
@@ -524,22 +526,22 @@ func (in *Interp) evalSuper(n *syntax.Super, env *Env, fr *Frame) (object.Value,
 		var err error
 		args, kw, err = in.evalCallArgs(n.Args, n.KwArgs, env, fr, n.Line())
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 	}
 	if n.Block != nil {
-		block = &Proc{Block: n.Block, Env: env, Frame: fr}
+		block = procValue(&Proc{Block: n.Block, Env: env, Frame: fr})
 	} else if n.BlockArg != nil {
 		v, err := in.eval(n.BlockArg, env, fr)
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		if block, err = in.toProc(v, n.Line()); err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 	}
 	var m *object.Method
-	if cls, ok := fr.Self.(*object.Class); ok && fr.Method.Owner.SingletonMethods[fr.Method.Name] == fr.Method {
+	if cls, ok := fr.Self.AsClass(); ok && fr.Method.Owner.SingletonMethods[fr.Method.Name] == fr.Method {
 		for k := cls.Super; k != nil && m == nil; k = k.Super {
 			m = k.LookupSingleton(fr.Method.Name)
 		}
@@ -550,7 +552,7 @@ func (in *Interp) evalSuper(n *syntax.Super, env *Env, fr *Frame) (object.Value,
 		if fr.Method.Name == "initialize" {
 			return object.Nil, nil
 		}
-		return nil, in.raise(object.NoMethodError, n.Line(), "super: no superclass method '%s' for %s", fr.Method.Name, typeName(fr.Self))
+		return object.Value{}, in.raise(object.NoMethodError, n.Line(), "super: no superclass method '%s' for %s", fr.Method.Name, typeName(fr.Self))
 	}
 	if m.Native != nil {
 		v, err := m.Native(in, fr.Self, args, kw, block)
@@ -558,4 +560,13 @@ func (in *Interp) evalSuper(n *syntax.Super, env *Env, fr *Frame) (object.Value,
 	}
 	v, err := in.invoke(m, fr.Self, args, kw, block, n.Line())
 	return v, withLine(err, n.Line())
+}
+
+// blockTarget is what a break out of block targets: the proc itself, as
+// callBlock records it on the control.
+func blockTarget(block object.Value) any {
+	if p, ok := asProc(block); ok {
+		return p
+	}
+	return nil
 }

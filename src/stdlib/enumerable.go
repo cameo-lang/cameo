@@ -15,7 +15,7 @@ func installEnumerable() {
 		def(e, name, -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			elems, err := toList(ctx, self)
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			return f(ctx, elems, args, block)
 		})
@@ -23,28 +23,28 @@ func installEnumerable() {
 	withBlock := func(name string, f func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error)) {
 		each(name, func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 			if err := needBlock(ctx, block, name); err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			return f(ctx, elems, args, block)
 		})
 	}
 	withBlock("each_with_index", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		for i, el := range elems {
-			if _, err := ctx.Yield(block, el, object.IntValue(i)); err != nil {
-				return nil, err
+			if _, err := ctx.Yield(block, el, object.Int(i)); err != nil {
+				return object.Value{}, err
 			}
 		}
 		return object.NewList(elems...), nil
 	})
 	withBlock("each_with_object", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		if len(args) != 1 {
-			return nil, argError(ctx, len(args), "1")
+			return object.Value{}, argError(ctx, len(args), "1")
 		}
 		memo := args[0]
 		for _, el := range elems {
 			v, err := ctx.Yield(block, el, memo)
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			// Nothing mutates, so the block's value is the next memo.
 			memo = v
@@ -54,7 +54,7 @@ func installEnumerable() {
 	each("each_slice", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		n, err := sizeArg(ctx, args)
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		var slices []object.Value
 		for i := 0; i < len(elems); i += n {
@@ -69,7 +69,7 @@ func installEnumerable() {
 	each("each_cons", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		n, err := sizeArg(ctx, args)
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		var windows []object.Value
 		for i := 0; i+n <= len(elems); i++ {
@@ -91,7 +91,7 @@ func installEnumerable() {
 	mapFn := func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		out, err := mapped(ctx, elems, block)
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		return object.NewList(out...), nil
 	}
@@ -102,9 +102,9 @@ func installEnumerable() {
 		for _, el := range elems {
 			v, err := ctx.Yield(block, el)
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
-			if l, ok := v.(*object.List); ok {
+			if l, ok := v.AsList(); ok {
 				out = append(out, l.Elems...)
 			} else {
 				out = append(out, v)
@@ -119,9 +119,9 @@ func installEnumerable() {
 		for _, el := range elems {
 			v, err := ctx.Yield(block, el)
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
-			if object.Truthy(v) {
+			if v.Truthy() {
 				out = append(out, v)
 			}
 		}
@@ -134,7 +134,7 @@ func installEnumerable() {
 			if err != nil {
 				return nil, err
 			}
-			if object.Truthy(v) == keep {
+			if v.Truthy() == keep {
 				out = append(out, el)
 			}
 		}
@@ -143,7 +143,7 @@ func installEnumerable() {
 	selectFn := func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		out, err := selected(ctx, elems, block, true)
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		return object.NewList(out...), nil
 	}
@@ -153,7 +153,7 @@ func installEnumerable() {
 	withBlock("reject", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		out, err := selected(ctx, elems, block, false)
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		return object.NewList(out...), nil
 	})
@@ -162,9 +162,9 @@ func installEnumerable() {
 		for _, el := range elems {
 			v, err := ctx.Yield(block, el)
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
-			if object.Truthy(v) {
+			if v.Truthy() {
 				yes = append(yes, el)
 			} else {
 				no = append(no, el)
@@ -176,9 +176,9 @@ func installEnumerable() {
 		for _, el := range elems {
 			v, err := ctx.Yield(block, el)
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
-			if object.Truthy(v) {
+			if v.Truthy() {
 				return el, nil
 			}
 		}
@@ -190,10 +190,10 @@ func installEnumerable() {
 		for i, el := range elems {
 			hit, err := matches(ctx, el, args, block)
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			if hit {
-				return object.IntValue(i), nil
+				return object.Int(i), nil
 			}
 		}
 		return object.Nil, nil
@@ -201,41 +201,41 @@ func installEnumerable() {
 	each("inject", inject)
 	each("reduce", inject)
 	each("sum", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
-		var acc object.Value = object.IntValue(0)
+		var acc object.Value = object.Int(0)
 		if len(args) == 1 {
 			acc = args[0]
 		}
 		for _, el := range elems {
 			v := el
-			if block != nil {
+			if !block.IsZero() {
 				var err error
 				if v, err = ctx.Yield(block, el); err != nil {
-					return nil, err
+					return object.Value{}, err
 				}
 			}
 			r, err := ctx.Call(acc, "+", v)
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			acc = r
 		}
 		return acc, nil
 	})
 	each("count", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
-		if len(args) == 0 && block == nil {
-			return object.IntValue(len(elems)), nil
+		if len(args) == 0 && block.IsZero() {
+			return object.Int(len(elems)), nil
 		}
 		n := 0
 		for _, el := range elems {
 			hit, err := matches(ctx, el, args, block)
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			if hit {
 				n++
 			}
 		}
-		return object.IntValue(n), nil
+		return object.Int(n), nil
 	})
 	extreme := func(name string, sign int) {
 		each(name, func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
@@ -243,13 +243,13 @@ func installEnumerable() {
 			if len(args) == 1 {
 				k, err := wantInt(ctx, args[0], "")
 				if err != nil {
-					return nil, err
+					return object.Value{}, err
 				}
 				n = int(k)
 			}
 			sorted, err := sortValues(ctx, elems, block)
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			if sign > 0 {
 				reverse(sorted)
@@ -272,7 +272,7 @@ func installEnumerable() {
 		withBlock(name, func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 			sorted, err := sortBy(ctx, elems, block)
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			if sign > 0 {
 				reverse(sorted)
@@ -283,7 +283,7 @@ func installEnumerable() {
 			if len(args) == 1 {
 				n, err := wantInt(ctx, args[0], "")
 				if err != nil {
-					return nil, err
+					return object.Value{}, err
 				}
 				if int(n) > len(sorted) {
 					n = int64(len(sorted))
@@ -298,7 +298,7 @@ func installEnumerable() {
 	each("minmax", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		sorted, err := sortValues(ctx, elems, block)
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		if len(sorted) == 0 {
 			return object.NewList(object.Nil, object.Nil), nil
@@ -308,14 +308,14 @@ func installEnumerable() {
 	each("sort", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		sorted, err := sortValues(ctx, elems, block)
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		return object.NewList(sorted...), nil
 	})
 	withBlock("sort_by", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		sorted, err := sortBy(ctx, elems, block)
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		return object.NewList(sorted...), nil
 	})
@@ -326,7 +326,7 @@ func installEnumerable() {
 		for _, el := range elems {
 			k, err := ctx.Yield(block, el)
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			key := object.Key(k)
 			if _, seen := members[key]; !seen {
@@ -337,7 +337,7 @@ func installEnumerable() {
 		for _, k := range order {
 			groups.Set(k, object.NewList(members[object.Key(k)]...))
 		}
-		return groups.Map(), nil
+		return object.MapValue(groups.Map()), nil
 	})
 	each("tally", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		counts := map[string]int64{}
@@ -351,16 +351,16 @@ func installEnumerable() {
 		}
 		b := object.NewMapBuilder()
 		for _, el := range order {
-			b.Set(el, object.IntValue(counts[object.Key(el)]))
+			b.Set(el, object.Int(counts[object.Key(el)]))
 		}
-		return b.Map(), nil
+		return object.MapValue(b.Map()), nil
 	})
 	each("zip", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		others := make([][]object.Value, len(args))
 		for i, a := range args {
 			l, err := toList(ctx, a)
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			others[i] = l
 		}
@@ -377,14 +377,14 @@ func installEnumerable() {
 	each("take", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		n, err := countArg(ctx, args, len(elems))
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		return object.NewList(append([]object.Value{}, elems[:n]...)...), nil
 	})
 	each("drop", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		n, err := countArg(ctx, args, len(elems))
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		return object.NewList(append([]object.Value{}, elems[n:]...)...), nil
 	})
@@ -393,9 +393,9 @@ func installEnumerable() {
 		for _, el := range elems {
 			v, err := ctx.Yield(block, el)
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
-			if !object.Truthy(v) {
+			if !v.Truthy() {
 				break
 			}
 			out = append(out, el)
@@ -407,9 +407,9 @@ func installEnumerable() {
 		for ; i < len(elems); i++ {
 			v, err := ctx.Yield(block, elems[i])
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
-			if !object.Truthy(v) {
+			if !v.Truthy() {
 				break
 			}
 		}
@@ -424,18 +424,18 @@ func installEnumerable() {
 		}
 		n, err := countArg(ctx, args, len(elems))
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		return object.NewList(append([]object.Value{}, elems[:n]...)...), nil
 	})
 	include := func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		if len(args) != 1 {
-			return nil, argError(ctx, len(args), "1")
+			return object.Value{}, argError(ctx, len(args), "1")
 		}
 		for _, el := range elems {
 			eq, err := ctx.Equal(el, args[0])
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			if eq {
 				return object.True, nil
@@ -451,13 +451,13 @@ func installEnumerable() {
 			for _, el := range elems {
 				hit, err := matches(ctx, el, args, block)
 				if err != nil {
-					return nil, err
+					return object.Value{}, err
 				}
 				if hit {
 					hits++
 				}
 			}
-			return object.BoolOf(want(hits, len(elems))), nil
+			return object.Bool(want(hits, len(elems))), nil
 		})
 	}
 	quantifier("any?", func(hits, total int) bool { return hits > 0 })
@@ -470,36 +470,36 @@ func installEnumerable() {
 	each("to_a", toA)
 	each("entries", toA)
 	each("to_set", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
-		return object.NewSet(elems...), nil
+		return object.SetValue(object.NewSet(elems...)), nil
 	})
 	each("to_h", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		b := object.NewMapBuilder()
 		for _, el := range elems {
 			pair := el
-			if block != nil {
+			if !block.IsZero() {
 				v, err := ctx.Yield(block, el)
 				if err != nil {
-					return nil, err
+					return object.Value{}, err
 				}
 				pair = v
 			}
-			l, ok := pair.(*object.List)
+			l, ok := pair.AsList()
 			if !ok || len(l.Elems) != 2 {
-				return nil, ctx.Raise(object.TypeError, "wrong element type %s (expected a [key, value] pair)", kindName(pair))
+				return object.Value{}, ctx.Raise(object.TypeError, "wrong element type %s (expected a [key, value] pair)", kindName(pair))
 			}
 			b.Set(l.Elems[0], l.Elems[1])
 		}
-		return b.Map(), nil
+		return object.MapValue(b.Map()), nil
 	})
 	each("uniq", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		seen := map[string]bool{}
 		out := []object.Value{}
 		for _, el := range elems {
 			k := el
-			if block != nil {
+			if !block.IsZero() {
 				v, err := ctx.Yield(block, el)
 				if err != nil {
-					return nil, err
+					return object.Value{}, err
 				}
 				k = v
 			}
@@ -515,7 +515,7 @@ func installEnumerable() {
 	withBlock("reverse_each", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		for i := len(elems) - 1; i >= 0; i-- {
 			if _, err := ctx.Yield(block, elems[i]); err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 		}
 		return object.NewList(elems...), nil
@@ -531,11 +531,11 @@ func installEnumerable() {
 	})
 	each("cycle", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		if err := needBlock(ctx, block, "cycle"); err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		n, err := countArg(ctx, args, -1)
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		if len(elems) == 0 {
 			return object.Nil, nil
@@ -543,7 +543,7 @@ func installEnumerable() {
 		for round := 0; n < 0 || round < n; round++ {
 			for _, el := range elems {
 				if _, err := ctx.Yield(block, el); err != nil {
-					return nil, err
+					return object.Value{}, err
 				}
 			}
 		}
@@ -551,18 +551,18 @@ func installEnumerable() {
 	})
 	each("grep", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		if len(args) != 1 {
-			return nil, argError(ctx, len(args), "1")
+			return object.Value{}, argError(ctx, len(args), "1")
 		}
 		out := []object.Value{}
 		for _, el := range elems {
 			r, err := ctx.Call(args[0], "===", el)
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
-			if object.Truthy(r) {
-				if block != nil {
+			if r.Truthy() {
+				if !block.IsZero() {
 					if el, err = ctx.Yield(block, el); err != nil {
-						return nil, err
+						return object.Value{}, err
 					}
 				}
 				out = append(out, el)
@@ -584,22 +584,22 @@ func inject(ctx object.Context, elems []object.Value, args []object.Value, block
 		acc = args[0]
 		s, err := wantString(ctx, args[1])
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		op = s
-	case len(args) == 1 && block == nil:
+	case len(args) == 1 && block.IsZero():
 		s, err := wantString(ctx, args[0])
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		op = s
 	case len(args) == 1:
 		acc = args[0]
-	case block == nil:
-		return nil, ctx.Raise(object.LocalJumpError, "no block given (inject)")
+	case block.IsZero():
+		return object.Value{}, ctx.Raise(object.LocalJumpError, "no block given (inject)")
 	}
 	for _, el := range elems {
-		if acc == nil {
+		if acc.IsZero() {
 			acc = el
 			continue
 		}
@@ -610,10 +610,10 @@ func inject(ctx object.Context, elems []object.Value, args []object.Value, block
 			acc, err = ctx.Yield(block, acc, el)
 		}
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 	}
-	if acc == nil {
+	if acc.IsZero() {
 		return object.Nil, nil
 	}
 	return acc, nil
@@ -628,26 +628,26 @@ func matches(ctx object.Context, el object.Value, args []object.Value, block obj
 		if err != nil {
 			return false, err
 		}
-		return object.Truthy(r), nil
-	case block != nil:
+		return r.Truthy(), nil
+	case !block.IsZero():
 		r, err := ctx.Yield(block, el)
 		if err != nil {
 			return false, err
 		}
-		return object.Truthy(r), nil
+		return r.Truthy(), nil
 	}
-	return object.Truthy(el), nil
+	return el.Truthy(), nil
 }
 
 // yieldEach yields each element when there is a block, else returns the
 // elements as a list.
 func yieldEach(ctx object.Context, elems []object.Value, block object.Value) (object.Value, error) {
-	if block == nil {
+	if block.IsZero() {
 		return object.NewList(elems...), nil
 	}
 	for _, el := range elems {
 		if _, err := ctx.Yield(block, el); err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 	}
 	return object.Nil, nil
@@ -711,13 +711,13 @@ func sortValues(ctx object.Context, elems []object.Value, block object.Value) ([
 		}
 		var c int
 		var err error
-		if block != nil {
+		if !block.IsZero() {
 			r, err := ctx.Yield(block, out[i], out[j])
 			if err != nil {
 				sortErr = err
 				return false
 			}
-			ci, ok := r.(object.Int)
+			ci, ok := r.AsInt()
 			if !ok {
 				sortErr = ctx.Raise(object.ArgumentError, "comparison of %s with %s failed", kindName(out[i]), kindName(out[j]))
 				return false
@@ -779,9 +779,9 @@ func chunks(ctx object.Context, elems []object.Value, block object.Value, togeth
 	for i := 1; i < len(elems); i++ {
 		r, err := ctx.Yield(block, elems[i-1], elems[i])
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
-		if object.Truthy(r) == together {
+		if r.Truthy() == together {
 			cur = append(cur, elems[i])
 		} else {
 			out = append(out, object.NewList(cur...))
