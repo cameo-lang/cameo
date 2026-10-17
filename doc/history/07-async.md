@@ -7,7 +7,7 @@ own, and `await` collects its result or re-raises its exception.
 ## A process is an interpreter on a goroutine
 
 A process is a goroutine running a worker interpreter
-([src/eval/async.go:230](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/eval/async.go#L230-L252)). The
+([src/eval/async.go:230](https://github.com/radiospiel/amber/blob/51393c751d51d4a84b305e1981954d125c09f0d1/src/eval/async.go#L230-L252)). The
 worker writes to the same output streams and sees the same classes,
 through a snapshot of the constants, since a class is immutable once it is
 bound. Everything else is its own: its scopes, its top-level `self`, and
@@ -16,7 +16,7 @@ its copies of the receiver and the arguments.
 Those copies are made the way step 6 makes any value travel. At the call
 site the receiver, the method name and the arguments are encoded into the
 `amber.Value` envelope, and the worker decodes them on its side
-([src/eval/async.go:165](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/eval/async.go#L165-L225)). A value that cannot
+([src/eval/async.go:165](https://github.com/radiospiel/amber/blob/51393c751d51d4a84b305e1981954d125c09f0d1/src/eval/async.go#L165-L225)). A value that cannot
 be encoded, a Proc, a class or a process, fails at the `async` call with a
 `TypeError`, where the script can see it, not inside the job. The result
 travels back the same way, and a result that cannot be encoded raises in
@@ -35,7 +35,7 @@ is `async` and `await` in one step. `await :all` waits for every process
 the current method started, its blocks included, that nobody has awaited
 yet, returns their results in start order, and raises the first failure
 only after all of them have finished
-([src/eval/async.go:125](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/eval/async.go#L125-L150)).
+([src/eval/async.go:125](https://github.com/radiospiel/amber/blob/51393c751d51d4a84b305e1981954d125c09f0d1/src/eval/async.go#L125-L150)).
 
 A process is a value, so a method may return one and its caller await it.
 The run ends when every process has, and the failure of a process that
