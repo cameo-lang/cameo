@@ -214,7 +214,18 @@ func installList() {
 		}
 		return object.NewList(out...), nil
 	})
-	def(c, "intersection", 1, c.Methods["&"].Native)
+	// intersection takes any number of lists: the elements of this one,
+	// once each, that every other holds; with none, this one as it is.
+	def(c, "intersection", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		out := self
+		for _, a := range args {
+			var err error
+			if out, err = c.Methods["&"].Native(ctx, out, []object.Value{a}, nil, object.Value{}); err != nil {
+				return object.Value{}, err
+			}
+		}
+		return out, nil
+	})
 	def(c, "|", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		o, err := toList(ctx, args[0])
 		if err != nil {

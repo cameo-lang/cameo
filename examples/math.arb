@@ -1,0 +1,18 @@
+# Math, Numeric#step and Range#bsearch.
+p Math.sqrt(16), Math.cbrt(27), Math::PI, Math::E, Math.hypot(3, 4), Math.log(8, 2), Math.log2(8), Math.log10(1000)
+p Math.atan2(1, 1), Math.exp(0), Math.sin(0), Math.cos(0)
+begin
+  Math.sqrt(-1)
+rescue Math::DomainError => e
+  puts "#{e.class}: #{e.message}"
+end
+
+# A float step computes each value from the start, so no error accumulates.
+steps = [*0.0.step(1.0, 0.0001)]
+p steps.size, steps.last, 1.0.step(2.0, 0.25).to_a, 1.step(2, 0.5).to_a, 10.step(1, -4).to_a, 0.1.step(0.3, 0.1).to_a
+
+# bsearch finds the smallest value a block is true for, or one it returns
+# 0 for; an endless or beginless range is probed outwards from its end.
+p (1..10000).bsearch { |x| x >= 5000 }, (1..10).bsearch { |x| x > 20 }, (0..4).bsearch { |x| 2 <=> x }
+p (1..).bsearch { |x| x >= 10000000000 }, (..0).bsearch { |x| x >= -100 }
+p (0.0..100.0).bsearch { |x| x >= 2.5 }, (0.0..Float::INFINITY).bsearch { |x| Math.log(x) >= 0 }

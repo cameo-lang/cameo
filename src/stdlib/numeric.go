@@ -249,33 +249,7 @@ func installInteger() {
 	}
 	step("upto", 1)
 	step("downto", -1)
-	def(c, "step", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if len(args) != 2 {
-			return object.Value{}, argError(ctx, len(args), "2")
-		}
-		to, err := wantInt(ctx, args[0], "")
-		if err != nil {
-			return object.Value{}, err
-		}
-		by, err := wantInt(ctx, args[1], "")
-		if err != nil || by == 0 {
-			return object.Value{}, ctx.Raise(object.ArgumentError, "step can't be 0")
-		}
-		var elems []object.Value
-		for i := int64(self.Int()); by > 0 && i <= to || by < 0 && i >= to; i += by {
-			if block.IsZero() {
-				elems = append(elems, object.Int(i))
-				continue
-			}
-			if _, err := ctx.Yield(block, object.Int(i)); err != nil {
-				return object.Value{}, err
-			}
-		}
-		if block.IsZero() {
-			return object.NewList(elems...), nil
-		}
-		return self, nil
-	})
+	def(c, "step", -1, numericStep)
 	def(c, "to_s", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		base := int64(10)
 		if len(args) == 1 {
@@ -455,6 +429,7 @@ func abs64(a int64) int64 {
 
 func installFloat() {
 	c := object.FloatClass
+	def(c, "step", -1, numericStep)
 	arith := func(name string, f func(a, b float64) float64) {
 		def(c, name, 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			a, b, _, err := numArgs(ctx, self, args[0], name)
@@ -597,3 +572,119 @@ func installFloat() {
 func roundHalfAway(x float64) float64 {
 	return math.Round(x)
 }
+
+// numericStep is Numeric#step(limit = nil, step = 1), or with the to: and
+// by: keywords: integers when all three are integers, otherwise floats as
+// Ruby's ruby_float_step makes them, each one beg + i * step so that no
+// error accumulates, and never past the limit. Without a block it returns
+// the numbers.
+func numericStep(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	if len(args) > 2 {
+		return object.Value{}, argError(ctx, len(args), "0..2")
+	}
+	limit, by := object.Nil, object.Int(1)
+	if len(args) > 0 {
+		limit = args[0]
+	}
+	if len(args) > 1 {
+		by = args[1]
+	}
+	if kw != nil {
+		if v, ok := kw.Get(object.Symbol("to")); ok {
+			limit = v
+		}
+		if v, ok := kw.Get(object.Symbol("by")); ok {
+			by = v
+		}
+	}
+	var out []object.Value
+	emit := func(v object.Value) error {
+		if block.IsZero() {
+			out = append(out, v)
+			return nil
+		}
+		_, err := ctx.Yield(block, v)
+		return err
+	}
+	done := func() (object.Value, error) {
+		if block.IsZero() {
+			return object.NewList(out...), nil
+		}
+		return self, nil
+	}
+	for _, v := range []object.Value{by, limit} {
+		if _, ok := v.AsNumber(); !ok && !v.IsNil() {
+			return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into Integer", kindName(v))
+		}
+	}
+	if f, _ := by.AsNumber(); f == 0 {
+		return object.Value{}, ctx.Raise(object.ArgumentError, "step can't be 0")
+	}
+	if limit.IsNil() && block.IsZero() {
+		return object.Value{}, ctx.Raise(object.RangeError, "cannot convert endless range to a list")
+	}
+	from, fromInt := self.AsInt()
+	to, toInt := limit.AsInt()
+	step, stepInt := by.AsInt()
+	if fromInt && stepInt && (toInt || limit.IsNil()) {
+		for i := from; limit.IsNil() || step > 0 && i <= to || step < 0 && i >= to; i += step {
+			if err := emit(object.Int(i)); err != nil {
+				return object.Value{}, err
+			}
+		}
+		return done()
+	}
+	beg, _ := self.AsNumber()
+	unit, _ := by.AsNumber()
+	end := math.Inf(1)
+	if unit < 0 {
+		end = math.Inf(-1)
+	}
+	if !limit.IsNil() {
+		end, _ = limit.AsNumber()
+	}
+	n := floatStepSize(beg, end, unit)
+	if math.IsInf(unit, 0) {
+		// i * unit is NaN for i = 0, so Ruby yields beg alone.
+		if n > 0 {
+			if err := emit(object.Float(beg)); err != nil {
+				return object.Value{}, err
+			}
+		}
+		return done()
+	}
+	for i := float64(0); i < n; i++ {
+		d := i*unit + beg
+		if unit >= 0 && end < d || unit < 0 && d < end {
+			d = end
+		}
+		if err := emit(object.Float(d)); err != nil {
+			return object.Value{}, err
+		}
+	}
+	return done()
+}
+
+// floatStepSize is how many floats a step from beg to end by unit makes,
+// allowing for the rounding error in (end - beg) / unit, after Ruby's
+// ruby_float_step_size.
+func floatStepSize(beg, end, unit float64) float64 {
+	if math.IsInf(unit, 0) {
+		if unit > 0 && beg <= end || unit < 0 && beg >= end {
+			return 1
+		}
+		return 0
+	}
+	n := (end - beg) / unit
+	err := (math.Abs(beg) + math.Abs(end) + math.Abs(end-beg)) / math.Abs(unit) * epsilon
+	if err > 0.5 {
+		err = 0.5
+	}
+	if n < 0 {
+		return 0
+	}
+	return math.Floor(n+err) + 1
+}
+
+// epsilon is the difference between 1 and the next float, C's DBL_EPSILON.
+const epsilon = 2.220446049250313e-16

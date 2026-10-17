@@ -39,3 +39,4 @@ The steps:
 - [16. `String#succ` and ranges of strings](16-string-succ.md)
 - [17. `Time`, an immutable instant with its offset](17-time.md)
 - [18. `Hash.new` with a default value or block](18-hash-defaults.md)
+- [19. `Math`, `Range#bsearch`, `Float#step` and other builtins](19-small-builtins.md)

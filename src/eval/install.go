@@ -28,6 +28,11 @@ func installStdlib() {
 	procClass.Define("arity", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Int(proc(self).Arity()), nil
 	})
+	// A hash's proc is a lambda that looks a key up, as Ruby's
+	// Hash#to_proc is.
+	object.MapClass.Define("to_proc", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return hashProc(self), nil
+	})
 	procClass.Define("curry", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Value{}, ctx.Raise(object.NotImplementedErr, "curry is not supported")
 	})
@@ -102,4 +107,9 @@ func (in *Interp) newInstance(cls *object.Class, args []object.Value, kw *object
 		}
 	}
 	return object.InstanceValue(inst), nil
+}
+
+// hashProc is the proc of a hash: a lambda that returns hash[key].
+func hashProc(h object.Value) object.Value {
+	return procValue(&Proc{Sym: "[]", Recv: h, Strict: true})
 }

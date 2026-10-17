@@ -215,6 +215,51 @@ func installString() {
 		}
 		return object.NewList(elems...), nil
 	})
+	def(c, "codepoints", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		elems := []object.Value{}
+		for _, r := range str(self) {
+			elems = append(elems, object.Int(r))
+		}
+		return object.NewList(elems...), nil
+	})
+	// byteindex is the byte offset of a substring at or after offset, which
+	// must fall on a character boundary.
+	def(c, "byteindex", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if len(args) < 1 || len(args) > 2 {
+			return object.Value{}, argError(ctx, len(args), "1..2")
+		}
+		sub, err := wantString(ctx, args[0])
+		if err != nil {
+			return object.Value{}, err
+		}
+		s, off := str(self), int64(0)
+		if len(args) == 2 {
+			if off, err = wantInt(ctx, args[1], ""); err != nil {
+				return object.Value{}, err
+			}
+		}
+		if off < 0 {
+			off += int64(len(s))
+		}
+		if off < 0 || off > int64(len(s)) {
+			return object.Nil, nil
+		}
+		if off < int64(len(s)) && !utf8.RuneStart(s[off]) {
+			return object.Value{}, ctx.Raise(object.IndexError, "offset %d does not land on character boundary", off)
+		}
+		i := strings.Index(s[off:], sub)
+		if i < 0 {
+			return object.Nil, nil
+		}
+		return object.Int(off + int64(i)), nil
+	})
+	// -@ and +@ return the string itself: every string is immutable, so the
+	// deduplicated and the unfrozen copy are both the string.
+	def(c, "-@", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return self, nil
+	})
+	def(c, "+@", 0, c.Methods["-@"].Native)
+	def(c, "dedup", 0, c.Methods["-@"].Native)
 	def(c, "lines", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.NewList(lines(str(self))...), nil
 	})

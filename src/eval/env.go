@@ -131,8 +131,11 @@ type Proc struct {
 	Frame  *Frame
 	Strict bool
 	// Sym is set for a block made from a symbol (&:name): it calls that
-	// method on its argument, and Block is nil.
-	Sym string
+	// method on its argument, and Block is nil. With Recv set it calls the
+	// method on Recv with the block's arguments instead, as the proc of a
+	// hash (&hash) calls [].
+	Sym  string
+	Recv object.Value
 }
 
 // procValue wraps a proc as a value; proc and asProc read it back.
@@ -157,6 +160,9 @@ func asProc(v object.Value) (*Proc, bool) {
 // block takes a splat or optional parameters, as Proc#arity reports.
 func (p *Proc) Arity() int {
 	if p.Block == nil {
+		if !p.Recv.IsZero() {
+			return 1
+		}
 		return -2
 	}
 	required, variable := 0, false
