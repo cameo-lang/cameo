@@ -11,7 +11,7 @@ it draws.
 Each interpreter holds a generator from Go's
 [`math/rand/v2`](https://pkg.go.dev/math/rand/v2), a
 [PCG](https://www.pcg-random.org/), seeded at random when the interpreter
-starts ([src/eval/interp.go:70](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/eval/interp.go#L70-L75)). `srand(n)`
+starts ([src/eval/interp.go:70](https://github.com/radiospiel/amber/blob/26a86ba5e3613907ff0441c19df7da6d6def3a75/src/eval/interp.go#L70-L75)). `srand(n)`
 replaces it with one seeded from `n` and returns the previous seed, as
 Ruby's does. An `async` worker's generator is seeded from its parent's
 when the process starts, so a seeded script draws the same numbers on
