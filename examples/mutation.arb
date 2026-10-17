@@ -1,0 +1,77 @@
+# A call that changes its receiver in Ruby -- <<, push, pop, delete, a
+# bang method -- rebinds the local it is called on to the changed copy, as
+# h[k] = v does. Its value is Ruby's: the receiver, the removed element,
+# or nil from a bang method that changed nothing.
+a = [1, 2]
+a << 3 << 4
+p a
+p a.push(5, 6)
+p a.pop
+p a.pop(2)
+p a.shift
+p a.unshift(0)
+p a.insert(1, :x)
+p a.insert(-1, :y)
+p a.concat([7], [8])
+p a.delete(:x)
+p a.delete(:none)
+p a.delete_at(0)
+p a.delete_at(99)
+p a
+x = [3, 1, 2, 2, nil]
+p x.compact!
+p x.compact!
+p x.uniq!
+p x.sort!
+p x.map! { _1 * 2 }
+p x.select! { _1 > 2 }
+p x.select! { true }
+p x.reject! { _1 > 5 }
+p x
+x.clear
+p x
+p x.replace([9])
+p(x.delete_if { _1 > 5 })
+p x.keep_if { true }
+s = "ab"
+s << "c" << 100
+p s
+p s.concat("e", "f")
+p s.prepend(">")
+p s.insert(1, "_")
+p s.upcase!
+p s.upcase!
+p s
+p s.reverse!
+p s.succ!
+h = Hash.new(0)
+h.store(:a, 1)
+h[:b] = 2
+p h.delete(:a)
+p h.delete(:zz)
+p h[:missing]
+p h.to_a
+p h.update(c: 3).to_a
+p h.shift
+p h.to_a
+p h.select! { |k, v| v > 2 }.to_a
+p h.select! { true }
+p h[:nope]
+p h.merge!(d: 4).to_a
+st = Set[1, 2]
+st << 3
+st.add(4)
+p st.add?(4)
+p st.add?(5).to_a
+p st.delete(1).to_a
+p st.delete?(99)
+p st.merge([6, 7]).size
+p st.subtract([2]).to_a
+p st.map! { _1 * 10 }.to_a
+p st.size
+n = 1
+n << 3
+p n, (n << 3)
+words = %w[b a c]
+words.sort!.reverse!
+p words

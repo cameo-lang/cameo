@@ -326,8 +326,13 @@ func (c *converter) binary(n *ast.BinaryExpr) Node {
 	case "||":
 		return &Or{c.pos(), c.expr(n.Left), c.expr(n.Right)}
 	case "<<":
-		c.fail("<< mutates its receiver: amber values are immutable; use + or append")
-		return nil
+		if m := c.mutCall(n); m != nil {
+			return m
+		}
+		if _, isInt := n.Left.(*ast.IntLit); !isInt {
+			c.fail("<< changes its receiver, which amber rebinds only for a local variable or a field in initialize; use + or append")
+			return nil
+		}
 	}
 	return &Call{Pos: c.pos(), Recv: c.expr(n.Left), Name: n.Op, Args: []Node{c.expr(n.Right)}}
 }
@@ -467,12 +472,21 @@ func (c *converter) call(n *ast.Call) Node {
 			}
 		}
 	}
-	if alt, mutating := mutators[name]; mutating && name != "[]=" {
-		c.fail("%s is not supported: amber values are immutable; use %s", name, alt)
+	if n.Recv != nil && mayMutate(name) {
+		if m := c.mutCall(n); m != nil {
+			return m
+		}
+	}
+	if alt, listed := mutators[name]; listed && name != "[]=" {
+		if mayMutate(name) {
+			c.fail("%s changes its receiver, which amber rebinds only for a local variable or a field in initialize; use %s", name, alt)
+		} else {
+			c.fail("%s is not supported; use %s", name, alt)
+		}
 		return nil
 	}
 	if strings.HasSuffix(name, "!") && name != "!" && name != "!=" {
-		c.fail("%s: bang methods mutate their receiver, and amber values are immutable", name)
+		c.fail("%s: a bang method changes its receiver, which amber rebinds only for a local variable or a field in initialize", name)
 		return nil
 	}
 	if isSetter(name) {
@@ -1106,4 +1120,61 @@ func (c *converter) scopeOf(path ast.Node) Node {
 		return nil
 	}
 	return c.expr(sc.Recv)
+}
+
+// mayMutate reports whether a call of name may change its receiver: one of
+// Ruby's core mutators or a bang method. Whether it does depends on the
+// receiver's kind, which only the evaluator knows.
+func mayMutate(name string) bool {
+	switch name {
+	case "<<", "push", "pop", "shift", "unshift", "insert", "concat", "delete", "delete_at", "prepend",
+		"delete_if", "keep_if", "clear", "store", "replace", "fill",
+		"add", "add?", "delete?", "merge", "subtract", "update", "reset":
+		return true
+	case "!", "!=", "exit!":
+		return false
+	}
+	return strings.HasSuffix(name, "!")
+}
+
+// mutCall makes a MutCall of a chain of calls that may change their
+// receiver, `x << a << b` or `x.push(a).push(b)`, when the chain starts at
+// a local variable or at a field inside initialize. It returns nil for any
+// other receiver, which the caller rejects.
+func (c *converter) mutCall(n ast.Node) Node {
+	var steps []*Call
+	for cur := n; ; {
+		var recv ast.Node
+		switch m := cur.(type) {
+		case *ast.BinaryExpr:
+			if m.Op != "<<" {
+				return nil
+			}
+			recv = m.Left
+			steps = append([]*Call{{Pos: c.pos(), Name: "<<", Args: []Node{c.expr(m.Right)}}}, steps...)
+		case *ast.Call:
+			if m.Recv == nil || m.Safe || !mayMutate(m.Name) {
+				return nil
+			}
+			recv = m.Recv
+			step := &Call{Pos: c.pos(), Name: m.Name}
+			step.Args, step.KwArgs, step.BlockArg = c.args(m.Args)
+			if m.Block != nil {
+				step.Block = c.block(m.Block)
+			}
+			steps = append([]*Call{step}, steps...)
+		default:
+			return nil
+		}
+		switch r := recv.(type) {
+		case *ast.VarRef:
+			return &MutCall{c.pos(), &Var{c.pos(), r.Name}, steps}
+		case *ast.IvarRef:
+			if def, ok := c.enclosingDef(); ok && def.name == "initialize" {
+				return &MutCall{c.pos(), &IVar{c.pos(), strings.TrimPrefix(r.Name, "@")}, steps}
+			}
+			return nil
+		}
+		cur = recv
+	}
 }

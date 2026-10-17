@@ -122,6 +122,14 @@ func TestHashNewBlockMayReadItsHash(t *testing.T) {
 	parse(t, "h = Hash.new { |m, k| x = {}\nx[k] = 1\nx }\n")
 }
 
+func TestMutationRebindsALocal(t *testing.T) {
+	// A mutating call on a local or a field in initialize parses; the
+	// evaluator rebinds the local.
+	parse(t, "a = []\na << 1 << 2\na.push(3)\na.map! { _1 }\n")
+	parse(t, "class C\n  list :xs, of: :int\n  def initialize\n    @xs = []\n    @xs << 1\n  end\nend\n")
+	rejects(t, "class C\n  list :xs, of: :int\n  def add(x) = @xs << x\nend\n", "<< changes its receiver")
+}
+
 func TestSugarParses(t *testing.T) {
 	// Forwarding, anonymous parameters, for loops, alias, a scoped class
 	// name and a top-level def self.x are sugar the converter rewrites.
@@ -138,9 +146,9 @@ func TestRejections(t *testing.T) {
 		"attr_accessor :x\n":                 "attr_accessor is not supported",
 		"def x=(v); end\n":                   "def x=: setters are not supported",
 		"def save!; end\n":                   "bang methods are not supported",
-		"a = []\na << 1\n":                   "<< mutates its receiver",
-		"a = []\na.push(1)\n":                "push is not supported",
-		"a = {}\na.merge!({})\n":             "merge!: bang methods mutate",
+		"A = []\nA << 1\n":                   "<< changes its receiver",
+		"a = [[]]\na.first.push(1)\n":        "push changes its receiver",
+		"A = {}\nA.merge!({})\n":             "merge!: a bang method changes its receiver",
 		"h = Hash.new { |m, k| m[k] = 1 }\n": "Hash.new's block cannot store into its hash m",
 		"$x = 1\n":                           "global variables are not supported",
 		"@@x = 1\n":                          "class variables are not supported",

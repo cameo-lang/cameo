@@ -50,9 +50,10 @@ What amber leaves out, and the checker rejects by name:
   *Classes*; a second `def` of one name in a class body; `define_method`,
   `method_missing`, `send`, `instance_variable_set`, `eval`, `undef`,
   `extend`, singleton classes, `def self.x` on an instance
-- mutating methods: `<<`, `push`, `pop`, `delete`, `merge!`, `map!`, every
-  bang method; `freeze` is accepted and changes nothing, since everything
-  already is frozen
+- mutating methods (`<<`, `push`, `pop`, `delete`, `merge!`, `map!`, every
+  bang method) on anything but a local or a field in `initialize`, which
+  they rebind, see *Variables rebind*; `freeze` is accepted and changes
+  nothing, since everything already is frozen
 - threads, fibers, `fork`, files, sockets, `require`, `$stdin`. Standard
   output and standard error are the whole of I/O.
 
@@ -120,6 +121,20 @@ again is the only mutation in the language. Blocks close over their lexical
 scope exactly as in Ruby, so a block that assigns an outer variable rebinds it
 for the enclosing scope. Nothing else in the program can observe the old
 value, since no value refers to a variable.
+
+A call that changes its receiver in Ruby -- `x << y`, `x.push(y)`,
+`x.pop`, `h.delete(k)`, `s.add(y)`, any bang method -- is a rebinding too,
+when its receiver is a local variable or a field inside `initialize`: x
+becomes the changed copy, as `h[k] = v` makes h one. The call's value is
+Ruby's: the receiver for most, the removed element for `pop`, `shift` and
+`delete`, nil from a bang method that changed nothing. Whether a call
+changes its receiver depends on the receiver's kind, which the evaluator
+checks: `String#delete` returns a new string, `Integer#<<` shifts, and an
+instance's methods are its own. Another variable that held the old value
+keeps it, where Ruby would show the change. On any other receiver -- an
+element, a constant, a call's result -- such a call is rejected, since
+there is no variable to rebind. amber's own `append`, `prepend`, `put` and
+`without` return a copy and change nothing.
 
 ### `tap`
 

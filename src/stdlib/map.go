@@ -122,6 +122,10 @@ func installMap() {
 		return object.MapValue(m(self).Put(args[0], args[1])), nil
 	})
 	def(c, "merge", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		// `h.merge(a: 1)` passes its hash as keywords.
+		if kw != nil && kw.Len() > 0 {
+			args = append(args, object.MapValue(kw))
+		}
 		out := m(self)
 		for _, a := range args {
 			other, ok := a.AsMap()

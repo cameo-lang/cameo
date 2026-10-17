@@ -162,6 +162,12 @@ func installInteger() {
 		}
 		return a >> uint(b)
 	})
+	bitwise("<<", func(a, b int64) int64 {
+		if b < 0 {
+			return a >> uint(-b)
+		}
+		return a << uint(b)
+	})
 	bitwise("[]", func(a, b int64) int64 { return (a >> uint(b)) & 1 })
 	def(c, "<=>", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		switch args[0].Kind() {

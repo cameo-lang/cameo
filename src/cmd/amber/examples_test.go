@@ -67,7 +67,7 @@ func TestCheckReportsErrors(t *testing.T) {
 		t.Fatal("check accepted a script with a syntax error")
 	}
 	mutating := filepath.Join(dir, "mutating.arb")
-	if err := os.WriteFile(mutating, []byte("a = []\na << 1\n"), 0o644); err != nil {
+	if err := os.WriteFile(mutating, []byte("A = []\nA << 1\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	err := check(mutating)
