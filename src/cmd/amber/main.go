@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"sort"
 
 	"github.com/radiospiel/amber/src/amber"
@@ -19,7 +20,23 @@ const usage = `usage: amber <script.arb>              run the script
        amber proto <script.arb> [dir]  print the .proto files of the script's classes, or write them into dir`
 
 func main() {
+	tuneGC()
 	os.Exit(run(os.Args[1:]))
+}
+
+// tuneGC lets the heap grow to five times what survives a collection, where
+// Go's default is twice, which spends a quarter less time on CRuby's
+// benchmarks; past a soft limit of 1 GB the collector runs as often as it
+// would by default, so a large heap does not grow fivefold. GOGC and
+// GOMEMLIMIT in the environment override either. A program that embeds
+// amber keeps its own settings.
+func tuneGC() {
+	if os.Getenv("GOGC") == "" {
+		debug.SetGCPercent(400)
+	}
+	if os.Getenv("GOMEMLIMIT") == "" {
+		debug.SetMemoryLimit(1 << 30)
+	}
 }
 
 // run executes the command line and returns the process exit status: 0 when

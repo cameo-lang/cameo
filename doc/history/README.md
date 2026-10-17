@@ -53,3 +53,4 @@ The steps:
 - [30. Strings carry their encoding, and `Array#pack`](30-encodings.md)
 - [31. `with` makes the copy with changes, `tap` is Ruby's](31-with-and-tap.md)
 - [32. User classes that include Enumerable](32-user-enumerable.md)
+- [33. The collector at GOGC=400 with a 1 GB soft limit](33-gc-tuning.md)
