@@ -230,8 +230,8 @@ func (in *Interp) start(recvNode, methodNode syntax.Node, argNodes []syntax.Node
 func (in *Interp) worker() *Interp {
 	mainClass := object.NewClass("Object", object.ObjectClass)
 	mainClass.Digest = "main"
-	for name, m := range in.mainClass.Methods {
-		mainClass.Methods[name] = m
+	for _, m := range in.mainClass.Methods {
+		mainClass.SetMethod(m)
 	}
 	w := &Interp{
 		stdout:    in.stdout,

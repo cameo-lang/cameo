@@ -359,9 +359,9 @@ func (in *Interp) evalInclude(n *syntax.Include, env *Env, fr *Frame) (object.Va
 		return nil, in.raise(object.ArgumentError, n.Line(), "cyclic include detected")
 	}
 	if n.Extend {
-		cls.Extends = append(cls.Extends, mod)
+		cls.Extend(mod)
 	} else {
-		cls.Includes = append(cls.Includes, mod)
+		cls.Include(mod)
 	}
 	return cls, nil
 }

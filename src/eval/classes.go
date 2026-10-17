@@ -124,7 +124,12 @@ func (in *Interp) evalDef(n *syntax.Def, fr *Frame) (object.Value, error) {
 		}
 		return nil, in.raise(object.AmberError, n.Line(), "cannot replace the builtin method %s of %s", n.Name, target.Name)
 	}
-	table[n.Name] = &object.Method{Name: n.Name, Owner: target, Body: n, Arity: -1, Lexical: fr.Lexical}
+	m := &object.Method{Name: n.Name, Owner: target, Body: n, Arity: -1, Lexical: fr.Lexical}
+	if n.Singleton {
+		target.SetSingletonMethod(m)
+	} else {
+		target.SetMethod(m)
+	}
 	return object.Symbol(n.Name), nil
 }
 

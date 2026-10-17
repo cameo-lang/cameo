@@ -28,3 +28,4 @@ The steps:
 - [5. Classes with typed fields, copies through `tap`, and modules](05-classes.md)
 - [6. Every class is a protobuf message; the host API](06-protobuf.md)
 - [7. `async` and `await`](07-async.md)
+- [8. A method cache per class](08-method-cache.md)

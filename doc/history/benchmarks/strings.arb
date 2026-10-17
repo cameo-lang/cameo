@@ -1,0 +1,9 @@
+words = %w[alpha beta gamma delta epsilon]
+out = []
+i = 0
+while i < 200_000
+  out = out + [words[i % 5].upcase + i.to_s] if i % 1000 == 0
+  s = "#{words[i % 5]}-#{i}"
+  i += 1
+end
+puts out.size
