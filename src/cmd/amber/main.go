@@ -1,12 +1,9 @@
-// Command amber runs amber scripts.
-//
-// Milestone 1: `amber check script.arb` parses and checks a script and reports
-// what the parser rejects and what amber leaves out, with line numbers;
-// `amber script.arb` fails, since the evaluator does not exist yet. The
-// language and the plan are in doc/design/amber.md.
+// Command amber runs amber scripts. The language and the plan are in
+// doc/design/amber.md.
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -14,16 +11,16 @@ import (
 	"github.com/radiospiel/amber/src/syntax"
 )
 
-const usage = `usage: amber check <script.arb>    parse and check the script, report every error
-       amber <script.arb>          run the script (not implemented yet)`
+const usage = `usage: amber <script.arb>          run the script
+       amber check <script.arb>    parse and check the script, report every error`
 
 func main() {
 	os.Exit(run(os.Args[1:]))
 }
 
 // run executes the command line and returns the process exit status: 0 when
-// the command succeeded, 1 when the script failed, 2 when the command line
-// is wrong or the command is not implemented.
+// the script ran or checked, 1 when it failed, 2 when the command line is
+// wrong.
 func run(args []string) int {
 	switch {
 	case len(args) == 1 && args[0] == "version":
@@ -39,8 +36,16 @@ func run(args []string) int {
 		}
 		return 0
 	case len(args) == 1 && args[0] != "check":
-		fmt.Fprintf(os.Stderr, "amber: running scripts is not implemented yet; `amber check %s` checks it\n", args[0])
-		return 2
+		if err := amber.RunFile(args[0], os.Stdout, os.Stderr); err != nil {
+			var errs syntax.ErrorList
+			if errors.As(err, &errs) {
+				fmt.Fprintln(os.Stderr, errs)
+				return 1
+			}
+			fmt.Fprintln(os.Stderr, err)
+			return 1
+		}
+		return 0
 	default:
 		fmt.Fprintln(os.Stderr, usage)
 		return 2

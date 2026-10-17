@@ -1,0 +1,110 @@
+package stdlib
+
+import "github.com/radiospiel/amber/src/object"
+
+// installClass defines the methods of classes and modules themselves.
+func installClass() {
+	m := object.ModuleClass
+	cls := func(self object.Value) *object.Class { return self.(*object.Class) }
+	def(m, "name", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return object.String(cls(self).QualifiedName()), nil
+	})
+	def(m, "to_s", 0, m.Methods["name"].Native)
+	def(m, "inspect", 0, m.Methods["name"].Native)
+	def(m, "===", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return object.BoolOf(args[0].Class().IsA(cls(self))), nil
+	})
+	def(m, "==", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return object.BoolOf(self == args[0]), nil
+	})
+	def(m, "ancestors", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		anc := cls(self).Ancestors()
+		out := make([]object.Value, len(anc))
+		for i, a := range anc {
+			out[i] = a
+		}
+		return object.NewList(out...), nil
+	})
+	def(m, "<", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		other, ok := args[0].(*object.Class)
+		if !ok {
+			return nil, ctx.Raise(object.TypeError, "compared with non class/module")
+		}
+		if self == other {
+			return object.False, nil
+		}
+		if cls(self).IsA(other) {
+			return object.True, nil
+		}
+		if other.IsA(cls(self)) {
+			return object.False, nil
+		}
+		return object.Nil, nil
+	})
+	def(m, "<=", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		other, ok := args[0].(*object.Class)
+		if !ok {
+			return nil, ctx.Raise(object.TypeError, "compared with non class/module")
+		}
+		if cls(self).IsA(other) {
+			return object.True, nil
+		}
+		if other.IsA(cls(self)) {
+			return object.False, nil
+		}
+		return object.Nil, nil
+	})
+	def(m, "instance_methods", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		names := []object.Value{}
+		for _, n := range cls(self).MethodNames() {
+			names = append(names, object.Symbol(n))
+		}
+		return object.NewList(names...), nil
+	})
+	def(m, "method_defined?", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		name, err := wantString(ctx, args[0])
+		if err != nil {
+			return nil, err
+		}
+		return object.BoolOf(cls(self).Lookup(name) != nil), nil
+	})
+	def(m, "const_get", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		name, err := wantString(ctx, args[0])
+		if err != nil {
+			return nil, err
+		}
+		for _, a := range cls(self).Ancestors() {
+			if v, ok := a.Consts[name]; ok {
+				return v, nil
+			}
+		}
+		return nil, ctx.Raise(object.NameError, "uninitialized constant %s::%s", cls(self).QualifiedName(), name)
+	})
+	def(m, "constants", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		names := []object.Value{}
+		for n := range cls(self).Consts {
+			names = append(names, object.Symbol(n))
+		}
+		return object.NewList(names...), nil
+	})
+	def(m, "hash", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return object.Int(hashString(object.Key(self))), nil
+	})
+	k := object.ClassClass
+	def(k, "superclass", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if cls(self).Super == nil {
+			return object.Nil, nil
+		}
+		return cls(self).Super, nil
+	})
+	def(k, "class", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return self.Class(), nil
+	})
+	def(k, "fields", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		names := []object.Value{}
+		for _, f := range cls(self).Fields {
+			names = append(names, object.Symbol(f.Name))
+		}
+		return object.NewList(names...), nil
+	})
+}

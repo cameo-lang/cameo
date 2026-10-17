@@ -23,3 +23,4 @@ The steps:
 
 - [1. The language design, and `amber check`](01-language-design.md)
 - [2. The front end: amber's tree, the checker and the rewrite](02-front-end.md)
+- [3. The evaluator core and the scalar library](03-evaluator.md)
