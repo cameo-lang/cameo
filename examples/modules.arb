@@ -21,4 +21,3 @@ pt = Geo::Point.new(1, 2)
 puts pt.describe
 puts Geo::Point.name
 puts pt.is_a?(Geo::Describable)
-puts Geo::Point.proto.lines.first

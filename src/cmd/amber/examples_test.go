@@ -18,13 +18,8 @@ const examplesDir = "../../../examples"
 // milestone. A pending example must still fail: when it passes, it comes
 // off this list.
 var pending = map[string]string{
-	"point.arb":             "milestone 4: classes with fields",
-	"nested_assignment.arb": "milestone 4: classes with fields",
-	"redefinition.arb":      "milestone 4: classes with fields",
-	"inheritance.arb":       "milestone 4: classes with fields",
-	"modules.arb":           "milestone 4: modules",
-	"proto.arb":             "milestone 5: protobuf",
-	"async.arb":             "milestone 6: async",
+	"proto.arb": "milestone 5: protobuf",
+	"async.arb": "milestone 6: async",
 }
 
 // TestExamples runs every example script and holds its standard output to

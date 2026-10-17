@@ -12,3 +12,4 @@ message Person {
   map<string, int64> scores = 5;
   optional Role role = 6;
 }
+package geo;

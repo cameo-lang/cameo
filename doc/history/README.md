@@ -25,3 +25,4 @@ The steps:
 - [2. The front end: amber's tree, the checker and the rewrite](02-front-end.md)
 - [3. The evaluator core and the scalar library](03-evaluator.md)
 - [4. The collection library](04-collections.md)
+- [5. Classes with typed fields, copies through `tap`, and modules](05-classes.md)

@@ -1,0 +1,79 @@
+# Typed fields: declaration, defaults, checking, keyword construction, tap.
+class Address
+  string :street, :city
+  int :zip
+end
+
+class Person
+  string :name
+  int :age, default: 0
+  float :height
+  bool :active, default: true
+  list :emails, of: :string
+  map :scores, key: :string, value: :int
+  set :tags, of: :string
+  ref :home, Address
+  enum :role, values: [:admin, :user], default: :user
+
+  def initialize(name, age: 0, home: nil, **rest)
+    @name = name
+    @age = age
+    @home = home
+    @emails = rest.fetch(:emails, [])
+    @scores = rest.fetch(:scores, {})
+    @tags = rest.fetch(:tags, [].to_set)
+    @height = rest[:height]
+  end
+
+  def adult? = age >= 18
+end
+
+home = Address.new(street: "Main 1", city: "Springfield", zip: 12345)
+p home
+ann = Person.new("ann", age: 31, home: home, emails: ["a@x"], scores: {"math" => 1}, tags: ["x"].to_set, height: 1)
+p ann
+puts ann.height
+puts ann.role
+puts ann.adult?
+puts ann.home.city
+puts Person.fields.inspect
+
+bob = ann.tap { |p| { name: "bob", age: 7, role: :admin } }
+puts bob.name, bob.age, bob.role
+puts ann.name
+puts bob == ann
+puts bob == bob.tap { |p| {} }
+
+bob.home.zip = 99999
+puts bob.home.zip
+puts ann.home.zip
+bob.emails[0] = "b@x"
+bob.scores["art"] = 5
+puts bob.emails.inspect
+puts bob.scores.keys.inspect
+
+def check
+  yield
+rescue TypeError, NameError, ArgumentError => e
+  puts "#{e.class}: #{e.message}"
+end
+
+check { Person.new(42) }
+check { ann.tap { |p| { age: "old" } } }
+check { ann.tap { |p| { role: :boss } } }
+check { ann.tap { |p| { nope: 1 } } }
+check { ann.tap { |p| { emails: ["ok", 3] } } }
+check { ann.tap { |p| { home: "nowhere" } } }
+check { Address.new(street: 1) }
+check { Address.new(1) }
+check { Person.new("x", age: 1.5) }
+check { ann.tap { |p| 5 } }
+
+nothing = Address.new
+p nothing
+puts nothing.zip.inspect
+puts [1, 2, 3].tap { |l| { 0 => :a, -1 => :c } }.inspect
+puts({x: 1}.tap { |m| { y: 2 } }.keys.inspect)
+list = [[1, 2], [3, 4]]
+list[1][0] = 30
+puts list.inspect
