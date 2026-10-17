@@ -30,7 +30,7 @@ explains why RE2's approach guarantees it.
 ## Ruby's syntax, translated
 
 The `rx` package translates a Ruby pattern into Go's syntax
-([src/rx/rx.go:39](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/rx/rx.go#L39-L55)). `^` and `$` match at every line
+([src/rx/rx.go:39](https://github.com/radiospiel/amber/blob/f12009337f7fbfff0ac5af1acdf5dac53ed58b79/src/rx/rx.go#L39-L55)). `^` and `$` match at every line
 in Ruby, so the translation is always multi-line; Ruby's `m` is Go's `s`;
 `x` drops whitespace and comments; and `\h`, `{,n}`, `\e`, `\u{…}`, `\xHH`
 sequences and Ruby's property names become what Go understands. A plain
@@ -41,7 +41,7 @@ group beside named ones does not capture, as in Ruby.
 A pattern that needs backtracking is refused by name: a backreference,
 lookahead or lookbehind, an atomic group, a possessive quantifier, a
 subexpression call, `\G`, `\K`, `\Z`, class intersection
-([src/rx/rx.go:29](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/rx/rx.go#L29-L31)):
+([src/rx/rx.go:29](https://github.com/radiospiel/amber/blob/f12009337f7fbfff0ac5af1acdf5dac53ed58b79/src/rx/rx.go#L29-L31)):
 
 ```
 This regexp is not supported in Amber: /(a)\1/ uses a backreference
