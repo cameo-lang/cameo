@@ -14,7 +14,7 @@ ASCII-8BIT (binary) and US-ASCII, and no others.
 
 A String's encoding is the kind of its Value: `KindString` is UTF-8,
 `KindBytes` binary and `KindASCII` US-ASCII
-([src/object/value.go:30](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/object/value.go#L30-L33)),
+([src/object/value.go:30](https://github.com/radiospiel/amber/blob/dfb035dbd034f7bd0385ced631ca4691547def0b/src/object/value.go#L30-L33)),
 and all three are instances of `String`. The separate `Bytes` class is
 gone, so `"\xFF".b.class` is `String`, as in Ruby.
 
@@ -31,7 +31,7 @@ results of its methods its encoding.
 compatible in, by Ruby's rule: a string that is all ASCII fits any of the
 three, so `"a" + "\xFF".b` is binary; two strings with non-ASCII bytes in
 different encodings raise `Encoding::CompatibilityError`
-([src/stdlib/encoding.go:79](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/stdlib/encoding.go#L79-L94)). `force_encoding`
+([src/stdlib/encoding.go:79](https://github.com/radiospiel/amber/blob/dfb035dbd034f7bd0385ced631ca4691547def0b/src/stdlib/encoding.go#L79-L94)). `force_encoding`
 relabels the same bytes, and on a local it rebinds the local, as Ruby's
 changes its receiver (step 22); `encode` converts them, with `invalid:`,
 `undef:` and `replace:`. `valid_encoding?` and `scrub` deal with bytes an
