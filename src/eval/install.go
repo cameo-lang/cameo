@@ -3,6 +3,7 @@ package eval
 import (
 	"github.com/radiospiel/amber/src/object"
 	"github.com/radiospiel/amber/src/stdlib"
+	"path/filepath"
 )
 
 // installStdlib installs the standard library once per process: the Go
@@ -63,6 +64,18 @@ func init() {
 		}
 		name, _ := args[0].AsSymbol()
 		return object.Value{}, in.raise(object.NoMethodError, 0, "undefined method '%s' for %s", name, typeName(self))
+	})
+	// __FILE__ is the script's path as it was given, and __dir__ the
+	// absolute directory it is in.
+	object.ObjectClass.Define("__FILE__", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return object.String(ctx.(*Interp).file), nil
+	})
+	object.ObjectClass.Define("__dir__", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		abs, err := filepath.Abs(ctx.(*Interp).file)
+		if err != nil {
+			return object.Nil, nil
+		}
+		return object.String(filepath.Dir(abs)), nil
 	})
 	object.ClassClass.Define("allocate", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Value{}, ctx.Raise(object.NoMethodError, "allocate is not supported: use new")
@@ -141,6 +154,7 @@ var builtinLibraries = map[string][]string{
 	"set":        nil,
 	"time":       nil,
 	"pp":         nil,
+	"pathname":   nil,
 	"cgi":        {"cgi/escape", "cgi/util"},
 	"cgi/escape": nil,
 	"cgi/util":   {"cgi/escape"},

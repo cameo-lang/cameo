@@ -192,6 +192,12 @@ g.bar
 	expectOutput(t, strings.TrimSuffix(src, "g.bar\n"), "[[1], 2]\ntrue\nfalse\n")
 }
 
+func TestFileIsTheScript(t *testing.T) {
+	// __FILE__ is the script's path, as it was given, which File's path
+	// functions take apart.
+	expectOutput(t, "p __FILE__, File.extname(__FILE__), File.basename(__FILE__, \".arb\")\n", "\"t.arb\"\n\".arb\"\n\"t\"\n")
+}
+
 func TestTimeCrossesAsync(t *testing.T) {
 	// A time travels to a process and back with its instant and offset.
 	src := `

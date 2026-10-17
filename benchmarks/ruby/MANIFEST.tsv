@@ -163,21 +163,7 @@ unsupported/environment	array_small_diff.rb	benchmark/array_small_diff.rb	enviro
 unsupported/environment	array_small_or.rb	benchmark/array_small_or.rb	environment and process
 unsupported/filesystem	dir_empty_p.rb	benchmark/dir_empty_p.rb	file system
 unsupported/filesystem	dir_pwd--pwd.rb	benchmark/dir_pwd.yml, entry pwd	file system
-unsupported/filesystem	file_basename--long.rb	benchmark/file_basename.yml, entry long	file system
-unsupported/filesystem	file_basename--long_name.rb	benchmark/file_basename.yml, entry long_name	file system
-unsupported/filesystem	file_basename--withext.rb	benchmark/file_basename.yml, entry withext	file system
 unsupported/filesystem	file_chmod.rb	benchmark/file_chmod.rb	file system
-unsupported/filesystem	file_dirname--long.rb	benchmark/file_dirname.yml, entry long	file system
-unsupported/filesystem	file_dirname--n_4.rb	benchmark/file_dirname.yml, entry n_4	file system
-unsupported/filesystem	file_dirname--short.rb	benchmark/file_dirname.yml, entry short	file system
-unsupported/filesystem	file_expand_path--expand_path.rb	benchmark/file_expand_path.yml, entry expand_path	file system
-unsupported/filesystem	file_extname--long.rb	benchmark/file_extname.yml, entry long	file system
-unsupported/filesystem	file_extname--long_name.rb	benchmark/file_extname.yml, entry long_name	file system
-unsupported/filesystem	file_extname--short.rb	benchmark/file_extname.yml, entry short	file system
-unsupported/filesystem	file_join--array.rb	benchmark/file_join.yml, entry array	file system
-unsupported/filesystem	file_join--many_strings.rb	benchmark/file_join.yml, entry many_strings	file system
-unsupported/filesystem	file_join--mixed.rb	benchmark/file_join.yml, entry mixed	file system
-unsupported/filesystem	file_join--two_strings.rb	benchmark/file_join.yml, entry two_strings	file system
 unsupported/filesystem	file_rename.rb	benchmark/file_rename.rb	file system
 unsupported/filesystem	io_close--io_close.rb	benchmark/io_close.yml, entry io_close	file system
 unsupported/filesystem	io_close_contended--io_close_contended.rb	benchmark/io_close_contended.yml, entry io_close_contended	file system
@@ -190,14 +176,6 @@ unsupported/filesystem	io_pipe_rw.rb	benchmark/io_pipe_rw.rb	file system
 unsupported/filesystem	io_select.rb	benchmark/io_select.rb	file system
 unsupported/filesystem	io_select2.rb	benchmark/io_select2.rb	file system
 unsupported/filesystem	io_select3.rb	benchmark/io_select3.rb	file system
-unsupported/filesystem	pathname--abs.absolute_.rb	benchmark/pathname.yml, entry abs.absolute_	file system
-unsupported/filesystem	pathname--abs.root_.rb	benchmark/pathname.yml, entry abs.root_	file system
-unsupported/filesystem	pathname--p1.cleanpath.rb	benchmark/pathname.yml, entry p1.cleanpath	file system
-unsupported/filesystem	pathname--p1_p2.rb	benchmark/pathname.yml, entry p1_p2	file system
-unsupported/filesystem	pathname--p2.cleanpath.rb	benchmark/pathname.yml, entry p2.cleanpath	file system
-unsupported/filesystem	pathname--rel.absolute_.rb	benchmark/pathname.yml, entry rel.absolute_	file system
-unsupported/filesystem	pathname--rel.root_.rb	benchmark/pathname.yml, entry rel.root_	file system
-unsupported/filesystem	pathname--relative_path_from.rb	benchmark/pathname.yml, entry relative_path_from	file system
 unsupported/filesystem	realpath--absolute_nil.rb	benchmark/realpath.yml, entry absolute_nil	file system
 unsupported/filesystem	realpath--absolute_nil_dir.rb	benchmark/realpath.yml, entry absolute_nil_dir	file system
 unsupported/filesystem	realpath--absolute_nil_notexist.rb	benchmark/realpath.yml, entry absolute_nil_notexist	file system
@@ -735,6 +713,20 @@ works	enum_sort_by--string_length1000.sort_by.rb	benchmark/enum_sort_by.yml, ent
 works	enum_sort_by--string_length100000.sort_by.rb	benchmark/enum_sort_by.yml, entry string_length100000.sort_by	
 works	enum_sort_by--string_length2.sort_by.rb	benchmark/enum_sort_by.yml, entry string_length2.sort_by	
 works	enum_tally--tally.rb	benchmark/enum_tally.yml, entry tally	
+works	file_basename--long.rb	benchmark/file_basename.yml, entry long	
+works	file_basename--long_name.rb	benchmark/file_basename.yml, entry long_name	
+works	file_basename--withext.rb	benchmark/file_basename.yml, entry withext	
+works	file_dirname--long.rb	benchmark/file_dirname.yml, entry long	
+works	file_dirname--n_4.rb	benchmark/file_dirname.yml, entry n_4	
+works	file_dirname--short.rb	benchmark/file_dirname.yml, entry short	
+works	file_expand_path--expand_path.rb	benchmark/file_expand_path.yml, entry expand_path	
+works	file_extname--long.rb	benchmark/file_extname.yml, entry long	
+works	file_extname--long_name.rb	benchmark/file_extname.yml, entry long_name	
+works	file_extname--short.rb	benchmark/file_extname.yml, entry short	
+works	file_join--array.rb	benchmark/file_join.yml, entry array	
+works	file_join--many_strings.rb	benchmark/file_join.yml, entry many_strings	
+works	file_join--mixed.rb	benchmark/file_join.yml, entry mixed	
+works	file_join--two_strings.rb	benchmark/file_join.yml, entry two_strings	
 works	float_methods---_.rb	benchmark/float_methods.yml, entry -_	
 works	float_methods--abs.rb	benchmark/float_methods.yml, entry abs	
 works	float_methods--magnitude.rb	benchmark/float_methods.yml, entry magnitude	
@@ -838,6 +830,14 @@ works	numeric_methods--finite_.rb	benchmark/numeric_methods.yml, entry finite_
 works	numeric_methods--infinite_.rb	benchmark/numeric_methods.yml, entry infinite_	
 works	numeric_methods--integer_.rb	benchmark/numeric_methods.yml, entry integer_	
 works	object_id--baseline.rb	benchmark/object_id.yml, entry baseline	
+works	pathname--abs.absolute_.rb	benchmark/pathname.yml, entry abs.absolute_	
+works	pathname--abs.root_.rb	benchmark/pathname.yml, entry abs.root_	
+works	pathname--p1.cleanpath.rb	benchmark/pathname.yml, entry p1.cleanpath	
+works	pathname--p1_p2.rb	benchmark/pathname.yml, entry p1_p2	
+works	pathname--p2.cleanpath.rb	benchmark/pathname.yml, entry p2.cleanpath	
+works	pathname--rel.absolute_.rb	benchmark/pathname.yml, entry rel.absolute_	
+works	pathname--rel.root_.rb	benchmark/pathname.yml, entry rel.root_	
+works	pathname--relative_path_from.rb	benchmark/pathname.yml, entry relative_path_from	
 works	pm_array--first_match.rb	benchmark/pm_array.yml, entry first_match	
 works	pm_array--fourth_match.rb	benchmark/pm_array.yml, entry fourth_match	
 works	pm_array--second_match.rb	benchmark/pm_array.yml, entry second_match	

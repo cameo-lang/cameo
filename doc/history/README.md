@@ -49,3 +49,4 @@ The steps:
 - [26. Lazy enumerators](26-lazy.md)
 - [27. `require` of built-in libraries, CGI escaping and Time parsing](27-require.md)
 - [28. `method_missing`](28-method-missing.md)
+- [29. Path functions and `Pathname`](29-paths.md)

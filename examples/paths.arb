@@ -1,0 +1,19 @@
+# Path arithmetic without the file system: File.join, basename, dirname,
+# extname, split and expand_path, and Pathname, an immutable path with
+# Ruby's +, join, cleanpath and relative_path_from.
+require "pathname"
+p File.basename("/Users/g/src/file_dirname.yml"), File.basename("/a/b.yml", ".yml"), File.basename("a/b.rb", ".*"), File.basename("/"), File.basename("a/b/"), File.basename(""), File.basename(".bashrc", ".*")
+p File.dirname("/a/b/c.yml"), File.dirname("/a/b/c/d/e.yml", 4), File.dirname("foo/bar"), File.dirname("a/b/"), File.dirname("a"), File.dirname("/a"), File.dirname("/"), File.dirname("//a//b//")
+p File.extname("/a/b.yml"), File.extname("foo/bar"), File.extname("foo."), File.extname(".bashrc"), File.extname("a.tar.gz"), File.extname(".a.b")
+p File.join("a", "b"), File.join(["a", ["b", "c"]], "d"), File.join("a/", "/b", "", "c"), File.join("", "a"), File.join("a", ""), File.join, File.join("/")
+p File.expand_path("../../foo.txt", "/x/y/z.rb"), File.expand_path("/a/./b/../c"), File.expand_path("b", "/a"), File.absolute_path("x", "/r"), File.split("/a/b"), File.absolute_path?("/a")
+abs = Pathname("/a")
+rel = Pathname("a")
+p1 = Pathname.new('foo/././././bar')
+p2 = Pathname.new('foo/bar/./../..')
+p3 = Pathname.new('foo/bar/zot')
+p abs, abs.absolute?, rel.absolute?, abs.root?, Pathname("/").root?, rel.root?, p1 + p2, p1.cleanpath, p2.cleanpath
+p p3.relative_path_from('foo/bar/qux/quax'), Pathname("a/b").parent, Pathname("a").join("b", "/c", "d"), Pathname("a/b.rb").sub_ext(".txt")
+p Pathname("a") / "b" / "..", Pathname("/a/b") + "../../..", Pathname("a/b/../c").cleanpath, Pathname("../a/..").cleanpath, Pathname("a").to_s, Pathname("x/y.rb").basename, Pathname("x/y.rb").dirname, Pathname("x/y.rb").extname
+p Pathname("a") == Pathname("a"), Pathname("a/b").each_filename.to_a, [Pathname("b"), Pathname("a/b"), Pathname("a")].sort, Pathname("a").parent, Pathname("/").parent, Pathname(".").parent
+p "#{Pathname("q")}", File.basename(Pathname("a/b"))

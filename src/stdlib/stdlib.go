@@ -32,6 +32,7 @@ func Install() {
 	installEnumerator()
 	installTimeParsing()
 	installCGI()
+	installPaths()
 }
 
 type fn = func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error)
