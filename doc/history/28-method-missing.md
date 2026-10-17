@@ -8,7 +8,7 @@ language whose classes cannot change.
 
 A call to a method a class lacks goes to the class's own `method_missing`,
 with the name as a symbol, then the arguments, keywords and block
-([src/eval/call.go:265](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/eval/call.go#L265-L286)). `super`
+([src/eval/call.go:265](https://github.com/radiospiel/amber/blob/a3bbeb128be0d5103e91080f997b109cab9a5dec/src/eval/call.go#L265-L286)). `super`
 from it reaches Object's, which raises the `NoMethodError` the call would
 have raised. `respond_to?` asks `respond_to_missing?` for a name it does
 not find, as Ruby's does, so a class that answers some names through
