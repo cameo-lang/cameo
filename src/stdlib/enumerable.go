@@ -2,7 +2,6 @@ package stdlib
 
 import (
 	"cmp"
-	"math"
 	"slices"
 	"sort"
 	"strings"
@@ -30,6 +29,24 @@ func installEnumerable() {
 				return object.Value{}, err
 			}
 			return f(ctx, elems, args, block)
+		})
+	}
+	// compared is each for the methods that compare elements: it passes the
+	// kinds they hold too, which an Array keeps and anything else is scanned
+	// for.
+	compared := func(name string, f func(ctx object.Context, elems []object.Value, kinds object.Kinds, args []object.Value, block object.Value) (object.Value, error)) {
+		def(e, name, -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+			elems, err := toList(ctx, self)
+			if err != nil {
+				return object.Value{}, err
+			}
+			var kinds object.Kinds
+			if l, ok := self.AsList(); ok {
+				kinds = l.Kinds()
+			} else {
+				kinds = object.KindsOf(elems)
+			}
+			return f(ctx, elems, kinds, args, block)
 		})
 	}
 	each("each_with_index", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
@@ -253,7 +270,7 @@ func installEnumerable() {
 		return object.Int(n), nil
 	})
 	extreme := func(name string, sign int) {
-		each(name, func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
+		compared(name, func(ctx object.Context, elems []object.Value, kinds object.Kinds, args []object.Value, block object.Value) (object.Value, error) {
 			n := -1
 			if len(args) == 1 {
 				k, err := wantInt(ctx, args[0], "")
@@ -263,9 +280,9 @@ func installEnumerable() {
 				n = int(k)
 			}
 			if n < 0 {
-				return extremum(ctx, elems, block, sign)
+				return extremum(ctx, elems, kinds, block, sign)
 			}
-			sorted, err := sortValues(ctx, elems, block)
+			sorted, err := sortValues(ctx, elems, kinds, block)
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -310,19 +327,19 @@ func installEnumerable() {
 	}
 	extremeBy("min_by", -1)
 	extremeBy("max_by", 1)
-	each("minmax", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
-		lo, err := extremum(ctx, elems, block, -1)
+	compared("minmax", func(ctx object.Context, elems []object.Value, kinds object.Kinds, args []object.Value, block object.Value) (object.Value, error) {
+		lo, err := extremum(ctx, elems, kinds, block, -1)
 		if err != nil {
 			return object.Value{}, err
 		}
-		hi, err := extremum(ctx, elems, block, 1)
+		hi, err := extremum(ctx, elems, kinds, block, 1)
 		if err != nil {
 			return object.Value{}, err
 		}
 		return object.NewList(lo, hi), nil
 	})
-	each("sort", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
-		sorted, err := sortValues(ctx, elems, block)
+	compared("sort", func(ctx object.Context, elems []object.Value, kinds object.Kinds, args []object.Value, block object.Value) (object.Value, error) {
+		sorted, err := sortValues(ctx, elems, kinds, block)
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -745,22 +762,15 @@ func reverse(elems []object.Value) {
 	}
 }
 
-// sortValues sorts a copy of elems by <=>, or by a comparator block.
-func sortValues(ctx object.Context, elems []object.Value, block object.Value) ([]object.Value, error) {
+// sortValues sorts a copy of elems, which hold kinds, by <=>, or by a
+// comparator block.
+func sortValues(ctx object.Context, elems []object.Value, kinds object.Kinds, block object.Value) ([]object.Value, error) {
 	out := append([]object.Value{}, elems...)
 	if block.IsZero() {
-		// Integers, floats and strings need no dispatch: no script can
-		// reopen a builtin class to redefine its <=>. slices sorts them
-		// with typed swaps, where sort.SliceStable swaps by reflection.
-		switch {
-		case allInts(out):
-			slices.SortStableFunc(out, func(a, b object.Value) int { return cmp.Compare(a.Int(), b.Int()) })
-			return out, nil
-		case allFloats(out):
-			slices.SortStableFunc(out, func(a, b object.Value) int { return cmp.Compare(a.Float(), b.Float()) })
-			return out, nil
-		case allStrings(out):
-			slices.SortStableFunc(out, func(a, b object.Value) int { return strings.Compare(a.Str(), b.Str()) })
+		// slices sorts with typed swaps, where sort.SliceStable swaps by
+		// reflection.
+		if c := builtinCompare(kinds); c != nil {
+			slices.SortStableFunc(out, c)
 			return out, nil
 		}
 	}
@@ -913,36 +923,21 @@ func installUserEnumerable() {
 	}
 }
 
-// allInts reports whether every element is an Integer of the int64 form.
-func allInts(elems []object.Value) bool {
-	for _, el := range elems {
-		if el.Kind() != object.KindInt {
-			return false
-		}
+// builtinCompare is <=> for elements of kinds, when they are all Integers
+// of the int64 form, all Floats other than NaN or all Strings, and nil
+// otherwise. Those need no dispatch: no script can reopen a builtin class
+// to redefine its <=>. A NaN compares with nothing, and is left to <=> to
+// fail on.
+func builtinCompare(kinds object.Kinds) func(a, b object.Value) int {
+	switch {
+	case kinds.Only(object.KindInt):
+		return func(a, b object.Value) int { return cmp.Compare(a.Int(), b.Int()) }
+	case kinds.Only(object.KindFloat):
+		return func(a, b object.Value) int { return cmp.Compare(a.Float(), b.Float()) }
+	case kinds.Only(object.KindString, object.KindBytes, object.KindASCII):
+		return func(a, b object.Value) int { return strings.Compare(a.Str(), b.Str()) }
 	}
-	return true
-}
-
-// allFloats reports whether every element is a Float other than NaN; a
-// NaN compares with nothing, and is left to <=> to fail on.
-func allFloats(elems []object.Value) bool {
-	for _, el := range elems {
-		if el.Kind() != object.KindFloat || math.IsNaN(el.Float()) {
-			return false
-		}
-	}
-	return true
-}
-
-// allStrings reports whether every element is a String, in any of its
-// encodings; Strings compare by their bytes.
-func allStrings(elems []object.Value) bool {
-	for _, el := range elems {
-		if !el.IsString() {
-			return false
-		}
-	}
-	return true
+	return nil
 }
 
 // compareWith compares a and b with the block, which returns their order
@@ -977,11 +972,19 @@ func cmpInt(a, b int64) int {
 
 // extremum is the least element (sign -1) or the greatest (sign 1) in one
 // pass, the first of equal ones as in Ruby, nil when there are none.
-func extremum(ctx object.Context, elems []object.Value, block object.Value, sign int) (object.Value, error) {
+func extremum(ctx object.Context, elems []object.Value, kinds object.Kinds, block object.Value, sign int) (object.Value, error) {
 	if len(elems) == 0 {
 		return object.Nil, nil
 	}
 	best := elems[0]
+	if c := builtinCompare(kinds); c != nil && block.IsZero() {
+		for _, el := range elems[1:] {
+			if c(el, best)*sign > 0 {
+				best = el
+			}
+		}
+		return best, nil
+	}
 	for _, el := range elems[1:] {
 		c, err := compareWith(ctx, block, el, best)
 		if err != nil {

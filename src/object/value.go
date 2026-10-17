@@ -499,7 +499,11 @@ func Same(a, b Value) bool { return a.kind == b.kind && a.n == b.n && a.p == b.p
 // Objects.
 
 // List is an immutable sequence. Elems is never changed after construction.
-type List struct{ Elems []Value }
+type List struct {
+	Elems []Value
+	// kinds caches Kinds; see there.
+	kinds uint32
+}
 
 // NewList makes a list of elems; the slice is owned by the list afterwards.
 func NewList(elems ...Value) Value {
