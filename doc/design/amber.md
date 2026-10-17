@@ -49,7 +49,7 @@ What amber leaves out, and the checker rejects by name:
   field with `self.x = v`, and a field is read with its reader; class
   variables; global variables
 - reopening a class: a second `class X` never changes the first, see
-  *Classes*; a second `def` of one name in a class body; `define_method`,
+  *Classes*; `define_method`,
   `send`, `instance_variable_set`, `eval`, `undef`,
   `extend`, singleton classes, `def self.x` on an instance
 - mutating methods (`<<`, `push`, `pop`, `delete`, `merge!`, `map!`, every
@@ -277,8 +277,10 @@ the same file can be loaded twice and every async worker can load the same
 class source. Evaluating `class X … end` with a different body produces a
 different class and rebinds `X` to it: the first class is not changed, and its
 instances keep it as their class and keep its methods. Nothing can reopen a
-class, replace a method, or add one; within one class body a second `def` of
-the same name is an error. There is no `remove_method`, `undef` or `alias`.
+class, or replace or add a method once its body has run. Within one class
+body, or at the top level, a second `def` of a name replaces the first, as
+in Ruby; the same `def` evaluated again, as a loop around it does, changes
+nothing. There is no `remove_method` or `undef`.
 
 **Inheritance** is single, by `class Child < Parent`. A child inherits fields
 and methods, may add fields, and may define a method of a name its parent

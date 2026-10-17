@@ -164,16 +164,13 @@ func (in *Interp) evalDef(n *syntax.Def, fr *Frame) (object.Value, error) {
 	if n.Singleton {
 		table = target.SingletonMethods
 	}
+	// A second def of a name replaces the first, as in Ruby. The same
+	// definition evaluated again, as a loop around it does, changes nothing,
+	// and leaves the method caches as they are.
 	if existing, ok := table[n.Name]; ok && existing.Owner == target && existing.Body != nil {
 		if cd, ok := existing.Body.(*compiledDef); ok && cd.def == n {
-			// The same definition evaluated again, as a loop around it does:
-			// nothing changes.
 			return object.Symbol(n.Name), nil
 		}
-		if target == in.mainClass {
-			return object.Value{}, in.raise(object.AmberError, n.Line(), "method %s is already defined at the top level", n.Name)
-		}
-		return object.Value{}, in.raise(object.AmberError, n.Line(), "method %s is already defined in %s", n.Name, target.QualifiedName())
 	}
 	if existing, ok := table[n.Name]; ok && existing.Native != nil && existing.Owner == target {
 		if _, isField := target.FieldIndex[n.Name]; isField {
