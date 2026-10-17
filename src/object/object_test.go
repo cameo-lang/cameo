@@ -79,7 +79,7 @@ func TestAncestorsAndLookup(t *testing.T) {
 	m.Define("hello", 0, nil)
 	a := NewClass("A", ObjectClass)
 	b := NewClass("B", a)
-	b.Includes = []*Class{m}
+	b.Include(m)
 	anc := b.Ancestors()
 	if anc[0] != b || anc[1] != m || anc[2] != a || anc[3] != ObjectClass {
 		t.Fatalf("ancestors: %v", anc)
@@ -89,5 +89,29 @@ func TestAncestorsAndLookup(t *testing.T) {
 	}
 	if !b.IsA(m) || a.IsA(m) {
 		t.Fatal("IsA sees included modules")
+	}
+}
+
+func TestLookupCacheFollowsDefinitions(t *testing.T) {
+	m := NewModule("Greets")
+	a := NewClass("A", ObjectClass)
+	b := NewClass("B", a)
+	if b.Lookup("hello") != nil {
+		t.Fatal("hello is not defined yet")
+	}
+	a.Define("hello", 0, nil)
+	if b.Lookup("hello") == nil {
+		t.Fatal("a method defined on the superclass after a miss is found")
+	}
+	if b.Lookup("bye") != nil {
+		t.Fatal("bye is not defined yet")
+	}
+	m.Define("bye", 0, nil)
+	a.Include(m)
+	if b.Lookup("bye") == nil || !b.IsA(m) {
+		t.Fatal("a module included after a miss is found, and shows in the ancestors")
+	}
+	if anc := b.Ancestors(); len(anc) != 4 || anc[1] != a || anc[2] != m {
+		t.Fatalf("ancestors after include: %v", anc)
 	}
 }

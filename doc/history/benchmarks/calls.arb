@@ -1,0 +1,16 @@
+class Point
+  int :x, :y
+  def initialize(x, y)
+    @x = x
+    @y = y
+  end
+  def +(other) = Point.new(x + other.x, y + other.y)
+end
+p = Point.new(0, 0)
+one = Point.new(1, 2)
+i = 0
+while i < 300_000
+  p = p + one
+  i += 1
+end
+puts p.x

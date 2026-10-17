@@ -1,6 +1,10 @@
 package object
 
-import "sort"
+import (
+	"maps"
+	"sort"
+	"sync/atomic"
+)
 
 // Class is a class or a module. A module is a class that has no superclass,
 // no instances and no fields, and that other classes include.
@@ -30,6 +34,37 @@ type Class struct {
 	// Reserved holds the reserved field numbers and names.
 	ReservedNumbers []int64
 	ReservedNames   []string
+	// lookup caches the ancestors and the resolved methods; see cache.
+	lookup atomic.Pointer[lookupCache]
+}
+
+// generation counts every change to any class's methods or ancestry. A
+// class changes only while its body is being evaluated (and the builtin
+// ones while the standard library installs), so after loading the count
+// stands still and every lookup cache stays valid.
+var generation atomic.Uint64
+
+// lookupCache is what a class answers to lookups under one generation:
+// its ancestors, and the instance methods resolved so far by name, with
+// nil for a name no ancestor defines. A cache is never modified once
+// stored; a miss stores a copy with the new entry, so readers on other
+// goroutines never see a map being written.
+type lookupCache struct {
+	gen       uint64
+	ancestors []*Class
+	methods   map[string]*Method
+}
+
+// cache answers the class's lookup cache for the current generation,
+// building a fresh one when the stored one is stale.
+func (c *Class) cache() *lookupCache {
+	gen := generation.Load()
+	if lc := c.lookup.Load(); lc != nil && lc.gen == gen {
+		return lc
+	}
+	lc := &lookupCache{gen: gen, ancestors: c.ancestors(), methods: map[string]*Method{}}
+	c.lookup.Store(lc)
+	return lc
 }
 
 // FieldType is the declared type of a field.
@@ -108,17 +143,49 @@ func (c *Class) QualifiedName() string {
 
 // Define adds a native instance method.
 func (c *Class) Define(name string, arity int, fn NativeFn) {
-	c.Methods[name] = &Method{Name: name, Owner: c, Native: fn, Arity: arity}
+	c.SetMethod(&Method{Name: name, Owner: c, Native: fn, Arity: arity})
 }
 
 // DefineSingleton adds a native class method.
 func (c *Class) DefineSingleton(name string, arity int, fn NativeFn) {
-	c.SingletonMethods[name] = &Method{Name: name, Owner: c, Native: fn, Arity: arity}
+	c.SetSingletonMethod(&Method{Name: name, Owner: c, Native: fn, Arity: arity})
+}
+
+// SetMethod adds or replaces the instance method m.Name. Every change to a
+// class's methods or ancestry goes through one of the Set*, Include and
+// Extend methods, which is what keeps the lookup caches honest.
+func (c *Class) SetMethod(m *Method) {
+	c.Methods[m.Name] = m
+	generation.Add(1)
+}
+
+// SetSingletonMethod adds or replaces the class method m.Name.
+func (c *Class) SetSingletonMethod(m *Method) {
+	c.SingletonMethods[m.Name] = m
+	generation.Add(1)
+}
+
+// Include appends mod to the included modules.
+func (c *Class) Include(mod *Class) {
+	c.Includes = append(c.Includes, mod)
+	generation.Add(1)
+}
+
+// Extend appends mod to the extended modules.
+func (c *Class) Extend(mod *Class) {
+	c.Extends = append(c.Extends, mod)
+	generation.Add(1)
 }
 
 // Ancestors is the method resolution order: the class, its included modules
-// (the last included first), then the superclass's ancestors.
+// (the last included first), then the superclass's ancestors. The slice is
+// the cached one and must not be modified.
 func (c *Class) Ancestors() []*Class {
+	return c.cache().ancestors
+}
+
+// ancestors computes the method resolution order.
+func (c *Class) ancestors() []*Class {
 	var out []*Class
 	seen := map[*Class]bool{}
 	var walk func(k *Class)
@@ -137,14 +204,25 @@ func (c *Class) Ancestors() []*Class {
 	return out
 }
 
-// Lookup finds the instance method name along the ancestors.
+// Lookup finds the instance method name along the ancestors, or answers
+// nil. Each name is resolved once per class and generation.
 func (c *Class) Lookup(name string) *Method {
-	for _, k := range c.Ancestors() {
-		if m, ok := k.Methods[name]; ok {
-			return m
+	lc := c.cache()
+	if m, ok := lc.methods[name]; ok {
+		return m
+	}
+	var m *Method
+	for _, k := range lc.ancestors {
+		if found, ok := k.Methods[name]; ok {
+			m = found
+			break
 		}
 	}
-	return nil
+	methods := make(map[string]*Method, len(lc.methods)+1)
+	maps.Copy(methods, lc.methods)
+	methods[name] = m
+	c.lookup.Store(&lookupCache{gen: lc.gen, ancestors: lc.ancestors, methods: methods})
+	return m
 }
 
 // LookupAfter finds the instance method name in the ancestors after owner:
@@ -245,13 +323,13 @@ var (
 )
 
 func init() {
-	ListClass.Includes = []*Class{Enumerable}
-	MapClass.Includes = []*Class{Enumerable}
-	SetClass.Includes = []*Class{Enumerable}
-	RangeClass.Includes = []*Class{Enumerable}
-	IntegerClass.Includes = []*Class{Comparable}
-	FloatClass.Includes = []*Class{Comparable}
-	StringClass.Includes = []*Class{Comparable}
+	ListClass.Include(Enumerable)
+	MapClass.Include(Enumerable)
+	SetClass.Include(Enumerable)
+	RangeClass.Include(Enumerable)
+	IntegerClass.Include(Comparable)
+	FloatClass.Include(Comparable)
+	StringClass.Include(Comparable)
 	BasicClasses = []*Class{
 		ObjectClass, ModuleClass, ClassClass, NilClass, BoolClass, IntegerClass, FloatClass,
 		StringClass, SymbolClass, BytesClass, ListClass, MapClass, SetClass, RangeClass, ProcClass,
