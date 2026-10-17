@@ -252,10 +252,16 @@ func (e *Encoder) message(fd protoreflect.FileDescriptor, v object.Value) (*dyna
 		if v == object.Nil {
 			break
 		}
-		return nil, fmt.Errorf("a %s cannot be serialised", kindName(v))
+		return nil, &NotSerialisable{Kind: kindName(v)}
 	}
 	return msg, nil
 }
+
+// NotSerialisable is the error for a value the envelope cannot carry: a
+// proc, a class, a process.
+type NotSerialisable struct{ Kind string }
+
+func (e *NotSerialisable) Error() string { return "a " + e.Kind + " cannot be serialised" }
 
 func (e *Encoder) items(fd protoreflect.FileDescriptor, name string, elems []object.Value) (*dynamicpb.Message, error) {
 	md := fd.Messages().ByName(protoreflect.Name(name))

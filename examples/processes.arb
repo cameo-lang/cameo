@@ -1,0 +1,74 @@
+# Processes: scopes, keyword arguments, nesting, failures, and what a process may carry.
+class Fetcher
+  string :name
+
+  def initialize(name)
+    @name = name
+  end
+
+  def fetch(id, retries: 1) = "#{name}:#{id}:#{retries}"
+
+  def fan_out(ids)
+    ids.each { |id| async self, :fetch, id }
+    await :all
+  end
+
+  def slow(n)
+    total = 0
+    n.times { |i| total += i }
+    total
+  end
+
+  def boom = raise(KeyError, "missing")
+
+  def give(v) = v
+end
+
+f = Fetcher.new("api")
+puts await f, :fetch, 7, retries: 3
+puts f.fan_out([1, 2, 3]).inspect
+
+job = async f, :slow, 100000
+puts job.class
+puts job.value
+puts job.done?
+puts (await job) == job.value
+
+results = (1..5).map { |n| async f, :slow, n * 1000 }.map { |p| await p }
+puts results.inspect
+
+async f, :boom
+async f, :slow, 10
+begin
+  await :all
+rescue KeyError => e
+  puts "all raised: #{e.message}"
+end
+puts (await :all).inspect
+
+def inner_scope(f)
+  async f, :slow, 5
+  [async(f, :slow, 6), 1]
+end
+started = inner_scope(f)
+puts (await started[0])
+puts (await :all).inspect  # inner_scope's processes are its own, not this scope's
+
+puts (await f, :give, {a: [1, 2.5, "x", nil, true]}).inspect
+puts (await f, :give, Fetcher.new("copy")).name
+puts (await f, :give, [1, 2].to_set).inspect
+puts (await f, :give, (1..3)).inspect
+puts (await f, :give, "sym".to_sym).inspect
+
+begin
+  await f, :give, Fetcher
+rescue TypeError => e
+  puts e.message
+end
+begin
+  await f, :nope
+rescue NoMethodError => e
+  puts e.message
+end
+async f, :boom
+puts "the run reports the failure nobody awaited on stderr"

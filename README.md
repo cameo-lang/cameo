@@ -31,13 +31,12 @@ interpreter is built in the milestones listed there.
 
 ## Status
 
-Milestone 5 of the plan in the design: protobuf. Every class is a protobuf
-message: `Point.proto` is its `.proto` text, `pt.to_proto` its wire form,
-`Point.from_proto(bytes)` the value back, and any value travels through the
-`amber.Value` envelope with `to_value_proto` and `from_value_proto`. `amber
-proto script.arb` prints the `.proto` files of a script's classes, and the
-`amber` Go package loads a script, calls its methods with Go values and gets
-Go values and `proto.Message`s back. Async is the one milestone still to come.
+The interpreter is complete to the plan in the design: the front end, the
+evaluator, the library, classes with typed fields, protobuf and async.
+`async recv, :method, *args` starts the call on a process of its own,
+`await` collects its result or re-raises its exception, and `await :all`
+waits for everything the current scope started. The Ruby adapter
+(milestone 7) is not built.
 
 ```sh
 amber script.arb            # run; an uncaught exception prints script:line: message (Class)
@@ -67,9 +66,10 @@ An example that is also plain Ruby has its expected output generated with
 `ruby`, so amber is held to Ruby's behaviour where the two overlap.
 
 The packages under `src/`: `syntax` is the front end (`syntax.Parse`),
-`object` the value model, `eval` the evaluator, `stdlib` the builtin methods,
-`protogen` the descriptors, `.proto` text and the envelope, `amber` the host
-API (`amber.Load`, `amber.Run`), and `cmd/amber` the binary.
+`object` the value model, `eval` the evaluator and the async scheduler,
+`stdlib` the builtin methods, `protogen` the descriptors, `.proto` text and
+the envelope, `amber` the host API (`amber.Load`, `amber.Run`), and
+`cmd/amber` the binary.
 
 ## Building
 
