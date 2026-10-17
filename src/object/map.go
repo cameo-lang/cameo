@@ -6,11 +6,16 @@ import (
 )
 
 // Map is an immutable ordered map: keys in insertion order, looked up by
-// structural equality.
+// structural equality. A map may have a default, a value or a proc, for a
+// key it does not hold; the copies Put, Merge and WithDefault make keep it,
+// as Ruby's []=, merge and dup do, and a map built anew has none.
 type Map struct {
 	keys  []Value
 	vals  []Value
 	index map[string]int
+	// dflt is the default value and dfltProc the default proc, at most one
+	// of them set.
+	dflt, dfltProc Value
 }
 
 // NewMap makes an empty map.
@@ -78,6 +83,18 @@ func (m *Map) Has(k Value) bool {
 func (m *Map) Keys() []Value   { return m.keys }
 func (m *Map) Values() []Value { return m.vals }
 
+// Default returns the default value and the default proc; each is zero
+// when unset.
+func (m *Map) Default() (value, proc Value) { return m.dflt, m.dfltProc }
+
+// WithDefault returns a copy whose default is value or, when proc is set,
+// proc.
+func (m *Map) WithDefault(value, proc Value) *Map {
+	out := m.clone()
+	out.dflt, out.dfltProc = value, proc
+	return out
+}
+
 // Put returns a copy with k set to v.
 func (m *Map) Put(k, v Value) *Map {
 	out := m.clone()
@@ -114,6 +131,7 @@ func (m *Map) clone() *Map {
 		keys:  append([]Value(nil), m.keys...),
 		vals:  append([]Value(nil), m.vals...),
 		index: make(map[string]int, len(m.index)),
+		dflt:  m.dflt, dfltProc: m.dfltProc,
 	}
 	for k, i := range m.index {
 		out.index[k] = i

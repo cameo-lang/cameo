@@ -1,0 +1,21 @@
+[["a", 3], ["b", 1], ["c", 1]]
+0
+0
+:none
+false
+49
+0
+nil
+9
+Proc
+0
+0
+nil
+[4, 9]
+16
+:x
+nil
+true
+"{}"
+ArgumentError: wrong number of arguments (given 2, expected 0..1)
+ArgumentError: wrong number of arguments (given 1, expected 0)

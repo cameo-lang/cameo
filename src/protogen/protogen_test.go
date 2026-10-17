@@ -184,3 +184,26 @@ func TestEnvelopeTime(t *testing.T) {
 		}
 	}
 }
+
+// A map's default value travels with it; a default proc cannot travel.
+func TestEnvelopeMapDefault(t *testing.T) {
+	reg := NewRegistry()
+	enc, dec := NewEncoder(reg), NewDecoder(reg, nil)
+	m := object.MapOf(object.String("k"), object.Int(1)).WithDefault(object.Int(0), object.Value{})
+	data, err := enc.Encode(object.MapValue(m))
+	if err != nil {
+		t.Fatal(err)
+	}
+	back, err := dec.Decode(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value, _ := back.Map().Default(); !object.Equal(value, object.Int(0)) || back.Map().Len() != 1 {
+		t.Fatalf("the default did not travel: %s", object.Key(back))
+	}
+	// The encoder refuses any default proc; an integer stands in for one.
+	withProc := object.NewMap().WithDefault(object.Value{}, object.Int(1))
+	if _, err := enc.Encode(object.MapValue(withProc)); err == nil {
+		t.Fatal("a map with a default proc cannot be encoded")
+	}
+}

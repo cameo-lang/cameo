@@ -56,8 +56,6 @@ stdlib/array	string_upcase--upcase-nonascii100.rb	benchmark/string_upcase.yml, e
 stdlib/array	string_upcase--upcase-nonascii1000.rb	benchmark/string_upcase.yml, entry upcase-nonascii1000	Array#pack
 stdlib/float	float_to_s--to_s.rb	benchmark/float_to_s.yml, entry to_s	Float#step
 stdlib/float	ractor_float_to_s--ractor_float_to_s.rb	benchmark/ractor_float_to_s.yml, entry ractor_float_to_s	Float#step
-stdlib/hash	hash_defaults--default_aref.rb	benchmark/hash_defaults.yml, entry default_aref	Hash.new with a default
-stdlib/hash	hash_defaults--default_method.rb	benchmark/hash_defaults.yml, entry default_method	Hash.new with a default
 stdlib/hash	hash_flatten.rb	benchmark/hash_flatten.rb	Hash#flatten
 stdlib/hash	hash_to_proc.rb	benchmark/hash_to_proc.rb	Hash#to_proc
 stdlib/kernel	kernel_then--kernel_yield_self.rb	benchmark/kernel_then.yml, entry kernel_yield_self	Integer#yield_self
@@ -1135,6 +1133,8 @@ works	hash_ar_aref--miss_empty.rb	benchmark/hash_ar_aref.yml, entry miss_empty
 works	hash_aref_array.rb	benchmark/hash_aref_array.rb	
 works	hash_aref_dsym.rb	benchmark/hash_aref_dsym.rb	
 works	hash_aref_fix.rb	benchmark/hash_aref_fix.rb	
+works	hash_defaults--default_aref.rb	benchmark/hash_defaults.yml, entry default_aref	
+works	hash_defaults--default_method.rb	benchmark/hash_defaults.yml, entry default_method	
 works	hash_dup--dup_larger.rb	benchmark/hash_dup.yml, entry dup_larger	
 works	hash_dup--dup_small.rb	benchmark/hash_dup.yml, entry dup_small	
 works	hash_keys.rb	benchmark/hash_keys.rb	
