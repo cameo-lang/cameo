@@ -21,6 +21,22 @@ mri, amber and rbgo were measured in
 measured again with [../warmruby](../warmruby), which replaced the command
 used there.
 
+## Rerunning
+
+[rerun.sh](rerun.sh) reruns every case on all four Rubies into
+`results.tsv`, on Linux or macOS:
+
+```sh
+benchmarks/compare/rerun.sh                 # half the CPUs' worth of cases at once
+JOBS=4 benchmarks/compare/rerun.sh          # or as many as JOBS says
+benchmarks/compare/rerun.sh --only amber    # time amber again, keep the others
+```
+
+It needs Go and a Ruby of 3.1 or later on `PATH`; that Ruby is the one
+measured as `mri`, so on macOS it is Homebrew's rather than the system's
+2.6. The first run downloads warmruby's module. It prints the machine and
+the versions first, which the results do not record.
+
 ## Results
 
 On 2026-10-17, two cases at a time on four cores. A time is what a run of

@@ -11,4 +11,5 @@ ascii8bit2560 = ascii8bit256 * 10
 ascii8bit25600 = ascii8bit2560 * 10
 ascii8bit256000 = ascii8bit25600 * 10
 
+#--- benchmark: the prelude above runs once, the script below in the loop ---
 str1.upcase

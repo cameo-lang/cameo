@@ -26,7 +26,12 @@ commit `25fb329ec9ae07b804dfdb5e34f7c05dcc92186e` (2026-10-16). A `.rb`
 benchmark there is one file here under its own name, and a file of `gc/`
 takes the prefix `gc_`. Each entry of a `.yml` benchmark definition becomes
 `<definition>--<entry>.rb`: the definition's prelude followed by the entry's
-body, run once instead of in benchmark-driver's loop.
+body, run once instead of in benchmark-driver's loop. A comment line,
+`#--- benchmark: the prelude above runs once, the script below in the loop
+---`, marks where the prelude ends, an entry's own prelude included, so
+[../compare](../compare) can run the prelude once and time the body in a
+loop, as benchmark-driver does; run directly, a file still runs top to
+bottom.
 
 The 24 `so_*` benchmarks, and the YAML entries of `so_count_words`,
 `so_k_nucleotide` and `so_reverse_complement`, are left out. They are old

@@ -26,4 +26,5 @@ string_array100000 = array_length.times.to_a.map {"r" * rand(1..10000)}
 mix_array100000 = array_length.times.to_a.map {if rand(1..100) <= 50 then rand(1..10000).to_f else rand(1..10000) end}
 all_zero_array100000 =array_length.times.to_a.map {0}
 
+#--- benchmark: the prelude above runs once, the script below in the loop ---
 all_zero_array10.sort_by{|a| a}

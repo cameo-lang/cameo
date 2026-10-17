@@ -6,4 +6,5 @@ big1 = [1, 2, 3, 4] * 64
 big2 = [1, 2, 3] * 64
 big3 = [1, 2] * 64
 
+#--- benchmark: the prelude above runs once, the script below in the loop ---
 small1.intersection(small2, small3, small4)

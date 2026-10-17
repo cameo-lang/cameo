@@ -12,4 +12,5 @@ ary50000 = 50000.times.to_a.shuffle
 ary100000 = 100000.times.to_a.shuffle
 ary1000000 = 1000000.times.to_a.shuffle
 
+#--- benchmark: the prelude above runs once, the script below in the loop ---
 ary10.max

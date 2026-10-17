@@ -6,6 +6,7 @@ def rec n
   end
 end
 
+#--- benchmark: the prelude above runs once, the script below in the loop ---
 begin
   rec 1
 rescue

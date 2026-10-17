@@ -21,6 +21,7 @@ worst_case_utf8 = duplicate_to_length("\u{1f600}\u{00e9}\u{00f1}", STRING_SIZE).
 unknown_but_valid_utf8_worst_case = worst_case_utf8.dup.b.force_encoding("UTF-8")
 unknown_but_invalid_utf8_worst_case = (worst_case_utf8.b + "\x80\xFF".b).force_encoding("UTF-8")
 
+#--- benchmark: the prelude above runs once, the script below in the loop ---
 string = invalid_utf8.dup
 string.scrub!
 

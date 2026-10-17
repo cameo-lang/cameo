@@ -12,6 +12,7 @@ class Bar < AR::Base; end
 o1 = Foo.new
 o2 = Bar.new
 
+#--- benchmark: the prelude above runs once, the script below in the loop ---
 o1.save; o2.save;
 o1.save; o2.save;
 o1.save; o2.save;

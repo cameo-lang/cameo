@@ -5,4 +5,5 @@ ary20 = [[*1..20]].cycle.lazy.take(10)
 ary50 = [[*1..50]].cycle.lazy.take(10)
 ary100 = [[*1..100]].cycle.lazy.take(10)
 
+#--- benchmark: the prelude above runs once, the script below in the loop ---
 num.flat_map {|x| x}.take(3).to_a

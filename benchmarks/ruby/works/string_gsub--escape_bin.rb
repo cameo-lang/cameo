@@ -21,6 +21,7 @@ ESCAPE_PATTERN = Regexp.union(ESCAPED_CHARS.keys)
 
 NO_MATCH_SHARED_STRING = ("a" * 100_000).freeze
 
+#--- benchmark: the prelude above runs once, the script below in the loop ---
 str = STR.b
 str.gsub!(BINARY_PATTERN, ESCAPED_CHARS_BINARY)
 str.force_encoding(Encoding::UTF_8)

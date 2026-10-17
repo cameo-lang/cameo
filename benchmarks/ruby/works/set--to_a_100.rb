@@ -50,4 +50,5 @@ cbi = s0.dup.compare_by_identity
 ns = Set[s3, o3, d3]
 set_subclass = Class.new(Set)
 
+#--- benchmark: the prelude above runs once, the script below in the loop ---
 s2.to_a

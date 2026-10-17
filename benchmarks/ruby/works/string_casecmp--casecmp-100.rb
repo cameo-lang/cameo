@@ -15,4 +15,5 @@ unonascii10 = unonascii1 * 10
 unonascii100 = unonascii10 * 10
 unonascii1000 = unonascii100 * 10
 
+#--- benchmark: the prelude above runs once, the script below in the loop ---
 lstr100.casecmp(ustr100)

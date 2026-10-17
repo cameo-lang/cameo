@@ -4,4 +4,5 @@ mixed = ("Hello World! " + "テスト" + " is great! ") * 100
 binary = ("\xE3\x81\x82" * 100).b
 escapy = "\n\t\"\\\#" * 100
 
+#--- benchmark: the prelude above runs once, the script below in the loop ---
 ascii.inspect

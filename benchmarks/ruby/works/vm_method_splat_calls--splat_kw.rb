@@ -4,4 +4,5 @@ ea = []
 kw = {y: 1}
 b = lambda{}
 
+#--- benchmark: the prelude above runs once, the script below in the loop ---
 f(*a, y: 1)

@@ -6,4 +6,5 @@ rb_1 = big..big+1
 rb_1k = big..big+1000
 rb_1m = big..big+1000000
 
+#--- benchmark: the prelude above runs once, the script below in the loop ---
 rb_1k.reverse_each { _1 }

@@ -22,5 +22,6 @@ hay_match_start = "xy" + "a" * 4094
 # Mixed content haystack (more realistic)
 mixed_hay = (("abcdefghij" * 100) + "z") * 10
 
+#--- benchmark: the prelude above runs once, the script below in the loop ---
 small_hay.index(first_byte_common)
 

@@ -6,5 +6,6 @@ end
 eh = {}
 def kw(kw: nil, **kws) end
 
+#--- benchmark: the prelude above runs once, the script below in the loop ---
 kw(**eh, **h100)
 

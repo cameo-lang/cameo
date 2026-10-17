@@ -10,4 +10,5 @@ def fw_no_kw(...) named_arg_splat(...) end
 a = [1]
 kw = {y: 1}
 
+#--- benchmark: the prelude above runs once, the script below in the loop ---
 named_arg_splat(*a, *a)

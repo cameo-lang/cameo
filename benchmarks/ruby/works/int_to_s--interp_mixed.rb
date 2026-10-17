@@ -10,4 +10,5 @@ BIG20  = 10 ** 19 + 12_345_678_901_234_567
 BIG40  = 10 ** 39 + 123_456_789_012_345
 BIG100 = 10 ** 99 + 42
 
+#--- benchmark: the prelude above runs once, the script below in the loop ---
 "a=#{N2},b=#{N5},c=#{N10}"

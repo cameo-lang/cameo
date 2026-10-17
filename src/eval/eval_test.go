@@ -100,7 +100,7 @@ puts first.class == A
 puts first.class.name
 `
 	expectOutput(t, src, "true\na\nA\nfalse\nA\n")
-	expectError(t, "class A\n def x; end\n def x; end\nend\n", "method x is already defined in A (AmberError)")
+	expectOutput(t, "class A\n def x = 1\n def x = 2\nend\np A.new.x\n", "2\n")
 	expectError(t, "class Integer\n def x; end\nend\n", "cannot redefine the builtin class Integer")
 }
 
@@ -299,4 +299,14 @@ rescue ArgumentError => e
 end
 `
 	expectOutput(t, src, "Float\ntrue\nInteger\ntrue\nInvalid argument - clock_gettime(99)\nunexpected unit: bogus\n")
+}
+
+func TestSecondDefReplacesTheFirst(t *testing.T) {
+	// A second def of a name replaces the first, at the top level and in a
+	// class body; a call made before it ran saw the first. A loop around a
+	// def evaluates the one definition again, which changes nothing.
+	expectOutput(t, "def f = 1\np f\ndef f = 2\np f\n", "1\n2\n")
+	expectOutput(t, "3.times do\n  def f = 1\nend\np f\n", "1\n")
+	expectOutput(t, "class A\n  def x = 1\n  def y = x\n  def x = 2\nend\np A.new.y\n", "2\n")
+	expectError(t, "class P\n  int :x\n  def x = 1\nend\n", "x is a field of P")
 }

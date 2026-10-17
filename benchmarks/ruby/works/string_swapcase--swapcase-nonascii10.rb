@@ -7,4 +7,5 @@ nonascii10 = nonascii1 * 10
 nonascii100 = nonascii10 * 10
 nonascii1000 = nonascii100 * 10
 
+#--- benchmark: the prelude above runs once, the script below in the loop ---
 nonascii10.swapcase

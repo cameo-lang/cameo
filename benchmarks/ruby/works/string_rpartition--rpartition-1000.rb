@@ -7,4 +7,5 @@ nonascii10 = nonascii1 * 10 + ":"
 nonascii100 = nonascii1 * 100 + ":"
 nonascii1000 = nonascii1 * 1000 + ":"
 
+#--- benchmark: the prelude above runs once, the script below in the loop ---
 str1000.rpartition(":")
