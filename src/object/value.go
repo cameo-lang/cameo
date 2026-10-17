@@ -9,6 +9,8 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 	"unsafe"
 )
 
@@ -479,41 +481,81 @@ func FormatFloat(f float64) string {
 	return s
 }
 
-// QuoteString prints a string the way Ruby's String#inspect does.
+// QuoteString prints a string the way Ruby's String#inspect does: the
+// usual backslash escapes, "#" escaped where it would start an
+// interpolation, a character Ruby does not print as \uXXXX, and a byte
+// that is not UTF-8 as \xXX.
 func QuoteString(s string) string {
 	var b strings.Builder
 	b.WriteByte('"')
-	for _, r := range s {
-		switch r {
-		case '"':
-			b.WriteString(`\"`)
-		case '\\':
-			b.WriteString(`\\`)
-		case '\n':
-			b.WriteString(`\n`)
-		case '\t':
-			b.WriteString(`\t`)
-		case '\r':
-			b.WriteString(`\r`)
-		case '\x1b':
-			b.WriteString(`\e`)
-		case '#':
-			b.WriteByte('#')
-		default:
-			if r < 0x20 || r == 0x7f {
-				h := strings.ToUpper(strconv.FormatInt(int64(r), 16))
-				if len(h) == 1 {
-					h = "0" + h
-				}
-				b.WriteString(`\x`)
-				b.WriteString(h)
-			} else {
-				b.WriteRune(r)
+	for i := 0; i < len(s); {
+		r, size := utf8.DecodeRuneInString(s[i:])
+		switch {
+		case r == utf8.RuneError && size == 1:
+			fmt.Fprintf(&b, `\x%02X`, s[i])
+		case r == '#':
+			if next := s[i+1:]; next != "" && (next[0] == '{' || next[0] == '$' || next[0] == '@') {
+				b.WriteByte('\\')
 			}
+			b.WriteByte('#')
+		case r == '"' || r == '\\':
+			b.WriteByte('\\')
+			b.WriteRune(r)
+		case escapes[r] != "":
+			b.WriteString(escapes[r])
+		case !printable(r):
+			if r < 0x10000 {
+				fmt.Fprintf(&b, `\u%04X`, r)
+			} else {
+				fmt.Fprintf(&b, `\u{%X}`, r)
+			}
+		default:
+			b.WriteRune(r)
+		}
+		i += size
+	}
+	b.WriteByte('"')
+	return b.String()
+}
+
+// QuoteBytes prints bytes the way Ruby inspects a binary string: as
+// QuoteString does, but byte by byte, with \xXX for each byte that is not
+// printable ASCII.
+func QuoteBytes(p []byte) string {
+	var b strings.Builder
+	b.WriteByte('"')
+	for i, c := range p {
+		r := rune(c)
+		switch {
+		case r == '#':
+			if i+1 < len(p) && (p[i+1] == '{' || p[i+1] == '$' || p[i+1] == '@') {
+				b.WriteByte('\\')
+			}
+			b.WriteByte('#')
+		case r == '"' || r == '\\':
+			b.WriteByte('\\')
+			b.WriteByte(c)
+		case escapes[r] != "":
+			b.WriteString(escapes[r])
+		case c < 0x20 || c >= 0x7f:
+			fmt.Fprintf(&b, `\x%02X`, c)
+		default:
+			b.WriteByte(c)
 		}
 	}
 	b.WriteByte('"')
 	return b.String()
+}
+
+var escapes = map[rune]string{
+	'\a': `\a`, '\b': `\b`, '\t': `\t`, '\n': `\n`, '\v': `\v`, '\f': `\f`, '\r': `\r`, '\x1b': `\e`,
+}
+
+// printable is Onigmo's print class, which decides what Ruby's inspect
+// shows as it is: anything but controls, surrogates, unassigned codepoints
+// and the line and paragraph separators.
+func printable(r rune) bool {
+	return unicode.In(r, unicode.L, unicode.M, unicode.N, unicode.P, unicode.S, unicode.Zs, unicode.Cf, unicode.Co)
 }
 
 // SymbolInspect prints a symbol the way Ruby's Symbol#inspect does: `:name`,

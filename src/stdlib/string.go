@@ -106,6 +106,30 @@ func installString() {
 	})
 	mapStr("succ", succ)
 	mapStr("next", succ)
+	// upto yields self and its successors up to max, as a range of strings
+	// from self to max does.
+	def(c, "upto", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if len(args) < 1 || len(args) > 2 {
+			return object.Value{}, argError(ctx, len(args), "1..2")
+		}
+		hi, err := wantString(ctx, args[0])
+		if err != nil {
+			return object.Value{}, err
+		}
+		exclusive := len(args) == 2 && args[1].Truthy()
+		out := []object.Value{}
+		for s := range stringsUpto(self.Str(), hi, exclusive, false) {
+			if block.IsZero() {
+				out = append(out, object.String(s))
+			} else if _, err := ctx.Yield(block, object.String(s)); err != nil {
+				return object.Value{}, err
+			}
+		}
+		if block.IsZero() {
+			return object.NewList(out...), nil
+		}
+		return self, nil
+	})
 	mapStr("to_s", func(s string) string { return s })
 	mapStr("to_str", func(s string) string { return s })
 	mapStr("inspect", object.QuoteString)
@@ -640,39 +664,4 @@ func parseIntBase(s string, base int) (int64, bool) {
 		v = -v
 	}
 	return v, true
-}
-
-// succ is String#succ for the common case: the rightmost alphanumeric is
-// incremented with carry.
-func succ(s string) string {
-	if s == "" {
-		return ""
-	}
-	runes := []rune(s)
-	i := len(runes) - 1
-	for ; i >= 0; i-- {
-		r := runes[i]
-		switch {
-		case r == 'z':
-			runes[i] = 'a'
-		case r == 'Z':
-			runes[i] = 'A'
-		case r == '9':
-			runes[i] = '0'
-		case unicode.IsLetter(r) || unicode.IsDigit(r):
-			runes[i]++
-			return string(runes)
-		default:
-			continue
-		}
-	}
-	first := runes[0]
-	var carry rune = '1'
-	switch {
-	case first == 'a':
-		carry = 'a'
-	case first == 'A':
-		carry = 'A'
-	}
-	return string(carry) + string(runes)
 }

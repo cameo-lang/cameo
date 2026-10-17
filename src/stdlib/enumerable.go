@@ -372,7 +372,16 @@ func installEnumerable() {
 			}
 			out[i] = object.NewList(tuple...)
 		}
-		return object.NewList(out...), nil
+		if block.IsZero() {
+			return object.NewList(out...), nil
+		}
+		// With a block, zip yields each tuple and returns nil.
+		for _, t := range out {
+			if _, err := ctx.Yield(block, t); err != nil {
+				return object.Value{}, err
+			}
+		}
+		return object.Nil, nil
 	})
 	each("take", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		n, err := countArg(ctx, args, len(elems))

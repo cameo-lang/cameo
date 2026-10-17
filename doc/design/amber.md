@@ -464,7 +464,8 @@ re-opened by accident:
     sequence was rejected as not worth its code, so seeded scripts do not
     print Ruby's numbers.
   - `String#succ` follows Ruby's full rules, and ranges over strings iterate
-    with it.
+    with it: `include?` walks such a range, `cover?` and `===` compare its
+    ends.
   - `Time` is an immutable value with fixed UTC offsets and the local zone.
   - `Hash.new` takes a default value or a default block; a block that
     stores into the hash raises, as any mutation does.

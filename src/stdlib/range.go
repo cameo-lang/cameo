@@ -1,6 +1,7 @@
 package stdlib
 
 import (
+	"iter"
 	"math"
 
 	"github.com/radiospiel/amber/src/object"
@@ -15,6 +16,32 @@ func installRange() {
 				return object.Value{}, ctx.Raise(object.RangeError, "cannot get the first element of beginless range")
 			}
 			return r(self).Lo, nil
+		}
+		// An endless range has a first n all the same.
+		if hi := object.OrNil(r(self).Hi); hi.IsNil() && len(args) == 1 {
+			n, err := wantInt(ctx, args[0], "")
+			if err != nil {
+				return object.Value{}, err
+			}
+			if n < 0 {
+				return object.Value{}, ctx.Raise(object.ArgumentError, "negative array size (or size too big)")
+			}
+			out := []object.Value{}
+			if lo, ok := r(self).Lo.AsInt(); ok {
+				for i := int64(0); i < n; i++ {
+					out = append(out, object.Int(lo+i))
+				}
+				return object.NewList(out...), nil
+			}
+			if seq, sym, _, ok := rangeStrings(r(self)); ok {
+				for s := range seq {
+					if int64(len(out)) == n {
+						break
+					}
+					out = append(out, strValue(s, sym))
+				}
+				return object.NewList(out...), nil
+			}
 		}
 		return object.Enumerable.Methods["first"].Native(ctx, self, args, kw, block)
 	})
@@ -37,7 +64,7 @@ func installRange() {
 			}
 			return r(self).Hi, nil
 		}
-		elems, err := rangeElems(ctx, r(self))
+		elems, err := RangeElems(ctx, r(self))
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -54,6 +81,9 @@ func installRange() {
 		lo, ok1 := r(self).Lo.AsInt()
 		hi, ok2 := r(self).Hi.AsInt()
 		if !ok1 {
+			if _, _, _, ok := rangeStrings(r(self)); ok {
+				return object.Nil, nil
+			}
 			return object.Value{}, ctx.Raise(object.TypeError, "can't iterate from %s", kindName(object.OrNil(r(self).Lo)))
 		}
 		if !ok2 {
@@ -72,7 +102,7 @@ func installRange() {
 		return object.Int(n), nil
 	})
 	def(c, "count", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if len(args) == 0 && block.IsZero() {
+		if _, ok := r(self).Lo.AsInt(); ok && len(args) == 0 && block.IsZero() {
 			return c.Methods["size"].Native(ctx, self, nil, nil, object.Value{})
 		}
 		return object.Enumerable.Methods["count"].Native(ctx, self, args, kw, block)
@@ -81,12 +111,37 @@ func installRange() {
 		in, err := rangeIncludes(ctx, r(self), args[0])
 		return object.Bool(in), err
 	}
-	def(c, "include?", 1, cover)
-	def(c, "member?", 1, cover)
+	// include? walks a range of strings, as Ruby does: "bb" lies between
+	// "a" and "z" but is not one of the strings from "a" to "z".
+	include := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		seq, sym, endless, ok := rangeStrings(r(self))
+		if !ok {
+			return cover(ctx, self, args, kw, block)
+		}
+		if endless {
+			return object.Value{}, ctx.Raise(object.TypeError, "cannot determine inclusion in beginless/endless ranges")
+		}
+		for s := range seq {
+			if object.Equal(strValue(s, sym), args[0]) {
+				return object.True, nil
+			}
+		}
+		return object.False, nil
+	}
+	def(c, "include?", 1, include)
+	def(c, "member?", 1, include)
 	def(c, "cover?", 1, cover)
 	def(c, "===", 1, cover)
 	def(c, "each", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if block.IsZero() {
+			return self, nil
+		}
+		if seq, sym, _, ok := rangeStrings(r(self)); ok {
+			for s := range seq {
+				if _, err := ctx.Yield(block, strValue(s, sym)); err != nil {
+					return object.Value{}, err
+				}
+			}
 			return self, nil
 		}
 		lo, ok := r(self).Lo.AsInt()
@@ -100,7 +155,7 @@ func installRange() {
 				}
 			}
 		}
-		elems, err := rangeElems(ctx, r(self))
+		elems, err := RangeElems(ctx, r(self))
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -119,7 +174,7 @@ func installRange() {
 		if by <= 0 {
 			return object.Value{}, ctx.Raise(object.ArgumentError, "step can't be negative or 0")
 		}
-		elems, err := rangeElems(ctx, r(self))
+		elems, err := RangeElems(ctx, r(self))
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -131,7 +186,7 @@ func installRange() {
 	})
 	def(c, "%", 1, c.Methods["step"].Native)
 	def(c, "to_a", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		elems, err := rangeElems(ctx, r(self))
+		elems, err := RangeElems(ctx, r(self))
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -152,30 +207,62 @@ func installRange() {
 		}
 		return object.Enumerable.Methods["sum"].Native(ctx, self, args, kw, block)
 	})
+	// min and max of a range compare its ends rather than walk it, but for
+	// a block, a count, or a range without a last element to name.
 	def(c, "min", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if len(args) == 0 && block.IsZero() && !r(self).Lo.IsZero() {
-			if size, err := c.Methods["size"].Native(ctx, self, nil, nil, object.Value{}); err == nil {
-				if n, ok := size.AsInt(); ok && n == 0 {
-					return object.Nil, nil
-				}
-			}
-			return r(self).Lo, nil
+		lo, hi := object.OrNil(r(self).Lo), object.OrNil(r(self).Hi)
+		_, numeric := hi.AsNumber()
+		if len(args) > 0 || !block.IsZero() || r(self).Exclusive && !numeric {
+			return object.Enumerable.Methods["min"].Native(ctx, self, args, kw, block)
 		}
-		return object.Enumerable.Methods["min"].Native(ctx, self, args, kw, block)
+		if lo.IsNil() {
+			return object.Value{}, ctx.Raise(object.RangeError, "cannot get the minimum of beginless range")
+		}
+		if hi.IsNil() {
+			return lo, nil
+		}
+		cmp, err := ctx.Compare(lo, hi)
+		if err != nil {
+			return object.Value{}, err
+		}
+		if cmp > 0 || cmp == 0 && r(self).Exclusive {
+			return object.Nil, nil
+		}
+		return lo, nil
 	})
 	def(c, "max", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if len(args) == 0 && block.IsZero() {
-			if hi, ok := r(self).Hi.AsInt(); ok {
-				if r(self).Exclusive {
-					hi--
-				}
-				if lo, ok := r(self).Lo.AsInt(); ok && hi < lo {
-					return object.Nil, nil
-				}
-				return object.Int(hi), nil
+		lo, hi := object.OrNil(r(self).Lo), object.OrNil(r(self).Hi)
+		if hi.IsNil() {
+			return object.Value{}, ctx.Raise(object.RangeError, "cannot get the maximum of endless range")
+		}
+		_, numeric := hi.AsNumber()
+		if len(args) > 0 || !block.IsZero() || r(self).Exclusive && !numeric {
+			return object.Enumerable.Methods["max"].Native(ctx, self, args, kw, block)
+		}
+		cmp := -1
+		if !lo.IsNil() {
+			var err error
+			if cmp, err = ctx.Compare(lo, hi); err != nil {
+				return object.Value{}, err
 			}
 		}
-		return object.Enumerable.Methods["max"].Native(ctx, self, args, kw, block)
+		if cmp > 0 {
+			return object.Nil, nil
+		}
+		if !r(self).Exclusive {
+			return hi, nil
+		}
+		hiI, ok := hi.AsInt()
+		if !ok {
+			return object.Value{}, ctx.Raise(object.TypeError, "cannot exclude non Integer end value")
+		}
+		if cmp == 0 {
+			return object.Nil, nil
+		}
+		if _, ok := lo.AsInt(); !ok {
+			return object.Value{}, ctx.Raise(object.TypeError, "cannot exclude end value with non Integer begin value")
+		}
+		return object.Int(hiI - 1), nil
 	})
 	def(c, "==", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Bool(object.Equal(self, args[0])), nil
@@ -226,8 +313,46 @@ func rangeIncludes(ctx object.Context, r *object.Range, v object.Value) (bool, e
 	return true, nil
 }
 
-// rangeElems expands an integer range into its elements.
-func rangeElems(ctx object.Context, r *object.Range) ([]object.Value, error) {
+// rangeStrings is the strings of a range over strings or symbols, whether
+// they are symbols and whether the range is endless; ok is false for any
+// other range.
+func rangeStrings(r *object.Range) (seq iter.Seq[string], sym, endless, ok bool) {
+	hi := object.OrNil(r.Hi)
+	endless = hi.IsNil()
+	if lo, isStr := r.Lo.AsString(); isStr {
+		if h, isStr := hi.AsString(); isStr || endless {
+			return stringsUpto(lo, h, r.Exclusive, endless), false, endless, true
+		}
+	}
+	if lo, isSym := r.Lo.AsSymbol(); isSym {
+		if h, isSym := hi.AsSymbol(); isSym || endless {
+			return stringsUpto(lo, h, r.Exclusive, endless), true, endless, true
+		}
+	}
+	return nil, false, false, false
+}
+
+// strValue is s as a string or, for a range of symbols, a symbol.
+func strValue(s string, sym bool) object.Value {
+	if sym {
+		return object.Symbol(s)
+	}
+	return object.String(s)
+}
+
+// RangeElems expands a range of integers, strings or symbols into its
+// elements.
+func RangeElems(ctx object.Context, r *object.Range) ([]object.Value, error) {
+	if seq, sym, endless, ok := rangeStrings(r); ok {
+		if endless {
+			return nil, ctx.Raise(object.RangeError, "cannot convert endless range to a list")
+		}
+		out := []object.Value{}
+		for s := range seq {
+			out = append(out, strValue(s, sym))
+		}
+		return out, nil
+	}
 	lo, ok1 := r.Lo.AsInt()
 	hi, ok2 := r.Hi.AsInt()
 	if !ok1 || !ok2 {
