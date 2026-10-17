@@ -111,6 +111,11 @@ that would mutate in Ruby: `list + [x]`, `list.append(x)`, `map.merge(other)`,
 includes Enumerable and defines `each` gets the same methods, over what its
 `each` yields: one value as itself, several as a list of them, as in Ruby.
 `to_enum` and `enum_for` make an enumerator over any method that yields.
+`_itemType`, amber's own, names the kinds of the elements as Symbols, the way
+`sort`, `min` and `max` see them to choose a path without dispatch:
+`[1, nil]._itemType` is `[:nil, :int]`, `[1.5, Float::NAN]._itemType` is
+`[:float, :nan]`. An Array keeps its kinds from the first time they are asked
+for; anything else is scanned.
 `each_with_object` cannot rely on the memo
 changing, so the block's value becomes the next memo, as in `reduce`. A
 collection that Ruby would change in place returns a copy: `list.append(x)`,

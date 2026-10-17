@@ -49,6 +49,20 @@ func installEnumerable() {
 			return f(ctx, elems, kinds, args, block)
 		})
 	}
+	// _itemType names the kinds of the elements as the fast paths see them,
+	// one Symbol each: an Array keeps them, anything else is scanned. It is
+	// amber's own, not Ruby's; the underscore marks it so.
+	compared("_itemType", func(ctx object.Context, elems []object.Value, kinds object.Kinds, args []object.Value, block object.Value) (object.Value, error) {
+		if len(args) != 0 {
+			return object.Value{}, argError(ctx, len(args), "0")
+		}
+		names := kinds.Names()
+		out := make([]object.Value, len(names))
+		for i, n := range names {
+			out[i] = object.Symbol(n)
+		}
+		return object.NewList(out...), nil
+	})
 	each("each_with_index", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		if block.IsZero() {
 			// Without a block, an enumerator of [element, index] pairs.
