@@ -28,7 +28,18 @@ func installEnumerable() {
 			return f(ctx, elems, args, block)
 		})
 	}
-	withBlock("each_with_index", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
+	each("each_with_index", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
+		if block.IsZero() {
+			// Without a block, an enumerator of [element, index] pairs.
+			return enumerator(false, object.NewList(elems...), "each_with_index", nil, func(ctx object.Context, yield func(object.Value) error) error {
+				for i, el := range elems {
+					if err := yield(object.NewList(el, object.Int(i))); err != nil {
+						return err
+					}
+				}
+				return nil
+			}), nil
+		}
 		for i, el := range elems {
 			if _, err := ctx.Yield(block, el, object.Int(i)); err != nil {
 				return object.Value{}, err
@@ -840,4 +851,35 @@ func grepElems(ctx object.Context, elems []object.Value, args []object.Value, bl
 		}
 	}
 	return object.NewList(out...), nil
+}
+
+// installUserEnumerable makes Enumerable's methods work for a user class
+// that includes it and defines each: on such an object a method runs on an
+// enumerator over its each, so that first, find, take_while and lazy stop
+// as soon as they have their answer, even when each never ends.
+func installUserEnumerable() {
+	e := object.Enumerable
+	names := make([]string, 0, len(e.Methods))
+	for name, m := range e.Methods {
+		if m.Native != nil {
+			names = append(names, name)
+		}
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		m := e.Methods[name]
+		native, name := m.Native, name
+		def(e, name, m.Arity, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+			if self.Kind() != object.KindInstance {
+				return native(ctx, self, args, kw, block)
+			}
+			over := enumerator(false, self, "each", nil, func(ctx object.Context, yield func(object.Value) error) error {
+				_, err := ctx.CallWith(self, "each", nil, nil, ctx.Block(func(args []object.Value) (object.Value, error) {
+					return object.Nil, yield(yielded(args))
+				}))
+				return err
+			})
+			return ctx.CallWith(over, name, args, kw, block)
+		})
+	}
 }

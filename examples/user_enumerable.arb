@@ -1,0 +1,58 @@
+# A class that includes Enumerable and defines each gets Enumerable's methods.
+class Pairs
+  include Enumerable
+  def each
+    return to_enum(:each) unless block_given?
+    yield :a, 1
+    yield :b, 2
+    yield :c, 3
+    self
+  end
+end
+class Nums
+  include Enumerable
+  list :n, of: :int
+  def initialize(*n) = @n = n
+  def each(&block)
+    @n.each(&block)
+    self
+  end
+end
+class Empty
+  include Enumerable
+end
+pr = Pairs.new
+p pr.to_a, pr.map { |k, v| "#{k}=#{v}" }, pr.to_h, pr.min_by { |_, v| -v }
+p pr.each_with_index.map { |(k, v), i| [k, v * i] }
+p pr.first(2), pr.count, pr.sort_by { |_, v| -v }.first
+n = Nums.new(5, 3, 8, 1)
+p n.sum, n.reduce(:*), n.sort, n.minmax, n.each_slice(2).to_a, n.group_by(&:odd?)
+p n.lazy.map { |x| x * 10 }.select { |x| x > 20 }.first(2)
+p n.include?(8), n.find { |x| x > 4 }, n.zip(n.to_a.reverse), n.to_set.size
+p n.entries, n.tally, n.partition(&:even?), n.min(2), n.inject { |a, b| a + b }
+p pr.each.to_a, pr.each.first, pr.to_enum.map { |k, _| k }
+begin
+  Empty.new.map { |x| x }
+rescue NoMethodError => e
+  puts "NoMethodError: #{e.message[0, 30]}"
+end
+
+# An endless each: first, find, take_while and lazy stop early.
+class Naturals
+  include Enumerable
+  def each
+    n = 0
+    loop do
+      yield n
+      n += 1
+    end
+  end
+end
+p Naturals.new.to_enum.first(3)
+p Naturals.new.lazy.map { |x| x * x }.first(4)
+p Naturals.new.first(2)
+p Naturals.new.find { |x| x > 5 }
+p Naturals.new.take_while { |x| x < 3 }
+
+# Without a block, each_with_index is an enumerator of [element, index] pairs.
+p [5, 6].each_with_index.to_a, [5, 6].each_with_index.map { |x, i| x * i }

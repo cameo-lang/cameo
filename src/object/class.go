@@ -393,6 +393,9 @@ type Context interface {
 	CallWith(recv Value, name string, args []Value, kw *Map, block Value) (Value, error)
 	// Yield calls a block (a *Proc value) with arguments.
 	Yield(block Value, args ...Value) (Value, error)
+	// Block makes a block a builtin passes to a method: calling it runs f
+	// with the block's arguments.
+	Block(f func(args []Value) (Value, error)) Value
 	// Raise makes an exception of class cls with a formatted message.
 	Raise(cls *Class, format string, args ...any) error
 	// Inspect and ToS render a value, dispatching to user-defined inspect

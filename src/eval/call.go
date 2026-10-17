@@ -481,11 +481,19 @@ func (in *Interp) Yield(block object.Value, args ...object.Value) (object.Value,
 	return in.callBlock(block, args, nil, object.Value{})
 }
 
+// Block makes a block that runs f with the arguments it is called with.
+func (in *Interp) Block(f func(args []object.Value) (object.Value, error)) object.Value {
+	return procValue(&Proc{Go: f})
+}
+
 // callBlock runs a block or lambda with arguments.
 func (in *Interp) callBlock(block object.Value, args []object.Value, kw *object.Map, inner object.Value) (object.Value, error) {
 	p, ok := asProc(block)
 	if !ok {
 		return object.Value{}, in.raise(object.TypeError, 0, "no block given")
+	}
+	if p.Go != nil {
+		return p.Go(args)
 	}
 	if p.Sym != "" {
 		if !p.Recv.IsZero() {

@@ -97,6 +97,26 @@ func installObject() {
 	}
 	then("then")
 	then("yield_self")
+	// to_enum and enum_for make an enumerator over what a method yields,
+	// calling it again each time the enumerator runs.
+	toEnum := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		meth := "each"
+		if len(args) > 0 {
+			name, ok := args[0].AsSymbol()
+			if !ok {
+				return object.Value{}, ctx.Raise(object.TypeError, "%s is not a symbol", kindName(args[0]))
+			}
+			meth, args = name, args[1:]
+		}
+		return enumerator(false, self, meth, args, func(ctx object.Context, yield func(object.Value) error) error {
+			_, err := ctx.CallWith(self, meth, args, kw, ctx.Block(func(args []object.Value) (object.Value, error) {
+				return object.Nil, yield(yielded(args))
+			}))
+			return err
+		}), nil
+	}
+	def(o, "to_enum", -1, toEnum)
+	def(o, "enum_for", -1, toEnum)
 	def(o, "instance_variables", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		inst, ok := self.AsInstance()
 		if !ok {

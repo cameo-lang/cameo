@@ -136,6 +136,9 @@ type Proc struct {
 	// hash (&hash) calls [].
 	Sym  string
 	Recv object.Value
+	// Go is set for a block a builtin makes: it runs the function with the
+	// block's arguments, and Block is nil.
+	Go func(args []object.Value) (object.Value, error)
 }
 
 // procValue wraps a proc as a value; proc and asProc read it back.
@@ -160,6 +163,9 @@ func asProc(v object.Value) (*Proc, bool) {
 // block takes a splat or optional parameters, as Proc#arity reports.
 func (p *Proc) Arity() int {
 	if p.Block == nil {
+		if p.Go != nil {
+			return -1
+		}
 		if !p.Recv.IsZero() {
 			return 1
 		}
