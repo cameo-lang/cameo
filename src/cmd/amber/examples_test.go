@@ -18,7 +18,6 @@ const examplesDir = "../../../examples"
 // milestone. A pending example must still fail: when it passes, it comes
 // off this list.
 var pending = map[string]string{
-	"enumerable.arb":        "milestone 3: the collection library",
 	"point.arb":             "milestone 4: classes with fields",
 	"nested_assignment.arb": "milestone 4: classes with fields",
 	"redefinition.arb":      "milestone 4: classes with fields",

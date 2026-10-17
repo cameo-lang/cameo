@@ -1,0 +1,30 @@
+# Collections never change: every operation answers a new value.
+list = [1, 2, 3]
+longer = list.append(4, 5)
+puts list.inspect
+puts longer.inspect
+puts list.prepend(0).inspect
+puts longer.without(2, 4).inspect
+puts longer.without_at(0, -1).inspect
+puts list.each_with_object([]) { |n, acc| acc.prepend(n) }.inspect
+
+scores = {ann: 1, bob: 2}
+more = scores.put(:cid, 3)
+puts scores.size
+puts more.size
+puts more.without(:ann).keys.inspect
+puts scores.merge({bob: 20}).values.inspect
+puts scores.values.inspect
+puts scores.each_with_object({}) { |(k, v), acc| acc.put(v, k) }.keys.inspect
+
+s = [1, 2].to_set
+bigger = s.add(3)
+puts s.size
+puts bigger.size
+puts bigger.without(1).to_a.inspect
+puts s.to_a.inspect
+
+text = "abc"
+louder = text.upcase
+puts text
+puts louder
