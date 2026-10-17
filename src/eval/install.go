@@ -59,6 +59,9 @@ func init() {
 // newInstance is Class#new: an instance with its fields at their defaults,
 // filled by initialize. Without initialize the fields come as keywords.
 func (in *Interp) newInstance(cls *object.Class, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	if cls == object.ClassClass {
+		return in.newClass(args, block)
+	}
 	if cls.IsModule {
 		return object.Value{}, in.raise(object.NoMethodError, 0, "undefined method 'new' for module %s", cls.QualifiedName())
 	}

@@ -1,0 +1,8 @@
+Point
+"hello"
+"child of base"
+Base
+[Child, Base]
+"base"
+Set
+"class method"

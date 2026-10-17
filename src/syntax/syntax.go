@@ -64,6 +64,10 @@ func Parse(file, src string) (*Program, error) {
 // digest identifies a class or module definition by its normalised body: the
 // AST with every line number left out, hashed. Two definitions with equal
 // digests are one definition.
+// Digest is a node's digest, as a class's: what identifies a class built
+// at run time from a block, by Class.new.
+func Digest(n Node) string { return digest(n) }
+
 func digest(n Node) string {
 	var b strings.Builder
 	writeNode(&b, reflect.ValueOf(n))

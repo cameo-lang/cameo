@@ -90,8 +90,57 @@ func (in *Interp) evalScopedConst(n *syntax.ScopedConst, env *Env, fr *Frame) (o
 // defineConst binds a constant in the innermost lexical scope. A constant
 // is a value bound to a name: binding it again replaces the binding.
 func (in *Interp) defineConst(name string, v object.Value, fr *Frame, line int) error {
+	// A class from Class.new takes the name of the first constant it is
+	// bound to, as in Ruby.
+	if cls, ok := v.AsClass(); ok && cls.Name == "" {
+		cls.Name = name
+		if len(fr.Lexical) > 0 {
+			cls.Lexical = fr.Lexical[len(fr.Lexical)-1]
+		}
+	}
 	in.constTable(fr)[name] = v
 	return nil
+}
+
+// newClass is Class.new(superclass = Object) { body }: a class built at
+// run time, its block run as the class body with the class as self and as
+// the target of def, closing over the block's locals. It is identified by
+// its block's digest, and named by the first constant it is bound to.
+func (in *Interp) newClass(args []object.Value, block object.Value) (object.Value, error) {
+	if len(args) > 1 {
+		return object.Value{}, in.raise(object.ArgumentError, 0, "wrong number of arguments (given %d, expected 0..1)", len(args))
+	}
+	super := object.ObjectClass
+	if len(args) == 1 {
+		s, ok := args[0].AsClass()
+		if !ok || s.IsModule {
+			return object.Value{}, in.raise(object.TypeError, 0, "superclass must be a Class (%s given)", typeName(args[0]))
+		}
+		super = s
+	}
+	cls := object.NewClass("", super)
+	cls.Digest = "new:" + super.QualifiedName()
+	if err := in.inheritFields(cls, super); err != nil {
+		return object.Value{}, err
+	}
+	if block.IsZero() {
+		return object.ClassValue(cls), nil
+	}
+	p, ok := asProc(block)
+	if !ok || p.Block == nil {
+		return object.Value{}, in.raise(object.TypeError, 0, "Class.new takes a literal block")
+	}
+	cls.Digest = "new:" + syntax.Digest(p.Block)
+	env := NewEnv(p.Env)
+	if len(p.Block.Params.Positional) > 0 {
+		env.Define(p.Block.Params.Positional[0].Name, object.ClassValue(cls))
+	}
+	lexical := append(append([]*object.Class{}, p.Frame.Lexical...), cls)
+	bodyFrame := &Frame{Self: object.ClassValue(cls), Lexical: lexical, DefTarget: cls}
+	if _, err := in.evalBody(p.Block.Body, env, bodyFrame); err != nil {
+		return object.Value{}, err
+	}
+	return object.ClassValue(cls), nil
 }
 
 // constTable is where a definition in fr binds its name: the innermost

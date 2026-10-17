@@ -1,0 +1,20 @@
+# Class.new builds a class at run time: its block is the class body, and the
+# class takes the name of the first constant it is bound to.
+greeting = "hi"
+Point = Class.new do
+  def hello = "hello"
+end
+p Point, Point.new.hello
+class Base
+  def who = "base"
+end
+Child = Class.new(Base) do
+  def who = "child of #{super}"
+end
+p Child.new.who, Child.superclass, Child.ancestors.take(2)
+anon = Class.new(Base)
+p anon.new.who
+set_subclass = Class.new(Set)
+p set_subclass.superclass
+k = Class.new { |c| def self.made = "class method" }
+p k.made

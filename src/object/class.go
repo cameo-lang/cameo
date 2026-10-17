@@ -136,6 +136,10 @@ func (c *Class) Class() *Class {
 
 // QualifiedName is the name with its lexical modules: Geo::Point.
 func (c *Class) QualifiedName() string {
+	if c.Name == "" {
+		// A class from Class.new before a constant names it.
+		return "#<Class>"
+	}
 	if c.Lexical != nil && c.Lexical != ObjectClass {
 		return c.Lexical.QualifiedName() + "::" + c.Name
 	}

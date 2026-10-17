@@ -475,7 +475,11 @@ re-opened by accident:
   field's number and name out of use.
 - **Classes are values** bound to their name: a second definition with the
   same body is the same class, one with a different body rebinds the name,
-  and nothing reopens a class.
+  and nothing reopens a class. `Class.new(Base) { ... }` builds one at run
+  time: its block is the class body, it is identified by the block's
+  digest, and it takes the name of the first constant it is bound to.
+  `Module.new` stays out, since its use is to include or extend at run
+  time.
 - **Only current Ruby syntax**: keyword arguments are keywords, never a
   trailing hash; `=>` stays for hash literals.
 - **The standard library follows CRuby's benchmarks** (`benchmarks/ruby/`):
