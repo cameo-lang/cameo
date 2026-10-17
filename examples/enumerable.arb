@@ -1,0 +1,15 @@
+# One Enumerable over Array, Hash, Set and Range.
+nums = (1..6).to_a
+puts nums.select(&:even?).map { |n| n * n }.sum
+puts nums.reduce(0) { |acc, n| acc + n }
+puts nums.each_slice(2).map(&:first).inspect
+puts nums.group_by { |n| n % 3 }.keys.sort.inspect
+
+words = %w[pear apple fig]
+puts words.sort_by(&:length).first
+puts words.min_by(&:length)
+puts words.to_set.include?("fig")
+
+scores = { alice: 3, bob: 5 }
+scores.each { |name, score| puts "#{name}: #{score}" }
+puts scores.map { |name, score| score }.max

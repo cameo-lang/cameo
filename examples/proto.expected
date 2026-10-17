@@ -1,0 +1,14 @@
+message Person {
+  enum Role {
+    ROLE_UNSPECIFIED = 0;
+    ROLE_ADMIN = 1;
+    ROLE_USER = 2;
+  }
+  reserved 2;
+  reserved "nickname";
+  optional string name = 1;
+  optional Address address = 3;
+  repeated string emails = 4;
+  map<string, int64> scores = 5;
+  optional Role role = 6;
+}

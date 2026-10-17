@@ -1,0 +1,24 @@
+# How amber came to be
+
+amber was first built inside [radiospiel/ark](https://github.com/radiospiel/ark),
+a monorepo, under `parts/golang/amber`, as a stack of pull requests. This
+repository replays that history one step at a time, and each step has a
+document here: what the step did, why, and the code it is about. A code
+reference in a document points at the commit the step merged as, so it shows
+the code as it was then, not as it is now.
+
+The replay keeps the order in which things were built, optimisations
+included. It differs from the history in ark in three places, where a
+decision ark made late was the right one from the start:
+
+- Lists and hashes are Ruby's `Array` and `Hash` from the first step. ark
+  called them `List` and `Map` until step 14.
+- Regular expressions run on Go's `regexp` from their first step,
+  step 24. ark first tried an engine that needed a newer Go.
+- Strings carry their encoding from the step that brings encodings,
+  step 30. ark first added a separate `Bytes` class and
+  removed it again.
+
+The steps:
+
+- [1. The language design, and `amber check`](01-language-design.md)

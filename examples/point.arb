@@ -1,0 +1,29 @@
+# A class declares typed fields, sets them in initialize, and is immutable.
+class Point
+  int :x, :y
+  string :label, default: ""
+
+  def initialize(x, y, label: "")
+    @x = x
+    @y = y
+    @label = label
+  end
+
+  def +(other)
+    Point.new(x + other.x, y + other.y)
+  end
+
+  def to_s = "(#{x}, #{y})"
+end
+
+a = Point.new(1, 2)
+b = a.tap { |p| { x: p.x + 10, label: "moved" } }
+puts a
+puts b
+puts b.label
+puts a == Point.new(1, 2)
+puts a + b
+
+a.x = 100
+puts a
+puts b

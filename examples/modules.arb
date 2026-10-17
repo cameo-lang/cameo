@@ -1,0 +1,24 @@
+# Modules are namespaces and mixins. They carry methods, never fields.
+module Geo
+  module Describable
+    def describe = "#{self.class.name}: #{self}"
+  end
+
+  class Point
+    include Describable
+    int :x, :y
+
+    def initialize(x, y)
+      @x = x
+      @y = y
+    end
+
+    def to_s = "(#{x}, #{y})"
+  end
+end
+
+pt = Geo::Point.new(1, 2)
+puts pt.describe
+puts Geo::Point.name
+puts pt.is_a?(Geo::Describable)
+puts Geo::Point.proto.lines.first

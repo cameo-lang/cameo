@@ -1,0 +1,24 @@
+class TooBig < StandardError; end
+
+def check(n)
+  raise TooBig, "#{n} is too big" if n > 10
+  n
+end
+
+begin
+  puts check(3)
+  puts check(30)
+rescue TooBig => e
+  puts "caught: #{e.message}"
+ensure
+  puts "done"
+end
+
+attempts = 0
+begin
+  attempts += 1
+  raise "flaky" if attempts < 3
+  puts "ok after #{attempts}"
+rescue RuntimeError
+  retry
+end

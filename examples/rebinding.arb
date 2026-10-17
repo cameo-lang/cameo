@@ -1,0 +1,15 @@
+# Assignment rebinds a name. Values never change.
+a = 1
+a = a + 1
+puts a
+
+list = [1, 2, 3]
+longer = list + [4]
+puts list.length
+puts longer.length
+
+h = { "k" => 1, k2: 2 }
+h2 = h.put(:k3, 3)
+puts h.size
+puts h2.size
+puts h2[:k3]
