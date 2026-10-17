@@ -20,7 +20,7 @@ Ruby already has a name for a copy with changes:
 [`Data#with`](https://docs.ruby-lang.org/en/3.3/Data.html#method-i-with),
 since Ruby 3.2, which takes the changes as keywords. amber's `with` takes
 them as keywords, or from the hash its block returns, keywords first
-([src/eval/fields.go:461](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/eval/fields.go#L461-L502)):
+([src/eval/fields.go:461](https://github.com/radiospiel/amber/blob/854d9a4f515516cb2b54e1e35e64f34ae756959d/src/eval/fields.go#L461-L502)):
 
 ```ruby
 moved = point.with(x: 10)
@@ -34,7 +34,7 @@ needed no change; only the method a script calls was renamed.
 A `tap` whose block ends in a hash literal, the old spelling, is almost
 certainly a script written for the old meaning, so the checker rejects it
 with a pointer to the new one
-([src/syntax/convert.go:506](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/syntax/convert.go#L506)):
+([src/syntax/convert.go:506](https://github.com/radiospiel/amber/blob/854d9a4f515516cb2b54e1e35e64f34ae756959d/src/syntax/convert.go#L506)):
 
 ```
 tap returns its receiver unchanged; for a copy with changes use with
