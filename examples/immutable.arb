@@ -17,14 +17,24 @@ puts scores.merge({bob: 20}).values.inspect
 puts scores.values.inspect
 puts scores.each_with_object({}) { |(k, v), acc| acc.put(v, k) }.keys.inspect
 
+# A call that changes its receiver in Ruby, such as Set#add or Array#<<,
+# rebinds the local it is called on; another variable keeps the old value.
 s = [1, 2].to_set
-bigger = s.add(3)
+before = s
+s.add(3)
+puts before.size
 puts s.size
-puts bigger.size
-puts bigger.without(1).to_a.inspect
-puts s.to_a.inspect
+puts s.without(1).to_a.inspect
+puts before.to_a.inspect
 
 text = "abc"
 louder = text.upcase
 puts text
 puts louder
+
+# Another variable keeps the value it had when the local was rebound.
+list = [1]
+other = list
+list << 2
+puts other.inspect
+puts list.inspect

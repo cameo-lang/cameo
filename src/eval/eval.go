@@ -102,6 +102,8 @@ func (in *Interp) evalSlow(n syntax.Node, env *Env, fr *Frame) (object.Value, er
 			return object.Value{}, err
 		}
 		return in.evalModuleDef(n, env, fr)
+	case *syntax.MutCall:
+		return in.evalMutCall(n, env, fr)
 	case *syntax.Seq:
 		return in.evalBody(n.Body, env, fr)
 	case *syntax.Alias:

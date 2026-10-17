@@ -118,3 +118,25 @@ func TestSetWithAndWithout(t *testing.T) {
 		t.Fatal("With and Without changed the wrong set")
 	}
 }
+
+func TestMapShiftWalksForward(t *testing.T) {
+	// Shifting the first key and re-adding it, as a queue does, keeps the
+	// order and costs no scan of the keys already shifted.
+	m := MapOf(Int(1), Int(10), Int(2), Int(20), Int(3), Int(30)).WithDefault(Int(0), Value{})
+	for i := 0; i < 1000; i++ {
+		k, v, rest, ok := m.Shift()
+		if !ok {
+			t.Fatal("shift of a full map failed")
+		}
+		m = rest.Put(k, v)
+	}
+	if got := keysOf(m); got != "i2=i20,i3=i30,i1=i10," {
+		t.Fatalf("after 1000 rotations: %s", got)
+	}
+	if d, _ := m.Default(); !Equal(d, Int(0)) {
+		t.Fatal("shift lost the default")
+	}
+	if _, _, _, ok := NewMap().Shift(); ok {
+		t.Fatal("shift of an empty map")
+	}
+}

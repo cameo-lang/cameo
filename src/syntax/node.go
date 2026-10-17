@@ -283,6 +283,20 @@ type Or struct {
 	Left, Right Node
 }
 
+// MutCall is a call that may change its receiver, on a local or on a field
+// inside initialize: `x << a << b`, `x.push(a)`, `h.delete(k)`,
+// `x.map! { ... }`. The Steps run in order, each on what the one before
+// left; one that changes a list, string, hash or set of the receiver's
+// kind computes the changed copy instead, and Target is rebound to it, as
+// `h[k] = v` rebinds h. A step that does not change its receiver for its
+// kind, such as String#delete, is an ordinary call. Each step's Recv is
+// nil.
+type MutCall struct {
+	Pos
+	Target Node // *Var or *IVar
+	Steps  []*Call
+}
+
 // Alias is `alias new old`: a second name for a method.
 type Alias struct {
 	Pos

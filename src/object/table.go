@@ -41,6 +41,9 @@ type span struct {
 	t   *table
 	n   int32
 	len int
+	// head is a position no live key starts before, so finding the first
+	// key, as Hash#shift does, need not scan the keys shifted already.
+	head int32
 }
 
 func newSpan() span { return span{t: &table{index: map[string]int32{}}} }
@@ -135,6 +138,24 @@ func (v *span) appendLocked(k string, key, val Value, del bool) {
 	}
 }
 
+// first returns the first live key, its value and the entry its life
+// starts at, scanning from head.
+func (v *span) first() (key, val Value, pos int32, ok bool) {
+	v.t.mu.RLock()
+	defer v.t.mu.RUnlock()
+	for i := v.head; i < v.n; i++ {
+		e := &v.t.entries[i]
+		if e.start != i || e.gone {
+			continue
+		}
+		p := v.t.latest(e.k, v.n)
+		if l := &v.t.entries[p]; l.start == i && !l.gone {
+			return e.key, l.val, i, true
+		}
+	}
+	return Value{}, Value{}, 0, false
+}
+
 // keysAndValues returns the live keys and values in order. The slices are
 // the version's own and must not be changed.
 func (v *version) keysAndValues() ([]Value, []Value) {
@@ -144,7 +165,7 @@ func (v *version) keysAndValues() ([]Value, []Value) {
 	keys := make([]Value, 0, v.len)
 	vals := make([]Value, 0, v.len)
 	v.t.mu.RLock()
-	for i := int32(0); i < v.n; i++ {
+	for i := v.head; i < v.n; i++ {
 		e := &v.t.entries[i]
 		if e.start != i || e.gone {
 			continue

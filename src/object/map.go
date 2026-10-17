@@ -106,6 +106,21 @@ func (m *Map) Merge(other *Map) *Map {
 	return out
 }
 
+// Shift returns the first entry and the map without it, keeping the
+// default, as Hash#shift leaves it; ok is false for an empty map. A loop
+// of shifts costs O(1) each.
+func (m *Map) Shift() (key, val Value, rest *Map, ok bool) {
+	key, val, pos, ok := m.first()
+	if !ok {
+		return Value{}, Value{}, m, false
+	}
+	s := m.with(Key(key), key, Value{}, true)
+	if s.t == m.t {
+		s.head = pos + 1
+	}
+	return key, val, m.derive(s), true
+}
+
 // Without returns a copy without the keys, and without a default, as
 // Ruby's except returns.
 func (m *Map) Without(keys ...Value) *Map {

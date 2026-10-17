@@ -164,6 +164,12 @@ unsupported/encodings	string_coderange_scan--coderange_alternating.rb	benchmark/
 unsupported/encodings	string_coderange_scan--coderange_ascii.rb	benchmark/string_coderange_scan.yml, entry coderange_ascii	string encodings (force_encoding, .b)
 unsupported/encodings	string_coderange_scan--coderange_multibyte.rb	benchmark/string_coderange_scan.yml, entry coderange_multibyte	string encodings (force_encoding, .b)
 unsupported/encodings	string_inspect--inspect_binary.rb	benchmark/string_inspect.yml, entry inspect_binary	string encodings (force_encoding, .b)
+unsupported/encodings	string_scrub--scrub_known_invalid.rb	benchmark/string_scrub.yml, entry scrub_known_invalid	string encodings (force_encoding, .b)
+unsupported/encodings	string_scrub--scrub_known_valid.rb	benchmark/string_scrub.yml, entry scrub_known_valid	string encodings (force_encoding, .b)
+unsupported/encodings	string_scrub--scrub_unknown_and_invalid_coderange.rb	benchmark/string_scrub.yml, entry scrub_unknown_and_invalid_coderange	string encodings (force_encoding, .b)
+unsupported/encodings	string_scrub--scrub_unknown_and_invalid_coderange_worst_case.rb	benchmark/string_scrub.yml, entry scrub_unknown_and_invalid_coderange_worst_case	string encodings (force_encoding, .b)
+unsupported/encodings	string_scrub--scrub_unknown_but_valid_coderange.rb	benchmark/string_scrub.yml, entry scrub_unknown_but_valid_coderange	string encodings (force_encoding, .b)
+unsupported/encodings	string_scrub--scrub_unknown_but_valid_coderange_worst_case.rb	benchmark/string_scrub.yml, entry scrub_unknown_but_valid_coderange_worst_case	string encodings (force_encoding, .b)
 unsupported/encodings	string_valid_encoding_p--valid_enc_false.rb	benchmark/string_valid_encoding_p.yml, entry valid_enc_false	string encodings (force_encoding, .b)
 unsupported/encodings	string_valid_encoding_p--valid_enc_true.rb	benchmark/string_valid_encoding_p.yml, entry valid_enc_true	string encodings (force_encoding, .b)
 unsupported/enumerators	enum_lazy_flat_map--ary10.rb	benchmark/enum_lazy_flat_map.yml, entry ary10	lazy enumerators and blockless enumerators
@@ -199,11 +205,15 @@ unsupported/filesystem	file_join--array.rb	benchmark/file_join.yml, entry array	
 unsupported/filesystem	file_join--many_strings.rb	benchmark/file_join.yml, entry many_strings	file system
 unsupported/filesystem	file_join--mixed.rb	benchmark/file_join.yml, entry mixed	file system
 unsupported/filesystem	file_join--two_strings.rb	benchmark/file_join.yml, entry two_strings	file system
+unsupported/filesystem	io_close--io_close.rb	benchmark/io_close.yml, entry io_close	file system
+unsupported/filesystem	io_close_contended--io_close_contended.rb	benchmark/io_close_contended.yml, entry io_close_contended	file system
 unsupported/filesystem	io_file_create.rb	benchmark/io_file_create.rb	file system
 unsupported/filesystem	io_nonblock_noex.rb	benchmark/io_nonblock_noex.rb	file system
 unsupported/filesystem	io_nonblock_noex2.rb	benchmark/io_nonblock_noex2.rb	file system
 unsupported/filesystem	io_pipe_rw.rb	benchmark/io_pipe_rw.rb	file system
 unsupported/filesystem	io_select.rb	benchmark/io_select.rb	file system
+unsupported/filesystem	io_select2.rb	benchmark/io_select2.rb	file system
+unsupported/filesystem	io_select3.rb	benchmark/io_select3.rb	file system
 unsupported/filesystem	pathname--abs.absolute_.rb	benchmark/pathname.yml, entry abs.absolute_	file system
 unsupported/filesystem	pathname--abs.root_.rb	benchmark/pathname.yml, entry abs.root_	file system
 unsupported/filesystem	pathname--p1.cleanpath.rb	benchmark/pathname.yml, entry p1.cleanpath	file system
@@ -401,7 +411,6 @@ unsupported/method-missing	vm_call_method_missing--method_missing_simple_0_splat
 unsupported/method-missing	vm_call_method_missing--method_missing_simple_1.rb	benchmark/vm_call_method_missing.yml, entry method_missing_simple_1	method_missing
 unsupported/method-missing	vm_call_method_missing--method_missing_simple_1_splat.rb	benchmark/vm_call_method_missing.yml, entry method_missing_simple_1_splat	method_missing
 unsupported/method-missing	vm_method_missing--vm_method_missing.rb	benchmark/vm_method_missing.yml, entry vm_method_missing	method_missing
-unsupported/mutation	app_lc_fizzbuzz.rb	benchmark/app_lc_fizzbuzz.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/mutation	array_flatten--large_flat_ary.flatten.rb	benchmark/array_flatten.yml, entry large_flat_ary.flatten	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/mutation	array_flatten--large_flat_ary.flatten_.rb	benchmark/array_flatten.yml, entry large_flat_ary.flatten_	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/mutation	array_flatten--large_nested_ary.flatten.rb	benchmark/array_flatten.yml, entry large_nested_ary.flatten	mutation (<<, push, pop, shift, delete, concat, bang methods)
@@ -445,51 +454,12 @@ unsupported/mutation	hash_aref_dsym_long.rb	benchmark/hash_aref_dsym_long.rb	Ran
 unsupported/mutation	hash_aref_flo.rb	benchmark/hash_aref_flo.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/mutation	hash_aref_miss.rb	benchmark/hash_aref_miss.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/mutation	hash_aref_str.rb	benchmark/hash_aref_str.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	hash_first--hash1.rb	benchmark/hash_first.yml, entry hash1	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	hash_first--hash2.rb	benchmark/hash_first.yml, entry hash2	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/mutation	hash_ident_flo.rb	benchmark/hash_ident_flo.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	hash_shift.rb	benchmark/hash_shift.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	hash_shift_u16.rb	benchmark/hash_shift_u16.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	hash_shift_u24.rb	benchmark/hash_shift_u24.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	hash_shift_u32.rb	benchmark/hash_shift_u32.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	io_close--io_close.rb	benchmark/io_close.yml, entry io_close	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	io_close_contended--io_close_contended.rb	benchmark/io_close_contended.yml, entry io_close_contended	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	io_select2.rb	benchmark/io_select2.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	io_select3.rb	benchmark/io_select3.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/mutation	string_capitalize--capitalize_-1.rb	benchmark/string_capitalize.yml, entry capitalize_-1	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/mutation	string_capitalize--capitalize_-100.rb	benchmark/string_capitalize.yml, entry capitalize_-100	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/mutation	string_capitalize--capitalize_-1000.rb	benchmark/string_capitalize.yml, entry capitalize_-1000	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	string_concat--binary_concat_7bit.rb	benchmark/string_concat.yml, entry binary_concat_7bit	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	string_concat--binary_concat_embedded.rb	benchmark/string_concat.yml, entry binary_concat_embedded	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	string_concat--utf8_concat_7bit.rb	benchmark/string_concat.yml, entry utf8_concat_7bit	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	string_concat--utf8_concat_UTF8.rb	benchmark/string_concat.yml, entry utf8_concat_UTF8	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	string_gsub--escape.rb	benchmark/string_gsub.yml, entry escape	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	string_gsub--escape_bin.rb	benchmark/string_gsub.yml, entry escape_bin	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	string_gsub--escape_utf8.rb	benchmark/string_gsub.yml, entry escape_utf8	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	string_gsub--escape_utf8_bin.rb	benchmark/string_gsub.yml, entry escape_utf8_bin	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	string_gsub--gsub_no_match_shared.rb	benchmark/string_gsub.yml, entry gsub_no_match_shared	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	string_gsub--sub_no_match_shared.rb	benchmark/string_gsub.yml, entry sub_no_match_shared	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	string_scrub--scrub_known_invalid.rb	benchmark/string_scrub.yml, entry scrub_known_invalid	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	string_scrub--scrub_known_valid.rb	benchmark/string_scrub.yml, entry scrub_known_valid	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	string_scrub--scrub_unknown_and_invalid_coderange.rb	benchmark/string_scrub.yml, entry scrub_unknown_and_invalid_coderange	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	string_scrub--scrub_unknown_and_invalid_coderange_worst_case.rb	benchmark/string_scrub.yml, entry scrub_unknown_and_invalid_coderange_worst_case	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	string_scrub--scrub_unknown_but_valid_coderange.rb	benchmark/string_scrub.yml, entry scrub_unknown_but_valid_coderange	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	string_scrub--scrub_unknown_but_valid_coderange_worst_case.rb	benchmark/string_scrub.yml, entry scrub_unknown_but_valid_coderange_worst_case	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	string_slice--regexp-long.rb	benchmark/string_slice.yml, entry regexp-long	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	string_slice--regexp-short.rb	benchmark/string_slice.yml, entry regexp-short	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/mutation	string_slice--string-long.rb	benchmark/string_slice.yml, entry string-long	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/mutation	string_slice--string-short.rb	benchmark/string_slice.yml, entry string-short	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	time_xmlschema--time_xmlschema_0.rb	benchmark/time_xmlschema.yml, entry time_xmlschema_0	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	time_xmlschema--time_xmlschema_1.rb	benchmark/time_xmlschema.yml, entry time_xmlschema_1	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	time_xmlschema--time_xmlschema_2.rb	benchmark/time_xmlschema.yml, entry time_xmlschema_2	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	time_xmlschema--time_xmlschema_3.rb	benchmark/time_xmlschema.yml, entry time_xmlschema_3	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	time_xmlschema--time_xmlschema_4.rb	benchmark/time_xmlschema.yml, entry time_xmlschema_4	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	time_xmlschema--time_xmlschema_5.rb	benchmark/time_xmlschema.yml, entry time_xmlschema_5	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	time_xmlschema--time_xmlschema_6.rb	benchmark/time_xmlschema.yml, entry time_xmlschema_6	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	time_xmlschema--time_xmlschema_7.rb	benchmark/time_xmlschema.yml, entry time_xmlschema_7	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	vm_fiber_count--vm_fiber_count.rb	benchmark/vm_fiber_count.yml, entry vm_fiber_count	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	vm_fiber_reuse--vm_fiber_reuse.rb	benchmark/vm_fiber_reuse.yml, entry vm_fiber_reuse	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/mutation	vm_fiber_reuse_gc--vm_fiber_reuse_gc.rb	benchmark/vm_fiber_reuse_gc.yml, entry vm_fiber_reuse_gc	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/mutation	vm_thread_pass.rb	benchmark/vm_thread_pass.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/regexp	app_answer.rb	benchmark/app_answer.rb	regular expressions
 unsupported/regexp	match_gt4.rb	benchmark/match_gt4.rb	regular expressions
@@ -704,7 +674,15 @@ unsupported/regexp	set--xor_same_0.rb	benchmark/set.yml, entry xor_same_0	regula
 unsupported/regexp	set--xor_same_10.rb	benchmark/set.yml, entry xor_same_10	regular expressions
 unsupported/regexp	set--xor_same_100.rb	benchmark/set.yml, entry xor_same_100	regular expressions
 unsupported/regexp	set--xor_same_1000.rb	benchmark/set.yml, entry xor_same_1000	regular expressions
+unsupported/regexp	string_gsub--escape.rb	benchmark/string_gsub.yml, entry escape	regular expressions
+unsupported/regexp	string_gsub--escape_bin.rb	benchmark/string_gsub.yml, entry escape_bin	regular expressions
+unsupported/regexp	string_gsub--escape_utf8.rb	benchmark/string_gsub.yml, entry escape_utf8	regular expressions
+unsupported/regexp	string_gsub--escape_utf8_bin.rb	benchmark/string_gsub.yml, entry escape_utf8_bin	regular expressions
+unsupported/regexp	string_gsub--gsub_no_match_shared.rb	benchmark/string_gsub.yml, entry gsub_no_match_shared	regular expressions
+unsupported/regexp	string_gsub--sub_no_match_shared.rb	benchmark/string_gsub.yml, entry sub_no_match_shared	regular expressions
 unsupported/regexp	string_scan_re.rb	benchmark/string_scan_re.rb	regular expressions
+unsupported/regexp	string_slice--regexp-long.rb	benchmark/string_slice.yml, entry regexp-long	regular expressions
+unsupported/regexp	string_slice--regexp-short.rb	benchmark/string_slice.yml, entry regexp-short	regular expressions
 unsupported/regexp	string_split--re_chars-1.rb	benchmark/string_split.yml, entry re_chars-1	regular expressions
 unsupported/regexp	string_split--re_chars-10.rb	benchmark/string_split.yml, entry re_chars-10	regular expressions
 unsupported/regexp	string_split--re_chars-100.rb	benchmark/string_split.yml, entry re_chars-100	regular expressions
@@ -726,6 +704,14 @@ unsupported/reopening-classes	range_overlap--range_overlap_5.rb	benchmark/range_
 unsupported/reopening-classes	range_overlap--range_overlap_6.rb	benchmark/range_overlap.yml, entry range_overlap_6	reopening builtin classes
 unsupported/reopening-classes	range_overlap--range_overlap_7.rb	benchmark/range_overlap.yml, entry range_overlap_7	reopening builtin classes
 unsupported/reopening-classes	range_overlap--range_overlap_8.rb	benchmark/range_overlap.yml, entry range_overlap_8	reopening builtin classes
+unsupported/reopening-classes	time_xmlschema--time_xmlschema_0.rb	benchmark/time_xmlschema.yml, entry time_xmlschema_0	reopening builtin classes
+unsupported/reopening-classes	time_xmlschema--time_xmlschema_1.rb	benchmark/time_xmlschema.yml, entry time_xmlschema_1	reopening builtin classes
+unsupported/reopening-classes	time_xmlschema--time_xmlschema_2.rb	benchmark/time_xmlschema.yml, entry time_xmlschema_2	reopening builtin classes
+unsupported/reopening-classes	time_xmlschema--time_xmlschema_3.rb	benchmark/time_xmlschema.yml, entry time_xmlschema_3	reopening builtin classes
+unsupported/reopening-classes	time_xmlschema--time_xmlschema_4.rb	benchmark/time_xmlschema.yml, entry time_xmlschema_4	reopening builtin classes
+unsupported/reopening-classes	time_xmlschema--time_xmlschema_5.rb	benchmark/time_xmlschema.yml, entry time_xmlschema_5	reopening builtin classes
+unsupported/reopening-classes	time_xmlschema--time_xmlschema_6.rb	benchmark/time_xmlschema.yml, entry time_xmlschema_6	reopening builtin classes
+unsupported/reopening-classes	time_xmlschema--time_xmlschema_7.rb	benchmark/time_xmlschema.yml, entry time_xmlschema_7	reopening builtin classes
 unsupported/reopening-classes	vm_freezestring--vm_freezestring.rb	benchmark/vm_freezestring.yml, entry vm_freezestring	reopening builtin classes
 unsupported/require	app_erb--app_erb.rb	benchmark/app_erb.yml, entry app_erb	require / load
 unsupported/require	app_mandelbrot.rb	benchmark/app_mandelbrot.rb	require / load
@@ -827,6 +813,8 @@ unsupported/threads	fiber_chain--resume_chain.rb	benchmark/fiber_chain.yml, entr
 unsupported/threads	fiber_locals--__.rb	benchmark/fiber_locals.yml, entry __	threads and fibers (amber has async)
 unsupported/threads	fiber_locals--key_.rb	benchmark/fiber_locals.yml, entry key_	threads and fibers (amber has async)
 unsupported/threads	fiber_locals--keys.rb	benchmark/fiber_locals.yml, entry keys	threads and fibers (amber has async)
+unsupported/threads	vm_fiber_count--vm_fiber_count.rb	benchmark/vm_fiber_count.yml, entry vm_fiber_count	threads and fibers (amber has async)
+unsupported/threads	vm_fiber_reuse_gc--vm_fiber_reuse_gc.rb	benchmark/vm_fiber_reuse_gc.yml, entry vm_fiber_reuse_gc	threads and fibers (amber has async)
 unsupported/threads	vm_fiber_switch--vm_fiber_switch.rb	benchmark/vm_fiber_switch.yml, entry vm_fiber_switch	threads and fibers (amber has async)
 unsupported/threads	vm_thread_alive_check--vm_thread_alive_check.rb	benchmark/vm_thread_alive_check.yml, entry vm_thread_alive_check	threads and fibers (amber has async)
 unsupported/threads	vm_thread_close.rb	benchmark/vm_thread_close.rb	threads and fibers (amber has async)
@@ -844,13 +832,18 @@ unsupported/vm-introspection	string_casecmp_p--casecmp_p-nonascii1.rb	benchmark/
 unsupported/vm-introspection	string_casecmp_p--casecmp_p-nonascii10.rb	benchmark/string_casecmp_p.yml, entry casecmp_p-nonascii10	GC and VM introspection
 unsupported/vm-introspection	string_casecmp_p--casecmp_p-nonascii100.rb	benchmark/string_casecmp_p.yml, entry casecmp_p-nonascii100	GC and VM introspection
 unsupported/vm-introspection	string_casecmp_p--casecmp_p-nonascii1000.rb	benchmark/string_casecmp_p.yml, entry casecmp_p-nonascii1000	GC and VM introspection
+unsupported/vm-introspection	string_concat--binary_concat_7bit.rb	benchmark/string_concat.yml, entry binary_concat_7bit	GC and VM introspection
+unsupported/vm-introspection	string_concat--binary_concat_embedded.rb	benchmark/string_concat.yml, entry binary_concat_embedded	GC and VM introspection
 unsupported/vm-introspection	string_concat--interpolation.rb	benchmark/string_concat.yml, entry interpolation	GC and VM introspection
 unsupported/vm-introspection	string_concat--interpolation_same_heap.rb	benchmark/string_concat.yml, entry interpolation_same_heap	GC and VM introspection
 unsupported/vm-introspection	string_concat--interpolation_switching_heaps.rb	benchmark/string_concat.yml, entry interpolation_switching_heaps	GC and VM introspection
+unsupported/vm-introspection	string_concat--utf8_concat_7bit.rb	benchmark/string_concat.yml, entry utf8_concat_7bit	GC and VM introspection
+unsupported/vm-introspection	string_concat--utf8_concat_UTF8.rb	benchmark/string_concat.yml, entry utf8_concat_UTF8	GC and VM introspection
 unsupported/vm-introspection	symbol_empty--symbol_empty-0.rb	benchmark/symbol_empty.yml, entry symbol_empty-0	GC and VM introspection
 unsupported/vm-introspection	symbol_empty--symbol_empty-8.rb	benchmark/symbol_empty.yml, entry symbol_empty-8	GC and VM introspection
 unsupported/vm-introspection	vm_backtrace.rb	benchmark/vm_backtrace.rb	caller (backtrace introspection)
 unsupported/vm-introspection	vm_fiber_allocate--vm_fiber_allocate.rb	benchmark/vm_fiber_allocate.yml, entry vm_fiber_allocate	GC and VM introspection
+unsupported/vm-introspection	vm_fiber_reuse--vm_fiber_reuse.rb	benchmark/vm_fiber_reuse.yml, entry vm_fiber_reuse	GC and VM introspection
 unsupported/vm-introspection	vm_gc.rb	benchmark/vm_gc.rb	GC and VM introspection
 unsupported/vm-introspection	vm_gc_old_full.rb	benchmark/vm_gc_old_full.rb	GC and VM introspection
 unsupported/vm-introspection	vm_gc_old_immediate.rb	benchmark/vm_gc_old_immediate.rb	GC and VM introspection
@@ -861,6 +854,7 @@ unsupported/vm-introspection	vm_gc_short_with_symbol--vm_gc_short_with_symbol.rb
 unsupported/vm-introspection	vm_gc_wb_ary_promoted--vm_gc_wb_ary_promoted.rb	benchmark/vm_gc_wb_ary_promoted.yml, entry vm_gc_wb_ary_promoted	GC and VM introspection
 unsupported/vm-introspection	vm_gc_wb_obj_promoted--vm_gc_wb_obj_promoted.rb	benchmark/vm_gc_wb_obj_promoted.yml, entry vm_gc_wb_obj_promoted	GC and VM introspection
 works	app_fib.rb	benchmark/app_fib.rb	
+works	app_lc_fizzbuzz.rb	benchmark/app_lc_fizzbuzz.rb	
 works	app_raise.rb	benchmark/app_raise.rb	
 works	app_strconcat.rb	benchmark/app_strconcat.rb	
 works	app_tak.rb	benchmark/app_tak.rb	
@@ -1044,6 +1038,8 @@ works	hash_defaults--default_aref.rb	benchmark/hash_defaults.yml, entry default_
 works	hash_defaults--default_method.rb	benchmark/hash_defaults.yml, entry default_method	
 works	hash_dup--dup_larger.rb	benchmark/hash_dup.yml, entry dup_larger	
 works	hash_dup--dup_small.rb	benchmark/hash_dup.yml, entry dup_small	
+works	hash_first--hash1.rb	benchmark/hash_first.yml, entry hash1	
+works	hash_first--hash2.rb	benchmark/hash_first.yml, entry hash2	
 works	hash_flatten.rb	benchmark/hash_flatten.rb	
 works	hash_ident_num.rb	benchmark/hash_ident_num.rb	
 works	hash_ident_str.rb	benchmark/hash_ident_str.rb	
@@ -1054,6 +1050,10 @@ works	hash_literal_small2.rb	benchmark/hash_literal_small2.rb
 works	hash_literal_small4.rb	benchmark/hash_literal_small4.rb	
 works	hash_literal_small8.rb	benchmark/hash_literal_small8.rb	
 works	hash_long.rb	benchmark/hash_long.rb	
+works	hash_shift.rb	benchmark/hash_shift.rb	
+works	hash_shift_u16.rb	benchmark/hash_shift_u16.rb	
+works	hash_shift_u24.rb	benchmark/hash_shift_u24.rb	
+works	hash_shift_u32.rb	benchmark/hash_shift_u32.rb	
 works	hash_small2.rb	benchmark/hash_small2.rb	
 works	hash_small4.rb	benchmark/hash_small4.rb	
 works	hash_small8.rb	benchmark/hash_small8.rb	
