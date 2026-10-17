@@ -23,7 +23,7 @@ In Ruby, `Hash.new { |h, k| h[k] = v }` stores into the hash the block is
 given. In amber that store could only rebind the block's parameter `h`,
 and the hash the caller holds would not change, so the block would compute
 the value again on every access while looking as if it cached it. The
-checker rejects it ([src/syntax/convert.go:35](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/syntax/convert.go#L35-L37)),
+checker rejects it ([src/syntax/convert.go:35](https://github.com/radiospiel/amber/blob/95054594acc616b33d0d64937c439428c2a55014/src/syntax/convert.go#L35-L37)),
 as it rejects any mutation, and the block returns the default instead:
 `Hash.new { |h, n| n * n }`.
 
