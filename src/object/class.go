@@ -282,16 +282,18 @@ func (c *Class) MethodNames() []string {
 var (
 	BasicClasses []*Class
 
-	ObjectClass    = NewClass("Object", nil)
-	ModuleClass    = NewClass("Module", ObjectClass)
-	ClassClass     = NewClass("Class", ModuleClass)
-	NilClass       = NewClass("NilClass", ObjectClass)
-	BoolClass      = NewClass("Boolean", ObjectClass)
-	IntegerClass   = NewClass("Integer", ObjectClass)
-	FloatClass     = NewClass("Float", ObjectClass)
-	StringClass    = NewClass("String", ObjectClass)
-	SymbolClass    = NewClass("Symbol", ObjectClass)
-	BytesClass     = NewClass("Bytes", ObjectClass)
+	ObjectClass  = NewClass("Object", nil)
+	ModuleClass  = NewClass("Module", ObjectClass)
+	ClassClass   = NewClass("Class", ModuleClass)
+	NilClass     = NewClass("NilClass", ObjectClass)
+	BoolClass    = NewClass("Boolean", ObjectClass)
+	IntegerClass = NewClass("Integer", ObjectClass)
+	FloatClass   = NewClass("Float", ObjectClass)
+	StringClass  = NewClass("String", ObjectClass)
+	SymbolClass  = NewClass("Symbol", ObjectClass)
+	BytesClass   = NewClass("Bytes", ObjectClass)
+	// A list and a map are Ruby's Array and Hash: those are the names a
+	// script sees, in inspect, in errors and as constants.
 	ListClass      = NewClass("Array", ObjectClass)
 	MapClass       = NewClass("Hash", ObjectClass)
 	SetClass       = NewClass("Set", ObjectClass)

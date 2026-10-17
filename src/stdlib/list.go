@@ -8,6 +8,46 @@ import (
 
 func installList() {
 	c := object.ListClass
+	// Array.new: empty, n nils, n copies of a value, n block values by
+	// index, or a copy of another array.
+	c.DefineSingleton("new", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if len(args) > 2 {
+			return object.Value{}, argError(ctx, len(args), "0..2")
+		}
+		if len(args) == 0 {
+			return object.NewList(), nil
+		}
+		if l, ok := args[0].AsList(); ok && len(args) == 1 {
+			return object.NewList(append([]object.Value{}, l.Elems...)...), nil
+		}
+		n, err := wantInt(ctx, args[0], "")
+		if err != nil {
+			return object.Value{}, err
+		}
+		if n < 0 {
+			return object.Value{}, ctx.Raise(object.ArgumentError, "negative array size")
+		}
+		fill := object.Nil
+		if len(args) == 2 {
+			fill = args[1]
+		}
+		out := make([]object.Value, n)
+		for i := range out {
+			if !block.IsZero() {
+				v, err := ctx.Yield(block, object.Int(i))
+				if err != nil {
+					return object.Value{}, err
+				}
+				out[i] = v
+			} else {
+				out[i] = fill
+			}
+		}
+		return object.NewList(out...), nil
+	})
+	c.DefineSingleton("[]", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return object.NewList(append([]object.Value{}, args...)...), nil
+	})
 	list := func(self object.Value) *object.List { return self.List() }
 	elems := func(self object.Value) []object.Value { return self.List().Elems }
 	def(c, "length", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {

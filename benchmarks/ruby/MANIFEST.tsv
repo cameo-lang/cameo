@@ -1,4 +1,5 @@
 directory	file	source	reason
+bugs	array_values_at_range.rb	benchmark/array_values_at_range.rb	Array#values_at with a range nests the range's elements and does not pad past the end
 bugs	bighash.rb	benchmark/bighash.rb	quadratic: each h[k] = v copies the whole map
 bugs	gc_hash1.rb	benchmark/gc/hash1.rb	quadratic: each h[k] = v copies the whole map
 bugs	gc_hash2.rb	benchmark/gc/hash2.rb	quadratic: each h[k] = v copies the whole map
@@ -21,32 +22,11 @@ bugs	range_reverse_each--Fixnum_1M.rb	benchmark/range_reverse_each.yml, entry Fi
 bugs	vm_dstr_class_module.rb	benchmark/vm_dstr_class_module.rb	defined?(X) raises NameError instead of returning nil
 bugs	vm_dstr_obj.rb	benchmark/vm_dstr_obj.rb	Object is not bound as a constant
 bugs	vm_freezeobj--vm_freeze_obj.rb	benchmark/vm_freezeobj.yml, entry vm_freeze_obj	Object is not bound as a constant
+bugs	vm_gc_short_with_complex_long--vm_gc_short_with_complex_long.rb	benchmark/vm_gc_short_with_complex_long.yml, entry vm_gc_short_with_complex_long	Object is not bound as a constant
 bugs	vm_neq--vm_neq.rb	benchmark/vm_neq.yml, entry vm_neq	Object is not bound as a constant
 bugs	vm_not--vm_not.rb	benchmark/vm_not.yml, entry vm_not	Object is not bound as a constant
-stdlib/array	array_eql--large_ary.__.rb	benchmark/array_eql.yml, entry large_ary.__	Array/Hash constants (Array.new, Hash.new)
-stdlib/array	array_eql--large_ary.eql_.rb	benchmark/array_eql.yml, entry large_ary.eql_	Array/Hash constants (Array.new, Hash.new)
-stdlib/array	array_eql--small_ary.eql_.rb	benchmark/array_eql.yml, entry small_ary.eql_	Array/Hash constants (Array.new, Hash.new)
-stdlib/array	array_eql--str_ary.eql_.rb	benchmark/array_eql.yml, entry str_ary.eql_	Array/Hash constants (Array.new, Hash.new)
 stdlib/array	array_intersection--big-intersection.rb	benchmark/array_intersection.yml, entry big-intersection	Array#intersection with several arguments, Array#sample(n)
 stdlib/array	array_intersection--small-intersection.rb	benchmark/array_intersection.yml, entry small-intersection	Array#intersection with several arguments, Array#sample(n)
-stdlib/array	array_join--join_nl_n100_e1.rb	benchmark/array_join.yml, entry join_nl_n100_e1	Array/Hash constants (Array.new, Hash.new)
-stdlib/array	array_join--join_nl_n100_e40.rb	benchmark/array_join.yml, entry join_nl_n100_e40	Array/Hash constants (Array.new, Hash.new)
-stdlib/array	array_join--join_nl_n100_e8.rb	benchmark/array_join.yml, entry join_nl_n100_e8	Array/Hash constants (Array.new, Hash.new)
-stdlib/array	array_join--join_nl_n100k_e1.rb	benchmark/array_join.yml, entry join_nl_n100k_e1	Array/Hash constants (Array.new, Hash.new)
-stdlib/array	array_join--join_nl_n100k_e40.rb	benchmark/array_join.yml, entry join_nl_n100k_e40	Array/Hash constants (Array.new, Hash.new)
-stdlib/array	array_join--join_nl_n100k_e8.rb	benchmark/array_join.yml, entry join_nl_n100k_e8	Array/Hash constants (Array.new, Hash.new)
-stdlib/array	array_join--join_nl_n1k_e1.rb	benchmark/array_join.yml, entry join_nl_n1k_e1	Array/Hash constants (Array.new, Hash.new)
-stdlib/array	array_join--join_nl_n1k_e40.rb	benchmark/array_join.yml, entry join_nl_n1k_e40	Array/Hash constants (Array.new, Hash.new)
-stdlib/array	array_join--join_nl_n1k_e8.rb	benchmark/array_join.yml, entry join_nl_n1k_e8	Array/Hash constants (Array.new, Hash.new)
-stdlib/array	array_join--join_sp_n100_e1.rb	benchmark/array_join.yml, entry join_sp_n100_e1	Array/Hash constants (Array.new, Hash.new)
-stdlib/array	array_join--join_sp_n100_e40.rb	benchmark/array_join.yml, entry join_sp_n100_e40	Array/Hash constants (Array.new, Hash.new)
-stdlib/array	array_join--join_sp_n100_e8.rb	benchmark/array_join.yml, entry join_sp_n100_e8	Array/Hash constants (Array.new, Hash.new)
-stdlib/array	array_join--join_sp_n100k_e1.rb	benchmark/array_join.yml, entry join_sp_n100k_e1	Array/Hash constants (Array.new, Hash.new)
-stdlib/array	array_join--join_sp_n100k_e40.rb	benchmark/array_join.yml, entry join_sp_n100k_e40	Array/Hash constants (Array.new, Hash.new)
-stdlib/array	array_join--join_sp_n100k_e8.rb	benchmark/array_join.yml, entry join_sp_n100k_e8	Array/Hash constants (Array.new, Hash.new)
-stdlib/array	array_join--join_sp_n1k_e1.rb	benchmark/array_join.yml, entry join_sp_n1k_e1	Array/Hash constants (Array.new, Hash.new)
-stdlib/array	array_join--join_sp_n1k_e40.rb	benchmark/array_join.yml, entry join_sp_n1k_e40	Array/Hash constants (Array.new, Hash.new)
-stdlib/array	array_join--join_sp_n1k_e8.rb	benchmark/array_join.yml, entry join_sp_n1k_e8	Array/Hash constants (Array.new, Hash.new)
 stdlib/array	array_sample--array_sample_1.rb	benchmark/array_sample.yml, entry array_sample_1	Array#intersection with several arguments, Array#sample(n)
 stdlib/array	array_sample_100k_10.rb	benchmark/array_sample_100k_10.rb	Array#intersection with several arguments, Array#sample(n)
 stdlib/array	array_sample_100k_11.rb	benchmark/array_sample_100k_11.rb	Array#intersection with several arguments, Array#sample(n)
@@ -55,33 +35,15 @@ stdlib/array	array_sample_100k__1k.rb	benchmark/array_sample_100k__1k.rb	Array#i
 stdlib/array	array_sample_100k__6k.rb	benchmark/array_sample_100k__6k.rb	Array#intersection with several arguments, Array#sample(n)
 stdlib/array	array_sample_100k___10k.rb	benchmark/array_sample_100k___10k.rb	Array#intersection with several arguments, Array#sample(n)
 stdlib/array	array_sample_100k___50k.rb	benchmark/array_sample_100k___50k.rb	Array#intersection with several arguments, Array#sample(n)
-stdlib/array	array_sort_block.rb	benchmark/array_sort_block.rb	Array/Hash constants (Array.new, Hash.new)
-stdlib/array	array_sort_float.rb	benchmark/array_sort_float.rb	Array/Hash constants (Array.new, Hash.new)
-stdlib/array	array_values_at_int.rb	benchmark/array_values_at_int.rb	Array/Hash constants (Array.new, Hash.new)
-stdlib/array	array_values_at_range.rb	benchmark/array_values_at_range.rb	Array/Hash constants (Array.new, Hash.new)
 stdlib/array	enum_lazy_grep_v_100.rb	benchmark/enum_lazy_grep_v_100.rb	Array#grep_v
 stdlib/array	enum_lazy_grep_v_20.rb	benchmark/enum_lazy_grep_v_20.rb	Array#grep_v
 stdlib/array	enum_lazy_grep_v_50.rb	benchmark/enum_lazy_grep_v_50.rb	Array#grep_v
-stdlib/array	string_scan_str.rb	benchmark/string_scan_str.rb	Array/Hash constants (Array.new, Hash.new)
-stdlib/array	vm_gc_old_full.rb	benchmark/vm_gc_old_full.rb	Array/Hash constants (Array.new, Hash.new)
-stdlib/array	vm_gc_old_immediate.rb	benchmark/vm_gc_old_immediate.rb	Array/Hash constants (Array.new, Hash.new)
-stdlib/array	vm_gc_old_lazy.rb	benchmark/vm_gc_old_lazy.rb	Array/Hash constants (Array.new, Hash.new)
-stdlib/array	vm_gc_short_with_long--vm_gc_short_with_long.rb	benchmark/vm_gc_short_with_long.yml, entry vm_gc_short_with_long	Array/Hash constants (Array.new, Hash.new)
 stdlib/float	float_to_s--to_s.rb	benchmark/float_to_s.yml, entry to_s	Float#step
 stdlib/float	ractor_float_to_s--ractor_float_to_s.rb	benchmark/ractor_float_to_s.yml, entry ractor_float_to_s	Float#step
-stdlib/hash	hash_defaults--default_aref.rb	benchmark/hash_defaults.yml, entry default_aref	Array/Hash constants (Array.new, Hash.new)
-stdlib/hash	hash_defaults--default_method.rb	benchmark/hash_defaults.yml, entry default_method	Array/Hash constants (Array.new, Hash.new)
+stdlib/hash	hash_defaults--default_aref.rb	benchmark/hash_defaults.yml, entry default_aref	Hash.new with a default
+stdlib/hash	hash_defaults--default_method.rb	benchmark/hash_defaults.yml, entry default_method	Hash.new with a default
 stdlib/hash	hash_flatten.rb	benchmark/hash_flatten.rb	Hash#flatten
 stdlib/hash	hash_to_proc.rb	benchmark/hash_to_proc.rb	Hash#to_proc
-stdlib/hash	pm_array--fourth_match.rb	benchmark/pm_array.yml, entry fourth_match	Array/Hash constants (Array.new, Hash.new)
-stdlib/hash	vm_case_classes--vm_case_classes.rb	benchmark/vm_case_classes.yml, entry vm_case_classes	Array/Hash constants (Array.new, Hash.new)
-stdlib/hash	vm_gc_short_with_complex_long--vm_gc_short_with_complex_long.rb	benchmark/vm_gc_short_with_complex_long.yml, entry vm_gc_short_with_complex_long	Array/Hash constants (Array.new, Hash.new)
-stdlib/hash	vm_send_cfunc--vm_send_cfunc.rb	benchmark/vm_send_cfunc.yml, entry vm_send_cfunc	Array/Hash constants (Array.new, Hash.new)
-stdlib/hash	vm_send_cfunc--vm_send_cfunc_splat.rb	benchmark/vm_send_cfunc.yml, entry vm_send_cfunc_splat	Array/Hash constants (Array.new, Hash.new)
-stdlib/hash	vm_send_cfunc--vm_send_cfunc_splat_empty_kw.rb	benchmark/vm_send_cfunc.yml, entry vm_send_cfunc_splat_empty_kw	Array/Hash constants (Array.new, Hash.new)
-stdlib/hash	vm_send_cfunc--vm_send_cfunc_splat_empty_kw_hash.rb	benchmark/vm_send_cfunc.yml, entry vm_send_cfunc_splat_empty_kw_hash	Array/Hash constants (Array.new, Hash.new)
-stdlib/hash	vm_send_cfunc--vm_send_cfunc_splat_kw.rb	benchmark/vm_send_cfunc.yml, entry vm_send_cfunc_splat_kw	Array/Hash constants (Array.new, Hash.new)
-stdlib/hash	vm_send_cfunc--vm_send_cfunc_splat_kw_hash.rb	benchmark/vm_send_cfunc.yml, entry vm_send_cfunc_splat_kw_hash	Array/Hash constants (Array.new, Hash.new)
 stdlib/kernel	kernel_then--kernel_yield_self.rb	benchmark/kernel_then.yml, entry kernel_yield_self	Integer#yield_self
 stdlib/kernel	kernel_then--kernel_yield_self_enum.rb	benchmark/kernel_then.yml, entry kernel_yield_self_enum	Integer#yield_self
 stdlib/random	array_max_float--ary10.max.rb	benchmark/array_max_float.yml, entry ary10.max	Random (rand, sample, shuffle)
@@ -135,6 +97,8 @@ stdlib/random	array_min--ary500.min.rb	benchmark/array_min.yml, entry ary500.min
 stdlib/random	array_min--ary5000.min.rb	benchmark/array_min.yml, entry ary5000.min	Random (rand, sample, shuffle)
 stdlib/random	array_min--ary50000.min.rb	benchmark/array_min.yml, entry ary50000.min	Random (rand, sample, shuffle)
 stdlib/random	array_sample--array_sample_0.rb	benchmark/array_sample.yml, entry array_sample_0	Random (rand, sample, shuffle)
+stdlib/random	array_sort_block.rb	benchmark/array_sort_block.rb	Random (rand, sample, shuffle)
+stdlib/random	array_sort_float.rb	benchmark/array_sort_float.rb	Random (rand, sample, shuffle)
 stdlib/random	array_sort_int--ary10.sort.rb	benchmark/array_sort_int.yml, entry ary10.sort	Random (rand, sample, shuffle)
 stdlib/random	array_sort_int--ary100.sort.rb	benchmark/array_sort_int.yml, entry ary100.sort	Random (rand, sample, shuffle)
 stdlib/random	array_sort_int--ary1000.sort.rb	benchmark/array_sort_int.yml, entry ary1000.sort	Random (rand, sample, shuffle)
@@ -214,6 +178,7 @@ stdlib/string	string_dup--uplus.rb	benchmark/string_dup.yml, entry uplus	String#
 stdlib/string	string_fstring--fstring_same.rb	benchmark/string_fstring.yml, entry fstring_same	String#-@
 stdlib/string	string_memsearch--byteindex_first_byte_absent.rb	benchmark/string_memsearch.yml, entry byteindex_first_byte_absent	String#byteindex
 stdlib/string	string_memsearch--byteindex_first_byte_common.rb	benchmark/string_memsearch.yml, entry byteindex_first_byte_common	String#byteindex
+stdlib/string	string_scan_str.rb	benchmark/string_scan_str.rb	String#scan
 stdlib/string-range	enum_lazy_zip--block.rb	benchmark/enum_lazy_zip.yml, entry block	ranges over strings ('a'..'z')
 stdlib/string-range	enum_lazy_zip--chain-first_nonary.rb	benchmark/enum_lazy_zip.yml, entry chain-first_nonary	ranges over strings ('a'..'z')
 stdlib/string-range	enum_lazy_zip--chain-take3_nonary.rb	benchmark/enum_lazy_zip.yml, entry chain-take3_nonary	ranges over strings ('a'..'z')
@@ -579,6 +544,12 @@ unsupported/instance-variables	vm_ivar_set_on_instance--vm_ivar_set_on_class.rb	
 unsupported/instance-variables	vm_ivar_set_on_instance--vm_ivar_set_on_generic.rb	benchmark/vm_ivar_set_on_instance.yml, entry vm_ivar_set_on_generic	instance variables outside initialize
 unsupported/instance-variables	vm_ivar_set_on_instance--vm_ivar_set_on_instance.rb	benchmark/vm_ivar_set_on_instance.yml, entry vm_ivar_set_on_instance	instance variables outside initialize
 unsupported/instance-variables	vm_ivar_set_subclass--vm_ivar_init_subclass.rb	benchmark/vm_ivar_set_subclass.yml, entry vm_ivar_init_subclass	instance variables outside initialize
+unsupported/legacy-keywords	vm_send_cfunc--vm_send_cfunc.rb	benchmark/vm_send_cfunc.yml, entry vm_send_cfunc	ruby2_keywords (legacy keyword passing)
+unsupported/legacy-keywords	vm_send_cfunc--vm_send_cfunc_splat.rb	benchmark/vm_send_cfunc.yml, entry vm_send_cfunc_splat	ruby2_keywords (legacy keyword passing)
+unsupported/legacy-keywords	vm_send_cfunc--vm_send_cfunc_splat_empty_kw.rb	benchmark/vm_send_cfunc.yml, entry vm_send_cfunc_splat_empty_kw	ruby2_keywords (legacy keyword passing)
+unsupported/legacy-keywords	vm_send_cfunc--vm_send_cfunc_splat_empty_kw_hash.rb	benchmark/vm_send_cfunc.yml, entry vm_send_cfunc_splat_empty_kw_hash	ruby2_keywords (legacy keyword passing)
+unsupported/legacy-keywords	vm_send_cfunc--vm_send_cfunc_splat_kw.rb	benchmark/vm_send_cfunc.yml, entry vm_send_cfunc_splat_kw	ruby2_keywords (legacy keyword passing)
+unsupported/legacy-keywords	vm_send_cfunc--vm_send_cfunc_splat_kw_hash.rb	benchmark/vm_send_cfunc.yml, entry vm_send_cfunc_splat_kw_hash	ruby2_keywords (legacy keyword passing)
 unsupported/marshal	marshal_dump_flo.rb	benchmark/marshal_dump_flo.rb	Marshal
 unsupported/marshal	marshal_dump_load_integer--marshal_dump_integer_over_32_bit.rb	benchmark/marshal_dump_load_integer.yml, entry marshal_dump_integer_over_32_bit	Marshal
 unsupported/marshal	marshal_dump_load_integer--marshal_dump_integer_over_64_bit.rb	benchmark/marshal_dump_load_integer.yml, entry marshal_dump_integer_over_64_bit	Marshal
@@ -1135,6 +1106,10 @@ unsupported/vm-introspection	symbol_empty--symbol_empty-0.rb	benchmark/symbol_em
 unsupported/vm-introspection	symbol_empty--symbol_empty-8.rb	benchmark/symbol_empty.yml, entry symbol_empty-8	GC and VM introspection
 unsupported/vm-introspection	vm_fiber_allocate--vm_fiber_allocate.rb	benchmark/vm_fiber_allocate.yml, entry vm_fiber_allocate	GC and VM introspection
 unsupported/vm-introspection	vm_gc.rb	benchmark/vm_gc.rb	GC and VM introspection
+unsupported/vm-introspection	vm_gc_old_full.rb	benchmark/vm_gc_old_full.rb	GC and VM introspection
+unsupported/vm-introspection	vm_gc_old_immediate.rb	benchmark/vm_gc_old_immediate.rb	GC and VM introspection
+unsupported/vm-introspection	vm_gc_old_lazy.rb	benchmark/vm_gc_old_lazy.rb	GC and VM introspection
+unsupported/vm-introspection	vm_gc_short_with_long--vm_gc_short_with_long.rb	benchmark/vm_gc_short_with_long.yml, entry vm_gc_short_with_long	GC and VM introspection
 unsupported/vm-introspection	vm_gc_short_with_symbol--vm_gc_short_with_symbol.rb	benchmark/vm_gc_short_with_symbol.yml, entry vm_gc_short_with_symbol	GC and VM introspection
 unsupported/vm-introspection	vm_gc_wb_ary_promoted--vm_gc_wb_ary_promoted.rb	benchmark/vm_gc_wb_ary_promoted.yml, entry vm_gc_wb_ary_promoted	GC and VM introspection
 unsupported/vm-introspection	vm_gc_wb_obj_promoted--vm_gc_wb_obj_promoted.rb	benchmark/vm_gc_wb_obj_promoted.yml, entry vm_gc_wb_obj_promoted	GC and VM introspection
@@ -1143,8 +1118,31 @@ works	app_raise.rb	benchmark/app_raise.rb
 works	app_strconcat.rb	benchmark/app_strconcat.rb	
 works	app_tak.rb	benchmark/app_tak.rb	
 works	app_tarai.rb	benchmark/app_tarai.rb	
+works	array_eql--large_ary.__.rb	benchmark/array_eql.yml, entry large_ary.__	
+works	array_eql--large_ary.eql_.rb	benchmark/array_eql.yml, entry large_ary.eql_	
+works	array_eql--small_ary.eql_.rb	benchmark/array_eql.yml, entry small_ary.eql_	
+works	array_eql--str_ary.eql_.rb	benchmark/array_eql.yml, entry str_ary.eql_	
 works	array_intersection--big-_.rb	benchmark/array_intersection.yml, entry big-_	
 works	array_intersection--small-_.rb	benchmark/array_intersection.yml, entry small-_	
+works	array_join--join_nl_n100_e1.rb	benchmark/array_join.yml, entry join_nl_n100_e1	
+works	array_join--join_nl_n100_e40.rb	benchmark/array_join.yml, entry join_nl_n100_e40	
+works	array_join--join_nl_n100_e8.rb	benchmark/array_join.yml, entry join_nl_n100_e8	
+works	array_join--join_nl_n100k_e1.rb	benchmark/array_join.yml, entry join_nl_n100k_e1	
+works	array_join--join_nl_n100k_e40.rb	benchmark/array_join.yml, entry join_nl_n100k_e40	
+works	array_join--join_nl_n100k_e8.rb	benchmark/array_join.yml, entry join_nl_n100k_e8	
+works	array_join--join_nl_n1k_e1.rb	benchmark/array_join.yml, entry join_nl_n1k_e1	
+works	array_join--join_nl_n1k_e40.rb	benchmark/array_join.yml, entry join_nl_n1k_e40	
+works	array_join--join_nl_n1k_e8.rb	benchmark/array_join.yml, entry join_nl_n1k_e8	
+works	array_join--join_sp_n100_e1.rb	benchmark/array_join.yml, entry join_sp_n100_e1	
+works	array_join--join_sp_n100_e40.rb	benchmark/array_join.yml, entry join_sp_n100_e40	
+works	array_join--join_sp_n100_e8.rb	benchmark/array_join.yml, entry join_sp_n100_e8	
+works	array_join--join_sp_n100k_e1.rb	benchmark/array_join.yml, entry join_sp_n100k_e1	
+works	array_join--join_sp_n100k_e40.rb	benchmark/array_join.yml, entry join_sp_n100k_e40	
+works	array_join--join_sp_n100k_e8.rb	benchmark/array_join.yml, entry join_sp_n100k_e8	
+works	array_join--join_sp_n1k_e1.rb	benchmark/array_join.yml, entry join_sp_n1k_e1	
+works	array_join--join_sp_n1k_e40.rb	benchmark/array_join.yml, entry join_sp_n1k_e40	
+works	array_join--join_sp_n1k_e8.rb	benchmark/array_join.yml, entry join_sp_n1k_e8	
+works	array_values_at_int.rb	benchmark/array_values_at_int.rb	
 works	enum_lazy_uniq_100.rb	benchmark/enum_lazy_uniq_100.rb	
 works	enum_lazy_uniq_20.rb	benchmark/enum_lazy_uniq_20.rb	
 works	enum_lazy_uniq_50.rb	benchmark/enum_lazy_uniq_50.rb	
@@ -1221,6 +1219,7 @@ works	num_zero_p--num_zero_p_1.rb	benchmark/num_zero_p.yml, entry num_zero_p_1
 works	numeric_methods--finite_.rb	benchmark/numeric_methods.yml, entry finite_	
 works	numeric_methods--integer_.rb	benchmark/numeric_methods.yml, entry integer_	
 works	pm_array--first_match.rb	benchmark/pm_array.yml, entry first_match	
+works	pm_array--fourth_match.rb	benchmark/pm_array.yml, entry fourth_match	
 works	pm_array--second_match.rb	benchmark/pm_array.yml, entry second_match	
 works	pm_array--third_match.rb	benchmark/pm_array.yml, entry third_match	
 works	range_count--int_1.rb	benchmark/range_count.yml, entry int_1	
@@ -1278,6 +1277,7 @@ works	vm_call_kw_and_kw_splat--100_mutable.rb	benchmark/vm_call_kw_and_kw_splat.
 works	vm_call_kw_and_kw_splat--10_mutable.rb	benchmark/vm_call_kw_and_kw_splat.yml, entry 10_mutable	
 works	vm_call_kw_and_kw_splat--1_mutable.rb	benchmark/vm_call_kw_and_kw_splat.yml, entry 1_mutable	
 works	vm_case--vm_case.rb	benchmark/vm_case.yml, entry vm_case	
+works	vm_case_classes--vm_case_classes.rb	benchmark/vm_case_classes.yml, entry vm_case_classes	
 works	vm_const--vm_const.rb	benchmark/vm_const.yml, entry vm_const	
 works	vm_const--vm_const_many.rb	benchmark/vm_const.yml, entry vm_const_many	
 works	vm_dstr--vm_dstr.rb	benchmark/vm_dstr.yml, entry vm_dstr	
