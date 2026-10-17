@@ -244,6 +244,7 @@ func (in *Interp) worker() *Interp {
 		consts:    make(map[string]object.Value, len(in.consts)),
 		proto:     in.proto,
 		procs:     in.procs,
+		code:      in.code,
 	}
 	for name, v := range in.consts {
 		w.consts[name] = v

@@ -30,3 +30,4 @@ The steps:
 - [7. `async` and `await`](07-async.md)
 - [8. A method cache per class](08-method-cache.md)
 - [9. Two allocations per method call instead of seven](09-allocations.md)
+- [10. Each node compiles to a closure on first use](10-closure-compiler.md)
