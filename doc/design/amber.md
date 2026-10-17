@@ -77,7 +77,7 @@ Every value is immutable. The kinds of value are:
 | Regexp | in `amber.Value`, a `Regexp` message: source and options; a MatchData does not travel |
 | Time | in `amber.Value`, a `Time` message: seconds, nanoseconds, UTC offset and zone; there is no field type for it yet |
 | an instance of a user class | the message that class declares |
-| Class, Proc, AsyncProcess, Enumerator | not serialisable; see *Async* |
+| Class, Proc, AsyncProcess, Enumerator, Pathname | not serialisable; see *Async* |
 
 Equality is structural everywhere: two lists with equal elements are `==`,
 two instances of one class with equal fields are `==` and hash alike. There
@@ -558,6 +558,13 @@ re-opened by accident:
     `method_missing`, with the name as a symbol, the arguments and the
     block; `super` from it reaches Object's, which raises NoMethodError.
     `respond_to?` asks `respond_to_missing?` for a name it does not find.
+  - Paths are arithmetic, not I/O: `File.join`, `basename`, `dirname`,
+    `extname`, `split`, `expand_path` and `absolute_path`, and `Pathname`,
+    an immutable path whose `+`, `join`, `cleanpath`, `parent` and
+    `relative_path_from` follow Ruby's pathname.rb. `expand_path` reads the
+    working directory and `$HOME` to resolve a relative path or `~`;
+    nothing reads a file. `__FILE__` is the script's path and `__dir__`
+    its directory.
   - Kept out: `GC`, `ENV`, metaprogramming (`define_method`, `send`,
     `eval`, `instance_variable_set`), setters and untyped fields, fibers
     and threads, and anything that touches the file system.

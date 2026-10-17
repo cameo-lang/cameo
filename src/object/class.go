@@ -308,6 +308,9 @@ var (
 	MatchDataClass = NewClass("MatchData", ObjectClass)
 	ProcClass      = NewClass("Proc", ObjectClass)
 	ProcessClass   = NewClass("AsyncProcess", ObjectClass)
+	// PathnameClass is Pathname: an instance holds its path, as its one
+	// field.
+	PathnameClass = NewClass("Pathname", ObjectClass)
 	// EnumeratorClass is Enumerator; LazyClass, Enumerator::Lazy, is
 	// bound inside it.
 	EnumeratorClass = NewClass("Enumerator", ObjectClass)
@@ -360,7 +363,7 @@ func init() {
 	TimeClass.Include(Comparable)
 	BasicClasses = []*Class{
 		ObjectClass, ModuleClass, ClassClass, NilClass, BoolClass, IntegerClass, FloatClass,
-		StringClass, SymbolClass, BytesClass, ListClass, MapClass, SetClass, RangeClass, TimeClass, RegexpClass, MatchDataClass, EnumeratorClass, ProcClass,
+		StringClass, SymbolClass, BytesClass, ListClass, MapClass, SetClass, RangeClass, TimeClass, RegexpClass, MatchDataClass, EnumeratorClass, PathnameClass, ProcClass,
 		ProcessClass, ExceptionClass, Enumerable, Comparable, MathModule,
 		StandardError, RuntimeError, ArgumentError, TypeError, NameError, NoMethodError, KeyError,
 		IndexError, RangeError, ZeroDivisionError, StopIteration, NoMatchingPattern, FrozenError,

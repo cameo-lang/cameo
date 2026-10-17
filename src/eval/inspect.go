@@ -66,6 +66,8 @@ func (in *Interp) ToS(v object.Value) (string, error) {
 			return "main", nil
 		case object.ObjectClass:
 			return "#<Object>", nil
+		case object.PathnameClass:
+			return v.Instance().Fields[0].Str(), nil
 		}
 	}
 	if v.IsNil() {
@@ -183,6 +185,8 @@ func (in *Interp) inspectBuiltin(v object.Value) (string, error) {
 		case object.ObjectClass:
 			// A bare Object has no fields to show, and amber no address.
 			return "#<Object>", nil
+		case object.PathnameClass:
+			return "#<Pathname:" + v.Fields[0].Str() + ">", nil
 		}
 		parts := make([]string, len(v.Cls.Fields))
 		for i, f := range v.Cls.Fields {
@@ -305,6 +309,10 @@ func (in *Interp) Compare(a, b object.Value) (int, error) {
 	case object.KindTime:
 		if b, ok := b.AsTime(); ok {
 			return a.Time().Compare(b), nil
+		}
+	case object.KindInstance:
+		if r, ok := stdlib.ComparePathnames(a, b); ok {
+			return r, nil
 		}
 	case object.KindList:
 		a := a.List()
