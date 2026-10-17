@@ -99,20 +99,6 @@ stdlib/string	string_rpartition--rpartition-nonascii10.rb	benchmark/string_rpart
 stdlib/string	string_rpartition--rpartition-nonascii100.rb	benchmark/string_rpartition.yml, entry rpartition-nonascii100	String#rpartition
 stdlib/string	string_rpartition--rpartition-nonascii1000.rb	benchmark/string_rpartition.yml, entry rpartition-nonascii1000	String#rpartition
 stdlib/string	string_scan_str.rb	benchmark/string_scan_str.rb	String#scan
-stdlib/time	time_at--time_at_0.rb	benchmark/time_at.yml, entry time_at_0	Time
-stdlib/time	time_at--time_at_1.rb	benchmark/time_at.yml, entry time_at_1	Time
-stdlib/time	time_at--time_at_2.rb	benchmark/time_at.yml, entry time_at_2	Time
-stdlib/time	time_at--time_at_3.rb	benchmark/time_at.yml, entry time_at_3	Time
-stdlib/time	time_new--time_new_0.rb	benchmark/time_new.yml, entry time_new_0	Time
-stdlib/time	time_new--time_new_1.rb	benchmark/time_new.yml, entry time_new_1	Time
-stdlib/time	time_new--time_new_2.rb	benchmark/time_new.yml, entry time_new_2	Time
-stdlib/time	time_now--time_now_0.rb	benchmark/time_now.yml, entry time_now_0	Time
-stdlib/time	time_now--time_now_1.rb	benchmark/time_now.yml, entry time_now_1	Time
-stdlib/time	time_now--time_now_2.rb	benchmark/time_now.yml, entry time_now_2	Time
-stdlib/time	time_strftime--time_strftime_0.rb	benchmark/time_strftime.yml, entry time_strftime_0	Time
-stdlib/time	time_strftime--time_strftime_1.rb	benchmark/time_strftime.yml, entry time_strftime_1	Time
-stdlib/time	time_strftime--time_strftime_2.rb	benchmark/time_strftime.yml, entry time_strftime_2	Time
-stdlib/time	time_subsec.rb	benchmark/time_subsec.rb	Time
 unsupported/alias	vm_backtrace.rb	benchmark/vm_backtrace.rb	alias / undef / method redefinition
 unsupported/anonymous-classes	class_superclass--large_class_superclass.rb	benchmark/class_superclass.yml, entry large_class_superclass	Module.new / Class.new (classes are literals)
 unsupported/anonymous-classes	class_superclass--medium_class_superclass.rb	benchmark/class_superclass.yml, entry medium_class_superclass	Module.new / Class.new (classes are literals)
@@ -1260,6 +1246,20 @@ works	string_swapcase--swapcase-nonascii1.rb	benchmark/string_swapcase.yml, entr
 works	string_swapcase--swapcase-nonascii10.rb	benchmark/string_swapcase.yml, entry swapcase-nonascii10	
 works	string_swapcase--swapcase-nonascii100.rb	benchmark/string_swapcase.yml, entry swapcase-nonascii100	
 works	string_swapcase--swapcase-nonascii1000.rb	benchmark/string_swapcase.yml, entry swapcase-nonascii1000	
+works	time_at--time_at_0.rb	benchmark/time_at.yml, entry time_at_0	
+works	time_at--time_at_1.rb	benchmark/time_at.yml, entry time_at_1	
+works	time_at--time_at_2.rb	benchmark/time_at.yml, entry time_at_2	
+works	time_at--time_at_3.rb	benchmark/time_at.yml, entry time_at_3	
+works	time_new--time_new_0.rb	benchmark/time_new.yml, entry time_new_0	
+works	time_new--time_new_1.rb	benchmark/time_new.yml, entry time_new_1	
+works	time_new--time_new_2.rb	benchmark/time_new.yml, entry time_new_2	
+works	time_now--time_now_0.rb	benchmark/time_now.yml, entry time_now_0	
+works	time_now--time_now_1.rb	benchmark/time_now.yml, entry time_now_1	
+works	time_now--time_now_2.rb	benchmark/time_now.yml, entry time_now_2	
+works	time_strftime--time_strftime_0.rb	benchmark/time_strftime.yml, entry time_strftime_0	
+works	time_strftime--time_strftime_1.rb	benchmark/time_strftime.yml, entry time_strftime_1	
+works	time_strftime--time_strftime_2.rb	benchmark/time_strftime.yml, entry time_strftime_2	
+works	time_subsec.rb	benchmark/time_subsec.rb	
 works	vm_array--vm_array.rb	benchmark/vm_array.yml, entry vm_array	
 works	vm_bigarray--vm_bigarray.rb	benchmark/vm_bigarray.yml, entry vm_bigarray	
 works	vm_bighash--vm_bighash.rb	benchmark/vm_bighash.yml, entry vm_bighash	

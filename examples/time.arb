@@ -1,0 +1,39 @@
+# Time: an immutable instant, shown in UTC, the local zone or a fixed
+# offset.
+t = Time.at(0, 500, in: "+09:00")
+p t, t.to_s, t.usec, t.nsec, t.zone, t.utc_offset, t.utc?
+u = Time.at(1629590400, in: "UTC")
+p u, u.zone, u.utc?, [u.year, u.month, u.day, u.hour, u.min, u.sec, u.wday, u.yday]
+p Time.at(1.5, in: "UTC"), Time.at(0, 1, :millisecond, in: "UTC"), Time.at(0, 7, :nsec, in: "Z")
+p Time.at(0, in: "-00:00"), Time.at(0, in: "+0530"), Time.at(0, in: 3600), Time.at(0, in: "A"), Time.at(0, in: "-02")
+
+# Time.new takes the civil fields, and a zone last or as in:.
+n = Time.new(2021, 8, 22, in: "+09:00")
+p n, n.to_i, Time.new(2021, 8, 22, 13, 5, 9.25, "-03:00"), Time.utc(2000, 1, 2, 3, 4, 5), Time.gm(2000, "feb", 2)
+
+# Arithmetic keeps the offset; the difference of two times is in seconds.
+p n + 3600, n - 1.5, (n + 60) - n, n.getutc, n.getlocal("-05:00"), n.getlocal("+01:30")
+
+# Times compare as instants, whatever their offsets.
+p n == Time.new(2021, 8, 21, 15, 0, 0, "UTC"), n.eql?(n.getutc), n.hash == n.getutc.hash
+p n < n + 1, [n + 5, n, n - 5].sort.map(&:to_i), [n, n + 1].max == n + 1, (n <=> 1)
+
+f = Time.new(2021, 8, 2, 4, 5, 6.789, "+05:30")
+puts f.strftime("%FT%T.%3N %z %:z %::z|%Y %C %y %m %d %e %j|%H %k %I %l %p %P %M %S %L")
+puts f.strftime("%A %a %^A %B %b %h %^b %u %w %U %W %G %g %V|%s|%c|%D|%x|%X|%R|%r|%T|%v|%%|%Z|")
+puts f.strftime("%-d %-m %_m %05d %10A %-10A|%^p %#p %#b %q"), u.strftime("%Z %z")
+p f.round, f.round(1), f.floor(2), f.ceil(1), f.usec, f.monday?, f.sunday?
+p Time.at(0, 123456789, :nsec, in: "UTC"), Time.at(-1, in: "UTC"), Time.new(-5, 1, 1, 0, 0, 0, "UTC")
+p Time.new(99, 1, 1, 0, 0, 0, "UTC").strftime("%Y %C %y"), Time.at(f).to_s, Time.new(2021, 1, 1, 24, 0, 0, "UTC")
+
+[-> { Time.at(0, in: "nope") }, -> { Time.at(0, in: "+24:00") }, -> { Time.new(2021, 13) },
+ -> { Time.new(2021, 1, 0) }, -> { Time.new(2021, 1, 1, 25) }, -> { Time.at(0, 1, :bad) },
+ -> { Time.now + Time.now }].each do |l|
+  begin
+    l.()
+  rescue ArgumentError, TypeError => e
+    puts "#{e.class}: #{e.message}"
+  end
+end
+
+p Time.now.class, Time.now(in: "+09:00").utc_offset, (Time.now - Time.now).abs < 1

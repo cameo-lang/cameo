@@ -3,6 +3,7 @@ package protogen
 import (
 	"fmt"
 	"sync"
+	"time"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
@@ -21,6 +22,7 @@ import (
 //	    bool bool_value = 1; int64 int_value = 2; double float_value = 3;
 //	    string string_value = 4; bytes bytes_value = 5;
 //	    List list = 6; Map map = 7; Set set = 8; Range range = 9; Object object = 10;
+//	    Time time = 11;
 //	  }
 //	}
 //	message List { repeated Value items = 1; }
@@ -28,8 +30,11 @@ import (
 //	message Map { repeated Entry entries = 1; message Entry { Value key = 1; Value value = 2; } }
 //	message Range { Value lo = 1; Value hi = 2; bool exclusive = 3; }
 //	message Object { string class = 1; string digest = 2; bytes message = 3; }
+//	message Time { int64 seconds = 1; int32 nanos = 2; int32 offset = 3; string zone = 4; }
 //
-// A Value with no kind set is nil. A symbol travels as a string.
+// A Value with no kind set is nil. A symbol travels as a string. A time is
+// its instant, its UTC offset in seconds, and a zone of "UTC" for a UTC
+// time, "local" for the local zone, or none for a fixed offset.
 var (
 	envelopeOnce sync.Once
 	envelopeFile protoreflect.FileDescriptor
@@ -49,6 +54,7 @@ const EnvelopeText = `message Value {
     Set set = 8;
     Range range = 9;
     Object object = 10;
+    Time time = 11;
   }
 }
 
@@ -78,6 +84,13 @@ message Object {
   string class = 1;
   string digest = 2;
   bytes message = 3;
+}
+
+message Time {
+  int64 seconds = 1;
+  int32 nanos = 2;
+  int32 offset = 3;
+  string zone = 4;
 }
 `
 
@@ -110,6 +123,7 @@ func envelope() (protoreflect.FileDescriptor, error) {
 				oneof(field("set", 8, descriptorpb.FieldDescriptorProto_TYPE_MESSAGE, "Set", opt)),
 				oneof(field("range", 9, descriptorpb.FieldDescriptorProto_TYPE_MESSAGE, "Range", opt)),
 				oneof(field("object", 10, descriptorpb.FieldDescriptorProto_TYPE_MESSAGE, "Object", opt)),
+				oneof(field("time", 11, descriptorpb.FieldDescriptorProto_TYPE_MESSAGE, "Time", opt)),
 			},
 		}
 		items := func(name string) *descriptorpb.DescriptorProto {
@@ -131,11 +145,17 @@ func envelope() (protoreflect.FileDescriptor, error) {
 			field("digest", 2, descriptorpb.FieldDescriptorProto_TYPE_STRING, "", opt),
 			field("message", 3, descriptorpb.FieldDescriptorProto_TYPE_BYTES, "", opt),
 		}}
+		timeMsg := &descriptorpb.DescriptorProto{Name: strPtr("Time"), Field: []*descriptorpb.FieldDescriptorProto{
+			field("seconds", 1, descriptorpb.FieldDescriptorProto_TYPE_INT64, "", opt),
+			field("nanos", 2, descriptorpb.FieldDescriptorProto_TYPE_INT32, "", opt),
+			field("offset", 3, descriptorpb.FieldDescriptorProto_TYPE_INT32, "", opt),
+			field("zone", 4, descriptorpb.FieldDescriptorProto_TYPE_STRING, "", opt),
+		}}
 		fdp := &descriptorpb.FileDescriptorProto{
 			Name:        strPtr("amber/value.proto"),
 			Package:     strPtr("amber"),
 			Syntax:      strPtr("proto3"),
-			MessageType: []*descriptorpb.DescriptorProto{value, items("List"), items("Set"), mapMsg, rangeMsg, objectMsg},
+			MessageType: []*descriptorpb.DescriptorProto{value, items("List"), items("Set"), mapMsg, rangeMsg, objectMsg, timeMsg},
 		}
 		envelopeFile, envelopeErr = protodesc.NewFile(fdp, nil)
 	})
@@ -247,6 +267,23 @@ func (e *Encoder) message(fd protoreflect.FileDescriptor, v object.Value) (*dyna
 		}
 		r.Set(rangeMd.Fields().ByName("exclusive"), protoreflect.ValueOfBool(v.Exclusive))
 		set("range", protoreflect.ValueOfMessage(r))
+	case object.KindTime:
+		t := v.Time()
+		timeMd := fd.Messages().ByName("Time")
+		m := dynamicpb.NewMessage(timeMd)
+		_, off := t.Zone()
+		zone := ""
+		switch t.Location() {
+		case time.UTC:
+			zone = "UTC"
+		case time.Local:
+			zone = "local"
+		}
+		m.Set(timeMd.Fields().ByName("seconds"), protoreflect.ValueOfInt64(t.Unix()))
+		m.Set(timeMd.Fields().ByName("nanos"), protoreflect.ValueOfInt32(int32(t.Nanosecond())))
+		m.Set(timeMd.Fields().ByName("offset"), protoreflect.ValueOfInt32(int32(off)))
+		m.Set(timeMd.Fields().ByName("zone"), protoreflect.ValueOfString(zone))
+		set("time", protoreflect.ValueOfMessage(m))
 	case object.KindInstance:
 		v := v.Instance()
 		data, err := e.reg.Marshal(v)
@@ -382,6 +419,19 @@ func (d *Decoder) value(msg protoreflect.Message) (object.Value, error) {
 			out.Hi = hi
 		}
 		return object.RangeValue(out), nil
+	case "time":
+		m := pv.Message()
+		fields := m.Descriptor().Fields()
+		t := time.Unix(m.Get(fields.ByName("seconds")).Int(), m.Get(fields.ByName("nanos")).Int())
+		switch m.Get(fields.ByName("zone")).String() {
+		case "UTC":
+			t = t.UTC()
+		case "local":
+			t = t.Local()
+		default:
+			t = t.In(time.FixedZone("", int(m.Get(fields.ByName("offset")).Int())))
+		}
+		return object.TimeValue(t), nil
 	case "object":
 		o := pv.Message()
 		fields := o.Descriptor().Fields()

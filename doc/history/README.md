@@ -37,3 +37,4 @@ The steps:
 - [14. `Array.new`, `Array[]` and `Hash.new`](14-array-hash-new.md)
 - [15. Random numbers from a seedable generator](15-random.md)
 - [16. `String#succ` and ranges of strings](16-string-succ.md)
+- [17. `Time`, an immutable instant with its offset](17-time.md)

@@ -48,7 +48,9 @@ was classified by what amber does with it.
 A case that draws random numbers cannot match Ruby's values, since amber's
 generator is not Ruby's: it works when it runs cleanly and its result holds
 what holds for any draw (a sorted result is sorted, a sample has distinct
-elements of the array).
+elements of the array). A case that reads the clock works when its result
+has Ruby's form. `Time#subsec` returns a Float where Ruby returns a
+Rational, which amber leaves out; the case that calls it never prints it.
 
 A failing case is filed under the first thing that stops it. Fixing that may
 uncover a second blocker, so a file can move from `stdlib/` to another

@@ -115,6 +115,19 @@ func TestExceptions(t *testing.T) {
 	_ = object.Nil
 }
 
+func TestTimeCrossesAsync(t *testing.T) {
+	// A time travels to a process and back with its instant and offset.
+	src := `
+class Later
+  def go(t) = t + 60
+end
+t = Time.new(2021, 8, 22, 9, 0, 0, "+09:00")
+p await(async(Later.new, :go, t))
+p await(async(Later.new, :go, t.getutc))
+`
+	expectOutput(t, src, "2021-08-22 09:01:00 +0900\n2021-08-22 00:01:00 UTC\n")
+}
+
 func TestRandomIsSeedable(t *testing.T) {
 	// The same seed gives the same draws, in the script and in its
 	// processes; srand returns the previous seed.
