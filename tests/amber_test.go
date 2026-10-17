@@ -6,7 +6,7 @@ package tests
 import (
 	"testing"
 
-	"github.com/radiospiel/simple-go/src/assert"
+	"github.com/radiospiel/amber/src/assert"
 
 	"github.com/radiospiel/amber/src/amber"
 )

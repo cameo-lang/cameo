@@ -13,6 +13,7 @@ element of the path is the package name:
 ```
 src/amber/        the host API a Go program imports
 src/cmd/amber/    the amber command
+src/assert/       the assertions the tests use, vendored
 tests/            Go tests against the packages, as a caller uses them
 tests/integration/  shell tests that drive the built binary
 ```
@@ -65,11 +66,11 @@ Elsewhere, ask before installing anything.
   output. Do not parse `os.Args` by hand.
 - **Errors, not panics, across the API.** Exported functions return `error`.
   A panic helper is for the command and for test setup.
-- **Assertions come from
-  [simple-go's assert](https://github.com/radiospiel/simple-go):**
+- **Assertions come from [src/assert](../src/assert):**
   `assert.Equals(t, got, want)`, `assert.NoError(t, err)`,
-  `assert.Contains(t, list, x, "details %v", list)`. Add a missing assertion
-  there rather than hand-rolling a check.
+  `assert.Contains(t, list, x, "details %v", list)`. It is vendored from
+  simple-go and keeps that licence; add a missing assertion there rather
+  than hand-rolling a check.
 - **Test names say the behaviour:** `TestParseDiscardsBlankRecords`, not
   `TestParse2`. Prefer explicit cases to a table unless the table earns its
   keep.

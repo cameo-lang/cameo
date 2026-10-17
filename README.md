@@ -28,6 +28,7 @@ bin/amber version
 |---|---|
 | `src/amber/` | the `amber` package: the API a Go program uses |
 | `src/cmd/amber/` | the `amber` command |
+| `src/assert/` | the assertions the tests use, vendored from simple-go |
 | `tests/` | Go tests against the packages, as a caller uses them |
 | `tests/integration/` | shell tests that drive the built binary, on `testsh.inc` |
 | `agents/` | guidance for coding agents; start at [CLAUDE.md](CLAUDE.md) |
@@ -35,4 +36,4 @@ bin/amber version
 
 ## License
 
-BSD-3-Clause, as amber is in ark. The license file is still to be added.
+Proprietary; see [LICENSE](LICENSE). Not open source.
