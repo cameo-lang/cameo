@@ -37,8 +37,8 @@ nothing to compute more than once.
 
 Each class keeps a lookup cache: its ancestors and the methods it has
 resolved so far by name, under a generation
-([src/object/class.go:45](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/object/class.go#L45),
-[src/object/class.go:60](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/object/class.go#L60-L68)). Every
+([src/object/class.go:45](https://github.com/radiospiel/amber/blob/4ac086c827c3c26924fa3ffc3694f20d7f9f0603/src/object/class.go#L45),
+[src/object/class.go:60](https://github.com/radiospiel/amber/blob/4ac086c827c3c26924fa3ffc3694f20d7f9f0603/src/object/class.go#L60-L68)). Every
 change to any class's methods or ancestry bumps the generation, so a cache
 from before the change is rebuilt on its next use. A class changes only
 while its body is evaluated, so once a script has loaded the generation
@@ -46,7 +46,7 @@ stands still and each name is resolved once per class.
 
 The cache is read by every process of step 7 at once. It is never modified
 after it is stored: a miss stores a copy with the new entry
-([src/object/class.go:209](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/object/class.go#L209-L226)),
+([src/object/class.go:209](https://github.com/radiospiel/amber/blob/4ac086c827c3c26924fa3ffc3694f20d7f9f0603/src/object/class.go#L209-L226)),
 so a goroutine holding the old one never sees a map being written, and
 there is no lock on the hot path.
 
