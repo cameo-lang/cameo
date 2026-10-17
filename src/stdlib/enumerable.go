@@ -917,12 +917,15 @@ func installUserEnumerable() {
 }
 
 // itemKinds is the kinds of the items of an enumerable, self, whose items
-// toList made elems: an Array keeps them, anything else is scanned. It is for
-// the Go implementations, which choose a path by it; a script has no use for
-// it, and does not see it.
+// toList made elems: an Array and a Set keep them, anything else is
+// scanned. It is for the Go implementations, which choose a path by it; a
+// script has no use for it, and does not see it.
 func itemKinds(self object.Value, elems []object.Value) object.Kinds {
 	if l, ok := self.AsList(); ok {
 		return l.Kinds()
+	}
+	if s, ok := self.AsSet(); ok {
+		return s.Kinds()
 	}
 	return object.KindsOf(elems)
 }
