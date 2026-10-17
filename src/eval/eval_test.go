@@ -310,3 +310,23 @@ func TestSecondDefReplacesTheFirst(t *testing.T) {
 	expectOutput(t, "class A\n  def x = 1\n  def y = x\n  def x = 2\nend\np A.new.y\n", "2\n")
 	expectError(t, "class P\n  int :x\n  def x = 1\nend\n", "x is a field of P")
 }
+
+func TestRangeLastCountsFromTheEnd(t *testing.T) {
+	// The last n of an integer range come from its end, without the
+	// elements before them, and fail as Ruby's do.
+	src := `
+p (1..1_000_000_000_000).last(3), (1...10).last(2), (5..1).last(2), (1..3).last(10), (1..3).last(0)
+p (-5..-1).last(2), ("a".."e").last(2)
+begin
+  (1..3).last(-1)
+rescue ArgumentError => e
+  puts e.message
+end
+begin
+  (1..).last(2)
+rescue RangeError => e
+  puts e.message
+end
+`
+	expectOutput(t, src, "[999999999998, 999999999999, 1000000000000]\n[8, 9]\n[]\n[1, 2, 3]\n[]\n[-2, -1]\n[\"d\", \"e\"]\nnegative array size\ncannot get the last element of endless range\n")
+}
