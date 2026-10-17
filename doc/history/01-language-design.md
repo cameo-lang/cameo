@@ -49,13 +49,13 @@ it parses a different meaning, and rejects the rest by name.
   blocks, async, protobuf, the Go host API and a Ruby adapter, and seven
   milestones to build it in.
 - `amber check script.arb`, which parses a script and reports the parser's
-  error with its line: [src/cmd/amber/main.go:51](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/cmd/amber/main.go#L51-L60).
+  error with its line: [src/cmd/amber/main.go:51](https://github.com/radiospiel/amber/blob/8866effea3c3f76df387211fbf9edf1cb29ac8bb/src/cmd/amber/main.go#L51-L60).
   Running a script fails with a pointer to `check`, since there is no
   evaluator yet.
 - The example corpus under `examples/`: each `<name>.arb` beside the output
   it must produce in `<name>.expected`. The corpus is the specification.
   At this step a test only proves every example parses
-  ([src/cmd/amber/examples_test.go:19](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/cmd/amber/examples_test.go#L19)); later
+  ([src/cmd/amber/examples_test.go:19](https://github.com/radiospiel/amber/blob/8866effea3c3f76df387211fbf9edf1cb29ac8bb/src/cmd/amber/examples_test.go#L19)); later
   steps run the scripts and compare their output.
   [examples/point.arb](../../examples/point.arb) shows a class, a copy with
   `tap` and the `a.x = 100` rewrite.
@@ -64,7 +64,7 @@ it parses a different meaning, and rejects the rest by name.
 
 The first draft left four questions open. They were decided before any
 interpreter code was written, and the design records them under *Decisions
-taken* ([doc/design/amber.md:407](https://github.com/radiospiel/amber/blob/@@COMMIT@@/doc/design/amber.md#L407)):
+taken* ([doc/design/amber.md:407](https://github.com/radiospiel/amber/blob/8866effea3c3f76df387211fbf9edf1cb29ac8bb/doc/design/amber.md#L407)):
 
 - **Overriding.** A child class may define a method its parent defines, and
   dispatch is dynamic. One definition per hierarchy with static dispatch
