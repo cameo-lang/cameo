@@ -7,8 +7,7 @@
 #
 #   mri       the ruby on PATH, which every time is a percentage of
 #   amber     this component's interpreter
-#   warmruby  agentic's code-ruby: CRuby 3.4 for WASI on wazero (../warmruby,
-#             in ark only; a run without it compares the other three)
+#   warmruby  CRuby 3.4 compiled to WASI, on wazero, compiled ahead (../warmruby)
 #   rbgo      go-embedded-ruby, a Ruby interpreter in Go (../rbgo)
 #
 # A time is what a run of the script costs without the Ruby's start. Before
@@ -56,11 +55,9 @@ OptionParser.new do |o|
 end.parse!
 
 # The Rubies in the order of the table's columns; MRI is the baseline.
-# warmruby links ark's agentic module, so its command exists only in ark;
-# without it a run has three columns and MRI's output is the reference.
-HAVE_WARM = File.directory?(File.join(AMBER, "benchmarks/warmruby"))
-NAMES = (options[:report] || HAVE_WARM ? %w[mri amber warmruby rbgo] : %w[mri amber rbgo]).freeze
-REFERENCE = HAVE_WARM ? "warmruby" : "mri"
+NAMES = %w[mri amber warmruby rbgo].freeze
+# The Ruby whose output is the reference: CRuby 3.4.
+REFERENCE = "warmruby"
 GREEN, RED, BOLD = 32, 31, 1
 WIDTH = 17
 
@@ -145,17 +142,17 @@ def build(dir, cmd)
 end
 build(AMBER, "go build -o #{bin}/amber ./src/cmd/amber")
 build(File.join(AMBER, "benchmarks/rbgo"), "make build >/dev/null")
-build(File.join(AMBER, "benchmarks/warmruby"), "make build >/dev/null") if HAVE_WARM
+build(File.join(AMBER, "benchmarks/warmruby"), "make build >/dev/null")
 
 ENGINES = {
   "mri" => ->(f, _t) { ["ruby", f] },
   "amber" => ->(f, _t) { ["#{bin}/amber", f] },
   "warmruby" => ->(f, t) { ["#{AMBER}/benchmarks/warmruby/bin/warmruby", "-time", t, f] },
   "rbgo" => ->(f, t) { ["#{AMBER}/benchmarks/rbgo/bin/rbgo", "-time", t, f] },
-}.select { |name, _| NAMES.include?(name) }.freeze
+}.freeze
 
-# A first run compiles warmruby's module into its cache.
-system("#{AMBER}/benchmarks/warmruby/bin/warmruby", File::NULL, out: File::NULL) if HAVE_WARM
+# A first run downloads warmruby's module and compiles it into its cache.
+system("#{AMBER}/benchmarks/warmruby/bin/warmruby", File::NULL, out: File::NULL)
 
 files = ARGV.empty? ? Dir[File.join(AMBER, "benchmarks/ruby/works/*.rb")].sort : ARGV.map { File.expand_path(_1) }
 TIMING_FILE = ->(name) { File.join(Dir.tmpdir, "amber-compare-#{Thread.current.object_id}-#{name}") }

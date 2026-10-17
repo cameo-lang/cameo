@@ -7,14 +7,14 @@ benchmarks, the 824 files of [../ruby/works](../ruby/works), on four Rubies:
 |---|---|
 | `mri` | the `ruby` on `PATH`; CRuby 3.3.6 for the results below |
 | `amber` | this component's interpreter |
-| `warmruby` | agentic's code-ruby: CRuby 3.4 for WASI on wazero, in a VM started ahead |
+| `warmruby` | CRuby 3.4 compiled to WASI, on wazero, from a module compiled ahead ([../warmruby](../warmruby)) |
 | `rbgo` | go-embedded-ruby v0.6.0, a Ruby interpreter in Go ([../rbgo](../rbgo)) |
 
-The warmruby command links agentic, a module of
-[radiospiel/ark](https://github.com/radiospiel/ark) under the AGPL, so it
-lives there and not here; the results below were measured in ark with all
-four. Here `compare.rb` runs the other three and checks outputs against
-MRI's.
+The results below were measured in
+[radiospiel/ark](https://github.com/radiospiel/ark), where warmruby was
+agentic's code-ruby; [../warmruby](../warmruby) is a command of this
+repository's own for the same Ruby, CRuby 3.4 for WASI on wazero, and a
+run here measures it.
 
 Every output is checked against CRuby 3.4's, which is warmruby's, since
 amber follows 3.4 where 3.3 differs. [results.tsv](results.tsv) has every
