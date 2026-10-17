@@ -72,13 +72,19 @@ func installObject() {
 	def(o, "itself", 0, identity)
 	def(o, "dup", 0, identity)
 	def(o, "clone", 0, identity)
-	def(o, "then", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if err := needBlock(ctx, block, "then"); err != nil {
-			return object.Value{}, err
-		}
-		return ctx.Yield(block, self)
-	})
-	def(o, "yield_self", 0, o.Methods["then"].Native)
+	// then yields self; without a block it is an enumerator of self.
+	then := func(name string) {
+		def(o, name, 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+			if block.IsZero() {
+				return enumerator(false, self, name, nil, func(ctx object.Context, yield func(object.Value) error) error {
+					return yield(self)
+				}), nil
+			}
+			return ctx.Yield(block, self)
+		})
+	}
+	then("then")
+	then("yield_self")
 	def(o, "instance_variables", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		inst, ok := self.AsInstance()
 		if !ok {

@@ -1,0 +1,38 @@
+[6, 12, 18]
+#<Enumerator::Lazy: 1..3>
+#<Enumerator::Lazy: #<Enumerator::Lazy: 1..3>:map>
+#<Enumerator::Lazy: #<Enumerator::Lazy: 1..>:take(5)>
+#<Enumerator: [1]:cycle>
+#<Enumerator: 1:then>
+#<Enumerator::Lazy: #<Enumerator: [1, 2]:cycle>>
+[1, 2, 1]
+[[1, "a"], [2, "b"], [3, "c"]]
+[[1], [2], [3]]
+[[1, "a"], [2, "b"], [3, "c"]]
+[[1, 10], [2, 11]]
+[1, 2, 1, 2, 1]
+[1, 2, 1]
+4
+[1, 2, 1, 2]
+[6, 8, 10]
+[[1, 0], [2, 1], [3, 2]]
+[0, 5]
+[4, 8]
+[]
+[1]
+#<Enumerator: #<Enumerator::Lazy: 1..3>:each>
+9
+true
+true
+[1]
+6
+[2, 4]
+3
+[10, 20, 30]
+[10, 20, 30]
+Enumerator::Lazy
+Enumerator
+[1, "a"]
+[2, "b"]
+[3, "c"]
+nil

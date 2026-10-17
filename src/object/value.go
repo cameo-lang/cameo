@@ -45,6 +45,8 @@ const (
 	KindMatch
 	// KindBig is an Integer beyond 64 bits; see BigInt.
 	KindBig
+	// KindEnumerator is an Enumerator or an Enumerator::Lazy.
+	KindEnumerator
 	// KindProc and KindProcess are the evaluator's: a block or lambda and
 	// an async process. The object is opaque here; see Opaque.
 	KindProc
@@ -91,6 +93,8 @@ func (k Kind) String() string {
 		return "match"
 	case KindBig:
 		return "int"
+	case KindEnumerator:
+		return "enumerator"
 	case KindProc:
 		return "proc"
 	case KindProcess:
@@ -178,6 +182,11 @@ func (v Value) Class() *Class {
 		return RegexpClass
 	case KindMatch:
 		return MatchDataClass
+	case KindEnumerator:
+		if (*Enumerator)(v.p).Lazy {
+			return LazyClass
+		}
+		return EnumeratorClass
 	case KindProc:
 		return ProcClass
 	case KindProcess:

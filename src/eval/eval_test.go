@@ -161,6 +161,18 @@ end
 	expectOutput(t, src, "2361183241434822606848\n1.8446744073709552e+19\nfield cents of Account takes an int, which holds 64 bits; 18446744073709551616 does not fit\n")
 }
 
+func TestLazyStopsWhereItIsDone(t *testing.T) {
+	// take ends an endless source after its last element, and the stop of
+	// an inner pipeline does not end the outer one.
+	src := `
+n = 0
+p (1..).lazy.map { |x| n += 1; x }.take(3).to_a, n
+p (1..3).lazy.flat_map { |x| (x..).lazy.take(2) }.to_a
+p (1..).lazy.zip(10..).take(2).to_a
+`
+	expectOutput(t, src, "[1, 2, 3]\n3\n[1, 2, 2, 3, 3, 4]\n[[1, 10], [2, 11]]\n")
+}
+
 func TestTimeCrossesAsync(t *testing.T) {
 	// A time travels to a process and back with its instant and offset.
 	src := `

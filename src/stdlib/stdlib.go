@@ -29,6 +29,7 @@ func Install() {
 	installMath()
 	installRegexp()
 	installStringPatterns()
+	installEnumerator()
 }
 
 type fn = func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error)
@@ -101,6 +102,8 @@ func toList(ctx object.Context, v object.Value) ([]object.Value, error) {
 	case object.KindRange:
 		v := v.Range()
 		return RangeElems(ctx, v)
+	case object.KindEnumerator:
+		return enumElems(ctx, v.Enumerator())
 	case object.KindMap:
 		v := v.Map()
 		out := make([]object.Value, v.Len())

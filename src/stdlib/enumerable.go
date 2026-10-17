@@ -551,25 +551,38 @@ func installEnumerable() {
 	withBlock("slice_when", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		return chunks(ctx, elems, block, false)
 	})
-	each("cycle", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
-		if err := needBlock(ctx, block, "cycle"); err != nil {
-			return object.Value{}, err
-		}
+	// cycle repeats the elements n times, or forever; without a block it
+	// is an enumerator of them.
+	def(e, "cycle", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		n, err := countArg(ctx, args, -1)
 		if err != nil {
 			return object.Value{}, err
 		}
-		if len(elems) == 0 {
-			return object.Nil, nil
+		elems, err := toList(ctx, self)
+		if err != nil {
+			return object.Value{}, err
 		}
-		for round := 0; n < 0 || round < n; round++ {
-			for _, el := range elems {
-				if _, err := ctx.Yield(block, el); err != nil {
-					return object.Value{}, err
+		cycle := func(ctx object.Context, yield func(object.Value) error) error {
+			if len(elems) == 0 {
+				return nil
+			}
+			for round := 0; n < 0 || round < n; round++ {
+				for _, el := range elems {
+					if err := yield(el); err != nil {
+						return err
+					}
 				}
 			}
+			return nil
 		}
-		return object.Nil, nil
+		if block.IsZero() {
+			return enumerator(false, self, "cycle", args, cycle), nil
+		}
+		err = cycle(ctx, func(v object.Value) error {
+			_, err := ctx.Yield(block, v)
+			return err
+		})
+		return object.Nil, err
 	})
 	// grep keeps the elements pattern === matches, and grep_v the others;
 	// a block maps what is kept.
@@ -580,8 +593,13 @@ func installEnumerable() {
 	}
 	grep("grep", true)
 	grep("grep_v", false)
-	each("lazy", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
-		return object.NewList(append([]object.Value{}, elems...)...), nil
+	// lazy enumerates without listing first, so an endless range works.
+	def(e, "lazy", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		each, err := eachOf(ctx, self)
+		if err != nil {
+			return object.Value{}, err
+		}
+		return enumerator(true, self, "", nil, each), nil
 	})
 }
 

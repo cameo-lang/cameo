@@ -76,7 +76,7 @@ Every value is immutable. The kinds of value are:
 | Regexp | in `amber.Value`, a `Regexp` message: source and options; a MatchData does not travel |
 | Time | in `amber.Value`, a `Time` message: seconds, nanoseconds, UTC offset and zone; there is no field type for it yet |
 | an instance of a user class | the message that class declares |
-| Class, Proc, AsyncProcess | not serialisable; see *Async* |
+| Class, Proc, AsyncProcess, Enumerator | not serialisable; see *Async* |
 
 Equality is structural everywhere: two lists with equal elements are `==`,
 two instances of one class with equal fields are `==` and hash alike. There
@@ -538,6 +538,14 @@ re-opened by accident:
     a `big.Int`; a result that fits moves back, so a number has one form
     and equality and hash keys need no conversion. The 64-bit fast paths
     check for overflow and hand that case to the ordinary call.
+  - An Enumerator produces its elements on demand, from a Go function
+    that hands them to a consumer one by one; a consumer that has had
+    enough returns a stop of its own from it, which only it recognises, so
+    `take` ends an endless source without ending a pipeline it is nested
+    in. `lazy` gives an `Enumerator::Lazy`, whose `map`, `select`, `take`
+    and the rest make another and do no work until `first`, `to_a`,
+    `force` or `each` asks; a blockless `cycle` or `then` gives an eager
+    Enumerator. There is no external iteration (`next`, `peek`).
   - Kept out: `GC`, `ENV`, metaprogramming (`define_method`, `send`,
     `eval`, `instance_variable_set`), setters and untyped fields, fibers
     and threads, and anything that touches the file system.
