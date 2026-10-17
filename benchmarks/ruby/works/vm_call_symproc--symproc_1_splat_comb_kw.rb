@@ -27,5 +27,6 @@ s = :s.to_proc
 b = :b.to_proc
 sb = :sb.to_proc
 
+#--- benchmark: the prelude above runs once, the script below in the loop ---
 sb.(*sb_t1, **kw)
 

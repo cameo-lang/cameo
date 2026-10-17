@@ -5,4 +5,5 @@ large_ary2 = Array.new(1000) { |i| i }
 str_ary1 = Array.new(100) { |i| i.to_s }
 str_ary2 = Array.new(100) { |i| i.to_s }
 
+#--- benchmark: the prelude above runs once, the script below in the loop ---
 large_ary1 == large_ary2

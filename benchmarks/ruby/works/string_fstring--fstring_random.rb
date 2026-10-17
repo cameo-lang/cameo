@@ -1,4 +1,5 @@
 
+#--- benchmark: the prelude above runs once, the script below in the loop ---
 i = 0
 str = "same".dup
 while i < 5_000_000

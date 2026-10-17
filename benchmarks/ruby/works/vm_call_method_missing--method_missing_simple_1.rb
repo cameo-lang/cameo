@@ -26,5 +26,6 @@ s = S.new
 b = B.new
 sb = SB.new
 
+#--- benchmark: the prelude above runs once, the script below in the loop ---
 a1.x(1)
 

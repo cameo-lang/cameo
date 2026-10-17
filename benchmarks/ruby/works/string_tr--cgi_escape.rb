@@ -13,5 +13,6 @@ ESCAPED_CHARS = {
 }.freeze
 ESCAPE_PATTERN = Regexp.union(ESCAPED_CHARS.keys)
 
+#--- benchmark: the prelude above runs once, the script below in the loop ---
 CGI.escape_html(STR)
 

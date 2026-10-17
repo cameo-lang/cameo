@@ -12,4 +12,5 @@ example_html = <<~HTML
   </body>
 HTML
 
+#--- benchmark: the prelude above runs once, the script below in the loop ---
 CGI.escapeHTML(example_html)

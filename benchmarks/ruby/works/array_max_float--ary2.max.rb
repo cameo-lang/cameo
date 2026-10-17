@@ -11,4 +11,5 @@ ary20000 = 20000.times.map(&:to_f).shuffle
 ary50000 = 50000.times.map(&:to_f).shuffle
 ary100000 = 100000.times.map(&:to_f).shuffle
 
+#--- benchmark: the prelude above runs once, the script below in the loop ---
 ary2.max

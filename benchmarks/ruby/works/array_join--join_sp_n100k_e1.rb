@@ -10,4 +10,5 @@ a100k_1   = Array.new(100000) { "a" * 1  }
 a100k_8   = Array.new(100000) { "a" * 8  }
 a100k_40  = Array.new(100000) { "a" * 40 }
 
+#--- benchmark: the prelude above runs once, the script below in the loop ---
 a100k_1.join(" ")
