@@ -1,0 +1,37 @@
+# method_missing takes a call to a method the class lacks: its name as a
+# symbol, then the arguments and the block. super reaches Object's, which
+# raises NoMethodError; respond_to? asks respond_to_missing?.
+class Settings
+  VALUES = { host: "example.org", port: 8080 }
+
+  def method_missing(name, *args)
+    key = name.to_s
+    if key.end_with?("?")
+      VALUES.key?(key.chomp("?").to_sym)
+    elsif VALUES.key?(name)
+      VALUES[name]
+    else
+      super
+    end
+  end
+
+  def respond_to_missing?(name, include_all = false)
+    VALUES.key?(name.to_s.chomp("?").to_sym) || super
+  end
+end
+
+s = Settings.new
+p s.host, s.port, s.host?, s.user?
+p s.respond_to?(:host), s.respond_to?(:port?), s.respond_to?(:user)
+begin
+  s.user
+rescue NoMethodError => e
+  p e.class
+end
+
+class Echo
+  def method_missing(name, *args, &block)
+    [name, args, block ? block.call : nil]
+  end
+end
+p Echo.new.hello(1, 2) { :done }, Echo.new.()

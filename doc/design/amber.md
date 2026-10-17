@@ -48,7 +48,7 @@ What amber leaves out, and the checker rejects by name:
 - instance variables outside `initialize`; class variables; global variables
 - reopening a class: a second `class X` never changes the first, see
   *Classes*; a second `def` of one name in a class body; `define_method`,
-  `method_missing`, `send`, `instance_variable_set`, `eval`, `undef`,
+  `send`, `instance_variable_set`, `eval`, `undef`,
   `extend`, singleton classes, `def self.x` on an instance
 - mutating methods (`<<`, `push`, `pop`, `delete`, `merge!`, `map!`, every
   bang method) on anything but a local or a field in `initialize`, which
@@ -554,6 +554,10 @@ re-opened by accident:
     `Time.parse`, `Time.iso8601` and `Time.strptime`, and `Time.new` reads
     a string as Ruby 3.2's does; `cgi` brings `CGI.escapeHTML`,
     `unescapeHTML`, `escape`, `unescape` and the URI-component pair.
+  - A call to a method a class lacks goes to the class's own
+    `method_missing`, with the name as a symbol, the arguments and the
+    block; `super` from it reaches Object's, which raises NoMethodError.
+    `respond_to?` asks `respond_to_missing?` for a name it does not find.
   - Kept out: `GC`, `ENV`, metaprogramming (`define_method`, `send`,
     `eval`, `instance_variable_set`), setters and untyped fields, fibers
     and threads, and anything that touches the file system.

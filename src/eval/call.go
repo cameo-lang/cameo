@@ -262,6 +262,11 @@ func (in *Interp) call(fr *Frame, recv object.Value, name string, args []object.
 		if name == "initialize" {
 			return object.Nil, nil
 		}
+		// A class's own method_missing takes a call to a method it lacks,
+		// with the name as a symbol first; Object's raises.
+		if mm := recv.Class().Lookup("method_missing"); mm != nil && mm.Native == nil {
+			return in.invoke(mm, recv, append([]object.Value{object.Symbol(name)}, args...), kw, block, line)
+		}
 		return object.Value{}, in.raise(object.NoMethodError, line, "undefined method '%s' for %s", name, typeName(recv))
 	}
 	if m.Native != nil {

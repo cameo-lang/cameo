@@ -98,6 +98,21 @@ func installString() {
 		s = strings.TrimSuffix(s, "\n")
 		return strings.TrimSuffix(s, "\r")
 	})
+	// chomp(suffix) drops that suffix, and chomp("") every line ending.
+	chomp := c.Methods["chomp"].Native
+	def(c, "chomp", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if len(args) == 0 {
+			return chomp(ctx, self, args, kw, block)
+		}
+		suffix, err := wantString(ctx, args[0])
+		if err != nil {
+			return object.Value{}, err
+		}
+		if suffix == "" {
+			return object.String(strings.TrimRight(str(self), "\r\n")), nil
+		}
+		return object.String(strings.TrimSuffix(str(self), suffix)), nil
+	})
 	mapStr("chop", func(s string) string {
 		if s == "" {
 			return s
