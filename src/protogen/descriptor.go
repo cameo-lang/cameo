@@ -142,7 +142,7 @@ func messageProto(cls *object.Class) *descriptorpb.DescriptorProto {
 				Options: &descriptorpb.MessageOptions{MapEntry: boolPtr(true)},
 			}
 			key := &descriptorpb.FieldDescriptorProto{Name: strPtr("key"), JsonName: strPtr("key"), Number: int32Ptr(1), Label: descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum()}
-			setType(key, &object.FieldType{Kind: f.Type.Key}, cls)
+			setType(key, object.ScalarField(f.Type.Key), cls)
 			value := &descriptorpb.FieldDescriptorProto{Name: strPtr("value"), JsonName: strPtr("value"), Number: int32Ptr(2), Label: descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum()}
 			setType(value, f.Type.Elem, cls)
 			entry.Field = []*descriptorpb.FieldDescriptorProto{key, value}
@@ -180,17 +180,12 @@ func optional(fp *descriptorpb.FieldDescriptorProto, m *descriptorpb.DescriptorP
 }
 
 func setType(fp *descriptorpb.FieldDescriptorProto, t *object.FieldType, cls *object.Class) {
+	if t.Scalar != nil {
+		// descriptorpb names each scalar type TYPE_ and its .proto name.
+		fp.Type = descriptorpb.FieldDescriptorProto_Type(descriptorpb.FieldDescriptorProto_Type_value["TYPE_"+strings.ToUpper(t.Scalar.Proto)]).Enum()
+		return
+	}
 	switch t.Kind {
-	case "string":
-		fp.Type = descriptorpb.FieldDescriptorProto_TYPE_STRING.Enum()
-	case "int":
-		fp.Type = descriptorpb.FieldDescriptorProto_TYPE_INT64.Enum()
-	case "float":
-		fp.Type = descriptorpb.FieldDescriptorProto_TYPE_DOUBLE.Enum()
-	case "bool":
-		fp.Type = descriptorpb.FieldDescriptorProto_TYPE_BOOL.Enum()
-	case "bytes":
-		fp.Type = descriptorpb.FieldDescriptorProto_TYPE_BYTES.Enum()
 	case "ref":
 		fp.Type = descriptorpb.FieldDescriptorProto_TYPE_MESSAGE.Enum()
 		fp.TypeName = strPtr("." + Package(t.Ref) + "." + t.Ref.Name)

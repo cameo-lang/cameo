@@ -498,7 +498,7 @@ type ModuleDef struct {
 // `ref :origin, Point`, `enum :kind, values: [:a, :b]`.
 type FieldDecl struct {
 	Pos
-	Type    string   // string, int, float, bool, bytes, list, set, map, ref, enum
+	Type    string   // a scalar type (object.Scalar), or list, set, map, ref, enum
 	Names   []string // one or more field names
 	Default Node     // default: expr, or nil
 	Of      string   // list/set element type

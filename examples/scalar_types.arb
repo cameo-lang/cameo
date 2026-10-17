@@ -1,0 +1,48 @@
+# proto3's scalar types as field types, int and float for Ruby's Integer
+# and Float, float32 for proto3's float, and bignum for an Integer of any
+# size: each holds what its protobuf type holds, and survives the wire.
+class Numbers
+  int32 :i32
+  int64 :i64
+  uint32 :u32
+  uint64 :u64
+  sint32 :s32
+  sint64 :s64
+  fixed32 :f32
+  fixed64 :f64
+  sfixed32 :sf32
+  sfixed64 :sf64
+  double :d
+  float32 :single
+  bignum :huge
+  list :small, of: :sint32
+  map :counts, key: :uint64, value: :bignum
+end
+
+n = Numbers.new(i32: -2**31, i64: 2**63 - 1, u32: 2**32 - 1, u64: 2**64 - 1,
+                s32: 2**31 - 1, s64: -2**63, f32: 0, f64: 2**64 - 1,
+                sf32: -1, sf64: 1, d: 0.1, single: 0.1, huge: 10**30,
+                small: [-1, 0, 1], counts: { 2**64 - 1 => -10**25 })
+back = Numbers.from_proto(n.to_proto)
+puts back == n
+p back.u64, back.f64, back.huge, back.counts
+p back.single, back.single == 0.1, back.d
+p Numbers.new(single: 3).single
+
+puts Numbers.proto
+
+def try
+  yield
+rescue RangeError, TypeError => e
+  puts "#{e.class}: #{e.message}"
+end
+
+try { Numbers.new(i32: 2**31) }
+try { Numbers.new(u32: -1) }
+try { Numbers.new(u64: 2**64) }
+try { Numbers.new(i64: 2**63) }
+try { Numbers.new(single: 1e39) }
+try { Numbers.new(huge: 1.5) }
+try { Numbers.new(small: [2**40]) }
+try { Numbers.new(counts: { -1 => 1 }) }
+try { Numbers.new(i32: "1") }

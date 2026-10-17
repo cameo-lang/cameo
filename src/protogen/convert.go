@@ -63,7 +63,7 @@ func (r *Registry) toProto(fd protoreflect.FieldDescriptor, t *object.FieldType,
 		m := parent.NewField(fd).Map()
 		src := v.Map()
 		for i, k := range src.Keys() {
-			key, err := r.scalar(fd.MapKey(), &object.FieldType{Kind: t.Key}, k)
+			key, err := r.scalar(fd.MapKey(), object.ScalarField(t.Key), k)
 			if err != nil {
 				return protoreflect.Value{}, err
 			}
@@ -80,24 +80,10 @@ func (r *Registry) toProto(fd protoreflect.FieldDescriptor, t *object.FieldType,
 
 // scalar converts one non-repeated value.
 func (r *Registry) scalar(fd protoreflect.FieldDescriptor, t *object.FieldType, v object.Value) (protoreflect.Value, error) {
+	if s := t.Scalar; s != nil {
+		return scalarToProto(s, v), nil
+	}
 	switch t.Kind {
-	case "string":
-		return protoreflect.ValueOfString(string(v.Str())), nil
-	case "int":
-		return protoreflect.ValueOfInt64(int64(v.Int())), nil
-	case "float":
-		switch v.Kind() {
-		case object.KindFloat:
-			x := v.Float()
-			return protoreflect.ValueOfFloat64(float64(x)), nil
-		case object.KindInt, object.KindBig:
-			x, _ := v.AsNumber()
-			return protoreflect.ValueOfFloat64(x), nil
-		}
-	case "bool":
-		return protoreflect.ValueOfBool(bool(v.Bool())), nil
-	case "bytes":
-		return protoreflect.ValueOfBytes([]byte(v.Bytes())), nil
 	case "enum":
 		name := string(v.Str())
 		for i, e := range t.Enum {
@@ -126,6 +112,60 @@ func (r *Registry) scalar(fd protoreflect.FieldDescriptor, t *object.FieldType, 
 		return protoreflect.ValueOfMessage(msg), nil
 	}
 	return protoreflect.Value{}, fmt.Errorf("cannot store %T in a %s field", v, t.Kind)
+}
+
+// scalarToProto converts a value the field checked against s.
+func scalarToProto(s *object.ScalarType, v object.Value) protoreflect.Value {
+	switch s.Kind {
+	case object.ScalarString:
+		return protoreflect.ValueOfString(v.Str())
+	case object.ScalarBytes:
+		return protoreflect.ValueOfBytes(v.Bytes())
+	case object.ScalarBool:
+		return protoreflect.ValueOfBool(v.Bool())
+	case object.ScalarFloat:
+		x, _ := v.AsNumber()
+		if s.Bits == 32 {
+			return protoreflect.ValueOfFloat32(float32(x))
+		}
+		return protoreflect.ValueOfFloat64(x)
+	}
+	switch {
+	case s.Bits == 0:
+		return protoreflect.ValueOfString(object.IntegerDigits(v))
+	case s.Unsigned && s.Bits == 32:
+		return protoreflect.ValueOfUint32(uint32(v.Int()))
+	case s.Unsigned:
+		return protoreflect.ValueOfUint64(object.IntegerUint64(v))
+	case s.Bits == 32:
+		return protoreflect.ValueOfInt32(int32(v.Int()))
+	}
+	return protoreflect.ValueOfInt64(v.Int())
+}
+
+// scalarFromProto reads a protobuf value of the scalar type s.
+func scalarFromProto(s *object.ScalarType, pv protoreflect.Value) (object.Value, error) {
+	switch s.Kind {
+	case object.ScalarString:
+		return object.String(pv.String()), nil
+	case object.ScalarBytes:
+		return object.Bytes(append([]byte{}, pv.Bytes()...)), nil
+	case object.ScalarBool:
+		return object.Bool(pv.Bool()), nil
+	case object.ScalarFloat:
+		return object.Float(pv.Float()), nil
+	}
+	switch {
+	case s.Bits == 0:
+		v, ok := object.ParseInteger(pv.String())
+		if !ok {
+			return object.Value{}, fmt.Errorf("a bignum field holds %q, which is not an integer", pv.String())
+		}
+		return v, nil
+	case s.Unsigned:
+		return object.Uint64Integer(pv.Uint()), nil
+	}
+	return object.Int(pv.Int()), nil
 }
 
 // narrow re-reads a subclass message as its parent's message.
@@ -192,7 +232,7 @@ func (r *Registry) fromProto(fd protoreflect.FieldDescriptor, t *object.FieldTyp
 		var entries []entry
 		var err error
 		pv.Map().Range(func(k protoreflect.MapKey, v protoreflect.Value) bool {
-			key, e := r.fromScalar(&object.FieldType{Kind: t.Key}, k.Value())
+			key, e := r.fromScalar(object.ScalarField(t.Key), k.Value())
 			if e != nil {
 				err = e
 				return false
@@ -219,17 +259,10 @@ func (r *Registry) fromProto(fd protoreflect.FieldDescriptor, t *object.FieldTyp
 }
 
 func (r *Registry) fromScalar(t *object.FieldType, pv protoreflect.Value) (object.Value, error) {
+	if s := t.Scalar; s != nil {
+		return scalarFromProto(s, pv)
+	}
 	switch t.Kind {
-	case "string":
-		return object.String(pv.String()), nil
-	case "int":
-		return object.Int(pv.Int()), nil
-	case "float":
-		return object.Float(pv.Float()), nil
-	case "bool":
-		return object.Bool(pv.Bool()), nil
-	case "bytes":
-		return object.Bytes(append([]byte{}, pv.Bytes()...)), nil
 	case "enum":
 		n := int(pv.Enum())
 		if n == 0 {

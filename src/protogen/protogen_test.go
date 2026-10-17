@@ -25,16 +25,16 @@ func person() (*object.Class, *object.Class) {
 		cls.FieldIndex[name] = len(cls.Fields)
 		cls.Fields = append(cls.Fields, f)
 	}
-	addField(address, "city", 1, &object.FieldType{Kind: "string"})
+	addField(address, "city", 1, object.ScalarField("string"))
 	p := object.NewClass("Person", object.ObjectClass)
 	p.Digest = "p"
 	p.Lexical = geo
-	addField(p, "name", 1, &object.FieldType{Kind: "string"})
+	addField(p, "name", 1, object.ScalarField("string"))
 	p.ReservedNumbers = []int64{2}
 	p.ReservedNames = []string{"nick"}
 	addField(p, "home", 3, &object.FieldType{Kind: "ref", Ref: address})
-	addField(p, "emails", 4, &object.FieldType{Kind: "list", Elem: &object.FieldType{Kind: "string"}})
-	addField(p, "scores", 5, &object.FieldType{Kind: "map", Key: "string", Elem: &object.FieldType{Kind: "int"}})
+	addField(p, "emails", 4, &object.FieldType{Kind: "list", Elem: object.ScalarField("string")})
+	addField(p, "scores", 5, &object.FieldType{Kind: "map", Key: "string", Elem: object.ScalarField("int")})
 	addField(p, "role", 6, &object.FieldType{Kind: "enum", Enum: []string{"admin", "user"}})
 	return p, address
 }

@@ -158,7 +158,7 @@ rescue RangeError => e
   puts e.message
 end
 `
-	expectOutput(t, src, "2361183241434822606848\n1.8446744073709552e+19\nfield cents of Account takes an int, which holds 64 bits; 18446744073709551616 does not fit\n")
+	expectOutput(t, src, "2361183241434822606848\n1.8446744073709552e+19\nfield cents of Account takes an int, from -9223372036854775808 to 9223372036854775807; 18446744073709551616 does not fit\n")
 }
 
 func TestLazyStopsWhereItIsDone(t *testing.T) {

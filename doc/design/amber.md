@@ -205,14 +205,35 @@ class Point
 end
 ```
 
-**Fields** are declared with typed helpers, which are class-body intrinsics:
-`string`, `int`, `float`, `bool`, `bytes`, `list :name, of: :int`,
-`map :name, key: :string, value: :float`, `set :name, of: :string`, `ref
-:name, Point` for a nested message, and `enum :name, values: [:a, :b]` for
-a field that holds one of the listed symbols. Each takes one or more names
-and an optional `default:`. A field without a default is `nil` until `initialize`
-sets it. Every field gets a reader of the same name. The type names double
-as the protobuf types the class generates, see *Protobuf*.
+**Fields** are declared with typed helpers, which are class-body intrinsics.
+The scalar ones are proto3's scalar types under their own names, with
+three of amber's beside them:
+
+| field type | holds | protobuf |
+|---|---|---|
+| `string`, `bytes`, `bool` | a String (UTF-8 for `string`), true or false | the same |
+| `int` | an Integer of 64 bits, Ruby's Integer as far as protobuf goes | `int64` |
+| `int32`, `sint32`, `sfixed32` | an Integer from -2³¹ to 2³¹-1 | the same |
+| `int64`, `sint64`, `sfixed64` | an Integer from -2⁶³ to 2⁶³-1 | the same |
+| `uint32`, `fixed32` | an Integer from 0 to 2³²-1 | the same |
+| `uint64`, `fixed64` | an Integer from 0 to 2⁶⁴-1 | the same |
+| `bignum` | an Integer of any size | `string`, its decimal digits |
+| `float`, `double` | a Float, Ruby's Float | `double` |
+| `float32` | a Float rounded to 32 bits | `float` |
+
+`float` keeps Ruby's meaning, so proto3's 32-bit `float` is spelled
+`float32`. An Integer outside its type's range, or a Float beyond
+`float32`'s, raises a `RangeError`; an Integer given to a float field
+becomes a Float, and a `float32` field keeps the rounded value, so it reads
+the same after a round trip. The composite helpers are `list :name, of:
+:int32`, `map :name, key: :string, value: :float`, `set :name, of:
+:string`, `ref :name, Point` for a nested message, and `enum :name, values:
+[:a, :b]` for a field that holds one of the listed symbols. An element type
+is any scalar type or a class; a map key is a `string`, a `bool` or an
+integer type of 32 or 64 bits, as protobuf requires. Each helper takes one
+or more names and an optional `default:`. A field without a default is
+`nil` until `initialize` sets it. Every field gets a reader of the same
+name.
 
 `reserved <number> [, :name]` is the one other declaration a class body
 takes. It claims a field number, and optionally a field name, that no field
@@ -483,6 +504,14 @@ re-opened by accident:
   arbitrary keys was rejected as not worth its cost.
 - **Field numbers** follow declaration order; `reserved` keeps a removed
   field's number and name out of use.
+- **Field types** are proto3's scalar types under their own names, except
+  that `float` keeps Ruby's meaning, a 64-bit `double`, and proto3's 32-bit
+  float is `float32`; following proto3 to the letter would have changed
+  every existing `float` field's precision and wire type. Integers stay of
+  any size, as in Ruby, and a `bignum` field holds one as its decimal
+  digits, the form the value envelope already uses; dropping big integers
+  was rejected, since 24 of the benchmark cases use them and the overflow
+  checks would stay to raise instead.
 - **Classes are values** bound to their name: a second definition with the
   same body is the same class, one with a different body rebinds the name,
   and nothing reopens a class. `Class.new(Base) { ... }` builds one at run

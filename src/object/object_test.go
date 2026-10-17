@@ -2,6 +2,7 @@ package object
 
 import (
 	"math"
+	"math/big"
 	"testing"
 )
 
@@ -191,5 +192,35 @@ func TestListKinds(t *testing.T) {
 	}
 	if !s.With(Float(1.5)).Without(Float(1.5)).Kinds().Only(KindInt) || !s.Kinds().Only(KindInt) {
 		t.Fatal("kinds after Without")
+	}
+}
+
+func TestScalarRanges(t *testing.T) {
+	big64 := BigInt(new(big.Int).Lsh(big.NewInt(1), 64)) // 2**64
+	maxU64 := BigInt(new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 64), big.NewInt(1)))
+	cases := []struct {
+		typ  string
+		v    Value
+		fits bool
+	}{
+		{"int32", Int(math.MaxInt32), true}, {"int32", Int(math.MaxInt32 + 1), false}, {"int32", Int(math.MinInt32), true}, {"int32", Int(math.MinInt32 - 1), false},
+		{"sfixed32", Int(math.MinInt32 - 1), false}, {"sint64", Int(math.MinInt64), true},
+		{"uint32", Int(math.MaxUint32), true}, {"uint32", Int(math.MaxUint32 + 1), false}, {"fixed32", Int(-1), false},
+		{"uint64", maxU64, true}, {"fixed64", maxU64, true}, {"uint64", big64, false}, {"uint64", Int(-1), false},
+		{"int", maxU64, false}, {"int64", Int(math.MaxInt64), true},
+		{"bignum", big64, true}, {"bignum", Int(-5), true}, {"bignum", Float(1), false},
+	}
+	for _, c := range cases {
+		if got := Scalar(c.typ).Fits(c.v); got != c.fits {
+			t.Errorf("%s fits %s: %v, want %v", c.typ, IntegerDigits(c.v), got, c.fits)
+		}
+	}
+	for _, name := range ScalarNames() {
+		if ScalarField(name).Scalar != Scalar(name) {
+			t.Errorf("ScalarField(%s) does not carry its scalar type", name)
+		}
+	}
+	if Scalar("float").Proto != "double" || Scalar("float32").Proto != "float" || Scalar("int").Proto != "int64" || Scalar("bignum").Proto != "string" {
+		t.Error("an amber name maps to the wrong protobuf type")
 	}
 }

@@ -1,6 +1,9 @@
 package eval
 
 import (
+	"fmt"
+	"math"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -86,6 +89,9 @@ func (in *Interp) nextFieldNumber(cls *object.Class) int64 {
 // fieldType builds a field's type from its declaration, resolving the
 // classes it names now.
 func (in *Interp) fieldType(n *syntax.FieldDecl, env *Env, fr *Frame) (*object.FieldType, error) {
+	if st := object.ScalarField(n.Type); st != nil {
+		return st, nil
+	}
 	t := &object.FieldType{Kind: n.Type}
 	switch n.Type {
 	case "list", "set":
@@ -119,9 +125,8 @@ func (in *Interp) fieldType(n *syntax.FieldDecl, env *Env, fr *Frame) (*object.F
 
 // elementType resolves an element type name: a scalar kind, or a class.
 func (in *Interp) elementType(name string, fr *Frame, line int) (*object.FieldType, error) {
-	switch name {
-	case "string", "int", "float", "bool", "bytes":
-		return &object.FieldType{Kind: name}, nil
+	if st := object.ScalarField(name); st != nil {
+		return st, nil
 	}
 	v, err := in.lookupConst(name, fr, line)
 	if err != nil {
@@ -141,9 +146,20 @@ func (in *Interp) checkField(f *object.Field, v object.Value, line int) (object.
 		return emptyFor(f.Type), nil
 	}
 	out, ok := in.coerce(f.Type, v)
-	if !ok && v.Kind() == object.KindBig {
-		// An int field is a protobuf int64.
-		return object.Value{}, in.raise(object.RangeError, line, "field %s of %s takes %s, which holds 64 bits; %s does not fit", f.Name, f.Owner.QualifiedName(), describeType(f.Type), v.Big())
+	if !ok {
+		// A number of the right kind that its type cannot hold, the field's
+		// own or an element's, is out of range rather than of a wrong type.
+		if n, s, role, found := outOfRange(f.Type, v, ""); found {
+			what := "takes " + describeType(f.Type)
+			if role != "" {
+				what = "takes " + article(s.Name) + " for each " + role
+			}
+			limits := s.Range()
+			if s.Kind == object.ScalarFloat {
+				limits = fmt.Sprintf("up to %g in magnitude", math.MaxFloat32)
+			}
+			return object.Value{}, in.raise(object.RangeError, line, "field %s of %s %s, %s; %s does not fit", f.Name, f.Owner.QualifiedName(), what, limits, inspectNumber(n))
+		}
 	}
 	if !ok {
 		return object.Value{}, in.raise(object.TypeError, line, "field %s of %s takes %s, not %s", f.Name, f.Owner.QualifiedName(), describeType(f.Type), typeName(v))
@@ -168,41 +184,10 @@ func emptyFor(t *object.FieldType) object.Value {
 
 // coerce checks v against a type and returns the stored form.
 func (in *Interp) coerce(t *object.FieldType, v object.Value) (object.Value, bool) {
+	if t.Scalar != nil {
+		return coerceScalar(t.Scalar, v)
+	}
 	switch t.Kind {
-	case "string":
-		// A protobuf string is UTF-8: a string of another encoding fits
-		// when its bytes are.
-		s, ok := v.AsString()
-		if !ok || v.Kind() != object.KindString && !utf8.ValidString(s) {
-			return object.Value{}, false
-		}
-		return object.String(s), true
-	case "int":
-		_, ok := v.AsInt()
-		return v, ok
-	case "float":
-		switch v.Kind() {
-		case object.KindFloat:
-			x := v.Float()
-			return object.Float(x), true
-		case object.KindInt, object.KindBig:
-			x, _ := v.AsNumber()
-			return object.Float(x), true
-		}
-		return object.Value{}, false
-	case "bool":
-		_, ok := v.AsBool()
-		return v, ok
-	case "bytes":
-		switch v.Kind() {
-		case object.KindBytes:
-			x := v.Bytes()
-			return object.Bytes(x), true
-		case object.KindString, object.KindASCII:
-			x := v.Str()
-			return object.Bytes([]byte(x)), true
-		}
-		return object.Value{}, false
 	case "list":
 		l, ok := v.AsList()
 		if !ok {
@@ -281,34 +266,125 @@ func (in *Interp) coerce(t *object.FieldType, v object.Value) (object.Value, boo
 	return object.Value{}, false
 }
 
-// coerceKey checks a map key against the declared key kind; a symbol is
-// stored as the string it names.
-func (in *Interp) coerceKey(kind string, k object.Value) (object.Value, bool) {
-	switch kind {
-	case "string":
-		switch k.Kind() {
-		case object.KindString, object.KindBytes, object.KindASCII:
-			x := k.Str()
-			return object.String(x), true
-		case object.KindSymbol:
-			x := k.Str()
-			return object.String(x), true
+// coerceScalar checks v against a scalar type and returns the stored form.
+func coerceScalar(t *object.ScalarType, v object.Value) (object.Value, bool) {
+	switch t.Kind {
+	case object.ScalarString:
+		// A protobuf string is UTF-8: a string of another encoding fits
+		// when its bytes are.
+		s, ok := v.AsString()
+		if !ok || v.Kind() != object.KindString && !utf8.ValidString(s) {
+			return object.Value{}, false
 		}
-	case "int":
-		_, ok := k.AsInt()
-		return k, ok
-	case "bool":
-		_, ok := k.AsBool()
-		return k, ok
+		return object.String(s), true
+	case object.ScalarInteger:
+		return v, t.Fits(v)
+	case object.ScalarFloat:
+		if !isNumber(v) {
+			return object.Value{}, false
+		}
+		x, _ := v.AsNumber()
+		if t.Bits == 32 {
+			// Stored as the wire keeps it, so a value reads the same after
+			// a round trip.
+			f := float32(x)
+			if math.IsInf(float64(f), 0) && !math.IsInf(x, 0) {
+				return object.Value{}, false
+			}
+			x = float64(f)
+		}
+		return object.Float(x), true
+	case object.ScalarBool:
+		_, ok := v.AsBool()
+		return v, ok
+	case object.ScalarBytes:
+		switch v.Kind() {
+		case object.KindBytes:
+			x := v.Bytes()
+			return object.Bytes(x), true
+		case object.KindString, object.KindASCII:
+			x := v.Str()
+			return object.Bytes([]byte(x)), true
+		}
 	}
 	return object.Value{}, false
 }
 
+// outOfRange finds a number in v, or among its elements and keys, that is
+// of the kind its scalar type takes but outside the type's range, and
+// names where it was: role is "", "element" or "key".
+func outOfRange(t *object.FieldType, v object.Value, role string) (object.Value, *object.ScalarType, string, bool) {
+	if s := t.Scalar; s != nil {
+		switch {
+		case s.Kind == object.ScalarInteger && v.IsInteger() && !s.Fits(v),
+			s.Kind == object.ScalarFloat && isNumber(v):
+			if _, ok := coerceScalar(s, v); !ok {
+				return v, s, role, true
+			}
+		}
+		return object.Value{}, nil, "", false
+	}
+	var elems []object.Value
+	switch v.Kind() {
+	case object.KindList:
+		v := v.List()
+		elems = v.Elems
+	case object.KindSet:
+		v := v.Set()
+		elems = v.Elems()
+	case object.KindMap:
+		m := v.Map()
+		if k := object.ScalarField(t.Key); k != nil {
+			for _, key := range m.Keys() {
+				if n, s, r, found := outOfRange(k, key, "key"); found {
+					return n, s, r, true
+				}
+			}
+		}
+		elems = m.Values()
+	}
+	if t.Elem == nil {
+		return object.Value{}, nil, "", false
+	}
+	for _, e := range elems {
+		if n, s, r, found := outOfRange(t.Elem, e, "element"); found {
+			return n, s, r, true
+		}
+	}
+	return object.Value{}, nil, "", false
+}
+
+// isNumber reports an Integer or a Float.
+func isNumber(v object.Value) bool { return v.IsInteger() || v.Kind() == object.KindFloat }
+
+// inspectNumber prints a number for an error message.
+func inspectNumber(v object.Value) string {
+	if v.IsInteger() {
+		return object.IntegerDigits(v)
+	}
+	return strconv.FormatFloat(v.Float(), 'g', -1, 64)
+}
+
+// coerceKey checks a map key against the declared key type; a symbol is
+// stored as the string it names.
+func (in *Interp) coerceKey(kind string, k object.Value) (object.Value, bool) {
+	t := object.Scalar(kind)
+	if t == nil {
+		return object.Value{}, false
+	}
+	if t.Kind == object.ScalarString && k.Kind() == object.KindSymbol {
+		x := k.Str()
+		return object.String(x), true
+	}
+	return coerceScalar(t, k)
+}
+
 // describeType names a field type in an error message.
 func describeType(t *object.FieldType) string {
-	switch t.Kind {
-	case "string", "int", "float", "bool", "bytes":
+	if t.Scalar != nil {
 		return article(t.Kind)
+	}
+	switch t.Kind {
 	case "list", "set":
 		return "a " + t.Kind + " of " + bare(t.Elem)
 	case "map":
@@ -332,9 +408,10 @@ func bare(t *object.FieldType) string {
 	return t.Kind
 }
 
-// article prefixes a noun with a or an.
+// article prefixes a noun with a or an. A u is taken as said "you", as in
+// uint32 or User.
 func article(noun string) string {
-	if strings.ContainsRune("aeiouAEIOU", rune(noun[0])) {
+	if strings.ContainsRune("aeioAEIO", rune(noun[0])) {
 		return "an " + noun
 	}
 	return "a " + noun

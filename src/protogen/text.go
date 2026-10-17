@@ -113,12 +113,5 @@ func typeName(t *object.FieldType, from *object.Class) string {
 	return scalarName(t.Kind)
 }
 
-func scalarName(kind string) string {
-	switch kind {
-	case "int":
-		return "int64"
-	case "float":
-		return "double"
-	}
-	return kind
-}
+// scalarName is a scalar type's name in .proto.
+func scalarName(kind string) string { return object.Scalar(kind).Proto }
