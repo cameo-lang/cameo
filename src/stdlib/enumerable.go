@@ -258,18 +258,15 @@ func installEnumerable() {
 				}
 				n = int(k)
 			}
+			if n < 0 {
+				return extremum(ctx, elems, block, sign)
+			}
 			sorted, err := sortValues(ctx, elems, block)
 			if err != nil {
 				return object.Value{}, err
 			}
 			if sign > 0 {
 				reverse(sorted)
-			}
-			if n < 0 {
-				if len(sorted) == 0 {
-					return object.Nil, nil
-				}
-				return sorted[0], nil
 			}
 			if n > len(sorted) {
 				n = len(sorted)
@@ -281,6 +278,9 @@ func installEnumerable() {
 	extreme("max", 1)
 	extremeBy := func(name string, sign int) {
 		withBlock(name, func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
+			if len(args) == 0 {
+				return extremumBy(ctx, elems, block, sign)
+			}
 			sorted, err := sortBy(ctx, elems, block)
 			if err != nil {
 				return object.Value{}, err
@@ -307,14 +307,15 @@ func installEnumerable() {
 	extremeBy("min_by", -1)
 	extremeBy("max_by", 1)
 	each("minmax", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
-		sorted, err := sortValues(ctx, elems, block)
+		lo, err := extremum(ctx, elems, block, -1)
 		if err != nil {
 			return object.Value{}, err
 		}
-		if len(sorted) == 0 {
-			return object.NewList(object.Nil, object.Nil), nil
+		hi, err := extremum(ctx, elems, block, 1)
+		if err != nil {
+			return object.Value{}, err
 		}
-		return object.NewList(sorted[0], sorted[len(sorted)-1]), nil
+		return object.NewList(lo, hi), nil
 	})
 	each("sort", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		sorted, err := sortValues(ctx, elems, block)
@@ -743,6 +744,11 @@ func reverse(elems []object.Value) {
 // sortValues sorts a copy of elems by <=>, or by a comparator block.
 func sortValues(ctx object.Context, elems []object.Value, block object.Value) ([]object.Value, error) {
 	out := append([]object.Value{}, elems...)
+	if block.IsZero() && allInts(out) {
+		// Integers need no dispatch: no class can redefine Integer#<=>.
+		sort.SliceStable(out, func(i, j int) bool { return out[i].Int() < out[j].Int() })
+		return out, nil
+	}
 	var sortErr error
 	sort.SliceStable(out, func(i, j int) bool {
 		if sortErr != nil {
@@ -785,18 +791,26 @@ func sortBy(ctx object.Context, elems []object.Value, block object.Value) ([]obj
 		}
 		items[i] = keyed{k, el}
 	}
+	ints := true
+	for _, it := range items {
+		ints = ints && it.key.Kind() == object.KindInt
+	}
 	var sortErr error
-	sort.SliceStable(items, func(i, j int) bool {
-		if sortErr != nil {
-			return false
-		}
-		c, err := ctx.Compare(items[i].key, items[j].key)
-		if err != nil {
-			sortErr = err
-			return false
-		}
-		return c < 0
-	})
+	if ints {
+		sort.SliceStable(items, func(i, j int) bool { return items[i].key.Int() < items[j].key.Int() })
+	} else {
+		sort.SliceStable(items, func(i, j int) bool {
+			if sortErr != nil {
+				return false
+			}
+			c, err := ctx.Compare(items[i].key, items[j].key)
+			if err != nil {
+				sortErr = err
+				return false
+			}
+			return c < 0
+		})
+	}
 	if sortErr != nil {
 		return nil, sortErr
 	}
@@ -882,4 +896,90 @@ func installUserEnumerable() {
 			return ctx.CallWith(over, name, args, kw, block)
 		})
 	}
+}
+
+// allInts reports whether every element is an Integer of the int64 form.
+func allInts(elems []object.Value) bool {
+	for _, el := range elems {
+		if el.Kind() != object.KindInt {
+			return false
+		}
+	}
+	return true
+}
+
+// compareWith compares a and b with the block, which returns their order
+// as an Integer, or with <=> when there is no block.
+func compareWith(ctx object.Context, block, a, b object.Value) (int, error) {
+	if block.IsZero() {
+		if a.Kind() == object.KindInt && b.Kind() == object.KindInt {
+			return cmpInt(a.Int(), b.Int()), nil
+		}
+		return ctx.Compare(a, b)
+	}
+	r, err := ctx.Yield(block, a, b)
+	if err != nil {
+		return 0, err
+	}
+	c, ok := r.AsInt()
+	if !ok {
+		return 0, ctx.Raise(object.ArgumentError, "comparison of %s with %s failed", kindName(a), kindName(b))
+	}
+	return int(c), nil
+}
+
+func cmpInt(a, b int64) int {
+	switch {
+	case a < b:
+		return -1
+	case a > b:
+		return 1
+	}
+	return 0
+}
+
+// extremum is the least element (sign -1) or the greatest (sign 1) in one
+// pass, the first of equal ones as in Ruby, nil when there are none.
+func extremum(ctx object.Context, elems []object.Value, block object.Value, sign int) (object.Value, error) {
+	if len(elems) == 0 {
+		return object.Nil, nil
+	}
+	best := elems[0]
+	for _, el := range elems[1:] {
+		c, err := compareWith(ctx, block, el, best)
+		if err != nil {
+			return object.Value{}, err
+		}
+		if c*sign > 0 {
+			best = el
+		}
+	}
+	return best, nil
+}
+
+// extremumBy is the element whose key the block computes is least (sign
+// -1) or greatest (sign 1), in one pass, nil when there are none.
+func extremumBy(ctx object.Context, elems []object.Value, block object.Value, sign int) (object.Value, error) {
+	if len(elems) == 0 {
+		return object.Nil, nil
+	}
+	best := elems[0]
+	bestKey, err := ctx.Yield(block, best)
+	if err != nil {
+		return object.Value{}, err
+	}
+	for _, el := range elems[1:] {
+		k, err := ctx.Yield(block, el)
+		if err != nil {
+			return object.Value{}, err
+		}
+		c, err := compareWith(ctx, object.Value{}, k, bestKey)
+		if err != nil {
+			return object.Value{}, err
+		}
+		if c*sign > 0 {
+			best, bestKey = el, k
+		}
+	}
+	return best, nil
 }

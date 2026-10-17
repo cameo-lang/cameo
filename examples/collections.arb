@@ -136,3 +136,6 @@ puts r.min_by { |i| (i - 5).abs }
 puts [].class, {}.class, [1].is_a?(Array), Array.new.inspect, Hash.new.inspect
 puts Array.new(3).inspect, Array.new(2, "a").inspect, Array.new(4) { |i| i * i }.inspect
 puts Array.new([1, 2]).inspect, Array[1, 2, 3].inspect, Array(nil).inspect, Array(1..3).inspect
+
+# min and max take the first of equal elements, as Ruby's do.
+p [3, 1, 2, 1.0, 3.0].min, [3, 1, 2, 1.0, 3.0].max, [3, 1, 2, 1.0, 3.0].minmax
