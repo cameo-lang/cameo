@@ -24,7 +24,7 @@ exists.
 
 A hash or a set is a version of a table: an append-only log of entries and
 an index from each key to its latest entry, and the version is the first
-`n` entries of the log ([src/object/table.go:8](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/object/table.go#L8-L24)).
+`n` entries of the log ([src/object/table.go:8](https://github.com/radiospiel/amber/blob/7714fc2b544c5d81d758144140d1a27a1dd3e1fe/src/object/table.go#L8-L24)).
 The version at the log's tip grows the table in place, so a `put` on it
 appends one entry, O(1). Any other version copies its live entries into a
 new table first, so an old version is never disturbed. An entry below a
