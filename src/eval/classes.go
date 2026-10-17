@@ -165,6 +165,11 @@ func (in *Interp) evalDef(n *syntax.Def, fr *Frame) (object.Value, error) {
 		table = target.SingletonMethods
 	}
 	if existing, ok := table[n.Name]; ok && existing.Owner == target && existing.Body != nil {
+		if cd, ok := existing.Body.(*compiledDef); ok && cd.def == n {
+			// The same definition evaluated again, as a loop around it does:
+			// nothing changes.
+			return object.Symbol(n.Name), nil
+		}
 		if target == in.mainClass {
 			return object.Value{}, in.raise(object.AmberError, n.Line(), "method %s is already defined at the top level", n.Name)
 		}

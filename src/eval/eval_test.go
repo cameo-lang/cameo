@@ -300,3 +300,10 @@ end
 `
 	expectOutput(t, src, "Float\ntrue\nInteger\ntrue\nInvalid argument - clock_gettime(99)\nunexpected unit: bogus\n")
 }
+
+func TestSameDefRunsAgain(t *testing.T) {
+	// A loop around a def evaluates the one definition again, which changes
+	// nothing; a second def of the name is still an error.
+	expectOutput(t, "3.times do\n  def f = 1\nend\np f\n", "1\n")
+	expectError(t, "def f = 1\ndef f = 2\n", "method f is already defined at the top level")
+}
