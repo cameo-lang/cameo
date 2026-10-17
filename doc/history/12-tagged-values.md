@@ -9,7 +9,7 @@ cost an allocation. Step 12 changes what a value is.
 ## Three words, passed by value
 
 `object.Value` becomes a 24-byte struct of a kind, an integer payload and
-a pointer ([src/object/value.go:90](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/object/value.go#L90-L95)). An integer, a
+a pointer ([src/object/value.go:90](https://github.com/radiospiel/amber/blob/11b17a3948749c578e1c26f7acc2335a8d62f201/src/object/value.go#L90-L95)). An integer, a
 float, a boolean and `nil` live entirely in the payload and never touch the
 heap. A string or a symbol points at its bytes. Every other kind points at
 its object; a Proc and a process are opaque pointers that the evaluator
