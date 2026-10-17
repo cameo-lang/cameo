@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"sort"
+	"time"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -181,8 +182,8 @@ func (p *Program) Decode(data []byte) (any, error) {
 }
 
 // ToValue converts a Go value to an amber value: nil, bool, integers,
-// floats, string, []byte, []any, map[string]any or map[any]any, an
-// object.Value as it is, or a proto.Message whose descriptor full name is a
+// floats, string, []byte, time.Time, []any, map[string]any or
+// map[any]any, an object.Value as it is, or a proto.Message whose descriptor full name is a
 // loaded class's.
 func (p *Program) ToValue(v any) (object.Value, error) {
 	switch v := v.(type) {
@@ -220,6 +221,8 @@ func (p *Program) ToValue(v any) (object.Value, error) {
 		return object.String(v), nil
 	case []byte:
 		return object.Bytes(v), nil
+	case time.Time:
+		return object.TimeValue(v.Round(0)), nil
 	case []any:
 		elems := make([]object.Value, len(v))
 		for i, e := range v {
@@ -287,8 +290,9 @@ func (p *Program) ToValue(v any) (object.Value, error) {
 }
 
 // ToGo converts an amber value to a Go value: nil, bool, int64, float64,
-// string, []byte, []any, map[any]any, a proto.Message for an instance, and
-// the object.Value itself for everything else (symbols, ranges, classes).
+// string, []byte, time.Time, []any, map[any]any, a proto.Message for an
+// instance, and the object.Value itself for everything else (symbols,
+// ranges, classes).
 func (p *Program) ToGo(v object.Value) (any, error) {
 	switch v.Kind() {
 	case object.KindBool:
@@ -349,6 +353,8 @@ func (p *Program) ToGo(v object.Value) (any, error) {
 			out[key] = val
 		}
 		return out, nil
+	case object.KindTime:
+		return v.Time(), nil
 	case object.KindInstance:
 		v := v.Instance()
 		if v.Cls.Digest == "" {

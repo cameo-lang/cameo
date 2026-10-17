@@ -285,6 +285,14 @@ func writeKey(b *strings.Builder, v Value) {
 		b.WriteString(c.QualifiedName())
 		b.WriteByte('#')
 		b.WriteString(c.Digest)
+	case KindTime:
+		// Two times are equal when they are the same instant, whatever
+		// their offsets.
+		t := v.Time()
+		b.WriteString("t")
+		b.WriteString(strconv.FormatInt(t.Unix(), 10))
+		b.WriteByte('.')
+		b.WriteString(strconv.Itoa(t.Nanosecond()))
 	case KindException:
 		e := v.Exception()
 		b.WriteString("e")

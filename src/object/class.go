@@ -299,12 +299,13 @@ var (
 	MapClass       = NewClass("Hash", ObjectClass)
 	SetClass       = NewClass("Set", ObjectClass)
 	RangeClass     = NewClass("Range", ObjectClass)
+	TimeClass      = NewClass("Time", ObjectClass)
 	ProcClass      = NewClass("Proc", ObjectClass)
 	ProcessClass   = NewClass("AsyncProcess", ObjectClass)
 	ExceptionClass = NewClass("Exception", ObjectClass)
 	// Enumerable is the module List, Map, Set and Range include.
 	Enumerable = NewModule("Enumerable")
-	// Comparable is the module Integer, Float and String include.
+	// Comparable is the module Integer, Float, String and Time include.
 	Comparable = NewModule("Comparable")
 
 	StandardError     = NewClass("StandardError", ExceptionClass)
@@ -333,9 +334,10 @@ func init() {
 	IntegerClass.Include(Comparable)
 	FloatClass.Include(Comparable)
 	StringClass.Include(Comparable)
+	TimeClass.Include(Comparable)
 	BasicClasses = []*Class{
 		ObjectClass, ModuleClass, ClassClass, NilClass, BoolClass, IntegerClass, FloatClass,
-		StringClass, SymbolClass, BytesClass, ListClass, MapClass, SetClass, RangeClass, ProcClass,
+		StringClass, SymbolClass, BytesClass, ListClass, MapClass, SetClass, RangeClass, TimeClass, ProcClass,
 		ProcessClass, ExceptionClass, Enumerable, Comparable,
 		StandardError, RuntimeError, ArgumentError, TypeError, NameError, NoMethodError, KeyError,
 		IndexError, RangeError, ZeroDivisionError, StopIteration, NoMatchingPattern, FrozenError,

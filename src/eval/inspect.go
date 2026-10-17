@@ -51,6 +51,8 @@ func (in *Interp) ToS(v object.Value) (string, error) {
 	case object.KindException:
 		v := v.Exception()
 		return v.Message, nil
+	case object.KindTime:
+		return stdlib.TimeToS(v.Time()), nil
 	case object.KindInstance:
 		v := v.Instance()
 		if v.Cls == object.ObjectClass {
@@ -86,6 +88,8 @@ func (in *Interp) inspectBuiltin(v object.Value) (string, error) {
 	case object.KindBytes:
 		v := v.Bytes()
 		return object.QuoteBytes(v) + ".b", nil
+	case object.KindTime:
+		return stdlib.TimeInspect(v.Time()), nil
 	case object.KindList:
 		v := v.List()
 		parts := make([]string, len(v.Elems))
@@ -276,6 +280,10 @@ func (in *Interp) Compare(a, b object.Value) (int, error) {
 		a := a.Str()
 		if b, ok := b.AsSymbol(); ok {
 			return strings.Compare(string(a), string(b)), nil
+		}
+	case object.KindTime:
+		if b, ok := b.AsTime(); ok {
+			return a.Time().Compare(b), nil
 		}
 	case object.KindList:
 		a := a.List()

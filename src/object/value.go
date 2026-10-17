@@ -9,6 +9,7 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 	"unicode/utf8"
 	"unsafe"
@@ -36,6 +37,8 @@ const (
 	KindInstance
 	KindClass
 	KindException
+	// KindTime is an instant with its UTC offset, Ruby's Time.
+	KindTime
 	// KindProc and KindProcess are the evaluator's: a block or lambda and
 	// an async process. The object is opaque here; see Opaque.
 	KindProc
@@ -74,6 +77,8 @@ func (k Kind) String() string {
 		return "class"
 	case KindException:
 		return "exception"
+	case KindTime:
+		return "time"
 	case KindProc:
 		return "proc"
 	case KindProcess:
@@ -155,6 +160,8 @@ func (v Value) Class() *Class {
 		return (*Class)(v.p).Class()
 	case KindException:
 		return (*Exception)(v.p).Cls
+	case KindTime:
+		return TimeClass
 	case KindProc:
 		return ProcClass
 	case KindProcess:
@@ -209,6 +216,11 @@ func RangeValue(r *Range) Value         { return Value{kind: KindRange, p: unsaf
 func InstanceValue(i *Instance) Value   { return Value{kind: KindInstance, p: unsafe.Pointer(i)} }
 func ClassValue(c *Class) Value         { return Value{kind: KindClass, p: unsafe.Pointer(c)} }
 func ExceptionValue(e *Exception) Value { return Value{kind: KindException, p: unsafe.Pointer(e)} }
+
+// TimeValue makes a time value. Its location says how it shows: time.UTC
+// for a UTC time, time.Local for the local zone, and a fixed zone for an
+// offset.
+func TimeValue(t time.Time) Value { return Value{kind: KindTime, p: unsafe.Pointer(&t)} }
 
 // Opaque wraps an object this package does not know, a proc or a process,
 // under its kind. The evaluator reads it back with Opaque.
@@ -280,6 +292,11 @@ func (v Value) Instance() *Instance {
 func (v Value) Exception() *Exception {
 	v.must(KindException)
 	return (*Exception)(v.p)
+}
+
+func (v Value) Time() time.Time {
+	v.must(KindTime)
+	return *(*time.Time)(v.p)
 }
 
 // Opaque returns the object of a proc or a process.
@@ -370,6 +387,13 @@ func (v Value) AsRange() (*Range, bool) {
 		return nil, false
 	}
 	return (*Range)(v.p), true
+}
+
+func (v Value) AsTime() (time.Time, bool) {
+	if v.kind != KindTime {
+		return time.Time{}, false
+	}
+	return *(*time.Time)(v.p), true
 }
 
 func (v Value) AsInstance() (*Instance, bool) {

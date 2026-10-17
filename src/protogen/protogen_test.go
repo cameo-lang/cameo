@@ -3,6 +3,7 @@ package protogen
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -155,5 +156,31 @@ func TestEnvelopeRoundTrip(t *testing.T) {
 	}
 	if _, err := enc.Encode(object.ClassValue(object.ProcClass)); err == nil {
 		t.Fatal("a class cannot be encoded")
+	}
+}
+
+// A time keeps its instant and how it shows: UTC, the local zone, or its
+// fixed offset.
+func TestEnvelopeTime(t *testing.T) {
+	reg := NewRegistry()
+	enc, dec := NewEncoder(reg), NewDecoder(reg, nil)
+	at := time.Unix(1629590400, 500)
+	for _, want := range []time.Time{at.UTC(), at.Local(), at.In(time.FixedZone("", 9*3600))} {
+		data, err := enc.Encode(object.TimeValue(want))
+		if err != nil {
+			t.Fatal(err)
+		}
+		back, err := dec.Decode(data)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := back.Time()
+		_, wantOff := want.Zone()
+		_, gotOff := got.Zone()
+		sameZone := (got.Location() == time.UTC) == (want.Location() == time.UTC) &&
+			(got.Location() == time.Local) == (want.Location() == time.Local)
+		if !got.Equal(want) || gotOff != wantOff || !sameZone {
+			t.Fatalf("round trip changed %v into %v", want, got)
+		}
 	}
 }
