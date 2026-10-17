@@ -198,7 +198,7 @@ func (in *Interp) eval(n syntax.Node, env *Env, fr *Frame) (object.Value, error)
 	case *syntax.Await:
 		return in.evalAwait(n, env, fr)
 	case *syntax.AwaitAll:
-		return in.evalAwaitAll(fr, n.Line())
+		return in.evalAwaitAll(env, n.Line())
 	case *syntax.Splat:
 		return nil, in.raise(object.AmberError, n.Line(), "a splat belongs in a list or an argument list")
 	}

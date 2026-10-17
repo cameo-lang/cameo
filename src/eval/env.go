@@ -11,6 +11,9 @@ import (
 type Env struct {
 	vars   map[string]object.Value
 	parent *Env
+	// processes are the async processes started in this scope, which
+	// `await :all` collects.
+	processes []*Process
 }
 
 // NewEnv makes a scope inside parent (nil for a method body).

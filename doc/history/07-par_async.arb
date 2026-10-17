@@ -1,0 +1,10 @@
+class Fib
+  int :n
+  def initialize(n)
+    @n = n
+  end
+  def run(k) = k < 2 ? k : run(k - 1) + run(k - 2)
+end
+f = Fib.new(0)
+jobs = [24, 24, 24, 24].map { |k| async f, :run, k }
+puts jobs.map { |j| await j }.sum

@@ -29,6 +29,10 @@ type Interp struct {
 	// lexical scopes and before the builtin classes.
 	consts map[string]object.Value
 	proto  *protogen.Registry
+	// procs is every process the script started, shared with its workers,
+	// so the run can wait for all of them and report the failures nobody
+	// awaited.
+	procs *processList
 }
 
 // New makes an interpreter writing to stdout and stderr.
@@ -45,6 +49,7 @@ func New(stdout, stderr io.Writer) *Interp {
 		top:       NewEnv(nil),
 		consts:    map[string]object.Value{},
 		proto:     protogen.NewRegistry(),
+		procs:     &processList{},
 	}
 }
 

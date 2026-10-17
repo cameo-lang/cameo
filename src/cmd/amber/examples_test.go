@@ -17,9 +17,7 @@ const examplesDir = "../../../examples"
 // pending names the examples that need a milestone not built yet, with the
 // milestone. A pending example must still fail: when it passes, it comes
 // off this list.
-var pending = map[string]string{
-	"async.arb": "milestone 6: async",
-}
+var pending = map[string]string{}
 
 // TestExamples runs every example script and holds its standard output to
 // the expected file beside it. Pending examples are run too, and must fail.

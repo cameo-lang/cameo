@@ -280,13 +280,17 @@ immutable afterwards, so it needs no copying and no lock.
 method raised, `await` raises the same exception class with the same message
 in the awaiting scope. Awaiting a process twice returns the same result.
 
-`await :all` waits for every process started in the current method or block
-activation that has not been awaited yet, and returns their results as a list
-in start order. If any raised, `await :all` waits for all of them first and
+`await :all` waits for every process started in the current method (its
+blocks included, since a block is part of the method that runs it) or at
+the top level, that has not been awaited yet, and returns their results as
+a list in start order. If any raised, `await :all` waits for all of them first and
 then raises the first exception in start order. A scope that returns with
-processes still running leaves them running; they are detached, their result
-is dropped, and a failure is written to standard error. `amber` exits when the
-script's top-level scope finishes, after an implicit `await :all`.
+processes still running leaves them running: a process is a value, so a
+caller that receives one may still await it, and one nobody awaits is
+waited for when the run ends, with its failure written to standard error.
+`amber` exits when the script's top-level scope finishes and every process
+has. A process's result has to be able to travel back, so a method that
+answers a Proc or a class to a process raises a `TypeError` there.
 
 A process has no handle to its parent, no shared memory, and no way to send
 anything but its return value. Starting processes from inside a process is
@@ -391,7 +395,7 @@ One Go module, `github.com/radiospiel/amber`, with the packages under `src/`:
 | `object` | the value model: kinds, structural equality, hashing, the class table, dynamic messages, conversion to and from `amber.Value` and Go values |
 | `eval` | the tree-walking evaluator: scopes, method dispatch, blocks, exceptions, intrinsics (`tap`, `async`, `await`, the field helpers) |
 | `stdlib` | Kernel, Integer, Float, String, Symbol, Array, Hash, Set, Range, Enumerable, Proc, the exception classes |
-| `async` | the scheduler: `AsyncProcess`, the per-scope process list, goroutine lifecycle |
+| `eval/async.go` | the scheduler: `AsyncProcess`, the per-scope process list, the worker interpreter a process runs in, goroutine lifecycle |
 | `protogen` | descriptors from class declarations, `.proto` text, the `amber.Value` envelope (`proto/amber.proto`, compiled in) |
 | `cmd/amber` | the binary: `amber script.arb`, `amber check script.arb`, `amber proto script.arb` |
 
