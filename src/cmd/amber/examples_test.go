@@ -5,18 +5,16 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"github.com/go-ruby-parser/parser"
 )
 
 // examplesDir is the corpus of scripts that specify the language, relative
 // to this package.
 const examplesDir = "../../../examples"
 
-// TestExamplesParse holds every example script to the parser: a script the
-// front end cannot read cannot specify anything. Each example also needs its
+// TestExamplesCheck holds every example script to the front end: a script
+// the checker rejects cannot specify anything. Each example also needs its
 // expected output beside it, or the corpus stops being a specification.
-func TestExamplesParse(t *testing.T) {
+func TestExamplesCheck(t *testing.T) {
 	scripts, err := filepath.Glob(filepath.Join(examplesDir, "*.arb"))
 	if err != nil {
 		t.Fatal(err)
@@ -26,12 +24,8 @@ func TestExamplesParse(t *testing.T) {
 	}
 	for _, script := range scripts {
 		t.Run(filepath.Base(script), func(t *testing.T) {
-			src, err := os.ReadFile(script)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if _, err := parser.Parse(string(src)); err != nil {
-				t.Fatalf("does not parse: %v", err)
+			if err := check(script); err != nil {
+				t.Fatalf("rejected: %v", err)
 			}
 			expected := strings.TrimSuffix(script, ".arb") + ".expected"
 			if _, err := os.Stat(expected); err != nil {
@@ -41,20 +35,30 @@ func TestExamplesParse(t *testing.T) {
 	}
 }
 
-// TestCheckRejectsSyntaxError proves the check command fails on a script the
-// parser rejects, so a green run on the corpus means something.
-func TestCheckRejectsSyntaxError(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "broken.arb")
-	if err := os.WriteFile(path, []byte("def foo(\n"), 0o644); err != nil {
+// TestCheckReportsErrors proves the check command fails on a script the
+// parser rejects and on one the checker rejects, so a green run on the
+// corpus means something.
+func TestCheckReportsErrors(t *testing.T) {
+	dir := t.TempDir()
+	broken := filepath.Join(dir, "broken.arb")
+	if err := os.WriteFile(broken, []byte("def foo(\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := check(path); err == nil {
+	if err := check(broken); err == nil {
 		t.Fatal("check accepted a script with a syntax error")
 	}
-	if status := run([]string{"check", path}); status != 1 {
+	mutating := filepath.Join(dir, "mutating.arb")
+	if err := os.WriteFile(mutating, []byte("a = []\na << 1\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	err := check(mutating)
+	if err == nil || !strings.Contains(err.Error(), "mutating.arb:2:") {
+		t.Fatalf("check on a mutating script: %v", err)
+	}
+	if status := run([]string{"check", broken}); status != 1 {
 		t.Fatalf("exit status %d for a syntax error, want 1", status)
 	}
-	if status := run([]string{path}); status != 2 {
+	if status := run([]string{broken}); status != 2 {
 		t.Fatalf("exit status %d for running a script, want 2 while unimplemented", status)
 	}
 }

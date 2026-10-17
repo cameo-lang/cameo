@@ -22,3 +22,4 @@ decision ark made late was the right one from the start:
 The steps:
 
 - [1. The language design, and `amber check`](01-language-design.md)
+- [2. The front end: amber's tree, the checker and the rewrite](02-front-end.md)
