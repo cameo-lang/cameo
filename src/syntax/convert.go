@@ -388,7 +388,7 @@ func (c *converter) scopedConst(n *ast.ScopedConst) Node {
 func (c *converter) ivarAssign(name string, value Node) Node {
 	def, ok := c.enclosingDef()
 	if !ok || def.name != "initialize" || !c.insideClass() {
-		c.fail("@%s = …: a field is set in initialize only; elsewhere use tap", name)
+		c.fail("@%s = …: a field is set in initialize only; elsewhere use with", name)
 		return nil
 	}
 	return &IVarAssign{c.pos(), name, value}
@@ -500,6 +500,12 @@ func (c *converter) call(n *ast.Call) Node {
 	}
 	if isSetter(name) {
 		return c.assignment(n)
+	}
+	if name == "tap" && n.Block != nil && len(n.Block.Body) > 0 {
+		if _, isHash := n.Block.Body[len(n.Block.Body)-1].(*ast.HashLit); isHash {
+			c.fail("tap returns its receiver unchanged; for a copy with changes use with")
+			return nil
+		}
 	}
 	call := &Call{Pos: c.pos(), Name: name, Safe: n.Safe}
 	if n.Recv != nil {
@@ -681,7 +687,7 @@ func (c *converter) def(d *ast.MethodDef) Node {
 		return nil
 	}
 	if isSetter(d.Name) {
-		c.fail("def %s: setters are not supported; a field changes through tap", d.Name)
+		c.fail("def %s: setters are not supported; a field changes through with", d.Name)
 		return nil
 	}
 	if strings.HasSuffix(d.Name, "!") && d.Name != "!" {

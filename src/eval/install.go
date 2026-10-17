@@ -45,8 +45,18 @@ func installStdlib() {
 }
 
 func init() {
+	object.ObjectClass.Define("with", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return ctx.(*Interp).withChanges(self, args, kw, block)
+	})
+	// tap is Ruby's: it yields the receiver and returns it unchanged.
 	object.ObjectClass.Define("tap", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return ctx.(*Interp).tap(self, block)
+		if block.IsZero() {
+			return object.Value{}, ctx.Raise(object.LocalJumpError, "no block given (yield)")
+		}
+		if _, err := ctx.Yield(block, self); err != nil {
+			return object.Value{}, err
+		}
+		return self, nil
 	})
 	// Class#new builds an instance of a user class and runs its initialize.
 	object.ClassClass.Define("new", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {

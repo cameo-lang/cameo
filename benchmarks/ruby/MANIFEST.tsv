@@ -437,7 +437,6 @@ unsupported/struct	vm_struct_small_aref--vm_struct_small_aref.rb	benchmark/vm_st
 unsupported/struct	vm_struct_small_aset--vm_struct_small_aset.rb	benchmark/vm_struct_small_aset.yml, entry vm_struct_small_aset	Struct (left out: untyped members, setters)
 unsupported/struct	vm_struct_small_href--vm_struct_small_href.rb	benchmark/vm_struct_small_href.yml, entry vm_struct_small_href	Struct (left out: untyped members, setters)
 unsupported/struct	vm_struct_small_hset--vm_struct_small_hset.rb	benchmark/vm_struct_small_hset.yml, entry vm_struct_small_hset	Struct (left out: untyped members, setters)
-unsupported/tap	kernel_tap--kernel_tap.rb	benchmark/kernel_tap.yml, entry kernel_tap	tap with a block for its side effect (amber's tap builds a copy from the map the block returns)
 unsupported/threads	fiber_chain--make_chain.rb	benchmark/fiber_chain.yml, entry make_chain	threads and fibers (amber has async)
 unsupported/threads	fiber_chain--resume_chain.rb	benchmark/fiber_chain.yml, entry resume_chain	threads and fibers (amber has async)
 unsupported/threads	fiber_locals--__.rb	benchmark/fiber_locals.yml, entry __	threads and fibers (amber has async)
@@ -757,6 +756,7 @@ works	kernel_clone--clone_true.rb	benchmark/kernel_clone.yml, entry clone_true
 works	kernel_float--float.rb	benchmark/kernel_float.yml, entry float	
 works	kernel_float--float_false.rb	benchmark/kernel_float.yml, entry float_false	
 works	kernel_float--float_true.rb	benchmark/kernel_float.yml, entry float_true	
+works	kernel_tap--kernel_tap.rb	benchmark/kernel_tap.yml, entry kernel_tap	
 works	kernel_then--kernel_then.rb	benchmark/kernel_then.yml, entry kernel_then	
 works	kernel_then--kernel_then_enum.rb	benchmark/kernel_then.yml, entry kernel_then_enum	
 works	kernel_then--kernel_yield_self.rb	benchmark/kernel_then.yml, entry kernel_yield_self	

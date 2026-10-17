@@ -1,4 +1,4 @@
-# a.x.y = 3 is sugar for a = a.tap { |a0| { x: a0.x.tap { |a1| { y: 3 } } } }
+# a.x.y = 3 is sugar for a = a.with { |a0| { x: a0.x.with { |a1| { y: 3 } } } }
 class Inner
   int :y
 

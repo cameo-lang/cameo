@@ -9,7 +9,7 @@ interpreter is built, and in which order.
 The front end is `github.com/go-ruby-parser/parser`, a Ruby parser in pure Go
 (no cgo, BSD-3-Clause, tested against MRI). amber adds no syntax of its own:
 everything below parses as Ruby, and amber gives some of it a different
-meaning. The constructs amber introduces — `tap` with a hash, `async`, `await`,
+meaning. The constructs amber introduces — `with`, `async`, `await`,
 the typed field helpers — are ordinary method calls to the parser and
 intrinsics to the interpreter.
 
@@ -138,39 +138,46 @@ element, a constant, a call's result -- such a call is rejected, since
 there is no variable to rebind. amber's own `append`, `prepend`, `put` and
 `without` return a copy and change nothing.
 
-### `tap`
+### `with`
 
-`value.tap { |v| { field: expr, … } }` returns a copy of `value` with the
-named fields replaced. The block receives the current value and returns a hash
-of the changes; it may use `v` to compute them. On an instance of a class the
+`value.with(field: expr, …)` returns a copy of `value` with the named fields
+replaced. A block computes changes from the current value:
+`value.with { |v| { field: expr, … } }` receives the copy so far and returns a
+hash of the changes, applied after any keywords. On an instance of a class the
 keys must name declared fields and the values must have the declared types.
-On a Hash the hash is merged in. On an Array the keys are indices. On anything
-else `tap` raises. A block that returns something other than a hash raises.
+On a Hash the hash is merged in. On an Array the keys are indices, so the
+block form is the one to use. On anything else `with` raises, and so does a
+block that returns something other than a hash.
 
-`tap` never changes `value`; the caller binds the result:
+`with` never changes `value`; the caller binds the result:
 
 ```ruby
 pt = Point.new(x: 1, y: 2)
-pt = pt.tap { |p| { x: p.x + 10 } }   # Point(x: 11, y: 2); the old pt is gone
+pt = pt.with(x: 11)                   # Point(x: 11, y: 2); the old pt is gone
+pt = pt.with { |p| { y: p.y * 5 } }   # Point(x: 11, y: 10)
 ```
 
-### Chained assignment is sugar for `tap`
+The keyword form is Ruby's own `Data#with`. `tap` is Ruby's too: it yields
+the receiver and returns it unchanged. A `tap` whose block ends in a hash
+literal is rejected by the checker, since it reads as the copy `with` makes.
+
+### Chained assignment is sugar for `with`
 
 `a.x.y = 3` is not a setter call. The checker rewrites every `recv.f1.f2….fn
-= expr` whose leftmost receiver is a local variable into nested `tap` calls
-and a rebinding of that variable:
+= expr` whose leftmost receiver is a local variable into nested copies and a
+rebinding of that variable:
 
 ```ruby
 a.x.y = 3
 # is
-a = a.tap { |a0| { x: a0.x.tap { |a1| { y: 3 } } } }
+a = a.with { |a0| { x: a0.x.with { |a1| { y: 3 } } } }
 ```
 
 The leftmost receiver must be a local variable (or an instance variable
 inside `initialize`), because the result has to be bound somewhere. `foo().x
 = 3` and `CONST.x = 3` are rejected by the checker with that reason. Index
-assignment `a[0] = 1` and `h[:k] = v` desugar the same way, through
-`tap` with an index or key.
+assignment `a[0] = 1` and `h[:k] = v` desugar the same way, with an index or
+key.
 
 ## Classes
 
@@ -395,8 +402,7 @@ a gem with an `Amber` module, and it is explicitly second in line behind the
 Go interpreter. Its shape:
 
 - `Amber::Object` as the base class: the typed field helpers (`string :name`
-  and the rest) define readers and a frozen initializer, `tap` with a block
-  returning a hash builds a copy, `==` and `hash` are structural, and
+  and the rest) define readers and a frozen initializer, `with` builds a copy, `==` and `hash` are structural, and
   `to_proto` returns the message through `google-protobuf`, built from the
   same descriptor the Go side generates. Values are deep-frozen on
   construction through `simple-immutable`, an existing ark part.
@@ -407,7 +413,7 @@ Go interpreter. Its shape:
 
 What the adapter cannot provide is the `a.x.y = 3` rewrite, since a library
 cannot rebind a caller's local. Scripts that must run under both write the
-`tap` form; the adapter may later gain a source rewriter.
+`with` form; the adapter may later gain a source rewriter.
 
 ## Architecture
 
@@ -417,9 +423,9 @@ One Go module, `github.com/radiospiel/amber`, with the packages under `src/`:
 |---|---|
 | `amber` | the host API: `Load`, `Run`, `Program`, `Value` |
 | `rx` | translates a Ruby regular expression into one for Go's regexp, and names what it uses that Go's cannot do |
-| `syntax` | wraps the parser; normalises its tree into amber's own AST, rewrites `a.x.y =` and index assignment into `tap`, rejects what amber leaves out, with line numbers; hashes class bodies so equal definitions are one class |
+| `syntax` | wraps the parser; normalises its tree into amber's own AST, rewrites `a.x.y =` and index assignment into copies, rejects what amber leaves out, with line numbers; hashes class bodies so equal definitions are one class |
 | `object` | the value model: a `Value` is a tagged 24-byte struct (kind, integer payload, pointer), so an integer, a float, a boolean and nil never touch the heap and a string shares its bytes; kinds, structural equality, hashing, the class table, dynamic messages, conversion to and from `amber.Value` and Go values |
-| `eval` | the evaluator: compiles each node to a closure on first use (`compile.go`), with a tree walker for the rare kinds; scopes, method dispatch with a per-class lookup cache, blocks, exceptions, intrinsics (`tap`, `async`, `await`, the field helpers) |
+| `eval` | the evaluator: compiles each node to a closure on first use (`compile.go`), with a tree walker for the rare kinds; scopes, method dispatch with a per-class lookup cache, blocks, exceptions, intrinsics (`with`, `async`, `await`, the field helpers) |
 | `stdlib` | Kernel, Integer, Float, String, Symbol, Array, Hash, Set, Range, Time, Math, Regexp, MatchData, Enumerable, Proc, the exception classes |
 | `eval/async.go` | the scheduler: `AsyncProcess`, the per-scope process list, the worker interpreter a process runs in, goroutine lifecycle |
 | `protogen` | descriptors from class declarations, `.proto` text, the `amber.Value` envelope (`proto/amber.proto`, compiled in) |
@@ -442,7 +448,7 @@ passing for what it covers.
    as a dependency, `amber check` that parses a script and reports syntax
    errors, the example corpus as the specification, and a test that every
    example parses.
-1. **Front end**: `syntax` — amber's AST, the rejection list, the `tap`
+1. **Front end**: `syntax` — amber's AST, the rejection list, the copy
    rewrite, with the checker's messages tested.
 2. **Evaluator core**: literals, variables, operators, control flow, methods,
    blocks, lambdas, exceptions, `puts`/`print`/`p`/`warn`. `amber script.arb`
@@ -450,7 +456,7 @@ passing for what it covers.
 3. **Standard library**: String, Integer, Float, Symbol, Array, Hash, Set,
    Range, Enumerable.
 4. **Classes**: typed fields as dynamic messages, `initialize`, readers,
-   `tap`, chained assignment, classes as values bound to their name,
+   `with`, chained assignment, classes as values bound to their name,
    inheritance with overriding, modules as namespaces and mixins.
 5. **Protobuf**: `.proto` generation with enums, packages and `reserved`,
    the value envelope, the Go host API, `amber proto`.
@@ -578,6 +584,13 @@ re-opened by accident:
     working directory and `$HOME` to resolve a relative path or `~`;
     nothing reads a file. `__FILE__` is the script's path and `__dir__`
     its directory.
+  - `with` makes the copy with changes, from keywords (Ruby's
+    `Data#with`) or from the hash its block returns; `tap` is Ruby's,
+    yielding the receiver and returning it. Until this round `tap` made the
+    copy, which left Ruby's `tap` idiom out.
+  - A mutating call on a temporary (`s.dup.merge!(x)`, `[1, 2].push(3)`,
+    `foo.bar[0] = 1`) stays rejected: there is no variable to rebind, and
+    the non-mutating form (`merge`, `+`, `with`) says what is meant.
   - Kept out: `GC`, `ENV`, metaprogramming (`define_method`, `send`,
     `eval`, `instance_variable_set`), setters and untyped fields, fibers
     and threads, and anything that touches the file system.

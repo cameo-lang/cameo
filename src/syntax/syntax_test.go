@@ -304,3 +304,7 @@ func TestOperatorsAndControlFlow(t *testing.T) {
 }
 
 func typeName(n Node) string { return fmt.Sprintf("%T", n) }
+
+func TestTapWithAHashPointsAtWith(t *testing.T) {
+	rejects(t, "p = q.tap { |x| { a: 1 } }\n", "tap returns its receiver unchanged; for a copy with changes use with")
+}

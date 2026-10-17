@@ -1,4 +1,4 @@
-# Typed fields: declaration, defaults, checking, keyword construction, tap.
+# Typed fields: declaration, defaults, checking, keyword construction, with.
 class Address
   string :street, :city
   int :zip
@@ -38,11 +38,11 @@ puts ann.adult?
 puts ann.home.city
 puts Person.fields.inspect
 
-bob = ann.tap { |p| { name: "bob", age: 7, role: :admin } }
+bob = ann.with { |p| { name: "bob", age: 7, role: :admin } }
 puts bob.name, bob.age, bob.role
 puts ann.name
 puts bob == ann
-puts bob == bob.tap { |p| {} }
+puts bob == bob.with { |p| {} }
 
 bob.home.zip = 99999
 puts bob.home.zip
@@ -59,21 +59,35 @@ rescue TypeError, NameError, ArgumentError => e
 end
 
 check { Person.new(42) }
-check { ann.tap { |p| { age: "old" } } }
-check { ann.tap { |p| { role: :boss } } }
-check { ann.tap { |p| { nope: 1 } } }
-check { ann.tap { |p| { emails: ["ok", 3] } } }
-check { ann.tap { |p| { home: "nowhere" } } }
+check { ann.with { |p| { age: "old" } } }
+check { ann.with { |p| { role: :boss } } }
+check { ann.with { |p| { nope: 1 } } }
+check { ann.with { |p| { emails: ["ok", 3] } } }
+check { ann.with { |p| { home: "nowhere" } } }
 check { Address.new(street: 1) }
 check { Address.new(1) }
 check { Person.new("x", age: 1.5) }
-check { ann.tap { |p| 5 } }
+check { ann.with { |p| 5 } }
 
 nothing = Address.new
 p nothing
 puts nothing.zip.inspect
-puts [1, 2, 3].tap { |l| { 0 => :a, -1 => :c } }.inspect
-puts({x: 1}.tap { |m| { y: 2 } }.keys.inspect)
+puts [1, 2, 3].with { |l| { 0 => :a, -1 => :c } }.inspect
+puts({x: 1}.with { |m| { y: 2 } }.keys.inspect)
 list = [[1, 2], [3, 4]]
 list[1][0] = 30
 puts list.inspect
+
+# with takes the changes as keywords too, and the block runs after them.
+older = ann.with(age: 50)
+puts older.age, ann.age
+puts ann.with(age: 51) { |p| { name: "#{p.name} at #{p.age}" } }.name
+check { ann.with }
+check { ann.with(1) }
+check { 5.with(x: 1) }
+
+# tap is Ruby's: it yields the receiver and returns it unchanged.
+seen = nil
+same = ann.tap { |p| seen = p.name }
+puts seen, same == ann
+puts [3, 1, 2].tap { |l| seen = l.size }.inspect, seen
