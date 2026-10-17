@@ -7,8 +7,7 @@
 #
 #   mri       the ruby on PATH, which every time is a percentage of
 #   amber     this component's interpreter
-#   warmruby  agentic's code-ruby: CRuby 3.4 for WASI on wazero (../warmruby,
-#             in ark only; a run without it compares the other three)
+#   warmruby  CRuby 3.4 compiled to WASI, on wazero, compiled ahead (../warmruby)
 #   rbgo      go-embedded-ruby, a Ruby interpreter in Go (../rbgo)
 #
 # A time is what a run of the script costs without the Ruby's start. Before
@@ -52,15 +51,14 @@ OptionParser.new do |o|
   o.on("--out FILE", "results table (default compare/results.tsv)") { options[:out] = _1 }
   o.on("--whole", "show whole processes, start included") { options[:whole] = true }
   o.on("--report FILE", "show a results file instead of running") { options[:report] = _1 }
+  o.on("--only NAME", "time only this Ruby and keep the others' timings from --out") { options[:only] = _1 }
   o.on("--[no-]color", "colour the table (default: when standard output is a terminal)") { options[:color] = _1 }
 end.parse!
 
 # The Rubies in the order of the table's columns; MRI is the baseline.
-# warmruby links ark's agentic module, so its command exists only in ark;
-# without it a run has three columns and MRI's output is the reference.
-HAVE_WARM = File.directory?(File.join(AMBER, "benchmarks/warmruby"))
-NAMES = (options[:report] || HAVE_WARM ? %w[mri amber warmruby rbgo] : %w[mri amber rbgo]).freeze
-REFERENCE = HAVE_WARM ? "warmruby" : "mri"
+NAMES = %w[mri amber warmruby rbgo].freeze
+# The Ruby whose output is the reference: CRuby 3.4.
+REFERENCE = "warmruby"
 GREEN, RED, BOLD = 32, 31, 1
 WIDTH = 17
 
@@ -138,6 +136,15 @@ if options[:report]
   exit
 end
 
+# With --only, the other Rubies' rows come from the existing results.
+kept = {}
+if options[:only]
+  abort "compare.rb: --only takes one of #{NAMES.join(", ")}" unless NAMES.include?(options[:only])
+  lines = File.readlines(options[:out], chomp: true)
+  keys = lines.shift.split("\t")
+  kept = lines.to_h { |l| r = keys.zip(l.split("\t", -1)).to_h; [r["file"], r] }
+end
+
 bin = File.join(Dir.tmpdir, "amber-compare")
 FileUtils.mkdir_p(bin)
 def build(dir, cmd)
@@ -145,17 +152,17 @@ def build(dir, cmd)
 end
 build(AMBER, "go build -o #{bin}/amber ./src/cmd/amber")
 build(File.join(AMBER, "benchmarks/rbgo"), "make build >/dev/null")
-build(File.join(AMBER, "benchmarks/warmruby"), "make build >/dev/null") if HAVE_WARM
+build(File.join(AMBER, "benchmarks/warmruby"), "make build >/dev/null")
 
 ENGINES = {
   "mri" => ->(f, _t) { ["ruby", f] },
   "amber" => ->(f, _t) { ["#{bin}/amber", f] },
   "warmruby" => ->(f, t) { ["#{AMBER}/benchmarks/warmruby/bin/warmruby", "-time", t, f] },
   "rbgo" => ->(f, t) { ["#{AMBER}/benchmarks/rbgo/bin/rbgo", "-time", t, f] },
-}.select { |name, _| NAMES.include?(name) }.freeze
+}.freeze
 
-# A first run compiles warmruby's module into its cache.
-system("#{AMBER}/benchmarks/warmruby/bin/warmruby", File::NULL, out: File::NULL) if HAVE_WARM
+# A first run downloads warmruby's module and compiles it into its cache.
+system("#{AMBER}/benchmarks/warmruby/bin/warmruby", File::NULL, out: File::NULL)
 
 files = ARGV.empty? ? Dir[File.join(AMBER, "benchmarks/ruby/works/*.rb")].sort : ARGV.map { File.expand_path(_1) }
 TIMING_FILE = ->(name) { File.join(Dir.tmpdir, "amber-compare-#{Thread.current.object_id}-#{name}") }
@@ -201,7 +208,9 @@ end
 # The start of each Ruby: the median time of an empty script.
 empty = File.join(Dir.tmpdir, "amber-compare-empty.rb")
 File.write(empty, "nil\n")
-STARTS = ENGINES.to_h do |name, argv|
+STARTS = ENGINES.filter_map do |name, argv|
+  next if options[:only] && name != options[:only]
+
   times = []
   started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
   while times.size < 5 || (Process.clock_gettime(Process::CLOCK_MONOTONIC) - started < 2 && times.size < 50)
@@ -210,7 +219,7 @@ STARTS = ENGINES.to_h do |name, argv|
     times << secs
   end
   [name, times.sort[times.size / 2]]
-end
+end.to_h
 puts "start: " + STARTS.map { |n, s| format("%s %.3fs", n, s) }.join("  "), ""
 
 header(options[:color])
@@ -224,6 +233,14 @@ options[:jobs].times.map do
       row = { "file" => File.basename(file) }
       outputs = {}
       ENGINES.each do |name, argv|
+        if options[:only] && name != options[:only]
+          # Kept: its timings from the table, its output from one run.
+          old = kept.fetch(row["file"]) { abort "compare.rb: #{row["file"]} is not in #{options[:out]}" }
+          old.each { |k, v| row[k] = v if k.start_with?("#{name}_") }
+          row["#{name}_result"] = old["#{name}_result"].to_sym
+          outputs[name] = run_one(argv.call(file, TIMING_FILE.call(name)), options[:timeout])[2] if row["#{name}_result"] == :ok
+          next
+        end
         result, runs, secs, script, out = repeat(name, argv, file, options[:min_time], options[:timeout])
         row["#{name}_result"] = result
         row["#{name}_runs"] = runs
@@ -247,6 +264,8 @@ options[:jobs].times.map do
   end
 end.each(&:join)
 
+# Cases not run this time keep their rows.
+kept.each_value { |r| rows << r unless rows.any? { _1["file"] == r["file"] } }
 rows.sort_by! { _1["file"] }
 columns = ["file"] + ENGINES.keys.flat_map { ["#{_1}_result", "#{_1}_runs", "#{_1}_secs", "#{_1}_script_secs", "#{_1}_net_secs", "#{_1}_output"] }
 File.write(options[:out], ([columns.join("\t")] + rows.map { |r| columns.map { r[_1] }.join("\t") }).join("\n") + "\n")
