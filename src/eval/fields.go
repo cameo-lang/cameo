@@ -455,28 +455,46 @@ func (in *Interp) with(target, key, value object.Value) (object.Value, error) {
 	return object.Value{}, in.raise(object.TypeError, 0, "cannot assign into %s", typeName(target))
 }
 
-// tap is `value.tap { |v| { key: new, … } }`: a copy with every entry of
-// the map the block returns applied.
-func (in *Interp) tap(self object.Value, block object.Value) (object.Value, error) {
-	if block.IsZero() {
-		return object.Value{}, in.raise(object.LocalJumpError, 0, "no block given (tap)")
+// withChanges is `value.with(key: new, …)` or `value.with { |v| { key:
+// new, … } }`: a copy with every entry of the keywords, then of the map the
+// block returns, applied.
+func (in *Interp) withChanges(self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	if len(args) > 0 {
+		return object.Value{}, in.raise(object.ArgumentError, 0, "with takes the changes as keywords or from its block, not positional arguments")
+	}
+	if kw == nil && block.IsZero() {
+		return object.Value{}, in.raise(object.ArgumentError, 0, "with needs the changes, as keywords or from its block")
 	}
 	switch self.Kind() {
 	case object.KindInstance, object.KindMap, object.KindList:
 	default:
-		return object.Value{}, in.raise(object.TypeError, 0, "tap copies an instance, a map or a list, not %s", typeName(self))
-	}
-	changes, err := in.callBlock(block, []object.Value{self}, nil, object.Value{})
-	if err != nil {
-		return object.Value{}, err
-	}
-	m, ok := changes.AsMap()
-	if !ok {
-		return object.Value{}, in.raise(object.TypeError, 0, "tap's block returns a map of the changes, not %s", typeName(changes))
+		return object.Value{}, in.raise(object.TypeError, 0, "with copies an instance, a map or a list, not %s", typeName(self))
 	}
 	out := self
-	for i, k := range m.Keys() {
-		if out, err = in.with(out, k, m.Values()[i]); err != nil {
+	var err error
+	apply := func(m *object.Map) error {
+		for i, k := range m.Keys() {
+			if out, err = in.with(out, k, m.Values()[i]); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	if kw != nil {
+		if err := apply(kw); err != nil {
+			return object.Value{}, err
+		}
+	}
+	if !block.IsZero() {
+		changes, err := in.callBlock(block, []object.Value{out}, nil, object.Value{})
+		if err != nil {
+			return object.Value{}, err
+		}
+		m, ok := changes.AsMap()
+		if !ok {
+			return object.Value{}, in.raise(object.TypeError, 0, "with's block returns a map of the changes, not %s", typeName(changes))
+		}
+		if err := apply(m); err != nil {
 			return object.Value{}, err
 		}
 	}

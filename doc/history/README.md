@@ -51,3 +51,4 @@ The steps:
 - [28. `method_missing`](28-method-missing.md)
 - [29. Path functions and `Pathname`](29-paths.md)
 - [30. Strings carry their encoding, and `Array#pack`](30-encodings.md)
+- [31. `with` makes the copy with changes, `tap` is Ruby's](31-with-and-tap.md)

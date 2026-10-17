@@ -17,7 +17,7 @@ class Point
 end
 
 a = Point.new(1, 2)
-b = a.tap { |p| { x: p.x + 10, label: "moved" } }
+b = a.with { |p| { x: p.x + 10, label: "moved" } }
 puts a
 puts b
 puts b.label

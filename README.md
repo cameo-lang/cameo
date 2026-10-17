@@ -18,7 +18,7 @@ end
 
 a = Point.new(1, 2)
 a.x = 10                                  # a is rebound to a copy with x: 10
-b = a.tap { |p| { y: p.y * 5 } }          # a copy with y: 10; a is unchanged
+b = a.with { |p| { y: p.y * 5 } }         # a copy with y: 10; a is unchanged
 
 job = async a, :+, b                      # a.+(b) on its own goroutine
 puts await job                            # Point(x: 20, y: 12)
