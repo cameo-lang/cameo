@@ -598,6 +598,12 @@ re-opened by accident:
   - A mutating call on a temporary (`s.dup.merge!(x)`, `[1, 2].push(3)`,
     `foo.bar[0] = 1`) stays rejected: there is no variable to rebind, and
     the non-mutating form (`merge`, `+`, `with`) says what is meant.
+  - The `amber` binary sets the collector to GOGC=400 with a soft memory
+    limit of 1 GB, unless the environment sets GOGC or GOMEMLIMIT. On
+    CRuby's benchmarks that takes a quarter off the total time (5000! in a
+    third of it) while the median script's memory is unchanged; the limit
+    keeps a large heap from growing fivefold. A program that embeds amber
+    keeps Go's defaults.
   - Kept out: `GC`, `ENV`, metaprogramming (`define_method`, `send`,
     `eval`, `instance_variable_set`), setters and untyped fields, fibers
     and threads, and anything that touches the file system.
