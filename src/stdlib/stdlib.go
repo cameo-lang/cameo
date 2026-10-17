@@ -94,7 +94,7 @@ func toList(ctx object.Context, v object.Value) ([]object.Value, error) {
 		return v.Elems(), nil
 	case object.KindRange:
 		v := v.Range()
-		return rangeElems(ctx, v)
+		return RangeElems(ctx, v)
 	case object.KindMap:
 		v := v.Map()
 		out := make([]object.Value, v.Len())

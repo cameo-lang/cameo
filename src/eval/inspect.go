@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/radiospiel/amber/src/object"
+	"github.com/radiospiel/amber/src/stdlib"
 )
 
 // userMethod finds a user-defined (not native) method name on v's class.
@@ -84,7 +85,7 @@ func (in *Interp) inspectBuiltin(v object.Value) (string, error) {
 		return object.SymbolInspect(string(v)), nil
 	case object.KindBytes:
 		v := v.Bytes()
-		return object.QuoteString(string(v)) + ".b", nil
+		return object.QuoteBytes(v) + ".b", nil
 	case object.KindList:
 		v := v.List()
 		parts := make([]string, len(v.Elems))
@@ -352,22 +353,11 @@ func (in *Interp) rangeIncludes(r *object.Range, v object.Value) (bool, error) {
 	return true, nil
 }
 
-// rangeToList expands an integer range.
+// rangeToList expands a range of integers, strings or symbols.
 func (in *Interp) rangeToList(r *object.Range, line int) (*object.List, error) {
-	lo, ok1 := r.Lo.AsInt()
-	hi, ok2 := r.Hi.AsInt()
-	if !ok1 || !ok2 {
-		if r.Hi.IsZero() {
-			return nil, in.raise(object.RangeError, line, "cannot convert endless range to a list")
-		}
-		return nil, in.raise(object.TypeError, line, "can't iterate from %s", typeName(object.OrNil(r.Lo)))
-	}
-	if r.Exclusive {
-		hi--
-	}
-	elems := []object.Value{}
-	for i := lo; i <= hi; i++ {
-		elems = append(elems, object.Int(i))
+	elems, err := stdlib.RangeElems(in, r)
+	if err != nil {
+		return nil, withLine(err, line)
 	}
 	return object.NewList(elems...).List(), nil
 }

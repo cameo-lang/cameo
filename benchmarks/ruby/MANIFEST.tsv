@@ -30,6 +30,30 @@ stdlib/array	array_intersection--small-intersection.rb	benchmark/array_intersect
 stdlib/array	enum_lazy_grep_v_100.rb	benchmark/enum_lazy_grep_v_100.rb	Array#grep_v
 stdlib/array	enum_lazy_grep_v_20.rb	benchmark/enum_lazy_grep_v_20.rb	Array#grep_v
 stdlib/array	enum_lazy_grep_v_50.rb	benchmark/enum_lazy_grep_v_50.rb	Array#grep_v
+stdlib/array	string_downcase--downcase-1.rb	benchmark/string_downcase.yml, entry downcase-1	Array#pack
+stdlib/array	string_downcase--downcase-10.rb	benchmark/string_downcase.yml, entry downcase-10	Array#pack
+stdlib/array	string_downcase--downcase-100.rb	benchmark/string_downcase.yml, entry downcase-100	Array#pack
+stdlib/array	string_downcase--downcase-1000.rb	benchmark/string_downcase.yml, entry downcase-1000	Array#pack
+stdlib/array	string_downcase--downcase-ascii8bit-256.rb	benchmark/string_downcase.yml, entry downcase-ascii8bit-256	Array#pack
+stdlib/array	string_downcase--downcase-ascii8bit-2560.rb	benchmark/string_downcase.yml, entry downcase-ascii8bit-2560	Array#pack
+stdlib/array	string_downcase--downcase-ascii8bit-25600.rb	benchmark/string_downcase.yml, entry downcase-ascii8bit-25600	Array#pack
+stdlib/array	string_downcase--downcase-ascii8bit-256000.rb	benchmark/string_downcase.yml, entry downcase-ascii8bit-256000	Array#pack
+stdlib/array	string_downcase--downcase-nonascii1.rb	benchmark/string_downcase.yml, entry downcase-nonascii1	Array#pack
+stdlib/array	string_downcase--downcase-nonascii10.rb	benchmark/string_downcase.yml, entry downcase-nonascii10	Array#pack
+stdlib/array	string_downcase--downcase-nonascii100.rb	benchmark/string_downcase.yml, entry downcase-nonascii100	Array#pack
+stdlib/array	string_downcase--downcase-nonascii1000.rb	benchmark/string_downcase.yml, entry downcase-nonascii1000	Array#pack
+stdlib/array	string_upcase--upcase-1.rb	benchmark/string_upcase.yml, entry upcase-1	Array#pack
+stdlib/array	string_upcase--upcase-10.rb	benchmark/string_upcase.yml, entry upcase-10	Array#pack
+stdlib/array	string_upcase--upcase-100.rb	benchmark/string_upcase.yml, entry upcase-100	Array#pack
+stdlib/array	string_upcase--upcase-1000.rb	benchmark/string_upcase.yml, entry upcase-1000	Array#pack
+stdlib/array	string_upcase--upcase-ascii8bit-256.rb	benchmark/string_upcase.yml, entry upcase-ascii8bit-256	Array#pack
+stdlib/array	string_upcase--upcase-ascii8bit-2560.rb	benchmark/string_upcase.yml, entry upcase-ascii8bit-2560	Array#pack
+stdlib/array	string_upcase--upcase-ascii8bit-25600.rb	benchmark/string_upcase.yml, entry upcase-ascii8bit-25600	Array#pack
+stdlib/array	string_upcase--upcase-ascii8bit-256000.rb	benchmark/string_upcase.yml, entry upcase-ascii8bit-256000	Array#pack
+stdlib/array	string_upcase--upcase-nonascii1.rb	benchmark/string_upcase.yml, entry upcase-nonascii1	Array#pack
+stdlib/array	string_upcase--upcase-nonascii10.rb	benchmark/string_upcase.yml, entry upcase-nonascii10	Array#pack
+stdlib/array	string_upcase--upcase-nonascii100.rb	benchmark/string_upcase.yml, entry upcase-nonascii100	Array#pack
+stdlib/array	string_upcase--upcase-nonascii1000.rb	benchmark/string_upcase.yml, entry upcase-nonascii1000	Array#pack
 stdlib/float	float_to_s--to_s.rb	benchmark/float_to_s.yml, entry to_s	Float#step
 stdlib/float	ractor_float_to_s--ractor_float_to_s.rb	benchmark/ractor_float_to_s.yml, entry ractor_float_to_s	Float#step
 stdlib/hash	hash_defaults--default_aref.rb	benchmark/hash_defaults.yml, entry default_aref	Hash.new with a default
@@ -66,77 +90,15 @@ stdlib/string	string_dup--uplus.rb	benchmark/string_dup.yml, entry uplus	String#
 stdlib/string	string_fstring--fstring_same.rb	benchmark/string_fstring.yml, entry fstring_same	String#-@
 stdlib/string	string_memsearch--byteindex_first_byte_absent.rb	benchmark/string_memsearch.yml, entry byteindex_first_byte_absent	String#byteindex
 stdlib/string	string_memsearch--byteindex_first_byte_common.rb	benchmark/string_memsearch.yml, entry byteindex_first_byte_common	String#byteindex
+stdlib/string	string_rpartition--rpartition-1.rb	benchmark/string_rpartition.yml, entry rpartition-1	String#rpartition
+stdlib/string	string_rpartition--rpartition-10.rb	benchmark/string_rpartition.yml, entry rpartition-10	String#rpartition
+stdlib/string	string_rpartition--rpartition-100.rb	benchmark/string_rpartition.yml, entry rpartition-100	String#rpartition
+stdlib/string	string_rpartition--rpartition-1000.rb	benchmark/string_rpartition.yml, entry rpartition-1000	String#rpartition
+stdlib/string	string_rpartition--rpartition-nonascii1.rb	benchmark/string_rpartition.yml, entry rpartition-nonascii1	String#rpartition
+stdlib/string	string_rpartition--rpartition-nonascii10.rb	benchmark/string_rpartition.yml, entry rpartition-nonascii10	String#rpartition
+stdlib/string	string_rpartition--rpartition-nonascii100.rb	benchmark/string_rpartition.yml, entry rpartition-nonascii100	String#rpartition
+stdlib/string	string_rpartition--rpartition-nonascii1000.rb	benchmark/string_rpartition.yml, entry rpartition-nonascii1000	String#rpartition
 stdlib/string	string_scan_str.rb	benchmark/string_scan_str.rb	String#scan
-stdlib/string-range	enum_lazy_zip--block.rb	benchmark/enum_lazy_zip.yml, entry block	ranges over strings ('a'..'z')
-stdlib/string-range	enum_lazy_zip--chain-first_nonary.rb	benchmark/enum_lazy_zip.yml, entry chain-first_nonary	ranges over strings ('a'..'z')
-stdlib/string-range	enum_lazy_zip--chain-take3_nonary.rb	benchmark/enum_lazy_zip.yml, entry chain-take3_nonary	ranges over strings ('a'..'z')
-stdlib/string-range	enum_lazy_zip--first_nonary.rb	benchmark/enum_lazy_zip.yml, entry first_nonary	ranges over strings ('a'..'z')
-stdlib/string-range	enum_lazy_zip--take3_nonary.rb	benchmark/enum_lazy_zip.yml, entry take3_nonary	ranges over strings ('a'..'z')
-stdlib/string-range	enum_tally--tally.rb	benchmark/enum_tally.yml, entry tally	ranges over strings ('a'..'z')
-stdlib/string-range	hash_aref_dsym.rb	benchmark/hash_aref_dsym.rb	ranges over strings ('a'..'z')
-stdlib/string-range	range_count--string.rb	benchmark/range_count.yml, entry string	ranges over strings ('a'..'z')
-stdlib/string-range	string_capitalize--capitalize-1.rb	benchmark/string_capitalize.yml, entry capitalize-1	ranges over strings ('a'..'z')
-stdlib/string-range	string_capitalize--capitalize-10.rb	benchmark/string_capitalize.yml, entry capitalize-10	ranges over strings ('a'..'z')
-stdlib/string-range	string_capitalize--capitalize-100.rb	benchmark/string_capitalize.yml, entry capitalize-100	ranges over strings ('a'..'z')
-stdlib/string-range	string_capitalize--capitalize-1000.rb	benchmark/string_capitalize.yml, entry capitalize-1000	ranges over strings ('a'..'z')
-stdlib/string-range	string_casecmp--casecmp-1.rb	benchmark/string_casecmp.yml, entry casecmp-1	ranges over strings ('a'..'z')
-stdlib/string-range	string_casecmp--casecmp-10.rb	benchmark/string_casecmp.yml, entry casecmp-10	ranges over strings ('a'..'z')
-stdlib/string-range	string_casecmp--casecmp-100.rb	benchmark/string_casecmp.yml, entry casecmp-100	ranges over strings ('a'..'z')
-stdlib/string-range	string_casecmp--casecmp-1000.rb	benchmark/string_casecmp.yml, entry casecmp-1000	ranges over strings ('a'..'z')
-stdlib/string-range	string_casecmp--casecmp-1000vs10.rb	benchmark/string_casecmp.yml, entry casecmp-1000vs10	ranges over strings ('a'..'z')
-stdlib/string-range	string_casecmp--casecmp-nonascii1.rb	benchmark/string_casecmp.yml, entry casecmp-nonascii1	ranges over strings ('a'..'z')
-stdlib/string-range	string_casecmp--casecmp-nonascii10.rb	benchmark/string_casecmp.yml, entry casecmp-nonascii10	ranges over strings ('a'..'z')
-stdlib/string-range	string_casecmp--casecmp-nonascii100.rb	benchmark/string_casecmp.yml, entry casecmp-nonascii100	ranges over strings ('a'..'z')
-stdlib/string-range	string_casecmp--casecmp-nonascii1000.rb	benchmark/string_casecmp.yml, entry casecmp-nonascii1000	ranges over strings ('a'..'z')
-stdlib/string-range	string_casecmp--casecmp-nonascii1000vs10.rb	benchmark/string_casecmp.yml, entry casecmp-nonascii1000vs10	ranges over strings ('a'..'z')
-stdlib/string-range	string_casecmp_p--casecmp_p-1.rb	benchmark/string_casecmp_p.yml, entry casecmp_p-1	ranges over strings ('a'..'z')
-stdlib/string-range	string_casecmp_p--casecmp_p-10.rb	benchmark/string_casecmp_p.yml, entry casecmp_p-10	ranges over strings ('a'..'z')
-stdlib/string-range	string_casecmp_p--casecmp_p-100.rb	benchmark/string_casecmp_p.yml, entry casecmp_p-100	ranges over strings ('a'..'z')
-stdlib/string-range	string_casecmp_p--casecmp_p-1000.rb	benchmark/string_casecmp_p.yml, entry casecmp_p-1000	ranges over strings ('a'..'z')
-stdlib/string-range	string_casecmp_p--casecmp_p-nonascii1.rb	benchmark/string_casecmp_p.yml, entry casecmp_p-nonascii1	ranges over strings ('a'..'z')
-stdlib/string-range	string_casecmp_p--casecmp_p-nonascii10.rb	benchmark/string_casecmp_p.yml, entry casecmp_p-nonascii10	ranges over strings ('a'..'z')
-stdlib/string-range	string_casecmp_p--casecmp_p-nonascii100.rb	benchmark/string_casecmp_p.yml, entry casecmp_p-nonascii100	ranges over strings ('a'..'z')
-stdlib/string-range	string_casecmp_p--casecmp_p-nonascii1000.rb	benchmark/string_casecmp_p.yml, entry casecmp_p-nonascii1000	ranges over strings ('a'..'z')
-stdlib/string-range	string_downcase--downcase-1.rb	benchmark/string_downcase.yml, entry downcase-1	ranges over strings ('a'..'z')
-stdlib/string-range	string_downcase--downcase-10.rb	benchmark/string_downcase.yml, entry downcase-10	ranges over strings ('a'..'z')
-stdlib/string-range	string_downcase--downcase-100.rb	benchmark/string_downcase.yml, entry downcase-100	ranges over strings ('a'..'z')
-stdlib/string-range	string_downcase--downcase-1000.rb	benchmark/string_downcase.yml, entry downcase-1000	ranges over strings ('a'..'z')
-stdlib/string-range	string_downcase--downcase-ascii8bit-256.rb	benchmark/string_downcase.yml, entry downcase-ascii8bit-256	ranges over strings ('a'..'z')
-stdlib/string-range	string_downcase--downcase-ascii8bit-2560.rb	benchmark/string_downcase.yml, entry downcase-ascii8bit-2560	ranges over strings ('a'..'z')
-stdlib/string-range	string_downcase--downcase-ascii8bit-25600.rb	benchmark/string_downcase.yml, entry downcase-ascii8bit-25600	ranges over strings ('a'..'z')
-stdlib/string-range	string_downcase--downcase-ascii8bit-256000.rb	benchmark/string_downcase.yml, entry downcase-ascii8bit-256000	ranges over strings ('a'..'z')
-stdlib/string-range	string_downcase--downcase-nonascii1.rb	benchmark/string_downcase.yml, entry downcase-nonascii1	ranges over strings ('a'..'z')
-stdlib/string-range	string_downcase--downcase-nonascii10.rb	benchmark/string_downcase.yml, entry downcase-nonascii10	ranges over strings ('a'..'z')
-stdlib/string-range	string_downcase--downcase-nonascii100.rb	benchmark/string_downcase.yml, entry downcase-nonascii100	ranges over strings ('a'..'z')
-stdlib/string-range	string_downcase--downcase-nonascii1000.rb	benchmark/string_downcase.yml, entry downcase-nonascii1000	ranges over strings ('a'..'z')
-stdlib/string-range	string_rpartition--rpartition-1.rb	benchmark/string_rpartition.yml, entry rpartition-1	ranges over strings ('a'..'z')
-stdlib/string-range	string_rpartition--rpartition-10.rb	benchmark/string_rpartition.yml, entry rpartition-10	ranges over strings ('a'..'z')
-stdlib/string-range	string_rpartition--rpartition-100.rb	benchmark/string_rpartition.yml, entry rpartition-100	ranges over strings ('a'..'z')
-stdlib/string-range	string_rpartition--rpartition-1000.rb	benchmark/string_rpartition.yml, entry rpartition-1000	ranges over strings ('a'..'z')
-stdlib/string-range	string_rpartition--rpartition-nonascii1.rb	benchmark/string_rpartition.yml, entry rpartition-nonascii1	ranges over strings ('a'..'z')
-stdlib/string-range	string_rpartition--rpartition-nonascii10.rb	benchmark/string_rpartition.yml, entry rpartition-nonascii10	ranges over strings ('a'..'z')
-stdlib/string-range	string_rpartition--rpartition-nonascii100.rb	benchmark/string_rpartition.yml, entry rpartition-nonascii100	ranges over strings ('a'..'z')
-stdlib/string-range	string_rpartition--rpartition-nonascii1000.rb	benchmark/string_rpartition.yml, entry rpartition-nonascii1000	ranges over strings ('a'..'z')
-stdlib/string-range	string_swapcase--swapcase-1.rb	benchmark/string_swapcase.yml, entry swapcase-1	ranges over strings ('a'..'z')
-stdlib/string-range	string_swapcase--swapcase-10.rb	benchmark/string_swapcase.yml, entry swapcase-10	ranges over strings ('a'..'z')
-stdlib/string-range	string_swapcase--swapcase-100.rb	benchmark/string_swapcase.yml, entry swapcase-100	ranges over strings ('a'..'z')
-stdlib/string-range	string_swapcase--swapcase-1000.rb	benchmark/string_swapcase.yml, entry swapcase-1000	ranges over strings ('a'..'z')
-stdlib/string-range	string_swapcase--swapcase-nonascii1.rb	benchmark/string_swapcase.yml, entry swapcase-nonascii1	ranges over strings ('a'..'z')
-stdlib/string-range	string_swapcase--swapcase-nonascii10.rb	benchmark/string_swapcase.yml, entry swapcase-nonascii10	ranges over strings ('a'..'z')
-stdlib/string-range	string_swapcase--swapcase-nonascii100.rb	benchmark/string_swapcase.yml, entry swapcase-nonascii100	ranges over strings ('a'..'z')
-stdlib/string-range	string_swapcase--swapcase-nonascii1000.rb	benchmark/string_swapcase.yml, entry swapcase-nonascii1000	ranges over strings ('a'..'z')
-stdlib/string-range	string_upcase--upcase-1.rb	benchmark/string_upcase.yml, entry upcase-1	ranges over strings ('a'..'z')
-stdlib/string-range	string_upcase--upcase-10.rb	benchmark/string_upcase.yml, entry upcase-10	ranges over strings ('a'..'z')
-stdlib/string-range	string_upcase--upcase-100.rb	benchmark/string_upcase.yml, entry upcase-100	ranges over strings ('a'..'z')
-stdlib/string-range	string_upcase--upcase-1000.rb	benchmark/string_upcase.yml, entry upcase-1000	ranges over strings ('a'..'z')
-stdlib/string-range	string_upcase--upcase-ascii8bit-256.rb	benchmark/string_upcase.yml, entry upcase-ascii8bit-256	ranges over strings ('a'..'z')
-stdlib/string-range	string_upcase--upcase-ascii8bit-2560.rb	benchmark/string_upcase.yml, entry upcase-ascii8bit-2560	ranges over strings ('a'..'z')
-stdlib/string-range	string_upcase--upcase-ascii8bit-25600.rb	benchmark/string_upcase.yml, entry upcase-ascii8bit-25600	ranges over strings ('a'..'z')
-stdlib/string-range	string_upcase--upcase-ascii8bit-256000.rb	benchmark/string_upcase.yml, entry upcase-ascii8bit-256000	ranges over strings ('a'..'z')
-stdlib/string-range	string_upcase--upcase-nonascii1.rb	benchmark/string_upcase.yml, entry upcase-nonascii1	ranges over strings ('a'..'z')
-stdlib/string-range	string_upcase--upcase-nonascii10.rb	benchmark/string_upcase.yml, entry upcase-nonascii10	ranges over strings ('a'..'z')
-stdlib/string-range	string_upcase--upcase-nonascii100.rb	benchmark/string_upcase.yml, entry upcase-nonascii100	ranges over strings ('a'..'z')
-stdlib/string-range	string_upcase--upcase-nonascii1000.rb	benchmark/string_upcase.yml, entry upcase-nonascii1000	ranges over strings ('a'..'z')
 stdlib/time	time_at--time_at_0.rb	benchmark/time_at.yml, entry time_at_0	Time
 stdlib/time	time_at--time_at_1.rb	benchmark/time_at.yml, entry time_at_1	Time
 stdlib/time	time_at--time_at_2.rb	benchmark/time_at.yml, entry time_at_2	Time
@@ -305,8 +267,10 @@ unsupported/enumerators	enum_lazy_flat_map--num10.rb	benchmark/enum_lazy_flat_ma
 unsupported/enumerators	enum_lazy_flat_map--num3.rb	benchmark/enum_lazy_flat_map.yml, entry num3	lazy enumerators and blockless enumerators
 unsupported/enumerators	enum_lazy_zip--chain-take3_ary.rb	benchmark/enum_lazy_zip.yml, entry chain-take3_ary	lazy enumerators and blockless enumerators
 unsupported/enumerators	enum_lazy_zip--chain-take3_noarg.rb	benchmark/enum_lazy_zip.yml, entry chain-take3_noarg	lazy enumerators and blockless enumerators
+unsupported/enumerators	enum_lazy_zip--chain-take3_nonary.rb	benchmark/enum_lazy_zip.yml, entry chain-take3_nonary	lazy enumerators and blockless enumerators
 unsupported/enumerators	enum_lazy_zip--take3_ary.rb	benchmark/enum_lazy_zip.yml, entry take3_ary	lazy enumerators and blockless enumerators
 unsupported/enumerators	enum_lazy_zip--take3_noarg.rb	benchmark/enum_lazy_zip.yml, entry take3_noarg	lazy enumerators and blockless enumerators
+unsupported/enumerators	enum_lazy_zip--take3_nonary.rb	benchmark/enum_lazy_zip.yml, entry take3_nonary	lazy enumerators and blockless enumerators
 unsupported/enumerators	kernel_then--kernel_then_enum.rb	benchmark/kernel_then.yml, entry kernel_then_enum	lazy enumerators and blockless enumerators
 unsupported/environment	array_small_and.rb	benchmark/array_small_and.rb	environment and process
 unsupported/environment	array_small_diff.rb	benchmark/array_small_diff.rb	environment and process
@@ -993,6 +957,14 @@ unsupported/threads	vm_thread_sleep--vm_thread_sleep.rb	benchmark/vm_thread_slee
 unsupported/vm-introspection	iseq_load_from_binary--all.rb	benchmark/iseq_load_from_binary.yml, entry all	GC and VM introspection
 unsupported/vm-introspection	iseq_load_from_binary--define_method.rb	benchmark/iseq_load_from_binary.yml, entry define_method	GC and VM introspection
 unsupported/vm-introspection	iseq_load_from_binary--symbol.rb	benchmark/iseq_load_from_binary.yml, entry symbol	GC and VM introspection
+unsupported/vm-introspection	string_casecmp_p--casecmp_p-1.rb	benchmark/string_casecmp_p.yml, entry casecmp_p-1	GC and VM introspection
+unsupported/vm-introspection	string_casecmp_p--casecmp_p-10.rb	benchmark/string_casecmp_p.yml, entry casecmp_p-10	GC and VM introspection
+unsupported/vm-introspection	string_casecmp_p--casecmp_p-100.rb	benchmark/string_casecmp_p.yml, entry casecmp_p-100	GC and VM introspection
+unsupported/vm-introspection	string_casecmp_p--casecmp_p-1000.rb	benchmark/string_casecmp_p.yml, entry casecmp_p-1000	GC and VM introspection
+unsupported/vm-introspection	string_casecmp_p--casecmp_p-nonascii1.rb	benchmark/string_casecmp_p.yml, entry casecmp_p-nonascii1	GC and VM introspection
+unsupported/vm-introspection	string_casecmp_p--casecmp_p-nonascii10.rb	benchmark/string_casecmp_p.yml, entry casecmp_p-nonascii10	GC and VM introspection
+unsupported/vm-introspection	string_casecmp_p--casecmp_p-nonascii100.rb	benchmark/string_casecmp_p.yml, entry casecmp_p-nonascii100	GC and VM introspection
+unsupported/vm-introspection	string_casecmp_p--casecmp_p-nonascii1000.rb	benchmark/string_casecmp_p.yml, entry casecmp_p-nonascii1000	GC and VM introspection
 unsupported/vm-introspection	string_concat--interpolation.rb	benchmark/string_concat.yml, entry interpolation	GC and VM introspection
 unsupported/vm-introspection	string_concat--interpolation_same_heap.rb	benchmark/string_concat.yml, entry interpolation_same_heap	GC and VM introspection
 unsupported/vm-introspection	string_concat--interpolation_switching_heaps.rb	benchmark/string_concat.yml, entry interpolation_switching_heaps	GC and VM introspection
@@ -1106,10 +1078,13 @@ works	array_values_at_int.rb	benchmark/array_values_at_int.rb
 works	enum_lazy_uniq_100.rb	benchmark/enum_lazy_uniq_100.rb	
 works	enum_lazy_uniq_20.rb	benchmark/enum_lazy_uniq_20.rb	
 works	enum_lazy_uniq_50.rb	benchmark/enum_lazy_uniq_50.rb	
+works	enum_lazy_zip--block.rb	benchmark/enum_lazy_zip.yml, entry block	
 works	enum_lazy_zip--chain-first_ary.rb	benchmark/enum_lazy_zip.yml, entry chain-first_ary	
 works	enum_lazy_zip--chain-first_noarg.rb	benchmark/enum_lazy_zip.yml, entry chain-first_noarg	
+works	enum_lazy_zip--chain-first_nonary.rb	benchmark/enum_lazy_zip.yml, entry chain-first_nonary	
 works	enum_lazy_zip--first_ary.rb	benchmark/enum_lazy_zip.yml, entry first_ary	
 works	enum_lazy_zip--first_noarg.rb	benchmark/enum_lazy_zip.yml, entry first_noarg	
+works	enum_lazy_zip--first_nonary.rb	benchmark/enum_lazy_zip.yml, entry first_nonary	
 works	enum_minmax--set10.max.rb	benchmark/enum_minmax.yml, entry set10.max	
 works	enum_minmax--set10.min.rb	benchmark/enum_minmax.yml, entry set10.min	
 works	enum_minmax--set10.minmax.rb	benchmark/enum_minmax.yml, entry set10.minmax	
@@ -1150,6 +1125,7 @@ works	enum_sort_by--string_length10.sort_by.rb	benchmark/enum_sort_by.yml, entry
 works	enum_sort_by--string_length1000.sort_by.rb	benchmark/enum_sort_by.yml, entry string_length1000.sort_by	
 works	enum_sort_by--string_length100000.sort_by.rb	benchmark/enum_sort_by.yml, entry string_length100000.sort_by	
 works	enum_sort_by--string_length2.sort_by.rb	benchmark/enum_sort_by.yml, entry string_length2.sort_by	
+works	enum_tally--tally.rb	benchmark/enum_tally.yml, entry tally	
 works	float_methods---_.rb	benchmark/float_methods.yml, entry -_	
 works	float_methods--abs.rb	benchmark/float_methods.yml, entry abs	
 works	float_methods--magnitude.rb	benchmark/float_methods.yml, entry magnitude	
@@ -1171,6 +1147,7 @@ works	hash_ar_aref--hit_third.rb	benchmark/hash_ar_aref.yml, entry hit_third
 works	hash_ar_aref--miss.rb	benchmark/hash_ar_aref.yml, entry miss	
 works	hash_ar_aref--miss_empty.rb	benchmark/hash_ar_aref.yml, entry miss_empty	
 works	hash_aref_array.rb	benchmark/hash_aref_array.rb	
+works	hash_aref_dsym.rb	benchmark/hash_aref_dsym.rb	
 works	hash_aref_fix.rb	benchmark/hash_aref_fix.rb	
 works	hash_dup--dup_larger.rb	benchmark/hash_dup.yml, entry dup_larger	
 works	hash_dup--dup_small.rb	benchmark/hash_dup.yml, entry dup_small	
@@ -1225,12 +1202,27 @@ works	pm_array--third_match.rb	benchmark/pm_array.yml, entry third_match
 works	range_count--int_1.rb	benchmark/range_count.yml, entry int_1	
 works	range_count--int_1K.rb	benchmark/range_count.yml, entry int_1K	
 works	range_count--int_1M.rb	benchmark/range_count.yml, entry int_1M	
+works	range_count--string.rb	benchmark/range_count.yml, entry string	
 works	range_last--range_last_0.rb	benchmark/range_last.yml, entry range_last_0	
 works	range_last--range_last_1.rb	benchmark/range_last.yml, entry range_last_1	
 works	range_last--range_last_2.rb	benchmark/range_last.yml, entry range_last_2	
 works	range_min--range_min_0.rb	benchmark/range_min.yml, entry range_min_0	
 works	string_ascii_only_p--ascii_only_false.rb	benchmark/string_ascii_only_p.yml, entry ascii_only_false	
 works	string_ascii_only_p--ascii_only_true.rb	benchmark/string_ascii_only_p.yml, entry ascii_only_true	
+works	string_capitalize--capitalize-1.rb	benchmark/string_capitalize.yml, entry capitalize-1	
+works	string_capitalize--capitalize-10.rb	benchmark/string_capitalize.yml, entry capitalize-10	
+works	string_capitalize--capitalize-100.rb	benchmark/string_capitalize.yml, entry capitalize-100	
+works	string_capitalize--capitalize-1000.rb	benchmark/string_capitalize.yml, entry capitalize-1000	
+works	string_casecmp--casecmp-1.rb	benchmark/string_casecmp.yml, entry casecmp-1	
+works	string_casecmp--casecmp-10.rb	benchmark/string_casecmp.yml, entry casecmp-10	
+works	string_casecmp--casecmp-100.rb	benchmark/string_casecmp.yml, entry casecmp-100	
+works	string_casecmp--casecmp-1000.rb	benchmark/string_casecmp.yml, entry casecmp-1000	
+works	string_casecmp--casecmp-1000vs10.rb	benchmark/string_casecmp.yml, entry casecmp-1000vs10	
+works	string_casecmp--casecmp-nonascii1.rb	benchmark/string_casecmp.yml, entry casecmp-nonascii1	
+works	string_casecmp--casecmp-nonascii10.rb	benchmark/string_casecmp.yml, entry casecmp-nonascii10	
+works	string_casecmp--casecmp-nonascii100.rb	benchmark/string_casecmp.yml, entry casecmp-nonascii100	
+works	string_casecmp--casecmp-nonascii1000.rb	benchmark/string_casecmp.yml, entry casecmp-nonascii1000	
+works	string_casecmp--casecmp-nonascii1000vs10.rb	benchmark/string_casecmp.yml, entry casecmp-nonascii1000vs10	
 works	string_dup--dup.rb	benchmark/string_dup.yml, entry dup	
 works	string_index.rb	benchmark/string_index.rb	
 works	string_inspect--inspect_ascii.rb	benchmark/string_inspect.yml, entry inspect_ascii	
@@ -1260,6 +1252,14 @@ works	string_split--to_words-1.rb	benchmark/string_split.yml, entry to_words-1
 works	string_split--to_words-10.rb	benchmark/string_split.yml, entry to_words-10	
 works	string_split--to_words-100.rb	benchmark/string_split.yml, entry to_words-100	
 works	string_split--to_words-1000.rb	benchmark/string_split.yml, entry to_words-1000	
+works	string_swapcase--swapcase-1.rb	benchmark/string_swapcase.yml, entry swapcase-1	
+works	string_swapcase--swapcase-10.rb	benchmark/string_swapcase.yml, entry swapcase-10	
+works	string_swapcase--swapcase-100.rb	benchmark/string_swapcase.yml, entry swapcase-100	
+works	string_swapcase--swapcase-1000.rb	benchmark/string_swapcase.yml, entry swapcase-1000	
+works	string_swapcase--swapcase-nonascii1.rb	benchmark/string_swapcase.yml, entry swapcase-nonascii1	
+works	string_swapcase--swapcase-nonascii10.rb	benchmark/string_swapcase.yml, entry swapcase-nonascii10	
+works	string_swapcase--swapcase-nonascii100.rb	benchmark/string_swapcase.yml, entry swapcase-nonascii100	
+works	string_swapcase--swapcase-nonascii1000.rb	benchmark/string_swapcase.yml, entry swapcase-nonascii1000	
 works	vm_array--vm_array.rb	benchmark/vm_array.yml, entry vm_array	
 works	vm_bigarray--vm_bigarray.rb	benchmark/vm_bigarray.yml, entry vm_bigarray	
 works	vm_bighash--vm_bighash.rb	benchmark/vm_bighash.yml, entry vm_bighash	

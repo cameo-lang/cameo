@@ -25,7 +25,7 @@ func installBytes() {
 		return self, nil
 	})
 	def(c, "inspect", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(object.QuoteString(string(bytes(self))) + ".b"), nil
+		return object.String(object.QuoteBytes(bytes(self)) + ".b"), nil
 	})
 	def(c, "bytes", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		out := make([]object.Value, len(bytes(self)))

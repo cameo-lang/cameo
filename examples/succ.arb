@@ -1,0 +1,19 @@
+# String#succ and ranges of strings, by Ruby's rules.
+
+# succ steps the rightmost letter or digit, carrying leftwards past other
+# characters, and steps by codepoint when there is no letter or digit.
+%w[az zz a9 Zz zz99 1.9.9 -9 *** <<koala>> 9z a-9 a/z].each { |s| puts "#{s} -> #{s.succ}" }
+p "é".succ, "ö".succ, "ÿ".succ, "٩".succ, "\x7F".succ
+
+# A range of strings walks the successors.
+p ("a".."e").to_a, ("a"..."e").to_a, ("az".."bc").to_a, ("08".."11").to_a, ("9".."10").to_a
+p ("y".."ab").to_a, ("b".."a").to_a, ("à".."ÿ").to_a.size
+p [*"a".."f"].join, (:a..:c).to_a
+
+# include? walks the range, cover? and === compare its ends.
+p ("a".."z").include?("bb"), ("a".."z").cover?("bb"), ("a".."z") === "bb", ("aa".."bb").include?("az")
+
+p "a".upto("e").to_a, "9".upto("11").to_a, "a".upto("e", true).to_a
+("x".."ab").each { |s| puts s }
+p ("a".."e").map(&:upcase), ("A".."Z").count, ("a".."e").last(2), ("a".."e").min, ("a".."e").max
+p ("y"..).first(4)
