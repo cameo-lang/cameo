@@ -91,9 +91,21 @@ func (in *Interp) evalSlow(n syntax.Node, env *Env, fr *Frame) (object.Value, er
 	case *syntax.Def:
 		return in.evalDef(n, fr)
 	case *syntax.ClassDef:
+		fr, err := in.scopedFrame(n.Scope, env, fr, n.Line())
+		if err != nil {
+			return object.Value{}, err
+		}
 		return in.evalClassDef(n, env, fr)
 	case *syntax.ModuleDef:
+		fr, err := in.scopedFrame(n.Scope, env, fr, n.Line())
+		if err != nil {
+			return object.Value{}, err
+		}
 		return in.evalModuleDef(n, env, fr)
+	case *syntax.Seq:
+		return in.evalBody(n.Body, env, fr)
+	case *syntax.Alias:
+		return in.evalAlias(n, fr)
 	case *syntax.FieldDecl:
 		return in.evalFieldDecl(n, env, fr)
 	case *syntax.Reserved:

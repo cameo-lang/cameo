@@ -283,6 +283,19 @@ type Or struct {
 	Left, Right Node
 }
 
+// Alias is `alias new old`: a second name for a method.
+type Alias struct {
+	Pos
+	New, Old string
+}
+
+// Seq is a sequence of expressions the converter makes of one construct,
+// evaluated in the enclosing scope; its value is the last one's.
+type Seq struct {
+	Pos
+	Body []Node
+}
+
 // Defined is `defined?(expr)`: what expr names, without evaluating it.
 type Defined struct {
 	Pos
@@ -427,6 +440,8 @@ type Def struct {
 // normalised body: two definitions with equal digests are one class.
 type ClassDef struct {
 	Pos
+	// Scope is the module of `class A::B`, nil for a plain name.
+	Scope  Node
 	Name   string
 	Super  Node // nil when absent
 	Body   []Node
@@ -436,6 +451,7 @@ type ClassDef struct {
 // ModuleDef is `module Name … end`.
 type ModuleDef struct {
 	Pos
+	Scope  Node // the module of `module A::B`, nil for a plain name
 	Name   string
 	Body   []Node
 	Digest string

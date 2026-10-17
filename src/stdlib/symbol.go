@@ -66,9 +66,6 @@ func installSymbol() {
 	def(c, "[]", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return stringIndex(ctx, sym(self), args)
 	})
-	def(c, "to_proc", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Value{}, ctx.Raise(object.NotImplementedErr, "Symbol#to_proc is written &:%s", sym(self))
-	})
 	def(c, "hash", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Int(hashString(object.Key(self))), nil
 	})
