@@ -205,7 +205,7 @@ func (in *Interp) matchConst(c syntax.Node, v object.Value, env *Env, fr *Frame)
 	return in.caseEqual(cls, v)
 }
 
-// deconstruct answers a value's elements for a list pattern: a list's
+// deconstruct returns a value's elements for a list pattern: a list's
 // elements, an instance's fields.
 func (in *Interp) deconstruct(v object.Value) ([]object.Value, bool) {
 	switch v := v.(type) {
@@ -221,7 +221,7 @@ func (in *Interp) deconstruct(v object.Value) ([]object.Value, bool) {
 	return nil, false
 }
 
-// deconstructKeys answers a value as a map for a map pattern: a map itself,
+// deconstructKeys returns a value as a map for a map pattern: a map itself,
 // an instance's fields by name.
 func (in *Interp) deconstructKeys(v object.Value) (*object.Map, bool) {
 	switch v := v.(type) {

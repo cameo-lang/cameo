@@ -639,7 +639,7 @@ func matches(ctx object.Context, el object.Value, args []object.Value, block obj
 	return object.Truthy(el), nil
 }
 
-// yieldEach yields each element when there is a block, else answers the
+// yieldEach yields each element when there is a block, else returns the
 // elements as a list.
 func yieldEach(ctx object.Context, elems []object.Value, block object.Value) (object.Value, error) {
 	if block == nil {
@@ -768,7 +768,7 @@ func sortBy(ctx object.Context, elems []object.Value, block object.Value) ([]obj
 	return out, nil
 }
 
-// chunks splits elems where the block, given two neighbours, answers
+// chunks splits elems where the block, given two neighbours, returns
 // false (chunk_while) or true (slice_when).
 func chunks(ctx object.Context, elems []object.Value, block object.Value, together bool) (object.Value, error) {
 	if len(elems) == 0 {

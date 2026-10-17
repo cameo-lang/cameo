@@ -77,7 +77,7 @@ func installKernel() {
 		}
 	})
 	def(o, "block_given?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		// The evaluator answers this for user methods; a native call site has
+		// The evaluator handles this for user methods; a native call site has
 		// no enclosing method.
 		return object.False, nil
 	})

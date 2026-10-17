@@ -99,11 +99,11 @@ that would mutate in Ruby: `list + [x]`, `list.append(x)`, `map.merge(other)`,
 `drop`, `first`, `last`, `find`, `any?`, `all?`, `none?`, `count`, `include?`,
 `flat_map`, `to_a`, `to_h`, `to_set`, `uniq`, `partition`, `min_by`,
 `max_by`, `each_slice`, `each_cons`, `tally`, `chunk_while`. There are no
-enumerators: a method that iterates answers a list when called without a
+enumerators: a method that iterates returns a list when called without a
 block, so `each_slice(2).map { … }` works and `each_with_index.to_a` is
 `each_with_index` with a block. `each_with_object` cannot rely on the memo
 changing, so the block's value becomes the next memo, as in `reduce`. A
-collection that Ruby would change in place answers a copy: `list.append(x)`,
+collection that Ruby would change in place returns a copy: `list.append(x)`,
 `list.prepend(x)`, `list.without(x)`, `list.without_at(i)`, `map.put(k, v)`,
 `map.without(k)`, `set.add(x)`, `set.without(x)`.
 
@@ -290,7 +290,7 @@ caller that receives one may still await it, and one nobody awaits is
 waited for when the run ends, with its failure written to standard error.
 `amber` exits when the script's top-level scope finishes and every process
 has. A process's result has to be able to travel back, so a method that
-answers a Proc or a class to a process raises a `TypeError` there.
+returns a Proc or a class to a process raises a `TypeError` there.
 
 A process has no handle to its parent, no shared memory, and no way to send
 anything but its return value. Starting processes from inside a process is

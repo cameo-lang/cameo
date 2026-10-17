@@ -44,7 +44,7 @@ type Class struct {
 // stands still and every lookup cache stays valid.
 var generation atomic.Uint64
 
-// lookupCache is what a class answers to lookups under one generation:
+// lookupCache is what a class has for lookups under one generation:
 // its ancestors, and the instance methods resolved so far by name, with
 // nil for a name no ancestor defines. A cache is never modified once
 // stored; a miss stores a copy with the new entry, so readers on other
@@ -55,7 +55,7 @@ type lookupCache struct {
 	methods   map[string]*Method
 }
 
-// cache answers the class's lookup cache for the current generation,
+// cache returns the class's lookup cache for the current generation,
 // building a fresh one when the stored one is stale.
 func (c *Class) cache() *lookupCache {
 	gen := generation.Load()
@@ -204,7 +204,7 @@ func (c *Class) ancestors() []*Class {
 	return out
 }
 
-// Lookup finds the instance method name along the ancestors, or answers
+// Lookup finds the instance method name along the ancestors, or returns
 // nil. Each name is resolved once per class and generation.
 func (c *Class) Lookup(name string) *Method {
 	lc := c.cache()

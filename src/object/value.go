@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-// Value is any amber value. Class answers the class the value dispatches on.
+// Value is any amber value. Class returns the class the value dispatches on.
 type Value interface {
 	Class() *Class
 }

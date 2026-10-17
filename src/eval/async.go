@@ -26,7 +26,7 @@ type Process struct {
 
 func (*Process) Class() *object.Class { return object.ProcessClass }
 
-// wait blocks until the process is done and answers its result or the
+// wait blocks until the process is done and returns its result or the
 // exception it raised.
 func (p *Process) wait() (object.Value, *object.Exception) {
 	<-p.done
@@ -83,7 +83,7 @@ func (l *processList) waitAll(in *Interp) {
 	}
 }
 
-// evalAsync starts recv.method(*args) on a process and answers the process.
+// evalAsync starts recv.method(*args) on a process and returns the process.
 func (in *Interp) evalAsync(n *syntax.Async, env *Env, fr *Frame) (object.Value, error) {
 	p, err := in.start(n.Recv, n.Method, n.Args, n.KwArgs, env, fr, n.Line())
 	if err != nil {
@@ -120,7 +120,7 @@ func (in *Interp) evalAwait(n *syntax.Await, env *Env, fr *Frame) (object.Value,
 }
 
 // evalAwaitAll waits for every process this scope started and has not
-// awaited, and answers their results in start order; when one failed it
+// awaited, and returns their results in start order; when one failed it
 // raises that failure after all have finished.
 func (in *Interp) evalAwaitAll(env *Env, line int) (object.Value, error) {
 	var pending []*Process
@@ -311,7 +311,7 @@ func (w *Interp) runCall(recvData []byte, method string, argData [][]byte, kwDat
 	if _, err := w.Encoder().Encode(result); err != nil {
 		var ns *protogen.NotSerialisable
 		if errors.As(err, &ns) {
-			return nil, w.raise(object.TypeError, 0, "a process answered a %s, which cannot be passed back", ns.Kind).(*object.Exception)
+			return nil, w.raise(object.TypeError, 0, "a process returned a %s, which cannot be passed back", ns.Kind).(*object.Exception)
 		}
 		return nil, w.raise(object.TypeError, 0, "%s", err.Error()).(*object.Exception)
 	}
