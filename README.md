@@ -28,6 +28,8 @@ The language, its differences from Ruby, the object model, the async model
 and the protobuf representation are in
 [doc/design/amber.md](doc/design/amber.md), which is also the plan: the
 interpreter is built in the milestones listed there.
+[doc/amber-vs-ruby.md](doc/amber-vs-ruby.md) lists, for someone who knows
+Ruby, what is the same, what differs, and what amber does not support.
 
 ## Status
 
