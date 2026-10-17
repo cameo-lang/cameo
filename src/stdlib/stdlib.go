@@ -26,6 +26,7 @@ func Install() {
 	installRange()
 	installTime()
 	installMath()
+	installProcess()
 	installRegexp()
 	installStringPatterns()
 	installEnumerator()

@@ -278,3 +278,25 @@ mixed
 nan
 `)
 }
+
+func TestClockGettime(t *testing.T) {
+	// The monotonic clock only goes forward; a unit scales the reading.
+	src := `
+a = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+b = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+p a.class, b >= a
+p Process.clock_gettime(Process::CLOCK_MONOTONIC, :nanosecond).class
+p Process.clock_gettime(Process::CLOCK_REALTIME, :second) > 1_700_000_000
+begin
+  Process.clock_gettime(99)
+rescue ArgumentError => e
+  puts e.message
+end
+begin
+  Process.clock_gettime(Process::CLOCK_MONOTONIC, :bogus)
+rescue ArgumentError => e
+  puts e.message
+end
+`
+	expectOutput(t, src, "Float\ntrue\nInteger\ntrue\nInvalid argument - clock_gettime(99)\nunexpected unit: bogus\n")
+}
