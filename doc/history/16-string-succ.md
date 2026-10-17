@@ -10,7 +10,7 @@ by codepoint.
 
 `succ` ports CRuby's `str_succ` from
 [string.c](https://github.com/ruby/ruby/blob/master/string.c)
-([src/stdlib/succ.go:26](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/stdlib/succ.go#L26)): it walks from the
+([src/stdlib/succ.go:26](https://github.com/radiospiel/amber/blob/594e30ce5eb81e58f3de6a9faec520d17eefa3b0/src/stdlib/succ.go#L26)): it walks from the
 right over the alphanumeric characters; a run that wraps carries into the
 character to its left, with a new character inserted at the leftmost
 wrapped one; a step skips one character of another kind; and a letter
