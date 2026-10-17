@@ -155,9 +155,10 @@ commit's subject. Five checks:
    | eval: a call site keeps a cache of the method it found, keyed on the receiver's class | eval: caches method lookup per call site |
    | cli: amber check prints every error it finds, through a new reporter type | cli: amber check reports every error, not only the first |
 
-**No names in pull request titles and descriptions.** Name no person: not
-the author, not a reviewer, not the human who asked for the change, and no
-handle or `@mention`. Do not address anyone either — no "as you asked", "you
+**No person names in pull request titles and descriptions.** It is not
+important who asked for a change, but why someone asked for it. Name no
+person: not the author, not a reviewer, not the human who asked for the
+change, and no handle or `@mention`. Do not address anyone either — no "as you asked", "you
 chose", "per your request". A pull request is read by people who were not in
 the conversation, and outlives it; it states what changes and why, and that
 is true whoever asked. The same holds for commit messages.

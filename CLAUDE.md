@@ -5,8 +5,9 @@ Go. This file is the entry point for coding agents. Read it first, then:
 
 1. **[agents/WRITING.md](agents/WRITING.md)** — always. How to write pull
    request titles and descriptions, commit messages, code comments,
-   documentation and messages to the human. **No names in pull request
-   titles and descriptions.**
+   documentation and messages to the human. **No person names in pull
+   request titles and descriptions.** It is not important who asked for a
+   change, but why someone asked for it.
 2. **[agents/CLAUDE.md](agents/CLAUDE.md)** — always. Task strategies,
    interface design, work logs, branching, and finishing on a pull request.
 3. **[agents/golang.md](agents/golang.md)** — the Go layout and conventions.

@@ -46,7 +46,8 @@ tasks.
 
 How to write — prose, comments, commit messages, pull request descriptions — is
 in [WRITING.md](WRITING.md). Read it before you write anything a human will
-read. Above all: **no names in pull request titles and descriptions.**
+read. Above all: **no person names in pull request titles and descriptions.** It
+is not important who asked for a change, but why someone asked for it.
 
 ### Work logs
 
