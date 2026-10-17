@@ -58,7 +58,19 @@ func installObject() {
 		if err != nil {
 			return object.Value{}, err
 		}
-		return object.Bool(ctx.RespondsTo(self, name)), nil
+		if ctx.RespondsTo(self, name) {
+			return object.True, nil
+		}
+		// A class with method_missing says what else it answers.
+		all := object.False
+		if len(args) > 1 {
+			all = object.Bool(args[1].Truthy())
+		}
+		r, err := ctx.Call(self, "respond_to_missing?", object.Symbol(name), all)
+		return object.Bool(r.Truthy()), err
+	})
+	def(o, "respond_to_missing?", 2, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return object.False, nil
 	})
 	def(o, "hash", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Int(hashString(object.Key(self))), nil

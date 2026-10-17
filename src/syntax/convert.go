@@ -415,7 +415,6 @@ var mutators = map[string]string{
 	"<<":                    "append, or +",
 	"[]=":                   "assignment, which copies",
 	"define_method":         "def",
-	"method_missing":        "a method per name",
 	"send":                  "a direct call",
 	"public_send":           "a direct call",
 	"__send__":              "a direct call",

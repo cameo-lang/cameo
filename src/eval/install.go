@@ -54,6 +54,16 @@ func init() {
 	object.ObjectClass.Define("require", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return ctx.(*Interp).require(args[0])
 	})
+	// method_missing is what super reaches from a class's own: the
+	// NoMethodError for the name.
+	object.ObjectClass.Define("method_missing", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		in := ctx.(*Interp)
+		if len(args) == 0 {
+			return object.Value{}, in.raise(object.ArgumentError, 0, "no method name given")
+		}
+		name, _ := args[0].AsSymbol()
+		return object.Value{}, in.raise(object.NoMethodError, 0, "undefined method '%s' for %s", name, typeName(self))
+	})
 	object.ClassClass.Define("allocate", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Value{}, ctx.Raise(object.NoMethodError, "allocate is not supported: use new")
 	})

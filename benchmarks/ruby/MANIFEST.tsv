@@ -383,23 +383,6 @@ unsupported/metaprogramming	vm_ivar_memoize--vm_ivar_unstable_undef.rb	benchmark
 unsupported/metaprogramming	vm_send--vm_send.rb	benchmark/vm_send.yml, entry vm_send	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
 unsupported/metaprogramming	vm_send--vm_send_var.rb	benchmark/vm_send.yml, entry vm_send_var	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
 unsupported/metaprogramming	vm_symbol_block_pass.rb	benchmark/vm_symbol_block_pass.rb	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/method-missing	vm_call_method_missing--method_missing_0_splat.rb	benchmark/vm_call_method_missing.yml, entry method_missing_0_splat	method_missing
-unsupported/method-missing	vm_call_method_missing--method_missing_0_splat_kw.rb	benchmark/vm_call_method_missing.yml, entry method_missing_0_splat_kw	method_missing
-unsupported/method-missing	vm_call_method_missing--method_missing_10_splat.rb	benchmark/vm_call_method_missing.yml, entry method_missing_10_splat	method_missing
-unsupported/method-missing	vm_call_method_missing--method_missing_10_splat_kw.rb	benchmark/vm_call_method_missing.yml, entry method_missing_10_splat_kw	method_missing
-unsupported/method-missing	vm_call_method_missing--method_missing_1_splat.rb	benchmark/vm_call_method_missing.yml, entry method_missing_1_splat	method_missing
-unsupported/method-missing	vm_call_method_missing--method_missing_1_splat_kw.rb	benchmark/vm_call_method_missing.yml, entry method_missing_1_splat_kw	method_missing
-unsupported/method-missing	vm_call_method_missing--method_missing_200_splat.rb	benchmark/vm_call_method_missing.yml, entry method_missing_200_splat	method_missing
-unsupported/method-missing	vm_call_method_missing--method_missing_200_splat_kw.rb	benchmark/vm_call_method_missing.yml, entry method_missing_200_splat_kw	method_missing
-unsupported/method-missing	vm_call_method_missing--method_missing_kw.rb	benchmark/vm_call_method_missing.yml, entry method_missing_kw	method_missing
-unsupported/method-missing	vm_call_method_missing--method_missing_kw_splat.rb	benchmark/vm_call_method_missing.yml, entry method_missing_kw_splat	method_missing
-unsupported/method-missing	vm_call_method_missing--method_missing_no_kw.rb	benchmark/vm_call_method_missing.yml, entry method_missing_no_kw	method_missing
-unsupported/method-missing	vm_call_method_missing--method_missing_no_splat.rb	benchmark/vm_call_method_missing.yml, entry method_missing_no_splat	method_missing
-unsupported/method-missing	vm_call_method_missing--method_missing_simple_0.rb	benchmark/vm_call_method_missing.yml, entry method_missing_simple_0	method_missing
-unsupported/method-missing	vm_call_method_missing--method_missing_simple_0_splat.rb	benchmark/vm_call_method_missing.yml, entry method_missing_simple_0_splat	method_missing
-unsupported/method-missing	vm_call_method_missing--method_missing_simple_1.rb	benchmark/vm_call_method_missing.yml, entry method_missing_simple_1	method_missing
-unsupported/method-missing	vm_call_method_missing--method_missing_simple_1_splat.rb	benchmark/vm_call_method_missing.yml, entry method_missing_simple_1_splat	method_missing
-unsupported/method-missing	vm_method_missing--vm_method_missing.rb	benchmark/vm_method_missing.yml, entry vm_method_missing	method_missing
 unsupported/mutation	array_flatten--large_flat_ary.flatten.rb	benchmark/array_flatten.yml, entry large_flat_ary.flatten	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/mutation	array_flatten--large_flat_ary.flatten_.rb	benchmark/array_flatten.yml, entry large_flat_ary.flatten_	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/mutation	array_flatten--large_nested_ary.flatten.rb	benchmark/array_flatten.yml, entry large_nested_ary.flatten	mutation (<<, push, pop, shift, delete, concat, bang methods)
@@ -1226,6 +1209,22 @@ works	vm_call_kw_and_kw_splat--1000_mutable.rb	benchmark/vm_call_kw_and_kw_splat
 works	vm_call_kw_and_kw_splat--100_mutable.rb	benchmark/vm_call_kw_and_kw_splat.yml, entry 100_mutable	
 works	vm_call_kw_and_kw_splat--10_mutable.rb	benchmark/vm_call_kw_and_kw_splat.yml, entry 10_mutable	
 works	vm_call_kw_and_kw_splat--1_mutable.rb	benchmark/vm_call_kw_and_kw_splat.yml, entry 1_mutable	
+works	vm_call_method_missing--method_missing_0_splat.rb	benchmark/vm_call_method_missing.yml, entry method_missing_0_splat	
+works	vm_call_method_missing--method_missing_0_splat_kw.rb	benchmark/vm_call_method_missing.yml, entry method_missing_0_splat_kw	
+works	vm_call_method_missing--method_missing_10_splat.rb	benchmark/vm_call_method_missing.yml, entry method_missing_10_splat	
+works	vm_call_method_missing--method_missing_10_splat_kw.rb	benchmark/vm_call_method_missing.yml, entry method_missing_10_splat_kw	
+works	vm_call_method_missing--method_missing_1_splat.rb	benchmark/vm_call_method_missing.yml, entry method_missing_1_splat	
+works	vm_call_method_missing--method_missing_1_splat_kw.rb	benchmark/vm_call_method_missing.yml, entry method_missing_1_splat_kw	
+works	vm_call_method_missing--method_missing_200_splat.rb	benchmark/vm_call_method_missing.yml, entry method_missing_200_splat	
+works	vm_call_method_missing--method_missing_200_splat_kw.rb	benchmark/vm_call_method_missing.yml, entry method_missing_200_splat_kw	
+works	vm_call_method_missing--method_missing_kw.rb	benchmark/vm_call_method_missing.yml, entry method_missing_kw	
+works	vm_call_method_missing--method_missing_kw_splat.rb	benchmark/vm_call_method_missing.yml, entry method_missing_kw_splat	
+works	vm_call_method_missing--method_missing_no_kw.rb	benchmark/vm_call_method_missing.yml, entry method_missing_no_kw	
+works	vm_call_method_missing--method_missing_no_splat.rb	benchmark/vm_call_method_missing.yml, entry method_missing_no_splat	
+works	vm_call_method_missing--method_missing_simple_0.rb	benchmark/vm_call_method_missing.yml, entry method_missing_simple_0	
+works	vm_call_method_missing--method_missing_simple_0_splat.rb	benchmark/vm_call_method_missing.yml, entry method_missing_simple_0_splat	
+works	vm_call_method_missing--method_missing_simple_1.rb	benchmark/vm_call_method_missing.yml, entry method_missing_simple_1	
+works	vm_call_method_missing--method_missing_simple_1_splat.rb	benchmark/vm_call_method_missing.yml, entry method_missing_simple_1_splat	
 works	vm_call_symproc--symproc_0_splat.rb	benchmark/vm_call_symproc.yml, entry symproc_0_splat	
 works	vm_call_symproc--symproc_0_splat_comb.rb	benchmark/vm_call_symproc.yml, entry symproc_0_splat_comb	
 works	vm_call_symproc--symproc_0_splat_comb_kw.rb	benchmark/vm_call_symproc.yml, entry symproc_0_splat_comb_kw	
@@ -1276,6 +1275,7 @@ works	vm_lvar_cond_set--vm_lvar_cond_set.rb	benchmark/vm_lvar_cond_set.yml, entr
 works	vm_lvar_init--vm_lvar_init.rb	benchmark/vm_lvar_init.yml, entry vm_lvar_init	
 works	vm_lvar_set--vm_lvar_set.rb	benchmark/vm_lvar_set.yml, entry vm_lvar_set	
 works	vm_method--vm_method.rb	benchmark/vm_method.yml, entry vm_method	
+works	vm_method_missing--vm_method_missing.rb	benchmark/vm_method_missing.yml, entry vm_method_missing	
 works	vm_method_splat_calls--arg_splat.rb	benchmark/vm_method_splat_calls.yml, entry arg_splat	
 works	vm_method_splat_calls--arg_splat_block.rb	benchmark/vm_method_splat_calls.yml, entry arg_splat_block	
 works	vm_method_splat_calls--splat_kw.rb	benchmark/vm_method_splat_calls.yml, entry splat_kw	

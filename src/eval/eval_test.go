@@ -173,6 +173,25 @@ p (1..).lazy.zip(10..).take(2).to_a
 	expectOutput(t, src, "[1, 2, 3]\n3\n[1, 2, 2, 3, 3, 4]\n[[1, 10], [2, 11]]\n")
 }
 
+func TestMethodMissing(t *testing.T) {
+	// A call to a missing method goes to method_missing with its name, its
+	// arguments and its block; super raises, and respond_to? asks
+	// respond_to_missing?.
+	src := `
+class Ghost
+  def method_missing(name, *args, &blk)
+    name == :boo ? [args, blk.call] : super
+  end
+  def respond_to_missing?(name, all) = name == :boo
+end
+g = Ghost.new
+p g.boo(1) { 2 }, g.respond_to?(:boo), g.respond_to?(:bar)
+g.bar
+`
+	expectError(t, src, "undefined method 'bar' for an instance of Ghost (NoMethodError)")
+	expectOutput(t, strings.TrimSuffix(src, "g.bar\n"), "[[1], 2]\ntrue\nfalse\n")
+}
+
 func TestTimeCrossesAsync(t *testing.T) {
 	// A time travels to a process and back with its instant and offset.
 	src := `
