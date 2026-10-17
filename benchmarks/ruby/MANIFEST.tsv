@@ -23,15 +23,7 @@ stdlib/array	string_upcase--upcase-nonascii1.rb	benchmark/string_upcase.yml, ent
 stdlib/array	string_upcase--upcase-nonascii10.rb	benchmark/string_upcase.yml, entry upcase-nonascii10	Array#pack
 stdlib/array	string_upcase--upcase-nonascii100.rb	benchmark/string_upcase.yml, entry upcase-nonascii100	Array#pack
 stdlib/array	string_upcase--upcase-nonascii1000.rb	benchmark/string_upcase.yml, entry upcase-nonascii1000	Array#pack
-stdlib/string	string_rpartition--rpartition-1.rb	benchmark/string_rpartition.yml, entry rpartition-1	String#rpartition
-stdlib/string	string_rpartition--rpartition-10.rb	benchmark/string_rpartition.yml, entry rpartition-10	String#rpartition
-stdlib/string	string_rpartition--rpartition-100.rb	benchmark/string_rpartition.yml, entry rpartition-100	String#rpartition
-stdlib/string	string_rpartition--rpartition-1000.rb	benchmark/string_rpartition.yml, entry rpartition-1000	String#rpartition
-stdlib/string	string_rpartition--rpartition-nonascii1.rb	benchmark/string_rpartition.yml, entry rpartition-nonascii1	String#rpartition
-stdlib/string	string_rpartition--rpartition-nonascii10.rb	benchmark/string_rpartition.yml, entry rpartition-nonascii10	String#rpartition
-stdlib/string	string_rpartition--rpartition-nonascii100.rb	benchmark/string_rpartition.yml, entry rpartition-nonascii100	String#rpartition
-stdlib/string	string_rpartition--rpartition-nonascii1000.rb	benchmark/string_rpartition.yml, entry rpartition-nonascii1000	String#rpartition
-stdlib/string	string_scan_str.rb	benchmark/string_scan_str.rb	String#scan
+stdlib/string	string_tr--tr_escape.rb	benchmark/string_tr.yml, entry tr_escape	String#tr with a hash (newer than Ruby 3.3)
 unsupported/anonymous-classes	class_superclass--large_class_superclass.rb	benchmark/class_superclass.yml, entry large_class_superclass	Module.new (a module built at run time, to include or extend)
 unsupported/anonymous-classes	class_superclass--medium_class_superclass.rb	benchmark/class_superclass.yml, entry medium_class_superclass	Module.new (a module built at run time, to include or extend)
 unsupported/anonymous-classes	class_superclass--object_class_superclass.rb	benchmark/class_superclass.yml, entry object_class_superclass	Module.new (a module built at run time, to include or extend)
@@ -69,6 +61,7 @@ unsupported/attr-accessor	attr_accessor--attr_reader.rb	benchmark/attr_accessor.
 unsupported/attr-accessor	attr_accessor--attr_reader_method.rb	benchmark/attr_accessor.yml, entry attr_reader_method	attr_* accessors (fields are declared, no setters)
 unsupported/attr-accessor	attr_accessor--attr_writer.rb	benchmark/attr_accessor.yml, entry attr_writer	attr_* accessors (fields are declared, no setters)
 unsupported/attr-accessor	attr_accessor--attr_writer_method.rb	benchmark/attr_accessor.yml, entry attr_writer_method	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	gc_redblack.rb	benchmark/gc/redblack.rb	attr_* accessors (fields are declared, no setters)
 unsupported/attr-accessor	gc_ring.rb	benchmark/gc/ring.rb	attr_* accessors (fields are declared, no setters)
 unsupported/attr-accessor	masgn--array2_2.rb	benchmark/masgn.yml, entry array2_2	attr_* accessors (fields are declared, no setters)
 unsupported/attr-accessor	masgn--array2_2lv.rb	benchmark/masgn.yml, entry array2_2lv	attr_* accessors (fields are declared, no setters)
@@ -146,6 +139,7 @@ unsupported/complex	numeric_methods--integer_numerator.rb	benchmark/numeric_meth
 unsupported/complex	numeric_methods--integer_real.rb	benchmark/numeric_methods.yml, entry integer_real	Rational and Complex (left out)
 unsupported/complex	numeric_methods--integr_imag.rb	benchmark/numeric_methods.yml, entry integr_imag	Rational and Complex (left out)
 unsupported/complex	numeric_methods--real_.rb	benchmark/numeric_methods.yml, entry real_	Rational and Complex (left out)
+unsupported/complex	time_strptime--time_strptime_5.rb	benchmark/time_strptime.yml, entry time_strptime_5	Rational and Complex (left out)
 unsupported/encodings	string_coderange_scan--coderange_alternating.rb	benchmark/string_coderange_scan.yml, entry coderange_alternating	string encodings (force_encoding, .b)
 unsupported/encodings	string_coderange_scan--coderange_ascii.rb	benchmark/string_coderange_scan.yml, entry coderange_ascii	string encodings (force_encoding, .b)
 unsupported/encodings	string_coderange_scan--coderange_multibyte.rb	benchmark/string_coderange_scan.yml, entry coderange_multibyte	string encodings (force_encoding, .b)
@@ -167,10 +161,12 @@ unsupported/encodings	string_valid_encoding_p--valid_enc_true.rb	benchmark/strin
 unsupported/environment	array_small_and.rb	benchmark/array_small_and.rb	environment and process
 unsupported/environment	array_small_diff.rb	benchmark/array_small_diff.rb	environment and process
 unsupported/environment	array_small_or.rb	benchmark/array_small_or.rb	environment and process
+unsupported/filesystem	dir_empty_p.rb	benchmark/dir_empty_p.rb	file system
 unsupported/filesystem	dir_pwd--pwd.rb	benchmark/dir_pwd.yml, entry pwd	file system
 unsupported/filesystem	file_basename--long.rb	benchmark/file_basename.yml, entry long	file system
 unsupported/filesystem	file_basename--long_name.rb	benchmark/file_basename.yml, entry long_name	file system
 unsupported/filesystem	file_basename--withext.rb	benchmark/file_basename.yml, entry withext	file system
+unsupported/filesystem	file_chmod.rb	benchmark/file_chmod.rb	file system
 unsupported/filesystem	file_dirname--long.rb	benchmark/file_dirname.yml, entry long	file system
 unsupported/filesystem	file_dirname--n_4.rb	benchmark/file_dirname.yml, entry n_4	file system
 unsupported/filesystem	file_dirname--short.rb	benchmark/file_dirname.yml, entry short	file system
@@ -182,9 +178,12 @@ unsupported/filesystem	file_join--array.rb	benchmark/file_join.yml, entry array	
 unsupported/filesystem	file_join--many_strings.rb	benchmark/file_join.yml, entry many_strings	file system
 unsupported/filesystem	file_join--mixed.rb	benchmark/file_join.yml, entry mixed	file system
 unsupported/filesystem	file_join--two_strings.rb	benchmark/file_join.yml, entry two_strings	file system
+unsupported/filesystem	file_rename.rb	benchmark/file_rename.rb	file system
 unsupported/filesystem	io_close--io_close.rb	benchmark/io_close.yml, entry io_close	file system
 unsupported/filesystem	io_close_contended--io_close_contended.rb	benchmark/io_close_contended.yml, entry io_close_contended	file system
 unsupported/filesystem	io_file_create.rb	benchmark/io_file_create.rb	file system
+unsupported/filesystem	io_file_read.rb	benchmark/io_file_read.rb	file system
+unsupported/filesystem	io_file_write.rb	benchmark/io_file_write.rb	file system
 unsupported/filesystem	io_nonblock_noex.rb	benchmark/io_nonblock_noex.rb	file system
 unsupported/filesystem	io_nonblock_noex2.rb	benchmark/io_nonblock_noex2.rb	file system
 unsupported/filesystem	io_pipe_rw.rb	benchmark/io_pipe_rw.rb	file system
@@ -217,6 +216,12 @@ unsupported/filesystem	realpath--relative_relative_notexist.rb	benchmark/realpat
 unsupported/filesystem	vm_thread_pipe.rb	benchmark/vm_thread_pipe.rb	file system
 unsupported/globals	app_pentomino.rb	benchmark/app_pentomino.rb	global variables
 unsupported/globals	constant_invalidation.rb	benchmark/constant_invalidation.rb	global variables
+unsupported/globals	gc_gcbench.rb	benchmark/gc/gcbench.rb	global variables
+unsupported/globals	objspace_dump_all--dump_all_dev_null.rb	benchmark/objspace_dump_all.yml, entry dump_all_dev_null	global variables
+unsupported/globals	objspace_dump_all--dump_all_file.rb	benchmark/objspace_dump_all.yml, entry dump_all_file	global variables
+unsupported/globals	objspace_dump_all--dump_all_string.rb	benchmark/objspace_dump_all.yml, entry dump_all_string	global variables
+unsupported/globals	require--require.rb	benchmark/require.yml, entry require	global variables
+unsupported/globals	require_thread--require_thread.rb	benchmark/require_thread.yml, entry require_thread	global variables
 unsupported/globals	vm_module_const_set--vm_module_const_set.rb	benchmark/vm_module_const_set.yml, entry vm_module_const_set	global variables
 unsupported/identity	hash_ident_obj.rb	benchmark/hash_ident_obj.rb	object identity (amber compares structurally: two bare Objects are equal)
 unsupported/identity	object_id--object_id.rb	benchmark/object_id.yml, entry object_id	object identity (amber compares structurally: two bare Objects are equal)
@@ -294,6 +299,10 @@ unsupported/marshal	marshal_dump_flo.rb	benchmark/marshal_dump_flo.rb	Marshal
 unsupported/marshal	marshal_dump_load_integer--marshal_dump_integer_over_32_bit.rb	benchmark/marshal_dump_load_integer.yml, entry marshal_dump_integer_over_32_bit	Marshal
 unsupported/marshal	marshal_dump_load_integer--marshal_dump_integer_over_64_bit.rb	benchmark/marshal_dump_load_integer.yml, entry marshal_dump_integer_over_64_bit	Marshal
 unsupported/marshal	marshal_dump_load_integer--marshal_dump_integer_small.rb	benchmark/marshal_dump_load_integer.yml, entry marshal_dump_integer_small	Marshal
+unsupported/marshal	marshal_dump_load_integer--marshal_load_integer_over_32_bit.rb	benchmark/marshal_dump_load_integer.yml, entry marshal_load_integer_over_32_bit	Marshal
+unsupported/marshal	marshal_dump_load_integer--marshal_load_integer_over_64_bit.rb	benchmark/marshal_dump_load_integer.yml, entry marshal_load_integer_over_64_bit	Marshal
+unsupported/marshal	marshal_dump_load_integer--marshal_load_integer_small.rb	benchmark/marshal_dump_load_integer.yml, entry marshal_load_integer_small	Marshal
+unsupported/marshal	marshal_dump_load_time.rb	benchmark/marshal_dump_load_time.rb	Marshal
 unsupported/metaprogramming	array_large_literal--array_100.rb	benchmark/array_large_literal.yml, entry array_100	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
 unsupported/metaprogramming	array_large_literal--array_1000.rb	benchmark/array_large_literal.yml, entry array_1000	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
 unsupported/metaprogramming	array_large_literal--array_10000.rb	benchmark/array_large_literal.yml, entry array_10000	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
@@ -467,80 +476,28 @@ unsupported/reopening-classes	time_xmlschema--time_xmlschema_5.rb	benchmark/time
 unsupported/reopening-classes	time_xmlschema--time_xmlschema_6.rb	benchmark/time_xmlschema.yml, entry time_xmlschema_6	reopening builtin classes
 unsupported/reopening-classes	time_xmlschema--time_xmlschema_7.rb	benchmark/time_xmlschema.yml, entry time_xmlschema_7	reopening builtin classes
 unsupported/reopening-classes	vm_freezestring--vm_freezestring.rb	benchmark/vm_freezestring.yml, entry vm_freezestring	reopening builtin classes
-unsupported/require	app_erb--app_erb.rb	benchmark/app_erb.yml, entry app_erb	require / load
-unsupported/require	app_mandelbrot.rb	benchmark/app_mandelbrot.rb	require / load
-unsupported/require	app_uri.rb	benchmark/app_uri.rb	require / load
-unsupported/require	array_shift.rb	benchmark/array_shift.rb	require / load
-unsupported/require	cgi_escape_html--cgi_escape_html_0.rb	benchmark/cgi_escape_html.yml, entry cgi_escape_html_0	require / load
-unsupported/require	cgi_escape_html--cgi_escape_html_1.rb	benchmark/cgi_escape_html.yml, entry cgi_escape_html_1	require / load
-unsupported/require	cgi_escape_html--cgi_escape_html_2.rb	benchmark/cgi_escape_html.yml, entry cgi_escape_html_2	require / load
-unsupported/require	cgi_escape_html--cgi_escape_html_3.rb	benchmark/cgi_escape_html.yml, entry cgi_escape_html_3	require / load
-unsupported/require	cgi_escape_html--cgi_escape_html_4.rb	benchmark/cgi_escape_html.yml, entry cgi_escape_html_4	require / load
-unsupported/require	cgi_escape_html--cgi_escape_html_5.rb	benchmark/cgi_escape_html.yml, entry cgi_escape_html_5	require / load
-unsupported/require	cgi_escape_html--cgi_escape_html_6.rb	benchmark/cgi_escape_html.yml, entry cgi_escape_html_6	require / load
-unsupported/require	dir_empty_p.rb	benchmark/dir_empty_p.rb	require / load
-unsupported/require	erb_escape_html--erb_escape_html_0.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_0	require / load
-unsupported/require	erb_escape_html--erb_escape_html_1.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_1	require / load
-unsupported/require	erb_escape_html--erb_escape_html_2.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_2	require / load
-unsupported/require	erb_escape_html--erb_escape_html_3.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_3	require / load
-unsupported/require	erb_escape_html--erb_escape_html_4.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_4	require / load
-unsupported/require	erb_escape_html--erb_escape_html_5.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_5	require / load
-unsupported/require	erb_escape_html--erb_escape_html_6.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_6	require / load
-unsupported/require	erb_render--erb_render.rb	benchmark/erb_render.yml, entry erb_render	require / load
-unsupported/require	file_chmod.rb	benchmark/file_chmod.rb	require / load
-unsupported/require	file_rename.rb	benchmark/file_rename.rb	require / load
+unsupported/require	app_erb--app_erb.rb	benchmark/app_erb.yml, entry app_erb	require of a library amber does not build in
+unsupported/require	app_mandelbrot.rb	benchmark/app_mandelbrot.rb	require of a library amber does not build in
+unsupported/require	app_uri.rb	benchmark/app_uri.rb	require of a library amber does not build in
+unsupported/require	array_shift.rb	benchmark/array_shift.rb	require of a library amber does not build in
+unsupported/require	erb_escape_html--erb_escape_html_0.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_0	require of a library amber does not build in
+unsupported/require	erb_escape_html--erb_escape_html_1.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_1	require of a library amber does not build in
+unsupported/require	erb_escape_html--erb_escape_html_2.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_2	require of a library amber does not build in
+unsupported/require	erb_escape_html--erb_escape_html_3.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_3	require of a library amber does not build in
+unsupported/require	erb_escape_html--erb_escape_html_4.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_4	require of a library amber does not build in
+unsupported/require	erb_escape_html--erb_escape_html_5.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_5	require of a library amber does not build in
+unsupported/require	erb_escape_html--erb_escape_html_6.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_6	require of a library amber does not build in
+unsupported/require	erb_render--erb_render.rb	benchmark/erb_render.yml, entry erb_render	require of a library amber does not build in
 unsupported/require	gc_aobench.rb	benchmark/gc/aobench.rb	require / load
 unsupported/require	gc_binary_trees.rb	benchmark/gc/binary_trees.rb	require / load
-unsupported/require	gc_gcbench.rb	benchmark/gc/gcbench.rb	require / load
 unsupported/require	gc_pentomino.rb	benchmark/gc/pentomino.rb	require / load
-unsupported/require	gc_rdoc.rb	benchmark/gc/rdoc.rb	require / load
-unsupported/require	gc_redblack.rb	benchmark/gc/redblack.rb	require / load
-unsupported/require	io_file_read.rb	benchmark/io_file_read.rb	require / load
-unsupported/require	io_file_write.rb	benchmark/io_file_write.rb	require / load
-unsupported/require	io_write.rb	benchmark/io_write.rb	require / load
-unsupported/require	irb_color--irb_color_complete.rb	benchmark/irb_color.yml, entry irb_color_complete	require / load
-unsupported/require	irb_color--irb_color_incomplete.rb	benchmark/irb_color.yml, entry irb_color_incomplete	require / load
-unsupported/require	irb_exec--irb_exec.rb	benchmark/irb_exec.yml, entry irb_exec	require / load
-unsupported/require	loop_generator.rb	benchmark/loop_generator.rb	require / load
-unsupported/require	marshal_dump_load_integer--marshal_load_integer_over_32_bit.rb	benchmark/marshal_dump_load_integer.yml, entry marshal_load_integer_over_32_bit	require / load
-unsupported/require	marshal_dump_load_integer--marshal_load_integer_over_64_bit.rb	benchmark/marshal_dump_load_integer.yml, entry marshal_load_integer_over_64_bit	require / load
-unsupported/require	marshal_dump_load_integer--marshal_load_integer_small.rb	benchmark/marshal_dump_load_integer.yml, entry marshal_load_integer_small	require / load
-unsupported/require	marshal_dump_load_time.rb	benchmark/marshal_dump_load_time.rb	require / load
-unsupported/require	objspace_dump_all--dump_all_dev_null.rb	benchmark/objspace_dump_all.yml, entry dump_all_dev_null	require / load
-unsupported/require	objspace_dump_all--dump_all_file.rb	benchmark/objspace_dump_all.yml, entry dump_all_file	require / load
-unsupported/require	objspace_dump_all--dump_all_string.rb	benchmark/objspace_dump_all.yml, entry dump_all_string	require / load
-unsupported/require	require--require.rb	benchmark/require.yml, entry require	require / load
-unsupported/require	require_thread--require_thread.rb	benchmark/require_thread.yml, entry require_thread	require / load
-unsupported/require	securerandom.rb	benchmark/securerandom.rb	require / load
-unsupported/require	string_tr--cgi_escape.rb	benchmark/string_tr.yml, entry cgi_escape	require / load
-unsupported/require	string_tr--gsub_escape.rb	benchmark/string_tr.yml, entry gsub_escape	require / load
-unsupported/require	string_tr--tr_escape.rb	benchmark/string_tr.yml, entry tr_escape	require / load
-unsupported/require	time_parse--time_parse_0.rb	benchmark/time_parse.yml, entry time_parse_0	require / load
-unsupported/require	time_parse--time_parse_1.rb	benchmark/time_parse.yml, entry time_parse_1	require / load
-unsupported/require	time_parse--time_parse_2.rb	benchmark/time_parse.yml, entry time_parse_2	require / load
-unsupported/require	time_parse--time_parse_3.rb	benchmark/time_parse.yml, entry time_parse_3	require / load
-unsupported/require	time_parse--time_parse_4.rb	benchmark/time_parse.yml, entry time_parse_4	require / load
-unsupported/require	time_strptime--time_strptime_0.rb	benchmark/time_strptime.yml, entry time_strptime_0	require / load
-unsupported/require	time_strptime--time_strptime_1.rb	benchmark/time_strptime.yml, entry time_strptime_1	require / load
-unsupported/require	time_strptime--time_strptime_2.rb	benchmark/time_strptime.yml, entry time_strptime_2	require / load
-unsupported/require	time_strptime--time_strptime_3.rb	benchmark/time_strptime.yml, entry time_strptime_3	require / load
-unsupported/require	time_strptime--time_strptime_4.rb	benchmark/time_strptime.yml, entry time_strptime_4	require / load
-unsupported/require	time_strptime--time_strptime_5.rb	benchmark/time_strptime.yml, entry time_strptime_5	require / load
-unsupported/require	time_strptime--time_strptime_6.rb	benchmark/time_strptime.yml, entry time_strptime_6	require / load
-unsupported/require	time_strptime--time_strptime_7.rb	benchmark/time_strptime.yml, entry time_strptime_7	require / load
-unsupported/require	time_strptime--time_strptime_8.rb	benchmark/time_strptime.yml, entry time_strptime_8	require / load
-unsupported/require	time_strptime--time_strptime_9.rb	benchmark/time_strptime.yml, entry time_strptime_9	require / load
-unsupported/require	vm_mutex--vm_mutex.rb	benchmark/vm_mutex.yml, entry vm_mutex	require / load
-unsupported/require	vm_thread_condvar1.rb	benchmark/vm_thread_condvar1.rb	require / load
-unsupported/require	vm_thread_condvar2.rb	benchmark/vm_thread_condvar2.rb	require / load
-unsupported/require	vm_thread_mutex1.rb	benchmark/vm_thread_mutex1.rb	require / load
-unsupported/require	vm_thread_mutex2.rb	benchmark/vm_thread_mutex2.rb	require / load
-unsupported/require	vm_thread_mutex3.rb	benchmark/vm_thread_mutex3.rb	require / load
-unsupported/require	vm_thread_queue.rb	benchmark/vm_thread_queue.rb	require / load
-unsupported/require	vm_thread_sized_queue.rb	benchmark/vm_thread_sized_queue.rb	require / load
-unsupported/require	vm_thread_sized_queue2.rb	benchmark/vm_thread_sized_queue2.rb	require / load
-unsupported/require	vm_thread_sized_queue3.rb	benchmark/vm_thread_sized_queue3.rb	require / load
-unsupported/require	vm_thread_sized_queue4.rb	benchmark/vm_thread_sized_queue4.rb	require / load
+unsupported/require	gc_rdoc.rb	benchmark/gc/rdoc.rb	require of a library amber does not build in
+unsupported/require	io_write.rb	benchmark/io_write.rb	require of a library amber does not build in
+unsupported/require	irb_color--irb_color_complete.rb	benchmark/irb_color.yml, entry irb_color_complete	require of a library amber does not build in
+unsupported/require	irb_color--irb_color_incomplete.rb	benchmark/irb_color.yml, entry irb_color_incomplete	require of a library amber does not build in
+unsupported/require	irb_exec--irb_exec.rb	benchmark/irb_exec.yml, entry irb_exec	require of a library amber does not build in
+unsupported/require	loop_generator.rb	benchmark/loop_generator.rb	require of a library amber does not build in
+unsupported/require	securerandom.rb	benchmark/securerandom.rb	require of a library amber does not build in
 unsupported/ruby-version	vm_gc_wb_ary--vm_gc_wb_ary.rb	benchmark/vm_gc_wb_ary.yml, entry vm_gc_wb_ary	RUBY_VERSION (left out)
 unsupported/singleton-methods	object_class--extended.rb	benchmark/object_class.yml, entry extended	singleton methods outside a class (def self.x at top level, def obj.x)
 unsupported/singleton-methods	object_class--immediate.rb	benchmark/object_class.yml, entry immediate	singleton methods outside a class (def self.x at top level, def obj.x)
@@ -570,10 +527,21 @@ unsupported/threads	fiber_locals--keys.rb	benchmark/fiber_locals.yml, entry keys
 unsupported/threads	vm_fiber_count--vm_fiber_count.rb	benchmark/vm_fiber_count.yml, entry vm_fiber_count	threads and fibers (amber has async)
 unsupported/threads	vm_fiber_reuse_gc--vm_fiber_reuse_gc.rb	benchmark/vm_fiber_reuse_gc.yml, entry vm_fiber_reuse_gc	threads and fibers (amber has async)
 unsupported/threads	vm_fiber_switch--vm_fiber_switch.rb	benchmark/vm_fiber_switch.yml, entry vm_fiber_switch	threads and fibers (amber has async)
+unsupported/threads	vm_mutex--vm_mutex.rb	benchmark/vm_mutex.yml, entry vm_mutex	threads and fibers (amber has async)
 unsupported/threads	vm_thread_alive_check--vm_thread_alive_check.rb	benchmark/vm_thread_alive_check.yml, entry vm_thread_alive_check	threads and fibers (amber has async)
 unsupported/threads	vm_thread_close.rb	benchmark/vm_thread_close.rb	threads and fibers (amber has async)
+unsupported/threads	vm_thread_condvar1.rb	benchmark/vm_thread_condvar1.rb	threads and fibers (amber has async)
+unsupported/threads	vm_thread_condvar2.rb	benchmark/vm_thread_condvar2.rb	threads and fibers (amber has async)
 unsupported/threads	vm_thread_create_join.rb	benchmark/vm_thread_create_join.rb	threads and fibers (amber has async)
+unsupported/threads	vm_thread_mutex1.rb	benchmark/vm_thread_mutex1.rb	threads and fibers (amber has async)
+unsupported/threads	vm_thread_mutex2.rb	benchmark/vm_thread_mutex2.rb	threads and fibers (amber has async)
+unsupported/threads	vm_thread_mutex3.rb	benchmark/vm_thread_mutex3.rb	threads and fibers (amber has async)
 unsupported/threads	vm_thread_pass_flood.rb	benchmark/vm_thread_pass_flood.rb	threads and fibers (amber has async)
+unsupported/threads	vm_thread_queue.rb	benchmark/vm_thread_queue.rb	threads and fibers (amber has async)
+unsupported/threads	vm_thread_sized_queue.rb	benchmark/vm_thread_sized_queue.rb	threads and fibers (amber has async)
+unsupported/threads	vm_thread_sized_queue2.rb	benchmark/vm_thread_sized_queue2.rb	threads and fibers (amber has async)
+unsupported/threads	vm_thread_sized_queue3.rb	benchmark/vm_thread_sized_queue3.rb	threads and fibers (amber has async)
+unsupported/threads	vm_thread_sized_queue4.rb	benchmark/vm_thread_sized_queue4.rb	threads and fibers (amber has async)
 unsupported/threads	vm_thread_sleep--vm_thread_sleep.rb	benchmark/vm_thread_sleep.yml, entry vm_thread_sleep	threads and fibers (amber has async)
 unsupported/vm-introspection	iseq_load_from_binary--all.rb	benchmark/iseq_load_from_binary.yml, entry all	GC and VM introspection
 unsupported/vm-introspection	iseq_load_from_binary--define_method.rb	benchmark/iseq_load_from_binary.yml, entry define_method	GC and VM introspection
@@ -710,6 +678,13 @@ works	array_sort_int--ary2.sort.rb	benchmark/array_sort_int.yml, entry ary2.sort
 works	array_values_at_int.rb	benchmark/array_values_at_int.rb	
 works	array_values_at_range.rb	benchmark/array_values_at_range.rb	
 works	bighash.rb	benchmark/bighash.rb	
+works	cgi_escape_html--cgi_escape_html_0.rb	benchmark/cgi_escape_html.yml, entry cgi_escape_html_0	
+works	cgi_escape_html--cgi_escape_html_1.rb	benchmark/cgi_escape_html.yml, entry cgi_escape_html_1	
+works	cgi_escape_html--cgi_escape_html_2.rb	benchmark/cgi_escape_html.yml, entry cgi_escape_html_2	
+works	cgi_escape_html--cgi_escape_html_3.rb	benchmark/cgi_escape_html.yml, entry cgi_escape_html_3	
+works	cgi_escape_html--cgi_escape_html_4.rb	benchmark/cgi_escape_html.yml, entry cgi_escape_html_4	
+works	cgi_escape_html--cgi_escape_html_5.rb	benchmark/cgi_escape_html.yml, entry cgi_escape_html_5	
+works	cgi_escape_html--cgi_escape_html_6.rb	benchmark/cgi_escape_html.yml, entry cgi_escape_html_6	
 works	enum_lazy_flat_map--ary10.rb	benchmark/enum_lazy_flat_map.yml, entry ary10	
 works	enum_lazy_flat_map--ary100.rb	benchmark/enum_lazy_flat_map.yml, entry ary100	
 works	enum_lazy_flat_map--ary2.rb	benchmark/enum_lazy_flat_map.yml, entry ary2	
@@ -1171,7 +1146,16 @@ works	string_memsearch--index_mixed_present.rb	benchmark/string_memsearch.yml, e
 works	string_memsearch--index_needle_2_absent.rb	benchmark/string_memsearch.yml, entry index_needle_2_absent	
 works	string_memsearch--index_needle_4_absent.rb	benchmark/string_memsearch.yml, entry index_needle_4_absent	
 works	string_memsearch--index_needle_8_absent.rb	benchmark/string_memsearch.yml, entry index_needle_8_absent	
+works	string_rpartition--rpartition-1.rb	benchmark/string_rpartition.yml, entry rpartition-1	
+works	string_rpartition--rpartition-10.rb	benchmark/string_rpartition.yml, entry rpartition-10	
+works	string_rpartition--rpartition-100.rb	benchmark/string_rpartition.yml, entry rpartition-100	
+works	string_rpartition--rpartition-1000.rb	benchmark/string_rpartition.yml, entry rpartition-1000	
+works	string_rpartition--rpartition-nonascii1.rb	benchmark/string_rpartition.yml, entry rpartition-nonascii1	
+works	string_rpartition--rpartition-nonascii10.rb	benchmark/string_rpartition.yml, entry rpartition-nonascii10	
+works	string_rpartition--rpartition-nonascii100.rb	benchmark/string_rpartition.yml, entry rpartition-nonascii100	
+works	string_rpartition--rpartition-nonascii1000.rb	benchmark/string_rpartition.yml, entry rpartition-nonascii1000	
 works	string_scan_re.rb	benchmark/string_scan_re.rb	
+works	string_scan_str.rb	benchmark/string_scan_str.rb	
 works	string_split--re_chars-1.rb	benchmark/string_split.yml, entry re_chars-1	
 works	string_split--re_chars-10.rb	benchmark/string_split.yml, entry re_chars-10	
 works	string_split--re_chars-100.rb	benchmark/string_split.yml, entry re_chars-100	
@@ -1196,6 +1180,8 @@ works	string_swapcase--swapcase-nonascii1.rb	benchmark/string_swapcase.yml, entr
 works	string_swapcase--swapcase-nonascii10.rb	benchmark/string_swapcase.yml, entry swapcase-nonascii10	
 works	string_swapcase--swapcase-nonascii100.rb	benchmark/string_swapcase.yml, entry swapcase-nonascii100	
 works	string_swapcase--swapcase-nonascii1000.rb	benchmark/string_swapcase.yml, entry swapcase-nonascii1000	
+works	string_tr--cgi_escape.rb	benchmark/string_tr.yml, entry cgi_escape	
+works	string_tr--gsub_escape.rb	benchmark/string_tr.yml, entry gsub_escape	
 works	time_at--time_at_0.rb	benchmark/time_at.yml, entry time_at_0	
 works	time_at--time_at_1.rb	benchmark/time_at.yml, entry time_at_1	
 works	time_at--time_at_2.rb	benchmark/time_at.yml, entry time_at_2	
@@ -1206,9 +1192,23 @@ works	time_new--time_new_2.rb	benchmark/time_new.yml, entry time_new_2
 works	time_now--time_now_0.rb	benchmark/time_now.yml, entry time_now_0	
 works	time_now--time_now_1.rb	benchmark/time_now.yml, entry time_now_1	
 works	time_now--time_now_2.rb	benchmark/time_now.yml, entry time_now_2	
+works	time_parse--time_parse_0.rb	benchmark/time_parse.yml, entry time_parse_0	
+works	time_parse--time_parse_1.rb	benchmark/time_parse.yml, entry time_parse_1	
+works	time_parse--time_parse_2.rb	benchmark/time_parse.yml, entry time_parse_2	
+works	time_parse--time_parse_3.rb	benchmark/time_parse.yml, entry time_parse_3	
+works	time_parse--time_parse_4.rb	benchmark/time_parse.yml, entry time_parse_4	
 works	time_strftime--time_strftime_0.rb	benchmark/time_strftime.yml, entry time_strftime_0	
 works	time_strftime--time_strftime_1.rb	benchmark/time_strftime.yml, entry time_strftime_1	
 works	time_strftime--time_strftime_2.rb	benchmark/time_strftime.yml, entry time_strftime_2	
+works	time_strptime--time_strptime_0.rb	benchmark/time_strptime.yml, entry time_strptime_0	
+works	time_strptime--time_strptime_1.rb	benchmark/time_strptime.yml, entry time_strptime_1	
+works	time_strptime--time_strptime_2.rb	benchmark/time_strptime.yml, entry time_strptime_2	
+works	time_strptime--time_strptime_3.rb	benchmark/time_strptime.yml, entry time_strptime_3	
+works	time_strptime--time_strptime_4.rb	benchmark/time_strptime.yml, entry time_strptime_4	
+works	time_strptime--time_strptime_6.rb	benchmark/time_strptime.yml, entry time_strptime_6	
+works	time_strptime--time_strptime_7.rb	benchmark/time_strptime.yml, entry time_strptime_7	
+works	time_strptime--time_strptime_8.rb	benchmark/time_strptime.yml, entry time_strptime_8	
+works	time_strptime--time_strptime_9.rb	benchmark/time_strptime.yml, entry time_strptime_9	
 works	time_subsec.rb	benchmark/time_subsec.rb	
 works	vm_array--vm_array.rb	benchmark/vm_array.yml, entry vm_array	
 works	vm_bigarray--vm_bigarray.rb	benchmark/vm_bigarray.yml, entry vm_bigarray	

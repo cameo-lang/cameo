@@ -424,7 +424,6 @@ var mutators = map[string]string{
 	"instance_eval":         "nothing",
 	"class_eval":            "nothing",
 	"eval":                  "nothing",
-	"require":               "nothing: a script is one file",
 	"require_relative":      "nothing: a script is one file",
 	"load":                  "nothing: a script is one file",
 	"fork":                  "async",

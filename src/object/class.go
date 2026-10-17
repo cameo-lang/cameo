@@ -338,6 +338,10 @@ var (
 	RegexpError       = NewClass("RegexpError", StandardError)
 	LocalJumpError    = NewClass("LocalJumpError", StandardError)
 	AmberError        = NewClass("AmberError", StandardError)
+	// ScriptError and LoadError are outside StandardError, so a bare
+	// rescue does not catch a failed require, as in Ruby.
+	ScriptError = NewClass("ScriptError", ExceptionClass)
+	LoadError   = NewClass("LoadError", ScriptError)
 	// MathDomainError is Math::DomainError, bound in Math, not at the top.
 	MathDomainError = NewClass("DomainError", ArgumentError)
 )
@@ -360,7 +364,7 @@ func init() {
 		ProcessClass, ExceptionClass, Enumerable, Comparable, MathModule,
 		StandardError, RuntimeError, ArgumentError, TypeError, NameError, NoMethodError, KeyError,
 		IndexError, RangeError, ZeroDivisionError, StopIteration, NoMatchingPattern, FrozenError,
-		NotImplementedErr, LocalJumpError, AmberError, RegexpError, FloatDomainError,
+		NotImplementedErr, LocalJumpError, AmberError, RegexpError, FloatDomainError, ScriptError, LoadError,
 	}
 	for _, c := range BasicClasses {
 		ObjectClass.Consts[c.Name] = ClassValue(c)

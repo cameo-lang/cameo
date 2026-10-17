@@ -40,6 +40,9 @@ type Interp struct {
 	// it started from; see Rand and Srand.
 	rng  *rand.Rand
 	seed uint64
+	// loaded is the libraries require has loaded, which a second require
+	// of answers false.
+	loaded map[string]bool
 }
 
 // New makes an interpreter writing to stdout and stderr.

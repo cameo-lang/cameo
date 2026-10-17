@@ -54,7 +54,8 @@ What amber leaves out, and the checker rejects by name:
   bang method) on anything but a local or a field in `initialize`, which
   they rebind, see *Variables rebind*; `freeze` is accepted and changes
   nothing, since everything already is frozen
-- threads, fibers, `fork`, files, sockets, `require`, `$stdin`. Standard
+- threads, fibers, `fork`, files, sockets, `require` of another file
+  (`require_relative`, `load`, a library amber does not build in), `$stdin`. Standard
   output and standard error are the whole of I/O.
 
 ## Values
@@ -546,6 +547,13 @@ re-opened by accident:
     and the rest make another and do no work until `first`, `to_a`,
     `force` or `each` asks; a blockless `cycle` or `then` gives an eager
     Enumerator. There is no external iteration (`next`, `peek`).
+  - `require` of a library amber builds in (`set`, `time`, `cgi`,
+    `cgi/escape`, `pp`) returns true the first time and false after, and
+    any other is a LoadError: a script is one file. The libraries are
+    there whether or not a script requires them. `time` brings
+    `Time.parse`, `Time.iso8601` and `Time.strptime`, and `Time.new` reads
+    a string as Ruby 3.2's does; `cgi` brings `CGI.escapeHTML`,
+    `unescapeHTML`, `escape`, `unescape` and the URI-component pair.
   - Kept out: `GC`, `ENV`, metaprogramming (`define_method`, `send`,
     `eval`, `instance_variable_set`), setters and untyped fields, fibers
     and threads, and anything that touches the file system.

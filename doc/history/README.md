@@ -47,3 +47,4 @@ The steps:
 - [24. `Regexp` and `MatchData` on Go's regexp](24-regexp.md)
 - [25. Integers of arbitrary precision](25-bignum.md)
 - [26. Lazy enumerators](26-lazy.md)
+- [27. `require` of built-in libraries, CGI escaping and Time parsing](27-require.md)
