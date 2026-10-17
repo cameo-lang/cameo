@@ -98,7 +98,14 @@ that would mutate in Ruby: `list + [x]`, `list.append(x)`, `map.merge(other)`,
 `sort_by`, `group_by`, `each_with_index`, `each_with_object`, `zip`, `take`,
 `drop`, `first`, `last`, `find`, `any?`, `all?`, `none?`, `count`, `include?`,
 `flat_map`, `to_a`, `to_h`, `to_set`, `uniq`, `partition`, `min_by`,
-`max_by`, `each_slice`, `each_cons`, `lazy` is not provided.
+`max_by`, `each_slice`, `each_cons`, `tally`, `chunk_while`. There are no
+enumerators: a method that iterates answers a list when called without a
+block, so `each_slice(2).map { … }` works and `each_with_index.to_a` is
+`each_with_index` with a block. `each_with_object` cannot rely on the memo
+changing, so the block's value becomes the next memo, as in `reduce`. A
+collection that Ruby would change in place answers a copy: `list.append(x)`,
+`list.prepend(x)`, `list.without(x)`, `list.without_at(i)`, `map.put(k, v)`,
+`map.without(k)`, `set.add(x)`, `set.without(x)`.
 
 ## Variables rebind, objects do not change
 

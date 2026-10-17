@@ -1,0 +1,134 @@
+# Lists, maps, sets and ranges through Enumerable.
+nums = [5, 3, 8, 1, 9, 2]
+puts nums.sort.inspect
+puts nums.sort { |a, b| b <=> a }.inspect
+puts nums.sort_by { |n| -n }.first(2).inspect
+puts nums.min, nums.max
+puts nums.minmax.inspect
+puts nums.min(2).inspect
+puts nums.sum
+puts nums.sum { |n| n * 2 }
+puts nums.inject(:+)
+puts nums.reduce(100) { |acc, n| acc - n }
+puts nums.count(&:even?)
+puts nums.count(3)
+puts nums.partition(&:even?).inspect
+puts nums.each_slice(4).to_a.inspect
+puts nums.each_cons(2).to_a.length
+nums.each_with_index { |n, i| print n, ":", i, " " }
+puts
+puts nums.take(2).inspect, nums.drop(4).inspect
+puts nums.take_while { |n| n > 2 }.inspect
+puts nums.drop_while { |n| n > 2 }.inspect
+puts nums.find { |n| n > 6 }
+puts nums.find_index(8)
+puts nums.include?(9)
+puts nums.any? { |n| n > 8 }
+puts nums.all? { |n| n > 0 }
+puts nums.none?(&:zero?)
+puts nums.one? { |n| n == 9 }
+puts nums.group_by(&:odd?).keys.inspect
+puts nums.group_by { |n| n % 3 }.values.inspect
+puts nums.tally.values.inspect
+puts nums.zip([1, 2, 3]).first(2).inspect
+puts nums.flat_map { |n| [n, n] }.length
+puts nums.filter_map { |n| n * 10 if n.even? }.inspect
+puts [[1, [2]], [3, [4, [5]]]].flatten.inspect
+puts [[1, [2]], [3, [4, [5]]]].flatten(1).inspect
+puts [1, nil, 2, nil].compact.inspect
+puts [1, 1, 2, 3, 3].uniq.inspect
+puts %w[b a c].sort.join("-")
+puts [1, 2, 3].reverse.inspect
+puts [1, 2, 3].rotate.inspect
+puts ([1, 2, 3] - [2]).inspect
+puts ([1, 2] + [3]).inspect
+puts ([1, 2, 2, 3] & [2, 3, 4]).inspect
+puts ([1, 2] | [2, 3]).inspect
+puts ([1, 2] * 2).inspect
+puts [1, 2, 3].last(2).inspect
+puts [1, 2, 3].fetch(1)
+puts [1, 2, 3].fetch(10, :none)
+puts [[1, 2], [3, 4]].transpose.inspect
+puts [1, 2].product([3, 4]).inspect
+puts [3, 1, 2].max_by { |n| -n }
+puts [[1, :a], [2, :b]].to_h.keys.inspect
+puts [1, 2, 3, 4].each_slice(2).map(&:sum).inspect
+puts [1, 2, 4, 9, 10, 11, 12, 15].chunk_while { |a, b| b == a + 1 }.to_a.inspect
+puts [1, 2, 4, 9, 10].slice_when { |a, b| b != a + 1 }.to_a.inspect
+puts [[1, 2], [3]].dig(0, 1)
+puts %w[apple pie].grep("pie").inspect
+
+ages = {"ann" => 31, "bob" => 25, "cid" => 40}
+puts ages.keys.inspect
+puts ages.values.sum
+puts ages.min_by { |name, age| age }.inspect
+puts ages.sort_by { |name, age| -age }.map(&:first).inspect
+puts ages.select { |name, age| age > 30 }.keys.inspect
+puts ages.reject { |name, age| age > 30 }.keys.inspect
+puts ages.map { |name, age| "#{name}=#{age}" }.join(",")
+puts ages.transform_values { |age| age + 1 }.values.inspect
+puts ages.transform_keys(&:upcase).keys.inspect
+puts ages.key?("ann")
+puts ages.fetch("zed", 0)
+puts ages.fetch("zed") { |k| k.length }
+puts ages.merge({"dan" => 20}).size
+puts ages.merge({"ann" => 1}) { |k, old, new| old + new }["ann"]
+puts ages.to_a.flatten.length
+puts ages.count { |name, age| age < 35 }
+puts ages.find { |name, age| age == 25 }.inspect
+puts ages.invert[40]
+puts ages.any? { |name, age| age > 39 }
+puts ages.sum { |name, age| age }
+puts ages.group_by { |name, age| age > 30 }.keys.inspect
+puts ages.slice("ann", "cid").keys.inspect
+puts ages.except("ann").keys.inspect
+puts ages.dig("bob")
+puts({a: {b: {c: 1}}}.dig(:a, :b, :c))
+puts ages.filter_map { |name, age| name if age > 30 }.inspect
+puts ages.inject(0) { |acc, (name, age)| acc + age }
+puts ages.sort.first.inspect
+puts ages == {"bob" => 25, "ann" => 31, "cid" => 40}
+puts ages.to_h { |name, age| [age, name] }.keys.inspect
+puts ages.compact.size
+
+s = [3, 1, 2, 3].to_set
+puts s.size
+puts s.include?(3)
+puts (s | [4]).size
+puts (s & [1, 9]).to_a.inspect
+puts (s - [1]).to_a.sort.inspect
+puts s.subset?([1, 2, 3, 4].to_set)
+puts s.superset?([1].to_set)
+puts s.disjoint?([7].to_set)
+puts s.map { |x| x * 2 }.sort.inspect
+puts s.select(&:odd?).to_a.sort.inspect
+puts s.sort.inspect
+puts s.min
+puts s.sum
+puts s == [1, 2, 3].to_set
+puts s.add(5).size
+puts s.add(5).to_a.sort.inspect
+
+r = (1..10)
+puts r.sum
+puts r.size
+puts r.include?(5)
+puts r.cover?(11)
+puts r.step(3).to_a.inspect
+puts r.select(&:even?).inspect
+puts r.each_slice(5).to_a.inspect
+puts r.min, r.max
+puts (1...4).to_a.inspect
+puts (1...4).size
+puts r.first(3).inspect
+puts r.last(2).inspect
+puts r.map { |i| i * i }.sum
+puts r.reduce(:*)
+puts (1..0).to_a.inspect
+puts ("a".."e").include?("c")
+puts r.find { |i| i % 7 == 0 }
+puts r.to_s
+puts r.inspect
+puts (1...3).inspect
+puts r.count(&:odd?)
+puts r.min_by { |i| (i - 5).abs }
