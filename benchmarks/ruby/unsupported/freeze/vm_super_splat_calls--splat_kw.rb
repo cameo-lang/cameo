@@ -1,0 +1,19 @@
+@a = [1].freeze
+@ea = [].freeze
+@kw = {y: 1}.freeze
+@b = lambda{}
+extend(Module.new{def arg_splat(x=0, y: 0) end})
+extend(Module.new{def arg_splat_block(x=0, y: 0) end})
+extend(Module.new{def splat_kw_splat(x=0, y: 0) end})
+extend(Module.new{def splat_kw_splat_block(x=0, y: 0) end})
+extend(Module.new{def splat_kw(x=0, y: 0) end})
+extend(Module.new{def splat_kw_block(x=0, y: 0) end})
+
+extend(Module.new{def arg_splat; super(1, *@ea) end})
+extend(Module.new{def arg_splat_block; super(1, *@ea, &@b) end})
+extend(Module.new{def splat_kw_splat; super(*@a, **@kw) end})
+extend(Module.new{def splat_kw_splat_block; super(*@a, **@kw, &@b) end})
+extend(Module.new{def splat_kw; super(*@a, y: 1) end})
+extend(Module.new{def splat_kw_block; super(*@a, y: 1, &@b) end})
+
+splat_kw

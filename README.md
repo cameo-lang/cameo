@@ -65,6 +65,11 @@ brings are listed as pending in the test and must keep failing until it lands.
 An example that is also plain Ruby has its expected output generated with
 `ruby`, so amber is held to Ruby's behaviour where the two overlap.
 
+[benchmarks/ruby/](benchmarks/ruby) holds CRuby's own benchmark suite, one
+script per case, grouped into what works, what fails on an amber bug, what
+needs a builtin amber does not have yet, and what uses a feature amber leaves
+out; its `run.rb` checks that the working ones keep working.
+
 The packages under `src/`: `syntax` is the front end (`syntax.Parse`),
 `object` the value model, `eval` the evaluator and the async scheduler,
 `stdlib` the builtin methods, `protogen` the descriptors, `.proto` text and

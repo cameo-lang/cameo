@@ -1,0 +1,4 @@
+str = 'xxxhogexxx'
+
+/hoge/ =~ str
+

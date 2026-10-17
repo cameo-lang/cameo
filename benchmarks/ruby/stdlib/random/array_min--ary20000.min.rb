@@ -1,0 +1,15 @@
+ary2 = 2.times.to_a.shuffle
+ary10 = 10.times.to_a.shuffle
+ary100 = 100.times.to_a.shuffle
+ary500 = 500.times.to_a.shuffle
+ary1000 = 1000.times.to_a.shuffle
+ary2000 = 2500.times.to_a.shuffle
+ary3000 = 2500.times.to_a.shuffle
+ary5000 = 5000.times.to_a.shuffle
+ary10000 = 10000.times.to_a.shuffle
+ary20000 = 20000.times.to_a.shuffle
+ary50000 = 50000.times.to_a.shuffle
+ary100000 = 100000.times.to_a.shuffle
+ary1000000 = 1000000.times.to_a.shuffle
+
+ary20000.min

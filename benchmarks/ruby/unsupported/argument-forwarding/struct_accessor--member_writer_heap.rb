@@ -1,0 +1,41 @@
+C = Struct.new(:x) do
+  def initialize(...)
+    super
+    @ivar = 42
+  end
+
+  attr_accessor :ivar
+
+  class_eval <<-END
+    def r
+      #{'x;'*256}
+    end
+    def w
+      #{'self.x = nil;'*256}
+    end
+    def rm
+      m = method(:x)
+      #{'m.call;'*256}
+    end
+    def wm
+      m = method(:x=)
+      #{'m.call(nil);'*256}
+    end
+    def r_ivar
+      #{'ivar;'*256}
+    end
+  END
+end
+# 200 members do not fit in a GC slot, so this struct is not embedded
+H = Struct.new(*(1..200).map { |i| :"m#{i}" }) do
+  class_eval <<-END
+    def w
+      #{'self.m200 = nil;'*256}
+    end
+  END
+end
+C.new(nil) # ensure common shape is known
+obj = C.new(nil)
+heap_obj = H.new
+
+heap_obj.w

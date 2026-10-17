@@ -1,0 +1,7 @@
+eval(<<~EOS)
+  def loop_times_megamorphic
+    #{"1.times {|i|};" * 1000}
+  end
+EOS
+
+loop_times_megamorphic

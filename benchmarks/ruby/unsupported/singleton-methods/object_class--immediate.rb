@@ -1,0 +1,35 @@
+def get_class(obj)
+  i = 10_000
+  while i > 0
+    i -= 1
+    # 100 times per loop
+    obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class;
+    obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class;
+    obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class;
+    obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class;
+    obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class;
+    obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class;
+    obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class;
+    obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class;
+    obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class;
+    obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class;
+    obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class; obj.class;
+  end
+end
+
+class Obj
+end
+obj = Obj.new
+
+singleton = Obj.new
+def singleton.bar
+end
+
+extended = Obj.new
+2.times do
+  extended.extend Module.new
+end
+
+immediate = 1.4
+
+get_class(immediate)
