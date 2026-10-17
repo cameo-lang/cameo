@@ -56,3 +56,4 @@ The steps:
 - [33. The collector at GOGC=400 with a 1 GB soft limit](33-gc-tuning.md)
 - [34. ruby/spec, sorted by what the checker accepts](34-ruby-spec.md)
 - [35. `min` and `max` in one pass, integer sorts without dispatch](35-min-max.md)
+- [36. amber against MRI, go-embedded-ruby and a WASM CRuby](36-comparison.md)

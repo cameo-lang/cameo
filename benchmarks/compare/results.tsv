@@ -1,0 +1,825 @@
+file	mri_result	mri_runs	mri_secs	mri_script_secs	mri_net_secs	mri_output	amber_result	amber_runs	amber_secs	amber_script_secs	amber_net_secs	amber_output	warmruby_result	warmruby_runs	warmruby_secs	warmruby_script_secs	warmruby_net_secs	warmruby_output	rbgo_result	rbgo_runs	rbgo_secs	rbgo_script_secs	rbgo_net_secs	rbgo_output
+app_answer.rb	ok	7	0.1442		0.0374	same	ok	3	0.4342		0.4258	same	ok	1	2.5857	0.8048	0.8048	same	ok	2	0.8616	0.7573	0.7573	same
+app_factorial.rb	ok	1	1.4573		1.3505	same	ok	1	2.263		2.2546	same	ok	1	30.5884	28.915	28.915	same	ok	1	5.5976	5.4782	5.4782	same
+app_fib.rb	ok	2	0.5374		0.4307	same	ok	1	4.7898		4.7814	same	ok	1	9.9329	8.4382	8.4382	same	ok	1	7.6781	7.5756	7.5756	same
+app_lc_fizzbuzz.rb	ok	1	92.2237		92.1169	?	ok	1	59.7877		59.7793	?	timeout	1	300.0302			-	ok	1	107.7875	107.6555	107.6555	?
+app_raise.rb	ok	2	0.5543		0.4475	?	ok	13	0.0787		0.0703	?	fail	1	4.2621			-	ok	1	1.9346	1.8172	1.8172	?
+app_strconcat.rb	ok	4	0.3259		0.2192	same	ok	2	0.8899		0.8815	same	ok	1	5.7772	4.1077	4.1077	same	ok	1	4.6987	4.596	4.596	same
+app_tak.rb	ok	2	0.7184		0.6116	same	ok	1	8.6935		8.685	same	ok	1	14.4318	12.8588	12.8588	same	ok	1	11.1107	10.975	10.975	same
+app_tarai.rb	ok	2	0.6562		0.5495	same	ok	1	7.3592		7.3508	same	ok	1	11.7488	10.0062	10.0062	same	ok	1	7.9858	7.8753	7.8753	same
+array_eql--large_ary.__.rb	ok	10	0.1124		0.0056	same	ok	91	0.0111		0.0027	same	ok	1	1.672	0.0247	0.0247	same	ok	7	0.157	0.0346	0.0346	same
+array_eql--large_ary.eql_.rb	ok	10	0.1082		0.0014	same	ok	85	0.0118		0.0034	same	ok	1	1.5745	0.0255	0.0255	same	ok	6	0.1823	0.038	0.038	same
+array_eql--small_ary.eql_.rb	ok	8	0.1256		0.0188	same	ok	81	0.0125		0.004	same	ok	1	1.6774	0.0342	0.0342	same	ok	7	0.1557	0.0366	0.0366	same
+array_eql--str_ary.eql_.rb	ok	9	0.1214		0.0146	same	ok	89	0.0113		0.0029	same	ok	1	1.6466	0.0165	0.0165	same	ok	7	0.1556	0.0356	0.0356	same
+array_intersection--big-_.rb	ok	10	0.1064		0.001	same	ok	97	0.0104		0.0019	same	ok	1	1.6513	0.0145	0.0145	same	ok	7	0.1449	0.034	0.034	same
+array_intersection--big-intersection.rb	ok	11	0.0954		0.001	same	ok	99	0.0101		0.0017	same	ok	1	1.6118	0.0133	0.0133	same	ok	8	0.1403	0.0315	0.0315	same
+array_intersection--small-_.rb	ok	10	0.1025		0.001	same	ok	101	0.0099		0.0015	same	ok	1	1.6066	0.0165	0.0165	same	ok	7	0.1583	0.0332	0.0332	same
+array_intersection--small-intersection.rb	ok	9	0.1138		0.007	same	ok	90	0.0113		0.0029	same	ok	1	1.5593	0.0091	0.0091	same	ok	8	0.141	0.0321	0.0321	same
+array_join--join_nl_n100_e1.rb	ok	4	0.2986		0.1919	same	ok	5	0.2202		0.2118	same	ok	1	3.9356	2.2423	2.2423	same	ok	3	0.4591	0.3312	0.3312	same
+array_join--join_nl_n100_e40.rb	ok	3	0.3717		0.2649	same	ok	6	0.1909		0.1824	same	ok	1	3.6869	2.0844	2.0844	same	ok	3	0.3794	0.2714	0.2714	same
+array_join--join_nl_n100_e8.rb	ok	4	0.3014		0.1946	same	ok	6	0.192		0.1836	same	ok	1	3.7836	2.009	2.009	same	ok	3	0.4239	0.2987	0.2987	same
+array_join--join_nl_n100k_e1.rb	ok	4	0.2788		0.172	same	ok	6	0.1943		0.1858	same	ok	1	3.8715	2.1256	2.1256	same	ok	3	0.4711	0.3511	0.3511	same
+array_join--join_nl_n100k_e40.rb	ok	3	0.4324		0.3256	same	ok	5	0.2147		0.2062	same	ok	1	5.1247	3.3955	3.3955	same	ok	2	0.5799	0.442	0.442	same
+array_join--join_nl_n100k_e8.rb	ok	3	0.3509		0.2441	same	ok	6	0.2038		0.1954	same	ok	1	4.0313	2.408	2.408	same	ok	3	0.4614	0.3548	0.3548	same
+array_join--join_nl_n1k_e1.rb	ok	4	0.2999		0.1931	same	ok	6	0.1697		0.1612	same	ok	1	3.3442	1.9069	1.9069	same	ok	3	0.3957	0.2855	0.2855	same
+array_join--join_nl_n1k_e40.rb	ok	3	0.353		0.2462	same	ok	6	0.1893		0.1808	same	ok	1	3.8607	1.9146	1.9146	same	ok	3	0.3794	0.2658	0.2658	same
+array_join--join_nl_n1k_e8.rb	ok	3	0.3345		0.2277	same	ok	5	0.2077		0.1993	same	ok	1	3.4142	1.936	1.936	same	ok	3	0.4056	0.2951	0.2951	same
+array_join--join_sp_n100_e1.rb	ok	3	0.3615		0.2548	same	ok	6	0.1817		0.1733	same	ok	1	3.5715	1.9317	1.9317	same	ok	3	0.3545	0.2486	0.2486	same
+array_join--join_sp_n100_e40.rb	ok	4	0.2981		0.1913	same	ok	6	0.1765		0.1681	same	ok	1	3.4268	1.8836	1.8836	same	ok	3	0.4237	0.2951	0.2951	same
+array_join--join_sp_n100_e8.rb	ok	3	0.3362		0.2294	same	ok	6	0.1918		0.1834	same	ok	1	3.7303	2.0017	2.0017	same	ok	3	0.3758	0.2618	0.2618	same
+array_join--join_sp_n100k_e1.rb	ok	4	0.2934		0.1867	same	ok	6	0.1865		0.1781	same	ok	1	4.2232	2.463	2.463	same	ok	3	0.4462	0.3357	0.3357	same
+array_join--join_sp_n100k_e40.rb	ok	3	0.42		0.3132	same	ok	5	0.2227		0.2142	same	ok	1	4.9649	3.1148	3.1148	same	ok	3	0.4786	0.3528	0.3528	same
+array_join--join_sp_n100k_e8.rb	ok	4	0.2917		0.185	same	ok	6	0.195		0.1865	same	ok	1	3.6853	2.118	2.118	same	ok	3	0.4436	0.3256	0.3256	same
+array_join--join_sp_n1k_e1.rb	ok	3	0.3384		0.2316	same	ok	6	0.1777		0.1693	same	ok	1	3.799	2.2165	2.2165	same	ok	3	0.4131	0.2937	0.2937	same
+array_join--join_sp_n1k_e40.rb	ok	4	0.2997		0.1929	same	ok	6	0.1869		0.1784	same	ok	1	3.6798	2.1227	2.1227	same	ok	3	0.4176	0.2942	0.2942	same
+array_join--join_sp_n1k_e8.rb	ok	4	0.2753		0.1685	same	ok	6	0.1753		0.1669	same	ok	1	3.9104	1.9511	1.9511	same	ok	3	0.402	0.2897	0.2897	same
+array_max_float--ary10.max.rb	ok	7	0.1471		0.0403	same	ok	13	0.0825		0.0741	same	ok	1	2.6281	0.9391	0.9391	same	ok	3	0.3866	0.2665	0.2665	same
+array_max_float--ary100.max.rb	ok	8	0.1302		0.0234	same	ok	13	0.08		0.0715	same	ok	1	2.4587	1.0194	1.0194	same	ok	3	0.3401	0.2376	0.2376	same
+array_max_float--ary1000.max.rb	ok	8	0.1318		0.025	same	ok	14	0.0752		0.0667	same	ok	1	2.7264	1.0209	1.0209	same	ok	3	0.3965	0.2862	0.2862	same
+array_max_float--ary10000.max.rb	ok	7	0.145		0.0382	same	ok	12	0.0901		0.0817	same	ok	1	2.9744	1.1891	1.1891	same	ok	3	0.4229	0.3075	0.3075	same
+array_max_float--ary100000.max.rb	ok	7	0.1545		0.0477	same	ok	10	0.1117		0.1033	same	ok	1	2.4659	0.938	0.938	same	ok	2	0.6624	0.5469	0.5469	same
+array_max_float--ary2.max.rb	ok	7	0.1536		0.0469	same	ok	13	0.0829		0.0745	same	ok	1	2.7703	1.0396	1.0396	same	ok	3	0.4113	0.3027	0.3027	same
+array_max_float--ary2000.max.rb	ok	7	0.148		0.0413	same	ok	13	0.0826		0.0741	same	ok	1	2.6972	1.0702	1.0702	same	ok	3	0.3704	0.251	0.251	same
+array_max_float--ary20000.max.rb	ok	7	0.1526		0.0458	same	ok	12	0.0841		0.0757	same	ok	1	2.5654	1.0608	1.0608	same	ok	3	0.4072	0.296	0.296	same
+array_max_float--ary3000.max.rb	ok	7	0.1525		0.0457	same	ok	13	0.0785		0.07	same	ok	1	2.9192	1.0536	1.0536	same	ok	3	0.464	0.3375	0.3375	same
+array_max_float--ary500.max.rb	ok	8	0.1348		0.0281	same	ok	12	0.0834		0.0749	same	ok	1	2.7605	1.0417	1.0417	same	ok	3	0.4061	0.2869	0.2869	same
+array_max_float--ary5000.max.rb	ok	7	0.1454		0.0386	same	ok	13	0.0801		0.0717	same	ok	1	2.8567	1.0453	1.0453	same	ok	3	0.4287	0.2973	0.2973	same
+array_max_float--ary50000.max.rb	ok	6	0.1923		0.0855	same	ok	11	0.0948		0.0863	same	ok	1	2.5331	0.9316	0.9316	same	ok	3	0.4991	0.3861	0.3861	same
+array_max_int--ary10.max.rb	ok	4	0.2561		0.1494	same	ok	2	0.544		0.5355	same	ok	1	3.197	1.7241	1.7241	same	ok	2	0.6898	0.5779	0.5779	same
+array_max_int--ary100.max.rb	ok	4	0.2973		0.1905	same	ok	2	0.6373		0.6289	same	ok	1	3.3097	1.5697	1.5697	same	ok	2	0.6435	0.5116	0.5116	same
+array_max_int--ary1000.max.rb	ok	4	0.3096		0.2028	same	ok	3	0.5175		0.5091	same	ok	1	3.6718	1.7753	1.7753	same	ok	2	0.6735	0.5376	0.5376	same
+array_max_int--ary10000.max.rb	ok	3	0.36		0.2532	same	ok	3	0.461		0.4526	same	ok	1	3.4086	1.7202	1.7202	same	ok	2	0.696	0.5651	0.5651	same
+array_max_int--ary100000.max.rb	ok	4	0.2818		0.175	same	ok	2	0.5313		0.5229	same	ok	1	2.993	1.5529	1.5529	same	ok	2	0.8716	0.7556	0.7556	same
+array_max_int--ary1000000.max.rb	ok	4	0.3546		0.2478	same	ok	2	0.5223		0.5139	same	ok	1	3.4506	1.7206	1.7206	same	ok	1	3.1306	3.0217	3.0217	same
+array_max_int--ary2.max.rb	ok	4	0.2686		0.1619	same	ok	2	0.5254		0.517	same	ok	1	3.5028	1.7513	1.7513	same	ok	2	0.8939	0.7382	0.7382	same
+array_max_int--ary2000.max.rb	ok	4	0.2998		0.1931	same	ok	3	0.467		0.4585	same	ok	1	3.167	1.5258	1.5258	same	ok	2	0.6193	0.4966	0.4966	same
+array_max_int--ary20000.max.rb	ok	3	0.3688		0.2621	same	ok	2	0.6545		0.646	same	ok	1	3.6599	1.6403	1.6403	same	ok	2	0.6986	0.5809	0.5809	same
+array_max_int--ary3000.max.rb	ok	4	0.2663		0.1595	same	ok	3	0.4418		0.4334	same	ok	1	3.4923	1.7886	1.7886	same	ok	2	0.6446	0.5343	0.5343	same
+array_max_int--ary500.max.rb	ok	3	0.3343		0.2275	same	ok	2	0.5689		0.5604	same	ok	1	3.0901	1.5789	1.5789	same	ok	2	0.8453	0.7229	0.7229	same
+array_max_int--ary5000.max.rb	ok	4	0.2733		0.1666	same	ok	2	0.7359		0.7274	same	ok	1	3.6098	1.5952	1.5952	same	ok	2	0.7079	0.5899	0.5899	same
+array_max_int--ary50000.max.rb	ok	3	0.3477		0.2409	same	ok	2	0.5194		0.5109	same	ok	1	3.2475	1.7321	1.7321	same	ok	1	1.0651	0.9393	0.9393	same
+array_max_str--ary10.max.rb	ok	5	0.2099		0.1032	same	ok	11	0.1036		0.0952	same	ok	1	2.7318	0.9536	0.9536	same	ok	3	0.4594	0.3361	0.3361	same
+array_max_str--ary100.max.rb	ok	5	0.2017		0.095	same	ok	9	0.1176		0.1092	same	ok	1	2.4338	0.825	0.825	same	ok	2	0.6053	0.4426	0.4426	same
+array_max_str--ary1000.max.rb	ok	5	0.2063		0.0995	same	ok	10	0.1049		0.0964	same	ok	1	2.5309	0.8426	0.8426	same	ok	3	0.4406	0.3145	0.3145	same
+array_max_str--ary10000.max.rb	ok	5	0.2115		0.1048	same	ok	11	0.0953		0.0869	same	ok	1	2.2312	0.7941	0.7941	same	ok	2	0.5016	0.3763	0.3763	same
+array_max_str--ary100000.max.rb	ok	5	0.2291		0.1223	same	ok	10	0.1064		0.098	same	ok	1	2.4135	0.8072	0.8072	same	ok	2	0.7093	0.5908	0.5908	same
+array_max_str--ary2.max.rb	ok	5	0.235		0.1282	same	ok	12	0.0868		0.0784	same	ok	1	2.4403	0.8111	0.8111	same	ok	2	0.5382	0.4071	0.4071	same
+array_max_str--ary2000.max.rb	ok	5	0.2203		0.1135	same	ok	12	0.0888		0.0804	same	ok	1	2.3734	0.7049	0.7049	same	ok	3	0.4358	0.3217	0.3217	same
+array_max_str--ary20000.max.rb	ok	6	0.1912		0.0844	same	ok	10	0.1001		0.0917	same	ok	1	2.6812	0.8045	0.8045	same	ok	2	0.535	0.4078	0.4078	same
+array_max_str--ary3000.max.rb	ok	5	0.202		0.0952	same	ok	11	0.0958		0.0874	same	ok	1	2.3782	0.6958	0.6958	same	ok	3	0.4468	0.3307	0.3307	same
+array_max_str--ary500.max.rb	ok	5	0.2084		0.1017	same	ok	12	0.0917		0.0833	same	ok	1	2.5595	0.8021	0.8021	same	ok	3	0.4524	0.3377	0.3377	same
+array_max_str--ary5000.max.rb	ok	4	0.2753		0.1685	same	ok	10	0.1051		0.0967	same	ok	1	2.6813	0.8919	0.8919	same	ok	2	0.5324	0.3847	0.3847	same
+array_max_str--ary50000.max.rb	ok	5	0.2249		0.1182	same	ok	10	0.1086		0.1001	same	ok	1	2.6486	0.9721	0.9721	same	ok	2	0.7218	0.5825	0.5825	same
+array_min--ary10.min.rb	ok	3	0.3996		0.2928	same	ok	3	0.4801		0.4717	same	ok	1	3.3141	1.6204	1.6204	same	ok	2	0.7791	0.639	0.639	same
+array_min--ary100.min.rb	ok	4	0.3032		0.1965	same	ok	2	0.5257		0.5173	same	ok	1	3.0663	1.5866	1.5866	same	ok	2	0.7493	0.6157	0.6157	same
+array_min--ary1000.min.rb	ok	4	0.2919		0.1851	same	ok	3	0.4045		0.3961	same	ok	1	3.3971	1.7684	1.7684	same	ok	2	0.7517	0.6211	0.6211	same
+array_min--ary10000.min.rb	ok	3	0.4106		0.3038	same	ok	2	0.784		0.7755	same	ok	1	3.5649	1.8078	1.8078	same	ok	2	0.9704	0.8415	0.8415	same
+array_min--ary100000.min.rb	ok	4	0.28		0.1732	same	ok	2	0.5012		0.4927	same	ok	1	3.3644	1.7117	1.7117	same	ok	1	1.0895	0.917	0.917	same
+array_min--ary1000000.min.rb	ok	4	0.2969		0.1901	same	ok	3	0.485		0.4766	same	ok	1	3.35	1.7807	1.7807	same	ok	1	3.5117	3.3531	3.3531	same
+array_min--ary2.min.rb	ok	4	0.3047		0.1979	same	ok	2	0.5117		0.5033	same	ok	1	3.4795	1.7062	1.7062	same	ok	2	0.6759	0.5615	0.5615	same
+array_min--ary2000.min.rb	ok	4	0.3411		0.2344	same	ok	2	0.8396		0.8312	same	ok	1	3.3494	1.5431	1.5431	same	ok	2	0.708	0.5787	0.5787	same
+array_min--ary20000.min.rb	ok	3	0.3534		0.2466	same	ok	2	0.5082		0.4997	same	ok	1	3.2864	1.6699	1.6699	same	ok	2	0.7585	0.638	0.638	same
+array_min--ary3000.min.rb	ok	4	0.3572		0.2504	same	ok	2	0.6006		0.5922	same	ok	1	3.5486	1.7048	1.7048	same	ok	2	0.8365	0.6945	0.6945	same
+array_min--ary500.min.rb	ok	4	0.2862		0.1794	same	ok	3	0.4404		0.432	same	ok	1	3.3377	1.6791	1.6791	same	ok	2	0.5965	0.4795	0.4795	same
+array_min--ary5000.min.rb	ok	4	0.2706		0.1638	same	ok	3	0.4529		0.4445	same	ok	1	3.5447	1.7804	1.7804	same	ok	2	0.7985	0.6775	0.6775	same
+array_min--ary50000.min.rb	ok	3	0.348		0.2412	same	ok	3	0.4849		0.4765	same	ok	1	3.3225	1.754	1.754	same	ok	2	0.8902	0.7581	0.7581	same
+array_sample--array_sample_0.rb	ok	9	0.1202		0.0134	same	ok	82	0.0122		0.0038	same	ok	1	1.8186	0.0198	0.0198	same	ok	7	0.154	0.0354	0.0354	same
+array_sample--array_sample_1.rb	ok	7	0.144		0.0372	same	ok	83	0.0121		0.0036	same	ok	1	1.9867	0.0296	0.0296	same	ok	7	0.158	0.0351	0.0351	same
+array_sample_100k_10.rb	ok	8	0.1388		0.032	same	ok	10	0.1032		0.0948	same	ok	1	2.585	0.3502	0.3502	same	ok	1	23.6898	23.5712	23.5712	same
+array_sample_100k_11.rb	ok	7	0.1443		0.0375	same	ok	11	0.0933		0.0848	same	ok	1	1.788	0.2968	0.2968	same	ok	1	23.2951	23.1533	23.1533	same
+array_sample_100k__100.rb	ok	4	0.2987		0.192	same	ok	4	0.2869		0.2784	same	ok	1	2.8898	1.2808	1.2808	same	ok	1	21.7948	21.684	21.684	same
+array_sample_100k__1k.rb	ok	2	1.1544		1.0476	same	ok	1	2.3023		2.2939	same	ok	1	11.3965	9.9051	9.9051	same	ok	1	23.3706	23.2458	23.2458	same
+array_sample_100k__6k.rb	ok	1	4.72		4.6132	same	ok	1	11.5366		11.5282	same	ok	1	61.2779	59.3796	59.3796	same	ok	1	28.2594	28.1453	28.1453	same
+array_sample_100k___10k.rb	ok	1	6.3593		6.2525	same	ok	1	19.4757		19.4673	same	ok	1	70.8423	69.2379	69.2379	same	ok	1	33.7044	33.5731	33.5731	same
+array_sample_100k___50k.rb	ok	1	22.575		22.4682	same	ok	1	120.7575		120.7491	same	ok	1	176.998	175.4334	175.4334	same	ok	1	69.5652	69.4285	69.4285	same
+array_sort_block.rb	ok	1	7.7201		7.6133	same	ok	1	64.3299		64.3215	same	ok	1	114.1047	112.4669	112.4669	same	ok	1	62.6074	62.5061	62.5061	same
+array_sort_float.rb	ok	1	2.4796		2.3728	same	ok	1	40.5707		40.5623	same	ok	1	15.4709	13.5522	13.5522	same	ok	1	28.956	28.8465	28.8465	same
+array_sort_int--ary10.sort.rb	ok	9	0.1115		0.0047	same	ok	80	0.0126		0.0041	same	ok	1	1.8203	0.0564	0.0564	same	ok	7	0.1539	0.0355	0.0355	same
+array_sort_int--ary100.sort.rb	ok	9	0.1165		0.0097	same	ok	77	0.0131		0.0047	same	ok	1	1.8348	0.0339	0.0339	same	ok	7	0.1594	0.0368	0.0368	same
+array_sort_int--ary1000.sort.rb	ok	9	0.1185		0.0117	same	ok	75	0.0134		0.005	same	ok	1	1.5922	0.0982	0.0982	same	ok	6	0.1752	0.0406	0.0406	same
+array_sort_int--ary10000.sort.rb	ok	10	0.1027		0.001	same	ok	41	0.0246		0.0162	same	ok	1	1.7483	0.1561	0.1561	same	ok	6	0.1862	0.072	0.072	same
+array_sort_int--ary2.sort.rb	ok	10	0.1086		0.0018	same	ok	95	0.0106		0.0022	same	ok	1	1.4219	0.0356	0.0356	same	ok	8	0.1414	0.0313	0.0313	same
+array_values_at_int.rb	ok	8	0.1292		0.0225	same	ok	16	0.0632		0.0547	same	ok	1	1.7682	0.3287	0.3287	same	ok	5	0.2004	0.0847	0.0847	same
+array_values_at_range.rb	ok	2	0.714		0.6072	same	ok	1	8.638		8.6295	same	ok	1	10.9813	9.3614	9.3614	same	ok	1	9.5018	9.3966	9.3966	same
+bighash.rb	ok	1	3.1845		3.0777	same	ok	1	16.2933		16.2849	same	ok	1	20.0916	18.3219	18.3219	same	ok	1	9.6533	9.4786	9.4786	same
+cgi_escape_html--cgi_escape_html_0.rb	ok	6	0.1733		0.0666	same	ok	105	0.0096		0.0011	same	ok	1	1.7868	0.0163	0.0163	same	fail	1	0.1376			-
+cgi_escape_html--cgi_escape_html_1.rb	ok	10	0.1052		0.001	same	ok	105	0.0095		0.0011	same	ok	1	1.4527	0.0142	0.0142	same	fail	1	0.1742			-
+cgi_escape_html--cgi_escape_html_2.rb	ok	11	0.0944		0.001	same	ok	114	0.0088		0.001	same	ok	1	1.6794	0.0132	0.0132	same	fail	1	0.1143			-
+cgi_escape_html--cgi_escape_html_3.rb	ok	9	0.1141		0.0073	same	ok	102	0.0099		0.0014	same	ok	1	1.9272	0.0148	0.0148	same	fail	1	0.1487			-
+cgi_escape_html--cgi_escape_html_4.rb	ok	10	0.1074		0.001	same	ok	108	0.0093		0.001	same	ok	1	1.3698	0.0161	0.0161	same	fail	1	0.1431			-
+cgi_escape_html--cgi_escape_html_5.rb	ok	10	0.1022		0.001	same	ok	101	0.01		0.0016	same	ok	1	1.3214	0.0163	0.0163	same	fail	1	0.1424			-
+cgi_escape_html--cgi_escape_html_6.rb	ok	10	0.105		0.001	same	ok	108	0.0093		0.001	same	ok	1	1.7681	0.0175	0.0175	same	fail	1	0.1488			-
+enum_lazy_flat_map--ary10.rb	ok	11	0.0998		0.001	same	ok	98	0.0102		0.0018	same	ok	1	1.4605	0.0162	0.0162	same	ok	8	0.1355	0.0298	0.0298	same
+enum_lazy_flat_map--ary100.rb	ok	8	0.1335		0.0267	same	ok	102	0.0098		0.0014	same	ok	1	1.4802	0.0246	0.0246	same	ok	7	0.1487	0.0334	0.0334	same
+enum_lazy_flat_map--ary2.rb	ok	9	0.1155		0.0087	same	ok	89	0.0113		0.0028	same	ok	1	1.7001	0.0122	0.0122	same	ok	7	0.1474	0.031	0.031	same
+enum_lazy_flat_map--ary20.rb	ok	9	0.1172		0.0104	same	ok	96	0.0104		0.002	same	ok	1	1.7585	0.0267	0.0267	same	ok	8	0.1349	0.0314	0.0314	same
+enum_lazy_flat_map--ary50.rb	ok	9	0.1144		0.0076	same	ok	96	0.0104		0.002	same	ok	1	1.4288	0.0142	0.0142	same	ok	8	0.137	0.0302	0.0302	same
+enum_lazy_flat_map--num10.rb	ok	10	0.1078		0.001	same	ok	96	0.0104		0.002	same	ok	1	1.4271	0.0141	0.0141	same	ok	7	0.153	0.0327	0.0327	same
+enum_lazy_flat_map--num3.rb	ok	9	0.1187		0.0119	same	ok	95	0.0106		0.0021	same	ok	1	1.7444	0.0323	0.0323	same	ok	7	0.1474	0.0302	0.0302	same
+enum_lazy_grep_v_100.rb	ok	2	0.6455		0.5388	same	ok	1	1.1989		1.1904	same	ok	1	8.9263	7.2467	7.2467	same	ok	1	1.5221	1.4011	1.4011	same
+enum_lazy_grep_v_20.rb	ok	3	0.3815		0.2747	same	ok	2	0.5664		0.5579	same	ok	1	5.386	3.9372	3.9372	same	ok	2	0.7947	0.6849	0.6849	same
+enum_lazy_grep_v_50.rb	ok	3	0.4877		0.3809	same	ok	2	0.8132		0.8047	same	ok	1	6.521	4.9073	4.9073	same	ok	2	0.924	0.8212	0.8212	same
+enum_lazy_uniq_100.rb	ok	2	0.8655		0.7588	same	ok	1	1.8638		1.8554	same	ok	1	9.5637	8.1948	8.1948	same	ok	1	297.3461	297.2379	297.2379	same
+enum_lazy_uniq_20.rb	ok	3	0.4519		0.3451	same	ok	2	0.6551		0.6467	same	ok	1	6.6099	4.2802	4.2802	same	ok	1	36.5429	36.438	36.438	same
+enum_lazy_uniq_50.rb	ok	2	0.5932		0.4864	same	ok	1	1.0051		0.9966	same	ok	1	7.7217	5.9498	5.9498	same	ok	1	111.893	111.7833	111.7833	same
+enum_lazy_zip--block.rb	ok	10	0.1058		0.001	same	ok	86	0.0117		0.0033	same	ok	1	1.9263	0.0144	0.0144	same	fail	1	0.1338			-
+enum_lazy_zip--chain-first_ary.rb	ok	10	0.1015		0.001	same	ok	106	0.0095		0.001	same	ok	1	1.677	0.0151	0.0151	same	ok	8	0.1401	0.0282	0.0282	same
+enum_lazy_zip--chain-first_noarg.rb	ok	10	0.1113		0.0046	same	ok	96	0.0105		0.002	same	ok	1	1.7793	0.0065	0.0065	same	ok	8	0.1389	0.0307	0.0307	same
+enum_lazy_zip--chain-first_nonary.rb	ok	10	0.1076		0.001	same	ok	99	0.0101		0.0017	same	ok	1	1.653	0.0237	0.0237	same	fail	1	0.1359			-
+enum_lazy_zip--chain-take3_ary.rb	ok	8	0.1269		0.0202	same	ok	97	0.0103		0.0019	same	ok	1	1.4173	0.015	0.015	same	ok	8	0.1363	0.0286	0.0286	same
+enum_lazy_zip--chain-take3_noarg.rb	ok	8	0.1321		0.0254	same	ok	106	0.0095		0.001	same	ok	1	1.7624	0.0155	0.0155	same	ok	6	0.1723	0.0389	0.0389	same
+enum_lazy_zip--chain-take3_nonary.rb	ok	10	0.1108		0.004	same	ok	95	0.0106		0.0022	same	ok	1	1.335	0.0189	0.0189	same	fail	1	0.1293			-
+enum_lazy_zip--first_ary.rb	ok	9	0.1157		0.0089	same	ok	105	0.0095		0.0011	same	ok	1	1.7669	0.0153	0.0153	same	ok	7	0.1495	0.0324	0.0324	same
+enum_lazy_zip--first_noarg.rb	ok	9	0.1115		0.0047	same	ok	96	0.0105		0.0021	same	ok	1	1.6042	0.016	0.016	same	ok	7	0.1578	0.033	0.033	same
+enum_lazy_zip--first_nonary.rb	ok	10	0.1062		0.001	same	ok	94	0.0107		0.0023	same	ok	1	1.6257	0.0228	0.0228	same	fail	1	0.1271			-
+enum_lazy_zip--take3_ary.rb	ok	9	0.1112		0.0044	same	ok	90	0.0112		0.0028	same	ok	1	1.8418	0.0076	0.0076	same	ok	7	0.1462	0.0317	0.0317	same
+enum_lazy_zip--take3_noarg.rb	ok	9	0.1145		0.0077	same	ok	94	0.0106		0.0022	same	ok	1	1.6708	0.0147	0.0147	same	ok	7	0.1467	0.0314	0.0314	same
+enum_lazy_zip--take3_nonary.rb	ok	10	0.1063		0.001	same	ok	99	0.0102		0.0018	same	ok	1	1.7442	0.0188	0.0188	same	fail	1	0.1339			-
+enum_minmax--set10.max.rb	ok	9	0.1208		0.014	same	ok	52	0.0194		0.011	same	ok	1	1.9608	0.1254	0.1254	same	ok	6	0.177	0.0636	0.0636	same
+enum_minmax--set10.min.rb	ok	10	0.1113		0.0045	same	ok	58	0.0175		0.009	same	ok	1	1.9254	0.1929	0.1929	same	ok	7	0.1622	0.0545	0.0545	same
+enum_minmax--set10.minmax.rb	ok	9	0.1215		0.0148	same	ok	56	0.018		0.0096	same	ok	1	1.5745	0.1528	0.1528	same	ok	6	0.178	0.0573	0.0573	same
+enum_minmax--set100.max.rb	ok	9	0.1159		0.0091	same	ok	56	0.018		0.0096	same	ok	1	2.0246	0.1513	0.1513	same	ok	6	0.1884	0.0665	0.0665	same
+enum_minmax--set100.min.rb	ok	9	0.1162		0.0094	same	ok	54	0.0187		0.0103	same	ok	1	1.8993	0.1909	0.1909	same	ok	6	0.1746	0.0613	0.0613	same
+enum_minmax--set100.minmax.rb	ok	9	0.1133		0.0065	same	ok	45	0.0224		0.0139	same	ok	1	2.2891	0.17	0.17	same	ok	6	0.1686	0.0578	0.0578	same
+enum_minmax--set1000.max.rb	ok	9	0.1205		0.0137	same	ok	52	0.0195		0.011	same	ok	1	1.8075	0.1713	0.1713	same	ok	7	0.1651	0.0597	0.0597	same
+enum_minmax--set1000.min.rb	ok	10	0.1008		0.001	same	ok	51	0.0197		0.0113	same	ok	1	2.0357	0.1745	0.1745	same	ok	6	0.1889	0.0692	0.0692	same
+enum_minmax--set1000.minmax.rb	ok	9	0.1274		0.0206	same	ok	45	0.0225		0.0141	same	ok	1	1.89	0.1576	0.1576	same	ok	7	0.1613	0.0594	0.0594	same
+enum_minmax--set10000.max.rb	ok	10	0.1052		0.001	same	ok	51	0.0199		0.0114	same	ok	1	1.9137	0.1587	0.1587	same	ok	5	0.217	0.0901	0.0901	same
+enum_minmax--set10000.min.rb	ok	10	0.1061		0.001	same	ok	48	0.021		0.0126	same	ok	1	2.073	0.151	0.151	same	ok	5	0.2115	0.0945	0.0945	same
+enum_minmax--set10000.minmax.rb	ok	9	0.1128		0.006	same	ok	45	0.0224		0.014	same	ok	1	2.0076	0.187	0.187	same	ok	5	0.2313	0.124	0.124	same
+enum_minmax--set2.max.rb	ok	9	0.1124		0.0057	same	ok	56	0.018		0.0095	same	ok	1	1.8727	0.168	0.168	same	ok	6	0.1681	0.0591	0.0591	same
+enum_minmax--set2.min.rb	ok	9	0.1204		0.0136	same	ok	52	0.0193		0.0109	same	ok	1	2.1789	0.1458	0.1458	same	ok	6	0.1934	0.0687	0.0687	same
+enum_minmax--set2.minmax.rb	ok	8	0.1275		0.0207	same	ok	44	0.0228		0.0143	same	ok	1	1.8662	0.1743	0.1743	same	ok	7	0.1627	0.0558	0.0558	same
+enum_sort--set10.sort_by.rb	ok	8	0.1256		0.0188	same	ok	51	0.0198		0.0114	same	ok	1	1.9465	0.1628	0.1628	same	ok	6	0.1705	0.0607	0.0607	same
+enum_sort--set100.sort_by.rb	ok	9	0.1139		0.0071	same	ok	49	0.0205		0.012	same	ok	1	1.5959	0.1583	0.1583	same	ok	6	0.1801	0.0646	0.0646	same
+enum_sort--set1000.sort_by.rb	ok	9	0.1162		0.0095	same	ok	48	0.021		0.0126	same	ok	1	1.5966	0.1642	0.1642	same	ok	7	0.1632	0.0559	0.0559	same
+enum_sort--set10000.sort_by.rb	ok	9	0.1169		0.0102	same	ok	37	0.0271		0.0187	same	ok	1	1.7832	0.1966	0.1966	same	ok	6	0.1736	0.0689	0.0689	same
+enum_sort--set2.sort_by.rb	ok	9	0.1147		0.0079	same	ok	49	0.0208		0.0124	same	ok	1	1.9868	0.1863	0.1863	same	ok	6	0.1976	0.0696	0.0696	same
+enum_sort_by--all_zero10.sort_by.rb	ok	2	1.0073		0.9005	?	ok	1	1.2094		1.201	?	fail	1	20.2504			-	ok	1	3.5392	3.35	3.35	?
+enum_sort_by--all_zero1000.sort_by.rb	ok	2	0.8307		0.7239	?	ok	2	0.9105		0.902	?	fail	1	19.3289			-	ok	1	2.9644	2.7887	2.7887	?
+enum_sort_by--all_zero100000.sort_by.rb	ok	1	1.0468		0.94	?	ok	2	0.9828		0.9744	?	fail	1	22.5853			-	ok	1	3.1833	2.9782	2.9782	?
+enum_sort_by--all_zero2.sort_by.rb	ok	2	0.7755		0.6687	?	ok	1	1.0429		1.0344	?	fail	1	21.2879			-	ok	1	2.8001	2.5895	2.5895	?
+enum_sort_by--fixnum_array10.sort_by.rb	ok	2	0.8441		0.7374	?	ok	2	0.9644		0.956	?	fail	1	21.7465			-	ok	1	3.3425	3.1249	3.1249	?
+enum_sort_by--fixnum_array1000.sort_by.rb	ok	2	0.891		0.7843	?	ok	2	0.9485		0.9401	?	fail	1	20.0838			-	ok	1	3.2056	2.9993	2.9993	?
+enum_sort_by--fixnum_array100000.sort_by.rb	ok	1	1.1133		1.0065	?	ok	1	1.2539		1.2454	?	fail	1	16.9939			-	ok	1	3.5647	3.3884	3.3884	?
+enum_sort_by--fixnum_array2.sort_by.rb	ok	2	1.0271		0.9203	?	ok	1	1.0612		1.0527	?	fail	1	19.1776			-	ok	1	2.9256	2.7339	2.7339	?
+enum_sort_by--float_array10.sort_by.rb	ok	2	0.8086		0.7018	?	ok	2	0.9567		0.9482	?	fail	1	18.56			-	ok	1	2.919	2.7178	2.7178	?
+enum_sort_by--float_array1000.sort_by.rb	ok	2	0.8627		0.7559	?	ok	2	0.9177		0.9093	?	fail	1	16.2965			-	ok	1	2.9694	2.7694	2.7694	?
+enum_sort_by--float_array100000.sort_by.rb	ok	2	0.9456		0.8388	?	ok	1	1.9786		1.9702	?	fail	1	17.9888			-	ok	1	3.5089	3.3283	3.3283	?
+enum_sort_by--float_array2.sort_by.rb	ok	1	1.0878		0.981	?	ok	1	1.0099		1.0014	?	fail	1	18.9245			-	ok	1	3.0283	2.8281	2.8281	?
+enum_sort_by--mix_array10.sort_by.rb	ok	2	0.9727		0.866	?	ok	2	0.915		0.9066	?	fail	1	16.5967			-	ok	1	3.1697	2.9943	2.9943	?
+enum_sort_by--mix_array1000.sort_by.rb	ok	1	1.0794		0.9726	?	ok	2	0.9385		0.93	?	fail	1	17.0655			-	ok	1	3.0311	2.8421	2.8421	?
+enum_sort_by--mix_array100000.sort_by.rb	ok	2	0.959		0.8522	?	ok	1	1.8803		1.8719	?	fail	1	20.1657			-	ok	1	4.3804	4.1593	4.1593	?
+enum_sort_by--mix_array2.sort_by.rb	ok	2	0.8647		0.7579	?	ok	2	0.9426		0.9341	?	fail	1	19.4677			-	ok	1	3.5795	3.3722	3.3722	?
+enum_sort_by--string_length10.sort_by.rb	ok	2	0.9913		0.8845	?	ok	1	1.0013		0.9928	?	fail	1	17.3073			-	ok	1	3.0368	2.8071	2.8071	?
+enum_sort_by--string_length1000.sort_by.rb	ok	2	1.0422		0.9355	?	ok	1	1.0998		1.0913	?	fail	1	16.5226			-	ok	1	2.8255	2.6236	2.6236	?
+enum_sort_by--string_length100000.sort_by.rb	ok	2	0.9765		0.8697	?	ok	1	1.6584		1.6499	?	fail	1	19.0804			-	ok	1	4.1019	3.9042	3.9042	?
+enum_sort_by--string_length2.sort_by.rb	ok	2	0.9609		0.8541	?	ok	1	1.1167		1.1082	?	fail	1	18.7414			-	ok	1	2.9556	2.738	2.738	?
+enum_tally--tally.rb	ok	9	0.1243		0.0176	same	ok	9	0.1187		0.1102	same	ok	1	2.0014	0.4063	0.4063	same	ok	2	0.8169	0.7058	0.7058	same
+file_basename--long.rb	ok	10	0.1068		0.001	same	ok	108	0.0093		0.001	same	ok	1	1.5884	0.0071	0.0071	same	ok	8	0.1373	0.0285	0.0285	same
+file_basename--long_name.rb	ok	10	0.1109		0.0041	same	ok	90	0.0112		0.0027	same	ok	1	1.5226	0.0119	0.0119	same	ok	7	0.1459	0.0296	0.0296	same
+file_basename--withext.rb	ok	10	0.1095		0.0027	same	ok	93	0.0108		0.0023	same	ok	1	1.6961	0.0137	0.0137	same	ok	8	0.1353	0.0278	0.0278	same
+file_dirname--long.rb	ok	9	0.1219		0.0151	same	ok	96	0.0104		0.002	same	ok	1	1.5978	0.0125	0.0125	same	ok	8	0.1406	0.0306	0.0306	same
+file_dirname--n_4.rb	ok	11	0.0974		0.001	same	ok	107	0.0094		0.001	same	ok	1	1.9626	0.0106	0.0106	same	ok	8	0.1406	0.0305	0.0305	same
+file_dirname--short.rb	ok	9	0.1193		0.0125	same	ok	94	0.0106		0.0022	same	ok	1	1.9078	0.0102	0.0102	same	ok	8	0.1391	0.0316	0.0316	same
+file_expand_path--expand_path.rb	ok	9	0.1157		0.0089	same	ok	104	0.0097		0.0012	same	ok	1	1.7177	0.0124	0.0124	same	ok	8	0.1412	0.0305	0.0305	same
+file_extname--long.rb	ok	10	0.1009		0.001	same	ok	92	0.0109		0.0025	same	ok	1	1.652	0.0127	0.0127	same	ok	7	0.1505	0.0295	0.0295	same
+file_extname--long_name.rb	ok	9	0.1115		0.0047	same	ok	89	0.0113		0.0029	same	ok	1	1.6174	0.0178	0.0178	same	ok	7	0.1565	0.0328	0.0328	same
+file_extname--short.rb	ok	9	0.1155		0.0087	same	ok	100	0.0101		0.0016	same	ok	1	1.548	0.0114	0.0114	same	ok	8	0.1396	0.0309	0.0309	same
+file_join--array.rb	ok	10	0.1035		0.001	same	ok	100	0.0101		0.0016	same	ok	1	1.6682	0.0078	0.0078	same	ok	8	0.1369	0.0301	0.0301	same
+file_join--many_strings.rb	ok	11	0.0972		0.001	same	ok	112	0.009		0.001	same	ok	1	1.6767	0.0107	0.0107	same	ok	8	0.1385	0.0289	0.0289	same
+file_join--mixed.rb	ok	10	0.1008		0.001	same	ok	104	0.0097		0.0012	same	ok	1	1.6576	0.0191	0.0191	same	ok	8	0.1278	0.0272	0.0272	same
+file_join--two_strings.rb	ok	11	0.0957		0.001	same	ok	103	0.0098		0.0014	same	ok	1	1.5972	0.0114	0.0114	same	ok	7	0.1513	0.0338	0.0338	same
+float_methods---_.rb	ok	9	0.1129		0.0062	same	ok	101	0.0099		0.0015	same	ok	1	1.7653	0.0123	0.0123	same	ok	8	0.1362	0.028	0.028	same
+float_methods--abs.rb	ok	9	0.1228		0.016	same	ok	95	0.0105		0.0021	same	ok	1	1.6706	0.0104	0.0104	same	ok	7	0.1646	0.032	0.032	same
+float_methods--magnitude.rb	ok	10	0.1013		0.001	same	ok	92	0.0109		0.0024	same	ok	1	1.6669	0.0086	0.0086	same	ok	7	0.154	0.0334	0.0334	same
+float_methods--to_f.rb	ok	8	0.1304		0.0236	same	ok	89	0.0113		0.0028	same	ok	1	1.6121	0.0139	0.0139	same	ok	8	0.1408	0.0326	0.0326	same
+float_methods--zero_.rb	ok	9	0.1227		0.0159	same	ok	94	0.0107		0.0022	same	ok	1	1.9151	0.0115	0.0115	same	ok	7	0.156	0.0323	0.0323	same
+float_neg_posi--negative_.rb	ok	10	0.1044		0.001	same	ok	93	0.0108		0.0023	same	ok	1	1.691	0.0188	0.0188	same	ok	7	0.154	0.0368	0.0368	same
+float_neg_posi--positive_.rb	ok	10	0.1091		0.0023	same	ok	89	0.0113		0.0028	same	ok	1	1.9717	0.0112	0.0112	same	ok	8	0.1367	0.0293	0.0293	same
+float_predicate--float_finite_.rb	ok	10	0.1019		0.001	same	ok	92	0.011		0.0025	same	ok	1	2.0876	0.0125	0.0125	same	ok	7	0.1478	0.0311	0.0311	same
+float_predicate--float_infinite_.rb	ok	8	0.1333		0.0266	same	ok	94	0.0107		0.0023	same	ok	1	1.6268	0.0135	0.0135	same	ok	7	0.144	0.0311	0.0311	same
+float_predicate--float_nan_.rb	ok	10	0.111		0.0042	same	ok	99	0.0101		0.0017	same	ok	1	1.8497	0.0138	0.0138	same	ok	7	0.1544	0.0321	0.0321	same
+float_predicate--float_negative_.rb	ok	9	0.1167		0.0099	same	ok	93	0.0108		0.0024	same	ok	1	1.7191	0.0164	0.0164	same	ok	7	0.1527	0.0301	0.0301	same
+float_predicate--float_positive_.rb	ok	11	0.098		0.001	same	ok	97	0.0104		0.0019	same	ok	1	1.5444	0.0138	0.0138	same	ok	8	0.1429	0.0309	0.0309	same
+float_predicate--float_zero_.rb	ok	10	0.1075		0.001	same	ok	96	0.0104		0.002	same	ok	1	1.5083	0.0193	0.0193	same	ok	7	0.1574	0.0329	0.0329	same
+float_to_s--to_s.rb	ok	9	0.1226		0.0158	same	ok	53	0.0189		0.0104	same	ok	1	1.8549	0.3764	0.3764	same	ok	7	0.1516	0.0398	0.0398	same
+gc_hash1.rb	ok	1	5.3568		5.25	same	ok	1	10.5393		10.5308	same	ok	1	129.8793	128.0891	128.0891	same	ok	1	19.258	19.1143	19.1143	same
+gc_hash2.rb	ok	1	52.3556		52.2488	?	ok	1	21.6275		21.6191	?	fail	1	59.1982			-	ok	1	27.2261	26.9933	26.9933	?
+gc_null.rb	ok	10	0.1031		0.001	same	ok	107	0.0094		0.001	same	ok	1	1.7952	0.0087	0.0087	same	ok	8	0.1375	0.0295	0.0295	same
+hash_ar_aref--hit_first.rb	ok	10	0.1057		0.001	same	ok	105	0.0096		0.0011	same	ok	1	1.3785	0.0182	0.0182	same	ok	8	0.1378	0.0289	0.0289	same
+hash_ar_aref--hit_fourth.rb	ok	11	0.0961		0.001	same	ok	102	0.0098		0.0014	same	ok	1	1.8068	0.0142	0.0142	same	ok	7	0.1436	0.031	0.031	same
+hash_ar_aref--hit_last.rb	ok	10	0.1017		0.001	same	ok	104	0.0096		0.0012	same	ok	1	1.5489	0.0098	0.0098	same	ok	7	0.1496	0.0319	0.0319	same
+hash_ar_aref--hit_third.rb	ok	9	0.1123		0.0055	same	ok	104	0.0096		0.0012	same	ok	1	1.7256	0.0135	0.0135	same	ok	8	0.1361	0.0286	0.0286	same
+hash_ar_aref--miss.rb	ok	10	0.1097		0.003	same	ok	106	0.0095		0.0011	same	ok	1	1.529	0.0159	0.0159	same	ok	7	0.1447	0.0315	0.0315	same
+hash_ar_aref--miss_empty.rb	ok	11	0.0948		0.001	same	ok	108	0.0093		0.001	same	ok	1	1.8031	0.0056	0.0056	same	ok	8	0.1338	0.0282	0.0282	same
+hash_aref_array.rb	ok	2	1.0656		0.9588	same	ok	1	1.8616		1.8531	same	ok	1	42.7465	41.3663	41.3663	same	ok	1	5.0273	4.9079	4.9079	same
+hash_aref_dsym.rb	ok	2	0.6153		0.5085	same	ok	1	2.7743		2.7659	same	ok	1	10.3909	8.7958	8.7958	same	ok	1	2.5612	2.4562	2.4562	same
+hash_aref_fix.rb	ok	2	0.5983		0.4915	same	ok	1	2.6975		2.689	same	ok	1	10.2872	8.6956	8.6956	same	ok	1	2.618	2.5256	2.5256	same
+hash_defaults--default_aref.rb	ok	9	0.1231		0.0164	same	ok	104	0.0096		0.0012	same	ok	1	1.601	0.012	0.012	same	ok	7	0.1463	0.0322	0.0322	same
+hash_defaults--default_method.rb	ok	10	0.1026		0.001	same	ok	116	0.0086		0.001	same	ok	1	1.5481	0.0154	0.0154	same	ok	7	0.1467	0.0322	0.0322	same
+hash_dup--dup_larger.rb	ok	10	0.1039		0.001	same	ok	112	0.009		0.001	same	ok	1	1.4554	0.0124	0.0124	same	ok	8	0.1315	0.0273	0.0273	same
+hash_dup--dup_small.rb	ok	10	0.1097		0.0029	same	ok	111	0.009		0.001	same	ok	1	1.879	0.0181	0.0181	same	ok	8	0.1378	0.0282	0.0282	same
+hash_first--hash1.rb	ok	2	0.8027		0.6959	same	ok	1	4.1332		4.1248	same	ok	1	11.5018	9.5704	9.5704	same	timeout	1	300.0429			-
+hash_first--hash2.rb	ok	2	0.8267		0.7199	same	ok	1	4.3528		4.3443	same	ok	1	11.1002	9.2747	9.2747	same	timeout	1	300.034			-
+hash_flatten.rb	ok	3	0.4207		0.3139	same	ok	3	0.4253		0.4168	same	ok	1	4.4637	2.8119	2.8119	same	ok	1	5.3074	5.2048	5.2048	same
+hash_ident_num.rb	ok	2	0.5574		0.4506	same	ok	1	2.5206		2.5121	same	ok	1	10.4269	8.936	8.936	same	ok	1	2.6088	2.4658	2.4658	same
+hash_ident_str.rb	ok	2	0.5637		0.4569	same	ok	1	2.6609		2.6524	same	ok	1	10.7971	9.2426	9.2426	same	ok	1	2.4804	2.3775	2.3775	same
+hash_ident_sym.rb	ok	2	0.5867		0.4799	same	ok	1	2.7723		2.7639	same	ok	1	10.3089	8.6605	8.6605	same	ok	1	2.6343	2.5347	2.5347	same
+hash_key--hash_key.rb	ok	10	0.1041		0.001	same	ok	118	0.0085		0.001	same	ok	1	1.7941	0.0108	0.0108	same	ok	8	0.1303	0.0292	0.0292	same
+hash_keys.rb	ok	4	0.3165		0.2097	same	ok	2	0.6724		0.664	same	ok	1	4.8319	3.0811	3.0811	same	ok	1	1.0588	0.9452	0.9452	same
+hash_literal_small2.rb	ok	2	0.8091		0.7024	same	ok	1	1.9839		1.9754	same	ok	1	65.1505	63.2472	63.2472	same	ok	1	3.2285	3.0407	3.0407	same
+hash_literal_small4.rb	ok	1	1.0251		0.9184	?	ok	1	2.8918		2.8834	?	fail	1	89.5422			-	ok	1	3.5326	3.359	3.359	?
+hash_literal_small8.rb	ok	2	0.931		0.8242	same	ok	1	12.946		12.9376	same	ok	1	43.4987	41.5702	41.5702	same	ok	1	5.2803	5.0163	5.0163	same
+hash_long.rb	ok	2	0.9156		0.8089	same	ok	1	4.752		4.7436	same	ok	1	40.725	38.7322	38.7322	same	ok	1	3.0376	2.9366	2.9366	same
+hash_shift.rb	ok	8	0.1307		0.0239	same	ok	5	0.2337		0.2253	same	ok	1	1.9336	0.3413	0.3413	same	ok	3	0.3651	0.2617	0.2617	same
+hash_shift_u16.rb	ok	5	0.2398		0.133	same	ok	1	1.3905		1.382	same	ok	1	3.1455	1.5441	1.5441	same	ok	1	5.7963	5.6988	5.6988	same
+hash_shift_u24.rb	ok	4	0.2508		0.144	same	ok	1	1.7915		1.7831	same	ok	1	3.2228	1.5696	1.5696	same	ok	1	5.8774	5.771	5.771	same
+hash_shift_u32.rb	ok	4	0.2897		0.1829	same	ok	1	1.7115		1.703	same	ok	1	3.4229	1.8186	1.8186	same	ok	1	6.0107	5.9	5.9	same
+hash_small2.rb	ok	1	1.1589		1.0521	same	ok	1	3.7784		3.7699	same	ok	1	53.714	52.0044	52.0044	same	ok	1	4.3831	4.1662	4.1662	same
+hash_small4.rb	ok	1	1.4682		1.3615	same	ok	1	9.8539		9.8455	same	ok	1	77.8673	76.0469	76.0469	same	ok	1	5.7202	5.531	5.531	same
+hash_small8.rb	ok	1	2.1453		2.0385	?	ok	1	25.8349		25.8264	?	fail	1	99.9047			-	ok	1	7.5837	7.4049	7.4049	?
+hash_to_proc.rb	ok	9	0.1139		0.0071	same	ok	29	0.0351		0.0267	same	ok	1	1.7009	0.1576	0.1576	same	ok	8	0.143	0.0427	0.0427	same
+hash_values.rb	ok	3	0.3431		0.2363	same	ok	2	0.6914		0.683	same	ok	1	4.7583	3.3233	3.3233	same	ok	1	3.4016	3.2993	3.2993	same
+int_to_s--big_100digit.rb	ok	10	0.1071		0.001	same	ok	108	0.0093		0.001	same	ok	1	1.3866	0.0128	0.0128	same	ok	8	0.1313	0.0274	0.0274	same
+int_to_s--big_20digit.rb	ok	10	0.1077		0.001	same	ok	110	0.0091		0.001	same	ok	1	1.6175	0.0146	0.0146	same	ok	8	0.1348	0.0277	0.0277	same
+int_to_s--big_40digit.rb	ok	9	0.1133		0.0065	same	ok	101	0.01		0.0015	same	ok	1	1.5442	0.0347	0.0347	same	ok	8	0.1337	0.0283	0.0283	same
+int_to_s--fix_10digit.rb	ok	8	0.1352		0.0284	same	ok	96	0.0105		0.0021	same	ok	1	1.6315	0.0257	0.0257	same	ok	8	0.1319	0.0305	0.0305	same
+int_to_s--fix_19digit.rb	ok	10	0.1074		0.001	same	ok	102	0.0099		0.0015	same	ok	1	1.4633	0.0123	0.0123	same	ok	7	0.1435	0.0293	0.0293	same
+int_to_s--fix_1digit.rb	ok	9	0.1241		0.0174	same	ok	105	0.0096		0.0011	same	ok	1	1.8026	0.0114	0.0114	same	ok	8	0.1371	0.0298	0.0298	same
+int_to_s--fix_2digit.rb	ok	9	0.1129		0.0061	same	ok	94	0.0106		0.0022	same	ok	1	1.8417	0.0182	0.0182	same	ok	8	0.1437	0.0296	0.0296	same
+int_to_s--fix_3digit.rb	ok	8	0.1272		0.0204	same	ok	92	0.0109		0.0025	same	ok	1	1.6327	0.0066	0.0066	same	ok	8	0.1317	0.0287	0.0287	same
+int_to_s--fix_5digit.rb	ok	9	0.1151		0.0083	same	ok	94	0.0107		0.0023	same	ok	1	1.6115	0.0152	0.0152	same	ok	7	0.143	0.0315	0.0315	same
+int_to_s--fix_negative.rb	ok	10	0.1076		0.001	same	ok	81	0.0124		0.004	same	ok	1	1.8609	0.0144	0.0144	same	ok	7	0.1553	0.0341	0.0341	same
+int_to_s--interp_id.rb	ok	7	0.1502		0.0434	same	ok	94	0.0107		0.0022	same	ok	1	1.3981	0.0157	0.0157	same	ok	8	0.1413	0.0318	0.0318	same
+int_to_s--interp_mixed.rb	ok	10	0.1001		0.001	same	ok	108	0.0093		0.001	same	ok	1	1.4599	0.0103	0.0103	same	ok	7	0.1617	0.0364	0.0364	same
+integer_predicate--integer_even_.rb	ok	10	0.1035		0.001	same	ok	92	0.0109		0.0025	same	ok	1	1.7499	0.0135	0.0135	same	ok	8	0.1436	0.032	0.032	same
+integer_predicate--integer_odd_.rb	ok	10	0.1072		0.001	same	ok	77	0.0151		0.0066	same	ok	1	1.7644	0.012	0.012	same	ok	8	0.1303	0.0294	0.0294	same
+integer_predicate--integer_zero_.rb	ok	10	0.1023		0.001	same	ok	99	0.0101		0.0017	same	ok	1	2.0527	0.0215	0.0215	same	ok	8	0.1291	0.028	0.028	same
+kernel_clone--clone.rb	ok	11	0.0975		0.001	same	ok	109	0.0093		0.001	same	ok	1	1.7492	0.0084	0.0084	same	ok	6	0.173	0.0409	0.0409	same
+kernel_clone--clone_false.rb	ok	6	0.1722		0.0655	same	ok	93	0.0108		0.0023	same	ok	1	1.7519	0.0124	0.0124	same	ok	7	0.1446	0.0305	0.0305	same
+kernel_clone--clone_true.rb	ok	9	0.1145		0.0078	same	ok	111	0.0091		0.001	same	ok	1	1.554	0.0197	0.0197	same	ok	8	0.1317	0.0298	0.0298	same
+kernel_float--float.rb	ok	11	0.0961		0.001	same	ok	113	0.0089		0.001	same	ok	1	1.586	0.0104	0.0104	same	ok	8	0.1301	0.0299	0.0299	same
+kernel_float--float_false.rb	ok	10	0.1088		0.002	same	ok	110	0.0091		0.001	same	ok	1	1.329	0.0138	0.0138	same	ok	9	0.122	0.0266	0.0266	same
+kernel_float--float_true.rb	ok	10	0.1071		0.001	same	ok	111	0.009		0.001	same	ok	1	1.688	0.0144	0.0144	same	ok	7	0.1442	0.0307	0.0307	same
+kernel_tap--kernel_tap.rb	ok	11	0.0975		0.001	same	ok	104	0.0097		0.0012	same	ok	1	1.731	0.0114	0.0114	same	ok	9	0.1248	0.0277	0.0277	same
+kernel_then--kernel_then.rb	ok	10	0.1011		0.001	same	ok	110	0.0092		0.001	same	ok	1	1.7098	0.0082	0.0082	same	ok	8	0.1392	0.0303	0.0303	same
+kernel_then--kernel_then_enum.rb	ok	9	0.1176		0.0108	same	ok	107	0.0094		0.001	same	ok	1	1.636	0.009	0.009	same	ok	8	0.1322	0.03	0.03	same
+kernel_then--kernel_yield_self.rb	ok	10	0.1141		0.0074	same	ok	111	0.009		0.001	same	ok	1	1.849	0.0092	0.0092	same	ok	7	0.1435	0.0287	0.0287	same
+kernel_then--kernel_yield_self_enum.rb	ok	10	0.1063		0.001	same	ok	101	0.0099		0.0015	same	ok	1	1.6058	0.0162	0.0162	same	ok	7	0.1525	0.0308	0.0308	same
+keyword_arguments--kw_and_splat_to_kw.rb	ok	9	0.1138		0.007	same	ok	106	0.0095		0.001	same	ok	1	1.5361	0.0138	0.0138	same	ok	7	0.1566	0.0337	0.0337	same
+keyword_arguments--kw_and_splat_to_kw_splat.rb	ok	9	0.1117		0.0049	same	ok	92	0.0109		0.0025	same	ok	1	1.5339	0.0196	0.0196	same	ok	7	0.1526	0.0345	0.0345	same
+keyword_arguments--kw_splat_to_kw.rb	ok	9	0.1207		0.0139	same	ok	108	0.0093		0.001	same	ok	1	1.522	0.0173	0.0173	same	ok	8	0.1336	0.0289	0.0289	same
+keyword_arguments--kw_splat_to_kw_splat.rb	ok	8	0.1267		0.0199	same	ok	103	0.0097		0.0013	same	ok	1	1.908	0.0113	0.0113	same	ok	8	0.1348	0.0286	0.0286	same
+keyword_arguments--kw_splats_to_kw.rb	ok	10	0.1051		0.001	same	ok	109	0.0092		0.001	same	ok	1	1.6801	0.0194	0.0194	same	ok	8	0.1322	0.0263	0.0263	same
+keyword_arguments--kw_splats_to_kw_splat.rb	ok	10	0.1056		0.001	same	ok	114	0.0088		0.001	same	ok	1	1.3698	0.0111	0.0111	same	ok	7	0.1453	0.0285	0.0285	same
+keyword_arguments--kw_to_kw.rb	ok	9	0.1164		0.0096	same	ok	94	0.0108		0.0023	same	ok	1	2.0274	0.021	0.021	same	ok	8	0.1417	0.0301	0.0301	same
+keyword_arguments--kw_to_kw_splat.rb	ok	8	0.1256		0.0188	same	ok	103	0.0098		0.0013	same	ok	1	1.8161	0.0092	0.0092	same	ok	8	0.1421	0.0299	0.0299	same
+loop_each--loop_each.rb	ok	1	1.9366		1.8298	same	ok	1	20.4482		20.4398	same	ok	1	91.1225	89.5178	89.5178	same	ok	1	7.5979	7.4412	7.4412	same
+loop_for.rb	ok	1	1.6862		1.5795	same	ok	1	8.7022		8.6937	same	ok	1	43.3955	41.5681	41.5681	same	ok	1	10.7197	10.4833	10.4833	same
+loop_times.rb	ok	1	1.4034		1.2966	same	ok	1	7.0705		7.0621	same	ok	1	28.7628	26.9548	26.9548	same	ok	1	7.2861	7.1649	7.1649	same
+loop_whileloop.rb	ok	2	0.6798		0.5731	same	ok	1	1.5561		1.5476	same	ok	1	18.0903	16.2293	16.2293	same	ok	1	7.3488	7.2584	7.2584	same
+loop_whileloop2.rb	ok	4	0.2615		0.1547	same	ok	2	0.5009		0.4924	same	ok	1	4.9039	3.0118	3.0118	same	ok	1	2.03	1.8819	1.8819	same
+match_gt4.rb	ok	2	0.9598		0.853	same	ok	1	1.1736		1.1652	same	ok	1	13.2837	11.6888	11.6888	same	ok	1	2.7279	2.6231	2.6231	same
+match_small.rb	ok	2	0.6932		0.5864	same	ok	2	0.7807		0.7722	same	ok	1	10.4417	8.6948	8.6948	same	ok	1	1.9164	1.7961	1.7961	same
+nil_p--nil_p_0.rb	ok	10	0.1048		0.001	same	ok	96	0.0105		0.002	same	ok	1	1.8647	0.0119	0.0119	same	ok	8	0.134	0.0286	0.0286	same
+nil_p--nil_p_1.rb	ok	10	0.1065		0.001	same	ok	113	0.009		0.001	same	ok	1	1.6795	0.0111	0.0111	same	ok	8	0.1335	0.0286	0.0286	same
+nil_p--nil_p_2.rb	ok	10	0.1069		0.001	same	ok	115	0.0087		0.001	same	ok	1	1.6189	0.0215	0.0215	same	ok	7	0.147	0.0292	0.0292	same
+nilclass--splat.rb	ok	9	0.1143		0.0075	same	ok	92	0.0109		0.0024	same	ok	1	1.9998	0.0162	0.0162	same	ok	8	0.1412	0.0316	0.0316	same
+nilclass--to_f.rb	ok	9	0.1247		0.0179	same	ok	110	0.0091		0.001	same	ok	1	1.4302	0.0078	0.0078	same	ok	8	0.1368	0.0307	0.0307	same
+nilclass--to_i.rb	ok	10	0.1083		0.0016	same	ok	96	0.0105		0.002	same	ok	1	1.4843	0.0125	0.0125	same	ok	8	0.1385	0.0297	0.0297	same
+num_zero_p--num_zero_p_0.rb	ok	10	0.1013		0.001	same	ok	94	0.0107		0.0022	same	ok	1	1.5451	0.0148	0.0148	same	ok	8	0.1381	0.0284	0.0284	same
+num_zero_p--num_zero_p_1.rb	ok	11	0.1002		0.001	same	ok	114	0.0088		0.001	same	ok	1	1.404	0.0147	0.0147	same	ok	7	0.1637	0.0362	0.0362	same
+numeric_methods--finite_.rb	ok	11	0.0979		0.001	same	ok	111	0.009		0.001	same	ok	1	1.6538	0.0099	0.0099	same	fail	1	0.1556			-
+numeric_methods--infinite_.rb	ok	10	0.1086		0.0018	same	ok	93	0.0108		0.0024	same	ok	1	1.7705	0.0124	0.0124	same	fail	1	0.1445			-
+numeric_methods--integer_.rb	ok	9	0.1138		0.007	same	ok	97	0.0104		0.0019	same	ok	1	1.4545	0.0142	0.0142	same	ok	8	0.1404	0.0305	0.0305	same
+object_id--baseline.rb	ok	10	0.105		0.001	same	ok	100	0.01		0.0016	same	ok	1	1.4487	0.0122	0.0122	same	ok	7	0.1493	0.0353	0.0353	same
+pathname--abs.absolute_.rb	fail	1	0.1012			-	ok	101	0.01		0.0015	?	fail	1	1.6746			-	fail	1	0.1531			-
+pathname--abs.root_.rb	fail	1	0.1295			-	ok	82	0.0122		0.0038	?	fail	1	1.9094			-	fail	1	0.1268			-
+pathname--p1.cleanpath.rb	fail	1	0.1188			-	ok	81	0.0124		0.0039	?	fail	1	1.3503			-	fail	1	0.1746			-
+pathname--p1_p2.rb	fail	1	0.1527			-	ok	99	0.0101		0.0017	?	fail	1	1.5013			-	fail	1	0.184			-
+pathname--p2.cleanpath.rb	fail	1	0.1471			-	ok	99	0.0102		0.0017	?	fail	1	1.9457			-	fail	1	0.1566			-
+pathname--rel.absolute_.rb	fail	1	0.171			-	ok	89	0.0113		0.0028	?	fail	1	1.8232			-	fail	1	0.1723			-
+pathname--rel.root_.rb	fail	1	0.1446			-	ok	91	0.0111		0.0026	?	fail	1	1.9866			-	fail	1	0.2246			-
+pathname--relative_path_from.rb	fail	1	0.1622			-	ok	83	0.0121		0.0036	?	fail	1	1.4454			-	fail	1	0.1483			-
+pm_array--first_match.rb	ok	9	0.1194		0.0127	same	ok	99	0.0101		0.0017	same	ok	1	1.793	0.0149	0.0149	same	ok	8	0.1294	0.029	0.029	same
+pm_array--fourth_match.rb	ok	10	0.1014		0.001	same	ok	109	0.0092		0.001	same	ok	1	1.3912	0.0152	0.0152	same	ok	7	0.1434	0.0294	0.0294	same
+pm_array--second_match.rb	ok	10	0.1002		0.001	same	ok	97	0.0104		0.0019	same	ok	1	1.8515	0.045	0.045	same	ok	8	0.1334	0.0309	0.0309	same
+pm_array--third_match.rb	ok	9	0.1133		0.0065	same	ok	102	0.0099		0.0014	same	ok	1	1.6555	0.0171	0.0171	same	ok	8	0.1416	0.0289	0.0289	same
+ractor_const--ractor_const.rb	ok	9	0.1197		0.0129	same	ok	91	0.011		0.0026	same	ok	1	1.8388	0.0133	0.0133	same	ok	6	0.1669	0.0386	0.0386	same
+ractor_float_to_s--ractor_float_to_s.rb	ok	8	0.1376		0.0308	same	ok	85	0.0118		0.0034	same	ok	1	1.8719	0.0762	0.0762	same	ok	7	0.1507	0.033	0.033	same
+ractor_string_fstring--ractor_fstring_random.rb	ok	1	1.2765		1.1698	same	ok	2	0.529		0.5206	same	ok	1	12.8782	10.8978	10.8978	same	ok	1	5.6611	5.4966	5.4966	same
+ractor_string_fstring--ractor_fstring_same.rb	ok	4	0.29		0.1833	same	ok	5	0.2377		0.2292	same	ok	1	4.667	3.1414	3.1414	same	ok	1	1.0829	0.9807	0.9807	same
+range_bsearch_bignum--first.rb	ok	10	0.1064		0.001	same	ok	79	0.0128		0.0044	same	ok	1	2.0477	0.1338	0.1338	same	ok	7	0.1619	0.0352	0.0352	same
+range_bsearch_bignum--last.rb	ok	9	0.122		0.0152	same	ok	70	0.0144		0.006	same	ok	1	1.4231	0.0593	0.0593	same	ok	8	0.1559	0.0347	0.0347	same
+range_bsearch_bignum--mid.rb	ok	8	0.1327		0.0259	same	ok	84	0.0119		0.0035	same	ok	1	1.6137	0.0613	0.0613	same	ok	7	0.1454	0.03	0.03	same
+range_bsearch_endpointless--beginless_-10__0.rb	ok	9	0.1148		0.008	same	ok	106	0.0095		0.0011	same	ok	1	1.74	0.0185	0.0185	same	ok	7	0.1662	0.0359	0.0359	same
+range_bsearch_endpointless--beginless_-10__1.rb	ok	9	0.1268		0.02	same	ok	94	0.0106		0.0022	same	ok	1	1.959	0.0121	0.0121	same	ok	7	0.1486	0.0337	0.0337	same
+range_bsearch_endpointless--beginless_-10__10.rb	ok	8	0.1297		0.0229	same	ok	100	0.01		0.0016	same	ok	1	1.6735	0.0141	0.0141	same	ok	7	0.1486	0.0285	0.0285	same
+range_bsearch_endpointless--beginless_-10__100.rb	ok	9	0.1253		0.0185	same	ok	89	0.0113		0.0029	same	ok	1	2.1686	0.0445	0.0445	same	timeout	1	300.0161			-
+range_bsearch_endpointless--beginless_-10__2.rb	ok	10	0.1128		0.006	same	ok	101	0.01		0.0015	same	ok	1	2.091	0.0101	0.0101	same	ok	7	0.15	0.0343	0.0343	same
+range_bsearch_endpointless--beginless_-10__3.rb	ok	9	0.1112		0.0044	same	ok	104	0.0096		0.0012	same	ok	1	1.785	0.0179	0.0179	same	ok	8	0.1311	0.0289	0.0289	same
+range_bsearch_endpointless--beginless_-10__4.rb	ok	11	0.0992		0.001	same	ok	95	0.0106		0.0022	same	ok	1	1.9093	0.0137	0.0137	same	ok	7	0.1559	0.0341	0.0341	same
+range_bsearch_endpointless--beginless_-10__5.rb	ok	10	0.1044		0.001	same	ok	99	0.0102		0.0017	same	ok	1	1.8005	0.0207	0.0207	same	ok	7	0.1475	0.0338	0.0338	same
+range_bsearch_endpointless--endless_10__0.rb	ok	9	0.1211		0.0144	same	ok	96	0.0105		0.002	same	ok	1	1.7087	0.0168	0.0168	same	ok	7	0.1529	0.0318	0.0318	same
+range_bsearch_endpointless--endless_10__1.rb	ok	9	0.1132		0.0064	same	ok	94	0.0107		0.0023	same	ok	1	1.9085	0.0139	0.0139	same	ok	7	0.1541	0.0334	0.0334	same
+range_bsearch_endpointless--endless_10__10.rb	ok	8	0.1319		0.0251	same	ok	96	0.0105		0.002	same	ok	1	1.8262	0.0171	0.0171	same	ok	7	0.1557	0.0314	0.0314	same
+range_bsearch_endpointless--endless_10__100.rb	ok	9	0.1136		0.0069	same	ok	81	0.0125		0.004	same	ok	1	1.6743	0.057	0.057	same	timeout	1	300.0108			-
+range_bsearch_endpointless--endless_10__2.rb	ok	8	0.1343		0.0276	same	ok	103	0.0098		0.0013	same	ok	1	1.8033	0.0116	0.0116	same	ok	8	0.1401	0.0313	0.0313	same
+range_bsearch_endpointless--endless_10__3.rb	ok	11	0.1014		0.001	same	ok	112	0.009		0.001	same	ok	1	1.5643	0.0097	0.0097	same	ok	7	0.1518	0.0309	0.0309	same
+range_bsearch_endpointless--endless_10__4.rb	ok	10	0.1064		0.001	same	ok	94	0.0106		0.0022	same	ok	1	1.6638	0.0114	0.0114	same	ok	8	0.1427	0.0325	0.0325	same
+range_bsearch_endpointless--endless_10__5.rb	ok	11	0.0943		0.001	same	ok	113	0.0089		0.001	same	ok	1	1.6565	0.0089	0.0089	same	ok	8	0.1392	0.0287	0.0287	same
+range_bsearch_fixnum--first.rb	ok	9	0.1113		0.0045	same	ok	101	0.01		0.0015	same	ok	1	1.6087	0.0112	0.0112	same	ok	7	0.1517	0.0322	0.0322	same
+range_bsearch_fixnum--last.rb	ok	8	0.1298		0.0231	same	ok	93	0.0109		0.0024	same	ok	1	1.6148	0.0132	0.0132	same	ok	7	0.1454	0.0308	0.0308	same
+range_bsearch_fixnum--mid.rb	ok	9	0.1112		0.0044	same	ok	103	0.0097		0.0013	same	ok	1	1.9227	0.0125	0.0125	same	ok	7	0.1504	0.0323	0.0323	same
+range_count--int_1.rb	ok	9	0.1151		0.0084	same	ok	98	0.0103		0.0019	same	ok	1	1.4308	0.0116	0.0116	same	ok	7	0.1525	0.0338	0.0338	same
+range_count--int_1K.rb	ok	7	0.1445		0.0377	same	ok	100	0.01		0.0016	same	ok	1	1.7204	0.021	0.021	same	ok	7	0.1469	0.0301	0.0301	same
+range_count--int_1M.rb	ok	9	0.1196		0.0128	same	ok	95	0.0105		0.0021	same	ok	1	1.7649	0.0126	0.0126	same	ok	7	0.1522	0.0321	0.0321	same
+range_count--string.rb	ok	8	0.1338		0.027	same	ok	98	0.0103		0.0018	same	ok	1	1.5748	0.0166	0.0166	same	fail	1	0.1635			-
+range_last--range_last_0.rb	ok	10	0.1087		0.0019	same	ok	4	0.2596		0.2512	same	ok	1	1.7767	0.0121	0.0121	same	ok	6	0.1999	0.0873	0.0873	same
+range_last--range_last_1.rb	ok	8	0.1335		0.0267	same	ok	4	0.2619		0.2535	same	ok	1	1.6854	0.0182	0.0182	same	ok	6	0.1899	0.0763	0.0763	same
+range_last--range_last_2.rb	ok	9	0.1253		0.0185	same	ok	4	0.2984		0.2899	same	ok	1	1.7442	0.083	0.083	same	ok	5	0.2148	0.0957	0.0957	same
+range_min--range_min_0.rb	ok	7	0.1462		0.0395	same	ok	92	0.0109		0.0025	same	ok	1	1.6568	0.0135	0.0135	same	ok	7	0.147	0.0341	0.0341	same
+range_reverse_each--Bignum_1.rb	ok	9	0.1154		0.0086	same	ok	94	0.0107		0.0023	same	ok	1	1.7923	0.0194	0.0194	same	fail	1	0.1244			-
+range_reverse_each--Bignum_1K.rb	ok	10	0.1033		0.001	same	ok	88	0.0114		0.003	same	ok	1	1.5802	0.0367	0.0367	same	fail	1	0.1262			-
+range_reverse_each--Bignum_1M.rb	ok	3	0.3843		0.2775	same	ok	3	0.4624		0.454	same	ok	1	7.9849	6.2524	6.2524	same	fail	1	0.1565			-
+range_reverse_each--Fixnum_1.rb	ok	10	0.101		0.001	same	ok	104	0.0097		0.0013	same	ok	1	1.6462	0.0202	0.0202	same	ok	7	0.1574	0.0345	0.0345	same
+range_reverse_each--Fixnum_1K.rb	ok	10	0.102		0.001	same	ok	100	0.01		0.0016	same	ok	1	1.769	0.0163	0.0163	same	ok	8	0.1376	0.0313	0.0313	same
+range_reverse_each--Fixnum_1M.rb	ok	5	0.2038		0.097	same	ok	4	0.2649		0.2564	same	ok	1	3.2448	1.3356	1.3356	same	ok	3	0.4181	0.3078	0.3078	same
+regexp_dup--dup.rb	ok	9	0.1139		0.0071	same	ok	90	0.0111		0.0027	same	ok	1	1.5482	0.0171	0.0171	same	ok	7	0.1457	0.0349	0.0349	same
+regexp_new--regexp.rb	ok	9	0.1116		0.0049	same	ok	114	0.0089		0.001	same	ok	1	1.8664	0.0152	0.0152	same	ok	7	0.1523	0.0403	0.0403	same
+regexp_new--string.rb	ok	11	0.0966		0.001	same	ok	96	0.0105		0.002	same	ok	1	1.5101	0.0174	0.0174	same	ok	7	0.1621	0.0444	0.0444	same
+set--add.rb	fail	1	0.1035			-	ok	33	0.0306		0.0221	same	ok	1	1.6823	0.1781	0.1781	same	ok	6	0.1821	0.0672	0.0672	same
+set--add_exist.rb	fail	1	0.1077			-	ok	35	0.0289		0.0204	same	ok	1	1.7641	0.1552	0.1552	same	ok	6	0.1827	0.0682	0.0682	same
+set--addq.rb	fail	1	0.1072			-	ok	33	0.0306		0.0221	same	ok	1	1.9468	0.2018	0.2018	same	ok	6	0.1699	0.0604	0.0604	same
+set--addq_exist.rb	fail	1	0.1348			-	ok	38	0.0267		0.0182	same	ok	1	1.5781	0.1878	0.1878	same	ok	7	0.1666	0.0621	0.0621	same
+set--amp_0.rb	ok	8	0.1365		0.0297	same	ok	39	0.0257		0.0173	same	ok	1	1.73	0.15	0.15	same	ok	6	0.1684	0.0604	0.0604	same
+set--amp_10.rb	ok	9	0.1129		0.0061	same	ok	42	0.0243		0.0158	same	ok	1	1.6316	0.1579	0.1579	same	ok	7	0.1583	0.0538	0.0538	same
+set--amp_100.rb	ok	9	0.1128		0.006	same	ok	38	0.0265		0.018	same	ok	1	1.8863	0.1783	0.1783	same	ok	6	0.1805	0.0643	0.0643	same
+set--amp_1000.rb	ok	9	0.1134		0.0066	same	ok	34	0.0299		0.0214	same	ok	1	2.127	0.1632	0.1632	same	ok	6	0.1773	0.061	0.061	same
+set--amp_same_0.rb	ok	8	0.1319		0.0251	same	ok	41	0.0249		0.0165	same	ok	1	2.1169	0.1429	0.1429	same	ok	5	0.2086	0.0691	0.0691	same
+set--amp_same_10.rb	ok	7	0.1468		0.0401	same	ok	37	0.0274		0.019	same	ok	1	1.8946	0.1372	0.1372	same	ok	6	0.1899	0.0682	0.0682	same
+set--amp_same_100.rb	ok	7	0.1546		0.0478	same	ok	36	0.0282		0.0198	same	ok	1	1.7328	0.1652	0.1652	same	ok	6	0.1829	0.061	0.061	same
+set--amp_same_1000.rb	ok	8	0.1283		0.0216	same	ok	36	0.0284		0.02	same	ok	1	1.9838	0.1799	0.1799	same	ok	6	0.1878	0.0658	0.0658	same
+set--aref_0.rb	ok	8	0.1318		0.0251	same	ok	36	0.0282		0.0198	same	ok	1	2.0132	0.1711	0.1711	same	ok	6	0.1806	0.0579	0.0579	same
+set--aref_10.rb	ok	8	0.135		0.0282	same	ok	36	0.0285		0.0201	same	ok	1	1.7088	0.1605	0.1605	same	ok	6	0.1712	0.0574	0.0574	same
+set--aref_100.rb	ok	8	0.1323		0.0255	same	ok	37	0.0273		0.0189	same	ok	1	1.8554	0.1293	0.1293	same	ok	6	0.1703	0.0573	0.0573	same
+set--aref_1000.rb	ok	8	0.1277		0.0209	same	ok	35	0.0288		0.0204	same	ok	1	1.7761	0.1699	0.1699	same	ok	6	0.1667	0.0591	0.0591	same
+set--classify_0.rb	ok	10	0.1069		0.001	differs	ok	41	0.0246		0.0161	same	ok	1	1.7512	0.1673	0.1673	same	ok	6	0.1767	0.0582	0.0582	same
+set--classify_10.rb	fail	1	0.0964			-	ok	42	0.0242		0.0157	same	ok	1	1.597	0.1716	0.1716	same	ok	6	0.1793	0.0654	0.0654	same
+set--classify_100.rb	fail	1	0.1241			-	ok	35	0.0291		0.0206	same	ok	1	1.8655	0.1845	0.1845	same	ok	7	0.1629	0.059	0.059	same
+set--classify_1000.rb	fail	1	0.1095			-	ok	37	0.0275		0.019	same	ok	1	1.6813	0.1642	0.1642	same	ok	6	0.174	0.0618	0.0618	same
+set--clear.rb	ok	10	0.1114		0.0046	same	ok	39	0.0261		0.0177	same	ok	1	2.1153	0.1463	0.1463	same	ok	6	0.1822	0.0698	0.0698	same
+set--clone_0.rb	ok	9	0.1217		0.0149	same	ok	39	0.0257		0.0172	same	ok	1	1.772	0.216	0.216	same	ok	6	0.1782	0.0627	0.0627	same
+set--clone_10.rb	ok	8	0.1375		0.0308	same	ok	39	0.0257		0.0172	same	ok	1	1.6344	0.18	0.18	same	ok	7	0.1584	0.0534	0.0534	same
+set--clone_100.rb	ok	8	0.1371		0.0303	same	ok	38	0.0272		0.0187	same	ok	1	1.6927	0.1621	0.1621	same	ok	7	0.1634	0.0554	0.0554	same
+set--clone_1000.rb	ok	10	0.1113		0.0045	same	ok	36	0.0278		0.0194	same	ok	1	1.7336	0.1707	0.1707	same	ok	6	0.1669	0.0549	0.0549	same
+set--collect_0.rb	ok	10	0.1038		0.001	differs	ok	38	0.0269		0.0185	same	ok	1	1.5456	0.1714	0.1714	same	ok	7	0.1622	0.0585	0.0585	same
+set--collect_10.rb	fail	1	0.133			-	ok	39	0.026		0.0176	same	ok	1	1.7117	0.1397	0.1397	same	ok	6	0.1708	0.0577	0.0577	same
+set--collect_100.rb	fail	1	0.1134			-	ok	41	0.0246		0.0161	same	ok	1	1.8317	0.1423	0.1423	same	ok	7	0.1637	0.0525	0.0525	same
+set--collect_1000.rb	fail	1	0.1036			-	ok	36	0.0279		0.0195	same	ok	1	1.7238	0.1399	0.1399	same	ok	6	0.1757	0.0596	0.0596	same
+set--compare_by_identity_0.rb	ok	9	0.1211		0.0143	same	ok	40	0.0254		0.017	same	ok	1	1.644	0.179	0.179	same	ok	7	0.1524	0.0535	0.0535	same
+set--compare_by_identity_10.rb	ok	9	0.1121		0.0053	same	ok	42	0.0241		0.0156	same	ok	1	1.673	0.1518	0.1518	same	ok	6	0.1708	0.0579	0.0579	same
+set--compare_by_identity_100.rb	ok	10	0.1055		0.001	same	ok	34	0.0299		0.0215	same	ok	1	1.7822	0.1531	0.1531	same	ok	6	0.1795	0.0655	0.0655	same
+set--compare_by_identity_1000.rb	ok	9	0.1183		0.0115	same	ok	35	0.0291		0.0207	same	ok	1	1.7481	0.2153	0.2153	same	ok	6	0.1872	0.0671	0.0671	same
+set--delete.rb	fail	1	0.1164			-	ok	34	0.0297		0.0212	same	ok	1	1.793	0.1716	0.1716	same	ok	6	0.1772	0.0612	0.0612	same
+set--delete_if_0.rb	ok	9	0.1233		0.0166	differs	ok	36	0.0282		0.0198	same	ok	1	1.8281	0.155	0.155	same	ok	6	0.1907	0.0633	0.0633	same
+set--delete_if_10.rb	fail	1	0.0989			-	ok	35	0.0287		0.0203	same	ok	1	1.9699	0.1618	0.1618	same	ok	5	0.2076	0.0766	0.0766	same
+set--delete_if_100.rb	fail	1	0.1589			-	ok	32	0.0315		0.0231	same	ok	1	2.1463	0.1507	0.1507	same	ok	6	0.1841	0.0681	0.0681	same
+set--delete_if_1000.rb	fail	1	0.1343			-	ok	31	0.0333		0.0249	same	ok	1	1.6353	0.1543	0.1543	same	ok	6	0.185	0.0652	0.0652	same
+set--delete_not_exist.rb	fail	1	0.1183			-	ok	34	0.0295		0.0211	same	ok	1	1.5361	0.1643	0.1643	same	ok	6	0.168	0.062	0.062	same
+set--deleteq.rb	fail	1	0.1317			-	ok	34	0.0304		0.0219	same	ok	1	1.8092	0.1731	0.1731	same	ok	6	0.1752	0.0599	0.0599	same
+set--deleteq_not_exist.rb	fail	1	0.0966			-	ok	42	0.0242		0.0158	same	ok	1	1.6081	0.1927	0.1927	same	ok	5	0.202	0.0761	0.0761	same
+set--disjoint_0.rb	ok	10	0.1044		0.001	same	ok	38	0.0268		0.0183	same	ok	1	2.0446	0.1783	0.1783	same	ok	6	0.1729	0.057	0.057	same
+set--disjoint_10.rb	ok	8	0.1295		0.0227	same	ok	38	0.0268		0.0183	same	ok	1	1.5799	0.1589	0.1589	same	ok	6	0.168	0.0569	0.0569	same
+set--disjoint_100.rb	ok	9	0.1122		0.0055	same	ok	35	0.0292		0.0208	same	ok	1	1.9893	0.1502	0.1502	same	ok	6	0.1776	0.065	0.065	same
+set--disjoint_1000.rb	ok	8	0.1283		0.0216	same	ok	34	0.0298		0.0214	same	ok	1	2.0239	0.1787	0.1787	same	ok	6	0.1896	0.0665	0.0665	same
+set--disjoint_same_0.rb	ok	9	0.1199		0.0131	same	ok	39	0.0259		0.0175	same	ok	1	2.0639	0.1703	0.1703	same	ok	6	0.1746	0.0612	0.0612	same
+set--disjoint_same_10.rb	ok	8	0.1376		0.0308	same	ok	37	0.0274		0.019	same	ok	1	2.0148	0.1561	0.1561	same	ok	6	0.1963	0.0732	0.0732	same
+set--disjoint_same_100.rb	ok	8	0.144		0.0372	same	ok	36	0.0281		0.0196	same	ok	1	1.9134	0.2048	0.2048	same	ok	5	0.206	0.0691	0.0691	same
+set--disjoint_same_1000.rb	ok	8	0.1419		0.0351	same	ok	30	0.0339		0.0254	same	ok	1	2.1446	0.1571	0.1571	same	ok	6	0.1963	0.0735	0.0735	same
+set--divide_1arity_0.rb	ok	8	0.1272		0.0204	same	ok	32	0.0319		0.0234	same	ok	1	2.0113	0.1802	0.1802	same	ok	7	0.1632	0.0564	0.0564	same
+set--divide_1arity_10.rb	fail	1	0.1084			-	ok	38	0.0267		0.0182	same	ok	1	1.9517	0.1535	0.1535	same	ok	6	0.1684	0.0559	0.0559	same
+set--divide_1arity_100.rb	fail	1	0.134			-	ok	40	0.0252		0.0167	same	ok	1	1.6124	0.1754	0.1754	same	ok	6	0.1702	0.0638	0.0638	same
+set--divide_1arity_1000.rb	fail	1	0.118			-	ok	32	0.0318		0.0233	same	ok	1	1.7581	0.1902	0.1902	same	ok	6	0.1936	0.0712	0.0712	same
+set--divide_2arity_0.rb	ok	10	0.1102		0.0034	same	ok	36	0.0285		0.0201	same	ok	1	2.0224	0.1858	0.1858	same	ok	6	0.1822	0.0629	0.0629	same
+set--divide_2arity_10.rb	ok	9	0.1201		0.0133	same	ok	36	0.0281		0.0197	same	ok	1	1.9514	0.1714	0.1714	same	ok	6	0.167	0.0568	0.0568	same
+set--divide_2arity_100.rb	ok	8	0.1271		0.0203	same	ok	35	0.0292		0.0208	same	ok	1	1.8024	0.2276	0.2276	same	ok	5	0.2165	0.1051	0.1051	same
+set--divide_2arity_1000.rb	ok	3	0.4118		0.305	?	ok	3	0.38		0.3715	?	fail	1	5.9975			-	ok	1	3.216	3.0948	3.0948	?
+set--dup_0.rb	ok	10	0.1062		0.001	same	ok	36	0.0281		0.0196	same	ok	1	1.7519	0.2123	0.2123	same	ok	6	0.1824	0.0632	0.0632	same
+set--dup_10.rb	ok	10	0.1045		0.001	same	ok	34	0.0296		0.0212	same	ok	1	1.6394	0.1434	0.1434	same	ok	6	0.1723	0.0639	0.0639	same
+set--dup_100.rb	ok	9	0.1199		0.0131	same	ok	32	0.0315		0.0231	same	ok	1	2.0487	0.1638	0.1638	same	ok	6	0.1712	0.0561	0.0561	same
+set--dup_1000.rb	ok	8	0.1428		0.036	same	ok	34	0.0296		0.0212	same	ok	1	1.8418	0.1428	0.1428	same	ok	6	0.1857	0.0684	0.0684	same
+set--each_0.rb	ok	9	0.121		0.0142	differs	ok	32	0.032		0.0236	same	ok	1	1.5474	0.1554	0.1554	same	ok	6	0.1835	0.0675	0.0675	same
+set--each_10.rb	fail	1	0.1673			-	ok	35	0.029		0.0206	same	ok	1	1.5342	0.1409	0.1409	same	ok	6	0.1721	0.0616	0.0616	same
+set--each_100.rb	fail	1	0.1218			-	ok	36	0.0283		0.0199	same	ok	1	2.1768	0.1968	0.1968	same	ok	6	0.1854	0.0613	0.0613	same
+set--each_1000.rb	fail	1	0.1455			-	ok	35	0.0292		0.0208	same	ok	1	2.1043	0.1833	0.1833	same	ok	6	0.173	0.0584	0.0584	same
+set--empty_false.rb	ok	9	0.1222		0.0154	same	ok	37	0.0274		0.0189	same	ok	1	1.642	0.1252	0.1252	same	ok	7	0.1588	0.0536	0.0536	same
+set--empty_true.rb	ok	9	0.1165		0.0097	same	ok	36	0.0278		0.0194	same	ok	1	1.895	0.139	0.139	same	ok	7	0.1628	0.0563	0.0563	same
+set--eq_0.rb	ok	10	0.1085		0.0018	same	ok	41	0.0247		0.0162	same	ok	1	1.6599	0.1863	0.1863	same	ok	6	0.1797	0.0642	0.0642	same
+set--eq_10.rb	ok	10	0.1079		0.0011	same	ok	40	0.0254		0.017	same	ok	1	2.0236	0.174	0.174	same	ok	6	0.1685	0.0558	0.0558	same
+set--eq_100.rb	ok	7	0.1503		0.0435	same	ok	39	0.0261		0.0177	same	ok	1	2.0729	0.1538	0.1538	same	ok	7	0.1717	0.0598	0.0598	same
+set--eq_1000.rb	ok	9	0.1215		0.0147	same	ok	42	0.0244		0.0159	same	ok	1	1.646	0.1618	0.1618	same	ok	6	0.1749	0.0576	0.0576	same
+set--eq_same_0.rb	ok	8	0.1285		0.0217	same	ok	37	0.0278		0.0193	same	ok	1	2.0013	0.1739	0.1739	same	ok	6	0.1899	0.069	0.069	same
+set--eq_same_10.rb	ok	8	0.1474		0.0406	same	ok	34	0.0297		0.0212	same	ok	1	1.8876	0.1788	0.1788	same	ok	5	0.2106	0.0708	0.0708	same
+set--eq_same_100.rb	ok	8	0.1272		0.0204	same	ok	38	0.0272		0.0187	same	ok	1	1.8043	0.1491	0.1491	same	ok	6	0.1816	0.0609	0.0609	same
+set--eq_same_1000.rb	ok	10	0.1076		0.001	same	ok	36	0.0286		0.0201	same	ok	1	1.9246	0.1538	0.1538	same	ok	6	0.196	0.0719	0.0719	same
+set--flatten.rb	ok	9	0.1239		0.0171	same	ok	33	0.0307		0.0223	same	ok	1	1.9195	0.2171	0.2171	same	ok	6	0.1838	0.061	0.061	same
+set--flattenb.rb	ok	8	0.1381		0.0314	same	ok	23	0.0435		0.0351	same	ok	1	1.9168	0.1864	0.1864	same	ok	6	0.1725	0.0643	0.0643	same
+set--include_false_0.rb	ok	9	0.1163		0.0095	same	ok	41	0.0244		0.0159	same	ok	1	1.6548	0.1565	0.1565	same	ok	6	0.1738	0.0639	0.0639	same
+set--include_false_10.rb	ok	9	0.1139		0.0071	same	ok	41	0.0252		0.0167	same	ok	1	2.1326	0.1338	0.1338	same	ok	7	0.1612	0.0554	0.0554	same
+set--include_false_100.rb	ok	9	0.1144		0.0076	same	ok	41	0.0249		0.0165	same	ok	1	2.4847	0.1739	0.1739	same	ok	6	0.1809	0.0593	0.0593	same
+set--include_false_1000.rb	ok	9	0.1121		0.0053	same	ok	43	0.0237		0.0152	same	ok	1	1.547	0.1575	0.1575	same	ok	6	0.1755	0.0605	0.0605	same
+set--include_true_0.rb	ok	9	0.1147		0.0079	same	ok	38	0.0268		0.0184	same	ok	1	1.6455	0.148	0.148	same	ok	7	0.166	0.0562	0.0562	same
+set--include_true_10.rb	ok	9	0.1115		0.0047	same	ok	38	0.0264		0.018	same	ok	1	2.0595	0.1514	0.1514	same	ok	6	0.1816	0.0643	0.0643	same
+set--include_true_100.rb	ok	9	0.1228		0.016	same	ok	37	0.0271		0.0186	same	ok	1	1.8018	0.1253	0.1253	same	ok	6	0.1912	0.0662	0.0662	same
+set--include_true_1000.rb	ok	9	0.1218		0.015	same	ok	38	0.0274		0.019	same	ok	1	1.4578	0.1469	0.1469	same	ok	6	0.1965	0.0659	0.0659	same
+set--intersect_0.rb	ok	9	0.1129		0.0062	same	ok	36	0.0283		0.0198	same	ok	1	1.8382	0.18	0.18	same	ok	6	0.1766	0.0606	0.0606	same
+set--intersect_10.rb	ok	10	0.1106		0.0038	same	ok	36	0.0283		0.0198	same	ok	1	1.9858	0.1475	0.1475	same	ok	6	0.179	0.0618	0.0618	same
+set--intersect_100.rb	ok	8	0.1268		0.02	same	ok	38	0.0267		0.0182	same	ok	1	1.9463	0.1654	0.1654	same	ok	6	0.1804	0.0636	0.0636	same
+set--intersect_1000.rb	ok	9	0.1131		0.0064	same	ok	37	0.0276		0.0191	same	ok	1	1.7644	0.1575	0.1575	same	ok	6	0.1843	0.0654	0.0654	same
+set--intersect_same_0.rb	ok	8	0.1284		0.0217	same	ok	36	0.028		0.0196	same	ok	1	1.8868	0.1394	0.1394	same	ok	6	0.1761	0.0592	0.0592	same
+set--intersect_same_10.rb	ok	9	0.1113		0.0045	same	ok	37	0.0276		0.0192	same	ok	1	1.6533	0.1472	0.1472	same	ok	6	0.1722	0.0637	0.0637	same
+set--intersect_same_100.rb	ok	10	0.1007		0.001	same	ok	41	0.0244		0.016	same	ok	1	1.7837	0.1478	0.1478	same	ok	6	0.1772	0.0638	0.0638	same
+set--intersect_same_1000.rb	ok	11	0.0978		0.001	same	ok	38	0.0269		0.0185	same	ok	1	1.6895	0.1396	0.1396	same	ok	6	0.1805	0.0632	0.0632	same
+set--join_0.rb	ok	10	0.1016		0.001	same	ok	37	0.0275		0.0191	same	ok	1	1.7049	0.1514	0.1514	same	ok	7	0.1517	0.0525	0.0525	same
+set--join_10.rb	ok	9	0.1138		0.007	same	ok	35	0.0286		0.0202	same	ok	1	1.6729	0.1282	0.1282	same	ok	7	0.1497	0.0536	0.0536	same
+set--join_100.rb	ok	10	0.1032		0.001	same	ok	39	0.0257		0.0173	same	ok	1	1.6225	0.1361	0.1361	same	ok	6	0.172	0.0641	0.0641	same
+set--join_1000.rb	ok	10	0.1001		0.001	same	ok	39	0.0257		0.0173	same	ok	1	1.6717	0.157	0.157	same	ok	7	0.1604	0.0544	0.0544	same
+set--join_arg_0.rb	ok	10	0.1031		0.001	same	ok	41	0.0246		0.0162	same	ok	1	1.7009	0.1193	0.1193	same	ok	6	0.2063	0.0605	0.0605	same
+set--join_arg_10.rb	ok	9	0.117		0.0102	same	ok	42	0.0243		0.0159	same	ok	1	2.087	0.1668	0.1668	same	ok	6	0.1843	0.0689	0.0689	same
+set--join_arg_100.rb	ok	8	0.1272		0.0204	same	ok	41	0.0244		0.016	same	ok	1	1.6992	0.1869	0.1869	same	ok	6	0.1745	0.058	0.058	same
+set--join_arg_1000.rb	ok	10	0.105		0.001	same	ok	40	0.0251		0.0166	same	ok	1	1.9071	0.147	0.147	same	ok	6	0.1766	0.0619	0.0619	same
+set--keep_if_0.rb	ok	10	0.1074		0.001	differs	ok	39	0.0261		0.0176	same	ok	1	1.933	0.1536	0.1536	same	ok	6	0.1739	0.0669	0.0669	same
+set--keep_if_10.rb	fail	1	0.1098			-	ok	42	0.0243		0.0159	same	ok	1	1.6543	0.1626	0.1626	same	ok	6	0.1801	0.0582	0.0582	same
+set--keep_if_100.rb	fail	1	0.1047			-	ok	39	0.0259		0.0175	same	ok	1	2.0588	0.1812	0.1812	same	ok	6	0.1885	0.0652	0.0652	same
+set--keep_if_1000.rb	fail	1	0.1071			-	ok	38	0.0268		0.0183	same	ok	1	1.8789	0.2044	0.2044	same	ok	6	0.1921	0.0728	0.0728	same
+set--minus_0.rb	ok	9	0.1217		0.015	same	ok	34	0.0295		0.0211	same	ok	1	1.912	0.1552	0.1552	same	ok	6	0.1899	0.0696	0.0696	same
+set--minus_10.rb	ok	8	0.1263		0.0195	same	ok	37	0.0276		0.0191	same	ok	1	2.0982	0.1547	0.1547	same	ok	6	0.1758	0.0585	0.0585	same
+set--minus_100.rb	ok	7	0.1445		0.0377	same	ok	36	0.028		0.0196	same	ok	1	1.7839	0.1394	0.1394	same	ok	6	0.1878	0.0615	0.0615	same
+set--minus_1000.rb	ok	9	0.1121		0.0053	same	ok	31	0.0326		0.0241	same	ok	1	1.9215	0.1841	0.1841	same	ok	6	0.1877	0.0682	0.0682	same
+set--minus_same_0.rb	ok	9	0.1182		0.0114	same	ok	39	0.0259		0.0175	same	ok	1	1.674	0.1553	0.1553	same	ok	6	0.1852	0.0629	0.0629	same
+set--minus_same_10.rb	ok	9	0.1241		0.0173	same	ok	38	0.0265		0.0181	same	ok	1	2.0617	0.1727	0.1727	same	ok	7	0.1629	0.055	0.055	same
+set--minus_same_100.rb	ok	9	0.121		0.0142	same	ok	41	0.0247		0.0163	same	ok	1	1.6501	0.1538	0.1538	same	ok	7	0.1708	0.0583	0.0583	same
+set--minus_same_1000.rb	ok	10	0.1067		0.001	same	ok	42	0.0239		0.0155	same	ok	1	1.575	0.1578	0.1578	same	ok	6	0.1723	0.0618	0.0618	same
+set--new_0.rb	ok	8	0.1262		0.0194	same	ok	38	0.0265		0.018	same	ok	1	1.7586	0.1551	0.1551	same	ok	7	0.1657	0.0566	0.0566	same
+set--new_10.rb	ok	8	0.1335		0.0267	same	ok	38	0.0267		0.0183	same	ok	1	1.631	0.1461	0.1461	same	ok	6	0.1767	0.0591	0.0591	same
+set--new_100.rb	ok	9	0.1204		0.0136	same	ok	36	0.0281		0.0196	same	ok	1	2.1169	0.1921	0.1921	same	ok	7	0.1666	0.0619	0.0619	same
+set--new_1000.rb	ok	9	0.1213		0.0145	same	ok	34	0.0298		0.0213	same	ok	1	1.4789	0.166	0.166	same	ok	6	0.1755	0.0655	0.0655	same
+set--pipe_0.rb	ok	9	0.1164		0.0097	same	ok	39	0.0259		0.0174	same	ok	1	2.0771	0.1683	0.1683	same	ok	6	0.1813	0.0592	0.0592	same
+set--pipe_10.rb	ok	8	0.1357		0.0289	same	ok	37	0.0277		0.0192	same	ok	1	1.841	0.1585	0.1585	same	ok	6	0.1903	0.0656	0.0656	same
+set--pipe_100.rb	ok	9	0.1172		0.0104	same	ok	38	0.027		0.0185	same	ok	1	1.6444	0.1252	0.1252	same	ok	6	0.1846	0.0694	0.0694	same
+set--pipe_1000.rb	ok	9	0.119		0.0122	same	ok	39	0.0263		0.0178	same	ok	1	1.9053	0.1748	0.1748	same	ok	6	0.1833	0.0644	0.0644	same
+set--pipe_same_0.rb	ok	9	0.119		0.0123	same	ok	36	0.0281		0.0197	same	ok	1	1.6437	0.1618	0.1618	same	ok	6	0.1734	0.0668	0.0668	same
+set--pipe_same_10.rb	ok	10	0.1116		0.0049	same	ok	37	0.0271		0.0187	same	ok	1	1.5718	0.1602	0.1602	same	ok	6	0.1719	0.0552	0.0552	same
+set--pipe_same_100.rb	ok	8	0.1296		0.0229	same	ok	38	0.0266		0.0181	same	ok	1	1.7684	0.1651	0.1651	same	ok	6	0.1751	0.0629	0.0629	same
+set--pipe_same_1000.rb	ok	9	0.1153		0.0085	same	ok	40	0.0255		0.0171	same	ok	1	1.8283	0.1922	0.1922	same	ok	6	0.1772	0.0619	0.0619	same
+set--proper_subset_0.rb	ok	9	0.1191		0.0123	same	ok	40	0.0259		0.0175	same	ok	1	1.6075	0.1548	0.1548	same	ok	7	0.1665	0.0562	0.0562	same
+set--proper_subset_10.rb	ok	9	0.122		0.0153	same	ok	38	0.0268		0.0184	same	ok	1	1.8212	0.1541	0.1541	same	ok	6	0.1831	0.0653	0.0653	same
+set--proper_subset_100.rb	ok	9	0.1209		0.0141	same	ok	38	0.0271		0.0186	same	ok	1	1.6846	0.1289	0.1289	same	ok	7	0.1658	0.0598	0.0598	same
+set--proper_subset_1000.rb	ok	8	0.1321		0.0253	same	ok	35	0.0286		0.0201	same	ok	1	1.7399	0.1808	0.1808	same	ok	6	0.1735	0.0587	0.0587	same
+set--proper_subset_false_10.rb	ok	8	0.1286		0.0218	same	ok	39	0.0266		0.0182	same	ok	1	1.6021	0.1849	0.1849	same	ok	7	0.1579	0.0561	0.0561	same
+set--proper_subset_false_100.rb	ok	9	0.1212		0.0144	same	ok	36	0.0279		0.0195	same	ok	1	1.6171	0.157	0.157	same	ok	6	0.1676	0.0598	0.0598	same
+set--proper_subset_false_1000.rb	ok	9	0.1135		0.0067	same	ok	41	0.0246		0.0162	same	ok	1	1.8407	0.1469	0.1469	same	ok	7	0.1683	0.0565	0.0565	same
+set--proper_superset_0.rb	ok	9	0.1168		0.0101	same	ok	37	0.0271		0.0186	same	ok	1	1.5957	0.1593	0.1593	same	ok	6	0.1777	0.0623	0.0623	same
+set--proper_superset_10.rb	ok	9	0.1212		0.0144	same	ok	37	0.0272		0.0187	same	ok	1	1.993	0.1779	0.1779	same	ok	7	0.1588	0.0581	0.0581	same
+set--proper_superset_100.rb	ok	8	0.1266		0.0198	same	ok	37	0.0272		0.0187	same	ok	1	1.6369	0.1268	0.1268	same	ok	7	0.154	0.0535	0.0535	same
+set--proper_superset_1000.rb	ok	9	0.1242		0.0174	same	ok	36	0.0284		0.0199	same	ok	1	1.7077	0.1544	0.1544	same	ok	6	0.1749	0.0661	0.0661	same
+set--proper_superset_false_10.rb	ok	9	0.1231		0.0163	same	ok	36	0.0283		0.0198	same	ok	1	1.7946	0.1547	0.1547	same	ok	6	0.1778	0.0645	0.0645	same
+set--proper_superset_false_100.rb	ok	9	0.1221		0.0153	same	ok	38	0.0264		0.018	same	ok	1	2.0344	0.1067	0.1067	same	ok	7	0.1655	0.0597	0.0597	same
+set--proper_superset_false_1000.rb	ok	9	0.1215		0.0147	same	ok	37	0.0276		0.0192	same	ok	1	1.8962	0.173	0.173	same	ok	6	0.177	0.0641	0.0641	same
+set--reject_0.rb	ok	9	0.1236		0.0168	differs	ok	38	0.0267		0.0182	same	ok	1	1.8614	0.1615	0.1615	same	ok	6	0.1676	0.0552	0.0552	same
+set--reject_10.rb	fail	1	0.1011			-	ok	38	0.0265		0.018	same	ok	1	1.8652	0.1602	0.1602	same	ok	7	0.1647	0.054	0.054	same
+set--reject_100.rb	fail	1	0.1155			-	ok	37	0.027		0.0186	same	ok	1	2.0606	0.1866	0.1866	same	ok	6	0.1812	0.0609	0.0609	same
+set--reject_1000.rb	fail	1	0.1105			-	ok	33	0.0306		0.0222	same	ok	1	1.7684	0.1902	0.1902	same	ok	6	0.1817	0.0661	0.0661	same
+set--replace_0.rb	ok	10	0.1109		0.0041	same	ok	33	0.0309		0.0225	same	ok	1	2.0614	0.1661	0.1661	same	ok	6	0.1761	0.0659	0.0659	same
+set--replace_10.rb	ok	9	0.1171		0.0103	same	ok	25	0.0412		0.0327	same	ok	1	1.6927	0.1697	0.1697	same	ok	6	0.1821	0.0672	0.0672	same
+set--replace_100.rb	ok	10	0.1049		0.001	same	ok	12	0.0871		0.0787	same	ok	1	1.9794	0.2023	0.2023	same	ok	5	0.2306	0.1237	0.1237	same
+set--replace_1000.rb	ok	10	0.1033		0.001	same	ok	2	0.5746		0.5662	same	ok	1	2.1056	0.4915	0.4915	same	ok	2	0.9035	0.7966	0.7966	same
+set--reset_0.rb	ok	10	0.1016		0.001	same	ok	44	0.0231		0.0147	same	ok	1	1.6887	0.1629	0.1629	same	ok	7	0.1583	0.0581	0.0581	same
+set--reset_10.rb	ok	11	0.0993		0.001	same	ok	43	0.0235		0.0151	same	ok	1	1.7586	0.1473	0.1473	same	ok	7	0.1481	0.0511	0.0511	same
+set--reset_100.rb	ok	10	0.1002		0.001	same	ok	38	0.0266		0.0181	same	ok	1	1.8954	0.1594	0.1594	same	ok	7	0.1625	0.057	0.057	same
+set--reset_1000.rb	ok	8	0.1254		0.0186	same	ok	37	0.0278		0.0194	same	ok	1	1.7789	0.1646	0.1646	same	ok	7	0.1517	0.0527	0.0527	same
+set--select_0.rb	ok	10	0.1069		0.001	differs	ok	38	0.0265		0.0181	same	ok	1	1.5272	0.1856	0.1856	same	ok	6	0.1754	0.0567	0.0567	same
+set--select_10.rb	fail	1	0.1056			-	ok	36	0.0279		0.0195	same	ok	1	1.5314	0.1152	0.1152	same	ok	7	0.152	0.052	0.052	same
+set--select_100.rb	fail	1	0.1069			-	ok	39	0.0258		0.0174	same	ok	1	1.5622	0.1269	0.1269	same	ok	6	0.1792	0.0669	0.0669	same
+set--select_1000.rb	fail	1	0.1462			-	ok	32	0.032		0.0236	same	ok	1	1.8814	0.1701	0.1701	same	ok	6	0.1823	0.0681	0.0681	same
+set--size_0.rb	ok	9	0.1257		0.0189	same	ok	35	0.0286		0.0202	same	ok	1	1.8031	0.1922	0.1922	same	ok	6	0.1899	0.0661	0.0661	same
+set--size_10.rb	ok	8	0.1286		0.0218	same	ok	38	0.0266		0.0182	same	ok	1	1.801	0.1684	0.1684	same	ok	6	0.1771	0.0654	0.0654	same
+set--size_100.rb	ok	10	0.1078		0.0011	same	ok	36	0.0282		0.0198	same	ok	1	2.0855	0.1562	0.1562	same	ok	6	0.1669	0.0563	0.0563	same
+set--size_1000.rb	ok	9	0.1166		0.0099	same	ok	36	0.0281		0.0196	same	ok	1	1.6162	0.1399	0.1399	same	ok	6	0.1707	0.0571	0.0571	same
+set--spaceship_0.rb	ok	10	0.1038		0.001	same	ok	39	0.0257		0.0173	same	ok	1	1.6677	0.1559	0.1559	same	ok	7	0.1621	0.0568	0.0568	same
+set--spaceship_diff_10.rb	ok	10	0.1107		0.004	same	ok	37	0.027		0.0186	same	ok	1	1.9704	0.1745	0.1745	same	ok	6	0.1716	0.0631	0.0631	same
+set--spaceship_diff_100.rb	ok	10	0.1095		0.0027	same	ok	42	0.024		0.0156	same	ok	1	1.6961	0.1384	0.1384	same	ok	7	0.1643	0.0568	0.0568	same
+set--spaceship_diff_1000.rb	ok	9	0.1232		0.0165	same	ok	43	0.0236		0.0152	same	ok	1	1.8277	0.1573	0.1573	same	ok	6	0.1694	0.0563	0.0563	same
+set--spaceship_sub_10.rb	ok	9	0.1129		0.0061	same	ok	39	0.0257		0.0172	same	ok	1	1.9251	0.1682	0.1682	same	ok	6	0.1758	0.0648	0.0648	same
+set--spaceship_sub_100.rb	ok	9	0.1137		0.0069	same	ok	40	0.0252		0.0167	same	ok	1	1.9895	0.1648	0.1648	same	ok	7	0.1663	0.0578	0.0578	same
+set--spaceship_sub_1000.rb	ok	9	0.1175		0.0107	same	ok	41	0.0246		0.0161	same	ok	1	1.9118	0.1683	0.1683	same	ok	6	0.1717	0.0608	0.0608	same
+set--spaceship_sup_10.rb	ok	10	0.1099		0.0031	same	ok	42	0.0241		0.0156	same	ok	1	1.5928	0.1446	0.1446	same	ok	7	0.1674	0.0577	0.0577	same
+set--spaceship_sup_100.rb	ok	8	0.1312		0.0244	same	ok	39	0.0262		0.0177	same	ok	1	1.6297	0.1549	0.1549	same	ok	7	0.1646	0.0565	0.0565	same
+set--spaceship_sup_1000.rb	ok	9	0.1188		0.0121	same	ok	41	0.0249		0.0165	same	ok	1	1.6859	0.1555	0.1555	same	ok	7	0.1659	0.0611	0.0611	same
+set--subset_0.rb	ok	9	0.1115		0.0048	same	ok	37	0.0273		0.0189	same	ok	1	1.9381	0.1503	0.1503	same	ok	6	0.1687	0.0571	0.0571	same
+set--subset_10.rb	ok	8	0.1313		0.0245	same	ok	36	0.0281		0.0196	same	ok	1	1.5592	0.1579	0.1579	same	ok	7	0.163	0.056	0.056	same
+set--subset_100.rb	ok	9	0.1126		0.0059	same	ok	40	0.0255		0.017	same	ok	1	1.7785	0.156	0.156	same	ok	6	0.169	0.0588	0.0588	same
+set--subset_1000.rb	ok	9	0.1159		0.0092	same	ok	38	0.0266		0.0181	same	ok	1	1.5994	0.1601	0.1601	same	ok	6	0.1699	0.0572	0.0572	same
+set--subset_false_10.rb	ok	9	0.1123		0.0055	same	ok	40	0.0255		0.0171	same	ok	1	1.6834	0.1664	0.1664	same	ok	6	0.1687	0.0588	0.0588	same
+set--subset_false_100.rb	ok	9	0.1277		0.0209	same	ok	38	0.0264		0.0179	same	ok	1	1.7831	0.1636	0.1636	same	ok	6	0.1711	0.0587	0.0587	same
+set--subset_false_1000.rb	ok	10	0.1093		0.0025	same	ok	38	0.0267		0.0182	same	ok	1	1.7872	0.1608	0.1608	same	ok	6	0.1788	0.0633	0.0633	same
+set--superset_0.rb	ok	9	0.1181		0.0113	same	ok	36	0.0279		0.0195	same	ok	1	1.7509	0.1508	0.1508	same	ok	6	0.1835	0.0638	0.0638	same
+set--superset_10.rb	ok	8	0.1274		0.0207	same	ok	37	0.0279		0.0195	same	ok	1	1.7024	0.1512	0.1512	same	ok	7	0.1641	0.0608	0.0608	same
+set--superset_100.rb	ok	9	0.1192		0.0124	same	ok	37	0.0271		0.0187	same	ok	1	1.6929	0.1367	0.1367	same	ok	7	0.1642	0.0602	0.0602	same
+set--superset_1000.rb	ok	10	0.11		0.0032	same	ok	36	0.0278		0.0194	same	ok	1	2.0898	0.1613	0.1613	same	ok	6	0.1868	0.0664	0.0664	same
+set--superset_false_10.rb	ok	9	0.1166		0.0098	same	ok	38	0.0265		0.0181	same	ok	1	1.7038	0.1676	0.1676	same	ok	6	0.1783	0.0613	0.0613	same
+set--superset_false_100.rb	ok	8	0.1282		0.0214	same	ok	36	0.0282		0.0197	same	ok	1	1.6157	0.1607	0.1607	same	ok	6	0.1824	0.063	0.063	same
+set--superset_false_1000.rb	ok	9	0.1232		0.0164	same	ok	37	0.0275		0.0191	same	ok	1	1.6722	0.1565	0.1565	same	ok	6	0.1821	0.0667	0.0667	same
+set--to_a_0.rb	ok	9	0.1245		0.0177	same	ok	34	0.0297		0.0213	same	ok	1	1.898	0.181	0.181	same	ok	6	0.1742	0.0576	0.0576	same
+set--to_a_10.rb	ok	9	0.1215		0.0147	same	ok	37	0.0275		0.019	same	ok	1	1.9859	0.1534	0.1534	same	ok	7	0.1594	0.0557	0.0557	same
+set--to_a_100.rb	ok	9	0.1227		0.016	same	ok	39	0.0258		0.0174	same	ok	1	1.7179	0.1506	0.1506	same	ok	6	0.1828	0.0618	0.0618	same
+set--to_a_1000.rb	ok	9	0.1117		0.0049	same	ok	38	0.0265		0.018	same	ok	1	1.8711	0.1468	0.1468	same	ok	6	0.1795	0.0616	0.0616	same
+set--to_set_0.rb	ok	9	0.1112		0.0044	same	ok	40	0.0253		0.0169	same	ok	1	1.9353	0.1616	0.1616	same	ok	6	0.1785	0.059	0.059	same
+set--to_set_10.rb	ok	9	0.112		0.0053	same	ok	40	0.0252		0.0167	same	ok	1	1.7527	0.1446	0.1446	same	ok	6	0.1726	0.0558	0.0558	same
+set--to_set_100.rb	ok	9	0.1133		0.0065	same	ok	41	0.0249		0.0164	same	ok	1	2.0209	0.1541	0.1541	same	ok	7	0.1617	0.0583	0.0583	same
+set--to_set_1000.rb	ok	10	0.1001		0.001	same	ok	41	0.0248		0.0164	same	ok	1	1.7593	0.144	0.144	same	ok	6	0.1679	0.0587	0.0587	same
+set--xor_0.rb	ok	9	0.1133		0.0065	same	ok	42	0.024		0.0155	same	ok	1	1.7465	0.183	0.183	same	ok	7	0.1623	0.0537	0.0537	same
+set--xor_10.rb	ok	11	0.1		0.001	same	ok	42	0.024		0.0155	same	ok	1	1.5264	0.1156	0.1156	same	ok	7	0.1658	0.0548	0.0548	same
+set--xor_100.rb	ok	10	0.1034		0.001	same	ok	37	0.0273		0.0189	same	ok	1	2.0476	0.1809	0.1809	same	ok	7	0.1637	0.0599	0.0599	same
+set--xor_1000.rb	ok	10	0.1059		0.001	same	ok	35	0.0287		0.0202	same	ok	1	1.6212	0.1521	0.1521	same	ok	6	0.174	0.0601	0.0601	same
+set--xor_same_0.rb	ok	9	0.1217		0.0149	same	ok	35	0.029		0.0205	same	ok	1	1.8797	0.1678	0.1678	same	ok	7	0.1617	0.0564	0.0564	same
+set--xor_same_10.rb	ok	8	0.1254		0.0186	same	ok	36	0.0284		0.0199	same	ok	1	1.5496	0.1594	0.1594	same	ok	7	0.163	0.0522	0.0522	same
+set--xor_same_100.rb	ok	10	0.1036		0.001	same	ok	38	0.0267		0.0183	same	ok	1	1.7518	0.1816	0.1816	same	ok	6	0.1717	0.0601	0.0601	same
+set--xor_same_1000.rb	ok	10	0.1116		0.0049	same	ok	40	0.0256		0.0172	same	ok	1	1.5781	0.1885	0.1885	same	ok	6	0.1728	0.0641	0.0641	same
+string_ascii_only_p--ascii_only_false.rb	ok	10	0.1052		0.001	same	ok	97	0.0104		0.002	same	ok	1	1.6699	0.0114	0.0114	same	ok	8	0.136	0.0299	0.0299	same
+string_ascii_only_p--ascii_only_true.rb	ok	11	0.0986		0.001	same	ok	93	0.0108		0.0023	same	ok	1	1.6224	0.0126	0.0126	same	ok	8	0.1378	0.0302	0.0302	same
+string_capitalize--capitalize-1.rb	ok	11	0.1019		0.001	same	ok	95	0.0106		0.0021	same	ok	1	1.741	0.0152	0.0152	same	ok	6	0.1674	0.0354	0.0354	same
+string_capitalize--capitalize-10.rb	ok	11	0.099		0.001	same	ok	94	0.0107		0.0023	same	ok	1	1.5629	0.0083	0.0083	same	ok	7	0.1611	0.0348	0.0348	same
+string_capitalize--capitalize-100.rb	ok	9	0.1186		0.0119	same	ok	87	0.0116		0.0032	same	ok	1	1.4225	0.017	0.017	same	ok	7	0.1526	0.0318	0.0318	same
+string_capitalize--capitalize-1000.rb	ok	9	0.1165		0.0097	same	ok	90	0.0112		0.0027	same	ok	1	1.3889	0.0375	0.0375	same	ok	7	0.1507	0.0336	0.0336	same
+string_casecmp--casecmp-1.rb	ok	10	0.107		0.001	same	ok	92	0.0109		0.0025	same	ok	1	1.3478	0.021	0.021	same	ok	8	0.1318	0.0285	0.0285	same
+string_casecmp--casecmp-10.rb	ok	10	0.1033		0.001	same	ok	92	0.011		0.0025	same	ok	1	1.4957	0.0218	0.0218	same	ok	8	0.137	0.0324	0.0324	same
+string_casecmp--casecmp-100.rb	ok	11	0.0974		0.001	same	ok	102	0.0098		0.0014	same	ok	1	2.076	0.0287	0.0287	same	ok	7	0.143	0.0337	0.0337	same
+string_casecmp--casecmp-1000.rb	ok	11	0.0956		0.001	same	ok	102	0.0099		0.0014	same	ok	1	1.5908	0.0283	0.0283	same	ok	8	0.1419	0.0332	0.0332	same
+string_casecmp--casecmp-1000vs10.rb	ok	11	0.0956		0.001	same	ok	103	0.0098		0.0013	same	ok	1	1.4802	0.039	0.039	same	ok	8	0.1344	0.0294	0.0294	same
+string_casecmp--casecmp-nonascii1.rb	ok	10	0.1055		0.001	same	ok	101	0.0099		0.0015	same	ok	1	1.5995	0.0187	0.0187	same	ok	7	0.1471	0.0301	0.0301	same
+string_casecmp--casecmp-nonascii10.rb	ok	10	0.1094		0.0027	same	ok	84	0.012		0.0035	same	ok	1	1.7244	0.0117	0.0117	same	ok	7	0.1456	0.0303	0.0303	same
+string_casecmp--casecmp-nonascii100.rb	ok	9	0.1124		0.0056	same	ok	83	0.0121		0.0037	same	ok	1	1.4811	0.0247	0.0247	same	ok	7	0.1434	0.0302	0.0302	same
+string_casecmp--casecmp-nonascii1000.rb	ok	11	0.0983		0.001	same	ok	92	0.011		0.0025	same	ok	1	1.5062	0.0261	0.0261	same	ok	8	0.1268	0.0283	0.0283	same
+string_casecmp--casecmp-nonascii1000vs10.rb	ok	10	0.1094		0.0026	same	ok	92	0.011		0.0025	same	ok	1	1.3331	0.0331	0.0331	same	ok	8	0.1315	0.0283	0.0283	same
+string_codepoints--codepoints_mixed_ascii256.rb	ok	10	0.1063		0.001	same	ok	26	0.0388		0.0303	same	ok	1	1.971	0.3438	0.3438	same	ok	6	0.1688	0.0554	0.0554	same
+string_codepoints--codepoints_mixed_ascii64.rb	ok	11	0.0915		0.001	same	ok	26	0.0402		0.0318	same	ok	1	1.9652	0.3972	0.3972	same	ok	6	0.174	0.0565	0.0565	same
+string_codepoints--codepoints_utf8_2byte.rb	ok	9	0.1141		0.0073	same	ok	51	0.0198		0.0113	same	ok	1	1.8965	0.2769	0.2769	same	ok	7	0.1523	0.0383	0.0383	same
+string_coderange_scan--coderange_alternating.rb	ok	9	0.1195		0.0127	same	ok	94	0.0107		0.0023	same	ok	1	1.471	0.018	0.018	same	ok	7	0.1544	0.0352	0.0352	same
+string_coderange_scan--coderange_ascii.rb	ok	10	0.1066		0.001	same	ok	95	0.0106		0.0021	same	ok	1	1.6468	0.0102	0.0102	same	ok	8	0.133	0.0299	0.0299	same
+string_coderange_scan--coderange_multibyte.rb	ok	10	0.1068		0.001	same	ok	101	0.01		0.0015	same	ok	1	1.4391	0.013	0.013	same	ok	8	0.1336	0.0289	0.0289	same
+string_downcase--downcase-1.rb	ok	10	0.1078		0.0011	same	ok	79	0.0127		0.0043	same	ok	1	1.5277	0.0293	0.0293	same	ok	8	0.1325	0.0283	0.0283	same
+string_downcase--downcase-10.rb	ok	10	0.1041		0.001	same	ok	78	0.0129		0.0045	same	ok	1	1.3909	0.0261	0.0261	same	ok	8	0.1333	0.0304	0.0304	same
+string_downcase--downcase-100.rb	ok	11	0.0946		0.001	same	ok	70	0.0143		0.0059	same	ok	1	1.7293	0.025	0.025	same	ok	8	0.139	0.0311	0.0311	same
+string_downcase--downcase-1000.rb	ok	11	0.0993		0.001	same	ok	69	0.0146		0.0061	same	ok	1	1.5303	0.0631	0.0631	same	ok	7	0.1495	0.0338	0.0338	same
+string_downcase--downcase-ascii8bit-256.rb	ok	9	0.1159		0.0091	same	ok	67	0.0149		0.0065	same	ok	1	1.5976	0.0147	0.0147	same	ok	8	0.1443	0.0314	0.0314	same
+string_downcase--downcase-ascii8bit-2560.rb	ok	10	0.1072		0.001	same	ok	64	0.0157		0.0072	same	ok	1	1.3516	0.037	0.037	same	ok	8	0.1431	0.0312	0.0312	same
+string_downcase--downcase-ascii8bit-25600.rb	ok	10	0.1091		0.0024	same	ok	74	0.0137		0.0052	same	ok	1	1.8377	0.1049	0.1049	same	ok	8	0.1391	0.0309	0.0309	same
+string_downcase--downcase-ascii8bit-256000.rb	ok	11	0.1002		0.001	same	ok	70	0.0144		0.006	same	ok	1	1.8101	0.5083	0.5083	same	ok	8	0.1408	0.0346	0.0346	same
+string_downcase--downcase-nonascii1.rb	ok	10	0.1051		0.001	same	ok	67	0.015		0.0066	same	ok	1	1.788	0.0284	0.0284	same	ok	8	0.1384	0.0302	0.0302	same
+string_downcase--downcase-nonascii10.rb	ok	11	0.0965		0.001	same	ok	68	0.0148		0.0064	same	ok	1	1.3988	0.0276	0.0276	same	ok	7	0.1494	0.0317	0.0317	same
+string_downcase--downcase-nonascii100.rb	ok	10	0.1082		0.0014	same	ok	62	0.0162		0.0078	same	ok	1	1.8569	0.044	0.044	same	ok	8	0.1413	0.0316	0.0316	same
+string_downcase--downcase-nonascii1000.rb	ok	10	0.1043		0.001	same	ok	57	0.0177		0.0093	same	ok	1	1.5315	0.0694	0.0694	same	ok	7	0.1488	0.0339	0.0339	same
+string_dup--dup.rb	ok	9	0.1188		0.012	same	ok	89	0.0113		0.0028	same	ok	1	1.6025	0.0088	0.0088	same	ok	7	0.1439	0.0316	0.0316	same
+string_dup--uplus.rb	ok	10	0.1051		0.001	same	ok	89	0.0113		0.0029	same	ok	1	1.5954	0.0126	0.0126	same	ok	8	0.1377	0.0299	0.0299	same
+string_fstring--fstring_random.rb	ok	1	2.1371		2.0303	same	ok	1	1.5374		1.529	same	ok	1	28.5193	26.7575	26.7575	same	ok	1	12.9273	12.7248	12.7248	same
+string_fstring--fstring_same.rb	ok	2	1.0069		0.9001	same	ok	1	1.1376		1.1292	same	ok	1	17.5694	15.4696	15.4696	same	ok	1	5.2258	5.098	5.098	same
+string_gsub--escape.rb	ok	10	0.1068		0.001	same	ok	76	0.0132		0.0047	same	ok	1	1.6421	0.0873	0.0873	same	ok	8	0.1354	0.0347	0.0347	same
+string_gsub--escape_bin.rb	ok	11	0.0988		0.001	same	ok	81	0.0126		0.0041	same	ok	1	1.97	0.0737	0.0737	same	ok	8	0.1354	0.0332	0.0332	same
+string_gsub--escape_utf8.rb	ok	10	0.1116		0.0048	same	ok	85	0.0119		0.0034	same	ok	1	1.7534	0.0496	0.0496	same	ok	5	0.2266	0.045	0.045	same
+string_gsub--escape_utf8_bin.rb	ok	9	0.1169		0.0101	same	ok	62	0.0163		0.0079	same	ok	1	1.9229	0.0645	0.0645	same	ok	8	0.1294	0.031	0.031	same
+string_gsub--gsub_no_match_shared.rb	ok	9	0.1144		0.0076	same	ok	95	0.0106		0.0021	same	ok	1	1.4478	0.0683	0.0683	same	ok	8	0.1346	0.0288	0.0288	same
+string_gsub--sub_no_match_shared.rb	ok	10	0.1007		0.001	same	ok	102	0.0098		0.0014	same	ok	1	1.4421	0.0734	0.0734	same	ok	8	0.1311	0.03	0.03	same
+string_index.rb	ok	2	0.6752		0.5684	same	ok	2	0.636		0.6275	same	ok	1	17.1245	15.7393	15.7393	same	ok	1	1.3405	1.2307	1.2307	same
+string_inspect--inspect_ascii.rb	ok	11	0.099		0.001	same	ok	109	0.0092		0.001	same	ok	1	1.6025	0.0186	0.0186	same	ok	8	0.1373	0.0314	0.0314	same
+string_inspect--inspect_binary.rb	ok	11	0.0974		0.001	same	ok	110	0.0091		0.001	same	ok	1	1.6086	0.016	0.016	same	ok	8	0.1362	0.0279	0.0279	same
+string_inspect--inspect_escapy.rb	ok	10	0.1102		0.0034	same	ok	99	0.0101		0.0017	same	ok	1	1.5546	0.0216	0.0216	same	ok	8	0.136	0.0307	0.0307	same
+string_inspect--inspect_mixed.rb	ok	10	0.1042		0.001	same	ok	96	0.0105		0.0021	same	ok	1	1.4692	0.0207	0.0207	same	ok	8	0.1379	0.03	0.03	same
+string_inspect--inspect_utf8.rb	ok	9	0.1154		0.0086	same	ok	110	0.0091		0.001	same	ok	1	1.6757	0.0218	0.0218	same	ok	7	0.1526	0.0313	0.0313	same
+string_memsearch--byteindex_first_byte_absent.rb	ok	11	0.0981		0.001	same	ok	104	0.0097		0.0012	same	ok	1	1.3565	0.0158	0.0158	same	ok	7	0.1435	0.0317	0.0317	same
+string_memsearch--byteindex_first_byte_common.rb	ok	9	0.1227		0.0159	same	ok	86	0.0116		0.0032	same	ok	1	1.7182	0.0106	0.0106	same	ok	7	0.1526	0.0344	0.0344	same
+string_memsearch--include_first_byte_absent.rb	ok	9	0.1212		0.0145	same	ok	87	0.0115		0.0031	same	ok	1	2.0398	0.0218	0.0218	same	ok	7	0.1515	0.0337	0.0337	same
+string_memsearch--include_first_byte_common.rb	ok	9	0.1195		0.0127	same	ok	89	0.0114		0.0029	same	ok	1	1.7433	0.0192	0.0192	same	ok	7	0.16	0.0356	0.0356	same
+string_memsearch--index_first_byte_absent_large.rb	ok	9	0.1146		0.0078	same	ok	90	0.0111		0.0027	same	ok	1	1.9226	0.017	0.017	same	ok	8	0.1396	0.0312	0.0312	same
+string_memsearch--index_first_byte_absent_medium.rb	ok	8	0.1256		0.0188	same	ok	94	0.0106		0.0022	same	ok	1	1.6103	0.0162	0.0162	same	ok	7	0.1604	0.0359	0.0359	same
+string_memsearch--index_first_byte_absent_small.rb	ok	8	0.1323		0.0255	same	ok	93	0.0108		0.0024	same	ok	1	1.8999	0.0192	0.0192	same	ok	8	0.1431	0.0323	0.0323	same
+string_memsearch--index_first_byte_common_large.rb	ok	9	0.1192		0.0125	same	ok	86	0.0117		0.0032	same	ok	1	1.843	0.0246	0.0246	same	ok	7	0.1543	0.0343	0.0343	same
+string_memsearch--index_first_byte_common_medium.rb	ok	10	0.1095		0.0027	same	ok	89	0.0113		0.0029	same	ok	1	1.9716	0.0243	0.0243	same	ok	7	0.1546	0.0341	0.0341	same
+string_memsearch--index_first_byte_common_small.rb	ok	9	0.1122		0.0054	same	ok	93	0.0108		0.0024	same	ok	1	1.9714	0.0194	0.0194	same	ok	6	0.1674	0.0363	0.0363	same
+string_memsearch--index_match_at_end.rb	ok	9	0.1187		0.0119	same	ok	84	0.012		0.0036	same	ok	1	1.5212	0.0261	0.0261	same	ok	7	0.1486	0.0326	0.0326	same
+string_memsearch--index_match_at_start.rb	ok	9	0.1161		0.0093	same	ok	75	0.0134		0.0049	same	ok	1	1.6368	0.023	0.023	same	ok	6	0.1726	0.0362	0.0362	same
+string_memsearch--index_mixed_absent.rb	ok	9	0.1255		0.0187	same	ok	85	0.0119		0.0034	same	ok	1	1.9198	0.0217	0.0217	same	ok	7	0.1455	0.0308	0.0308	same
+string_memsearch--index_mixed_present.rb	ok	8	0.1288		0.0221	same	ok	90	0.0112		0.0028	same	ok	1	1.6575	0.0185	0.0185	same	ok	7	0.1557	0.0315	0.0315	same
+string_memsearch--index_needle_2_absent.rb	ok	9	0.1194		0.0127	same	ok	87	0.0115		0.0031	same	ok	1	1.7139	0.0136	0.0136	same	ok	7	0.1572	0.0352	0.0352	same
+string_memsearch--index_needle_4_absent.rb	ok	8	0.1408		0.034	same	ok	76	0.0133		0.0049	same	ok	1	1.7448	0.0211	0.0211	same	ok	6	0.1696	0.0363	0.0363	same
+string_memsearch--index_needle_8_absent.rb	ok	9	0.1263		0.0195	same	ok	80	0.0126		0.0042	same	ok	1	1.8526	0.0291	0.0291	same	ok	7	0.1453	0.0288	0.0288	same
+string_rpartition--rpartition-1.rb	ok	8	0.1295		0.0227	same	ok	82	0.0123		0.0039	same	ok	1	1.7074	0.024	0.024	same	ok	7	0.1604	0.0371	0.0371	same
+string_rpartition--rpartition-10.rb	ok	9	0.1139		0.0071	same	ok	82	0.0123		0.0039	same	ok	1	1.8215	0.0185	0.0185	same	ok	7	0.1446	0.0312	0.0312	same
+string_rpartition--rpartition-100.rb	ok	8	0.1428		0.036	same	ok	88	0.0114		0.003	same	ok	1	1.8838	0.0192	0.0192	same	ok	7	0.152	0.0339	0.0339	same
+string_rpartition--rpartition-1000.rb	ok	8	0.1337		0.0269	same	ok	91	0.011		0.0026	same	ok	1	1.9228	0.0454	0.0454	same	ok	7	0.1459	0.0306	0.0306	same
+string_rpartition--rpartition-nonascii1.rb	ok	10	0.1089		0.0022	same	ok	86	0.0118		0.0033	same	ok	1	1.7633	0.0253	0.0253	same	ok	8	0.1337	0.0287	0.0287	same
+string_rpartition--rpartition-nonascii10.rb	ok	10	0.1034		0.001	same	ok	99	0.0101		0.0017	same	ok	1	1.5535	0.0216	0.0216	same	ok	8	0.1356	0.0304	0.0304	same
+string_rpartition--rpartition-nonascii100.rb	ok	11	0.1001		0.001	same	ok	95	0.0106		0.0021	same	ok	1	1.6335	0.0249	0.0249	same	ok	8	0.1404	0.0295	0.0295	same
+string_rpartition--rpartition-nonascii1000.rb	ok	11	0.0981		0.001	same	ok	97	0.0103		0.0019	same	ok	1	1.6276	0.0803	0.0803	same	ok	7	0.1437	0.0303	0.0303	same
+string_scan_re.rb	ok	2	0.5483		0.4415	same	ok	2	0.5004		0.492	same	ok	1	5.2359	3.4534	3.4534	same	ok	2	1.0323	0.9207	0.9207	same
+string_scan_str.rb	ok	4	0.2597		0.1529	same	ok	4	0.2808		0.2724	same	ok	1	2.7245	1.4009	1.4009	same	ok	2	0.9381	0.8333	0.8333	same
+string_scrub--scrub_known_invalid.rb	ok	9	0.1246		0.0178	same	ok	77	0.0131		0.0046	same	ok	1	1.7782	0.0363	0.0363	same	ok	7	0.1443	0.0312	0.0312	same
+string_scrub--scrub_known_valid.rb	ok	8	0.1332		0.0264	same	ok	100	0.0101		0.0016	same	ok	1	1.6364	0.0159	0.0159	same	ok	8	0.1319	0.0279	0.0279	same
+string_scrub--scrub_unknown_and_invalid_coderange.rb	ok	10	0.104		0.001	same	ok	102	0.0098		0.0014	same	ok	1	1.7099	0.037	0.037	same	ok	8	0.1406	0.0291	0.0291	same
+string_scrub--scrub_unknown_and_invalid_coderange_worst_case.rb	ok	10	0.1072		0.001	same	ok	99	0.0102		0.0017	same	ok	1	1.5789	0.0146	0.0146	same	ok	7	0.1529	0.034	0.034	same
+string_scrub--scrub_unknown_but_valid_coderange.rb	ok	9	0.1224		0.0156	same	ok	88	0.0114		0.003	same	ok	1	1.8658	0.0246	0.0246	same	ok	7	0.1477	0.0312	0.0312	same
+string_scrub--scrub_unknown_but_valid_coderange_worst_case.rb	ok	8	0.1383		0.0316	same	ok	91	0.011		0.0026	same	ok	1	1.5013	0.0208	0.0208	same	ok	7	0.1482	0.034	0.034	same
+string_split--re_chars-1.rb	ok	9	0.1198		0.013	same	ok	81	0.0124		0.0039	same	ok	1	1.6968	0.013	0.013	same	ok	7	0.1555	0.0332	0.0332	same
+string_split--re_chars-10.rb	ok	8	0.1351		0.0284	same	ok	87	0.0116		0.0031	same	ok	1	1.5601	0.0187	0.0187	same	ok	7	0.1493	0.0338	0.0338	same
+string_split--re_chars-100.rb	ok	8	0.1254		0.0186	same	ok	80	0.0126		0.0042	same	ok	1	1.7061	0.0212	0.0212	same	ok	8	0.1416	0.0298	0.0298	same
+string_split--re_chars-1000.rb	ok	10	0.1125		0.0057	same	ok	49	0.0205		0.0121	same	ok	1	1.9548	0.1362	0.1362	same	ok	7	0.1499	0.0374	0.0374	same
+string_split--re_space-1.rb	ok	11	0.1025		0.001	same	ok	91	0.011		0.0026	same	ok	1	1.3862	0.0133	0.0133	same	ok	7	0.1578	0.0343	0.0343	same
+string_split--re_space-10.rb	ok	9	0.1148		0.0081	same	ok	93	0.0108		0.0023	same	ok	1	1.6216	0.0134	0.0134	same	ok	7	0.1487	0.0319	0.0319	same
+string_split--re_space-100.rb	ok	9	0.1177		0.0109	same	ok	80	0.0126		0.0041	same	ok	1	1.6842	0.0156	0.0156	same	ok	8	0.1333	0.0288	0.0288	same
+string_split--re_space-1000.rb	ok	8	0.1279		0.0212	same	ok	63	0.0161		0.0077	same	ok	1	1.838	0.0858	0.0858	same	ok	7	0.1597	0.0367	0.0367	same
+string_split--to_chars-1.rb	ok	10	0.1055		0.001	same	ok	87	0.0115		0.0031	same	ok	1	1.6517	0.0111	0.0111	same	ok	7	0.153	0.0363	0.0363	same
+string_split--to_chars-10.rb	ok	8	0.13		0.0232	same	ok	85	0.0118		0.0034	same	ok	1	1.3754	0.0173	0.0173	same	ok	8	0.139	0.0309	0.0309	same
+string_split--to_chars-100.rb	ok	11	0.0978		0.001	same	ok	95	0.0106		0.0022	same	ok	1	1.6902	0.0263	0.0263	same	ok	6	0.1732	0.0357	0.0357	same
+string_split--to_chars-1000.rb	ok	10	0.1072		0.001	same	ok	84	0.012		0.0035	same	ok	1	2.0858	0.1552	0.1552	same	ok	7	0.1483	0.0376	0.0376	same
+string_split--to_words-1.rb	ok	9	0.1187		0.012	same	ok	96	0.0105		0.0021	same	ok	1	1.9789	0.0156	0.0156	same	ok	7	0.1502	0.0331	0.0331	same
+string_split--to_words-10.rb	ok	10	0.1031		0.001	same	ok	96	0.0105		0.0021	same	ok	1	1.7784	0.0116	0.0116	same	ok	7	0.1526	0.0334	0.0334	same
+string_split--to_words-100.rb	ok	9	0.1187		0.0119	same	ok	90	0.0112		0.0028	same	ok	1	1.736	0.011	0.011	same	ok	7	0.1672	0.038	0.038	same
+string_split--to_words-1000.rb	ok	9	0.1209		0.0142	same	ok	80	0.0126		0.0042	same	ok	1	1.5489	0.0588	0.0588	same	ok	7	0.1541	0.0336	0.0336	same
+string_swapcase--swapcase-1.rb	ok	5	0.2148		0.108	same	ok	88	0.0114		0.0029	same	ok	1	1.7647	0.0145	0.0145	same	ok	6	0.1723	0.0407	0.0407	same
+string_swapcase--swapcase-10.rb	ok	8	0.1354		0.0286	same	ok	92	0.0109		0.0025	same	ok	1	1.7085	0.0224	0.0224	same	ok	6	0.1788	0.0363	0.0363	same
+string_swapcase--swapcase-100.rb	ok	7	0.1521		0.0453	same	ok	71	0.0141		0.0057	same	ok	1	1.8422	0.0347	0.0347	same	ok	7	0.1604	0.0345	0.0345	same
+string_swapcase--swapcase-1000.rb	ok	8	0.1448		0.038	same	ok	69	0.0146		0.0061	same	ok	1	1.8197	0.0361	0.0361	same	ok	7	0.1539	0.0336	0.0336	same
+string_swapcase--swapcase-nonascii1.rb	ok	9	0.1293		0.0225	same	ok	86	0.0118		0.0034	same	ok	1	1.7688	0.0185	0.0185	same	ok	7	0.148	0.0333	0.0333	same
+string_swapcase--swapcase-nonascii10.rb	ok	8	0.1256		0.0188	same	ok	84	0.012		0.0035	same	ok	1	1.5877	0.0111	0.0111	same	ok	8	0.1436	0.033	0.033	same
+string_swapcase--swapcase-nonascii100.rb	ok	8	0.141		0.0342	same	ok	82	0.0123		0.0038	same	ok	1	1.8361	0.0145	0.0145	same	ok	7	0.1551	0.0351	0.0351	same
+string_swapcase--swapcase-nonascii1000.rb	ok	10	0.1045		0.001	same	ok	78	0.0129		0.0045	same	ok	1	1.741	0.0736	0.0736	same	ok	7	0.1623	0.0355	0.0355	same
+string_tr--cgi_escape.rb	fail	1	0.1318			-	ok	89	0.0113		0.0029	?	fail	1	1.7387			-	fail	1	0.148			-
+string_tr--gsub_escape.rb	ok	9	0.121		0.0143	same	ok	74	0.0136		0.0051	same	ok	1	1.7087	0.0741	0.0741	same	fail	1	0.1618			-
+string_upcase--upcase-1.rb	ok	7	0.1533		0.0465	same	ok	67	0.0151		0.0066	same	ok	1	1.6521	0.0255	0.0255	same	ok	7	0.1449	0.0304	0.0304	same
+string_upcase--upcase-10.rb	ok	8	0.1257		0.0189	same	ok	69	0.0146		0.0061	same	ok	1	1.5159	0.0315	0.0315	same	ok	7	0.1527	0.0308	0.0308	same
+string_upcase--upcase-100.rb	ok	9	0.1245		0.0177	same	ok	68	0.0147		0.0063	same	ok	1	1.9343	0.0326	0.0326	same	ok	7	0.1504	0.0319	0.0319	same
+string_upcase--upcase-1000.rb	ok	9	0.122		0.0153	same	ok	65	0.0156		0.0071	same	ok	1	2.0846	0.0411	0.0411	same	ok	7	0.1516	0.0328	0.0328	same
+string_upcase--upcase-ascii8bit-256.rb	ok	9	0.1268		0.02	same	ok	61	0.0165		0.0081	same	ok	1	2.0818	0.0199	0.0199	same	ok	7	0.1608	0.0335	0.0335	same
+string_upcase--upcase-ascii8bit-2560.rb	ok	8	0.1342		0.0274	same	ok	65	0.0156		0.0072	same	ok	1	2.1158	0.0572	0.0572	same	ok	7	0.1509	0.0301	0.0301	same
+string_upcase--upcase-ascii8bit-25600.rb	ok	8	0.134		0.0272	same	ok	67	0.0151		0.0067	same	ok	1	1.6627	0.1613	0.1613	same	ok	7	0.1537	0.0336	0.0336	same
+string_upcase--upcase-ascii8bit-256000.rb	ok	10	0.1001		0.001	same	ok	67	0.015		0.0066	same	ok	1	2.2273	0.5364	0.5364	same	ok	7	0.1475	0.0362	0.0362	same
+string_upcase--upcase-nonascii1.rb	ok	10	0.1052		0.001	same	ok	68	0.0149		0.0065	same	ok	1	1.8306	0.0213	0.0213	same	ok	8	0.1396	0.0308	0.0308	same
+string_upcase--upcase-nonascii10.rb	ok	9	0.1111		0.0043	same	ok	71	0.0143		0.0058	same	ok	1	1.5435	0.0261	0.0261	same	ok	7	0.1472	0.0358	0.0358	same
+string_upcase--upcase-nonascii100.rb	ok	9	0.1184		0.0117	same	ok	64	0.0158		0.0073	same	ok	1	1.7997	0.0338	0.0338	same	ok	6	0.1872	0.0398	0.0398	same
+string_upcase--upcase-nonascii1000.rb	ok	9	0.1258		0.019	same	ok	64	0.0157		0.0073	same	ok	1	1.9912	0.0572	0.0572	same	ok	7	0.1505	0.0391	0.0391	same
+string_valid_encoding_p--valid_enc_false.rb	ok	8	0.1315		0.0247	same	ok	93	0.0108		0.0024	same	ok	1	1.8326	0.0217	0.0217	same	ok	7	0.1478	0.0308	0.0308	same
+string_valid_encoding_p--valid_enc_true.rb	ok	8	0.1319		0.0251	same	ok	93	0.0109		0.0024	same	ok	1	1.5007	0.0098	0.0098	same	ok	8	0.1378	0.0301	0.0301	same
+time_at--time_at_0.rb	ok	9	0.1138		0.007	same	ok	98	0.0102		0.0018	same	ok	1	1.6854	0.0156	0.0156	same	ok	7	0.151	0.0308	0.0308	same
+time_at--time_at_1.rb	ok	7	0.1432		0.0364	same	ok	100	0.01		0.0016	same	ok	1	1.4349	0.0094	0.0094	same	ok	8	0.1359	0.0273	0.0273	same
+time_at--time_at_2.rb	ok	10	0.1093		0.0025	same	ok	82	0.0123		0.0038	same	ok	1	1.8559	0.0131	0.0131	same	ok	6	0.1733	0.0365	0.0365	same
+time_at--time_at_3.rb	ok	9	0.1185		0.0117	same	ok	85	0.0119		0.0035	same	ok	1	1.8539	0.0162	0.0162	same	ok	6	0.1724	0.0384	0.0384	same
+time_new--time_new_0.rb	ok	8	0.1271		0.0204	same	ok	98	0.0103		0.0018	same	ok	1	1.6895	0.013	0.013	same	ok	7	0.154	0.0328	0.0328	same
+time_new--time_new_1.rb	ok	8	0.1268		0.02	same	ok	99	0.0101		0.0017	same	ok	1	1.7825	0.0203	0.0203	same	ok	8	0.1419	0.0319	0.0319	same
+time_new--time_new_2.rb	ok	10	0.1104		0.0037	same	ok	89	0.0114		0.0029	same	ok	1	1.7458	0.0148	0.0148	same	ok	7	0.1497	0.0305	0.0305	same
+time_now--time_now_0.rb	ok	8	0.1308		0.0241	same	ok	94	0.0107		0.0023	same	ok	1	1.8276	0.0095	0.0095	same	ok	7	0.1473	0.0332	0.0332	same
+time_now--time_now_1.rb	ok	10	0.1098		0.0031	same	ok	90	0.0111		0.0027	same	ok	1	1.9235	0.0129	0.0129	same	ok	7	0.1591	0.0343	0.0343	same
+time_now--time_now_2.rb	ok	9	0.1222		0.0154	same	ok	84	0.0119		0.0035	same	ok	1	1.9178	0.0179	0.0179	same	ok	7	0.1523	0.0318	0.0318	same
+time_parse--time_parse_0.rb	ok	8	0.139		0.0322	same	ok	88	0.0114		0.003	same	ok	1	1.7972	0.0767	0.0767	same	ok	6	0.1727	0.0404	0.0404	same
+time_parse--time_parse_1.rb	ok	7	0.1524		0.0456	same	ok	87	0.0115		0.0031	same	ok	1	1.9581	0.146	0.146	same	ok	7	0.1612	0.0322	0.0322	same
+time_parse--time_parse_2.rb	ok	7	0.1567		0.0499	same	ok	83	0.0121		0.0037	same	ok	1	1.6869	0.1362	0.1362	same	fail	1	0.1721			-
+time_parse--time_parse_3.rb	ok	8	0.1459		0.0391	same	ok	88	0.0115		0.0031	same	ok	1	2.0098	0.1192	0.1192	same	ok	7	0.1471	0.0313	0.0313	same
+time_parse--time_parse_4.rb	ok	9	0.122		0.0153	same	ok	94	0.0107		0.0023	same	ok	1	1.9008	0.1124	0.1124	same	ok	7	0.1653	0.0367	0.0367	same
+time_strftime--time_strftime_0.rb	ok	9	0.1183		0.0115	same	ok	92	0.011		0.0025	same	ok	1	1.7036	0.0142	0.0142	same	ok	7	0.1561	0.0345	0.0345	same
+time_strftime--time_strftime_1.rb	ok	8	0.1302		0.0234	same	ok	87	0.0116		0.0032	same	ok	1	1.6511	0.0094	0.0094	same	ok	7	0.158	0.0326	0.0326	same
+time_strftime--time_strftime_2.rb	ok	9	0.1118		0.0051	same	ok	93	0.0108		0.0023	same	ok	1	1.6568	0.0165	0.0165	same	ok	7	0.1521	0.0328	0.0328	same
+time_strptime--time_strptime_0.rb	ok	8	0.1388		0.032	same	ok	91	0.0111		0.0027	same	ok	1	1.6068	0.0436	0.0436	same	fail	1	0.1318			-
+time_strptime--time_strptime_1.rb	ok	10	0.1078		0.001	same	ok	89	0.0112		0.0028	same	ok	1	1.6966	0.0839	0.0839	same	fail	1	0.1465			-
+time_strptime--time_strptime_2.rb	ok	9	0.1134		0.0067	same	ok	96	0.0105		0.002	same	ok	1	1.9062	0.0928	0.0928	same	fail	1	0.1422			-
+time_strptime--time_strptime_3.rb	ok	8	0.1253		0.0185	same	ok	100	0.0101		0.0016	same	ok	1	1.9597	0.1063	0.1063	same	fail	1	0.1499			-
+time_strptime--time_strptime_4.rb	ok	10	0.1053		0.001	same	ok	96	0.0104		0.002	same	ok	1	2.0289	0.1065	0.1065	same	fail	1	0.1204			-
+time_strptime--time_strptime_6.rb	ok	8	0.1307		0.0239	same	ok	100	0.0101		0.0017	same	ok	1	1.8544	0.0951	0.0951	same	ok	7	0.1572	0.0352	0.0352	same
+time_strptime--time_strptime_7.rb	ok	10	0.1062		0.001	same	ok	96	0.0104		0.002	same	ok	1	1.5782	0.1139	0.1139	same	fail	1	0.1441			-
+time_strptime--time_strptime_8.rb	ok	9	0.116		0.0092	same	ok	92	0.011		0.0025	same	ok	1	2.0345	0.1105	0.1105	same	ok	8	0.1293	0.0285	0.0285	same
+time_strptime--time_strptime_9.rb	ok	8	0.1258		0.019	same	ok	100	0.0101		0.0016	same	ok	1	1.6893	0.0745	0.0745	same	ok	8	0.1369	0.0287	0.0287	same
+time_subsec.rb	ok	1	1.7857		1.6789	same	ok	1	1.1144		1.106	same	ok	1	41.092	38.9979	38.9979	same	ok	1	3.6537	3.5346	3.5346	same
+vm_array--vm_array.rb	ok	11	0.1002		0.001	same	ok	101	0.0099		0.0015	same	ok	1	1.82	0.019	0.019	same	ok	6	0.1882	0.0386	0.0386	same
+vm_bigarray--vm_bigarray.rb	ok	9	0.1137		0.0069	same	ok	89	0.0113		0.0029	same	ok	1	1.6051	0.0203	0.0203	same	ok	6	0.1668	0.0412	0.0412	same
+vm_bighash--vm_bighash.rb	ok	8	0.132		0.0252	same	ok	75	0.0134		0.005	same	ok	1	1.9011	0.037	0.037	same	ok	7	0.1559	0.0363	0.0363	same
+vm_block--vm_block.rb	ok	9	0.1156		0.0089	same	ok	95	0.0105		0.0021	same	ok	1	1.931	0.0135	0.0135	same	ok	7	0.1499	0.0356	0.0356	same
+vm_blockparam--vm_blockparam.rb	ok	9	0.1141		0.0073	same	ok	87	0.0115		0.0031	same	ok	1	1.6544	0.0172	0.0172	same	ok	7	0.1566	0.0371	0.0371	same
+vm_blockparam_call--vm_blockparam_call.rb	ok	11	0.0979		0.001	same	ok	104	0.0096		0.0012	same	ok	1	1.7263	0.011	0.011	same	ok	8	0.1349	0.0292	0.0292	same
+vm_blockparam_pass--vm_blockparam_pass.rb	ok	10	0.1033		0.001	same	ok	101	0.01		0.0015	same	ok	1	1.4549	0.0111	0.0111	same	ok	8	0.1421	0.0307	0.0307	same
+vm_blockparam_yield--vm_blockparam_yield.rb	ok	10	0.1091		0.0023	same	ok	96	0.0105		0.002	same	ok	1	1.7425	0.0129	0.0129	same	ok	8	0.1283	0.0278	0.0278	same
+vm_call_kw_and_kw_splat--1.rb	ok	8	0.1267		0.02	same	ok	80	0.0126		0.0042	same	ok	1	1.9549	0.0603	0.0603	same	ok	7	0.1495	0.0337	0.0337	same
+vm_call_kw_and_kw_splat--10.rb	ok	8	0.1281		0.0213	same	ok	76	0.0132		0.0048	same	ok	1	1.6006	0.085	0.085	same	ok	7	0.1583	0.0352	0.0352	same
+vm_call_kw_and_kw_splat--100.rb	ok	9	0.1127		0.006	same	ok	73	0.0138		0.0053	same	ok	1	1.5865	0.0576	0.0576	same	ok	8	0.1458	0.0334	0.0334	same
+vm_call_kw_and_kw_splat--1000.rb	ok	10	0.1057		0.001	same	ok	76	0.0132		0.0047	same	ok	1	1.6277	0.0957	0.0957	same	ok	8	0.1377	0.0322	0.0322	same
+vm_call_kw_and_kw_splat--1000_mutable.rb	ok	10	0.1053		0.001	same	ok	76	0.0133		0.0049	same	ok	1	2.1009	0.0668	0.0668	same	ok	7	0.1492	0.0352	0.0352	same
+vm_call_kw_and_kw_splat--100_mutable.rb	ok	8	0.1379		0.0311	same	ok	76	0.0133		0.0048	same	ok	1	2.0345	0.0939	0.0939	same	ok	8	0.1363	0.0313	0.0313	same
+vm_call_kw_and_kw_splat--10_mutable.rb	ok	9	0.12		0.0133	same	ok	80	0.0125		0.0041	same	ok	1	1.9481	0.06	0.06	same	ok	7	0.1569	0.0346	0.0346	same
+vm_call_kw_and_kw_splat--1_mutable.rb	ok	11	0.1007		0.001	same	ok	80	0.0127		0.0042	same	ok	1	1.5578	0.0673	0.0673	same	ok	7	0.1466	0.0334	0.0334	same
+vm_call_method_missing--method_missing_0_splat.rb	ok	11	0.0988		0.001	same	ok	87	0.0115		0.0031	same	ok	1	1.7234	0.0271	0.0271	same	ok	7	0.1439	0.0332	0.0332	same
+vm_call_method_missing--method_missing_0_splat_kw.rb	ok	9	0.1208		0.014	same	ok	85	0.0118		0.0034	same	ok	1	1.577	0.0213	0.0213	same	ok	8	0.1336	0.0272	0.0272	same
+vm_call_method_missing--method_missing_10_splat.rb	ok	10	0.1082		0.0014	same	ok	101	0.0099		0.0015	same	ok	1	1.7895	0.018	0.018	same	ok	8	0.1364	0.0296	0.0296	same
+vm_call_method_missing--method_missing_10_splat_kw.rb	ok	9	0.116		0.0092	same	ok	92	0.011		0.0025	same	ok	1	1.3047	0.0136	0.0136	same	ok	7	0.1444	0.0321	0.0321	same
+vm_call_method_missing--method_missing_1_splat.rb	ok	10	0.1059		0.001	same	ok	103	0.0098		0.0014	same	ok	1	1.8585	0.0171	0.0171	same	ok	6	0.1674	0.0351	0.0351	same
+vm_call_method_missing--method_missing_1_splat_kw.rb	ok	9	0.1112		0.0044	same	ok	107	0.0094		0.001	same	ok	1	1.7128	0.0174	0.0174	same	ok	7	0.1491	0.0328	0.0328	same
+vm_call_method_missing--method_missing_200_splat.rb	ok	9	0.1199		0.0131	same	ok	92	0.011		0.0025	same	ok	1	1.7767	0.025	0.025	same	ok	7	0.1469	0.0316	0.0316	same
+vm_call_method_missing--method_missing_200_splat_kw.rb	ok	8	0.1261		0.0193	same	ok	92	0.0109		0.0024	same	ok	1	1.6716	0.018	0.018	same	ok	7	0.1443	0.0306	0.0306	same
+vm_call_method_missing--method_missing_kw.rb	ok	11	0.0979		0.001	same	ok	95	0.0106		0.0022	same	ok	1	1.8522	0.0189	0.0189	same	ok	8	0.1366	0.0291	0.0291	same
+vm_call_method_missing--method_missing_kw_splat.rb	ok	9	0.119		0.0122	same	ok	91	0.0111		0.0026	same	ok	1	1.6038	0.0188	0.0188	same	ok	8	0.1382	0.0312	0.0312	same
+vm_call_method_missing--method_missing_no_kw.rb	ok	9	0.1158		0.0091	same	ok	82	0.0123		0.0038	same	ok	1	1.8618	0.0177	0.0177	same	ok	8	0.1428	0.032	0.032	same
+vm_call_method_missing--method_missing_no_splat.rb	ok	10	0.1067		0.001	same	ok	81	0.0124		0.0039	same	ok	1	1.515	0.0197	0.0197	same	ok	8	0.1433	0.0323	0.0323	same
+vm_call_method_missing--method_missing_simple_0.rb	ok	9	0.1114		0.0046	same	ok	86	0.0117		0.0033	same	ok	1	1.8801	0.0199	0.0199	same	ok	6	0.177	0.0377	0.0377	same
+vm_call_method_missing--method_missing_simple_0_splat.rb	ok	10	0.11		0.0032	same	ok	85	0.0119		0.0035	same	ok	1	1.5794	0.0276	0.0276	same	ok	6	0.1717	0.0347	0.0347	same
+vm_call_method_missing--method_missing_simple_1.rb	ok	9	0.1261		0.0193	same	ok	81	0.0124		0.0039	same	ok	1	1.6139	0.0204	0.0204	same	ok	7	0.1511	0.0315	0.0315	same
+vm_call_method_missing--method_missing_simple_1_splat.rb	ok	10	0.1078		0.001	same	ok	82	0.0123		0.0039	same	ok	1	1.9754	0.0201	0.0201	same	ok	7	0.1488	0.0315	0.0315	same
+vm_call_symproc--symproc_0_splat.rb	ok	9	0.1162		0.0094	same	ok	95	0.0106		0.0021	same	ok	1	1.5603	0.0197	0.0197	same	ok	8	0.1369	0.0294	0.0294	same
+vm_call_symproc--symproc_0_splat_comb.rb	ok	8	0.1295		0.0228	same	ok	95	0.0106		0.0022	same	ok	1	1.9221	0.0144	0.0144	same	ok	8	0.1344	0.0293	0.0293	same
+vm_call_symproc--symproc_0_splat_comb_kw.rb	ok	9	0.1112		0.0044	same	ok	94	0.0107		0.0023	same	ok	1	1.5696	0.0175	0.0175	same	ok	8	0.1372	0.0302	0.0302	same
+vm_call_symproc--symproc_0_splat_kw.rb	ok	7	0.145		0.0382	same	ok	97	0.0104		0.0019	same	ok	1	1.5823	0.0097	0.0097	same	ok	8	0.1337	0.0282	0.0282	same
+vm_call_symproc--symproc_10_splat.rb	ok	10	0.1066		0.001	same	ok	92	0.0109		0.0024	same	ok	1	1.5205	0.0245	0.0245	same	ok	7	0.1499	0.0341	0.0341	same
+vm_call_symproc--symproc_10_splat_comb.rb	ok	10	0.1023		0.001	same	ok	91	0.0111		0.0027	same	ok	1	1.8022	0.0134	0.0134	same	ok	8	0.1398	0.0286	0.0286	same
+vm_call_symproc--symproc_10_splat_comb_kw.rb	ok	10	0.1108		0.004	same	ok	97	0.0103		0.0019	same	ok	1	1.3661	0.0163	0.0163	same	ok	7	0.1446	0.0315	0.0315	same
+vm_call_symproc--symproc_10_splat_kw.rb	ok	10	0.1048		0.001	same	ok	93	0.0108		0.0024	same	ok	1	1.6107	0.017	0.017	same	ok	8	0.142	0.0302	0.0302	same
+vm_call_symproc--symproc_1_splat.rb	ok	10	0.1036		0.001	same	ok	94	0.0107		0.0022	same	ok	1	1.6549	0.0125	0.0125	same	ok	7	0.1488	0.0321	0.0321	same
+vm_call_symproc--symproc_1_splat_comb.rb	ok	10	0.1054		0.001	same	ok	103	0.0098		0.0013	same	ok	1	1.8315	0.021	0.021	same	ok	8	0.1336	0.0307	0.0307	same
+vm_call_symproc--symproc_1_splat_comb_kw.rb	ok	10	0.1061		0.001	same	ok	95	0.0106		0.0021	same	ok	1	1.6668	0.0335	0.0335	same	ok	8	0.1435	0.0353	0.0353	same
+vm_call_symproc--symproc_1_splat_kw.rb	ok	10	0.1002		0.001	same	ok	97	0.0104		0.002	same	ok	1	1.8232	0.0134	0.0134	same	ok	8	0.141	0.0297	0.0297	same
+vm_call_symproc--symproc_200_splat.rb	ok	9	0.1148		0.008	same	ok	91	0.011		0.0026	same	ok	1	1.5415	0.0303	0.0303	same	ok	7	0.1513	0.0313	0.0313	same
+vm_call_symproc--symproc_200_splat_comb.rb	ok	9	0.1248		0.018	same	ok	78	0.0128		0.0044	same	ok	1	1.9455	0.0129	0.0129	same	ok	7	0.1537	0.0317	0.0317	same
+vm_call_symproc--symproc_200_splat_comb_kw.rb	ok	9	0.1136		0.0069	same	ok	89	0.0113		0.0028	same	ok	1	1.7627	0.0267	0.0267	same	ok	7	0.1446	0.0301	0.0301	same
+vm_call_symproc--symproc_200_splat_kw.rb	ok	9	0.1238		0.017	same	ok	85	0.0118		0.0034	same	ok	1	2.1047	0.0171	0.0171	same	ok	7	0.1464	0.031	0.031	same
+vm_call_symproc--symproc_kw.rb	ok	9	0.1181		0.0113	same	ok	92	0.0109		0.0025	same	ok	1	1.8032	0.0238	0.0238	same	ok	7	0.1567	0.0345	0.0345	same
+vm_call_symproc--symproc_kw_splat.rb	ok	11	0.1021		0.001	same	ok	85	0.0118		0.0034	same	ok	1	1.4241	0.0169	0.0169	same	ok	7	0.1463	0.0293	0.0293	same
+vm_call_symproc--symproc_no_kw.rb	ok	8	0.1347		0.0279	same	ok	88	0.0115		0.003	same	ok	1	1.7354	0.0189	0.0189	same	ok	7	0.1442	0.0338	0.0338	same
+vm_call_symproc--symproc_no_splat.rb	ok	10	0.101		0.001	same	ok	88	0.0115		0.003	same	ok	1	1.9682	0.0174	0.0174	same	ok	8	0.1377	0.0301	0.0301	same
+vm_call_symproc--symproc_simple_0.rb	ok	8	0.1302		0.0234	same	ok	100	0.01		0.0016	same	ok	1	1.694	0.0184	0.0184	same	ok	6	0.1684	0.0387	0.0387	same
+vm_call_symproc--symproc_simple_0_splat.rb	ok	9	0.1174		0.0107	same	ok	83	0.0121		0.0036	same	ok	1	1.9276	0.0077	0.0077	same	ok	7	0.1473	0.0325	0.0325	same
+vm_call_symproc--symproc_simple_0_splat_comb.rb	ok	7	0.1512		0.0444	same	ok	84	0.012		0.0035	same	ok	1	1.7719	0.0175	0.0175	same	ok	6	0.1765	0.0394	0.0394	same
+vm_call_symproc--symproc_simple_1.rb	ok	10	0.1092		0.0024	same	ok	77	0.0131		0.0046	same	ok	1	1.5397	0.0465	0.0465	same	ok	5	0.2159	0.037	0.037	same
+vm_call_symproc--symproc_simple_1_splat.rb	ok	7	0.1462		0.0394	same	ok	57	0.0177		0.0093	same	ok	1	1.6206	0.0154	0.0154	same	ok	6	0.1786	0.0352	0.0352	same
+vm_call_symproc--symproc_simple_1_splat_comb.rb	ok	8	0.128		0.0212	same	ok	72	0.014		0.0055	same	ok	1	1.6341	0.0122	0.0122	same	ok	7	0.1458	0.0338	0.0338	same
+vm_case--vm_case.rb	ok	10	0.1102		0.0035	same	ok	92	0.0109		0.0024	same	ok	1	1.8885	0.0122	0.0122	same	ok	7	0.1504	0.0316	0.0316	same
+vm_case_classes--vm_case_classes.rb	ok	9	0.1195		0.0127	same	ok	85	0.0118		0.0034	same	ok	1	1.7807	0.0136	0.0136	same	ok	7	0.1469	0.0287	0.0287	same
+vm_clearmethodcache.rb	ok	2	0.5251		0.4184	same	ok	1	1.322		1.3136	same	ok	1	4.5113	2.9764	2.9764	same	ok	1	1.0634	0.9359	0.9359	same
+vm_const--vm_const.rb	ok	10	0.1138		0.007	same	ok	91	0.0111		0.0027	same	ok	1	1.6376	0.0206	0.0206	same	ok	7	0.1575	0.0348	0.0348	same
+vm_const--vm_const_many.rb	ok	10	0.1081		0.0013	same	ok	88	0.0115		0.0031	same	ok	1	2.0348	0.023	0.023	same	ok	7	0.1515	0.0301	0.0301	same
+vm_dstr--vm_dstr.rb	ok	9	0.1146		0.0079	same	ok	91	0.0111		0.0026	same	ok	1	1.6762	0.0196	0.0196	same	ok	8	0.1355	0.0288	0.0288	same
+vm_dstr_ary.rb	ok	1	3.0976		2.9909	same	ok	1	3.4063		3.3979	same	ok	1	33.0077	31.5598	31.5598	same	ok	1	14.3377	14.168	14.168	same
+vm_dstr_bool.rb	ok	1	1.7656		1.6588	same	ok	1	3.2098		3.2014	same	ok	1	24.5047	22.682	22.682	same	ok	1	13.4798	13.3269	13.3269	same
+vm_dstr_class_module.rb	ok	1	1.5457		1.4389	same	ok	1	3.9376		3.9292	same	ok	1	23.4675	21.3985	21.3985	same	ok	1	11.8418	11.6617	11.6617	same
+vm_dstr_digit.rb	ok	1	1.7576		1.6508	same	ok	1	2.8977		2.8892	same	ok	1	22.2214	20.5564	20.5564	same	ok	1	13.5833	13.318	13.318	same
+vm_dstr_int.rb	ok	1	3.726		3.6192	same	ok	1	4.4883		4.4798	same	ok	1	40.9593	39.0149	39.0149	same	ok	1	14.559	14.3708	14.3708	same
+vm_dstr_nil.rb	ok	1	1.6644		1.5576	same	ok	1	2.6235		2.615	same	ok	1	21.9435	19.9928	19.9928	same	ok	1	10.9568	10.7806	10.7806	same
+vm_dstr_obj.rb	ok	1	10.0478		9.941	same	ok	1	3.3746		3.3662	same	ok	1	101.9556	100.0532	100.0532	same	ok	1	13.8853	13.6633	13.6633	same
+vm_dstr_str.rb	ok	1	1.7939		1.6871	same	ok	1	2.7748		2.7664	same	ok	1	20.3064	18.6206	18.6206	same	ok	1	7.6635	7.5417	7.5417	same
+vm_dstr_sym.rb	ok	1	2.2932		2.1864	same	ok	1	2.778		2.7696	same	ok	1	20.8078	19.0856	19.0856	same	ok	1	10.4438	10.2383	10.2383	same
+vm_ensure--vm_ensure.rb	ok	2	0.6736		0.5668	same	ok	1	2.1239		2.1154	same	ok	1	17.8275	16.1544	16.1544	same	ok	1	8.7122	8.5971	8.5971	same
+vm_float_simple--vm_float_simple.rb	ok	8	0.1374		0.0306	same	ok	52	0.0192		0.0108	same	ok	1	1.7583	0.0108	0.0108	same	ok	6	0.1852	0.044	0.044	same
+vm_freezeobj--vm_freeze_obj.rb	ok	5	0.2187		0.1119	same	ok	7	0.146		0.1376	same	ok	1	4.3155	2.595	2.595	same	ok	1	1.0311	0.659	0.659	same
+vm_gc_short_lived--vm_gc_short_lived.rb	ok	7	0.1609		0.0541	same	ok	78	0.0128		0.0044	same	ok	1	1.9427	0.0086	0.0086	same	ok	5	0.2021	0.0469	0.0469	same
+vm_length--vm_length.rb	ok	9	0.116		0.0092	same	ok	79	0.0127		0.0042	same	ok	1	1.7422	0.0046	0.0046	same	ok	5	0.2337	0.0441	0.0441	same
+vm_lvar_cond_set--vm_lvar_cond_set.rb	ok	7	0.1742		0.0674	same	ok	69	0.0146		0.0062	same	ok	1	1.5724	0.0088	0.0088	same	ok	5	0.2101	0.0389	0.0389	same
+vm_lvar_init--vm_lvar_init.rb	ok	1	2.2833		2.1765	same	ok	1	16.822		16.8136	same	ok	1	48.7442	47.1148	47.1148	same	ok	1	50.9514	50.7575	50.7575	same
+vm_lvar_set--vm_lvar_set.rb	ok	5	0.2296		0.1228	same	ok	67	0.0161		0.0076	same	ok	1	1.685	0.0101	0.0101	same	ok	6	0.1942	0.0471	0.0471	same
+vm_method--vm_method.rb	ok	8	0.1299		0.0231	same	ok	81	0.0125		0.004	same	ok	1	1.533	0.009	0.009	same	ok	6	0.1825	0.0419	0.0419	same
+vm_method_missing--vm_method_missing.rb	ok	8	0.1276		0.0208	same	ok	62	0.0164		0.0079	same	ok	1	1.5133	0.0101	0.0101	same	ok	6	0.1821	0.0371	0.0371	same
+vm_method_splat_calls--arg_splat.rb	ok	8	0.131		0.0242	same	ok	84	0.0119		0.0035	same	ok	1	1.8712	0.0185	0.0185	same	ok	5	0.222	0.0422	0.0422	same
+vm_method_splat_calls--arg_splat_block.rb	ok	7	0.1742		0.0675	same	ok	50	0.02		0.0116	same	ok	1	1.5452	0.009	0.009	same	ok	6	0.1794	0.0343	0.0343	same
+vm_method_splat_calls--splat_kw.rb	ok	7	0.1548		0.048	same	ok	69	0.015		0.0065	same	ok	1	1.7937	0.0805	0.0805	same	ok	6	0.1878	0.0398	0.0398	same
+vm_method_splat_calls--splat_kw_block.rb	ok	10	0.1042		0.001	same	ok	75	0.0134		0.005	same	ok	1	1.3686	0.014	0.014	same	ok	6	0.1757	0.0388	0.0388	same
+vm_method_splat_calls--splat_kw_splat.rb	ok	8	0.1351		0.0284	same	ok	74	0.0149		0.0064	same	ok	1	1.7342	0.0049	0.0049	same	ok	4	0.2604	0.0417	0.0417	same
+vm_method_splat_calls--splat_kw_splat_block.rb	ok	7	0.1691		0.0623	same	ok	74	0.0136		0.0052	same	ok	1	1.7307	0.0123	0.0123	same	ok	7	0.1583	0.034	0.034	same
+vm_method_splat_calls2--anon_arg_kw_splat.rb	ok	10	0.1082		0.0014	same	ok	91	0.0112		0.0028	same	ok	1	1.5448	0.0157	0.0157	same	ok	6	0.1844	0.0373	0.0373	same
+vm_method_splat_calls2--anon_arg_splat.rb	ok	10	0.1092		0.0024	same	ok	70	0.0143		0.0059	same	ok	1	1.2577	0.0107	0.0107	same	ok	7	0.1649	0.0342	0.0342	same
+vm_method_splat_calls2--anon_fw_to_named_no_splat.rb	ok	10	0.1079		0.0011	same	ok	111	0.0091		0.001	same	ok	1	1.4219	0.0159	0.0159	same	ok	7	0.1602	0.0302	0.0302	same
+vm_method_splat_calls2--anon_fw_to_named_splat.rb	ok	10	0.1049		0.001	same	ok	81	0.0124		0.004	same	ok	1	1.5383	0.0091	0.0091	same	ok	6	0.1974	0.0365	0.0365	same
+vm_method_splat_calls2--anon_kw_splat.rb	ok	8	0.138		0.0312	same	ok	63	0.0161		0.0077	same	ok	1	1.9183	0.0093	0.0093	same	ok	7	0.1559	0.0355	0.0355	same
+vm_method_splat_calls2--anon_multi_arg_splat.rb	ok	11	0.0955		0.001	same	ok	83	0.0121		0.0037	same	ok	1	1.5916	0.0087	0.0087	same	ok	7	0.1591	0.0352	0.0352	same
+vm_method_splat_calls2--anon_post_splat.rb	ok	10	0.1055		0.001	same	ok	89	0.0113		0.0029	same	ok	1	1.6037	0.0163	0.0163	same	ok	7	0.1517	0.0344	0.0344	same
+vm_method_splat_calls2--fw_no_kw.rb	ok	10	0.1038		0.001	same	ok	88	0.0114		0.003	same	ok	1	1.4331	0.0143	0.0143	same	ok	7	0.1487	0.0329	0.0329	same
+vm_method_splat_calls2--fw_to_anon_to_named_no_splat.rb	ok	10	0.1061		0.001	same	ok	89	0.0113		0.0029	same	ok	1	1.3899	0.0153	0.0153	same	ok	7	0.1441	0.0295	0.0295	same
+vm_method_splat_calls2--fw_to_anon_to_named_splat.rb	ok	9	0.1194		0.0126	same	ok	96	0.0105		0.0021	same	ok	1	1.5351	0.009	0.009	same	ok	7	0.1552	0.0347	0.0347	same
+vm_method_splat_calls2--fw_to_named_no_splat.rb	ok	10	0.1023		0.001	same	ok	94	0.0107		0.0023	same	ok	1	1.555	0.0163	0.0163	same	ok	7	0.1474	0.0318	0.0318	same
+vm_method_splat_calls2--fw_to_named_splat.rb	ok	9	0.1148		0.008	same	ok	88	0.0114		0.0029	same	ok	1	1.4443	0.0116	0.0116	same	ok	7	0.1534	0.0327	0.0327	same
+vm_method_splat_calls2--named_multi_arg_splat.rb	ok	10	0.1014		0.001	same	ok	91	0.011		0.0026	same	ok	1	1.4124	0.0202	0.0202	same	ok	7	0.1518	0.033	0.033	same
+vm_method_splat_calls2--named_post_splat.rb	ok	10	0.1089		0.0021	same	ok	87	0.0115		0.0031	same	ok	1	1.8207	0.0174	0.0174	same	ok	7	0.1448	0.0298	0.0298	same
+vm_method_with_block--vm_method_with_block.rb	ok	10	0.1056		0.001	same	ok	87	0.0116		0.0031	same	ok	1	1.3987	0.0165	0.0165	same	ok	7	0.1569	0.0364	0.0364	same
+vm_newlambda--vm_newlambda.rb	ok	9	0.116		0.0092	same	ok	93	0.0108		0.0024	same	ok	1	1.7805	0.013	0.013	same	ok	8	0.135	0.0294	0.0294	same
+vm_not--vm_not.rb	ok	9	0.1129		0.0061	same	ok	91	0.0111		0.0026	same	ok	1	1.4269	0.0084	0.0084	same	ok	8	0.1349	0.0307	0.0307	same
+vm_poly_method--vm_poly_method.rb	ok	1	2.8877		2.7809	same	ok	1	15.957		15.9486	same	ok	1	33.1783	31.2444	31.2444	same	ok	1	22.8347	22.734	22.734	same
+vm_poly_method_ov--vm_poly_method_ov.rb	ok	3	0.3453		0.2385	same	ok	1	1.027		1.0186	same	ok	1	8.7642	6.9275	6.9275	same	ok	1	3.1559	3.0426	3.0426	same
+vm_poly_same_method--vm_poly_same_method.rb	ok	10	0.1023		0.001	same	ok	99	0.0102		0.0018	same	ok	1	1.8964	0.008	0.008	same	ok	7	0.1443	0.0328	0.0328	same
+vm_proc--vm_proc.rb	ok	10	0.1021		0.001	same	ok	106	0.0095		0.001	same	ok	1	1.5685	0.0143	0.0143	same	ok	8	0.1416	0.0287	0.0287	same
+vm_raise1--vm_raise1.rb	ok	11	0.0967		0.001	same	ok	102	0.0098		0.0014	same	ok	1	1.4297	0.0199	0.0199	same	ok	8	0.1376	0.0275	0.0275	same
+vm_raise2--vm_raise2.rb	ok	10	0.1078		0.0011	same	ok	93	0.0108		0.0024	same	ok	1	1.6263	0.0193	0.0193	same	ok	8	0.1263	0.0302	0.0302	same
+vm_regexp--vm_regexp.rb	ok	10	0.1135		0.0068	same	ok	90	0.0112		0.0028	same	ok	1	1.5213	0.0112	0.0112	same	ok	8	0.1372	0.0289	0.0289	same
+vm_regexp--vm_regexp_alternating.rb	ok	10	0.1059		0.001	same	ok	95	0.0106		0.0022	same	ok	1	1.5066	0.0141	0.0141	same	ok	8	0.1317	0.0292	0.0292	same
+vm_regexp--vm_regexp_invert.rb	ok	11	0.0925		0.001	same	ok	116	0.0087		0.001	same	ok	1	1.5669	0.0114	0.0114	same	ok	8	0.1348	0.0294	0.0294	same
+vm_regexp--vm_regexp_invert_alternating.rb	ok	10	0.1044		0.001	same	ok	102	0.0098		0.0014	same	ok	1	1.6857	0.0081	0.0081	same	ok	7	0.1436	0.0306	0.0306	same
+vm_rescue--vm_rescue.rb	ok	9	0.1171		0.0103	same	ok	67	0.0151		0.0067	same	ok	1	1.5992	0.007	0.007	same	ok	5	0.2037	0.0417	0.0417	same
+vm_simplereturn--vm_simplereturn.rb	ok	8	0.1338		0.027	same	ok	76	0.0135		0.0051	same	ok	1	1.6925	0.0109	0.0109	same	ok	5	0.2295	0.0437	0.0437	same
+vm_string_literal--vm_string_literal.rb	ok	6	0.1727		0.0659	same	ok	46	0.0221		0.0136	same	ok	1	1.7529	0.0102	0.0102	same	ok	6	0.1773	0.0386	0.0386	same
+vm_super--vm_super.rb	ok	8	0.1324		0.0256	same	ok	82	0.0122		0.0038	same	ok	1	1.4682	0.009	0.009	same	ok	6	0.1831	0.0403	0.0403	same
+vm_swap--vm_swap.rb	ok	9	0.1134		0.0066	same	ok	73	0.0138		0.0053	same	ok	1	1.6416	0.01	0.01	same	ok	5	0.2213	0.0466	0.0466	same
+vm_unif1--vm_unif1.rb	ok	6	0.1775		0.0707	same	ok	57	0.0181		0.0096	same	ok	1	1.6294	0.0091	0.0091	same	ok	7	0.1579	0.0342	0.0342	same
+vm_yield--vm_yield.rb	ok	1	1.5678		1.4611	same	ok	1	9.3711		9.3626	same	ok	1	31.2399	29.5937	29.5937	same	ok	1	15.0453	14.9181	14.9181	same
+vm_zsuper--vm_zsuper.rb	ok	8	0.1341		0.0274	same	ok	66	0.0153		0.0069	same	ok	1	1.5554	0.0092	0.0092	same	ok	6	0.1953	0.039	0.039	same
