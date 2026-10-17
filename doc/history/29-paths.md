@@ -8,7 +8,7 @@ strings that name files, not file access.
 ## Arithmetic, not I/O
 
 `File` gains `join`, `basename`, `dirname`, `extname`, `split`,
-`expand_path` and `absolute_path` ([src/stdlib/path.go:236](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/stdlib/path.go#L236-L347)).
+`expand_path` and `absolute_path` ([src/stdlib/path.go:236](https://github.com/radiospiel/amber/blob/bc9317ad4f17bd4546a89a84bf7f28ac2e06924b/src/stdlib/path.go#L236-L347)).
 None of them opens a file. Only `expand_path` reads anything, the working
 directory and `$HOME`, to resolve a relative path or `~`, and that is read,
 not written.
