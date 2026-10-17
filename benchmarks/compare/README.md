@@ -57,7 +57,13 @@ Of the cases MRI takes at least 0.1 s, amber is slowest on
 - method calls in deep recursion (`app_tak` 14×, `app_tarai` 13×,
   `app_fib` 11×) and blocks (`loop_each` 11×).
 
-[hotspots.rb](hotspots.rb) runs those cases alone.
+[hotspots.rb](hotspots.rb) runs those cases alone, and one of amber's own,
+[cases/array_sort_string.rb](cases/array_sort_string.rb): the suite sorts no
+strings by `<=>`, so it sorts 1000 random strings of up to eight characters
+10000 times, as `array_sort_float` does floats. Measured with the others on
+2026-10-17, amber takes 520% of MRI's time on it, against 1527% on
+`array_sort_float` and 38% on `array_sort_int--ary1000`, the one sort that
+needs no dispatch; warmruby takes 294% and rbgo 1519%.
 
 What the others fail on: MRI 3.3 lacks the core `Set` and a `Pathname`
 without `require` that the benchmarks, from CRuby master, use; seven `set`
