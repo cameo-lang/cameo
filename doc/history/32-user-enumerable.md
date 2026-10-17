@@ -11,7 +11,7 @@ did not know how to read it.
 A user class that includes Enumerable and defines `each` now gets
 Enumerable's methods. They run on an enumerator (step 26) over the class's
 `each`: the enumerator calls `each` with a block that hands each element to
-the method ([src/stdlib/enumerable.go:860](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/stdlib/enumerable.go#L860-L885)).
+the method ([src/stdlib/enumerable.go:860](https://github.com/radiospiel/amber/blob/30b5ca7c897b598ea0d66f75e65aba48d733e30d/src/stdlib/enumerable.go#L860-L885)).
 For that, a builtin passes a Go function as a block, which the evaluator
 calls like any other block: `Context.Block` turns a Go function into a
 Proc.
