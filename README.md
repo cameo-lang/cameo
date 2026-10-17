@@ -9,8 +9,8 @@ class Point
   int :x, :y
 
   def initialize(x, y)
-    @x = x
-    @y = y
+    self.x = x
+    self.y = y
   end
 
   def +(other) = Point.new(x + other.x, y + other.y)

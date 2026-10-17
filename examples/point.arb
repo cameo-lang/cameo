@@ -4,9 +4,9 @@ class Point
   string :label, default: ""
 
   def initialize(x, y, label: "")
-    @x = x
-    @y = y
-    @label = label
+    self.x = x
+    self.y = y
+    self.label = label
   end
 
   def +(other)

@@ -5,14 +5,15 @@ import (
 	"github.com/radiospiel/amber/src/syntax"
 )
 
-func (in *Interp) readIVar(name string, fr *Frame, line int) (object.Value, error) {
+// readField reads a field of self, as `self.name` does.
+func (in *Interp) readField(name string, fr *Frame, line int) (object.Value, error) {
 	inst, ok := fr.Self.AsInstance()
 	if !ok {
-		return object.Value{}, in.raise(object.NameError, line, "@%s: %s has no fields", name, typeName(fr.Self))
+		return object.Value{}, in.raise(object.NameError, line, "self.%s: %s has no fields", name, typeName(fr.Self))
 	}
 	v, ok := inst.Field(name)
 	if !ok {
-		return object.Value{}, in.raise(object.NameError, line, "@%s: %s has no field %s", name, inst.Cls.QualifiedName(), name)
+		return object.Value{}, in.raise(object.NameError, line, "self.%s: %s has no field %s", name, inst.Cls.QualifiedName(), name)
 	}
 	if v.IsZero() {
 		return object.Nil, nil
@@ -20,14 +21,16 @@ func (in *Interp) readIVar(name string, fr *Frame, line int) (object.Value, erro
 	return v, nil
 }
 
-func (in *Interp) writeIVar(name string, v object.Value, fr *Frame, line int) error {
+// writeField sets a field of the instance initialize is building, as
+// `self.name = v` does.
+func (in *Interp) writeField(name string, v object.Value, fr *Frame, line int) error {
 	inst := fr.Building
 	if inst == nil {
-		return in.raise(object.AmberError, line, "@%s = …: a field is set in initialize only", name)
+		return in.raise(object.AmberError, line, "self.%s = …: a field is set in initialize only", name)
 	}
 	idx, ok := inst.Cls.FieldIndex[name]
 	if !ok {
-		return in.raise(object.NameError, line, "@%s = …: %s has no field %s", name, inst.Cls.QualifiedName(), name)
+		return in.raise(object.NameError, line, "self.%s = …: %s has no field %s", name, inst.Cls.QualifiedName(), name)
 	}
 	checked, err := in.checkField(inst.Cls.Fields[idx], v, line)
 	if err != nil {
@@ -275,13 +278,6 @@ func (in *Interp) defined(n syntax.Node, env *Env, fr *Frame) (object.Value, err
 			return object.Value{}, err
 		}
 		return object.String("constant"), nil
-	case *syntax.IVar:
-		if inst, ok := fr.Self.AsInstance(); ok {
-			if f, ok := inst.Field(n.Name); ok && !f.IsZero() {
-				return object.String("instance-variable"), nil
-			}
-		}
-		return object.Nil, nil
 	case *syntax.Call:
 		recv := fr.Self
 		if n.Recv != nil {
@@ -305,7 +301,7 @@ func (in *Interp) defined(n syntax.Node, env *Env, fr *Frame) (object.Value, err
 		return object.String("yield"), nil
 	case *syntax.Self:
 		return object.String("self"), nil
-	case *syntax.Assign, *syntax.IVarAssign, *syntax.ConstAssign, *syntax.MultiAssign:
+	case *syntax.Assign, *syntax.FieldAssign, *syntax.ConstAssign, *syntax.MultiAssign:
 		return object.String("assignment"), nil
 	}
 	return object.String("expression"), nil

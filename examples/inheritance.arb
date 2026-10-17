@@ -3,7 +3,7 @@ class Animal
   string :name
 
   def initialize(name)
-    @name = name
+    self.name = name
   end
 
   def speak = "..."

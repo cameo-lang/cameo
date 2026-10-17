@@ -51,12 +51,12 @@ def reason(msg)
   case msg
   when /\Arequire_relative is not supported/ then nil
   when /\Aparse error/ then "parse-error"
-  when /\A@\w+ = …: a field is set in initialize only|\A@\w+: instance variables read fields|\Ainstance_variable_[gs]et is not supported/
+  when /\A@\w+( = …)?: amber has no instance variables|\Ainstance_variable_[gs]et is not supported/
     "instance-variables"
   when /\Aglobal variables are not supported/ then "globals"
   when /\Aclass variables are not supported/ then "class-variables"
   when /\Amultiple assignment binds local variables only/ then "multiple-assignment"
-  when /changes its receiver|a bang method changes its receiver|the left side of an assignment must start with a local variable|\Aindex assignment takes one index|cannot store into its hash/
+  when /changes its receiver|a bang method changes its receiver|the left side of an assignment must start with a local variable|\Aindex assignment takes one index|cannot store into its hash|\Aself\.\w+ = …: a field is set in initialize only|\Aself\[…\] = …: amber has no setters/
     "mutation"
   when /\Aclass << self is not supported|\Adef \S+ on an object|\Adef self\.\S+ outside a class body/ then "singleton-methods"
   when /\A(send|public_send|__send__|eval|class_eval|module_eval|instance_eval|instance_exec|class_exec|define_method|undef|method|binding) is not supported/

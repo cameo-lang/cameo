@@ -5,19 +5,19 @@ without running a spec. See [README.md](README.md).
 
 | Directory | Specs |
 |---|---|
-| `supported/` | 1404 |
+| `supported/` | 1403 |
 | `bug/` | 1 |
 | `unsupported/require/` | 1006 |
-| `unsupported/instance-variables/` | 830 |
-| `unsupported/metaprogramming/` | 164 |
-| `unsupported/mutation/` | 162 |
-| `unsupported/singleton-methods/` | 105 |
-| `unsupported/globals/` | 60 |
+| `unsupported/instance-variables/` | 852 |
+| `unsupported/mutation/` | 160 |
+| `unsupported/metaprogramming/` | 160 |
+| `unsupported/singleton-methods/` | 103 |
 | `unsupported/multiple-assignment/` | 56 |
+| `unsupported/globals/` | 48 |
 | `unsupported/regexp/` | 9 |
 | `unsupported/scoped-constants/` | 8 |
 | `unsupported/complex/` | 8 |
-| `unsupported/attr-accessor/` | 8 |
+| `unsupported/attr-accessor/` | 7 |
 | `unsupported/shell/` | 7 |
 | `unsupported/other/` | 4 |
 | `unsupported/procs/` | 3 |

@@ -25,7 +25,7 @@ What amber keeps from Ruby:
 
 - literals: `nil`, `true`, `false`, integers, floats, strings with
   interpolation, symbols, arrays, hashes, ranges, `%w[]` and `%i[]`
-- local variables, constants, instance variables inside `initialize`
+- local variables and constants
 - operators, `if`/`unless`/`elsif`/`else`, `case`/`when`, `case`/`in`
   (pattern matching over immutable data is a natural fit; it lands late, see
   *Milestones*), `while`/`until`, modifier forms, `&&`/`||`/`!`, safe
@@ -45,7 +45,9 @@ What amber keeps from Ruby:
 What amber leaves out, and the checker rejects by name:
 
 - any setter: `def x=(v)`, `attr_writer`, `attr_accessor`
-- instance variables outside `initialize`; class variables; global variables
+- instance variables, so `@` is free for later use: `initialize` sets a
+  field with `self.x = v`, and a field is read with its reader; class
+  variables; global variables
 - reopening a class: a second `class X` never changes the first, see
   *Classes*; a second `def` of one name in a class body; `define_method`,
   `send`, `instance_variable_set`, `eval`, `undef`,
@@ -174,8 +176,9 @@ a.x.y = 3
 a = a.with { |a0| { x: a0.x.with { |a1| { y: 3 } } } }
 ```
 
-The leftmost receiver must be a local variable (or an instance variable
-inside `initialize`), because the result has to be bound somewhere. `foo().x
+The leftmost receiver must be a local variable (or `self` inside
+`initialize`, where `self.x.y = 3` sets field `x`), because the result has
+to be bound somewhere. `foo().x
 = 3` and `CONST.x = 3` are rejected by the checker with that reason. Index
 assignment `a[0] = 1` and `h[:k] = v` desugar the same way, with an index or
 key.
@@ -192,9 +195,9 @@ class Point
   string :label, default: ""
 
   def initialize(x, y, label: "")
-    @x = x
-    @y = y
-    @label = label
+    self.x = x
+    self.y = y
+    self.label = label
   end
 
   def +(other)
@@ -252,15 +255,20 @@ end
 A `reserved` whose number a field already holds, or whose name a field
 declares, is an error at load time.
 
-**`initialize`** is the one place instance variables may be assigned, and
-`@x = v` there sets field `x`; a name that is not a field, or a value of the
-wrong type, raises. Reading `@x` anywhere reads the field. `Class.new(…)`
+**`initialize`** is the one place a field may be set: `self.x = v` there
+sets field `x`, and `self.x += 1`, `self.items << v` and `self.home.city =
+v` work as they do on a local. A name that is not a field, or a value of the
+wrong type, raises. While `initialize` runs, `self` is the instance being
+built, so its readers return what has been set so far. amber has no
+instance variables: `@x` is rejected everywhere, which leaves `@` free for
+later use. `Class.new(…)`
 takes `initialize`'s parameters; a class without `initialize` takes its
 fields as keyword arguments. When `initialize` returns, the message is sealed
 and becomes the instance.
 
 **Methods** read fields and return values. `self` is the instance. A method
-body cannot assign instance variables; the checker rejects it at load time.
+body cannot set a field; the checker rejects `self.x = v` outside
+`initialize` at load time, and `with` makes the changed copy instead.
 
 **A class is a value, and `class X … end` binds the name `X` to it**, the
 way `x = …` binds a variable. A class is identified by its normalised body:
@@ -504,6 +512,10 @@ re-opened by accident:
   arbitrary keys was rejected as not worth its cost.
 - **Field numbers** follow declaration order; `reserved` keeps a removed
   field's number and name out of use.
+- **No instance variables.** `initialize` sets a field with `self.x = v`,
+  and a field is read with its reader, so `@` is free for later use. Ruby
+  code that sets `@x` in `initialize` no longer runs unchanged; it never
+  could outside `initialize`.
 - **Field types** are proto3's scalar types under their own names, except
   that `float` keeps Ruby's meaning, a 64-bit `double`, and proto3's 32-bit
   float is `float32`; following proto3 to the letter would have changed
