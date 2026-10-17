@@ -28,3 +28,11 @@ class Person
 end
 
 puts Person.proto
+
+module Geo
+  class Point
+    int :x, :y
+  end
+end
+
+puts Geo::Point.proto.lines.first

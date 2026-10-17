@@ -34,6 +34,9 @@ func installStdlib() {
 }
 
 func init() {
+	object.ObjectClass.Define("tap", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return ctx.(*Interp).tap(self, block)
+	})
 	// Class#new builds an instance of a user class and runs its initialize.
 	object.ClassClass.Define("new", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return ctx.(*Interp).newInstance(self.(*object.Class), args, kw, block)

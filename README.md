@@ -31,13 +31,12 @@ interpreter is built in the milestones listed there.
 
 ## Status
 
-Milestone 3 of the plan in the design: the collection library. `amber
-script.arb` runs scripts that use literals, variables, operators, control
-flow, methods with every parameter kind, blocks, closures and lambdas,
-`case`/`when` and pattern matching, exceptions, classes with methods, and the
-standard library: Kernel, Integer, Float, String, Symbol, List, Map, Set,
-Range and Enumerable. Typed fields, protobuf and async are the milestones
-still to come.
+Milestone 4 of the plan in the design: classes. Besides everything the
+evaluator core and the library brought, a class declares typed fields, sets
+them in `initialize` or takes them as keywords, reads them, copies itself
+through `tap` and through `a.x.y = 3`, overrides and calls `super`, includes
+and extends modules, and is a value bound to its name. Protobuf and async are
+the milestones still to come.
 
 ```sh
 amber script.arb            # run; an uncaught exception prints script:line: message (Class)

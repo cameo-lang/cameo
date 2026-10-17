@@ -186,7 +186,7 @@ func (in *Interp) eval(n syntax.Node, env *Env, fr *Frame) (object.Value, error)
 	case *syntax.ModuleDef:
 		return in.evalModuleDef(n, env, fr)
 	case *syntax.FieldDecl:
-		return in.evalFieldDecl(n, fr)
+		return in.evalFieldDecl(n, env, fr)
 	case *syntax.Reserved:
 		return in.evalReserved(n, fr)
 	case *syntax.Include:

@@ -119,6 +119,9 @@ func (in *Interp) evalDef(n *syntax.Def, fr *Frame) (object.Value, error) {
 		return nil, in.raise(object.AmberError, n.Line(), "method %s is already defined in %s", n.Name, target.QualifiedName())
 	}
 	if existing, ok := table[n.Name]; ok && existing.Native != nil && existing.Owner == target {
+		if _, isField := target.FieldIndex[n.Name]; isField {
+			return nil, in.raise(object.AmberError, n.Line(), "def %s: %s is a field of %s, and fields read themselves", n.Name, n.Name, target.QualifiedName())
+		}
 		return nil, in.raise(object.AmberError, n.Line(), "cannot replace the builtin method %s of %s", n.Name, target.Name)
 	}
 	table[n.Name] = &object.Method{Name: n.Name, Owner: target, Body: n, Arity: -1, Lexical: fr.Lexical}
