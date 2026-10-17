@@ -33,7 +33,7 @@ measures each Ruby's start, the median time of an empty script:
 A first run that timed whole processes made amber look five times faster
 than MRI, because most cases run for a few milliseconds and amber starts in
 a tenth of MRI's time. So each case runs again and again until its runs add
-up to a second ([benchmarks/compare/compare.rb:185](https://github.com/radiospiel/amber/blob/@@COMMIT@@/benchmarks/compare/compare.rb#L185-L198)), and
+up to a second ([benchmarks/compare/compare.rb:185](https://github.com/radiospiel/amber/blob/15c2dfb65559dee49bbd842615bc24cd26ca1b48/benchmarks/compare/compare.rb#L185-L198)), and
 its time is the mean run less the start; warmruby and rbgo report the
 script's own time, which is used for them instead. Each output is checked
 against CRuby 3.4's.
