@@ -47,28 +47,3 @@ func (l *List) Kinds() Kinds {
 	atomic.StoreUint32(&l.kinds, uint32(k|kindsKnown))
 	return k
 }
-
-// kindNames are the names Names gives where a script would not know
-// Kind's own: Ruby's Array and Hash, the binary encoding, and "bignum" for
-// an Integer beyond 64 bits, which does not take the paths "int" does.
-var kindNames = map[Kind]string{KindList: "array", KindMap: "hash", KindBytes: "binary", KindBig: "bignum"}
-
-// Names names the kinds in the set, in the order of Kind, with "nan" after
-// "float" when a NaN is among them.
-func (k Kinds) Names() []string {
-	var names []string
-	for kind := KindNone; kind <= KindProcess; kind++ {
-		if k&(1<<kind) == 0 {
-			continue
-		}
-		if n, ok := kindNames[kind]; ok {
-			names = append(names, n)
-		} else {
-			names = append(names, kind.String())
-		}
-		if kind == KindFloat && k&KindsNaN != 0 {
-			names = append(names, "nan")
-		}
-	}
-	return names
-}

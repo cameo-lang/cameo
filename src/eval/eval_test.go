@@ -278,34 +278,3 @@ mixed
 nan
 `)
 }
-
-func TestItemType(t *testing.T) {
-	// _itemType names the kinds of an enumerable's elements, as the fast
-	// paths see them: an Array from what it keeps, anything else by a scan.
-	src := `
-p [1, 2]._itemType, [1, nil]._itemType, []._itemType
-p [1.5, Float::NAN]._itemType, [1, 2**70]._itemType
-p ["a", "b".b, "c".force_encoding("US-ASCII")]._itemType
-p({ a: 1 }._itemType, Set[:a]._itemType, (1..3)._itemType, [[1], {}]._itemType)
-class Bag
-  include Enumerable
-  def each
-    yield 1.0
-    yield "s"
-  end
-end
-p Bag.new._itemType
-`
-	expectOutput(t, src, `[:int]
-[:nil, :int]
-[]
-[:float, :nan]
-[:int, :bignum]
-[:string, :binary, :ascii]
-[:array]
-[:symbol]
-[:int]
-[:array, :hash]
-[:float, :string]
-`)
-}

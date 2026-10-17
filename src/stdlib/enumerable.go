@@ -32,37 +32,16 @@ func installEnumerable() {
 		})
 	}
 	// compared is each for the methods that compare elements: it passes the
-	// kinds they hold too, which an Array keeps and anything else is scanned
-	// for.
+	// kinds they hold too.
 	compared := func(name string, f func(ctx object.Context, elems []object.Value, kinds object.Kinds, args []object.Value, block object.Value) (object.Value, error)) {
 		def(e, name, -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			elems, err := toList(ctx, self)
 			if err != nil {
 				return object.Value{}, err
 			}
-			var kinds object.Kinds
-			if l, ok := self.AsList(); ok {
-				kinds = l.Kinds()
-			} else {
-				kinds = object.KindsOf(elems)
-			}
-			return f(ctx, elems, kinds, args, block)
+			return f(ctx, elems, itemKinds(self, elems), args, block)
 		})
 	}
-	// _itemType names the kinds of the elements as the fast paths see them,
-	// one Symbol each: an Array keeps them, anything else is scanned. It is
-	// amber's own, not Ruby's; the underscore marks it so.
-	compared("_itemType", func(ctx object.Context, elems []object.Value, kinds object.Kinds, args []object.Value, block object.Value) (object.Value, error) {
-		if len(args) != 0 {
-			return object.Value{}, argError(ctx, len(args), "0")
-		}
-		names := kinds.Names()
-		out := make([]object.Value, len(names))
-		for i, n := range names {
-			out[i] = object.Symbol(n)
-		}
-		return object.NewList(out...), nil
-	})
 	each("each_with_index", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		if block.IsZero() {
 			// Without a block, an enumerator of [element, index] pairs.
@@ -935,6 +914,17 @@ func installUserEnumerable() {
 			return ctx.CallWith(over, name, args, kw, block)
 		})
 	}
+}
+
+// itemKinds is the kinds of the items of an enumerable, self, whose items
+// toList made elems: an Array keeps them, anything else is scanned. It is for
+// the Go implementations, which choose a path by it; a script has no use for
+// it, and does not see it.
+func itemKinds(self object.Value, elems []object.Value) object.Kinds {
+	if l, ok := self.AsList(); ok {
+		return l.Kinds()
+	}
+	return object.KindsOf(elems)
 }
 
 // builtinCompare is <=> for elements of kinds, when they are all Integers
