@@ -1,0 +1,13 @@
+# Ten calls each of min, max and sort on a million integers, timed.
+t = Time.now
+a = Array.new(1_000_000) { |i| (i * 7919) % 1_000_003 }
+puts "build #{Time.now - t}"
+t = Time.now
+10.times { a.min }
+puts "min #{Time.now - t}"
+t = Time.now
+10.times { a.max }
+puts "max #{Time.now - t}"
+t = Time.now
+10.times { a.sort }
+puts "sort #{Time.now - t}"
