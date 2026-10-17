@@ -1,0 +1,16 @@
+class C
+  def m a
+    1
+  end
+end
+
+class CC < C
+  def m a
+    super
+  end
+end
+
+obj = CC.new
+
+obj.m 10
+

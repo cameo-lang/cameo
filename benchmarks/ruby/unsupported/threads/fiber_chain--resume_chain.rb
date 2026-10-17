@@ -1,0 +1,28 @@
+def make_link(previous)
+  Fiber.new do
+    while message = previous.resume
+      Fiber.yield(message)
+    end
+  end
+end
+
+def make_chain(length = 1000, &block)
+  chain = Fiber.new(&block)
+
+  (length - 1).times do
+    chain = make_link(chain)
+  end
+
+  return chain
+end
+
+message = "Hello World!"
+
+chain = make_chain do
+  while true
+    Fiber.yield(message)
+  end
+end
+
+chain.resume
+

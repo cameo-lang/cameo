@@ -1,0 +1,18 @@
+ios = 100.times.map do
+  10.times.map do
+    pipe = IO.pipe.tap do |r, w|
+      Thread.new do
+        r.read
+      rescue IOError
+        # Ignore
+      end
+    end
+  end
+end
+
+# Process each batch of ios per iteration of the benchmark.
+ios.pop.each do |r, w|
+  r.close
+  w.close
+end
+

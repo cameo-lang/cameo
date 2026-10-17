@@ -1,0 +1,1319 @@
+directory	file	source	reason
+bugs	bighash.rb	benchmark/bighash.rb	quadratic: each h[k] = v copies the whole map
+bugs	gc_hash1.rb	benchmark/gc/hash1.rb	quadratic: each h[k] = v copies the whole map
+bugs	gc_hash2.rb	benchmark/gc/hash2.rb	quadratic: each h[k] = v copies the whole map
+bugs	hash_aref_dsym_long.rb	benchmark/hash_aref_dsym_long.rb	quadratic: each h[k] = v copies the whole map
+bugs	hash_key--hash_key.rb	benchmark/hash_key.yml, entry hash_key	Object is not bound as a constant
+bugs	kernel_clone--clone.rb	benchmark/kernel_clone.yml, entry clone	Object is not bound as a constant
+bugs	kernel_clone--clone_false.rb	benchmark/kernel_clone.yml, entry clone_false	Object is not bound as a constant
+bugs	kernel_clone--clone_true.rb	benchmark/kernel_clone.yml, entry clone_true	Object is not bound as a constant
+bugs	kernel_tap--kernel_tap.rb	benchmark/kernel_tap.yml, entry kernel_tap	Object is not bound as a constant
+bugs	nil_p--nil_p_0.rb	benchmark/nil_p.yml, entry nil_p_0	Object is not bound as a constant
+bugs	nil_p--nil_p_1.rb	benchmark/nil_p.yml, entry nil_p_1	Object is not bound as a constant
+bugs	nil_p--nil_p_2.rb	benchmark/nil_p.yml, entry nil_p_2	Object is not bound as a constant
+bugs	numeric_methods--infinite_.rb	benchmark/numeric_methods.yml, entry infinite_	Integer#infinite? returns false, Ruby returns nil
+bugs	object_id--baseline.rb	benchmark/object_id.yml, entry baseline	Object is not bound as a constant
+bugs	object_id--object_id.rb	benchmark/object_id.yml, entry object_id	Object is not bound as a constant
+bugs	ractor_const--ractor_const.rb	benchmark/ractor_const.yml, entry ractor_const	Object is not bound as a constant
+bugs	range_reverse_each--Fixnum_1.rb	benchmark/range_reverse_each.yml, entry Fixnum_1	Range#reverse_each returns a list, Ruby returns the range
+bugs	range_reverse_each--Fixnum_1K.rb	benchmark/range_reverse_each.yml, entry Fixnum_1K	Range#reverse_each returns a list, Ruby returns the range
+bugs	range_reverse_each--Fixnum_1M.rb	benchmark/range_reverse_each.yml, entry Fixnum_1M	Range#reverse_each returns a list, Ruby returns the range
+bugs	vm_dstr_class_module.rb	benchmark/vm_dstr_class_module.rb	defined?(X) raises NameError instead of returning nil
+bugs	vm_dstr_obj.rb	benchmark/vm_dstr_obj.rb	Object is not bound as a constant
+bugs	vm_freezeobj--vm_freeze_obj.rb	benchmark/vm_freezeobj.yml, entry vm_freeze_obj	Object is not bound as a constant
+bugs	vm_neq--vm_neq.rb	benchmark/vm_neq.yml, entry vm_neq	Object is not bound as a constant
+bugs	vm_not--vm_not.rb	benchmark/vm_not.yml, entry vm_not	Object is not bound as a constant
+stdlib/array	array_eql--large_ary.__.rb	benchmark/array_eql.yml, entry large_ary.__	Array/Hash constants (Array.new, Hash.new)
+stdlib/array	array_eql--large_ary.eql_.rb	benchmark/array_eql.yml, entry large_ary.eql_	Array/Hash constants (Array.new, Hash.new)
+stdlib/array	array_eql--small_ary.eql_.rb	benchmark/array_eql.yml, entry small_ary.eql_	Array/Hash constants (Array.new, Hash.new)
+stdlib/array	array_eql--str_ary.eql_.rb	benchmark/array_eql.yml, entry str_ary.eql_	Array/Hash constants (Array.new, Hash.new)
+stdlib/array	array_intersection--big-intersection.rb	benchmark/array_intersection.yml, entry big-intersection	Array#intersection with several arguments, Array#sample(n)
+stdlib/array	array_intersection--small-intersection.rb	benchmark/array_intersection.yml, entry small-intersection	Array#intersection with several arguments, Array#sample(n)
+stdlib/array	array_join--join_nl_n100_e1.rb	benchmark/array_join.yml, entry join_nl_n100_e1	Array/Hash constants (Array.new, Hash.new)
+stdlib/array	array_join--join_nl_n100_e40.rb	benchmark/array_join.yml, entry join_nl_n100_e40	Array/Hash constants (Array.new, Hash.new)
+stdlib/array	array_join--join_nl_n100_e8.rb	benchmark/array_join.yml, entry join_nl_n100_e8	Array/Hash constants (Array.new, Hash.new)
+stdlib/array	array_join--join_nl_n100k_e1.rb	benchmark/array_join.yml, entry join_nl_n100k_e1	Array/Hash constants (Array.new, Hash.new)
+stdlib/array	array_join--join_nl_n100k_e40.rb	benchmark/array_join.yml, entry join_nl_n100k_e40	Array/Hash constants (Array.new, Hash.new)
+stdlib/array	array_join--join_nl_n100k_e8.rb	benchmark/array_join.yml, entry join_nl_n100k_e8	Array/Hash constants (Array.new, Hash.new)
+stdlib/array	array_join--join_nl_n1k_e1.rb	benchmark/array_join.yml, entry join_nl_n1k_e1	Array/Hash constants (Array.new, Hash.new)
+stdlib/array	array_join--join_nl_n1k_e40.rb	benchmark/array_join.yml, entry join_nl_n1k_e40	Array/Hash constants (Array.new, Hash.new)
+stdlib/array	array_join--join_nl_n1k_e8.rb	benchmark/array_join.yml, entry join_nl_n1k_e8	Array/Hash constants (Array.new, Hash.new)
+stdlib/array	array_join--join_sp_n100_e1.rb	benchmark/array_join.yml, entry join_sp_n100_e1	Array/Hash constants (Array.new, Hash.new)
+stdlib/array	array_join--join_sp_n100_e40.rb	benchmark/array_join.yml, entry join_sp_n100_e40	Array/Hash constants (Array.new, Hash.new)
+stdlib/array	array_join--join_sp_n100_e8.rb	benchmark/array_join.yml, entry join_sp_n100_e8	Array/Hash constants (Array.new, Hash.new)
+stdlib/array	array_join--join_sp_n100k_e1.rb	benchmark/array_join.yml, entry join_sp_n100k_e1	Array/Hash constants (Array.new, Hash.new)
+stdlib/array	array_join--join_sp_n100k_e40.rb	benchmark/array_join.yml, entry join_sp_n100k_e40	Array/Hash constants (Array.new, Hash.new)
+stdlib/array	array_join--join_sp_n100k_e8.rb	benchmark/array_join.yml, entry join_sp_n100k_e8	Array/Hash constants (Array.new, Hash.new)
+stdlib/array	array_join--join_sp_n1k_e1.rb	benchmark/array_join.yml, entry join_sp_n1k_e1	Array/Hash constants (Array.new, Hash.new)
+stdlib/array	array_join--join_sp_n1k_e40.rb	benchmark/array_join.yml, entry join_sp_n1k_e40	Array/Hash constants (Array.new, Hash.new)
+stdlib/array	array_join--join_sp_n1k_e8.rb	benchmark/array_join.yml, entry join_sp_n1k_e8	Array/Hash constants (Array.new, Hash.new)
+stdlib/array	array_sample--array_sample_1.rb	benchmark/array_sample.yml, entry array_sample_1	Array#intersection with several arguments, Array#sample(n)
+stdlib/array	array_sample_100k_10.rb	benchmark/array_sample_100k_10.rb	Array#intersection with several arguments, Array#sample(n)
+stdlib/array	array_sample_100k_11.rb	benchmark/array_sample_100k_11.rb	Array#intersection with several arguments, Array#sample(n)
+stdlib/array	array_sample_100k__100.rb	benchmark/array_sample_100k__100.rb	Array#intersection with several arguments, Array#sample(n)
+stdlib/array	array_sample_100k__1k.rb	benchmark/array_sample_100k__1k.rb	Array#intersection with several arguments, Array#sample(n)
+stdlib/array	array_sample_100k__6k.rb	benchmark/array_sample_100k__6k.rb	Array#intersection with several arguments, Array#sample(n)
+stdlib/array	array_sample_100k___10k.rb	benchmark/array_sample_100k___10k.rb	Array#intersection with several arguments, Array#sample(n)
+stdlib/array	array_sample_100k___50k.rb	benchmark/array_sample_100k___50k.rb	Array#intersection with several arguments, Array#sample(n)
+stdlib/array	array_sort_block.rb	benchmark/array_sort_block.rb	Array/Hash constants (Array.new, Hash.new)
+stdlib/array	array_sort_float.rb	benchmark/array_sort_float.rb	Array/Hash constants (Array.new, Hash.new)
+stdlib/array	array_values_at_int.rb	benchmark/array_values_at_int.rb	Array/Hash constants (Array.new, Hash.new)
+stdlib/array	array_values_at_range.rb	benchmark/array_values_at_range.rb	Array/Hash constants (Array.new, Hash.new)
+stdlib/array	enum_lazy_grep_v_100.rb	benchmark/enum_lazy_grep_v_100.rb	Array#grep_v
+stdlib/array	enum_lazy_grep_v_20.rb	benchmark/enum_lazy_grep_v_20.rb	Array#grep_v
+stdlib/array	enum_lazy_grep_v_50.rb	benchmark/enum_lazy_grep_v_50.rb	Array#grep_v
+stdlib/array	string_scan_str.rb	benchmark/string_scan_str.rb	Array/Hash constants (Array.new, Hash.new)
+stdlib/array	vm_gc_old_full.rb	benchmark/vm_gc_old_full.rb	Array/Hash constants (Array.new, Hash.new)
+stdlib/array	vm_gc_old_immediate.rb	benchmark/vm_gc_old_immediate.rb	Array/Hash constants (Array.new, Hash.new)
+stdlib/array	vm_gc_old_lazy.rb	benchmark/vm_gc_old_lazy.rb	Array/Hash constants (Array.new, Hash.new)
+stdlib/array	vm_gc_short_with_long--vm_gc_short_with_long.rb	benchmark/vm_gc_short_with_long.yml, entry vm_gc_short_with_long	Array/Hash constants (Array.new, Hash.new)
+stdlib/float	float_to_s--to_s.rb	benchmark/float_to_s.yml, entry to_s	Float#step
+stdlib/float	ractor_float_to_s--ractor_float_to_s.rb	benchmark/ractor_float_to_s.yml, entry ractor_float_to_s	Float#step
+stdlib/hash	hash_defaults--default_aref.rb	benchmark/hash_defaults.yml, entry default_aref	Array/Hash constants (Array.new, Hash.new)
+stdlib/hash	hash_defaults--default_method.rb	benchmark/hash_defaults.yml, entry default_method	Array/Hash constants (Array.new, Hash.new)
+stdlib/hash	hash_flatten.rb	benchmark/hash_flatten.rb	Hash#flatten
+stdlib/hash	hash_to_proc.rb	benchmark/hash_to_proc.rb	Hash#to_proc
+stdlib/hash	pm_array--fourth_match.rb	benchmark/pm_array.yml, entry fourth_match	Array/Hash constants (Array.new, Hash.new)
+stdlib/hash	vm_case_classes--vm_case_classes.rb	benchmark/vm_case_classes.yml, entry vm_case_classes	Array/Hash constants (Array.new, Hash.new)
+stdlib/hash	vm_gc_short_with_complex_long--vm_gc_short_with_complex_long.rb	benchmark/vm_gc_short_with_complex_long.yml, entry vm_gc_short_with_complex_long	Array/Hash constants (Array.new, Hash.new)
+stdlib/hash	vm_send_cfunc--vm_send_cfunc.rb	benchmark/vm_send_cfunc.yml, entry vm_send_cfunc	Array/Hash constants (Array.new, Hash.new)
+stdlib/hash	vm_send_cfunc--vm_send_cfunc_splat.rb	benchmark/vm_send_cfunc.yml, entry vm_send_cfunc_splat	Array/Hash constants (Array.new, Hash.new)
+stdlib/hash	vm_send_cfunc--vm_send_cfunc_splat_empty_kw.rb	benchmark/vm_send_cfunc.yml, entry vm_send_cfunc_splat_empty_kw	Array/Hash constants (Array.new, Hash.new)
+stdlib/hash	vm_send_cfunc--vm_send_cfunc_splat_empty_kw_hash.rb	benchmark/vm_send_cfunc.yml, entry vm_send_cfunc_splat_empty_kw_hash	Array/Hash constants (Array.new, Hash.new)
+stdlib/hash	vm_send_cfunc--vm_send_cfunc_splat_kw.rb	benchmark/vm_send_cfunc.yml, entry vm_send_cfunc_splat_kw	Array/Hash constants (Array.new, Hash.new)
+stdlib/hash	vm_send_cfunc--vm_send_cfunc_splat_kw_hash.rb	benchmark/vm_send_cfunc.yml, entry vm_send_cfunc_splat_kw_hash	Array/Hash constants (Array.new, Hash.new)
+stdlib/kernel	kernel_then--kernel_yield_self.rb	benchmark/kernel_then.yml, entry kernel_yield_self	Integer#yield_self
+stdlib/kernel	kernel_then--kernel_yield_self_enum.rb	benchmark/kernel_then.yml, entry kernel_yield_self_enum	Integer#yield_self
+stdlib/random	array_max_float--ary10.max.rb	benchmark/array_max_float.yml, entry ary10.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_float--ary100.max.rb	benchmark/array_max_float.yml, entry ary100.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_float--ary1000.max.rb	benchmark/array_max_float.yml, entry ary1000.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_float--ary10000.max.rb	benchmark/array_max_float.yml, entry ary10000.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_float--ary100000.max.rb	benchmark/array_max_float.yml, entry ary100000.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_float--ary2.max.rb	benchmark/array_max_float.yml, entry ary2.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_float--ary2000.max.rb	benchmark/array_max_float.yml, entry ary2000.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_float--ary20000.max.rb	benchmark/array_max_float.yml, entry ary20000.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_float--ary3000.max.rb	benchmark/array_max_float.yml, entry ary3000.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_float--ary500.max.rb	benchmark/array_max_float.yml, entry ary500.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_float--ary5000.max.rb	benchmark/array_max_float.yml, entry ary5000.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_float--ary50000.max.rb	benchmark/array_max_float.yml, entry ary50000.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_int--ary10.max.rb	benchmark/array_max_int.yml, entry ary10.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_int--ary100.max.rb	benchmark/array_max_int.yml, entry ary100.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_int--ary1000.max.rb	benchmark/array_max_int.yml, entry ary1000.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_int--ary10000.max.rb	benchmark/array_max_int.yml, entry ary10000.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_int--ary100000.max.rb	benchmark/array_max_int.yml, entry ary100000.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_int--ary1000000.max.rb	benchmark/array_max_int.yml, entry ary1000000.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_int--ary2.max.rb	benchmark/array_max_int.yml, entry ary2.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_int--ary2000.max.rb	benchmark/array_max_int.yml, entry ary2000.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_int--ary20000.max.rb	benchmark/array_max_int.yml, entry ary20000.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_int--ary3000.max.rb	benchmark/array_max_int.yml, entry ary3000.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_int--ary500.max.rb	benchmark/array_max_int.yml, entry ary500.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_int--ary5000.max.rb	benchmark/array_max_int.yml, entry ary5000.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_int--ary50000.max.rb	benchmark/array_max_int.yml, entry ary50000.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_str--ary10.max.rb	benchmark/array_max_str.yml, entry ary10.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_str--ary100.max.rb	benchmark/array_max_str.yml, entry ary100.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_str--ary1000.max.rb	benchmark/array_max_str.yml, entry ary1000.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_str--ary10000.max.rb	benchmark/array_max_str.yml, entry ary10000.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_str--ary100000.max.rb	benchmark/array_max_str.yml, entry ary100000.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_str--ary2.max.rb	benchmark/array_max_str.yml, entry ary2.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_str--ary2000.max.rb	benchmark/array_max_str.yml, entry ary2000.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_str--ary20000.max.rb	benchmark/array_max_str.yml, entry ary20000.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_str--ary3000.max.rb	benchmark/array_max_str.yml, entry ary3000.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_str--ary500.max.rb	benchmark/array_max_str.yml, entry ary500.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_str--ary5000.max.rb	benchmark/array_max_str.yml, entry ary5000.max	Random (rand, sample, shuffle)
+stdlib/random	array_max_str--ary50000.max.rb	benchmark/array_max_str.yml, entry ary50000.max	Random (rand, sample, shuffle)
+stdlib/random	array_min--ary10.min.rb	benchmark/array_min.yml, entry ary10.min	Random (rand, sample, shuffle)
+stdlib/random	array_min--ary100.min.rb	benchmark/array_min.yml, entry ary100.min	Random (rand, sample, shuffle)
+stdlib/random	array_min--ary1000.min.rb	benchmark/array_min.yml, entry ary1000.min	Random (rand, sample, shuffle)
+stdlib/random	array_min--ary10000.min.rb	benchmark/array_min.yml, entry ary10000.min	Random (rand, sample, shuffle)
+stdlib/random	array_min--ary100000.min.rb	benchmark/array_min.yml, entry ary100000.min	Random (rand, sample, shuffle)
+stdlib/random	array_min--ary1000000.min.rb	benchmark/array_min.yml, entry ary1000000.min	Random (rand, sample, shuffle)
+stdlib/random	array_min--ary2.min.rb	benchmark/array_min.yml, entry ary2.min	Random (rand, sample, shuffle)
+stdlib/random	array_min--ary2000.min.rb	benchmark/array_min.yml, entry ary2000.min	Random (rand, sample, shuffle)
+stdlib/random	array_min--ary20000.min.rb	benchmark/array_min.yml, entry ary20000.min	Random (rand, sample, shuffle)
+stdlib/random	array_min--ary3000.min.rb	benchmark/array_min.yml, entry ary3000.min	Random (rand, sample, shuffle)
+stdlib/random	array_min--ary500.min.rb	benchmark/array_min.yml, entry ary500.min	Random (rand, sample, shuffle)
+stdlib/random	array_min--ary5000.min.rb	benchmark/array_min.yml, entry ary5000.min	Random (rand, sample, shuffle)
+stdlib/random	array_min--ary50000.min.rb	benchmark/array_min.yml, entry ary50000.min	Random (rand, sample, shuffle)
+stdlib/random	array_sample--array_sample_0.rb	benchmark/array_sample.yml, entry array_sample_0	Random (rand, sample, shuffle)
+stdlib/random	array_sort_int--ary10.sort.rb	benchmark/array_sort_int.yml, entry ary10.sort	Random (rand, sample, shuffle)
+stdlib/random	array_sort_int--ary100.sort.rb	benchmark/array_sort_int.yml, entry ary100.sort	Random (rand, sample, shuffle)
+stdlib/random	array_sort_int--ary1000.sort.rb	benchmark/array_sort_int.yml, entry ary1000.sort	Random (rand, sample, shuffle)
+stdlib/random	array_sort_int--ary10000.sort.rb	benchmark/array_sort_int.yml, entry ary10000.sort	Random (rand, sample, shuffle)
+stdlib/random	array_sort_int--ary2.sort.rb	benchmark/array_sort_int.yml, entry ary2.sort	Random (rand, sample, shuffle)
+stdlib/random	complex_float_add--complex_float_add.rb	benchmark/complex_float_add.yml, entry complex_float_add	Random (rand, sample, shuffle)
+stdlib/random	complex_float_div--complex_float_div.rb	benchmark/complex_float_div.yml, entry complex_float_div	Random (rand, sample, shuffle)
+stdlib/random	complex_float_mul--complex_float_mul.rb	benchmark/complex_float_mul.yml, entry complex_float_mul	Random (rand, sample, shuffle)
+stdlib/random	complex_float_new--complex_float_new.rb	benchmark/complex_float_new.yml, entry complex_float_new	Random (rand, sample, shuffle)
+stdlib/random	complex_float_power--complex_float_power.rb	benchmark/complex_float_power.yml, entry complex_float_power	Random (rand, sample, shuffle)
+stdlib/random	complex_float_sub--complex_float_sub.rb	benchmark/complex_float_sub.yml, entry complex_float_sub	Random (rand, sample, shuffle)
+stdlib/random	enum_minmax--set10.max.rb	benchmark/enum_minmax.yml, entry set10.max	Random (rand, sample, shuffle)
+stdlib/random	enum_minmax--set10.min.rb	benchmark/enum_minmax.yml, entry set10.min	Random (rand, sample, shuffle)
+stdlib/random	enum_minmax--set10.minmax.rb	benchmark/enum_minmax.yml, entry set10.minmax	Random (rand, sample, shuffle)
+stdlib/random	enum_minmax--set100.max.rb	benchmark/enum_minmax.yml, entry set100.max	Random (rand, sample, shuffle)
+stdlib/random	enum_minmax--set100.min.rb	benchmark/enum_minmax.yml, entry set100.min	Random (rand, sample, shuffle)
+stdlib/random	enum_minmax--set100.minmax.rb	benchmark/enum_minmax.yml, entry set100.minmax	Random (rand, sample, shuffle)
+stdlib/random	enum_minmax--set1000.max.rb	benchmark/enum_minmax.yml, entry set1000.max	Random (rand, sample, shuffle)
+stdlib/random	enum_minmax--set1000.min.rb	benchmark/enum_minmax.yml, entry set1000.min	Random (rand, sample, shuffle)
+stdlib/random	enum_minmax--set1000.minmax.rb	benchmark/enum_minmax.yml, entry set1000.minmax	Random (rand, sample, shuffle)
+stdlib/random	enum_minmax--set10000.max.rb	benchmark/enum_minmax.yml, entry set10000.max	Random (rand, sample, shuffle)
+stdlib/random	enum_minmax--set10000.min.rb	benchmark/enum_minmax.yml, entry set10000.min	Random (rand, sample, shuffle)
+stdlib/random	enum_minmax--set10000.minmax.rb	benchmark/enum_minmax.yml, entry set10000.minmax	Random (rand, sample, shuffle)
+stdlib/random	enum_minmax--set2.max.rb	benchmark/enum_minmax.yml, entry set2.max	Random (rand, sample, shuffle)
+stdlib/random	enum_minmax--set2.min.rb	benchmark/enum_minmax.yml, entry set2.min	Random (rand, sample, shuffle)
+stdlib/random	enum_minmax--set2.minmax.rb	benchmark/enum_minmax.yml, entry set2.minmax	Random (rand, sample, shuffle)
+stdlib/random	enum_sort--set10.sort_by.rb	benchmark/enum_sort.yml, entry set10.sort_by	Random (rand, sample, shuffle)
+stdlib/random	enum_sort--set100.sort_by.rb	benchmark/enum_sort.yml, entry set100.sort_by	Random (rand, sample, shuffle)
+stdlib/random	enum_sort--set1000.sort_by.rb	benchmark/enum_sort.yml, entry set1000.sort_by	Random (rand, sample, shuffle)
+stdlib/random	enum_sort--set10000.sort_by.rb	benchmark/enum_sort.yml, entry set10000.sort_by	Random (rand, sample, shuffle)
+stdlib/random	enum_sort--set2.sort_by.rb	benchmark/enum_sort.yml, entry set2.sort_by	Random (rand, sample, shuffle)
+stdlib/random	enum_sort_by--all_zero10.sort_by.rb	benchmark/enum_sort_by.yml, entry all_zero10.sort_by	Random (rand, sample, shuffle)
+stdlib/random	enum_sort_by--all_zero1000.sort_by.rb	benchmark/enum_sort_by.yml, entry all_zero1000.sort_by	Random (rand, sample, shuffle)
+stdlib/random	enum_sort_by--all_zero100000.sort_by.rb	benchmark/enum_sort_by.yml, entry all_zero100000.sort_by	Random (rand, sample, shuffle)
+stdlib/random	enum_sort_by--all_zero2.sort_by.rb	benchmark/enum_sort_by.yml, entry all_zero2.sort_by	Random (rand, sample, shuffle)
+stdlib/random	enum_sort_by--fixnum_array10.sort_by.rb	benchmark/enum_sort_by.yml, entry fixnum_array10.sort_by	Random (rand, sample, shuffle)
+stdlib/random	enum_sort_by--fixnum_array1000.sort_by.rb	benchmark/enum_sort_by.yml, entry fixnum_array1000.sort_by	Random (rand, sample, shuffle)
+stdlib/random	enum_sort_by--fixnum_array100000.sort_by.rb	benchmark/enum_sort_by.yml, entry fixnum_array100000.sort_by	Random (rand, sample, shuffle)
+stdlib/random	enum_sort_by--fixnum_array2.sort_by.rb	benchmark/enum_sort_by.yml, entry fixnum_array2.sort_by	Random (rand, sample, shuffle)
+stdlib/random	enum_sort_by--float_array10.sort_by.rb	benchmark/enum_sort_by.yml, entry float_array10.sort_by	Random (rand, sample, shuffle)
+stdlib/random	enum_sort_by--float_array1000.sort_by.rb	benchmark/enum_sort_by.yml, entry float_array1000.sort_by	Random (rand, sample, shuffle)
+stdlib/random	enum_sort_by--float_array100000.sort_by.rb	benchmark/enum_sort_by.yml, entry float_array100000.sort_by	Random (rand, sample, shuffle)
+stdlib/random	enum_sort_by--float_array2.sort_by.rb	benchmark/enum_sort_by.yml, entry float_array2.sort_by	Random (rand, sample, shuffle)
+stdlib/random	enum_sort_by--mix_array10.sort_by.rb	benchmark/enum_sort_by.yml, entry mix_array10.sort_by	Random (rand, sample, shuffle)
+stdlib/random	enum_sort_by--mix_array1000.sort_by.rb	benchmark/enum_sort_by.yml, entry mix_array1000.sort_by	Random (rand, sample, shuffle)
+stdlib/random	enum_sort_by--mix_array100000.sort_by.rb	benchmark/enum_sort_by.yml, entry mix_array100000.sort_by	Random (rand, sample, shuffle)
+stdlib/random	enum_sort_by--mix_array2.sort_by.rb	benchmark/enum_sort_by.yml, entry mix_array2.sort_by	Random (rand, sample, shuffle)
+stdlib/random	enum_sort_by--string_length10.sort_by.rb	benchmark/enum_sort_by.yml, entry string_length10.sort_by	Random (rand, sample, shuffle)
+stdlib/random	enum_sort_by--string_length1000.sort_by.rb	benchmark/enum_sort_by.yml, entry string_length1000.sort_by	Random (rand, sample, shuffle)
+stdlib/random	enum_sort_by--string_length100000.sort_by.rb	benchmark/enum_sort_by.yml, entry string_length100000.sort_by	Random (rand, sample, shuffle)
+stdlib/random	enum_sort_by--string_length2.sort_by.rb	benchmark/enum_sort_by.yml, entry string_length2.sort_by	Random (rand, sample, shuffle)
+stdlib/range	range_bsearch_bignum--first.rb	benchmark/range_bsearch_bignum.yml, entry first	Range#bsearch
+stdlib/range	range_bsearch_bignum--last.rb	benchmark/range_bsearch_bignum.yml, entry last	Range#bsearch
+stdlib/range	range_bsearch_bignum--mid.rb	benchmark/range_bsearch_bignum.yml, entry mid	Range#bsearch
+stdlib/range	range_bsearch_endpointless--beginless_-10__0.rb	benchmark/range_bsearch_endpointless.yml, entry beginless_-10__0	Range#bsearch
+stdlib/range	range_bsearch_endpointless--beginless_-10__1.rb	benchmark/range_bsearch_endpointless.yml, entry beginless_-10__1	Range#bsearch
+stdlib/range	range_bsearch_endpointless--beginless_-10__10.rb	benchmark/range_bsearch_endpointless.yml, entry beginless_-10__10	Range#bsearch
+stdlib/range	range_bsearch_endpointless--beginless_-10__2.rb	benchmark/range_bsearch_endpointless.yml, entry beginless_-10__2	Range#bsearch
+stdlib/range	range_bsearch_endpointless--beginless_-10__3.rb	benchmark/range_bsearch_endpointless.yml, entry beginless_-10__3	Range#bsearch
+stdlib/range	range_bsearch_endpointless--beginless_-10__4.rb	benchmark/range_bsearch_endpointless.yml, entry beginless_-10__4	Range#bsearch
+stdlib/range	range_bsearch_endpointless--beginless_-10__5.rb	benchmark/range_bsearch_endpointless.yml, entry beginless_-10__5	Range#bsearch
+stdlib/range	range_bsearch_endpointless--endless_10__0.rb	benchmark/range_bsearch_endpointless.yml, entry endless_10__0	Range#bsearch
+stdlib/range	range_bsearch_endpointless--endless_10__1.rb	benchmark/range_bsearch_endpointless.yml, entry endless_10__1	Range#bsearch
+stdlib/range	range_bsearch_endpointless--endless_10__10.rb	benchmark/range_bsearch_endpointless.yml, entry endless_10__10	Range#bsearch
+stdlib/range	range_bsearch_endpointless--endless_10__2.rb	benchmark/range_bsearch_endpointless.yml, entry endless_10__2	Range#bsearch
+stdlib/range	range_bsearch_endpointless--endless_10__3.rb	benchmark/range_bsearch_endpointless.yml, entry endless_10__3	Range#bsearch
+stdlib/range	range_bsearch_endpointless--endless_10__4.rb	benchmark/range_bsearch_endpointless.yml, entry endless_10__4	Range#bsearch
+stdlib/range	range_bsearch_endpointless--endless_10__5.rb	benchmark/range_bsearch_endpointless.yml, entry endless_10__5	Range#bsearch
+stdlib/range	range_bsearch_fixnum--first.rb	benchmark/range_bsearch_fixnum.yml, entry first	Range#bsearch
+stdlib/range	range_bsearch_fixnum--last.rb	benchmark/range_bsearch_fixnum.yml, entry last	Range#bsearch
+stdlib/range	range_bsearch_fixnum--mid.rb	benchmark/range_bsearch_fixnum.yml, entry mid	Range#bsearch
+stdlib/string	ractor_string_fstring--ractor_fstring_same.rb	benchmark/ractor_string_fstring.yml, entry ractor_fstring_same	String#-@
+stdlib/string	string_codepoints--codepoints_mixed_ascii256.rb	benchmark/string_codepoints.yml, entry codepoints_mixed_ascii256	String#codepoints
+stdlib/string	string_codepoints--codepoints_mixed_ascii64.rb	benchmark/string_codepoints.yml, entry codepoints_mixed_ascii64	String#codepoints
+stdlib/string	string_codepoints--codepoints_utf8_2byte.rb	benchmark/string_codepoints.yml, entry codepoints_utf8_2byte	String#codepoints
+stdlib/string	string_dup--uplus.rb	benchmark/string_dup.yml, entry uplus	String#+@
+stdlib/string	string_fstring--fstring_same.rb	benchmark/string_fstring.yml, entry fstring_same	String#-@
+stdlib/string	string_memsearch--byteindex_first_byte_absent.rb	benchmark/string_memsearch.yml, entry byteindex_first_byte_absent	String#byteindex
+stdlib/string	string_memsearch--byteindex_first_byte_common.rb	benchmark/string_memsearch.yml, entry byteindex_first_byte_common	String#byteindex
+stdlib/string-range	enum_lazy_zip--block.rb	benchmark/enum_lazy_zip.yml, entry block	ranges over strings ('a'..'z')
+stdlib/string-range	enum_lazy_zip--chain-first_nonary.rb	benchmark/enum_lazy_zip.yml, entry chain-first_nonary	ranges over strings ('a'..'z')
+stdlib/string-range	enum_lazy_zip--chain-take3_nonary.rb	benchmark/enum_lazy_zip.yml, entry chain-take3_nonary	ranges over strings ('a'..'z')
+stdlib/string-range	enum_lazy_zip--first_nonary.rb	benchmark/enum_lazy_zip.yml, entry first_nonary	ranges over strings ('a'..'z')
+stdlib/string-range	enum_lazy_zip--take3_nonary.rb	benchmark/enum_lazy_zip.yml, entry take3_nonary	ranges over strings ('a'..'z')
+stdlib/string-range	enum_tally--tally.rb	benchmark/enum_tally.yml, entry tally	ranges over strings ('a'..'z')
+stdlib/string-range	hash_aref_dsym.rb	benchmark/hash_aref_dsym.rb	ranges over strings ('a'..'z')
+stdlib/string-range	range_count--string.rb	benchmark/range_count.yml, entry string	ranges over strings ('a'..'z')
+stdlib/string-range	string_capitalize--capitalize-1.rb	benchmark/string_capitalize.yml, entry capitalize-1	ranges over strings ('a'..'z')
+stdlib/string-range	string_capitalize--capitalize-10.rb	benchmark/string_capitalize.yml, entry capitalize-10	ranges over strings ('a'..'z')
+stdlib/string-range	string_capitalize--capitalize-100.rb	benchmark/string_capitalize.yml, entry capitalize-100	ranges over strings ('a'..'z')
+stdlib/string-range	string_capitalize--capitalize-1000.rb	benchmark/string_capitalize.yml, entry capitalize-1000	ranges over strings ('a'..'z')
+stdlib/string-range	string_casecmp--casecmp-1.rb	benchmark/string_casecmp.yml, entry casecmp-1	ranges over strings ('a'..'z')
+stdlib/string-range	string_casecmp--casecmp-10.rb	benchmark/string_casecmp.yml, entry casecmp-10	ranges over strings ('a'..'z')
+stdlib/string-range	string_casecmp--casecmp-100.rb	benchmark/string_casecmp.yml, entry casecmp-100	ranges over strings ('a'..'z')
+stdlib/string-range	string_casecmp--casecmp-1000.rb	benchmark/string_casecmp.yml, entry casecmp-1000	ranges over strings ('a'..'z')
+stdlib/string-range	string_casecmp--casecmp-1000vs10.rb	benchmark/string_casecmp.yml, entry casecmp-1000vs10	ranges over strings ('a'..'z')
+stdlib/string-range	string_casecmp--casecmp-nonascii1.rb	benchmark/string_casecmp.yml, entry casecmp-nonascii1	ranges over strings ('a'..'z')
+stdlib/string-range	string_casecmp--casecmp-nonascii10.rb	benchmark/string_casecmp.yml, entry casecmp-nonascii10	ranges over strings ('a'..'z')
+stdlib/string-range	string_casecmp--casecmp-nonascii100.rb	benchmark/string_casecmp.yml, entry casecmp-nonascii100	ranges over strings ('a'..'z')
+stdlib/string-range	string_casecmp--casecmp-nonascii1000.rb	benchmark/string_casecmp.yml, entry casecmp-nonascii1000	ranges over strings ('a'..'z')
+stdlib/string-range	string_casecmp--casecmp-nonascii1000vs10.rb	benchmark/string_casecmp.yml, entry casecmp-nonascii1000vs10	ranges over strings ('a'..'z')
+stdlib/string-range	string_casecmp_p--casecmp_p-1.rb	benchmark/string_casecmp_p.yml, entry casecmp_p-1	ranges over strings ('a'..'z')
+stdlib/string-range	string_casecmp_p--casecmp_p-10.rb	benchmark/string_casecmp_p.yml, entry casecmp_p-10	ranges over strings ('a'..'z')
+stdlib/string-range	string_casecmp_p--casecmp_p-100.rb	benchmark/string_casecmp_p.yml, entry casecmp_p-100	ranges over strings ('a'..'z')
+stdlib/string-range	string_casecmp_p--casecmp_p-1000.rb	benchmark/string_casecmp_p.yml, entry casecmp_p-1000	ranges over strings ('a'..'z')
+stdlib/string-range	string_casecmp_p--casecmp_p-nonascii1.rb	benchmark/string_casecmp_p.yml, entry casecmp_p-nonascii1	ranges over strings ('a'..'z')
+stdlib/string-range	string_casecmp_p--casecmp_p-nonascii10.rb	benchmark/string_casecmp_p.yml, entry casecmp_p-nonascii10	ranges over strings ('a'..'z')
+stdlib/string-range	string_casecmp_p--casecmp_p-nonascii100.rb	benchmark/string_casecmp_p.yml, entry casecmp_p-nonascii100	ranges over strings ('a'..'z')
+stdlib/string-range	string_casecmp_p--casecmp_p-nonascii1000.rb	benchmark/string_casecmp_p.yml, entry casecmp_p-nonascii1000	ranges over strings ('a'..'z')
+stdlib/string-range	string_downcase--downcase-1.rb	benchmark/string_downcase.yml, entry downcase-1	ranges over strings ('a'..'z')
+stdlib/string-range	string_downcase--downcase-10.rb	benchmark/string_downcase.yml, entry downcase-10	ranges over strings ('a'..'z')
+stdlib/string-range	string_downcase--downcase-100.rb	benchmark/string_downcase.yml, entry downcase-100	ranges over strings ('a'..'z')
+stdlib/string-range	string_downcase--downcase-1000.rb	benchmark/string_downcase.yml, entry downcase-1000	ranges over strings ('a'..'z')
+stdlib/string-range	string_downcase--downcase-ascii8bit-256.rb	benchmark/string_downcase.yml, entry downcase-ascii8bit-256	ranges over strings ('a'..'z')
+stdlib/string-range	string_downcase--downcase-ascii8bit-2560.rb	benchmark/string_downcase.yml, entry downcase-ascii8bit-2560	ranges over strings ('a'..'z')
+stdlib/string-range	string_downcase--downcase-ascii8bit-25600.rb	benchmark/string_downcase.yml, entry downcase-ascii8bit-25600	ranges over strings ('a'..'z')
+stdlib/string-range	string_downcase--downcase-ascii8bit-256000.rb	benchmark/string_downcase.yml, entry downcase-ascii8bit-256000	ranges over strings ('a'..'z')
+stdlib/string-range	string_downcase--downcase-nonascii1.rb	benchmark/string_downcase.yml, entry downcase-nonascii1	ranges over strings ('a'..'z')
+stdlib/string-range	string_downcase--downcase-nonascii10.rb	benchmark/string_downcase.yml, entry downcase-nonascii10	ranges over strings ('a'..'z')
+stdlib/string-range	string_downcase--downcase-nonascii100.rb	benchmark/string_downcase.yml, entry downcase-nonascii100	ranges over strings ('a'..'z')
+stdlib/string-range	string_downcase--downcase-nonascii1000.rb	benchmark/string_downcase.yml, entry downcase-nonascii1000	ranges over strings ('a'..'z')
+stdlib/string-range	string_rpartition--rpartition-1.rb	benchmark/string_rpartition.yml, entry rpartition-1	ranges over strings ('a'..'z')
+stdlib/string-range	string_rpartition--rpartition-10.rb	benchmark/string_rpartition.yml, entry rpartition-10	ranges over strings ('a'..'z')
+stdlib/string-range	string_rpartition--rpartition-100.rb	benchmark/string_rpartition.yml, entry rpartition-100	ranges over strings ('a'..'z')
+stdlib/string-range	string_rpartition--rpartition-1000.rb	benchmark/string_rpartition.yml, entry rpartition-1000	ranges over strings ('a'..'z')
+stdlib/string-range	string_rpartition--rpartition-nonascii1.rb	benchmark/string_rpartition.yml, entry rpartition-nonascii1	ranges over strings ('a'..'z')
+stdlib/string-range	string_rpartition--rpartition-nonascii10.rb	benchmark/string_rpartition.yml, entry rpartition-nonascii10	ranges over strings ('a'..'z')
+stdlib/string-range	string_rpartition--rpartition-nonascii100.rb	benchmark/string_rpartition.yml, entry rpartition-nonascii100	ranges over strings ('a'..'z')
+stdlib/string-range	string_rpartition--rpartition-nonascii1000.rb	benchmark/string_rpartition.yml, entry rpartition-nonascii1000	ranges over strings ('a'..'z')
+stdlib/string-range	string_swapcase--swapcase-1.rb	benchmark/string_swapcase.yml, entry swapcase-1	ranges over strings ('a'..'z')
+stdlib/string-range	string_swapcase--swapcase-10.rb	benchmark/string_swapcase.yml, entry swapcase-10	ranges over strings ('a'..'z')
+stdlib/string-range	string_swapcase--swapcase-100.rb	benchmark/string_swapcase.yml, entry swapcase-100	ranges over strings ('a'..'z')
+stdlib/string-range	string_swapcase--swapcase-1000.rb	benchmark/string_swapcase.yml, entry swapcase-1000	ranges over strings ('a'..'z')
+stdlib/string-range	string_swapcase--swapcase-nonascii1.rb	benchmark/string_swapcase.yml, entry swapcase-nonascii1	ranges over strings ('a'..'z')
+stdlib/string-range	string_swapcase--swapcase-nonascii10.rb	benchmark/string_swapcase.yml, entry swapcase-nonascii10	ranges over strings ('a'..'z')
+stdlib/string-range	string_swapcase--swapcase-nonascii100.rb	benchmark/string_swapcase.yml, entry swapcase-nonascii100	ranges over strings ('a'..'z')
+stdlib/string-range	string_swapcase--swapcase-nonascii1000.rb	benchmark/string_swapcase.yml, entry swapcase-nonascii1000	ranges over strings ('a'..'z')
+stdlib/string-range	string_upcase--upcase-1.rb	benchmark/string_upcase.yml, entry upcase-1	ranges over strings ('a'..'z')
+stdlib/string-range	string_upcase--upcase-10.rb	benchmark/string_upcase.yml, entry upcase-10	ranges over strings ('a'..'z')
+stdlib/string-range	string_upcase--upcase-100.rb	benchmark/string_upcase.yml, entry upcase-100	ranges over strings ('a'..'z')
+stdlib/string-range	string_upcase--upcase-1000.rb	benchmark/string_upcase.yml, entry upcase-1000	ranges over strings ('a'..'z')
+stdlib/string-range	string_upcase--upcase-ascii8bit-256.rb	benchmark/string_upcase.yml, entry upcase-ascii8bit-256	ranges over strings ('a'..'z')
+stdlib/string-range	string_upcase--upcase-ascii8bit-2560.rb	benchmark/string_upcase.yml, entry upcase-ascii8bit-2560	ranges over strings ('a'..'z')
+stdlib/string-range	string_upcase--upcase-ascii8bit-25600.rb	benchmark/string_upcase.yml, entry upcase-ascii8bit-25600	ranges over strings ('a'..'z')
+stdlib/string-range	string_upcase--upcase-ascii8bit-256000.rb	benchmark/string_upcase.yml, entry upcase-ascii8bit-256000	ranges over strings ('a'..'z')
+stdlib/string-range	string_upcase--upcase-nonascii1.rb	benchmark/string_upcase.yml, entry upcase-nonascii1	ranges over strings ('a'..'z')
+stdlib/string-range	string_upcase--upcase-nonascii10.rb	benchmark/string_upcase.yml, entry upcase-nonascii10	ranges over strings ('a'..'z')
+stdlib/string-range	string_upcase--upcase-nonascii100.rb	benchmark/string_upcase.yml, entry upcase-nonascii100	ranges over strings ('a'..'z')
+stdlib/string-range	string_upcase--upcase-nonascii1000.rb	benchmark/string_upcase.yml, entry upcase-nonascii1000	ranges over strings ('a'..'z')
+stdlib/time	time_at--time_at_0.rb	benchmark/time_at.yml, entry time_at_0	Time
+stdlib/time	time_at--time_at_1.rb	benchmark/time_at.yml, entry time_at_1	Time
+stdlib/time	time_at--time_at_2.rb	benchmark/time_at.yml, entry time_at_2	Time
+stdlib/time	time_at--time_at_3.rb	benchmark/time_at.yml, entry time_at_3	Time
+stdlib/time	time_new--time_new_0.rb	benchmark/time_new.yml, entry time_new_0	Time
+stdlib/time	time_new--time_new_1.rb	benchmark/time_new.yml, entry time_new_1	Time
+stdlib/time	time_new--time_new_2.rb	benchmark/time_new.yml, entry time_new_2	Time
+stdlib/time	time_now--time_now_0.rb	benchmark/time_now.yml, entry time_now_0	Time
+stdlib/time	time_now--time_now_1.rb	benchmark/time_now.yml, entry time_now_1	Time
+stdlib/time	time_now--time_now_2.rb	benchmark/time_now.yml, entry time_now_2	Time
+stdlib/time	time_strftime--time_strftime_0.rb	benchmark/time_strftime.yml, entry time_strftime_0	Time
+stdlib/time	time_strftime--time_strftime_1.rb	benchmark/time_strftime.yml, entry time_strftime_1	Time
+stdlib/time	time_strftime--time_strftime_2.rb	benchmark/time_strftime.yml, entry time_strftime_2	Time
+stdlib/time	time_subsec.rb	benchmark/time_subsec.rb	Time
+unsupported/alias	vm_backtrace.rb	benchmark/vm_backtrace.rb	alias / undef / method redefinition
+unsupported/anonymous-classes	class_superclass--large_class_superclass.rb	benchmark/class_superclass.yml, entry large_class_superclass	Module.new / Class.new (classes are literals)
+unsupported/anonymous-classes	class_superclass--medium_class_superclass.rb	benchmark/class_superclass.yml, entry medium_class_superclass	Module.new / Class.new (classes are literals)
+unsupported/anonymous-classes	class_superclass--object_class_superclass.rb	benchmark/class_superclass.yml, entry object_class_superclass	Module.new / Class.new (classes are literals)
+unsupported/anonymous-classes	class_superclass--one_module_class.rb	benchmark/class_superclass.yml, entry one_module_class	Module.new / Class.new (classes are literals)
+unsupported/anonymous-classes	class_superclass--simple_class_superclass.rb	benchmark/class_superclass.yml, entry simple_class_superclass	Module.new / Class.new (classes are literals)
+unsupported/anonymous-classes	module_eqq--medium_class_eqq_simple_obj.rb	benchmark/module_eqq.yml, entry medium_class_eqq_simple_obj	Module.new / Class.new (classes are literals)
+unsupported/anonymous-classes	module_eqq--module_eqq_module.rb	benchmark/module_eqq.yml, entry module_eqq_module	Module.new / Class.new (classes are literals)
+unsupported/anonymous-classes	module_eqq--simple_class_eqq_huge_obj.rb	benchmark/module_eqq.yml, entry simple_class_eqq_huge_obj	Module.new / Class.new (classes are literals)
+unsupported/anonymous-classes	module_eqq--simple_class_eqq_large_obj.rb	benchmark/module_eqq.yml, entry simple_class_eqq_large_obj	Module.new / Class.new (classes are literals)
+unsupported/anonymous-classes	module_eqq--simple_class_eqq_medium_obj.rb	benchmark/module_eqq.yml, entry simple_class_eqq_medium_obj	Module.new / Class.new (classes are literals)
+unsupported/anonymous-classes	module_eqq--simple_class_eqq_module.rb	benchmark/module_eqq.yml, entry simple_class_eqq_module	Module.new / Class.new (classes are literals)
+unsupported/anonymous-classes	module_eqq--simple_class_eqq_simple_obj.rb	benchmark/module_eqq.yml, entry simple_class_eqq_simple_obj	Module.new / Class.new (classes are literals)
+unsupported/anonymous-classes	object_allocate--allocate_128_deep.rb	benchmark/object_allocate.yml, entry allocate_128_deep	Module.new / Class.new (classes are literals)
+unsupported/anonymous-classes	object_allocate--allocate_1_positional_params.rb	benchmark/object_allocate.yml, entry allocate_1_positional_params	Module.new / Class.new (classes are literals)
+unsupported/anonymous-classes	object_allocate--allocate_2_positional_params.rb	benchmark/object_allocate.yml, entry allocate_2_positional_params	Module.new / Class.new (classes are literals)
+unsupported/anonymous-classes	object_allocate--allocate_32_deep.rb	benchmark/object_allocate.yml, entry allocate_32_deep	Module.new / Class.new (classes are literals)
+unsupported/anonymous-classes	object_allocate--allocate_3_positional_params.rb	benchmark/object_allocate.yml, entry allocate_3_positional_params	Module.new / Class.new (classes are literals)
+unsupported/anonymous-classes	object_allocate--allocate_4_positional_params.rb	benchmark/object_allocate.yml, entry allocate_4_positional_params	Module.new / Class.new (classes are literals)
+unsupported/anonymous-classes	object_allocate--allocate_64_deep.rb	benchmark/object_allocate.yml, entry allocate_64_deep	Module.new / Class.new (classes are literals)
+unsupported/anonymous-classes	object_allocate--allocate_8_deep.rb	benchmark/object_allocate.yml, entry allocate_8_deep	Module.new / Class.new (classes are literals)
+unsupported/anonymous-classes	object_allocate--allocate_allocate.rb	benchmark/object_allocate.yml, entry allocate_allocate	Module.new / Class.new (classes are literals)
+unsupported/anonymous-classes	object_allocate--allocate_kwarg_params.rb	benchmark/object_allocate.yml, entry allocate_kwarg_params	Module.new / Class.new (classes are literals)
+unsupported/anonymous-classes	object_allocate--allocate_mixed_params.rb	benchmark/object_allocate.yml, entry allocate_mixed_params	Module.new / Class.new (classes are literals)
+unsupported/anonymous-classes	object_allocate--allocate_no_params.rb	benchmark/object_allocate.yml, entry allocate_no_params	Module.new / Class.new (classes are literals)
+unsupported/anonymous-classes	vm_clearmethodcache.rb	benchmark/vm_clearmethodcache.rb	Module.new / Class.new (classes are literals)
+unsupported/anonymous-classes	vm_module_ann_const_set--vm_module_ann_const_set.rb	benchmark/vm_module_ann_const_set.yml, entry vm_module_ann_const_set	Module.new / Class.new (classes are literals)
+unsupported/argument-forwarding	struct_accessor--ivar_reader.rb	benchmark/struct_accessor.yml, entry ivar_reader	argument forwarding (...)
+unsupported/argument-forwarding	struct_accessor--member_reader.rb	benchmark/struct_accessor.yml, entry member_reader	argument forwarding (...)
+unsupported/argument-forwarding	struct_accessor--member_reader_method.rb	benchmark/struct_accessor.yml, entry member_reader_method	argument forwarding (...)
+unsupported/argument-forwarding	struct_accessor--member_writer.rb	benchmark/struct_accessor.yml, entry member_writer	argument forwarding (...)
+unsupported/argument-forwarding	struct_accessor--member_writer_heap.rb	benchmark/struct_accessor.yml, entry member_writer_heap	argument forwarding (...)
+unsupported/argument-forwarding	struct_accessor--member_writer_method.rb	benchmark/struct_accessor.yml, entry member_writer_method	argument forwarding (...)
+unsupported/argument-forwarding	vm_method_splat_calls2--anon_arg_kw_splat.rb	benchmark/vm_method_splat_calls2.yml, entry anon_arg_kw_splat	argument forwarding (...)
+unsupported/argument-forwarding	vm_method_splat_calls2--anon_arg_splat.rb	benchmark/vm_method_splat_calls2.yml, entry anon_arg_splat	argument forwarding (...)
+unsupported/argument-forwarding	vm_method_splat_calls2--anon_fw_to_named_no_splat.rb	benchmark/vm_method_splat_calls2.yml, entry anon_fw_to_named_no_splat	argument forwarding (...)
+unsupported/argument-forwarding	vm_method_splat_calls2--anon_fw_to_named_splat.rb	benchmark/vm_method_splat_calls2.yml, entry anon_fw_to_named_splat	argument forwarding (...)
+unsupported/argument-forwarding	vm_method_splat_calls2--anon_kw_splat.rb	benchmark/vm_method_splat_calls2.yml, entry anon_kw_splat	argument forwarding (...)
+unsupported/argument-forwarding	vm_method_splat_calls2--anon_multi_arg_splat.rb	benchmark/vm_method_splat_calls2.yml, entry anon_multi_arg_splat	argument forwarding (...)
+unsupported/argument-forwarding	vm_method_splat_calls2--anon_post_splat.rb	benchmark/vm_method_splat_calls2.yml, entry anon_post_splat	argument forwarding (...)
+unsupported/argument-forwarding	vm_method_splat_calls2--fw_no_kw.rb	benchmark/vm_method_splat_calls2.yml, entry fw_no_kw	argument forwarding (...)
+unsupported/argument-forwarding	vm_method_splat_calls2--fw_to_anon_to_named_no_splat.rb	benchmark/vm_method_splat_calls2.yml, entry fw_to_anon_to_named_no_splat	argument forwarding (...)
+unsupported/argument-forwarding	vm_method_splat_calls2--fw_to_anon_to_named_splat.rb	benchmark/vm_method_splat_calls2.yml, entry fw_to_anon_to_named_splat	argument forwarding (...)
+unsupported/argument-forwarding	vm_method_splat_calls2--fw_to_named_no_splat.rb	benchmark/vm_method_splat_calls2.yml, entry fw_to_named_no_splat	argument forwarding (...)
+unsupported/argument-forwarding	vm_method_splat_calls2--fw_to_named_splat.rb	benchmark/vm_method_splat_calls2.yml, entry fw_to_named_splat	argument forwarding (...)
+unsupported/argument-forwarding	vm_method_splat_calls2--named_multi_arg_splat.rb	benchmark/vm_method_splat_calls2.yml, entry named_multi_arg_splat	argument forwarding (...)
+unsupported/argument-forwarding	vm_method_splat_calls2--named_post_splat.rb	benchmark/vm_method_splat_calls2.yml, entry named_post_splat	argument forwarding (...)
+unsupported/attr-accessor	app_aobench.rb	benchmark/app_aobench.rb	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	attr_accessor--attr_reader.rb	benchmark/attr_accessor.yml, entry attr_reader	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	attr_accessor--attr_reader_method.rb	benchmark/attr_accessor.yml, entry attr_reader_method	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	attr_accessor--attr_writer.rb	benchmark/attr_accessor.yml, entry attr_writer	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	attr_accessor--attr_writer_method.rb	benchmark/attr_accessor.yml, entry attr_writer_method	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	gc_ring.rb	benchmark/gc/ring.rb	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--array2_2.rb	benchmark/masgn.yml, entry array2_2	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--array2_2lv.rb	benchmark/masgn.yml, entry array2_2lv	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--array2_2p.rb	benchmark/masgn.yml, entry array2_2p	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--array2_2plv.rb	benchmark/masgn.yml, entry array2_2plv	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--array2_3.rb	benchmark/masgn.yml, entry array2_3	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--array2_3p.rb	benchmark/masgn.yml, entry array2_3p	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--array2_ilv.rb	benchmark/masgn.yml, entry array2_ilv	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--array2_iplv.rb	benchmark/masgn.yml, entry array2_iplv	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--array3_2.rb	benchmark/masgn.yml, entry array3_2	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--array3_2p.rb	benchmark/masgn.yml, entry array3_2p	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--array3_3.rb	benchmark/masgn.yml, entry array3_3	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--array3_3p.rb	benchmark/masgn.yml, entry array3_3p	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--arrayi_2lv.rb	benchmark/masgn.yml, entry arrayi_2lv	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--arrayi_2plv.rb	benchmark/masgn.yml, entry arrayi_2plv	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--arrayi_ilv.rb	benchmark/masgn.yml, entry arrayi_ilv	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--arrayi_iplv.rb	benchmark/masgn.yml, entry arrayi_iplv	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--attr2_2.rb	benchmark/masgn.yml, entry attr2_2	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--attr2_2lv.rb	benchmark/masgn.yml, entry attr2_2lv	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--attr2_2p.rb	benchmark/masgn.yml, entry attr2_2p	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--attr2_2plv.rb	benchmark/masgn.yml, entry attr2_2plv	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--attr2_3.rb	benchmark/masgn.yml, entry attr2_3	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--attr2_3p.rb	benchmark/masgn.yml, entry attr2_3p	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--attr2_ilv.rb	benchmark/masgn.yml, entry attr2_ilv	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--attr2_iplv.rb	benchmark/masgn.yml, entry attr2_iplv	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--attr3_2.rb	benchmark/masgn.yml, entry attr3_2	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--attr3_2p.rb	benchmark/masgn.yml, entry attr3_2p	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--attr3_3.rb	benchmark/masgn.yml, entry attr3_3	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--attr3_3p.rb	benchmark/masgn.yml, entry attr3_3p	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--attri_2lv.rb	benchmark/masgn.yml, entry attri_2lv	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--attri_2plv.rb	benchmark/masgn.yml, entry attri_2plv	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--attri_ilv.rb	benchmark/masgn.yml, entry attri_ilv	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--attri_iplv.rb	benchmark/masgn.yml, entry attri_iplv	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--lvar2_2.rb	benchmark/masgn.yml, entry lvar2_2	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--lvar2_2lv.rb	benchmark/masgn.yml, entry lvar2_2lv	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--lvar2_2p.rb	benchmark/masgn.yml, entry lvar2_2p	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--lvar2_2plv.rb	benchmark/masgn.yml, entry lvar2_2plv	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--lvar2_3.rb	benchmark/masgn.yml, entry lvar2_3	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--lvar2_3p.rb	benchmark/masgn.yml, entry lvar2_3p	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--lvar2_ilv.rb	benchmark/masgn.yml, entry lvar2_ilv	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--lvar2_iplv.rb	benchmark/masgn.yml, entry lvar2_iplv	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--lvar3_2.rb	benchmark/masgn.yml, entry lvar3_2	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--lvar3_2p.rb	benchmark/masgn.yml, entry lvar3_2p	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--lvar3_3.rb	benchmark/masgn.yml, entry lvar3_3	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--lvar3_3p.rb	benchmark/masgn.yml, entry lvar3_3p	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--lvari_2lv.rb	benchmark/masgn.yml, entry lvari_2lv	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--lvari_2plv.rb	benchmark/masgn.yml, entry lvari_2plv	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--lvari_ilv.rb	benchmark/masgn.yml, entry lvari_ilv	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	masgn--lvari_iplv.rb	benchmark/masgn.yml, entry lvari_iplv	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	vm_attr_ivar--vm_attr_ivar.rb	benchmark/vm_attr_ivar.yml, entry vm_attr_ivar	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	vm_attr_ivar_set--vm_attr_ivar_set.rb	benchmark/vm_attr_ivar_set.yml, entry vm_attr_ivar_set	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	vm_gc_wb_obj--vm_gc_wb_obj.rb	benchmark/vm_gc_wb_obj.yml, entry vm_gc_wb_obj	attr_* accessors (fields are declared, no setters)
+unsupported/attr-accessor	vm_ivar_generic_get--vm_ivar_generic_get.rb	benchmark/vm_ivar_generic_get.yml, entry vm_ivar_generic_get	attr_* accessors (fields are declared, no setters)
+unsupported/bignum	app_factorial.rb	benchmark/app_factorial.rb	bignum arithmetic (amber wraps at 64 bits, silently)
+unsupported/bignum	int_to_s--big_100digit.rb	benchmark/int_to_s.yml, entry big_100digit	bignum arithmetic (amber wraps at 64 bits, silently)
+unsupported/bignum	int_to_s--big_20digit.rb	benchmark/int_to_s.yml, entry big_20digit	bignum arithmetic (amber wraps at 64 bits, silently)
+unsupported/bignum	int_to_s--big_40digit.rb	benchmark/int_to_s.yml, entry big_40digit	bignum arithmetic (amber wraps at 64 bits, silently)
+unsupported/bignum	num_zero_p--num_zero_p_2.rb	benchmark/num_zero_p.yml, entry num_zero_p_2	bignum, rational and complex literals
+unsupported/bignum	num_zero_p--num_zero_p_3.rb	benchmark/num_zero_p.yml, entry num_zero_p_3	bignum, rational and complex literals
+unsupported/bignum	num_zero_p--num_zero_p_4.rb	benchmark/num_zero_p.yml, entry num_zero_p_4	bignum, rational and complex literals
+unsupported/bignum	num_zero_p--num_zero_p_5.rb	benchmark/num_zero_p.yml, entry num_zero_p_5	bignum, rational and complex literals
+unsupported/bignum	range_bsearch_endpointless--beginless_-10__100.rb	benchmark/range_bsearch_endpointless.yml, entry beginless_-10__100	bignum, rational and complex literals
+unsupported/bignum	range_bsearch_endpointless--endless_10__100.rb	benchmark/range_bsearch_endpointless.yml, entry endless_10__100	bignum, rational and complex literals
+unsupported/bignum	range_reverse_each--Bignum_1.rb	benchmark/range_reverse_each.yml, entry Bignum_1	bignum arithmetic (amber wraps at 64 bits, silently)
+unsupported/bignum	range_reverse_each--Bignum_1K.rb	benchmark/range_reverse_each.yml, entry Bignum_1K	bignum arithmetic (amber wraps at 64 bits, silently)
+unsupported/bignum	range_reverse_each--Bignum_1M.rb	benchmark/range_reverse_each.yml, entry Bignum_1M	bignum arithmetic (amber wraps at 64 bits, silently)
+unsupported/bignum	vm_case_lit--vm_case_lit.rb	benchmark/vm_case_lit.yml, entry vm_case_lit	bignum, rational and complex literals
+unsupported/class-variables	vm_cvar--vm_cvar.rb	benchmark/vm_cvar.yml, entry vm_cvar	class variables
+unsupported/complex	int_quo.rb	benchmark/int_quo.rb	Rational and Complex (left out)
+unsupported/complex	nilclass--rationalize.rb	benchmark/nilclass.yml, entry rationalize	Rational and Complex (left out)
+unsupported/complex	nilclass--to_c.rb	benchmark/nilclass.yml, entry to_c	Rational and Complex (left out)
+unsupported/complex	nilclass--to_r.rb	benchmark/nilclass.yml, entry to_r	Rational and Complex (left out)
+unsupported/complex	numeric_methods--float_conj.rb	benchmark/numeric_methods.yml, entry float_conj	Rational and Complex (left out)
+unsupported/complex	numeric_methods--float_imag.rb	benchmark/numeric_methods.yml, entry float_imag	Rational and Complex (left out)
+unsupported/complex	numeric_methods--float_real.rb	benchmark/numeric_methods.yml, entry float_real	Rational and Complex (left out)
+unsupported/complex	numeric_methods--integer_conj.rb	benchmark/numeric_methods.yml, entry integer_conj	Rational and Complex (left out)
+unsupported/complex	numeric_methods--integer_denominator.rb	benchmark/numeric_methods.yml, entry integer_denominator	Rational and Complex (left out)
+unsupported/complex	numeric_methods--integer_numerator.rb	benchmark/numeric_methods.yml, entry integer_numerator	Rational and Complex (left out)
+unsupported/complex	numeric_methods--integer_real.rb	benchmark/numeric_methods.yml, entry integer_real	Rational and Complex (left out)
+unsupported/complex	numeric_methods--integr_imag.rb	benchmark/numeric_methods.yml, entry integr_imag	Rational and Complex (left out)
+unsupported/complex	numeric_methods--real_.rb	benchmark/numeric_methods.yml, entry real_	Rational and Complex (left out)
+unsupported/encodings	string_coderange_scan--coderange_alternating.rb	benchmark/string_coderange_scan.yml, entry coderange_alternating	string encodings (force_encoding, .b)
+unsupported/encodings	string_coderange_scan--coderange_ascii.rb	benchmark/string_coderange_scan.yml, entry coderange_ascii	string encodings (force_encoding, .b)
+unsupported/encodings	string_coderange_scan--coderange_multibyte.rb	benchmark/string_coderange_scan.yml, entry coderange_multibyte	string encodings (force_encoding, .b)
+unsupported/encodings	string_inspect--inspect_binary.rb	benchmark/string_inspect.yml, entry inspect_binary	string encodings (force_encoding, .b)
+unsupported/encodings	string_valid_encoding_p--valid_enc_false.rb	benchmark/string_valid_encoding_p.yml, entry valid_enc_false	string encodings (force_encoding, .b)
+unsupported/encodings	string_valid_encoding_p--valid_enc_true.rb	benchmark/string_valid_encoding_p.yml, entry valid_enc_true	string encodings (force_encoding, .b)
+unsupported/enumerators	enum_lazy_flat_map--ary10.rb	benchmark/enum_lazy_flat_map.yml, entry ary10	lazy enumerators and blockless enumerators
+unsupported/enumerators	enum_lazy_flat_map--ary100.rb	benchmark/enum_lazy_flat_map.yml, entry ary100	lazy enumerators and blockless enumerators
+unsupported/enumerators	enum_lazy_flat_map--ary2.rb	benchmark/enum_lazy_flat_map.yml, entry ary2	lazy enumerators and blockless enumerators
+unsupported/enumerators	enum_lazy_flat_map--ary20.rb	benchmark/enum_lazy_flat_map.yml, entry ary20	lazy enumerators and blockless enumerators
+unsupported/enumerators	enum_lazy_flat_map--ary50.rb	benchmark/enum_lazy_flat_map.yml, entry ary50	lazy enumerators and blockless enumerators
+unsupported/enumerators	enum_lazy_flat_map--num10.rb	benchmark/enum_lazy_flat_map.yml, entry num10	lazy enumerators and blockless enumerators
+unsupported/enumerators	enum_lazy_flat_map--num3.rb	benchmark/enum_lazy_flat_map.yml, entry num3	lazy enumerators and blockless enumerators
+unsupported/enumerators	enum_lazy_zip--chain-take3_ary.rb	benchmark/enum_lazy_zip.yml, entry chain-take3_ary	lazy enumerators and blockless enumerators
+unsupported/enumerators	enum_lazy_zip--chain-take3_noarg.rb	benchmark/enum_lazy_zip.yml, entry chain-take3_noarg	lazy enumerators and blockless enumerators
+unsupported/enumerators	enum_lazy_zip--take3_ary.rb	benchmark/enum_lazy_zip.yml, entry take3_ary	lazy enumerators and blockless enumerators
+unsupported/enumerators	enum_lazy_zip--take3_noarg.rb	benchmark/enum_lazy_zip.yml, entry take3_noarg	lazy enumerators and blockless enumerators
+unsupported/enumerators	kernel_then--kernel_then_enum.rb	benchmark/kernel_then.yml, entry kernel_then_enum	lazy enumerators and blockless enumerators
+unsupported/environment	array_small_and.rb	benchmark/array_small_and.rb	environment and process
+unsupported/environment	array_small_diff.rb	benchmark/array_small_diff.rb	environment and process
+unsupported/environment	array_small_or.rb	benchmark/array_small_or.rb	environment and process
+unsupported/filesystem	dir_pwd--pwd.rb	benchmark/dir_pwd.yml, entry pwd	file system
+unsupported/filesystem	file_basename--long.rb	benchmark/file_basename.yml, entry long	file system
+unsupported/filesystem	file_basename--long_name.rb	benchmark/file_basename.yml, entry long_name	file system
+unsupported/filesystem	file_basename--withext.rb	benchmark/file_basename.yml, entry withext	file system
+unsupported/filesystem	file_dirname--long.rb	benchmark/file_dirname.yml, entry long	file system
+unsupported/filesystem	file_dirname--n_4.rb	benchmark/file_dirname.yml, entry n_4	file system
+unsupported/filesystem	file_dirname--short.rb	benchmark/file_dirname.yml, entry short	file system
+unsupported/filesystem	file_expand_path--expand_path.rb	benchmark/file_expand_path.yml, entry expand_path	file system
+unsupported/filesystem	file_extname--long.rb	benchmark/file_extname.yml, entry long	file system
+unsupported/filesystem	file_extname--long_name.rb	benchmark/file_extname.yml, entry long_name	file system
+unsupported/filesystem	file_extname--short.rb	benchmark/file_extname.yml, entry short	file system
+unsupported/filesystem	file_join--array.rb	benchmark/file_join.yml, entry array	file system
+unsupported/filesystem	file_join--many_strings.rb	benchmark/file_join.yml, entry many_strings	file system
+unsupported/filesystem	file_join--mixed.rb	benchmark/file_join.yml, entry mixed	file system
+unsupported/filesystem	file_join--two_strings.rb	benchmark/file_join.yml, entry two_strings	file system
+unsupported/filesystem	io_file_create.rb	benchmark/io_file_create.rb	file system
+unsupported/filesystem	io_nonblock_noex.rb	benchmark/io_nonblock_noex.rb	file system
+unsupported/filesystem	io_nonblock_noex2.rb	benchmark/io_nonblock_noex2.rb	file system
+unsupported/filesystem	io_select.rb	benchmark/io_select.rb	file system
+unsupported/filesystem	pathname--abs.absolute_.rb	benchmark/pathname.yml, entry abs.absolute_	file system
+unsupported/filesystem	pathname--abs.root_.rb	benchmark/pathname.yml, entry abs.root_	file system
+unsupported/filesystem	pathname--p1.cleanpath.rb	benchmark/pathname.yml, entry p1.cleanpath	file system
+unsupported/filesystem	pathname--p1_p2.rb	benchmark/pathname.yml, entry p1_p2	file system
+unsupported/filesystem	pathname--p2.cleanpath.rb	benchmark/pathname.yml, entry p2.cleanpath	file system
+unsupported/filesystem	pathname--rel.absolute_.rb	benchmark/pathname.yml, entry rel.absolute_	file system
+unsupported/filesystem	pathname--rel.root_.rb	benchmark/pathname.yml, entry rel.root_	file system
+unsupported/filesystem	pathname--relative_path_from.rb	benchmark/pathname.yml, entry relative_path_from	file system
+unsupported/filesystem	realpath--absolute_nil.rb	benchmark/realpath.yml, entry absolute_nil	file system
+unsupported/filesystem	realpath--absolute_nil_dir.rb	benchmark/realpath.yml, entry absolute_nil_dir	file system
+unsupported/filesystem	realpath--absolute_nil_notexist.rb	benchmark/realpath.yml, entry absolute_nil_notexist	file system
+unsupported/filesystem	realpath--absolute_relative.rb	benchmark/realpath.yml, entry absolute_relative	file system
+unsupported/filesystem	realpath--absolute_relative_dir.rb	benchmark/realpath.yml, entry absolute_relative_dir	file system
+unsupported/filesystem	realpath--absolute_relative_notexist.rb	benchmark/realpath.yml, entry absolute_relative_notexist	file system
+unsupported/filesystem	realpath--relative_absolute.rb	benchmark/realpath.yml, entry relative_absolute	file system
+unsupported/filesystem	realpath--relative_absolute_dir.rb	benchmark/realpath.yml, entry relative_absolute_dir	file system
+unsupported/filesystem	realpath--relative_absolute_notexist.rb	benchmark/realpath.yml, entry relative_absolute_notexist	file system
+unsupported/filesystem	realpath--relative_nil.rb	benchmark/realpath.yml, entry relative_nil	file system
+unsupported/filesystem	realpath--relative_nil_dir.rb	benchmark/realpath.yml, entry relative_nil_dir	file system
+unsupported/filesystem	realpath--relative_nil_notexist.rb	benchmark/realpath.yml, entry relative_nil_notexist	file system
+unsupported/filesystem	realpath--relative_relative.rb	benchmark/realpath.yml, entry relative_relative	file system
+unsupported/filesystem	realpath--relative_relative_dir.rb	benchmark/realpath.yml, entry relative_relative_dir	file system
+unsupported/filesystem	realpath--relative_relative_notexist.rb	benchmark/realpath.yml, entry relative_relative_notexist	file system
+unsupported/filesystem	vm_thread_pipe.rb	benchmark/vm_thread_pipe.rb	file system
+unsupported/for-loops	loop_for.rb	benchmark/loop_for.rb	for loops
+unsupported/freeze	hash_new--new.rb	benchmark/hash_new.yml, entry new	freeze (rejected, though every value is immutable)
+unsupported/freeze	hash_new--new_with_capa_100k.rb	benchmark/hash_new.yml, entry new_with_capa_100k	freeze (rejected, though every value is immutable)
+unsupported/freeze	hash_new--new_with_capa_1k.rb	benchmark/hash_new.yml, entry new_with_capa_1k	freeze (rejected, though every value is immutable)
+unsupported/freeze	io_pipe_rw.rb	benchmark/io_pipe_rw.rb	freeze (rejected, though every value is immutable)
+unsupported/freeze	method_bind_call--fastpath.rb	benchmark/method_bind_call.yml, entry fastpath	freeze (rejected, though every value is immutable)
+unsupported/freeze	method_bind_call--slowpath.rb	benchmark/method_bind_call.yml, entry slowpath	freeze (rejected, though every value is immutable)
+unsupported/freeze	ractor_string_fstring--ractor_fstring_random.rb	benchmark/ractor_string_fstring.yml, entry ractor_fstring_random	freeze (rejected, though every value is immutable)
+unsupported/freeze	string_fstring--fstring_random.rb	benchmark/string_fstring.yml, entry fstring_random	freeze (rejected, though every value is immutable)
+unsupported/freeze	string_gsub--escape.rb	benchmark/string_gsub.yml, entry escape	freeze (rejected, though every value is immutable)
+unsupported/freeze	string_gsub--escape_bin.rb	benchmark/string_gsub.yml, entry escape_bin	freeze (rejected, though every value is immutable)
+unsupported/freeze	string_gsub--escape_utf8.rb	benchmark/string_gsub.yml, entry escape_utf8	freeze (rejected, though every value is immutable)
+unsupported/freeze	string_gsub--escape_utf8_bin.rb	benchmark/string_gsub.yml, entry escape_utf8_bin	freeze (rejected, though every value is immutable)
+unsupported/freeze	string_gsub--gsub_no_match_shared.rb	benchmark/string_gsub.yml, entry gsub_no_match_shared	freeze (rejected, though every value is immutable)
+unsupported/freeze	string_gsub--sub_no_match_shared.rb	benchmark/string_gsub.yml, entry sub_no_match_shared	freeze (rejected, though every value is immutable)
+unsupported/freeze	vm_freezestring--vm_freezestring.rb	benchmark/vm_freezestring.yml, entry vm_freezestring	freeze (rejected, though every value is immutable)
+unsupported/freeze	vm_super_splat_calls--arg_splat.rb	benchmark/vm_super_splat_calls.yml, entry arg_splat	freeze (rejected, though every value is immutable)
+unsupported/freeze	vm_super_splat_calls--arg_splat_block.rb	benchmark/vm_super_splat_calls.yml, entry arg_splat_block	freeze (rejected, though every value is immutable)
+unsupported/freeze	vm_super_splat_calls--splat_kw.rb	benchmark/vm_super_splat_calls.yml, entry splat_kw	freeze (rejected, though every value is immutable)
+unsupported/freeze	vm_super_splat_calls--splat_kw_block.rb	benchmark/vm_super_splat_calls.yml, entry splat_kw_block	freeze (rejected, though every value is immutable)
+unsupported/freeze	vm_super_splat_calls--splat_kw_splat.rb	benchmark/vm_super_splat_calls.yml, entry splat_kw_splat	freeze (rejected, though every value is immutable)
+unsupported/freeze	vm_super_splat_calls--splat_kw_splat_block.rb	benchmark/vm_super_splat_calls.yml, entry splat_kw_splat_block	freeze (rejected, though every value is immutable)
+unsupported/freeze	vm_zsuper_splat_calls--arg_splat.rb	benchmark/vm_zsuper_splat_calls.yml, entry arg_splat	freeze (rejected, though every value is immutable)
+unsupported/freeze	vm_zsuper_splat_calls--arg_splat_block.rb	benchmark/vm_zsuper_splat_calls.yml, entry arg_splat_block	freeze (rejected, though every value is immutable)
+unsupported/freeze	vm_zsuper_splat_calls--arg_splat_post.rb	benchmark/vm_zsuper_splat_calls.yml, entry arg_splat_post	freeze (rejected, though every value is immutable)
+unsupported/freeze	vm_zsuper_splat_calls--splat_kw.rb	benchmark/vm_zsuper_splat_calls.yml, entry splat_kw	freeze (rejected, though every value is immutable)
+unsupported/freeze	vm_zsuper_splat_calls--splat_kw_block.rb	benchmark/vm_zsuper_splat_calls.yml, entry splat_kw_block	freeze (rejected, though every value is immutable)
+unsupported/freeze	vm_zsuper_splat_calls--splat_kw_splat.rb	benchmark/vm_zsuper_splat_calls.yml, entry splat_kw_splat	freeze (rejected, though every value is immutable)
+unsupported/freeze	vm_zsuper_splat_calls--splat_kw_splat_block.rb	benchmark/vm_zsuper_splat_calls.yml, entry splat_kw_splat_block	freeze (rejected, though every value is immutable)
+unsupported/globals	app_pentomino.rb	benchmark/app_pentomino.rb	global variables
+unsupported/globals	constant_invalidation.rb	benchmark/constant_invalidation.rb	global variables
+unsupported/globals	vm_module_const_set--vm_module_const_set.rb	benchmark/vm_module_const_set.yml, entry vm_module_const_set	global variables
+unsupported/identity-hash	hash_ident_num.rb	benchmark/hash_ident_num.rb	identity hashes (compare_by_identity)
+unsupported/identity-hash	hash_ident_obj.rb	benchmark/hash_ident_obj.rb	identity hashes (compare_by_identity)
+unsupported/identity-hash	hash_ident_str.rb	benchmark/hash_ident_str.rb	identity hashes (compare_by_identity)
+unsupported/identity-hash	hash_ident_sym.rb	benchmark/hash_ident_sym.rb	identity hashes (compare_by_identity)
+unsupported/instance-variables	io_copy_stream_write.rb	benchmark/io_copy_stream_write.rb	instance variables outside initialize
+unsupported/instance-variables	io_copy_stream_write_socket.rb	benchmark/io_copy_stream_write_socket.rb	instance variables outside initialize
+unsupported/instance-variables	ivar_extend--embedded.rb	benchmark/ivar_extend.yml, entry embedded	undeclared instance variables (fields are declared)
+unsupported/instance-variables	ivar_extend--extended.rb	benchmark/ivar_extend.yml, entry extended	undeclared instance variables (fields are declared)
+unsupported/instance-variables	marshal_load_partial_objects--marshal_load_data_objects.rb	benchmark/marshal_load_partial_objects.yml, entry marshal_load_data_objects	instance variables outside initialize
+unsupported/instance-variables	marshal_load_partial_objects--marshal_load_data_objects_freeze.rb	benchmark/marshal_load_partial_objects.yml, entry marshal_load_data_objects_freeze	instance variables outside initialize
+unsupported/instance-variables	marshal_load_partial_objects--marshal_load_data_objects_with_proc.rb	benchmark/marshal_load_partial_objects.yml, entry marshal_load_data_objects_with_proc	instance variables outside initialize
+unsupported/instance-variables	marshal_load_partial_objects--marshal_load_integer_array_10.rb	benchmark/marshal_load_partial_objects.yml, entry marshal_load_integer_array_10	instance variables outside initialize
+unsupported/instance-variables	marshal_load_partial_objects--marshal_load_integer_array_1000.rb	benchmark/marshal_load_partial_objects.yml, entry marshal_load_integer_array_1000	instance variables outside initialize
+unsupported/instance-variables	marshal_load_partial_objects--marshal_load_integer_array_1000_freeze.rb	benchmark/marshal_load_partial_objects.yml, entry marshal_load_integer_array_1000_freeze	instance variables outside initialize
+unsupported/instance-variables	marshal_load_partial_objects--marshal_load_integer_array_1000_with_proc.rb	benchmark/marshal_load_partial_objects.yml, entry marshal_load_integer_array_1000_with_proc	instance variables outside initialize
+unsupported/instance-variables	marshal_load_partial_objects--marshal_load_integer_array_10_freeze.rb	benchmark/marshal_load_partial_objects.yml, entry marshal_load_integer_array_10_freeze	instance variables outside initialize
+unsupported/instance-variables	marshal_load_partial_objects--marshal_load_integer_array_10_with_proc.rb	benchmark/marshal_load_partial_objects.yml, entry marshal_load_integer_array_10_with_proc	instance variables outside initialize
+unsupported/instance-variables	marshal_load_partial_objects--marshal_load_integer_hash.rb	benchmark/marshal_load_partial_objects.yml, entry marshal_load_integer_hash	instance variables outside initialize
+unsupported/instance-variables	marshal_load_partial_objects--marshal_load_integer_hash_freeze.rb	benchmark/marshal_load_partial_objects.yml, entry marshal_load_integer_hash_freeze	instance variables outside initialize
+unsupported/instance-variables	marshal_load_partial_objects--marshal_load_integer_hash_with_proc.rb	benchmark/marshal_load_partial_objects.yml, entry marshal_load_integer_hash_with_proc	instance variables outside initialize
+unsupported/instance-variables	marshal_load_partial_objects--marshal_load_objects.rb	benchmark/marshal_load_partial_objects.yml, entry marshal_load_objects	instance variables outside initialize
+unsupported/instance-variables	marshal_load_partial_objects--marshal_load_objects_freeze.rb	benchmark/marshal_load_partial_objects.yml, entry marshal_load_objects_freeze	instance variables outside initialize
+unsupported/instance-variables	marshal_load_partial_objects--marshal_load_objects_with_proc.rb	benchmark/marshal_load_partial_objects.yml, entry marshal_load_objects_with_proc	instance variables outside initialize
+unsupported/instance-variables	marshal_load_partial_objects--marshal_load_shared_strings.rb	benchmark/marshal_load_partial_objects.yml, entry marshal_load_shared_strings	instance variables outside initialize
+unsupported/instance-variables	marshal_load_partial_objects--marshal_load_shared_strings_freeze.rb	benchmark/marshal_load_partial_objects.yml, entry marshal_load_shared_strings_freeze	instance variables outside initialize
+unsupported/instance-variables	marshal_load_partial_objects--marshal_load_shared_strings_with_proc.rb	benchmark/marshal_load_partial_objects.yml, entry marshal_load_shared_strings_with_proc	instance variables outside initialize
+unsupported/instance-variables	marshal_load_partial_objects--marshal_load_structs.rb	benchmark/marshal_load_partial_objects.yml, entry marshal_load_structs	instance variables outside initialize
+unsupported/instance-variables	marshal_load_partial_objects--marshal_load_structs_freeze.rb	benchmark/marshal_load_partial_objects.yml, entry marshal_load_structs_freeze	instance variables outside initialize
+unsupported/instance-variables	marshal_load_partial_objects--marshal_load_structs_with_proc.rb	benchmark/marshal_load_partial_objects.yml, entry marshal_load_structs_with_proc	instance variables outside initialize
+unsupported/instance-variables	marshal_load_partial_objects--marshal_load_symbol_string_hash.rb	benchmark/marshal_load_partial_objects.yml, entry marshal_load_symbol_string_hash	instance variables outside initialize
+unsupported/instance-variables	marshal_load_partial_objects--marshal_load_symbol_string_hash_freeze.rb	benchmark/marshal_load_partial_objects.yml, entry marshal_load_symbol_string_hash_freeze	instance variables outside initialize
+unsupported/instance-variables	marshal_load_partial_objects--marshal_load_symbol_string_hash_with_proc.rb	benchmark/marshal_load_partial_objects.yml, entry marshal_load_symbol_string_hash_with_proc	instance variables outside initialize
+unsupported/instance-variables	marshal_load_partial_objects--marshal_load_unique_strings.rb	benchmark/marshal_load_partial_objects.yml, entry marshal_load_unique_strings	instance variables outside initialize
+unsupported/instance-variables	marshal_load_partial_objects--marshal_load_unique_strings_freeze.rb	benchmark/marshal_load_partial_objects.yml, entry marshal_load_unique_strings_freeze	instance variables outside initialize
+unsupported/instance-variables	marshal_load_partial_objects--marshal_load_unique_strings_with_proc.rb	benchmark/marshal_load_partial_objects.yml, entry marshal_load_unique_strings_with_proc	instance variables outside initialize
+unsupported/instance-variables	vm_ivar--vm_ivar.rb	benchmark/vm_ivar.yml, entry vm_ivar	instance variables outside initialize
+unsupported/instance-variables	vm_ivar_embedded_obj_init--vm_ivar_embedded_obj_init.rb	benchmark/vm_ivar_embedded_obj_init.yml, entry vm_ivar_embedded_obj_init	instance variables outside initialize
+unsupported/instance-variables	vm_ivar_extended_obj_init--vm_ivar_extended_obj_init.rb	benchmark/vm_ivar_extended_obj_init.yml, entry vm_ivar_extended_obj_init	instance variables outside initialize
+unsupported/instance-variables	vm_ivar_generic_set--vm_ivar_generic_set.rb	benchmark/vm_ivar_generic_set.yml, entry vm_ivar_generic_set	instance variables outside initialize
+unsupported/instance-variables	vm_ivar_get--vm_ivar_get_on_class.rb	benchmark/vm_ivar_get.yml, entry vm_ivar_get_on_class	instance variables outside initialize
+unsupported/instance-variables	vm_ivar_get--vm_ivar_get_on_generic.rb	benchmark/vm_ivar_get.yml, entry vm_ivar_get_on_generic	instance variables outside initialize
+unsupported/instance-variables	vm_ivar_get--vm_ivar_get_on_obj.rb	benchmark/vm_ivar_get.yml, entry vm_ivar_get_on_obj	instance variables outside initialize
+unsupported/instance-variables	vm_ivar_get_unintialized--vm_ivar_get_uninitialized.rb	benchmark/vm_ivar_get_unintialized.yml, entry vm_ivar_get_uninitialized	undeclared instance variables (fields are declared)
+unsupported/instance-variables	vm_ivar_ic_miss--vm_ivar_ic_miss.rb	benchmark/vm_ivar_ic_miss.yml, entry vm_ivar_ic_miss	undeclared instance variables (fields are declared)
+unsupported/instance-variables	vm_ivar_lazy_set--vm_ivar_lazy_set.rb	benchmark/vm_ivar_lazy_set.yml, entry vm_ivar_lazy_set	instance variables outside initialize
+unsupported/instance-variables	vm_ivar_of_class--vm_ivar_of_class.rb	benchmark/vm_ivar_of_class.yml, entry vm_ivar_of_class	instance variables outside initialize
+unsupported/instance-variables	vm_ivar_of_class_set--vm_ivar_of_class_set.rb	benchmark/vm_ivar_of_class_set.yml, entry vm_ivar_of_class_set	instance variables outside initialize
+unsupported/instance-variables	vm_ivar_set--vm_ivar_set.rb	benchmark/vm_ivar_set.yml, entry vm_ivar_set	instance variables outside initialize
+unsupported/instance-variables	vm_ivar_set_on_instance--vm_ivar_set_on_class.rb	benchmark/vm_ivar_set_on_instance.yml, entry vm_ivar_set_on_class	instance variables outside initialize
+unsupported/instance-variables	vm_ivar_set_on_instance--vm_ivar_set_on_generic.rb	benchmark/vm_ivar_set_on_instance.yml, entry vm_ivar_set_on_generic	instance variables outside initialize
+unsupported/instance-variables	vm_ivar_set_on_instance--vm_ivar_set_on_instance.rb	benchmark/vm_ivar_set_on_instance.yml, entry vm_ivar_set_on_instance	instance variables outside initialize
+unsupported/instance-variables	vm_ivar_set_subclass--vm_ivar_init_subclass.rb	benchmark/vm_ivar_set_subclass.yml, entry vm_ivar_init_subclass	instance variables outside initialize
+unsupported/marshal	marshal_dump_flo.rb	benchmark/marshal_dump_flo.rb	Marshal
+unsupported/marshal	marshal_dump_load_integer--marshal_dump_integer_over_32_bit.rb	benchmark/marshal_dump_load_integer.yml, entry marshal_dump_integer_over_32_bit	Marshal
+unsupported/marshal	marshal_dump_load_integer--marshal_dump_integer_over_64_bit.rb	benchmark/marshal_dump_load_integer.yml, entry marshal_dump_integer_over_64_bit	Marshal
+unsupported/marshal	marshal_dump_load_integer--marshal_dump_integer_small.rb	benchmark/marshal_dump_load_integer.yml, entry marshal_dump_integer_small	Marshal
+unsupported/metaprogramming	array_large_literal--array_100.rb	benchmark/array_large_literal.yml, entry array_100	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	array_large_literal--array_1000.rb	benchmark/array_large_literal.yml, entry array_1000	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	array_large_literal--array_10000.rb	benchmark/array_large_literal.yml, entry array_10000	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	array_large_literal--array_100000.rb	benchmark/array_large_literal.yml, entry array_100000	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	hash_aref_str_lit--dyn_symbol.rb	benchmark/hash_aref_str_lit.yml, entry dyn_symbol	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	hash_aref_str_lit--frozen_lit.rb	benchmark/hash_aref_str_lit.yml, entry frozen_lit	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	hash_aref_str_lit--iseq_lit.rb	benchmark/hash_aref_str_lit.yml, entry iseq_lit	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	hash_aref_str_lit--small_lit.rb	benchmark/hash_aref_str_lit.yml, entry small_lit	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	hash_aref_str_lit--symbol.rb	benchmark/hash_aref_str_lit.yml, entry symbol	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	hash_aref_sym.rb	benchmark/hash_aref_sym.rb	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	hash_aref_sym_long.rb	benchmark/hash_aref_sym_long.rb	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	keyword_arguments_many--kw_128_dense.rb	benchmark/keyword_arguments_many.yml, entry kw_128_dense	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	keyword_arguments_many--kw_128_sparse.rb	benchmark/keyword_arguments_many.yml, entry kw_128_sparse	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	keyword_arguments_many--kw_31_dense.rb	benchmark/keyword_arguments_many.yml, entry kw_31_dense	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	keyword_arguments_many--kw_31_sparse.rb	benchmark/keyword_arguments_many.yml, entry kw_31_sparse	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	keyword_arguments_many--kw_32_dense.rb	benchmark/keyword_arguments_many.yml, entry kw_32_dense	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	keyword_arguments_many--kw_32_sparse.rb	benchmark/keyword_arguments_many.yml, entry kw_32_sparse	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	keyword_arguments_many--kwsplat_128_dense.rb	benchmark/keyword_arguments_many.yml, entry kwsplat_128_dense	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	keyword_arguments_many--kwsplat_128_sparse.rb	benchmark/keyword_arguments_many.yml, entry kwsplat_128_sparse	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	keyword_arguments_many--kwsplat_31_dense.rb	benchmark/keyword_arguments_many.yml, entry kwsplat_31_dense	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	keyword_arguments_many--kwsplat_31_sparse.rb	benchmark/keyword_arguments_many.yml, entry kwsplat_31_sparse	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	keyword_arguments_many--kwsplat_32_dense.rb	benchmark/keyword_arguments_many.yml, entry kwsplat_32_dense	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	keyword_arguments_many--kwsplat_32_sparse.rb	benchmark/keyword_arguments_many.yml, entry kwsplat_32_sparse	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	loop_times_megamorphic--loop_times_megamorphic.rb	benchmark/loop_times_megamorphic.yml, entry loop_times_megamorphic	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	marshal_dump_load_geniv.rb	benchmark/marshal_dump_load_geniv.rb	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_bmethod--bmethod_0_splat.rb	benchmark/vm_call_bmethod.yml, entry bmethod_0_splat	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_bmethod--bmethod_100_splat.rb	benchmark/vm_call_bmethod.yml, entry bmethod_100_splat	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_bmethod--bmethod_10_splat.rb	benchmark/vm_call_bmethod.yml, entry bmethod_10_splat	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_bmethod--bmethod_1_splat.rb	benchmark/vm_call_bmethod.yml, entry bmethod_1_splat	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_bmethod--bmethod_kw.rb	benchmark/vm_call_bmethod.yml, entry bmethod_kw	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_bmethod--bmethod_kw_splat.rb	benchmark/vm_call_bmethod.yml, entry bmethod_kw_splat	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_bmethod--bmethod_no_kw.rb	benchmark/vm_call_bmethod.yml, entry bmethod_no_kw	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_bmethod--bmethod_no_splat.rb	benchmark/vm_call_bmethod.yml, entry bmethod_no_splat	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_bmethod--bmethod_simple_0.rb	benchmark/vm_call_bmethod.yml, entry bmethod_simple_0	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_bmethod--bmethod_simple_0_splat.rb	benchmark/vm_call_bmethod.yml, entry bmethod_simple_0_splat	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_bmethod--bmethod_simple_1.rb	benchmark/vm_call_bmethod.yml, entry bmethod_simple_1	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_bmethod--bmethod_simple_1_splat.rb	benchmark/vm_call_bmethod.yml, entry bmethod_simple_1_splat	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_send_iseq--send_0_splat.rb	benchmark/vm_call_send_iseq.yml, entry send_0_splat	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_send_iseq--send_0_splat_comb.rb	benchmark/vm_call_send_iseq.yml, entry send_0_splat_comb	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_send_iseq--send_0_splat_comb_kw.rb	benchmark/vm_call_send_iseq.yml, entry send_0_splat_comb_kw	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_send_iseq--send_0_splat_kw.rb	benchmark/vm_call_send_iseq.yml, entry send_0_splat_kw	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_send_iseq--send_10_splat.rb	benchmark/vm_call_send_iseq.yml, entry send_10_splat	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_send_iseq--send_10_splat_comb.rb	benchmark/vm_call_send_iseq.yml, entry send_10_splat_comb	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_send_iseq--send_10_splat_comb_kw.rb	benchmark/vm_call_send_iseq.yml, entry send_10_splat_comb_kw	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_send_iseq--send_10_splat_kw.rb	benchmark/vm_call_send_iseq.yml, entry send_10_splat_kw	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_send_iseq--send_1_splat.rb	benchmark/vm_call_send_iseq.yml, entry send_1_splat	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_send_iseq--send_1_splat_comb.rb	benchmark/vm_call_send_iseq.yml, entry send_1_splat_comb	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_send_iseq--send_1_splat_comb_kw.rb	benchmark/vm_call_send_iseq.yml, entry send_1_splat_comb_kw	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_send_iseq--send_1_splat_kw.rb	benchmark/vm_call_send_iseq.yml, entry send_1_splat_kw	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_send_iseq--send_200_splat.rb	benchmark/vm_call_send_iseq.yml, entry send_200_splat	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_send_iseq--send_200_splat_comb.rb	benchmark/vm_call_send_iseq.yml, entry send_200_splat_comb	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_send_iseq--send_200_splat_comb_kw.rb	benchmark/vm_call_send_iseq.yml, entry send_200_splat_comb_kw	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_send_iseq--send_200_splat_kw.rb	benchmark/vm_call_send_iseq.yml, entry send_200_splat_kw	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_send_iseq--send_kw.rb	benchmark/vm_call_send_iseq.yml, entry send_kw	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_send_iseq--send_kw_splat.rb	benchmark/vm_call_send_iseq.yml, entry send_kw_splat	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_send_iseq--send_no_kw.rb	benchmark/vm_call_send_iseq.yml, entry send_no_kw	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_send_iseq--send_no_splat.rb	benchmark/vm_call_send_iseq.yml, entry send_no_splat	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_send_iseq--send_simple_0.rb	benchmark/vm_call_send_iseq.yml, entry send_simple_0	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_send_iseq--send_simple_0_splat.rb	benchmark/vm_call_send_iseq.yml, entry send_simple_0_splat	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_send_iseq--send_simple_0_splat_comb.rb	benchmark/vm_call_send_iseq.yml, entry send_simple_0_splat_comb	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_send_iseq--send_simple_1.rb	benchmark/vm_call_send_iseq.yml, entry send_simple_1	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_send_iseq--send_simple_1_splat.rb	benchmark/vm_call_send_iseq.yml, entry send_simple_1_splat	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_send_iseq--send_simple_1_splat_comb.rb	benchmark/vm_call_send_iseq.yml, entry send_simple_1_splat_comb	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_defined_method--vm_defined_method.rb	benchmark/vm_defined_method.yml, entry vm_defined_method	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_eval--vm_eval.rb	benchmark/vm_eval.yml, entry vm_eval	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_iclass_super--vm_iclass_super.rb	benchmark/vm_iclass_super.yml, entry vm_iclass_super	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_ivar_memoize--vm_ivar_divergent_shape.rb	benchmark/vm_ivar_memoize.yml, entry vm_ivar_divergent_shape	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_ivar_memoize--vm_ivar_divergent_shape_imbalanced.rb	benchmark/vm_ivar_memoize.yml, entry vm_ivar_divergent_shape_imbalanced	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_ivar_memoize--vm_ivar_memoize_unstable_shape.rb	benchmark/vm_ivar_memoize.yml, entry vm_ivar_memoize_unstable_shape	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_ivar_memoize--vm_ivar_memoize_unstable_shape_miss.rb	benchmark/vm_ivar_memoize.yml, entry vm_ivar_memoize_unstable_shape_miss	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_ivar_memoize--vm_ivar_stable_shape.rb	benchmark/vm_ivar_memoize.yml, entry vm_ivar_stable_shape	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_ivar_memoize--vm_ivar_unstable_undef.rb	benchmark/vm_ivar_memoize.yml, entry vm_ivar_unstable_undef	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_send--vm_send.rb	benchmark/vm_send.yml, entry vm_send	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_send--vm_send_var.rb	benchmark/vm_send.yml, entry vm_send_var	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_symbol_block_pass.rb	benchmark/vm_symbol_block_pass.rb	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/method-missing	vm_call_method_missing--method_missing_0_splat.rb	benchmark/vm_call_method_missing.yml, entry method_missing_0_splat	method_missing
+unsupported/method-missing	vm_call_method_missing--method_missing_0_splat_kw.rb	benchmark/vm_call_method_missing.yml, entry method_missing_0_splat_kw	method_missing
+unsupported/method-missing	vm_call_method_missing--method_missing_10_splat.rb	benchmark/vm_call_method_missing.yml, entry method_missing_10_splat	method_missing
+unsupported/method-missing	vm_call_method_missing--method_missing_10_splat_kw.rb	benchmark/vm_call_method_missing.yml, entry method_missing_10_splat_kw	method_missing
+unsupported/method-missing	vm_call_method_missing--method_missing_1_splat.rb	benchmark/vm_call_method_missing.yml, entry method_missing_1_splat	method_missing
+unsupported/method-missing	vm_call_method_missing--method_missing_1_splat_kw.rb	benchmark/vm_call_method_missing.yml, entry method_missing_1_splat_kw	method_missing
+unsupported/method-missing	vm_call_method_missing--method_missing_200_splat.rb	benchmark/vm_call_method_missing.yml, entry method_missing_200_splat	method_missing
+unsupported/method-missing	vm_call_method_missing--method_missing_200_splat_kw.rb	benchmark/vm_call_method_missing.yml, entry method_missing_200_splat_kw	method_missing
+unsupported/method-missing	vm_call_method_missing--method_missing_kw.rb	benchmark/vm_call_method_missing.yml, entry method_missing_kw	method_missing
+unsupported/method-missing	vm_call_method_missing--method_missing_kw_splat.rb	benchmark/vm_call_method_missing.yml, entry method_missing_kw_splat	method_missing
+unsupported/method-missing	vm_call_method_missing--method_missing_no_kw.rb	benchmark/vm_call_method_missing.yml, entry method_missing_no_kw	method_missing
+unsupported/method-missing	vm_call_method_missing--method_missing_no_splat.rb	benchmark/vm_call_method_missing.yml, entry method_missing_no_splat	method_missing
+unsupported/method-missing	vm_call_method_missing--method_missing_simple_0.rb	benchmark/vm_call_method_missing.yml, entry method_missing_simple_0	method_missing
+unsupported/method-missing	vm_call_method_missing--method_missing_simple_0_splat.rb	benchmark/vm_call_method_missing.yml, entry method_missing_simple_0_splat	method_missing
+unsupported/method-missing	vm_call_method_missing--method_missing_simple_1.rb	benchmark/vm_call_method_missing.yml, entry method_missing_simple_1	method_missing
+unsupported/method-missing	vm_call_method_missing--method_missing_simple_1_splat.rb	benchmark/vm_call_method_missing.yml, entry method_missing_simple_1_splat	method_missing
+unsupported/method-missing	vm_method_missing--vm_method_missing.rb	benchmark/vm_method_missing.yml, entry vm_method_missing	method_missing
+unsupported/mutation	app_lc_fizzbuzz.rb	benchmark/app_lc_fizzbuzz.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	array_flatten--large_flat_ary.flatten.rb	benchmark/array_flatten.yml, entry large_flat_ary.flatten	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	array_flatten--large_flat_ary.flatten_.rb	benchmark/array_flatten.yml, entry large_flat_ary.flatten_	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	array_flatten--large_nested_ary.flatten.rb	benchmark/array_flatten.yml, entry large_nested_ary.flatten	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	array_flatten--large_nested_ary.flatten_.rb	benchmark/array_flatten.yml, entry large_nested_ary.flatten_	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	array_flatten--large_nested_ary.flatten_1_.rb	benchmark/array_flatten.yml, entry large_nested_ary.flatten_1_	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	array_flatten--large_nested_ary.flatten__1_.rb	benchmark/array_flatten.yml, entry large_nested_ary.flatten__1_	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	array_flatten--large_pairs_ary.flatten.rb	benchmark/array_flatten.yml, entry large_pairs_ary.flatten	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	array_flatten--large_pairs_ary.flatten_.rb	benchmark/array_flatten.yml, entry large_pairs_ary.flatten_	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	array_flatten--mostly_flat_ary.flatten.rb	benchmark/array_flatten.yml, entry mostly_flat_ary.flatten	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	array_flatten--mostly_flat_ary.flatten_.rb	benchmark/array_flatten.yml, entry mostly_flat_ary.flatten_	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	array_flatten--small_flat_ary.flatten.rb	benchmark/array_flatten.yml, entry small_flat_ary.flatten	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	array_flatten--small_flat_ary.flatten_.rb	benchmark/array_flatten.yml, entry small_flat_ary.flatten_	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	array_flatten--small_nested_ary.flatten.rb	benchmark/array_flatten.yml, entry small_nested_ary.flatten	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	array_flatten--small_nested_ary.flatten_.rb	benchmark/array_flatten.yml, entry small_nested_ary.flatten_	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	array_flatten--small_nested_ary.flatten_1_.rb	benchmark/array_flatten.yml, entry small_nested_ary.flatten_1_	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	array_flatten--small_nested_ary.flatten__1_.rb	benchmark/array_flatten.yml, entry small_nested_ary.flatten__1_	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	array_flatten--small_pairs_ary.flatten.rb	benchmark/array_flatten.yml, entry small_pairs_ary.flatten	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	array_flatten--small_pairs_ary.flatten_.rb	benchmark/array_flatten.yml, entry small_pairs_ary.flatten_	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	array_join_regression--fp_big_e1k.rb	benchmark/array_join_regression.yml, entry fp_big_e1k	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	array_join_regression--fp_big_e256.rb	benchmark/array_join_regression.yml, entry fp_big_e256	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	array_join_regression--fp_big_e4k.rb	benchmark/array_join_regression.yml, entry fp_big_e4k	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	array_join_regression--fp_frozen.rb	benchmark/array_join_regression.yml, entry fp_frozen	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	array_join_regression--fp_multichar_sep.rb	benchmark/array_join_regression.yml, entry fp_multichar_sep	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	array_join_regression--fp_nosep.rb	benchmark/array_join_regression.yml, entry fp_nosep	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	array_join_regression--reg_mixed_tail_int.rb	benchmark/array_join_regression.yml, entry reg_mixed_tail_int	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	array_join_regression--reg_multibyte_sep.rb	benchmark/array_join_regression.yml, entry reg_multibyte_sep	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	array_join_regression--reg_multibyte_utf8.rb	benchmark/array_join_regression.yml, entry reg_multibyte_utf8	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	array_join_regression--reg_nested.rb	benchmark/array_join_regression.yml, entry reg_nested	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	array_join_regression--reg_nonstring_int.rb	benchmark/array_join_regression.yml, entry reg_nonstring_int	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	array_join_regression--reg_tail_multibyte.rb	benchmark/array_join_regression.yml, entry reg_tail_multibyte	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	array_join_regression--reg_utf16.rb	benchmark/array_join_regression.yml, entry reg_utf16	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	buffer_each--array.each.rb	benchmark/buffer_each.yml, entry array.each	index assignment on a non-local
+unsupported/mutation	buffer_each--buffer.each.rb	benchmark/buffer_each.yml, entry buffer.each	index assignment on a non-local
+unsupported/mutation	buffer_each--buffer.each_byte.rb	benchmark/buffer_each.yml, entry buffer.each_byte	index assignment on a non-local
+unsupported/mutation	buffer_each--string.each_byte.rb	benchmark/buffer_each.yml, entry string.each_byte	index assignment on a non-local
+unsupported/mutation	buffer_get--buffer.get_value.rb	benchmark/buffer_get.yml, entry buffer.get_value	index assignment on a non-local
+unsupported/mutation	buffer_get--buffer.get_values.rb	benchmark/buffer_get.yml, entry buffer.get_values	index assignment on a non-local
+unsupported/mutation	buffer_get--string.unpack.rb	benchmark/buffer_get.yml, entry string.unpack	index assignment on a non-local
+unsupported/mutation	buffer_get--string.unpack1.rb	benchmark/buffer_get.yml, entry string.unpack1	index assignment on a non-local
+unsupported/mutation	hash_aref_flo.rb	benchmark/hash_aref_flo.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	hash_aref_miss.rb	benchmark/hash_aref_miss.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	hash_aref_str.rb	benchmark/hash_aref_str.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	hash_first--hash1.rb	benchmark/hash_first.yml, entry hash1	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	hash_first--hash2.rb	benchmark/hash_first.yml, entry hash2	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	hash_ident_flo.rb	benchmark/hash_ident_flo.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	hash_shift.rb	benchmark/hash_shift.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	hash_shift_u16.rb	benchmark/hash_shift_u16.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	hash_shift_u24.rb	benchmark/hash_shift_u24.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	hash_shift_u32.rb	benchmark/hash_shift_u32.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	io_close--io_close.rb	benchmark/io_close.yml, entry io_close	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	io_close_contended--io_close_contended.rb	benchmark/io_close_contended.yml, entry io_close_contended	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	io_select2.rb	benchmark/io_select2.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	io_select3.rb	benchmark/io_select3.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	string_capitalize--capitalize_-1.rb	benchmark/string_capitalize.yml, entry capitalize_-1	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	string_capitalize--capitalize_-100.rb	benchmark/string_capitalize.yml, entry capitalize_-100	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	string_capitalize--capitalize_-1000.rb	benchmark/string_capitalize.yml, entry capitalize_-1000	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	string_concat--binary_concat_7bit.rb	benchmark/string_concat.yml, entry binary_concat_7bit	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	string_concat--binary_concat_embedded.rb	benchmark/string_concat.yml, entry binary_concat_embedded	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	string_concat--utf8_concat_7bit.rb	benchmark/string_concat.yml, entry utf8_concat_7bit	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	string_concat--utf8_concat_UTF8.rb	benchmark/string_concat.yml, entry utf8_concat_UTF8	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	string_scrub--scrub_known_invalid.rb	benchmark/string_scrub.yml, entry scrub_known_invalid	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	string_scrub--scrub_known_valid.rb	benchmark/string_scrub.yml, entry scrub_known_valid	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	string_scrub--scrub_unknown_and_invalid_coderange.rb	benchmark/string_scrub.yml, entry scrub_unknown_and_invalid_coderange	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	string_scrub--scrub_unknown_and_invalid_coderange_worst_case.rb	benchmark/string_scrub.yml, entry scrub_unknown_and_invalid_coderange_worst_case	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	string_scrub--scrub_unknown_but_valid_coderange.rb	benchmark/string_scrub.yml, entry scrub_unknown_but_valid_coderange	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	string_scrub--scrub_unknown_but_valid_coderange_worst_case.rb	benchmark/string_scrub.yml, entry scrub_unknown_but_valid_coderange_worst_case	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	string_slice--regexp-long.rb	benchmark/string_slice.yml, entry regexp-long	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	string_slice--regexp-short.rb	benchmark/string_slice.yml, entry regexp-short	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	string_slice--string-long.rb	benchmark/string_slice.yml, entry string-long	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	string_slice--string-short.rb	benchmark/string_slice.yml, entry string-short	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	time_xmlschema--time_xmlschema_0.rb	benchmark/time_xmlschema.yml, entry time_xmlschema_0	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	time_xmlschema--time_xmlschema_1.rb	benchmark/time_xmlschema.yml, entry time_xmlschema_1	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	time_xmlschema--time_xmlschema_2.rb	benchmark/time_xmlschema.yml, entry time_xmlschema_2	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	time_xmlschema--time_xmlschema_3.rb	benchmark/time_xmlschema.yml, entry time_xmlschema_3	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	time_xmlschema--time_xmlschema_4.rb	benchmark/time_xmlschema.yml, entry time_xmlschema_4	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	time_xmlschema--time_xmlschema_5.rb	benchmark/time_xmlschema.yml, entry time_xmlschema_5	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	time_xmlschema--time_xmlschema_6.rb	benchmark/time_xmlschema.yml, entry time_xmlschema_6	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	time_xmlschema--time_xmlschema_7.rb	benchmark/time_xmlschema.yml, entry time_xmlschema_7	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	vm_fiber_count--vm_fiber_count.rb	benchmark/vm_fiber_count.yml, entry vm_fiber_count	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	vm_fiber_reuse--vm_fiber_reuse.rb	benchmark/vm_fiber_reuse.yml, entry vm_fiber_reuse	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	vm_fiber_reuse_gc--vm_fiber_reuse_gc.rb	benchmark/vm_fiber_reuse_gc.yml, entry vm_fiber_reuse_gc	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	vm_thread_pass.rb	benchmark/vm_thread_pass.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/regexp	app_answer.rb	benchmark/app_answer.rb	regular expressions
+unsupported/regexp	match_gt4.rb	benchmark/match_gt4.rb	regular expressions
+unsupported/regexp	match_small.rb	benchmark/match_small.rb	regular expressions
+unsupported/regexp	regexp_dup--dup.rb	benchmark/regexp_dup.yml, entry dup	regular expressions
+unsupported/regexp	regexp_new--regexp.rb	benchmark/regexp_new.yml, entry regexp	regular expressions
+unsupported/regexp	regexp_new--string.rb	benchmark/regexp_new.yml, entry string	regular expressions
+unsupported/regexp	set--add.rb	benchmark/set.yml, entry add	regular expressions
+unsupported/regexp	set--add_exist.rb	benchmark/set.yml, entry add_exist	regular expressions
+unsupported/regexp	set--addq.rb	benchmark/set.yml, entry addq	regular expressions
+unsupported/regexp	set--addq_exist.rb	benchmark/set.yml, entry addq_exist	regular expressions
+unsupported/regexp	set--amp_0.rb	benchmark/set.yml, entry amp_0	regular expressions
+unsupported/regexp	set--amp_10.rb	benchmark/set.yml, entry amp_10	regular expressions
+unsupported/regexp	set--amp_100.rb	benchmark/set.yml, entry amp_100	regular expressions
+unsupported/regexp	set--amp_1000.rb	benchmark/set.yml, entry amp_1000	regular expressions
+unsupported/regexp	set--amp_same_0.rb	benchmark/set.yml, entry amp_same_0	regular expressions
+unsupported/regexp	set--amp_same_10.rb	benchmark/set.yml, entry amp_same_10	regular expressions
+unsupported/regexp	set--amp_same_100.rb	benchmark/set.yml, entry amp_same_100	regular expressions
+unsupported/regexp	set--amp_same_1000.rb	benchmark/set.yml, entry amp_same_1000	regular expressions
+unsupported/regexp	set--aref_0.rb	benchmark/set.yml, entry aref_0	regular expressions
+unsupported/regexp	set--aref_10.rb	benchmark/set.yml, entry aref_10	regular expressions
+unsupported/regexp	set--aref_100.rb	benchmark/set.yml, entry aref_100	regular expressions
+unsupported/regexp	set--aref_1000.rb	benchmark/set.yml, entry aref_1000	regular expressions
+unsupported/regexp	set--classify_0.rb	benchmark/set.yml, entry classify_0	regular expressions
+unsupported/regexp	set--classify_10.rb	benchmark/set.yml, entry classify_10	regular expressions
+unsupported/regexp	set--classify_100.rb	benchmark/set.yml, entry classify_100	regular expressions
+unsupported/regexp	set--classify_1000.rb	benchmark/set.yml, entry classify_1000	regular expressions
+unsupported/regexp	set--clear.rb	benchmark/set.yml, entry clear	regular expressions
+unsupported/regexp	set--clone_0.rb	benchmark/set.yml, entry clone_0	regular expressions
+unsupported/regexp	set--clone_10.rb	benchmark/set.yml, entry clone_10	regular expressions
+unsupported/regexp	set--clone_100.rb	benchmark/set.yml, entry clone_100	regular expressions
+unsupported/regexp	set--clone_1000.rb	benchmark/set.yml, entry clone_1000	regular expressions
+unsupported/regexp	set--collect_0.rb	benchmark/set.yml, entry collect_0	regular expressions
+unsupported/regexp	set--collect_10.rb	benchmark/set.yml, entry collect_10	regular expressions
+unsupported/regexp	set--collect_100.rb	benchmark/set.yml, entry collect_100	regular expressions
+unsupported/regexp	set--collect_1000.rb	benchmark/set.yml, entry collect_1000	regular expressions
+unsupported/regexp	set--compare_by_identity_0.rb	benchmark/set.yml, entry compare_by_identity_0	regular expressions
+unsupported/regexp	set--compare_by_identity_10.rb	benchmark/set.yml, entry compare_by_identity_10	regular expressions
+unsupported/regexp	set--compare_by_identity_100.rb	benchmark/set.yml, entry compare_by_identity_100	regular expressions
+unsupported/regexp	set--compare_by_identity_1000.rb	benchmark/set.yml, entry compare_by_identity_1000	regular expressions
+unsupported/regexp	set--compare_by_identityq_false.rb	benchmark/set.yml, entry compare_by_identityq_false	regular expressions
+unsupported/regexp	set--compare_by_identityq_true.rb	benchmark/set.yml, entry compare_by_identityq_true	regular expressions
+unsupported/regexp	set--delete.rb	benchmark/set.yml, entry delete	regular expressions
+unsupported/regexp	set--delete_if_0.rb	benchmark/set.yml, entry delete_if_0	regular expressions
+unsupported/regexp	set--delete_if_10.rb	benchmark/set.yml, entry delete_if_10	regular expressions
+unsupported/regexp	set--delete_if_100.rb	benchmark/set.yml, entry delete_if_100	regular expressions
+unsupported/regexp	set--delete_if_1000.rb	benchmark/set.yml, entry delete_if_1000	regular expressions
+unsupported/regexp	set--delete_not_exist.rb	benchmark/set.yml, entry delete_not_exist	regular expressions
+unsupported/regexp	set--deleteq.rb	benchmark/set.yml, entry deleteq	regular expressions
+unsupported/regexp	set--deleteq_not_exist.rb	benchmark/set.yml, entry deleteq_not_exist	regular expressions
+unsupported/regexp	set--disjoint_0.rb	benchmark/set.yml, entry disjoint_0	regular expressions
+unsupported/regexp	set--disjoint_10.rb	benchmark/set.yml, entry disjoint_10	regular expressions
+unsupported/regexp	set--disjoint_100.rb	benchmark/set.yml, entry disjoint_100	regular expressions
+unsupported/regexp	set--disjoint_1000.rb	benchmark/set.yml, entry disjoint_1000	regular expressions
+unsupported/regexp	set--disjoint_same_0.rb	benchmark/set.yml, entry disjoint_same_0	regular expressions
+unsupported/regexp	set--disjoint_same_10.rb	benchmark/set.yml, entry disjoint_same_10	regular expressions
+unsupported/regexp	set--disjoint_same_100.rb	benchmark/set.yml, entry disjoint_same_100	regular expressions
+unsupported/regexp	set--disjoint_same_1000.rb	benchmark/set.yml, entry disjoint_same_1000	regular expressions
+unsupported/regexp	set--divide_1arity_0.rb	benchmark/set.yml, entry divide_1arity_0	regular expressions
+unsupported/regexp	set--divide_1arity_10.rb	benchmark/set.yml, entry divide_1arity_10	regular expressions
+unsupported/regexp	set--divide_1arity_100.rb	benchmark/set.yml, entry divide_1arity_100	regular expressions
+unsupported/regexp	set--divide_1arity_1000.rb	benchmark/set.yml, entry divide_1arity_1000	regular expressions
+unsupported/regexp	set--divide_2arity_0.rb	benchmark/set.yml, entry divide_2arity_0	regular expressions
+unsupported/regexp	set--divide_2arity_10.rb	benchmark/set.yml, entry divide_2arity_10	regular expressions
+unsupported/regexp	set--divide_2arity_100.rb	benchmark/set.yml, entry divide_2arity_100	regular expressions
+unsupported/regexp	set--divide_2arity_1000.rb	benchmark/set.yml, entry divide_2arity_1000	regular expressions
+unsupported/regexp	set--dup_0.rb	benchmark/set.yml, entry dup_0	regular expressions
+unsupported/regexp	set--dup_10.rb	benchmark/set.yml, entry dup_10	regular expressions
+unsupported/regexp	set--dup_100.rb	benchmark/set.yml, entry dup_100	regular expressions
+unsupported/regexp	set--dup_1000.rb	benchmark/set.yml, entry dup_1000	regular expressions
+unsupported/regexp	set--each_0.rb	benchmark/set.yml, entry each_0	regular expressions
+unsupported/regexp	set--each_10.rb	benchmark/set.yml, entry each_10	regular expressions
+unsupported/regexp	set--each_100.rb	benchmark/set.yml, entry each_100	regular expressions
+unsupported/regexp	set--each_1000.rb	benchmark/set.yml, entry each_1000	regular expressions
+unsupported/regexp	set--empty_false.rb	benchmark/set.yml, entry empty_false	regular expressions
+unsupported/regexp	set--empty_true.rb	benchmark/set.yml, entry empty_true	regular expressions
+unsupported/regexp	set--eq_0.rb	benchmark/set.yml, entry eq_0	regular expressions
+unsupported/regexp	set--eq_10.rb	benchmark/set.yml, entry eq_10	regular expressions
+unsupported/regexp	set--eq_100.rb	benchmark/set.yml, entry eq_100	regular expressions
+unsupported/regexp	set--eq_1000.rb	benchmark/set.yml, entry eq_1000	regular expressions
+unsupported/regexp	set--eq_same_0.rb	benchmark/set.yml, entry eq_same_0	regular expressions
+unsupported/regexp	set--eq_same_10.rb	benchmark/set.yml, entry eq_same_10	regular expressions
+unsupported/regexp	set--eq_same_100.rb	benchmark/set.yml, entry eq_same_100	regular expressions
+unsupported/regexp	set--eq_same_1000.rb	benchmark/set.yml, entry eq_same_1000	regular expressions
+unsupported/regexp	set--flatten.rb	benchmark/set.yml, entry flatten	regular expressions
+unsupported/regexp	set--flattenb.rb	benchmark/set.yml, entry flattenb	regular expressions
+unsupported/regexp	set--include_false_0.rb	benchmark/set.yml, entry include_false_0	regular expressions
+unsupported/regexp	set--include_false_10.rb	benchmark/set.yml, entry include_false_10	regular expressions
+unsupported/regexp	set--include_false_100.rb	benchmark/set.yml, entry include_false_100	regular expressions
+unsupported/regexp	set--include_false_1000.rb	benchmark/set.yml, entry include_false_1000	regular expressions
+unsupported/regexp	set--include_true_0.rb	benchmark/set.yml, entry include_true_0	regular expressions
+unsupported/regexp	set--include_true_10.rb	benchmark/set.yml, entry include_true_10	regular expressions
+unsupported/regexp	set--include_true_100.rb	benchmark/set.yml, entry include_true_100	regular expressions
+unsupported/regexp	set--include_true_1000.rb	benchmark/set.yml, entry include_true_1000	regular expressions
+unsupported/regexp	set--intersect_0.rb	benchmark/set.yml, entry intersect_0	regular expressions
+unsupported/regexp	set--intersect_10.rb	benchmark/set.yml, entry intersect_10	regular expressions
+unsupported/regexp	set--intersect_100.rb	benchmark/set.yml, entry intersect_100	regular expressions
+unsupported/regexp	set--intersect_1000.rb	benchmark/set.yml, entry intersect_1000	regular expressions
+unsupported/regexp	set--intersect_same_0.rb	benchmark/set.yml, entry intersect_same_0	regular expressions
+unsupported/regexp	set--intersect_same_10.rb	benchmark/set.yml, entry intersect_same_10	regular expressions
+unsupported/regexp	set--intersect_same_100.rb	benchmark/set.yml, entry intersect_same_100	regular expressions
+unsupported/regexp	set--intersect_same_1000.rb	benchmark/set.yml, entry intersect_same_1000	regular expressions
+unsupported/regexp	set--join_0.rb	benchmark/set.yml, entry join_0	regular expressions
+unsupported/regexp	set--join_10.rb	benchmark/set.yml, entry join_10	regular expressions
+unsupported/regexp	set--join_100.rb	benchmark/set.yml, entry join_100	regular expressions
+unsupported/regexp	set--join_1000.rb	benchmark/set.yml, entry join_1000	regular expressions
+unsupported/regexp	set--join_arg_0.rb	benchmark/set.yml, entry join_arg_0	regular expressions
+unsupported/regexp	set--join_arg_10.rb	benchmark/set.yml, entry join_arg_10	regular expressions
+unsupported/regexp	set--join_arg_100.rb	benchmark/set.yml, entry join_arg_100	regular expressions
+unsupported/regexp	set--join_arg_1000.rb	benchmark/set.yml, entry join_arg_1000	regular expressions
+unsupported/regexp	set--keep_if_0.rb	benchmark/set.yml, entry keep_if_0	regular expressions
+unsupported/regexp	set--keep_if_10.rb	benchmark/set.yml, entry keep_if_10	regular expressions
+unsupported/regexp	set--keep_if_100.rb	benchmark/set.yml, entry keep_if_100	regular expressions
+unsupported/regexp	set--keep_if_1000.rb	benchmark/set.yml, entry keep_if_1000	regular expressions
+unsupported/regexp	set--merge_enum.rb	benchmark/set.yml, entry merge_enum	regular expressions
+unsupported/regexp	set--merge_set.rb	benchmark/set.yml, entry merge_set	regular expressions
+unsupported/regexp	set--minus_0.rb	benchmark/set.yml, entry minus_0	regular expressions
+unsupported/regexp	set--minus_10.rb	benchmark/set.yml, entry minus_10	regular expressions
+unsupported/regexp	set--minus_100.rb	benchmark/set.yml, entry minus_100	regular expressions
+unsupported/regexp	set--minus_1000.rb	benchmark/set.yml, entry minus_1000	regular expressions
+unsupported/regexp	set--minus_same_0.rb	benchmark/set.yml, entry minus_same_0	regular expressions
+unsupported/regexp	set--minus_same_10.rb	benchmark/set.yml, entry minus_same_10	regular expressions
+unsupported/regexp	set--minus_same_100.rb	benchmark/set.yml, entry minus_same_100	regular expressions
+unsupported/regexp	set--minus_same_1000.rb	benchmark/set.yml, entry minus_same_1000	regular expressions
+unsupported/regexp	set--new_0.rb	benchmark/set.yml, entry new_0	regular expressions
+unsupported/regexp	set--new_10.rb	benchmark/set.yml, entry new_10	regular expressions
+unsupported/regexp	set--new_100.rb	benchmark/set.yml, entry new_100	regular expressions
+unsupported/regexp	set--new_1000.rb	benchmark/set.yml, entry new_1000	regular expressions
+unsupported/regexp	set--pipe_0.rb	benchmark/set.yml, entry pipe_0	regular expressions
+unsupported/regexp	set--pipe_10.rb	benchmark/set.yml, entry pipe_10	regular expressions
+unsupported/regexp	set--pipe_100.rb	benchmark/set.yml, entry pipe_100	regular expressions
+unsupported/regexp	set--pipe_1000.rb	benchmark/set.yml, entry pipe_1000	regular expressions
+unsupported/regexp	set--pipe_same_0.rb	benchmark/set.yml, entry pipe_same_0	regular expressions
+unsupported/regexp	set--pipe_same_10.rb	benchmark/set.yml, entry pipe_same_10	regular expressions
+unsupported/regexp	set--pipe_same_100.rb	benchmark/set.yml, entry pipe_same_100	regular expressions
+unsupported/regexp	set--pipe_same_1000.rb	benchmark/set.yml, entry pipe_same_1000	regular expressions
+unsupported/regexp	set--proper_subset_0.rb	benchmark/set.yml, entry proper_subset_0	regular expressions
+unsupported/regexp	set--proper_subset_10.rb	benchmark/set.yml, entry proper_subset_10	regular expressions
+unsupported/regexp	set--proper_subset_100.rb	benchmark/set.yml, entry proper_subset_100	regular expressions
+unsupported/regexp	set--proper_subset_1000.rb	benchmark/set.yml, entry proper_subset_1000	regular expressions
+unsupported/regexp	set--proper_subset_false_10.rb	benchmark/set.yml, entry proper_subset_false_10	regular expressions
+unsupported/regexp	set--proper_subset_false_100.rb	benchmark/set.yml, entry proper_subset_false_100	regular expressions
+unsupported/regexp	set--proper_subset_false_1000.rb	benchmark/set.yml, entry proper_subset_false_1000	regular expressions
+unsupported/regexp	set--proper_superset_0.rb	benchmark/set.yml, entry proper_superset_0	regular expressions
+unsupported/regexp	set--proper_superset_10.rb	benchmark/set.yml, entry proper_superset_10	regular expressions
+unsupported/regexp	set--proper_superset_100.rb	benchmark/set.yml, entry proper_superset_100	regular expressions
+unsupported/regexp	set--proper_superset_1000.rb	benchmark/set.yml, entry proper_superset_1000	regular expressions
+unsupported/regexp	set--proper_superset_false_10.rb	benchmark/set.yml, entry proper_superset_false_10	regular expressions
+unsupported/regexp	set--proper_superset_false_100.rb	benchmark/set.yml, entry proper_superset_false_100	regular expressions
+unsupported/regexp	set--proper_superset_false_1000.rb	benchmark/set.yml, entry proper_superset_false_1000	regular expressions
+unsupported/regexp	set--reject_0.rb	benchmark/set.yml, entry reject_0	regular expressions
+unsupported/regexp	set--reject_10.rb	benchmark/set.yml, entry reject_10	regular expressions
+unsupported/regexp	set--reject_100.rb	benchmark/set.yml, entry reject_100	regular expressions
+unsupported/regexp	set--reject_1000.rb	benchmark/set.yml, entry reject_1000	regular expressions
+unsupported/regexp	set--replace_0.rb	benchmark/set.yml, entry replace_0	regular expressions
+unsupported/regexp	set--replace_10.rb	benchmark/set.yml, entry replace_10	regular expressions
+unsupported/regexp	set--replace_100.rb	benchmark/set.yml, entry replace_100	regular expressions
+unsupported/regexp	set--replace_1000.rb	benchmark/set.yml, entry replace_1000	regular expressions
+unsupported/regexp	set--reset_0.rb	benchmark/set.yml, entry reset_0	regular expressions
+unsupported/regexp	set--reset_10.rb	benchmark/set.yml, entry reset_10	regular expressions
+unsupported/regexp	set--reset_100.rb	benchmark/set.yml, entry reset_100	regular expressions
+unsupported/regexp	set--reset_1000.rb	benchmark/set.yml, entry reset_1000	regular expressions
+unsupported/regexp	set--select_0.rb	benchmark/set.yml, entry select_0	regular expressions
+unsupported/regexp	set--select_10.rb	benchmark/set.yml, entry select_10	regular expressions
+unsupported/regexp	set--select_100.rb	benchmark/set.yml, entry select_100	regular expressions
+unsupported/regexp	set--select_1000.rb	benchmark/set.yml, entry select_1000	regular expressions
+unsupported/regexp	set--size_0.rb	benchmark/set.yml, entry size_0	regular expressions
+unsupported/regexp	set--size_10.rb	benchmark/set.yml, entry size_10	regular expressions
+unsupported/regexp	set--size_100.rb	benchmark/set.yml, entry size_100	regular expressions
+unsupported/regexp	set--size_1000.rb	benchmark/set.yml, entry size_1000	regular expressions
+unsupported/regexp	set--spaceship_0.rb	benchmark/set.yml, entry spaceship_0	regular expressions
+unsupported/regexp	set--spaceship_diff_10.rb	benchmark/set.yml, entry spaceship_diff_10	regular expressions
+unsupported/regexp	set--spaceship_diff_100.rb	benchmark/set.yml, entry spaceship_diff_100	regular expressions
+unsupported/regexp	set--spaceship_diff_1000.rb	benchmark/set.yml, entry spaceship_diff_1000	regular expressions
+unsupported/regexp	set--spaceship_sub_10.rb	benchmark/set.yml, entry spaceship_sub_10	regular expressions
+unsupported/regexp	set--spaceship_sub_100.rb	benchmark/set.yml, entry spaceship_sub_100	regular expressions
+unsupported/regexp	set--spaceship_sub_1000.rb	benchmark/set.yml, entry spaceship_sub_1000	regular expressions
+unsupported/regexp	set--spaceship_sup_10.rb	benchmark/set.yml, entry spaceship_sup_10	regular expressions
+unsupported/regexp	set--spaceship_sup_100.rb	benchmark/set.yml, entry spaceship_sup_100	regular expressions
+unsupported/regexp	set--spaceship_sup_1000.rb	benchmark/set.yml, entry spaceship_sup_1000	regular expressions
+unsupported/regexp	set--subset_0.rb	benchmark/set.yml, entry subset_0	regular expressions
+unsupported/regexp	set--subset_10.rb	benchmark/set.yml, entry subset_10	regular expressions
+unsupported/regexp	set--subset_100.rb	benchmark/set.yml, entry subset_100	regular expressions
+unsupported/regexp	set--subset_1000.rb	benchmark/set.yml, entry subset_1000	regular expressions
+unsupported/regexp	set--subset_false_10.rb	benchmark/set.yml, entry subset_false_10	regular expressions
+unsupported/regexp	set--subset_false_100.rb	benchmark/set.yml, entry subset_false_100	regular expressions
+unsupported/regexp	set--subset_false_1000.rb	benchmark/set.yml, entry subset_false_1000	regular expressions
+unsupported/regexp	set--subtract_enum.rb	benchmark/set.yml, entry subtract_enum	regular expressions
+unsupported/regexp	set--subtract_same_enum.rb	benchmark/set.yml, entry subtract_same_enum	regular expressions
+unsupported/regexp	set--subtract_same_set.rb	benchmark/set.yml, entry subtract_same_set	regular expressions
+unsupported/regexp	set--subtract_set.rb	benchmark/set.yml, entry subtract_set	regular expressions
+unsupported/regexp	set--superset_0.rb	benchmark/set.yml, entry superset_0	regular expressions
+unsupported/regexp	set--superset_10.rb	benchmark/set.yml, entry superset_10	regular expressions
+unsupported/regexp	set--superset_100.rb	benchmark/set.yml, entry superset_100	regular expressions
+unsupported/regexp	set--superset_1000.rb	benchmark/set.yml, entry superset_1000	regular expressions
+unsupported/regexp	set--superset_false_10.rb	benchmark/set.yml, entry superset_false_10	regular expressions
+unsupported/regexp	set--superset_false_100.rb	benchmark/set.yml, entry superset_false_100	regular expressions
+unsupported/regexp	set--superset_false_1000.rb	benchmark/set.yml, entry superset_false_1000	regular expressions
+unsupported/regexp	set--to_a_0.rb	benchmark/set.yml, entry to_a_0	regular expressions
+unsupported/regexp	set--to_a_10.rb	benchmark/set.yml, entry to_a_10	regular expressions
+unsupported/regexp	set--to_a_100.rb	benchmark/set.yml, entry to_a_100	regular expressions
+unsupported/regexp	set--to_a_1000.rb	benchmark/set.yml, entry to_a_1000	regular expressions
+unsupported/regexp	set--to_set_0.rb	benchmark/set.yml, entry to_set_0	regular expressions
+unsupported/regexp	set--to_set_10.rb	benchmark/set.yml, entry to_set_10	regular expressions
+unsupported/regexp	set--to_set_100.rb	benchmark/set.yml, entry to_set_100	regular expressions
+unsupported/regexp	set--to_set_1000.rb	benchmark/set.yml, entry to_set_1000	regular expressions
+unsupported/regexp	set--xor_0.rb	benchmark/set.yml, entry xor_0	regular expressions
+unsupported/regexp	set--xor_10.rb	benchmark/set.yml, entry xor_10	regular expressions
+unsupported/regexp	set--xor_100.rb	benchmark/set.yml, entry xor_100	regular expressions
+unsupported/regexp	set--xor_1000.rb	benchmark/set.yml, entry xor_1000	regular expressions
+unsupported/regexp	set--xor_same_0.rb	benchmark/set.yml, entry xor_same_0	regular expressions
+unsupported/regexp	set--xor_same_10.rb	benchmark/set.yml, entry xor_same_10	regular expressions
+unsupported/regexp	set--xor_same_100.rb	benchmark/set.yml, entry xor_same_100	regular expressions
+unsupported/regexp	set--xor_same_1000.rb	benchmark/set.yml, entry xor_same_1000	regular expressions
+unsupported/regexp	string_scan_re.rb	benchmark/string_scan_re.rb	regular expressions
+unsupported/regexp	string_split--re_chars-1.rb	benchmark/string_split.yml, entry re_chars-1	regular expressions
+unsupported/regexp	string_split--re_chars-10.rb	benchmark/string_split.yml, entry re_chars-10	regular expressions
+unsupported/regexp	string_split--re_chars-100.rb	benchmark/string_split.yml, entry re_chars-100	regular expressions
+unsupported/regexp	string_split--re_chars-1000.rb	benchmark/string_split.yml, entry re_chars-1000	regular expressions
+unsupported/regexp	string_split--re_space-1.rb	benchmark/string_split.yml, entry re_space-1	regular expressions
+unsupported/regexp	string_split--re_space-10.rb	benchmark/string_split.yml, entry re_space-10	regular expressions
+unsupported/regexp	string_split--re_space-100.rb	benchmark/string_split.yml, entry re_space-100	regular expressions
+unsupported/regexp	string_split--re_space-1000.rb	benchmark/string_split.yml, entry re_space-1000	regular expressions
+unsupported/regexp	vm_regexp--vm_regexp.rb	benchmark/vm_regexp.yml, entry vm_regexp	regular expressions
+unsupported/regexp	vm_regexp--vm_regexp_alternating.rb	benchmark/vm_regexp.yml, entry vm_regexp_alternating	regular expressions
+unsupported/regexp	vm_regexp--vm_regexp_invert.rb	benchmark/vm_regexp.yml, entry vm_regexp_invert	regular expressions
+unsupported/regexp	vm_regexp--vm_regexp_invert_alternating.rb	benchmark/vm_regexp.yml, entry vm_regexp_invert_alternating	regular expressions
+unsupported/reopening-classes	range_overlap--range_overlap_0.rb	benchmark/range_overlap.yml, entry range_overlap_0	reopening builtin classes
+unsupported/reopening-classes	range_overlap--range_overlap_1.rb	benchmark/range_overlap.yml, entry range_overlap_1	reopening builtin classes
+unsupported/reopening-classes	range_overlap--range_overlap_2.rb	benchmark/range_overlap.yml, entry range_overlap_2	reopening builtin classes
+unsupported/reopening-classes	range_overlap--range_overlap_3.rb	benchmark/range_overlap.yml, entry range_overlap_3	reopening builtin classes
+unsupported/reopening-classes	range_overlap--range_overlap_4.rb	benchmark/range_overlap.yml, entry range_overlap_4	reopening builtin classes
+unsupported/reopening-classes	range_overlap--range_overlap_5.rb	benchmark/range_overlap.yml, entry range_overlap_5	reopening builtin classes
+unsupported/reopening-classes	range_overlap--range_overlap_6.rb	benchmark/range_overlap.yml, entry range_overlap_6	reopening builtin classes
+unsupported/reopening-classes	range_overlap--range_overlap_7.rb	benchmark/range_overlap.yml, entry range_overlap_7	reopening builtin classes
+unsupported/reopening-classes	range_overlap--range_overlap_8.rb	benchmark/range_overlap.yml, entry range_overlap_8	reopening builtin classes
+unsupported/require	app_erb--app_erb.rb	benchmark/app_erb.yml, entry app_erb	require / load
+unsupported/require	app_mandelbrot.rb	benchmark/app_mandelbrot.rb	require / load
+unsupported/require	app_uri.rb	benchmark/app_uri.rb	require / load
+unsupported/require	array_shift.rb	benchmark/array_shift.rb	require / load
+unsupported/require	cgi_escape_html--cgi_escape_html_0.rb	benchmark/cgi_escape_html.yml, entry cgi_escape_html_0	require / load
+unsupported/require	cgi_escape_html--cgi_escape_html_1.rb	benchmark/cgi_escape_html.yml, entry cgi_escape_html_1	require / load
+unsupported/require	cgi_escape_html--cgi_escape_html_2.rb	benchmark/cgi_escape_html.yml, entry cgi_escape_html_2	require / load
+unsupported/require	cgi_escape_html--cgi_escape_html_3.rb	benchmark/cgi_escape_html.yml, entry cgi_escape_html_3	require / load
+unsupported/require	cgi_escape_html--cgi_escape_html_4.rb	benchmark/cgi_escape_html.yml, entry cgi_escape_html_4	require / load
+unsupported/require	cgi_escape_html--cgi_escape_html_5.rb	benchmark/cgi_escape_html.yml, entry cgi_escape_html_5	require / load
+unsupported/require	cgi_escape_html--cgi_escape_html_6.rb	benchmark/cgi_escape_html.yml, entry cgi_escape_html_6	require / load
+unsupported/require	dir_empty_p.rb	benchmark/dir_empty_p.rb	require / load
+unsupported/require	erb_escape_html--erb_escape_html_0.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_0	require / load
+unsupported/require	erb_escape_html--erb_escape_html_1.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_1	require / load
+unsupported/require	erb_escape_html--erb_escape_html_2.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_2	require / load
+unsupported/require	erb_escape_html--erb_escape_html_3.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_3	require / load
+unsupported/require	erb_escape_html--erb_escape_html_4.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_4	require / load
+unsupported/require	erb_escape_html--erb_escape_html_5.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_5	require / load
+unsupported/require	erb_escape_html--erb_escape_html_6.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_6	require / load
+unsupported/require	erb_render--erb_render.rb	benchmark/erb_render.yml, entry erb_render	require / load
+unsupported/require	file_chmod.rb	benchmark/file_chmod.rb	require / load
+unsupported/require	file_rename.rb	benchmark/file_rename.rb	require / load
+unsupported/require	gc_aobench.rb	benchmark/gc/aobench.rb	require / load
+unsupported/require	gc_binary_trees.rb	benchmark/gc/binary_trees.rb	require / load
+unsupported/require	gc_gcbench.rb	benchmark/gc/gcbench.rb	require / load
+unsupported/require	gc_pentomino.rb	benchmark/gc/pentomino.rb	require / load
+unsupported/require	gc_rdoc.rb	benchmark/gc/rdoc.rb	require / load
+unsupported/require	gc_redblack.rb	benchmark/gc/redblack.rb	require / load
+unsupported/require	io_file_read.rb	benchmark/io_file_read.rb	require / load
+unsupported/require	io_file_write.rb	benchmark/io_file_write.rb	require / load
+unsupported/require	io_write.rb	benchmark/io_write.rb	require / load
+unsupported/require	irb_color--irb_color_complete.rb	benchmark/irb_color.yml, entry irb_color_complete	require / load
+unsupported/require	irb_color--irb_color_incomplete.rb	benchmark/irb_color.yml, entry irb_color_incomplete	require / load
+unsupported/require	irb_exec--irb_exec.rb	benchmark/irb_exec.yml, entry irb_exec	require / load
+unsupported/require	loop_generator.rb	benchmark/loop_generator.rb	require / load
+unsupported/require	marshal_dump_load_integer--marshal_load_integer_over_32_bit.rb	benchmark/marshal_dump_load_integer.yml, entry marshal_load_integer_over_32_bit	require / load
+unsupported/require	marshal_dump_load_integer--marshal_load_integer_over_64_bit.rb	benchmark/marshal_dump_load_integer.yml, entry marshal_load_integer_over_64_bit	require / load
+unsupported/require	marshal_dump_load_integer--marshal_load_integer_small.rb	benchmark/marshal_dump_load_integer.yml, entry marshal_load_integer_small	require / load
+unsupported/require	marshal_dump_load_time.rb	benchmark/marshal_dump_load_time.rb	require / load
+unsupported/require	objspace_dump_all--dump_all_dev_null.rb	benchmark/objspace_dump_all.yml, entry dump_all_dev_null	require / load
+unsupported/require	objspace_dump_all--dump_all_file.rb	benchmark/objspace_dump_all.yml, entry dump_all_file	require / load
+unsupported/require	objspace_dump_all--dump_all_string.rb	benchmark/objspace_dump_all.yml, entry dump_all_string	require / load
+unsupported/require	require--require.rb	benchmark/require.yml, entry require	require / load
+unsupported/require	require_thread--require_thread.rb	benchmark/require_thread.yml, entry require_thread	require / load
+unsupported/require	securerandom.rb	benchmark/securerandom.rb	require / load
+unsupported/require	string_tr--cgi_escape.rb	benchmark/string_tr.yml, entry cgi_escape	require / load
+unsupported/require	string_tr--gsub_escape.rb	benchmark/string_tr.yml, entry gsub_escape	require / load
+unsupported/require	string_tr--tr_escape.rb	benchmark/string_tr.yml, entry tr_escape	require / load
+unsupported/require	time_parse--time_parse_0.rb	benchmark/time_parse.yml, entry time_parse_0	require / load
+unsupported/require	time_parse--time_parse_1.rb	benchmark/time_parse.yml, entry time_parse_1	require / load
+unsupported/require	time_parse--time_parse_2.rb	benchmark/time_parse.yml, entry time_parse_2	require / load
+unsupported/require	time_parse--time_parse_3.rb	benchmark/time_parse.yml, entry time_parse_3	require / load
+unsupported/require	time_parse--time_parse_4.rb	benchmark/time_parse.yml, entry time_parse_4	require / load
+unsupported/require	time_strptime--time_strptime_0.rb	benchmark/time_strptime.yml, entry time_strptime_0	require / load
+unsupported/require	time_strptime--time_strptime_1.rb	benchmark/time_strptime.yml, entry time_strptime_1	require / load
+unsupported/require	time_strptime--time_strptime_2.rb	benchmark/time_strptime.yml, entry time_strptime_2	require / load
+unsupported/require	time_strptime--time_strptime_3.rb	benchmark/time_strptime.yml, entry time_strptime_3	require / load
+unsupported/require	time_strptime--time_strptime_4.rb	benchmark/time_strptime.yml, entry time_strptime_4	require / load
+unsupported/require	time_strptime--time_strptime_5.rb	benchmark/time_strptime.yml, entry time_strptime_5	require / load
+unsupported/require	time_strptime--time_strptime_6.rb	benchmark/time_strptime.yml, entry time_strptime_6	require / load
+unsupported/require	time_strptime--time_strptime_7.rb	benchmark/time_strptime.yml, entry time_strptime_7	require / load
+unsupported/require	time_strptime--time_strptime_8.rb	benchmark/time_strptime.yml, entry time_strptime_8	require / load
+unsupported/require	time_strptime--time_strptime_9.rb	benchmark/time_strptime.yml, entry time_strptime_9	require / load
+unsupported/require	vm_mutex--vm_mutex.rb	benchmark/vm_mutex.yml, entry vm_mutex	require / load
+unsupported/require	vm_thread_condvar1.rb	benchmark/vm_thread_condvar1.rb	require / load
+unsupported/require	vm_thread_condvar2.rb	benchmark/vm_thread_condvar2.rb	require / load
+unsupported/require	vm_thread_mutex1.rb	benchmark/vm_thread_mutex1.rb	require / load
+unsupported/require	vm_thread_mutex2.rb	benchmark/vm_thread_mutex2.rb	require / load
+unsupported/require	vm_thread_mutex3.rb	benchmark/vm_thread_mutex3.rb	require / load
+unsupported/require	vm_thread_queue.rb	benchmark/vm_thread_queue.rb	require / load
+unsupported/require	vm_thread_sized_queue.rb	benchmark/vm_thread_sized_queue.rb	require / load
+unsupported/require	vm_thread_sized_queue2.rb	benchmark/vm_thread_sized_queue2.rb	require / load
+unsupported/require	vm_thread_sized_queue3.rb	benchmark/vm_thread_sized_queue3.rb	require / load
+unsupported/require	vm_thread_sized_queue4.rb	benchmark/vm_thread_sized_queue4.rb	require / load
+unsupported/ruby-version	vm_gc_wb_ary--vm_gc_wb_ary.rb	benchmark/vm_gc_wb_ary.yml, entry vm_gc_wb_ary	RUBY_VERSION (left out)
+unsupported/scoped-names	vm_poly_same_method--vm_poly_same_method.rb	benchmark/vm_poly_same_method.yml, entry vm_poly_same_method	scoped class names (class A::B)
+unsupported/singleton-methods	object_class--extended.rb	benchmark/object_class.yml, entry extended	singleton methods outside a class (def self.x at top level, def obj.x)
+unsupported/singleton-methods	object_class--immediate.rb	benchmark/object_class.yml, entry immediate	singleton methods outside a class (def self.x at top level, def obj.x)
+unsupported/singleton-methods	object_class--obj.rb	benchmark/object_class.yml, entry obj	singleton methods outside a class (def self.x at top level, def obj.x)
+unsupported/singleton-methods	object_class--singleton.rb	benchmark/object_class.yml, entry singleton	singleton methods outside a class (def self.x at top level, def obj.x)
+unsupported/singleton-methods	vm_block_handler--block_handler_type_iseq.rb	benchmark/vm_block_handler.yml, entry block_handler_type_iseq	singleton methods outside a class (def self.x at top level, def obj.x)
+unsupported/singleton-methods	vm_block_handler--block_handler_type_proc.rb	benchmark/vm_block_handler.yml, entry block_handler_type_proc	singleton methods outside a class (def self.x at top level, def obj.x)
+unsupported/singleton-methods	vm_block_handler--block_handler_type_symbol.rb	benchmark/vm_block_handler.yml, entry block_handler_type_symbol	singleton methods outside a class (def self.x at top level, def obj.x)
+unsupported/singleton-methods	vm_call_symproc--symproc_0_splat.rb	benchmark/vm_call_symproc.yml, entry symproc_0_splat	singleton methods outside a class (def self.x at top level, def obj.x)
+unsupported/singleton-methods	vm_call_symproc--symproc_0_splat_comb.rb	benchmark/vm_call_symproc.yml, entry symproc_0_splat_comb	singleton methods outside a class (def self.x at top level, def obj.x)
+unsupported/singleton-methods	vm_call_symproc--symproc_0_splat_comb_kw.rb	benchmark/vm_call_symproc.yml, entry symproc_0_splat_comb_kw	singleton methods outside a class (def self.x at top level, def obj.x)
+unsupported/singleton-methods	vm_call_symproc--symproc_0_splat_kw.rb	benchmark/vm_call_symproc.yml, entry symproc_0_splat_kw	singleton methods outside a class (def self.x at top level, def obj.x)
+unsupported/singleton-methods	vm_call_symproc--symproc_10_splat.rb	benchmark/vm_call_symproc.yml, entry symproc_10_splat	singleton methods outside a class (def self.x at top level, def obj.x)
+unsupported/singleton-methods	vm_call_symproc--symproc_10_splat_comb.rb	benchmark/vm_call_symproc.yml, entry symproc_10_splat_comb	singleton methods outside a class (def self.x at top level, def obj.x)
+unsupported/singleton-methods	vm_call_symproc--symproc_10_splat_comb_kw.rb	benchmark/vm_call_symproc.yml, entry symproc_10_splat_comb_kw	singleton methods outside a class (def self.x at top level, def obj.x)
+unsupported/singleton-methods	vm_call_symproc--symproc_10_splat_kw.rb	benchmark/vm_call_symproc.yml, entry symproc_10_splat_kw	singleton methods outside a class (def self.x at top level, def obj.x)
+unsupported/singleton-methods	vm_call_symproc--symproc_1_splat.rb	benchmark/vm_call_symproc.yml, entry symproc_1_splat	singleton methods outside a class (def self.x at top level, def obj.x)
+unsupported/singleton-methods	vm_call_symproc--symproc_1_splat_comb.rb	benchmark/vm_call_symproc.yml, entry symproc_1_splat_comb	singleton methods outside a class (def self.x at top level, def obj.x)
+unsupported/singleton-methods	vm_call_symproc--symproc_1_splat_comb_kw.rb	benchmark/vm_call_symproc.yml, entry symproc_1_splat_comb_kw	singleton methods outside a class (def self.x at top level, def obj.x)
+unsupported/singleton-methods	vm_call_symproc--symproc_1_splat_kw.rb	benchmark/vm_call_symproc.yml, entry symproc_1_splat_kw	singleton methods outside a class (def self.x at top level, def obj.x)
+unsupported/singleton-methods	vm_call_symproc--symproc_200_splat.rb	benchmark/vm_call_symproc.yml, entry symproc_200_splat	singleton methods outside a class (def self.x at top level, def obj.x)
+unsupported/singleton-methods	vm_call_symproc--symproc_200_splat_comb.rb	benchmark/vm_call_symproc.yml, entry symproc_200_splat_comb	singleton methods outside a class (def self.x at top level, def obj.x)
+unsupported/singleton-methods	vm_call_symproc--symproc_200_splat_comb_kw.rb	benchmark/vm_call_symproc.yml, entry symproc_200_splat_comb_kw	singleton methods outside a class (def self.x at top level, def obj.x)
+unsupported/singleton-methods	vm_call_symproc--symproc_200_splat_kw.rb	benchmark/vm_call_symproc.yml, entry symproc_200_splat_kw	singleton methods outside a class (def self.x at top level, def obj.x)
+unsupported/singleton-methods	vm_call_symproc--symproc_kw.rb	benchmark/vm_call_symproc.yml, entry symproc_kw	singleton methods outside a class (def self.x at top level, def obj.x)
+unsupported/singleton-methods	vm_call_symproc--symproc_kw_splat.rb	benchmark/vm_call_symproc.yml, entry symproc_kw_splat	singleton methods outside a class (def self.x at top level, def obj.x)
+unsupported/singleton-methods	vm_call_symproc--symproc_no_kw.rb	benchmark/vm_call_symproc.yml, entry symproc_no_kw	singleton methods outside a class (def self.x at top level, def obj.x)
+unsupported/singleton-methods	vm_call_symproc--symproc_no_splat.rb	benchmark/vm_call_symproc.yml, entry symproc_no_splat	singleton methods outside a class (def self.x at top level, def obj.x)
+unsupported/singleton-methods	vm_call_symproc--symproc_simple_0.rb	benchmark/vm_call_symproc.yml, entry symproc_simple_0	singleton methods outside a class (def self.x at top level, def obj.x)
+unsupported/singleton-methods	vm_call_symproc--symproc_simple_0_splat.rb	benchmark/vm_call_symproc.yml, entry symproc_simple_0_splat	singleton methods outside a class (def self.x at top level, def obj.x)
+unsupported/singleton-methods	vm_call_symproc--symproc_simple_0_splat_comb.rb	benchmark/vm_call_symproc.yml, entry symproc_simple_0_splat_comb	singleton methods outside a class (def self.x at top level, def obj.x)
+unsupported/singleton-methods	vm_call_symproc--symproc_simple_1.rb	benchmark/vm_call_symproc.yml, entry symproc_simple_1	singleton methods outside a class (def self.x at top level, def obj.x)
+unsupported/singleton-methods	vm_call_symproc--symproc_simple_1_splat.rb	benchmark/vm_call_symproc.yml, entry symproc_simple_1_splat	singleton methods outside a class (def self.x at top level, def obj.x)
+unsupported/singleton-methods	vm_call_symproc--symproc_simple_1_splat_comb.rb	benchmark/vm_call_symproc.yml, entry symproc_simple_1_splat_comb	singleton methods outside a class (def self.x at top level, def obj.x)
+unsupported/singleton-methods	vm_dstr_obj_def.rb	benchmark/vm_dstr_obj_def.rb	singleton methods outside a class (def self.x at top level, def obj.x)
+unsupported/singleton-methods	vm_poly_singleton--vm_poly_singleton.rb	benchmark/vm_poly_singleton.yml, entry vm_poly_singleton	singleton classes
+unsupported/struct	vm_struct_big_aref_hi--vm_struct_big_aref_hi.rb	benchmark/vm_struct_big_aref_hi.yml, entry vm_struct_big_aref_hi	Struct (left out: untyped members, setters)
+unsupported/struct	vm_struct_big_aref_lo--vm_struct_big_aref_lo.rb	benchmark/vm_struct_big_aref_lo.yml, entry vm_struct_big_aref_lo	Struct (left out: untyped members, setters)
+unsupported/struct	vm_struct_big_aset--vm_struct_big_aset.rb	benchmark/vm_struct_big_aset.yml, entry vm_struct_big_aset	Struct (left out: untyped members, setters)
+unsupported/struct	vm_struct_big_href_hi--vm_struct_big_href_hi.rb	benchmark/vm_struct_big_href_hi.yml, entry vm_struct_big_href_hi	Struct (left out: untyped members, setters)
+unsupported/struct	vm_struct_big_href_lo--vm_struct_big_href_lo.rb	benchmark/vm_struct_big_href_lo.yml, entry vm_struct_big_href_lo	Struct (left out: untyped members, setters)
+unsupported/struct	vm_struct_big_hset--vm_struct_big_hset.rb	benchmark/vm_struct_big_hset.yml, entry vm_struct_big_hset	Struct (left out: untyped members, setters)
+unsupported/struct	vm_struct_small_aref--vm_struct_small_aref.rb	benchmark/vm_struct_small_aref.yml, entry vm_struct_small_aref	Struct (left out: untyped members, setters)
+unsupported/struct	vm_struct_small_aset--vm_struct_small_aset.rb	benchmark/vm_struct_small_aset.yml, entry vm_struct_small_aset	Struct (left out: untyped members, setters)
+unsupported/struct	vm_struct_small_href--vm_struct_small_href.rb	benchmark/vm_struct_small_href.yml, entry vm_struct_small_href	Struct (left out: untyped members, setters)
+unsupported/struct	vm_struct_small_hset--vm_struct_small_hset.rb	benchmark/vm_struct_small_hset.yml, entry vm_struct_small_hset	Struct (left out: untyped members, setters)
+unsupported/threads	fiber_chain--make_chain.rb	benchmark/fiber_chain.yml, entry make_chain	threads and fibers (amber has async)
+unsupported/threads	fiber_chain--resume_chain.rb	benchmark/fiber_chain.yml, entry resume_chain	threads and fibers (amber has async)
+unsupported/threads	fiber_locals--__.rb	benchmark/fiber_locals.yml, entry __	threads and fibers (amber has async)
+unsupported/threads	fiber_locals--key_.rb	benchmark/fiber_locals.yml, entry key_	threads and fibers (amber has async)
+unsupported/threads	fiber_locals--keys.rb	benchmark/fiber_locals.yml, entry keys	threads and fibers (amber has async)
+unsupported/threads	vm_fiber_switch--vm_fiber_switch.rb	benchmark/vm_fiber_switch.yml, entry vm_fiber_switch	threads and fibers (amber has async)
+unsupported/threads	vm_thread_alive_check--vm_thread_alive_check.rb	benchmark/vm_thread_alive_check.yml, entry vm_thread_alive_check	threads and fibers (amber has async)
+unsupported/threads	vm_thread_close.rb	benchmark/vm_thread_close.rb	threads and fibers (amber has async)
+unsupported/threads	vm_thread_create_join.rb	benchmark/vm_thread_create_join.rb	threads and fibers (amber has async)
+unsupported/threads	vm_thread_pass_flood.rb	benchmark/vm_thread_pass_flood.rb	threads and fibers (amber has async)
+unsupported/threads	vm_thread_sleep--vm_thread_sleep.rb	benchmark/vm_thread_sleep.yml, entry vm_thread_sleep	threads and fibers (amber has async)
+unsupported/vm-introspection	iseq_load_from_binary--all.rb	benchmark/iseq_load_from_binary.yml, entry all	GC and VM introspection
+unsupported/vm-introspection	iseq_load_from_binary--define_method.rb	benchmark/iseq_load_from_binary.yml, entry define_method	GC and VM introspection
+unsupported/vm-introspection	iseq_load_from_binary--symbol.rb	benchmark/iseq_load_from_binary.yml, entry symbol	GC and VM introspection
+unsupported/vm-introspection	string_concat--interpolation.rb	benchmark/string_concat.yml, entry interpolation	GC and VM introspection
+unsupported/vm-introspection	string_concat--interpolation_same_heap.rb	benchmark/string_concat.yml, entry interpolation_same_heap	GC and VM introspection
+unsupported/vm-introspection	string_concat--interpolation_switching_heaps.rb	benchmark/string_concat.yml, entry interpolation_switching_heaps	GC and VM introspection
+unsupported/vm-introspection	symbol_empty--symbol_empty-0.rb	benchmark/symbol_empty.yml, entry symbol_empty-0	GC and VM introspection
+unsupported/vm-introspection	symbol_empty--symbol_empty-8.rb	benchmark/symbol_empty.yml, entry symbol_empty-8	GC and VM introspection
+unsupported/vm-introspection	vm_fiber_allocate--vm_fiber_allocate.rb	benchmark/vm_fiber_allocate.yml, entry vm_fiber_allocate	GC and VM introspection
+unsupported/vm-introspection	vm_gc.rb	benchmark/vm_gc.rb	GC and VM introspection
+unsupported/vm-introspection	vm_gc_short_with_symbol--vm_gc_short_with_symbol.rb	benchmark/vm_gc_short_with_symbol.yml, entry vm_gc_short_with_symbol	GC and VM introspection
+unsupported/vm-introspection	vm_gc_wb_ary_promoted--vm_gc_wb_ary_promoted.rb	benchmark/vm_gc_wb_ary_promoted.yml, entry vm_gc_wb_ary_promoted	GC and VM introspection
+unsupported/vm-introspection	vm_gc_wb_obj_promoted--vm_gc_wb_obj_promoted.rb	benchmark/vm_gc_wb_obj_promoted.yml, entry vm_gc_wb_obj_promoted	GC and VM introspection
+works	app_fib.rb	benchmark/app_fib.rb	
+works	app_raise.rb	benchmark/app_raise.rb	
+works	app_strconcat.rb	benchmark/app_strconcat.rb	
+works	app_tak.rb	benchmark/app_tak.rb	
+works	app_tarai.rb	benchmark/app_tarai.rb	
+works	array_intersection--big-_.rb	benchmark/array_intersection.yml, entry big-_	
+works	array_intersection--small-_.rb	benchmark/array_intersection.yml, entry small-_	
+works	enum_lazy_uniq_100.rb	benchmark/enum_lazy_uniq_100.rb	
+works	enum_lazy_uniq_20.rb	benchmark/enum_lazy_uniq_20.rb	
+works	enum_lazy_uniq_50.rb	benchmark/enum_lazy_uniq_50.rb	
+works	enum_lazy_zip--chain-first_ary.rb	benchmark/enum_lazy_zip.yml, entry chain-first_ary	
+works	enum_lazy_zip--chain-first_noarg.rb	benchmark/enum_lazy_zip.yml, entry chain-first_noarg	
+works	enum_lazy_zip--first_ary.rb	benchmark/enum_lazy_zip.yml, entry first_ary	
+works	enum_lazy_zip--first_noarg.rb	benchmark/enum_lazy_zip.yml, entry first_noarg	
+works	float_methods---_.rb	benchmark/float_methods.yml, entry -_	
+works	float_methods--abs.rb	benchmark/float_methods.yml, entry abs	
+works	float_methods--magnitude.rb	benchmark/float_methods.yml, entry magnitude	
+works	float_methods--to_f.rb	benchmark/float_methods.yml, entry to_f	
+works	float_methods--zero_.rb	benchmark/float_methods.yml, entry zero_	
+works	float_neg_posi--negative_.rb	benchmark/float_neg_posi.yml, entry negative_	
+works	float_neg_posi--positive_.rb	benchmark/float_neg_posi.yml, entry positive_	
+works	float_predicate--float_finite_.rb	benchmark/float_predicate.yml, entry float_finite_	
+works	float_predicate--float_infinite_.rb	benchmark/float_predicate.yml, entry float_infinite_	
+works	float_predicate--float_nan_.rb	benchmark/float_predicate.yml, entry float_nan_	
+works	float_predicate--float_negative_.rb	benchmark/float_predicate.yml, entry float_negative_	
+works	float_predicate--float_positive_.rb	benchmark/float_predicate.yml, entry float_positive_	
+works	float_predicate--float_zero_.rb	benchmark/float_predicate.yml, entry float_zero_	
+works	gc_null.rb	benchmark/gc/null.rb	
+works	hash_ar_aref--hit_first.rb	benchmark/hash_ar_aref.yml, entry hit_first	
+works	hash_ar_aref--hit_fourth.rb	benchmark/hash_ar_aref.yml, entry hit_fourth	
+works	hash_ar_aref--hit_last.rb	benchmark/hash_ar_aref.yml, entry hit_last	
+works	hash_ar_aref--hit_third.rb	benchmark/hash_ar_aref.yml, entry hit_third	
+works	hash_ar_aref--miss.rb	benchmark/hash_ar_aref.yml, entry miss	
+works	hash_ar_aref--miss_empty.rb	benchmark/hash_ar_aref.yml, entry miss_empty	
+works	hash_aref_array.rb	benchmark/hash_aref_array.rb	
+works	hash_aref_fix.rb	benchmark/hash_aref_fix.rb	
+works	hash_dup--dup_larger.rb	benchmark/hash_dup.yml, entry dup_larger	
+works	hash_dup--dup_small.rb	benchmark/hash_dup.yml, entry dup_small	
+works	hash_keys.rb	benchmark/hash_keys.rb	
+works	hash_literal_small2.rb	benchmark/hash_literal_small2.rb	
+works	hash_literal_small4.rb	benchmark/hash_literal_small4.rb	
+works	hash_literal_small8.rb	benchmark/hash_literal_small8.rb	
+works	hash_long.rb	benchmark/hash_long.rb	
+works	hash_small2.rb	benchmark/hash_small2.rb	
+works	hash_small4.rb	benchmark/hash_small4.rb	
+works	hash_small8.rb	benchmark/hash_small8.rb	
+works	hash_values.rb	benchmark/hash_values.rb	
+works	int_to_s--fix_10digit.rb	benchmark/int_to_s.yml, entry fix_10digit	
+works	int_to_s--fix_19digit.rb	benchmark/int_to_s.yml, entry fix_19digit	
+works	int_to_s--fix_1digit.rb	benchmark/int_to_s.yml, entry fix_1digit	
+works	int_to_s--fix_2digit.rb	benchmark/int_to_s.yml, entry fix_2digit	
+works	int_to_s--fix_3digit.rb	benchmark/int_to_s.yml, entry fix_3digit	
+works	int_to_s--fix_5digit.rb	benchmark/int_to_s.yml, entry fix_5digit	
+works	int_to_s--fix_negative.rb	benchmark/int_to_s.yml, entry fix_negative	
+works	int_to_s--interp_id.rb	benchmark/int_to_s.yml, entry interp_id	
+works	int_to_s--interp_mixed.rb	benchmark/int_to_s.yml, entry interp_mixed	
+works	integer_predicate--integer_even_.rb	benchmark/integer_predicate.yml, entry integer_even_	
+works	integer_predicate--integer_odd_.rb	benchmark/integer_predicate.yml, entry integer_odd_	
+works	integer_predicate--integer_zero_.rb	benchmark/integer_predicate.yml, entry integer_zero_	
+works	kernel_float--float.rb	benchmark/kernel_float.yml, entry float	
+works	kernel_float--float_false.rb	benchmark/kernel_float.yml, entry float_false	
+works	kernel_float--float_true.rb	benchmark/kernel_float.yml, entry float_true	
+works	kernel_then--kernel_then.rb	benchmark/kernel_then.yml, entry kernel_then	
+works	keyword_arguments--kw_and_splat_to_kw.rb	benchmark/keyword_arguments.yml, entry kw_and_splat_to_kw	
+works	keyword_arguments--kw_and_splat_to_kw_splat.rb	benchmark/keyword_arguments.yml, entry kw_and_splat_to_kw_splat	
+works	keyword_arguments--kw_splat_to_kw.rb	benchmark/keyword_arguments.yml, entry kw_splat_to_kw	
+works	keyword_arguments--kw_splat_to_kw_splat.rb	benchmark/keyword_arguments.yml, entry kw_splat_to_kw_splat	
+works	keyword_arguments--kw_splats_to_kw.rb	benchmark/keyword_arguments.yml, entry kw_splats_to_kw	
+works	keyword_arguments--kw_splats_to_kw_splat.rb	benchmark/keyword_arguments.yml, entry kw_splats_to_kw_splat	
+works	keyword_arguments--kw_to_kw.rb	benchmark/keyword_arguments.yml, entry kw_to_kw	
+works	keyword_arguments--kw_to_kw_splat.rb	benchmark/keyword_arguments.yml, entry kw_to_kw_splat	
+works	loop_each--loop_each.rb	benchmark/loop_each.yml, entry loop_each	
+works	loop_times.rb	benchmark/loop_times.rb	
+works	loop_whileloop.rb	benchmark/loop_whileloop.rb	
+works	loop_whileloop2.rb	benchmark/loop_whileloop2.rb	
+works	nilclass--splat.rb	benchmark/nilclass.yml, entry splat	
+works	nilclass--to_f.rb	benchmark/nilclass.yml, entry to_f	
+works	nilclass--to_i.rb	benchmark/nilclass.yml, entry to_i	
+works	num_zero_p--num_zero_p_0.rb	benchmark/num_zero_p.yml, entry num_zero_p_0	
+works	num_zero_p--num_zero_p_1.rb	benchmark/num_zero_p.yml, entry num_zero_p_1	
+works	numeric_methods--finite_.rb	benchmark/numeric_methods.yml, entry finite_	
+works	numeric_methods--integer_.rb	benchmark/numeric_methods.yml, entry integer_	
+works	pm_array--first_match.rb	benchmark/pm_array.yml, entry first_match	
+works	pm_array--second_match.rb	benchmark/pm_array.yml, entry second_match	
+works	pm_array--third_match.rb	benchmark/pm_array.yml, entry third_match	
+works	range_count--int_1.rb	benchmark/range_count.yml, entry int_1	
+works	range_count--int_1K.rb	benchmark/range_count.yml, entry int_1K	
+works	range_count--int_1M.rb	benchmark/range_count.yml, entry int_1M	
+works	range_last--range_last_0.rb	benchmark/range_last.yml, entry range_last_0	
+works	range_last--range_last_1.rb	benchmark/range_last.yml, entry range_last_1	
+works	range_last--range_last_2.rb	benchmark/range_last.yml, entry range_last_2	
+works	range_min--range_min_0.rb	benchmark/range_min.yml, entry range_min_0	
+works	string_ascii_only_p--ascii_only_false.rb	benchmark/string_ascii_only_p.yml, entry ascii_only_false	
+works	string_ascii_only_p--ascii_only_true.rb	benchmark/string_ascii_only_p.yml, entry ascii_only_true	
+works	string_dup--dup.rb	benchmark/string_dup.yml, entry dup	
+works	string_index.rb	benchmark/string_index.rb	
+works	string_inspect--inspect_ascii.rb	benchmark/string_inspect.yml, entry inspect_ascii	
+works	string_inspect--inspect_escapy.rb	benchmark/string_inspect.yml, entry inspect_escapy	
+works	string_inspect--inspect_mixed.rb	benchmark/string_inspect.yml, entry inspect_mixed	
+works	string_inspect--inspect_utf8.rb	benchmark/string_inspect.yml, entry inspect_utf8	
+works	string_memsearch--include_first_byte_absent.rb	benchmark/string_memsearch.yml, entry include_first_byte_absent	
+works	string_memsearch--include_first_byte_common.rb	benchmark/string_memsearch.yml, entry include_first_byte_common	
+works	string_memsearch--index_first_byte_absent_large.rb	benchmark/string_memsearch.yml, entry index_first_byte_absent_large	
+works	string_memsearch--index_first_byte_absent_medium.rb	benchmark/string_memsearch.yml, entry index_first_byte_absent_medium	
+works	string_memsearch--index_first_byte_absent_small.rb	benchmark/string_memsearch.yml, entry index_first_byte_absent_small	
+works	string_memsearch--index_first_byte_common_large.rb	benchmark/string_memsearch.yml, entry index_first_byte_common_large	
+works	string_memsearch--index_first_byte_common_medium.rb	benchmark/string_memsearch.yml, entry index_first_byte_common_medium	
+works	string_memsearch--index_first_byte_common_small.rb	benchmark/string_memsearch.yml, entry index_first_byte_common_small	
+works	string_memsearch--index_match_at_end.rb	benchmark/string_memsearch.yml, entry index_match_at_end	
+works	string_memsearch--index_match_at_start.rb	benchmark/string_memsearch.yml, entry index_match_at_start	
+works	string_memsearch--index_mixed_absent.rb	benchmark/string_memsearch.yml, entry index_mixed_absent	
+works	string_memsearch--index_mixed_present.rb	benchmark/string_memsearch.yml, entry index_mixed_present	
+works	string_memsearch--index_needle_2_absent.rb	benchmark/string_memsearch.yml, entry index_needle_2_absent	
+works	string_memsearch--index_needle_4_absent.rb	benchmark/string_memsearch.yml, entry index_needle_4_absent	
+works	string_memsearch--index_needle_8_absent.rb	benchmark/string_memsearch.yml, entry index_needle_8_absent	
+works	string_split--to_chars-1.rb	benchmark/string_split.yml, entry to_chars-1	
+works	string_split--to_chars-10.rb	benchmark/string_split.yml, entry to_chars-10	
+works	string_split--to_chars-100.rb	benchmark/string_split.yml, entry to_chars-100	
+works	string_split--to_chars-1000.rb	benchmark/string_split.yml, entry to_chars-1000	
+works	string_split--to_words-1.rb	benchmark/string_split.yml, entry to_words-1	
+works	string_split--to_words-10.rb	benchmark/string_split.yml, entry to_words-10	
+works	string_split--to_words-100.rb	benchmark/string_split.yml, entry to_words-100	
+works	string_split--to_words-1000.rb	benchmark/string_split.yml, entry to_words-1000	
+works	vm_array--vm_array.rb	benchmark/vm_array.yml, entry vm_array	
+works	vm_bigarray--vm_bigarray.rb	benchmark/vm_bigarray.yml, entry vm_bigarray	
+works	vm_bighash--vm_bighash.rb	benchmark/vm_bighash.yml, entry vm_bighash	
+works	vm_block--vm_block.rb	benchmark/vm_block.yml, entry vm_block	
+works	vm_blockparam--vm_blockparam.rb	benchmark/vm_blockparam.yml, entry vm_blockparam	
+works	vm_blockparam_call--vm_blockparam_call.rb	benchmark/vm_blockparam_call.yml, entry vm_blockparam_call	
+works	vm_blockparam_pass--vm_blockparam_pass.rb	benchmark/vm_blockparam_pass.yml, entry vm_blockparam_pass	
+works	vm_blockparam_yield--vm_blockparam_yield.rb	benchmark/vm_blockparam_yield.yml, entry vm_blockparam_yield	
+works	vm_call_kw_and_kw_splat--1.rb	benchmark/vm_call_kw_and_kw_splat.yml, entry 1	
+works	vm_call_kw_and_kw_splat--10.rb	benchmark/vm_call_kw_and_kw_splat.yml, entry 10	
+works	vm_call_kw_and_kw_splat--100.rb	benchmark/vm_call_kw_and_kw_splat.yml, entry 100	
+works	vm_call_kw_and_kw_splat--1000.rb	benchmark/vm_call_kw_and_kw_splat.yml, entry 1000	
+works	vm_call_kw_and_kw_splat--1000_mutable.rb	benchmark/vm_call_kw_and_kw_splat.yml, entry 1000_mutable	
+works	vm_call_kw_and_kw_splat--100_mutable.rb	benchmark/vm_call_kw_and_kw_splat.yml, entry 100_mutable	
+works	vm_call_kw_and_kw_splat--10_mutable.rb	benchmark/vm_call_kw_and_kw_splat.yml, entry 10_mutable	
+works	vm_call_kw_and_kw_splat--1_mutable.rb	benchmark/vm_call_kw_and_kw_splat.yml, entry 1_mutable	
+works	vm_case--vm_case.rb	benchmark/vm_case.yml, entry vm_case	
+works	vm_const--vm_const.rb	benchmark/vm_const.yml, entry vm_const	
+works	vm_const--vm_const_many.rb	benchmark/vm_const.yml, entry vm_const_many	
+works	vm_dstr--vm_dstr.rb	benchmark/vm_dstr.yml, entry vm_dstr	
+works	vm_dstr_ary.rb	benchmark/vm_dstr_ary.rb	
+works	vm_dstr_bool.rb	benchmark/vm_dstr_bool.rb	
+works	vm_dstr_digit.rb	benchmark/vm_dstr_digit.rb	
+works	vm_dstr_int.rb	benchmark/vm_dstr_int.rb	
+works	vm_dstr_nil.rb	benchmark/vm_dstr_nil.rb	
+works	vm_dstr_str.rb	benchmark/vm_dstr_str.rb	
+works	vm_dstr_sym.rb	benchmark/vm_dstr_sym.rb	
+works	vm_ensure--vm_ensure.rb	benchmark/vm_ensure.yml, entry vm_ensure	
+works	vm_float_simple--vm_float_simple.rb	benchmark/vm_float_simple.yml, entry vm_float_simple	
+works	vm_gc_short_lived--vm_gc_short_lived.rb	benchmark/vm_gc_short_lived.yml, entry vm_gc_short_lived	
+works	vm_length--vm_length.rb	benchmark/vm_length.yml, entry vm_length	
+works	vm_lvar_cond_set--vm_lvar_cond_set.rb	benchmark/vm_lvar_cond_set.yml, entry vm_lvar_cond_set	
+works	vm_lvar_init--vm_lvar_init.rb	benchmark/vm_lvar_init.yml, entry vm_lvar_init	
+works	vm_lvar_set--vm_lvar_set.rb	benchmark/vm_lvar_set.yml, entry vm_lvar_set	
+works	vm_method--vm_method.rb	benchmark/vm_method.yml, entry vm_method	
+works	vm_method_splat_calls--arg_splat.rb	benchmark/vm_method_splat_calls.yml, entry arg_splat	
+works	vm_method_splat_calls--arg_splat_block.rb	benchmark/vm_method_splat_calls.yml, entry arg_splat_block	
+works	vm_method_splat_calls--splat_kw.rb	benchmark/vm_method_splat_calls.yml, entry splat_kw	
+works	vm_method_splat_calls--splat_kw_block.rb	benchmark/vm_method_splat_calls.yml, entry splat_kw_block	
+works	vm_method_splat_calls--splat_kw_splat.rb	benchmark/vm_method_splat_calls.yml, entry splat_kw_splat	
+works	vm_method_splat_calls--splat_kw_splat_block.rb	benchmark/vm_method_splat_calls.yml, entry splat_kw_splat_block	
+works	vm_method_with_block--vm_method_with_block.rb	benchmark/vm_method_with_block.yml, entry vm_method_with_block	
+works	vm_newlambda--vm_newlambda.rb	benchmark/vm_newlambda.yml, entry vm_newlambda	
+works	vm_poly_method--vm_poly_method.rb	benchmark/vm_poly_method.yml, entry vm_poly_method	
+works	vm_poly_method_ov--vm_poly_method_ov.rb	benchmark/vm_poly_method_ov.yml, entry vm_poly_method_ov	
+works	vm_proc--vm_proc.rb	benchmark/vm_proc.yml, entry vm_proc	
+works	vm_raise1--vm_raise1.rb	benchmark/vm_raise1.yml, entry vm_raise1	
+works	vm_raise2--vm_raise2.rb	benchmark/vm_raise2.yml, entry vm_raise2	
+works	vm_rescue--vm_rescue.rb	benchmark/vm_rescue.yml, entry vm_rescue	
+works	vm_simplereturn--vm_simplereturn.rb	benchmark/vm_simplereturn.yml, entry vm_simplereturn	
+works	vm_string_literal--vm_string_literal.rb	benchmark/vm_string_literal.yml, entry vm_string_literal	
+works	vm_super--vm_super.rb	benchmark/vm_super.yml, entry vm_super	
+works	vm_swap--vm_swap.rb	benchmark/vm_swap.yml, entry vm_swap	
+works	vm_unif1--vm_unif1.rb	benchmark/vm_unif1.yml, entry vm_unif1	
+works	vm_yield--vm_yield.rb	benchmark/vm_yield.yml, entry vm_yield	
+works	vm_zsuper--vm_zsuper.rb	benchmark/vm_zsuper.yml, entry vm_zsuper	

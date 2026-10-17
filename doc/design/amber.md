@@ -455,3 +455,19 @@ re-opened by accident:
   and nothing reopens a class.
 - **Only current Ruby syntax**: keyword arguments are keywords, never a
   trailing hash; `=>` stays for hash literals.
+- **The standard library follows CRuby's benchmarks** (`benchmarks/ruby/`):
+  - `Array` and `Hash` are the Ruby-visible names of amber's lists and maps,
+    so `[].class`, inspect and error messages match Ruby; the field types
+    keep their protobuf names, `list` and `map`.
+  - Random numbers come from Go's `math/rand/v2`: one generator per
+    interpreter, seeded by `srand`. Reproducing Ruby's Mersenne Twister
+    sequence was rejected as not worth its code, so seeded scripts do not
+    print Ruby's numbers.
+  - `String#succ` follows Ruby's full rules, and ranges over strings iterate
+    with it.
+  - `Time` is an immutable value with fixed UTC offsets and the local zone.
+  - `Hash.new` takes a default value or a default block; a block that
+    stores into the hash raises, as any mutation does.
+  - Left out: `Struct` (its members are untyped and its point is setters;
+    amber classes declare typed fields), `Rational` and `Complex` (with
+    their literals), and `RUBY_VERSION`.
