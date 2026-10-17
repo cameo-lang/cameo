@@ -1,7 +1,11 @@
 package stdlib
 
 import (
+	"cmp"
+	"math"
+	"slices"
 	"sort"
+	"strings"
 
 	"github.com/radiospiel/amber/src/object"
 )
@@ -744,10 +748,21 @@ func reverse(elems []object.Value) {
 // sortValues sorts a copy of elems by <=>, or by a comparator block.
 func sortValues(ctx object.Context, elems []object.Value, block object.Value) ([]object.Value, error) {
 	out := append([]object.Value{}, elems...)
-	if block.IsZero() && allInts(out) {
-		// Integers need no dispatch: no class can redefine Integer#<=>.
-		sort.SliceStable(out, func(i, j int) bool { return out[i].Int() < out[j].Int() })
-		return out, nil
+	if block.IsZero() {
+		// Integers, floats and strings need no dispatch: no script can
+		// reopen a builtin class to redefine its <=>. slices sorts them
+		// with typed swaps, where sort.SliceStable swaps by reflection.
+		switch {
+		case allInts(out):
+			slices.SortStableFunc(out, func(a, b object.Value) int { return cmp.Compare(a.Int(), b.Int()) })
+			return out, nil
+		case allFloats(out):
+			slices.SortStableFunc(out, func(a, b object.Value) int { return cmp.Compare(a.Float(), b.Float()) })
+			return out, nil
+		case allStrings(out):
+			slices.SortStableFunc(out, func(a, b object.Value) int { return strings.Compare(a.Str(), b.Str()) })
+			return out, nil
+		}
 	}
 	var sortErr error
 	sort.SliceStable(out, func(i, j int) bool {
@@ -902,6 +917,28 @@ func installUserEnumerable() {
 func allInts(elems []object.Value) bool {
 	for _, el := range elems {
 		if el.Kind() != object.KindInt {
+			return false
+		}
+	}
+	return true
+}
+
+// allFloats reports whether every element is a Float other than NaN; a
+// NaN compares with nothing, and is left to <=> to fail on.
+func allFloats(elems []object.Value) bool {
+	for _, el := range elems {
+		if el.Kind() != object.KindFloat || math.IsNaN(el.Float()) {
+			return false
+		}
+	}
+	return true
+}
+
+// allStrings reports whether every element is a String, in any of its
+// encodings; Strings compare by their bytes.
+func allStrings(elems []object.Value) bool {
+	for _, el := range elems {
+		if !el.IsString() {
 			return false
 		}
 	}

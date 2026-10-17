@@ -50,7 +50,8 @@ amber is faster than MRI in 7 of them (`vm_dstr_obj` 34%, `gc_hash2` 41%).
 Of the cases MRI takes at least 0.1 s, amber is slowest on
 
 - sorting with `<=>` dispatched per comparison (`array_sort_float` 17×,
-  `array_sort_block` 8×),
+  `array_sort_block` 8×); floats and strings have since been sorted without
+  dispatch, as integers were, and `array_sort_float` takes 141%,
 - hashes of a few literal entries built in a loop (`hash_literal_small8`
   16×, `hash_small8` 13×), and `Hash#shift` in a loop (`hash_shift_u24`
   12×),
@@ -63,7 +64,9 @@ strings by `<=>`, so it sorts 1000 random strings of up to eight characters
 10000 times, as `array_sort_float` does floats. Measured with the others on
 2026-10-17, amber takes 520% of MRI's time on it, against 1527% on
 `array_sort_float` and 38% on `array_sort_int--ary1000`, the one sort that
-needs no dispatch; warmruby takes 294% and rbgo 1519%.
+needs no dispatch; warmruby takes 294% and rbgo 1519%. Sorting arrays of
+floats or of strings without dispatch, with typed swaps, brought amber to
+141% on `array_sort_float` and 171% on `array_sort_string`.
 
 What the others fail on: MRI 3.3 lacks the core `Set` and a `Pathname`
 without `require` that the benchmarks, from CRuby master, use; seven `set`
