@@ -259,6 +259,8 @@ starts = ENGINES.filter_map do |name, argv|
 end
 puts "start, not in any time: " + starts.map { |n, s| format("%s %.3fs", n, s) }.join("  "), ""
 
+# Rows show as they finish, also when the table goes to a file.
+$stdout.sync = true
 header(options[:color])
 queue = Queue.new
 files.each { queue << _1 }
