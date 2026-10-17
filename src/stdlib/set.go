@@ -16,7 +16,7 @@ func installSet() {
 		return object.NewSet(elems...), nil
 	}
 	def(c, "size", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Int(set(self).Len()), nil
+		return object.IntValue(set(self).Len()), nil
 	})
 	def(c, "length", 0, c.Methods["size"].Native)
 	def(c, "count", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -118,7 +118,7 @@ func installSet() {
 		return self, nil
 	})
 	def(c, "hash", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Int(hashString(object.Key(self))), nil
+		return object.IntValue(hashString(object.Key(self))), nil
 	})
 	object.SetClass.DefineSingleton("new", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) == 0 {

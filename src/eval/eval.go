@@ -29,7 +29,7 @@ func (in *Interp) eval(n syntax.Node, env *Env, fr *Frame) (object.Value, error)
 	case *syntax.Bool:
 		return object.BoolOf(n.Value), nil
 	case *syntax.Int:
-		return object.Int(n.Value), nil
+		return object.IntValue(n.Value), nil
 	case *syntax.Float:
 		return object.Float(n.Value), nil
 	case *syntax.Str:

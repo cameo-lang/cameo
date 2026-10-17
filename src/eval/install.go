@@ -26,7 +26,7 @@ func installStdlib() {
 		return object.BoolOf(self.(*Proc).Strict), nil
 	})
 	proc.Define("arity", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Int(self.(*Proc).Arity()), nil
+		return object.IntValue(self.(*Proc).Arity()), nil
 	})
 	proc.Define("curry", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return nil, ctx.Raise(object.NotImplementedErr, "curry is not supported")

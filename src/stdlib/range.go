@@ -69,7 +69,7 @@ func installRange() {
 		if n < 0 {
 			n = 0
 		}
-		return object.Int(n), nil
+		return object.IntValue(n), nil
 	})
 	def(c, "count", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) == 0 && block == nil {
@@ -146,9 +146,9 @@ func installRange() {
 				hi--
 			}
 			if hi < lo {
-				return object.Int(0), nil
+				return object.IntValue(0), nil
 			}
-			return object.Int((int64(lo) + int64(hi)) * (int64(hi) - int64(lo) + 1) / 2), nil
+			return object.IntValue((int64(lo) + int64(hi)) * (int64(hi) - int64(lo) + 1) / 2), nil
 		}
 		return object.Enumerable.Methods["sum"].Native(ctx, self, args, kw, block)
 	})
@@ -181,7 +181,7 @@ func installRange() {
 		return object.BoolOf(object.Equal(self, args[0])), nil
 	})
 	def(c, "hash", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Int(hashString(object.Key(self))), nil
+		return object.IntValue(hashString(object.Key(self))), nil
 	})
 	def(c, "to_s", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		lo, hi := "", ""

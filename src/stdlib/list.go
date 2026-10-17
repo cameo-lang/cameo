@@ -11,7 +11,7 @@ func installList() {
 	list := func(self object.Value) *object.List { return self.(*object.List) }
 	elems := func(self object.Value) []object.Value { return self.(*object.List).Elems }
 	def(c, "length", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Int(list(self).Len()), nil
+		return object.IntValue(list(self).Len()), nil
 	})
 	def(c, "size", 0, c.Methods["length"].Native)
 	def(c, "empty?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -33,7 +33,7 @@ func installList() {
 			return nil, err
 		}
 		for i := range elems(self) {
-			if _, err := ctx.Yield(block, object.Int(i)); err != nil {
+			if _, err := ctx.Yield(block, object.IntValue(i)); err != nil {
 				return nil, err
 			}
 		}
@@ -207,7 +207,7 @@ func installList() {
 		if err != nil {
 			return object.Nil, nil
 		}
-		return object.Int(r), nil
+		return object.IntValue(r), nil
 	})
 	def(c, "reverse", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		out := append([]object.Value{}, elems(self)...)
@@ -266,7 +266,7 @@ func installList() {
 				return nil, err
 			}
 			if hit {
-				return object.Int(i), nil
+				return object.IntValue(i), nil
 			}
 		}
 		return object.Nil, nil
@@ -278,7 +278,7 @@ func installList() {
 				return nil, err
 			}
 			if hit {
-				return object.Int(i), nil
+				return object.IntValue(i), nil
 			}
 		}
 		return object.Nil, nil
@@ -338,7 +338,7 @@ func installList() {
 	})
 	def(c, "shuffle", 0, c.Methods["sample"].Native)
 	def(c, "hash", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Int(hashString(object.Key(self))), nil
+		return object.IntValue(hashString(object.Key(self))), nil
 	})
 	def(c, "to_list", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return self, nil

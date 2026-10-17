@@ -29,3 +29,4 @@ The steps:
 - [6. Every class is a protobuf message; the host API](06-protobuf.md)
 - [7. `async` and `await`](07-async.md)
 - [8. A method cache per class](08-method-cache.md)
+- [9. Two allocations per method call instead of seven](09-allocations.md)

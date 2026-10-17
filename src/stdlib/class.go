@@ -88,7 +88,7 @@ func installClass() {
 		return object.NewList(names...), nil
 	})
 	def(m, "hash", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Int(hashString(object.Key(self))), nil
+		return object.IntValue(hashString(object.Key(self))), nil
 	})
 	k := object.ClassClass
 	def(k, "superclass", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {

@@ -219,7 +219,7 @@ func (r *Registry) fromScalar(t *object.FieldType, pv protoreflect.Value) (objec
 	case "string":
 		return object.String(pv.String()), nil
 	case "int":
-		return object.Int(pv.Int()), nil
+		return object.IntValue(pv.Int()), nil
 	case "float":
 		return object.Float(pv.Float()), nil
 	case "bool":

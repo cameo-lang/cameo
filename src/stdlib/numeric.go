@@ -56,20 +56,20 @@ func installInteger() {
 			return floats(a, b), nil
 		})
 	}
-	arith("+", func(a, b int64) (object.Value, error) { return object.Int(a + b), nil }, func(a, b float64) object.Value { return object.Float(a + b) })
-	arith("-", func(a, b int64) (object.Value, error) { return object.Int(a - b), nil }, func(a, b float64) object.Value { return object.Float(a - b) })
-	arith("*", func(a, b int64) (object.Value, error) { return object.Int(a * b), nil }, func(a, b float64) object.Value { return object.Float(a * b) })
+	arith("+", func(a, b int64) (object.Value, error) { return object.IntValue(a + b), nil }, func(a, b float64) object.Value { return object.Float(a + b) })
+	arith("-", func(a, b int64) (object.Value, error) { return object.IntValue(a - b), nil }, func(a, b float64) object.Value { return object.Float(a - b) })
+	arith("*", func(a, b int64) (object.Value, error) { return object.IntValue(a * b), nil }, func(a, b float64) object.Value { return object.Float(a * b) })
 	arith("/", func(a, b int64) (object.Value, error) {
 		if b == 0 {
 			return nil, errDivZero
 		}
-		return object.Int(floorDiv(a, b)), nil
+		return object.IntValue(floorDiv(a, b)), nil
 	}, func(a, b float64) object.Value { return object.Float(a / b) })
 	arith("%", func(a, b int64) (object.Value, error) {
 		if b == 0 {
 			return nil, errDivZero
 		}
-		return object.Int(floorMod(a, b)), nil
+		return object.IntValue(floorMod(a, b)), nil
 	}, func(a, b float64) object.Value { return object.Float(floatMod(a, b)) })
 	def(c, "modulo", 1, c.Methods["%"].Native)
 	def(c, "div", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -80,7 +80,7 @@ func installInteger() {
 		if b == 0 {
 			return nil, ctx.Raise(object.ZeroDivisionError, "divided by 0")
 		}
-		return object.Int(int64(math.Floor(a / b))), nil
+		return object.IntValue(int64(math.Floor(a / b))), nil
 	})
 	def(c, "fdiv", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		a, b, _, err := numArgs(ctx, self, args[0], "fdiv")
@@ -99,7 +99,7 @@ func installInteger() {
 		}
 		if isInt {
 			ai, bi := int64(self.(object.Int)), int64(args[0].(object.Int))
-			return object.NewList(object.Int(floorDiv(ai, bi)), object.Int(floorMod(ai, bi))), nil
+			return object.NewList(object.IntValue(floorDiv(ai, bi)), object.IntValue(floorMod(ai, bi))), nil
 		}
 		q := math.Floor(a / b)
 		return object.NewList(object.Float(q), object.Float(a-q*b)), nil
@@ -110,7 +110,7 @@ func installInteger() {
 			return nil, err
 		}
 		if isInt && b >= 0 {
-			return object.Int(ipow(int64(a), int64(b))), nil
+			return object.IntValue(ipow(int64(a), int64(b))), nil
 		}
 		return object.Float(math.Pow(a, b)), nil
 	})
@@ -124,7 +124,7 @@ func installInteger() {
 			if err != nil {
 				return nil, err
 			}
-			return object.Int(powMod(int64(self.(object.Int)), b, m)), nil
+			return object.IntValue(powMod(int64(self.(object.Int)), b, m)), nil
 		}
 		if len(args) != 1 {
 			return nil, argError(ctx, len(args), "1..2")
@@ -146,7 +146,7 @@ func installInteger() {
 			if err != nil {
 				return nil, err
 			}
-			return object.Int(f(int64(self.(object.Int)), b)), nil
+			return object.IntValue(f(int64(self.(object.Int)), b)), nil
 		})
 	}
 	bitwise("&", func(a, b int64) int64 { return a & b })
@@ -163,7 +163,7 @@ func installInteger() {
 		switch args[0].(type) {
 		case object.Int, object.Float:
 			r, err := ctx.Compare(self, args[0])
-			return object.Int(r), err
+			return object.IntValue(r), err
 		}
 		return object.Nil, nil
 	})
@@ -209,12 +209,12 @@ func installInteger() {
 		if block == nil {
 			elems := []object.Value{}
 			for i := int64(0); i < n; i++ {
-				elems = append(elems, object.Int(i))
+				elems = append(elems, object.IntValue(i))
 			}
 			return object.NewList(elems...), nil
 		}
 		for i := int64(0); i < n; i++ {
-			if _, err := ctx.Yield(block, object.Int(i)); err != nil {
+			if _, err := ctx.Yield(block, object.IntValue(i)); err != nil {
 				return nil, err
 			}
 		}
@@ -230,10 +230,10 @@ func installInteger() {
 			var elems []object.Value
 			for i := from; dir > 0 && i <= to || dir < 0 && i >= to; i += dir {
 				if block == nil {
-					elems = append(elems, object.Int(i))
+					elems = append(elems, object.IntValue(i))
 					continue
 				}
-				if _, err := ctx.Yield(block, object.Int(i)); err != nil {
+				if _, err := ctx.Yield(block, object.IntValue(i)); err != nil {
 					return nil, err
 				}
 			}
@@ -260,10 +260,10 @@ func installInteger() {
 		var elems []object.Value
 		for i := int64(self.(object.Int)); by > 0 && i <= to || by < 0 && i >= to; i += by {
 			if block == nil {
-				elems = append(elems, object.Int(i))
+				elems = append(elems, object.IntValue(i))
 				continue
 			}
-			if _, err := ctx.Yield(block, object.Int(i)); err != nil {
+			if _, err := ctx.Yield(block, object.IntValue(i)); err != nil {
 				return nil, err
 			}
 		}
@@ -307,14 +307,14 @@ func installInteger() {
 		return self, nil
 	})
 	def(c, "hash", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Int(hashString(object.Key(self))), nil
+		return object.IntValue(hashString(object.Key(self))), nil
 	})
 	def(c, "gcd", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		b, err := wantInt(ctx, args[0], "")
 		if err != nil {
 			return nil, err
 		}
-		return object.Int(gcd(int64(self.(object.Int)), b)), nil
+		return object.IntValue(gcd(int64(self.(object.Int)), b)), nil
 	})
 	def(c, "lcm", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		b, err := wantInt(ctx, args[0], "")
@@ -323,9 +323,9 @@ func installInteger() {
 		}
 		a := int64(self.(object.Int))
 		if a == 0 || b == 0 {
-			return object.Int(0), nil
+			return object.IntValue(0), nil
 		}
-		return object.Int(abs64(a / gcd(a, b) * b)), nil
+		return object.IntValue(abs64(a / gcd(a, b) * b)), nil
 	})
 	def(c, "digits", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		v := int64(self.(object.Int))
@@ -334,7 +334,7 @@ func installInteger() {
 		}
 		elems := []object.Value{}
 		for {
-			elems = append(elems, object.Int(v%10))
+			elems = append(elems, object.IntValue(v%10))
 			v /= 10
 			if v == 0 {
 				break
@@ -352,7 +352,7 @@ func installInteger() {
 			n++
 			v >>= 1
 		}
-		return object.Int(n), nil
+		return object.IntValue(n), nil
 	})
 	rounding := func(name string, f func(float64) float64) {
 		def(c, name, -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -367,7 +367,7 @@ func installInteger() {
 				return self, nil
 			}
 			p := math.Pow(10, float64(-digits))
-			return object.Int(int64(f(float64(self.(object.Int))/p) * p)), nil
+			return object.IntValue(int64(f(float64(self.(object.Int))/p) * p)), nil
 		})
 	}
 	rounding("round", math.Round)
@@ -375,7 +375,7 @@ func installInteger() {
 	rounding("ceil", math.Ceil)
 	rounding("truncate", math.Trunc)
 	def(c, "size", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Int(8), nil
+		return object.IntValue(8), nil
 	})
 }
 
@@ -477,7 +477,7 @@ func installFloat() {
 		if b == 0 {
 			return nil, ctx.Raise(object.ZeroDivisionError, "divided by 0")
 		}
-		return object.Int(int64(math.Floor(a / b))), nil
+		return object.IntValue(int64(math.Floor(a / b))), nil
 	})
 	def(c, "divmod", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		a, b, _, err := numArgs(ctx, self, args[0], "divmod")
@@ -500,7 +500,7 @@ func installFloat() {
 		switch args[0].(type) {
 		case object.Int, object.Float:
 			r, err := ctx.Compare(self, args[0])
-			return object.Int(r), err
+			return object.IntValue(r), err
 		}
 		return object.Nil, nil
 	})
@@ -526,9 +526,9 @@ func installFloat() {
 		f := float64(self.(object.Float))
 		switch {
 		case math.IsInf(f, 1):
-			return object.Int(1), nil
+			return object.IntValue(1), nil
 		case math.IsInf(f, -1):
-			return object.Int(-1), nil
+			return object.IntValue(-1), nil
 		}
 		return object.Nil, nil
 	})
@@ -545,7 +545,7 @@ func installFloat() {
 				if math.IsNaN(x) || math.IsInf(x, 0) {
 					return nil, ctx.Raise(object.RangeError, "%s", object.FormatFloat(x))
 				}
-				return object.Int(int64(f(x))), nil
+				return object.IntValue(int64(f(x))), nil
 			}
 			digits, err := wantInt(ctx, args[0], "")
 			if err != nil {
@@ -554,7 +554,7 @@ func installFloat() {
 			p := math.Pow(10, float64(digits))
 			r := f(x*p) / p
 			if digits <= 0 {
-				return object.Int(int64(r)), nil
+				return object.IntValue(int64(r)), nil
 			}
 			return object.Float(r), nil
 		})
@@ -568,7 +568,7 @@ func installFloat() {
 		if math.IsNaN(x) || math.IsInf(x, 0) {
 			return nil, ctx.Raise(object.RangeError, "%s", object.FormatFloat(x))
 		}
-		return object.Int(int64(x)), nil
+		return object.IntValue(int64(x)), nil
 	})
 	def(c, "to_int", 0, c.Methods["to_i"].Native)
 	def(c, "to_f", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -579,7 +579,7 @@ func installFloat() {
 	})
 	def(c, "inspect", 0, c.Methods["to_s"].Native)
 	def(c, "hash", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Int(hashString(object.Key(self))), nil
+		return object.IntValue(hashString(object.Key(self))), nil
 	})
 	object.ObjectClass.Consts["Float"] = c
 	c.Consts["INFINITY"] = object.Float(math.Inf(1))

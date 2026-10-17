@@ -193,25 +193,25 @@ func (p *Program) ToValue(v any) (object.Value, error) {
 	case bool:
 		return object.Bool(v), nil
 	case int:
-		return object.Int(v), nil
+		return object.IntValue(v), nil
 	case int8:
-		return object.Int(v), nil
+		return object.IntValue(v), nil
 	case int16:
-		return object.Int(v), nil
+		return object.IntValue(v), nil
 	case int32:
-		return object.Int(v), nil
+		return object.IntValue(v), nil
 	case int64:
-		return object.Int(v), nil
+		return object.IntValue(v), nil
 	case uint:
-		return object.Int(v), nil
+		return object.IntValue(v), nil
 	case uint8:
-		return object.Int(v), nil
+		return object.IntValue(v), nil
 	case uint16:
-		return object.Int(v), nil
+		return object.IntValue(v), nil
 	case uint32:
-		return object.Int(v), nil
+		return object.IntValue(v), nil
 	case uint64:
-		return object.Int(v), nil
+		return object.IntValue(v), nil
 	case float32:
 		return object.Float(v), nil
 	case float64:

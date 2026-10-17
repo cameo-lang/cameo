@@ -30,7 +30,7 @@ func installEnumerable() {
 	}
 	withBlock("each_with_index", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		for i, el := range elems {
-			if _, err := ctx.Yield(block, el, object.Int(i)); err != nil {
+			if _, err := ctx.Yield(block, el, object.IntValue(i)); err != nil {
 				return nil, err
 			}
 		}
@@ -193,7 +193,7 @@ func installEnumerable() {
 				return nil, err
 			}
 			if hit {
-				return object.Int(i), nil
+				return object.IntValue(i), nil
 			}
 		}
 		return object.Nil, nil
@@ -201,7 +201,7 @@ func installEnumerable() {
 	each("inject", inject)
 	each("reduce", inject)
 	each("sum", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
-		var acc object.Value = object.Int(0)
+		var acc object.Value = object.IntValue(0)
 		if len(args) == 1 {
 			acc = args[0]
 		}
@@ -223,7 +223,7 @@ func installEnumerable() {
 	})
 	each("count", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		if len(args) == 0 && block == nil {
-			return object.Int(len(elems)), nil
+			return object.IntValue(len(elems)), nil
 		}
 		n := 0
 		for _, el := range elems {
@@ -235,7 +235,7 @@ func installEnumerable() {
 				n++
 			}
 		}
-		return object.Int(n), nil
+		return object.IntValue(n), nil
 	})
 	extreme := func(name string, sign int) {
 		each(name, func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
@@ -351,7 +351,7 @@ func installEnumerable() {
 		}
 		b := object.NewMapBuilder()
 		for _, el := range order {
-			b.Set(el, object.Int(counts[object.Key(el)]))
+			b.Set(el, object.IntValue(counts[object.Key(el)]))
 		}
 		return b.Map(), nil
 	})

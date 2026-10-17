@@ -60,7 +60,7 @@ func installObject() {
 		return object.BoolOf(ctx.RespondsTo(self, name)), nil
 	})
 	def(o, "hash", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Int(hashString(object.Key(self))), nil
+		return object.IntValue(hashString(object.Key(self))), nil
 	})
 	def(o, "frozen?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.True, nil
@@ -94,7 +94,7 @@ func installObject() {
 			return nil, err
 		}
 		if eq {
-			return object.Int(0), nil
+			return object.IntValue(0), nil
 		}
 		return object.Nil, nil
 	})

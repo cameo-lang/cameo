@@ -13,7 +13,7 @@ func installMap() {
 		return out
 	}
 	def(c, "size", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Int(m(self).Len()), nil
+		return object.IntValue(m(self).Len()), nil
 	})
 	def(c, "length", 0, c.Methods["size"].Native)
 	def(c, "count", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -295,7 +295,7 @@ func installMap() {
 		return object.True, nil
 	})
 	def(c, "hash", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Int(hashString(object.Key(self))), nil
+		return object.IntValue(hashString(object.Key(self))), nil
 	})
 	def(c, "any?", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) == 0 && block == nil {
