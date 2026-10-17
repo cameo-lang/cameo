@@ -10,7 +10,7 @@ of a million elements for each call.
 
 Without a count, they now make one pass over the elements and keep the
 first of equal ones, as Ruby does
-([src/stdlib/enumerable.go:943](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/stdlib/enumerable.go#L943-L958)). `max` and `minmax`
+([src/stdlib/enumerable.go:943](https://github.com/radiospiel/amber/blob/f719d1c06cc15998cf7dd9d36ad1efe3d2aadab0/src/stdlib/enumerable.go#L943-L958)). `max` and `minmax`
 used to return the last of equal elements, so this is a fix as well as a
 speed-up: `[[1, :a], [1, :b]].max_by(&:first)` is `[1, :a]` in Ruby, and
 now in amber.
@@ -20,7 +20,7 @@ now in amber.
 Sorting compared every pair through `<=>`'s dispatch. An array of Integers
 in the `int64` form (step 25) now sorts by comparing the numbers directly,
 since no class can redefine `Integer#<=>`, and `sort_by` with Integer keys
-does the same ([src/stdlib/enumerable.go:745](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/stdlib/enumerable.go#L745-L747)).
+does the same ([src/stdlib/enumerable.go:745](https://github.com/radiospiel/amber/blob/f719d1c06cc15998cf7dd9d36ad1efe3d2aadab0/src/stdlib/enumerable.go#L745-L747)).
 
 ## Measured
 
