@@ -4,6 +4,12 @@ import "github.com/radiospiel/amber/src/object"
 
 func installMap() {
 	c := object.MapClass
+	c.DefineSingleton("new", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if len(args) > 0 || !block.IsZero() {
+			return object.Value{}, ctx.Raise(object.NotImplementedErr, "Hash.new with a default is not supported yet")
+		}
+		return object.MapValue(object.NewMap()), nil
+	})
 	m := func(self object.Value) *object.Map { return self.Map() }
 	pairs := func(self object.Value) []object.Value {
 		out := make([]object.Value, m(self).Len())
