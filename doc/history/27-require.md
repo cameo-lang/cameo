@@ -7,7 +7,7 @@ an amber script is one file.
 The libraries those cases load are part of what amber builds in, or small
 enough to be. So `require` of a library amber builds in returns `true` the
 first time and `false` after, as Ruby's does
-([src/eval/install.go:130](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/eval/install.go#L130-L137)); the library is there
+([src/eval/install.go:130](https://github.com/radiospiel/amber/blob/e903fb7e42128231ef91f80c5b494b0783b2a070/src/eval/install.go#L130-L137)); the library is there
 whether or not the script requires it. Any other name raises a `LoadError`,
 which sits outside `StandardError` as in Ruby, so a bare `rescue` does not
 swallow it. `require_relative` and `load` stay refused, since they read a
