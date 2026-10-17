@@ -194,7 +194,11 @@ func installInteger() {
 	pred("integer?", func(int64) bool { return true })
 	pred("finite?", func(int64) bool { return true })
 	pred("nan?", func(int64) bool { return false })
-	pred("infinite?", func(int64) bool { return false })
+	// infinite? is nil for an integer, which is never infinite, as Float's
+	// is nil for a finite float.
+	def(c, "infinite?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return object.Nil, nil
+	})
 	def(c, "nonzero?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if self.Int() == 0 {
 			return object.Nil, nil

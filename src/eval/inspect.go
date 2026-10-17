@@ -54,9 +54,11 @@ func (in *Interp) ToS(v object.Value) (string, error) {
 	case object.KindTime:
 		return stdlib.TimeToS(v.Time()), nil
 	case object.KindInstance:
-		v := v.Instance()
-		if v.Cls == object.ObjectClass {
+		switch v.Instance().Cls {
+		case in.mainClass:
 			return "main", nil
+		case object.ObjectClass:
+			return "#<Object>", nil
 		}
 	}
 	if v.IsNil() {
@@ -160,8 +162,12 @@ func (in *Interp) inspectBuiltin(v object.Value) (string, error) {
 		return "#<" + v.Cls.QualifiedName() + ": " + v.Message + ">", nil
 	case object.KindInstance:
 		v := v.Instance()
-		if v.Cls == object.ObjectClass {
+		switch v.Cls {
+		case in.mainClass:
 			return "main", nil
+		case object.ObjectClass:
+			// A bare Object has no fields to show, and amber no address.
+			return "#<Object>", nil
 		}
 		parts := make([]string, len(v.Cls.Fields))
 		for i, f := range v.Cls.Fields {

@@ -346,9 +346,7 @@ func init() {
 		NotImplementedErr, LocalJumpError, AmberError,
 	}
 	for _, c := range BasicClasses {
-		if c != ObjectClass {
-			ObjectClass.Consts[c.Name] = ClassValue(c)
-		}
+		ObjectClass.Consts[c.Name] = ClassValue(c)
 	}
 }
 

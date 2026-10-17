@@ -480,3 +480,22 @@ re-opened by accident:
   - Left out: `Struct` (its members are untyped and its point is setters;
     amber classes declare typed fields), `Rational` and `Complex` (with
     their literals), and `RUBY_VERSION`.
+- **The language follows CRuby's benchmarks too**, a second round over
+  what they use beyond the standard library:
+  - Taken in: a mutating call on a local (`x << y`, `x.push(y)`,
+    `x.map!`, `s.add(y)`) rebinds the local, as `h[k] = v` already does;
+    `freeze`, `frozen?` and `compare_by_identity` as no-ops, since values
+    are immutable and have no identity; argument forwarding (`...`, `*`,
+    `**`, `&`); a top-level `def self.x`; `:sym.to_proc` as a value;
+    `Class.new(Base) { ... }` as a class value; regular expressions,
+    through `go-ruby-regexp`; integers of any size; lazy enumerators;
+    `require` of a library amber builds in, with `CGI.escape` and its
+    kin; `method_missing`; string encodings to and from bytes; `pack`;
+    `for` loops, `alias` and `class A::B`; path arithmetic without I/O
+    (`File.join`, `Pathname`).
+  - Kept out: `GC`, `ENV`, metaprogramming (`define_method`, `send`,
+    `eval`, `instance_variable_set`), setters and untyped fields, fibers
+    and threads, and anything that touches the file system.
+  - Maps and sets are versions of an append-only table (`object/table.go`),
+    so a copy with one more key costs O(1) and building a map key by key
+    is linear, not quadratic.

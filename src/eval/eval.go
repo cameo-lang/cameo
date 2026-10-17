@@ -30,6 +30,8 @@ func (in *Interp) eval(n syntax.Node, env *Env, fr *Frame) (object.Value, error)
 // through eval, so they are compiled.
 func (in *Interp) evalSlow(n syntax.Node, env *Env, fr *Frame) (object.Value, error) {
 	switch n := n.(type) {
+	case *syntax.Defined:
+		return in.defined(n.Expr, env, fr)
 	case *syntax.List:
 		elems, err := in.evalArgs(n.Elems, env, fr)
 		if err != nil {

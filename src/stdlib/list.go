@@ -112,13 +112,32 @@ func installList() {
 		return object.Value{}, ctx.Raise(object.IndexError, "index %d outside of list bounds: %d...%d", i, -n, n)
 	})
 	def(c, "values_at", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		out := make([]object.Value, len(args))
-		for i, a := range args {
+		es := elems(self)
+		at := func(i int64) object.Value {
+			if i >= 0 && i < int64(len(es)) {
+				return es[i]
+			}
+			return object.Nil
+		}
+		out := make([]object.Value, 0, len(args))
+		for _, a := range args {
+			// A range takes its elements in order, nil past the end, as
+			// many as the range is long.
+			if r, ok := a.AsRange(); ok {
+				lo, hi, err := valuesAtBounds(ctx, r, int64(len(es)))
+				if err != nil {
+					return object.Value{}, err
+				}
+				for i := lo; i <= hi; i++ {
+					out = append(out, at(i))
+				}
+				continue
+			}
 			v, err := listIndex(ctx, list(self), []object.Value{a})
 			if err != nil {
 				return object.Value{}, err
 			}
-			out[i] = v
+			out = append(out, v)
 		}
 		return object.NewList(out...), nil
 	})
@@ -634,4 +653,37 @@ func listIndex(ctx object.Context, l *object.List, args []object.Value) (object.
 		return object.NewList(append([]object.Value{}, l.Elems[start:end]...)...), nil
 	}
 	return object.Value{}, argError(ctx, len(args), "1..2")
+}
+
+// valuesAtBounds resolves an integer range against a list of n elements, as
+// values_at reads it: negative ends count from the end, an endless range
+// runs to the last element, and an end past the list is kept. A start
+// before the list raises RangeError.
+func valuesAtBounds(ctx object.Context, r *object.Range, n int64) (lo, hi int64, err error) {
+	lov, hiv := object.OrNil(r.Lo), object.OrNil(r.Hi)
+	if !lov.IsNil() {
+		if lo, err = wantInt(ctx, lov, ""); err != nil {
+			return 0, 0, err
+		}
+	}
+	hi = n - 1
+	if !hiv.IsNil() {
+		if hi, err = wantInt(ctx, hiv, ""); err != nil {
+			return 0, 0, err
+		}
+		if hi < 0 {
+			hi += n
+		}
+		if r.Exclusive {
+			hi--
+		}
+	}
+	if lo < 0 {
+		lo += n
+		if lo < 0 {
+			s, _ := ctx.Inspect(object.RangeValue(r))
+			return 0, 0, ctx.Raise(object.RangeError, "%s out of range", s)
+		}
+	}
+	return lo, hi, nil
 }

@@ -56,16 +56,9 @@ A failing case is filed under the first thing that stops it. Fixing that may
 uncover a second blocker, so a file can move from `stdlib/` to another
 directory rather than to `works/`.
 
-The bugs in `bugs/`, by number of files:
-
-| Files | Bug |
-|---:|---|
-| 16 | `Object` is not bound as a constant |
-| 4 | each `h[k] = v` copies the whole map, so building a map is quadratic (these time out) |
-| 3 | `Range#reverse_each` returns a list where Ruby returns the range |
-| 1 | `Integer#infinite?` returns false where Ruby returns nil |
-| 1 | `defined?(X)` raises NameError instead of returning nil |
-| 1 | `Array#values_at` with a range nests the range's elements and does not pad past the end |
+`bugs/` is empty: every case filed there has been fixed. A bare `Object`
+prints as `#<Object>`, without the address Ruby shows, since amber values
+have no identity; the cases that print one count as working.
 
 `unsupported/bignum/` holds files that exit cleanly with a wrong result:
 amber's integers wrap at 64 bits where Ruby's grow, and `app_factorial`
