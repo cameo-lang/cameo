@@ -11,12 +11,12 @@ A class body declares its fields with helpers named after their protobuf
 types: `string`, `int`, `float`, `bool`, `bytes`, `list :name, of:`,
 `map :name, key:, value:`, `set :name, of:`, `ref :name, Class` and
 `enum :name, values: [...]`
-([src/eval/fields.go:12](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/eval/fields.go#L12)). Each
+([src/eval/fields.go:12](https://github.com/radiospiel/amber/blob/0d25770b6a92c58907e00cfeb78252e37be7837f/src/eval/fields.go#L12)). Each
 field takes the lowest number that no field and no `reserved` statement
 holds, keeps its default, and gets a reader.
 
 Every value stored into a field is checked against its type
-([src/eval/fields.go:150](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/eval/fields.go#L150)). Where protobuf
+([src/eval/fields.go:150](https://github.com/radiospiel/amber/blob/0d25770b6a92c58907e00cfeb78252e37be7837f/src/eval/fields.go#L150)). Where protobuf
 would convert, amber converts: an Integer stored into a `float` field
 becomes a Float, a symbol key in a string-keyed map becomes a string, an
 `enum` field takes only its declared symbols. Anything else is a
@@ -36,9 +36,9 @@ the type errors and keyword construction.
 
 `tap` with a block that returns a hash is the copy with changes:
 `point.tap { |p| { x: p.x + 10 } }` returns a new instance with `x`
-replaced ([src/eval/fields.go:424](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/eval/fields.go#L424-L448)). Each key
+replaced ([src/eval/fields.go:424](https://github.com/radiospiel/amber/blob/0d25770b6a92c58907e00cfeb78252e37be7837f/src/eval/fields.go#L424-L448)). Each key
 goes through `with`, which copies the fields of an instance, a hash or an
-array and replaces one ([src/eval/fields.go:375](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/eval/fields.go#L375-L420)).
+array and replaces one ([src/eval/fields.go:375](https://github.com/radiospiel/amber/blob/0d25770b6a92c58907e00cfeb78252e37be7837f/src/eval/fields.go#L375-L420)).
 The `With` nodes the front end builds from `a.x.y = 3` (step 2) call the
 same function one link at a time, so the sugar and the explicit copy are
 one mechanism.
@@ -53,7 +53,7 @@ back.
 
 Defining a class evaluates its body into a class identified by the body's
 digest (step 2), and binds the name to it
-([src/eval/classes.go:134](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/eval/classes.go#L134-L169)). The same
+([src/eval/classes.go:134](https://github.com/radiospiel/amber/blob/0d25770b6a92c58907e00cfeb78252e37be7837f/src/eval/classes.go#L134-L169)). The same
 body again is the same class. A different body is a new class: the name now
 means it, and every instance made earlier keeps its own class and methods.
 Redefining a builtin class is an error.
@@ -61,7 +61,7 @@ Redefining a builtin class is an error.
 ![A class is a value bound to its name](05-classes.svg)
 
 A subclass starts from its parent's fields with their numbers
-([src/eval/fields.go:452](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/eval/fields.go#L452)), so its
+([src/eval/fields.go:452](https://github.com/radiospiel/amber/blob/0d25770b6a92c58907e00cfeb78252e37be7837f/src/eval/fields.go#L452)), so its
 message extends the parent's. `include` and `extend` add a module's
 methods with Ruby's method resolution order, and a field's reader cannot be
 redefined, since a method that hid a field would make the message and the
