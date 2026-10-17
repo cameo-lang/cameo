@@ -13,7 +13,7 @@ little to free.
 The `amber` binary sets GOGC to 400, a heap of five times what survives,
 and a soft memory limit of 1 GB
 ([GOMEMLIMIT](https://tip.golang.org/doc/gc-guide#Memory_limit)), unless
-the environment sets either ([src/cmd/amber/main.go:33](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/cmd/amber/main.go#L33-L40)).
+the environment sets either ([src/cmd/amber/main.go:33](https://github.com/radiospiel/amber/blob/2b9dcdae8dbfe15a011ef35e369eb2f8036cef21/src/cmd/amber/main.go#L33-L40)).
 Past the limit the collector runs as often as it must, so a script with a
 large heap does not grow it fivefold. A Go program that embeds amber
 through the `amber` package keeps its own settings: the tuning is the
