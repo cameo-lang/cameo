@@ -304,6 +304,8 @@ var (
 	SetClass       = NewClass("Set", ObjectClass)
 	RangeClass     = NewClass("Range", ObjectClass)
 	TimeClass      = NewClass("Time", ObjectClass)
+	RegexpClass    = NewClass("Regexp", ObjectClass)
+	MatchDataClass = NewClass("MatchData", ObjectClass)
 	ProcClass      = NewClass("Proc", ObjectClass)
 	ProcessClass   = NewClass("AsyncProcess", ObjectClass)
 	ExceptionClass = NewClass("Exception", ObjectClass)
@@ -328,6 +330,7 @@ var (
 	NoMatchingPattern = NewClass("NoMatchingPatternError", StandardError)
 	FrozenError       = NewClass("FrozenError", RuntimeError)
 	NotImplementedErr = NewClass("NotImplementedError", StandardError)
+	RegexpError       = NewClass("RegexpError", StandardError)
 	LocalJumpError    = NewClass("LocalJumpError", StandardError)
 	AmberError        = NewClass("AmberError", StandardError)
 )
@@ -343,11 +346,11 @@ func init() {
 	TimeClass.Include(Comparable)
 	BasicClasses = []*Class{
 		ObjectClass, ModuleClass, ClassClass, NilClass, BoolClass, IntegerClass, FloatClass,
-		StringClass, SymbolClass, BytesClass, ListClass, MapClass, SetClass, RangeClass, TimeClass, ProcClass,
+		StringClass, SymbolClass, BytesClass, ListClass, MapClass, SetClass, RangeClass, TimeClass, RegexpClass, MatchDataClass, ProcClass,
 		ProcessClass, ExceptionClass, Enumerable, Comparable, MathModule,
 		StandardError, RuntimeError, ArgumentError, TypeError, NameError, NoMethodError, KeyError,
 		IndexError, RangeError, ZeroDivisionError, StopIteration, NoMatchingPattern, FrozenError,
-		NotImplementedErr, LocalJumpError, AmberError,
+		NotImplementedErr, LocalJumpError, AmberError, RegexpError,
 	}
 	for _, c := range BasicClasses {
 		ObjectClass.Consts[c.Name] = ClassValue(c)

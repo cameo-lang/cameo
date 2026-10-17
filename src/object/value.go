@@ -39,6 +39,10 @@ const (
 	KindException
 	// KindTime is an instant with its UTC offset, Ruby's Time.
 	KindTime
+	// KindRegexp is a compiled regular expression, KindMatch a match of
+	// one: Ruby's Regexp and MatchData.
+	KindRegexp
+	KindMatch
 	// KindProc and KindProcess are the evaluator's: a block or lambda and
 	// an async process. The object is opaque here; see Opaque.
 	KindProc
@@ -79,6 +83,10 @@ func (k Kind) String() string {
 		return "exception"
 	case KindTime:
 		return "time"
+	case KindRegexp:
+		return "regexp"
+	case KindMatch:
+		return "match"
 	case KindProc:
 		return "proc"
 	case KindProcess:
@@ -162,6 +170,10 @@ func (v Value) Class() *Class {
 		return (*Exception)(v.p).Cls
 	case KindTime:
 		return TimeClass
+	case KindRegexp:
+		return RegexpClass
+	case KindMatch:
+		return MatchDataClass
 	case KindProc:
 		return ProcClass
 	case KindProcess:
@@ -221,6 +233,10 @@ func ExceptionValue(e *Exception) Value { return Value{kind: KindException, p: u
 // for a UTC time, time.Local for the local zone, and a fixed zone for an
 // offset.
 func TimeValue(t time.Time) Value { return Value{kind: KindTime, p: unsafe.Pointer(&t)} }
+
+// RegexpValue and MatchValue wrap a regexp and a match.
+func RegexpValue(r *Regexp) Value { return Value{kind: KindRegexp, p: unsafe.Pointer(r)} }
+func MatchValue(m *Match) Value   { return Value{kind: KindMatch, p: unsafe.Pointer(m)} }
 
 // Opaque wraps an object this package does not know, a proc or a process,
 // under its kind. The evaluator reads it back with Opaque.
@@ -387,6 +403,23 @@ func (v Value) AsRange() (*Range, bool) {
 		return nil, false
 	}
 	return (*Range)(v.p), true
+}
+
+func (v Value) Regexp() *Regexp {
+	v.must(KindRegexp)
+	return (*Regexp)(v.p)
+}
+
+func (v Value) AsRegexp() (*Regexp, bool) {
+	if v.kind != KindRegexp {
+		return nil, false
+	}
+	return (*Regexp)(v.p), true
+}
+
+func (v Value) Match() *Match {
+	v.must(KindMatch)
+	return (*Match)(v.p)
 }
 
 func (v Value) AsTime() (time.Time, bool) {

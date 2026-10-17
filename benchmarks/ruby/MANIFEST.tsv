@@ -162,6 +162,12 @@ unsupported/complex	numeric_methods--real_.rb	benchmark/numeric_methods.yml, ent
 unsupported/encodings	string_coderange_scan--coderange_alternating.rb	benchmark/string_coderange_scan.yml, entry coderange_alternating	string encodings (force_encoding, .b)
 unsupported/encodings	string_coderange_scan--coderange_ascii.rb	benchmark/string_coderange_scan.yml, entry coderange_ascii	string encodings (force_encoding, .b)
 unsupported/encodings	string_coderange_scan--coderange_multibyte.rb	benchmark/string_coderange_scan.yml, entry coderange_multibyte	string encodings (force_encoding, .b)
+unsupported/encodings	string_gsub--escape.rb	benchmark/string_gsub.yml, entry escape	string encodings (force_encoding, .b)
+unsupported/encodings	string_gsub--escape_bin.rb	benchmark/string_gsub.yml, entry escape_bin	string encodings (force_encoding, .b)
+unsupported/encodings	string_gsub--escape_utf8.rb	benchmark/string_gsub.yml, entry escape_utf8	string encodings (force_encoding, .b)
+unsupported/encodings	string_gsub--escape_utf8_bin.rb	benchmark/string_gsub.yml, entry escape_utf8_bin	string encodings (force_encoding, .b)
+unsupported/encodings	string_gsub--gsub_no_match_shared.rb	benchmark/string_gsub.yml, entry gsub_no_match_shared	string encodings (force_encoding, .b)
+unsupported/encodings	string_gsub--sub_no_match_shared.rb	benchmark/string_gsub.yml, entry sub_no_match_shared	string encodings (force_encoding, .b)
 unsupported/encodings	string_inspect--inspect_binary.rb	benchmark/string_inspect.yml, entry inspect_binary	string encodings (force_encoding, .b)
 unsupported/encodings	string_scrub--scrub_known_invalid.rb	benchmark/string_scrub.yml, entry scrub_known_invalid	string encodings (force_encoding, .b)
 unsupported/encodings	string_scrub--scrub_known_valid.rb	benchmark/string_scrub.yml, entry scrub_known_valid	string encodings (force_encoding, .b)
@@ -242,6 +248,8 @@ unsupported/globals	constant_invalidation.rb	benchmark/constant_invalidation.rb	
 unsupported/globals	vm_module_const_set--vm_module_const_set.rb	benchmark/vm_module_const_set.yml, entry vm_module_const_set	global variables
 unsupported/identity	hash_ident_obj.rb	benchmark/hash_ident_obj.rb	object identity (amber compares structurally: two bare Objects are equal)
 unsupported/identity	object_id--object_id.rb	benchmark/object_id.yml, entry object_id	object identity (amber compares structurally: two bare Objects are equal)
+unsupported/identity	set--compare_by_identityq_false.rb	benchmark/set.yml, entry compare_by_identityq_false	compare_by_identity? (compare_by_identity changes nothing, so it cannot tell)
+unsupported/identity	set--compare_by_identityq_true.rb	benchmark/set.yml, entry compare_by_identityq_true	compare_by_identity? (compare_by_identity changes nothing, so it cannot tell)
 unsupported/identity	vm_neq--vm_neq.rb	benchmark/vm_neq.yml, entry vm_neq	object identity (amber compares structurally: two bare Objects are equal)
 unsupported/instance-variables	io_copy_stream_write.rb	benchmark/io_copy_stream_write.rb	instance variables outside initialize
 unsupported/instance-variables	io_copy_stream_write_socket.rb	benchmark/io_copy_stream_write_socket.rb	instance variables outside initialize
@@ -454,246 +462,20 @@ unsupported/mutation	hash_aref_flo.rb	benchmark/hash_aref_flo.rb	mutation (<<, p
 unsupported/mutation	hash_aref_miss.rb	benchmark/hash_aref_miss.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/mutation	hash_aref_str.rb	benchmark/hash_aref_str.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/mutation	hash_ident_flo.rb	benchmark/hash_ident_flo.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--merge_enum.rb	benchmark/set.yml, entry merge_enum	mutation on a temporary (a mutator called on a copy or a literal, not a local)
+unsupported/mutation	set--merge_set.rb	benchmark/set.yml, entry merge_set	mutation on a temporary (a mutator called on a copy or a literal, not a local)
+unsupported/mutation	set--subtract_enum.rb	benchmark/set.yml, entry subtract_enum	mutation on a temporary (a mutator called on a copy or a literal, not a local)
+unsupported/mutation	set--subtract_same_enum.rb	benchmark/set.yml, entry subtract_same_enum	mutation on a temporary (a mutator called on a copy or a literal, not a local)
+unsupported/mutation	set--subtract_same_set.rb	benchmark/set.yml, entry subtract_same_set	mutation on a temporary (a mutator called on a copy or a literal, not a local)
+unsupported/mutation	set--subtract_set.rb	benchmark/set.yml, entry subtract_set	mutation on a temporary (a mutator called on a copy or a literal, not a local)
 unsupported/mutation	string_capitalize--capitalize_-1.rb	benchmark/string_capitalize.yml, entry capitalize_-1	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/mutation	string_capitalize--capitalize_-100.rb	benchmark/string_capitalize.yml, entry capitalize_-100	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/mutation	string_capitalize--capitalize_-1000.rb	benchmark/string_capitalize.yml, entry capitalize_-1000	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	string_slice--regexp-long.rb	benchmark/string_slice.yml, entry regexp-long	mutation on a temporary (a mutator called on a copy or a literal, not a local)
+unsupported/mutation	string_slice--regexp-short.rb	benchmark/string_slice.yml, entry regexp-short	mutation on a temporary (a mutator called on a copy or a literal, not a local)
 unsupported/mutation	string_slice--string-long.rb	benchmark/string_slice.yml, entry string-long	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/mutation	string_slice--string-short.rb	benchmark/string_slice.yml, entry string-short	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/mutation	vm_thread_pass.rb	benchmark/vm_thread_pass.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
-unsupported/regexp	app_answer.rb	benchmark/app_answer.rb	regular expressions
-unsupported/regexp	match_gt4.rb	benchmark/match_gt4.rb	regular expressions
-unsupported/regexp	match_small.rb	benchmark/match_small.rb	regular expressions
-unsupported/regexp	regexp_dup--dup.rb	benchmark/regexp_dup.yml, entry dup	regular expressions
-unsupported/regexp	regexp_new--regexp.rb	benchmark/regexp_new.yml, entry regexp	regular expressions
-unsupported/regexp	regexp_new--string.rb	benchmark/regexp_new.yml, entry string	regular expressions
-unsupported/regexp	set--add.rb	benchmark/set.yml, entry add	regular expressions
-unsupported/regexp	set--add_exist.rb	benchmark/set.yml, entry add_exist	regular expressions
-unsupported/regexp	set--addq.rb	benchmark/set.yml, entry addq	regular expressions
-unsupported/regexp	set--addq_exist.rb	benchmark/set.yml, entry addq_exist	regular expressions
-unsupported/regexp	set--amp_0.rb	benchmark/set.yml, entry amp_0	regular expressions
-unsupported/regexp	set--amp_10.rb	benchmark/set.yml, entry amp_10	regular expressions
-unsupported/regexp	set--amp_100.rb	benchmark/set.yml, entry amp_100	regular expressions
-unsupported/regexp	set--amp_1000.rb	benchmark/set.yml, entry amp_1000	regular expressions
-unsupported/regexp	set--amp_same_0.rb	benchmark/set.yml, entry amp_same_0	regular expressions
-unsupported/regexp	set--amp_same_10.rb	benchmark/set.yml, entry amp_same_10	regular expressions
-unsupported/regexp	set--amp_same_100.rb	benchmark/set.yml, entry amp_same_100	regular expressions
-unsupported/regexp	set--amp_same_1000.rb	benchmark/set.yml, entry amp_same_1000	regular expressions
-unsupported/regexp	set--aref_0.rb	benchmark/set.yml, entry aref_0	regular expressions
-unsupported/regexp	set--aref_10.rb	benchmark/set.yml, entry aref_10	regular expressions
-unsupported/regexp	set--aref_100.rb	benchmark/set.yml, entry aref_100	regular expressions
-unsupported/regexp	set--aref_1000.rb	benchmark/set.yml, entry aref_1000	regular expressions
-unsupported/regexp	set--classify_0.rb	benchmark/set.yml, entry classify_0	regular expressions
-unsupported/regexp	set--classify_10.rb	benchmark/set.yml, entry classify_10	regular expressions
-unsupported/regexp	set--classify_100.rb	benchmark/set.yml, entry classify_100	regular expressions
-unsupported/regexp	set--classify_1000.rb	benchmark/set.yml, entry classify_1000	regular expressions
-unsupported/regexp	set--clear.rb	benchmark/set.yml, entry clear	regular expressions
-unsupported/regexp	set--clone_0.rb	benchmark/set.yml, entry clone_0	regular expressions
-unsupported/regexp	set--clone_10.rb	benchmark/set.yml, entry clone_10	regular expressions
-unsupported/regexp	set--clone_100.rb	benchmark/set.yml, entry clone_100	regular expressions
-unsupported/regexp	set--clone_1000.rb	benchmark/set.yml, entry clone_1000	regular expressions
-unsupported/regexp	set--collect_0.rb	benchmark/set.yml, entry collect_0	regular expressions
-unsupported/regexp	set--collect_10.rb	benchmark/set.yml, entry collect_10	regular expressions
-unsupported/regexp	set--collect_100.rb	benchmark/set.yml, entry collect_100	regular expressions
-unsupported/regexp	set--collect_1000.rb	benchmark/set.yml, entry collect_1000	regular expressions
-unsupported/regexp	set--compare_by_identity_0.rb	benchmark/set.yml, entry compare_by_identity_0	regular expressions
-unsupported/regexp	set--compare_by_identity_10.rb	benchmark/set.yml, entry compare_by_identity_10	regular expressions
-unsupported/regexp	set--compare_by_identity_100.rb	benchmark/set.yml, entry compare_by_identity_100	regular expressions
-unsupported/regexp	set--compare_by_identity_1000.rb	benchmark/set.yml, entry compare_by_identity_1000	regular expressions
-unsupported/regexp	set--compare_by_identityq_false.rb	benchmark/set.yml, entry compare_by_identityq_false	regular expressions
-unsupported/regexp	set--compare_by_identityq_true.rb	benchmark/set.yml, entry compare_by_identityq_true	regular expressions
-unsupported/regexp	set--delete.rb	benchmark/set.yml, entry delete	regular expressions
-unsupported/regexp	set--delete_if_0.rb	benchmark/set.yml, entry delete_if_0	regular expressions
-unsupported/regexp	set--delete_if_10.rb	benchmark/set.yml, entry delete_if_10	regular expressions
-unsupported/regexp	set--delete_if_100.rb	benchmark/set.yml, entry delete_if_100	regular expressions
-unsupported/regexp	set--delete_if_1000.rb	benchmark/set.yml, entry delete_if_1000	regular expressions
-unsupported/regexp	set--delete_not_exist.rb	benchmark/set.yml, entry delete_not_exist	regular expressions
-unsupported/regexp	set--deleteq.rb	benchmark/set.yml, entry deleteq	regular expressions
-unsupported/regexp	set--deleteq_not_exist.rb	benchmark/set.yml, entry deleteq_not_exist	regular expressions
-unsupported/regexp	set--disjoint_0.rb	benchmark/set.yml, entry disjoint_0	regular expressions
-unsupported/regexp	set--disjoint_10.rb	benchmark/set.yml, entry disjoint_10	regular expressions
-unsupported/regexp	set--disjoint_100.rb	benchmark/set.yml, entry disjoint_100	regular expressions
-unsupported/regexp	set--disjoint_1000.rb	benchmark/set.yml, entry disjoint_1000	regular expressions
-unsupported/regexp	set--disjoint_same_0.rb	benchmark/set.yml, entry disjoint_same_0	regular expressions
-unsupported/regexp	set--disjoint_same_10.rb	benchmark/set.yml, entry disjoint_same_10	regular expressions
-unsupported/regexp	set--disjoint_same_100.rb	benchmark/set.yml, entry disjoint_same_100	regular expressions
-unsupported/regexp	set--disjoint_same_1000.rb	benchmark/set.yml, entry disjoint_same_1000	regular expressions
-unsupported/regexp	set--divide_1arity_0.rb	benchmark/set.yml, entry divide_1arity_0	regular expressions
-unsupported/regexp	set--divide_1arity_10.rb	benchmark/set.yml, entry divide_1arity_10	regular expressions
-unsupported/regexp	set--divide_1arity_100.rb	benchmark/set.yml, entry divide_1arity_100	regular expressions
-unsupported/regexp	set--divide_1arity_1000.rb	benchmark/set.yml, entry divide_1arity_1000	regular expressions
-unsupported/regexp	set--divide_2arity_0.rb	benchmark/set.yml, entry divide_2arity_0	regular expressions
-unsupported/regexp	set--divide_2arity_10.rb	benchmark/set.yml, entry divide_2arity_10	regular expressions
-unsupported/regexp	set--divide_2arity_100.rb	benchmark/set.yml, entry divide_2arity_100	regular expressions
-unsupported/regexp	set--divide_2arity_1000.rb	benchmark/set.yml, entry divide_2arity_1000	regular expressions
-unsupported/regexp	set--dup_0.rb	benchmark/set.yml, entry dup_0	regular expressions
-unsupported/regexp	set--dup_10.rb	benchmark/set.yml, entry dup_10	regular expressions
-unsupported/regexp	set--dup_100.rb	benchmark/set.yml, entry dup_100	regular expressions
-unsupported/regexp	set--dup_1000.rb	benchmark/set.yml, entry dup_1000	regular expressions
-unsupported/regexp	set--each_0.rb	benchmark/set.yml, entry each_0	regular expressions
-unsupported/regexp	set--each_10.rb	benchmark/set.yml, entry each_10	regular expressions
-unsupported/regexp	set--each_100.rb	benchmark/set.yml, entry each_100	regular expressions
-unsupported/regexp	set--each_1000.rb	benchmark/set.yml, entry each_1000	regular expressions
-unsupported/regexp	set--empty_false.rb	benchmark/set.yml, entry empty_false	regular expressions
-unsupported/regexp	set--empty_true.rb	benchmark/set.yml, entry empty_true	regular expressions
-unsupported/regexp	set--eq_0.rb	benchmark/set.yml, entry eq_0	regular expressions
-unsupported/regexp	set--eq_10.rb	benchmark/set.yml, entry eq_10	regular expressions
-unsupported/regexp	set--eq_100.rb	benchmark/set.yml, entry eq_100	regular expressions
-unsupported/regexp	set--eq_1000.rb	benchmark/set.yml, entry eq_1000	regular expressions
-unsupported/regexp	set--eq_same_0.rb	benchmark/set.yml, entry eq_same_0	regular expressions
-unsupported/regexp	set--eq_same_10.rb	benchmark/set.yml, entry eq_same_10	regular expressions
-unsupported/regexp	set--eq_same_100.rb	benchmark/set.yml, entry eq_same_100	regular expressions
-unsupported/regexp	set--eq_same_1000.rb	benchmark/set.yml, entry eq_same_1000	regular expressions
-unsupported/regexp	set--flatten.rb	benchmark/set.yml, entry flatten	regular expressions
-unsupported/regexp	set--flattenb.rb	benchmark/set.yml, entry flattenb	regular expressions
-unsupported/regexp	set--include_false_0.rb	benchmark/set.yml, entry include_false_0	regular expressions
-unsupported/regexp	set--include_false_10.rb	benchmark/set.yml, entry include_false_10	regular expressions
-unsupported/regexp	set--include_false_100.rb	benchmark/set.yml, entry include_false_100	regular expressions
-unsupported/regexp	set--include_false_1000.rb	benchmark/set.yml, entry include_false_1000	regular expressions
-unsupported/regexp	set--include_true_0.rb	benchmark/set.yml, entry include_true_0	regular expressions
-unsupported/regexp	set--include_true_10.rb	benchmark/set.yml, entry include_true_10	regular expressions
-unsupported/regexp	set--include_true_100.rb	benchmark/set.yml, entry include_true_100	regular expressions
-unsupported/regexp	set--include_true_1000.rb	benchmark/set.yml, entry include_true_1000	regular expressions
-unsupported/regexp	set--intersect_0.rb	benchmark/set.yml, entry intersect_0	regular expressions
-unsupported/regexp	set--intersect_10.rb	benchmark/set.yml, entry intersect_10	regular expressions
-unsupported/regexp	set--intersect_100.rb	benchmark/set.yml, entry intersect_100	regular expressions
-unsupported/regexp	set--intersect_1000.rb	benchmark/set.yml, entry intersect_1000	regular expressions
-unsupported/regexp	set--intersect_same_0.rb	benchmark/set.yml, entry intersect_same_0	regular expressions
-unsupported/regexp	set--intersect_same_10.rb	benchmark/set.yml, entry intersect_same_10	regular expressions
-unsupported/regexp	set--intersect_same_100.rb	benchmark/set.yml, entry intersect_same_100	regular expressions
-unsupported/regexp	set--intersect_same_1000.rb	benchmark/set.yml, entry intersect_same_1000	regular expressions
-unsupported/regexp	set--join_0.rb	benchmark/set.yml, entry join_0	regular expressions
-unsupported/regexp	set--join_10.rb	benchmark/set.yml, entry join_10	regular expressions
-unsupported/regexp	set--join_100.rb	benchmark/set.yml, entry join_100	regular expressions
-unsupported/regexp	set--join_1000.rb	benchmark/set.yml, entry join_1000	regular expressions
-unsupported/regexp	set--join_arg_0.rb	benchmark/set.yml, entry join_arg_0	regular expressions
-unsupported/regexp	set--join_arg_10.rb	benchmark/set.yml, entry join_arg_10	regular expressions
-unsupported/regexp	set--join_arg_100.rb	benchmark/set.yml, entry join_arg_100	regular expressions
-unsupported/regexp	set--join_arg_1000.rb	benchmark/set.yml, entry join_arg_1000	regular expressions
-unsupported/regexp	set--keep_if_0.rb	benchmark/set.yml, entry keep_if_0	regular expressions
-unsupported/regexp	set--keep_if_10.rb	benchmark/set.yml, entry keep_if_10	regular expressions
-unsupported/regexp	set--keep_if_100.rb	benchmark/set.yml, entry keep_if_100	regular expressions
-unsupported/regexp	set--keep_if_1000.rb	benchmark/set.yml, entry keep_if_1000	regular expressions
-unsupported/regexp	set--merge_enum.rb	benchmark/set.yml, entry merge_enum	regular expressions
-unsupported/regexp	set--merge_set.rb	benchmark/set.yml, entry merge_set	regular expressions
-unsupported/regexp	set--minus_0.rb	benchmark/set.yml, entry minus_0	regular expressions
-unsupported/regexp	set--minus_10.rb	benchmark/set.yml, entry minus_10	regular expressions
-unsupported/regexp	set--minus_100.rb	benchmark/set.yml, entry minus_100	regular expressions
-unsupported/regexp	set--minus_1000.rb	benchmark/set.yml, entry minus_1000	regular expressions
-unsupported/regexp	set--minus_same_0.rb	benchmark/set.yml, entry minus_same_0	regular expressions
-unsupported/regexp	set--minus_same_10.rb	benchmark/set.yml, entry minus_same_10	regular expressions
-unsupported/regexp	set--minus_same_100.rb	benchmark/set.yml, entry minus_same_100	regular expressions
-unsupported/regexp	set--minus_same_1000.rb	benchmark/set.yml, entry minus_same_1000	regular expressions
-unsupported/regexp	set--new_0.rb	benchmark/set.yml, entry new_0	regular expressions
-unsupported/regexp	set--new_10.rb	benchmark/set.yml, entry new_10	regular expressions
-unsupported/regexp	set--new_100.rb	benchmark/set.yml, entry new_100	regular expressions
-unsupported/regexp	set--new_1000.rb	benchmark/set.yml, entry new_1000	regular expressions
-unsupported/regexp	set--pipe_0.rb	benchmark/set.yml, entry pipe_0	regular expressions
-unsupported/regexp	set--pipe_10.rb	benchmark/set.yml, entry pipe_10	regular expressions
-unsupported/regexp	set--pipe_100.rb	benchmark/set.yml, entry pipe_100	regular expressions
-unsupported/regexp	set--pipe_1000.rb	benchmark/set.yml, entry pipe_1000	regular expressions
-unsupported/regexp	set--pipe_same_0.rb	benchmark/set.yml, entry pipe_same_0	regular expressions
-unsupported/regexp	set--pipe_same_10.rb	benchmark/set.yml, entry pipe_same_10	regular expressions
-unsupported/regexp	set--pipe_same_100.rb	benchmark/set.yml, entry pipe_same_100	regular expressions
-unsupported/regexp	set--pipe_same_1000.rb	benchmark/set.yml, entry pipe_same_1000	regular expressions
-unsupported/regexp	set--proper_subset_0.rb	benchmark/set.yml, entry proper_subset_0	regular expressions
-unsupported/regexp	set--proper_subset_10.rb	benchmark/set.yml, entry proper_subset_10	regular expressions
-unsupported/regexp	set--proper_subset_100.rb	benchmark/set.yml, entry proper_subset_100	regular expressions
-unsupported/regexp	set--proper_subset_1000.rb	benchmark/set.yml, entry proper_subset_1000	regular expressions
-unsupported/regexp	set--proper_subset_false_10.rb	benchmark/set.yml, entry proper_subset_false_10	regular expressions
-unsupported/regexp	set--proper_subset_false_100.rb	benchmark/set.yml, entry proper_subset_false_100	regular expressions
-unsupported/regexp	set--proper_subset_false_1000.rb	benchmark/set.yml, entry proper_subset_false_1000	regular expressions
-unsupported/regexp	set--proper_superset_0.rb	benchmark/set.yml, entry proper_superset_0	regular expressions
-unsupported/regexp	set--proper_superset_10.rb	benchmark/set.yml, entry proper_superset_10	regular expressions
-unsupported/regexp	set--proper_superset_100.rb	benchmark/set.yml, entry proper_superset_100	regular expressions
-unsupported/regexp	set--proper_superset_1000.rb	benchmark/set.yml, entry proper_superset_1000	regular expressions
-unsupported/regexp	set--proper_superset_false_10.rb	benchmark/set.yml, entry proper_superset_false_10	regular expressions
-unsupported/regexp	set--proper_superset_false_100.rb	benchmark/set.yml, entry proper_superset_false_100	regular expressions
-unsupported/regexp	set--proper_superset_false_1000.rb	benchmark/set.yml, entry proper_superset_false_1000	regular expressions
-unsupported/regexp	set--reject_0.rb	benchmark/set.yml, entry reject_0	regular expressions
-unsupported/regexp	set--reject_10.rb	benchmark/set.yml, entry reject_10	regular expressions
-unsupported/regexp	set--reject_100.rb	benchmark/set.yml, entry reject_100	regular expressions
-unsupported/regexp	set--reject_1000.rb	benchmark/set.yml, entry reject_1000	regular expressions
-unsupported/regexp	set--replace_0.rb	benchmark/set.yml, entry replace_0	regular expressions
-unsupported/regexp	set--replace_10.rb	benchmark/set.yml, entry replace_10	regular expressions
-unsupported/regexp	set--replace_100.rb	benchmark/set.yml, entry replace_100	regular expressions
-unsupported/regexp	set--replace_1000.rb	benchmark/set.yml, entry replace_1000	regular expressions
-unsupported/regexp	set--reset_0.rb	benchmark/set.yml, entry reset_0	regular expressions
-unsupported/regexp	set--reset_10.rb	benchmark/set.yml, entry reset_10	regular expressions
-unsupported/regexp	set--reset_100.rb	benchmark/set.yml, entry reset_100	regular expressions
-unsupported/regexp	set--reset_1000.rb	benchmark/set.yml, entry reset_1000	regular expressions
-unsupported/regexp	set--select_0.rb	benchmark/set.yml, entry select_0	regular expressions
-unsupported/regexp	set--select_10.rb	benchmark/set.yml, entry select_10	regular expressions
-unsupported/regexp	set--select_100.rb	benchmark/set.yml, entry select_100	regular expressions
-unsupported/regexp	set--select_1000.rb	benchmark/set.yml, entry select_1000	regular expressions
-unsupported/regexp	set--size_0.rb	benchmark/set.yml, entry size_0	regular expressions
-unsupported/regexp	set--size_10.rb	benchmark/set.yml, entry size_10	regular expressions
-unsupported/regexp	set--size_100.rb	benchmark/set.yml, entry size_100	regular expressions
-unsupported/regexp	set--size_1000.rb	benchmark/set.yml, entry size_1000	regular expressions
-unsupported/regexp	set--spaceship_0.rb	benchmark/set.yml, entry spaceship_0	regular expressions
-unsupported/regexp	set--spaceship_diff_10.rb	benchmark/set.yml, entry spaceship_diff_10	regular expressions
-unsupported/regexp	set--spaceship_diff_100.rb	benchmark/set.yml, entry spaceship_diff_100	regular expressions
-unsupported/regexp	set--spaceship_diff_1000.rb	benchmark/set.yml, entry spaceship_diff_1000	regular expressions
-unsupported/regexp	set--spaceship_sub_10.rb	benchmark/set.yml, entry spaceship_sub_10	regular expressions
-unsupported/regexp	set--spaceship_sub_100.rb	benchmark/set.yml, entry spaceship_sub_100	regular expressions
-unsupported/regexp	set--spaceship_sub_1000.rb	benchmark/set.yml, entry spaceship_sub_1000	regular expressions
-unsupported/regexp	set--spaceship_sup_10.rb	benchmark/set.yml, entry spaceship_sup_10	regular expressions
-unsupported/regexp	set--spaceship_sup_100.rb	benchmark/set.yml, entry spaceship_sup_100	regular expressions
-unsupported/regexp	set--spaceship_sup_1000.rb	benchmark/set.yml, entry spaceship_sup_1000	regular expressions
-unsupported/regexp	set--subset_0.rb	benchmark/set.yml, entry subset_0	regular expressions
-unsupported/regexp	set--subset_10.rb	benchmark/set.yml, entry subset_10	regular expressions
-unsupported/regexp	set--subset_100.rb	benchmark/set.yml, entry subset_100	regular expressions
-unsupported/regexp	set--subset_1000.rb	benchmark/set.yml, entry subset_1000	regular expressions
-unsupported/regexp	set--subset_false_10.rb	benchmark/set.yml, entry subset_false_10	regular expressions
-unsupported/regexp	set--subset_false_100.rb	benchmark/set.yml, entry subset_false_100	regular expressions
-unsupported/regexp	set--subset_false_1000.rb	benchmark/set.yml, entry subset_false_1000	regular expressions
-unsupported/regexp	set--subtract_enum.rb	benchmark/set.yml, entry subtract_enum	regular expressions
-unsupported/regexp	set--subtract_same_enum.rb	benchmark/set.yml, entry subtract_same_enum	regular expressions
-unsupported/regexp	set--subtract_same_set.rb	benchmark/set.yml, entry subtract_same_set	regular expressions
-unsupported/regexp	set--subtract_set.rb	benchmark/set.yml, entry subtract_set	regular expressions
-unsupported/regexp	set--superset_0.rb	benchmark/set.yml, entry superset_0	regular expressions
-unsupported/regexp	set--superset_10.rb	benchmark/set.yml, entry superset_10	regular expressions
-unsupported/regexp	set--superset_100.rb	benchmark/set.yml, entry superset_100	regular expressions
-unsupported/regexp	set--superset_1000.rb	benchmark/set.yml, entry superset_1000	regular expressions
-unsupported/regexp	set--superset_false_10.rb	benchmark/set.yml, entry superset_false_10	regular expressions
-unsupported/regexp	set--superset_false_100.rb	benchmark/set.yml, entry superset_false_100	regular expressions
-unsupported/regexp	set--superset_false_1000.rb	benchmark/set.yml, entry superset_false_1000	regular expressions
-unsupported/regexp	set--to_a_0.rb	benchmark/set.yml, entry to_a_0	regular expressions
-unsupported/regexp	set--to_a_10.rb	benchmark/set.yml, entry to_a_10	regular expressions
-unsupported/regexp	set--to_a_100.rb	benchmark/set.yml, entry to_a_100	regular expressions
-unsupported/regexp	set--to_a_1000.rb	benchmark/set.yml, entry to_a_1000	regular expressions
-unsupported/regexp	set--to_set_0.rb	benchmark/set.yml, entry to_set_0	regular expressions
-unsupported/regexp	set--to_set_10.rb	benchmark/set.yml, entry to_set_10	regular expressions
-unsupported/regexp	set--to_set_100.rb	benchmark/set.yml, entry to_set_100	regular expressions
-unsupported/regexp	set--to_set_1000.rb	benchmark/set.yml, entry to_set_1000	regular expressions
-unsupported/regexp	set--xor_0.rb	benchmark/set.yml, entry xor_0	regular expressions
-unsupported/regexp	set--xor_10.rb	benchmark/set.yml, entry xor_10	regular expressions
-unsupported/regexp	set--xor_100.rb	benchmark/set.yml, entry xor_100	regular expressions
-unsupported/regexp	set--xor_1000.rb	benchmark/set.yml, entry xor_1000	regular expressions
-unsupported/regexp	set--xor_same_0.rb	benchmark/set.yml, entry xor_same_0	regular expressions
-unsupported/regexp	set--xor_same_10.rb	benchmark/set.yml, entry xor_same_10	regular expressions
-unsupported/regexp	set--xor_same_100.rb	benchmark/set.yml, entry xor_same_100	regular expressions
-unsupported/regexp	set--xor_same_1000.rb	benchmark/set.yml, entry xor_same_1000	regular expressions
-unsupported/regexp	string_gsub--escape.rb	benchmark/string_gsub.yml, entry escape	regular expressions
-unsupported/regexp	string_gsub--escape_bin.rb	benchmark/string_gsub.yml, entry escape_bin	regular expressions
-unsupported/regexp	string_gsub--escape_utf8.rb	benchmark/string_gsub.yml, entry escape_utf8	regular expressions
-unsupported/regexp	string_gsub--escape_utf8_bin.rb	benchmark/string_gsub.yml, entry escape_utf8_bin	regular expressions
-unsupported/regexp	string_gsub--gsub_no_match_shared.rb	benchmark/string_gsub.yml, entry gsub_no_match_shared	regular expressions
-unsupported/regexp	string_gsub--sub_no_match_shared.rb	benchmark/string_gsub.yml, entry sub_no_match_shared	regular expressions
-unsupported/regexp	string_scan_re.rb	benchmark/string_scan_re.rb	regular expressions
-unsupported/regexp	string_slice--regexp-long.rb	benchmark/string_slice.yml, entry regexp-long	regular expressions
-unsupported/regexp	string_slice--regexp-short.rb	benchmark/string_slice.yml, entry regexp-short	regular expressions
-unsupported/regexp	string_split--re_chars-1.rb	benchmark/string_split.yml, entry re_chars-1	regular expressions
-unsupported/regexp	string_split--re_chars-10.rb	benchmark/string_split.yml, entry re_chars-10	regular expressions
-unsupported/regexp	string_split--re_chars-100.rb	benchmark/string_split.yml, entry re_chars-100	regular expressions
-unsupported/regexp	string_split--re_chars-1000.rb	benchmark/string_split.yml, entry re_chars-1000	regular expressions
-unsupported/regexp	string_split--re_space-1.rb	benchmark/string_split.yml, entry re_space-1	regular expressions
-unsupported/regexp	string_split--re_space-10.rb	benchmark/string_split.yml, entry re_space-10	regular expressions
-unsupported/regexp	string_split--re_space-100.rb	benchmark/string_split.yml, entry re_space-100	regular expressions
-unsupported/regexp	string_split--re_space-1000.rb	benchmark/string_split.yml, entry re_space-1000	regular expressions
-unsupported/regexp	vm_regexp--vm_regexp.rb	benchmark/vm_regexp.yml, entry vm_regexp	regular expressions
-unsupported/regexp	vm_regexp--vm_regexp_alternating.rb	benchmark/vm_regexp.yml, entry vm_regexp_alternating	regular expressions
-unsupported/regexp	vm_regexp--vm_regexp_invert.rb	benchmark/vm_regexp.yml, entry vm_regexp_invert	regular expressions
-unsupported/regexp	vm_regexp--vm_regexp_invert_alternating.rb	benchmark/vm_regexp.yml, entry vm_regexp_invert_alternating	regular expressions
 unsupported/reopening-classes	range_overlap--range_overlap_0.rb	benchmark/range_overlap.yml, entry range_overlap_0	reopening builtin classes
 unsupported/reopening-classes	range_overlap--range_overlap_1.rb	benchmark/range_overlap.yml, entry range_overlap_1	reopening builtin classes
 unsupported/reopening-classes	range_overlap--range_overlap_2.rb	benchmark/range_overlap.yml, entry range_overlap_2	reopening builtin classes
@@ -852,6 +634,7 @@ unsupported/vm-introspection	vm_gc_short_with_long--vm_gc_short_with_long.rb	ben
 unsupported/vm-introspection	vm_gc_short_with_symbol--vm_gc_short_with_symbol.rb	benchmark/vm_gc_short_with_symbol.yml, entry vm_gc_short_with_symbol	GC and VM introspection
 unsupported/vm-introspection	vm_gc_wb_ary_promoted--vm_gc_wb_ary_promoted.rb	benchmark/vm_gc_wb_ary_promoted.yml, entry vm_gc_wb_ary_promoted	GC and VM introspection
 unsupported/vm-introspection	vm_gc_wb_obj_promoted--vm_gc_wb_obj_promoted.rb	benchmark/vm_gc_wb_obj_promoted.yml, entry vm_gc_wb_obj_promoted	GC and VM introspection
+works	app_answer.rb	benchmark/app_answer.rb	
 works	app_fib.rb	benchmark/app_fib.rb	
 works	app_lc_fizzbuzz.rb	benchmark/app_lc_fizzbuzz.rb	
 works	app_raise.rb	benchmark/app_raise.rb	
@@ -1091,6 +874,8 @@ works	loop_for.rb	benchmark/loop_for.rb
 works	loop_times.rb	benchmark/loop_times.rb	
 works	loop_whileloop.rb	benchmark/loop_whileloop.rb	
 works	loop_whileloop2.rb	benchmark/loop_whileloop2.rb	
+works	match_gt4.rb	benchmark/match_gt4.rb	
+works	match_small.rb	benchmark/match_small.rb	
 works	nil_p--nil_p_0.rb	benchmark/nil_p.yml, entry nil_p_0	
 works	nil_p--nil_p_1.rb	benchmark/nil_p.yml, entry nil_p_1	
 works	nil_p--nil_p_2.rb	benchmark/nil_p.yml, entry nil_p_2	
@@ -1139,6 +924,208 @@ works	range_min--range_min_0.rb	benchmark/range_min.yml, entry range_min_0
 works	range_reverse_each--Fixnum_1.rb	benchmark/range_reverse_each.yml, entry Fixnum_1	
 works	range_reverse_each--Fixnum_1K.rb	benchmark/range_reverse_each.yml, entry Fixnum_1K	
 works	range_reverse_each--Fixnum_1M.rb	benchmark/range_reverse_each.yml, entry Fixnum_1M	
+works	regexp_dup--dup.rb	benchmark/regexp_dup.yml, entry dup	
+works	regexp_new--regexp.rb	benchmark/regexp_new.yml, entry regexp	
+works	regexp_new--string.rb	benchmark/regexp_new.yml, entry string	
+works	set--add.rb	benchmark/set.yml, entry add	
+works	set--add_exist.rb	benchmark/set.yml, entry add_exist	
+works	set--addq.rb	benchmark/set.yml, entry addq	
+works	set--addq_exist.rb	benchmark/set.yml, entry addq_exist	
+works	set--amp_0.rb	benchmark/set.yml, entry amp_0	
+works	set--amp_10.rb	benchmark/set.yml, entry amp_10	
+works	set--amp_100.rb	benchmark/set.yml, entry amp_100	
+works	set--amp_1000.rb	benchmark/set.yml, entry amp_1000	
+works	set--amp_same_0.rb	benchmark/set.yml, entry amp_same_0	
+works	set--amp_same_10.rb	benchmark/set.yml, entry amp_same_10	
+works	set--amp_same_100.rb	benchmark/set.yml, entry amp_same_100	
+works	set--amp_same_1000.rb	benchmark/set.yml, entry amp_same_1000	
+works	set--aref_0.rb	benchmark/set.yml, entry aref_0	
+works	set--aref_10.rb	benchmark/set.yml, entry aref_10	
+works	set--aref_100.rb	benchmark/set.yml, entry aref_100	
+works	set--aref_1000.rb	benchmark/set.yml, entry aref_1000	
+works	set--classify_0.rb	benchmark/set.yml, entry classify_0	
+works	set--classify_10.rb	benchmark/set.yml, entry classify_10	
+works	set--classify_100.rb	benchmark/set.yml, entry classify_100	
+works	set--classify_1000.rb	benchmark/set.yml, entry classify_1000	
+works	set--clear.rb	benchmark/set.yml, entry clear	
+works	set--clone_0.rb	benchmark/set.yml, entry clone_0	
+works	set--clone_10.rb	benchmark/set.yml, entry clone_10	
+works	set--clone_100.rb	benchmark/set.yml, entry clone_100	
+works	set--clone_1000.rb	benchmark/set.yml, entry clone_1000	
+works	set--collect_0.rb	benchmark/set.yml, entry collect_0	
+works	set--collect_10.rb	benchmark/set.yml, entry collect_10	
+works	set--collect_100.rb	benchmark/set.yml, entry collect_100	
+works	set--collect_1000.rb	benchmark/set.yml, entry collect_1000	
+works	set--compare_by_identity_0.rb	benchmark/set.yml, entry compare_by_identity_0	
+works	set--compare_by_identity_10.rb	benchmark/set.yml, entry compare_by_identity_10	
+works	set--compare_by_identity_100.rb	benchmark/set.yml, entry compare_by_identity_100	
+works	set--compare_by_identity_1000.rb	benchmark/set.yml, entry compare_by_identity_1000	
+works	set--delete.rb	benchmark/set.yml, entry delete	
+works	set--delete_if_0.rb	benchmark/set.yml, entry delete_if_0	
+works	set--delete_if_10.rb	benchmark/set.yml, entry delete_if_10	
+works	set--delete_if_100.rb	benchmark/set.yml, entry delete_if_100	
+works	set--delete_if_1000.rb	benchmark/set.yml, entry delete_if_1000	
+works	set--delete_not_exist.rb	benchmark/set.yml, entry delete_not_exist	
+works	set--deleteq.rb	benchmark/set.yml, entry deleteq	
+works	set--deleteq_not_exist.rb	benchmark/set.yml, entry deleteq_not_exist	
+works	set--disjoint_0.rb	benchmark/set.yml, entry disjoint_0	
+works	set--disjoint_10.rb	benchmark/set.yml, entry disjoint_10	
+works	set--disjoint_100.rb	benchmark/set.yml, entry disjoint_100	
+works	set--disjoint_1000.rb	benchmark/set.yml, entry disjoint_1000	
+works	set--disjoint_same_0.rb	benchmark/set.yml, entry disjoint_same_0	
+works	set--disjoint_same_10.rb	benchmark/set.yml, entry disjoint_same_10	
+works	set--disjoint_same_100.rb	benchmark/set.yml, entry disjoint_same_100	
+works	set--disjoint_same_1000.rb	benchmark/set.yml, entry disjoint_same_1000	
+works	set--divide_1arity_0.rb	benchmark/set.yml, entry divide_1arity_0	
+works	set--divide_1arity_10.rb	benchmark/set.yml, entry divide_1arity_10	
+works	set--divide_1arity_100.rb	benchmark/set.yml, entry divide_1arity_100	
+works	set--divide_1arity_1000.rb	benchmark/set.yml, entry divide_1arity_1000	
+works	set--divide_2arity_0.rb	benchmark/set.yml, entry divide_2arity_0	
+works	set--divide_2arity_10.rb	benchmark/set.yml, entry divide_2arity_10	
+works	set--divide_2arity_100.rb	benchmark/set.yml, entry divide_2arity_100	
+works	set--divide_2arity_1000.rb	benchmark/set.yml, entry divide_2arity_1000	
+works	set--dup_0.rb	benchmark/set.yml, entry dup_0	
+works	set--dup_10.rb	benchmark/set.yml, entry dup_10	
+works	set--dup_100.rb	benchmark/set.yml, entry dup_100	
+works	set--dup_1000.rb	benchmark/set.yml, entry dup_1000	
+works	set--each_0.rb	benchmark/set.yml, entry each_0	
+works	set--each_10.rb	benchmark/set.yml, entry each_10	
+works	set--each_100.rb	benchmark/set.yml, entry each_100	
+works	set--each_1000.rb	benchmark/set.yml, entry each_1000	
+works	set--empty_false.rb	benchmark/set.yml, entry empty_false	
+works	set--empty_true.rb	benchmark/set.yml, entry empty_true	
+works	set--eq_0.rb	benchmark/set.yml, entry eq_0	
+works	set--eq_10.rb	benchmark/set.yml, entry eq_10	
+works	set--eq_100.rb	benchmark/set.yml, entry eq_100	
+works	set--eq_1000.rb	benchmark/set.yml, entry eq_1000	
+works	set--eq_same_0.rb	benchmark/set.yml, entry eq_same_0	
+works	set--eq_same_10.rb	benchmark/set.yml, entry eq_same_10	
+works	set--eq_same_100.rb	benchmark/set.yml, entry eq_same_100	
+works	set--eq_same_1000.rb	benchmark/set.yml, entry eq_same_1000	
+works	set--flatten.rb	benchmark/set.yml, entry flatten	
+works	set--flattenb.rb	benchmark/set.yml, entry flattenb	
+works	set--include_false_0.rb	benchmark/set.yml, entry include_false_0	
+works	set--include_false_10.rb	benchmark/set.yml, entry include_false_10	
+works	set--include_false_100.rb	benchmark/set.yml, entry include_false_100	
+works	set--include_false_1000.rb	benchmark/set.yml, entry include_false_1000	
+works	set--include_true_0.rb	benchmark/set.yml, entry include_true_0	
+works	set--include_true_10.rb	benchmark/set.yml, entry include_true_10	
+works	set--include_true_100.rb	benchmark/set.yml, entry include_true_100	
+works	set--include_true_1000.rb	benchmark/set.yml, entry include_true_1000	
+works	set--intersect_0.rb	benchmark/set.yml, entry intersect_0	
+works	set--intersect_10.rb	benchmark/set.yml, entry intersect_10	
+works	set--intersect_100.rb	benchmark/set.yml, entry intersect_100	
+works	set--intersect_1000.rb	benchmark/set.yml, entry intersect_1000	
+works	set--intersect_same_0.rb	benchmark/set.yml, entry intersect_same_0	
+works	set--intersect_same_10.rb	benchmark/set.yml, entry intersect_same_10	
+works	set--intersect_same_100.rb	benchmark/set.yml, entry intersect_same_100	
+works	set--intersect_same_1000.rb	benchmark/set.yml, entry intersect_same_1000	
+works	set--join_0.rb	benchmark/set.yml, entry join_0	
+works	set--join_10.rb	benchmark/set.yml, entry join_10	
+works	set--join_100.rb	benchmark/set.yml, entry join_100	
+works	set--join_1000.rb	benchmark/set.yml, entry join_1000	
+works	set--join_arg_0.rb	benchmark/set.yml, entry join_arg_0	
+works	set--join_arg_10.rb	benchmark/set.yml, entry join_arg_10	
+works	set--join_arg_100.rb	benchmark/set.yml, entry join_arg_100	
+works	set--join_arg_1000.rb	benchmark/set.yml, entry join_arg_1000	
+works	set--keep_if_0.rb	benchmark/set.yml, entry keep_if_0	
+works	set--keep_if_10.rb	benchmark/set.yml, entry keep_if_10	
+works	set--keep_if_100.rb	benchmark/set.yml, entry keep_if_100	
+works	set--keep_if_1000.rb	benchmark/set.yml, entry keep_if_1000	
+works	set--minus_0.rb	benchmark/set.yml, entry minus_0	
+works	set--minus_10.rb	benchmark/set.yml, entry minus_10	
+works	set--minus_100.rb	benchmark/set.yml, entry minus_100	
+works	set--minus_1000.rb	benchmark/set.yml, entry minus_1000	
+works	set--minus_same_0.rb	benchmark/set.yml, entry minus_same_0	
+works	set--minus_same_10.rb	benchmark/set.yml, entry minus_same_10	
+works	set--minus_same_100.rb	benchmark/set.yml, entry minus_same_100	
+works	set--minus_same_1000.rb	benchmark/set.yml, entry minus_same_1000	
+works	set--new_0.rb	benchmark/set.yml, entry new_0	
+works	set--new_10.rb	benchmark/set.yml, entry new_10	
+works	set--new_100.rb	benchmark/set.yml, entry new_100	
+works	set--new_1000.rb	benchmark/set.yml, entry new_1000	
+works	set--pipe_0.rb	benchmark/set.yml, entry pipe_0	
+works	set--pipe_10.rb	benchmark/set.yml, entry pipe_10	
+works	set--pipe_100.rb	benchmark/set.yml, entry pipe_100	
+works	set--pipe_1000.rb	benchmark/set.yml, entry pipe_1000	
+works	set--pipe_same_0.rb	benchmark/set.yml, entry pipe_same_0	
+works	set--pipe_same_10.rb	benchmark/set.yml, entry pipe_same_10	
+works	set--pipe_same_100.rb	benchmark/set.yml, entry pipe_same_100	
+works	set--pipe_same_1000.rb	benchmark/set.yml, entry pipe_same_1000	
+works	set--proper_subset_0.rb	benchmark/set.yml, entry proper_subset_0	
+works	set--proper_subset_10.rb	benchmark/set.yml, entry proper_subset_10	
+works	set--proper_subset_100.rb	benchmark/set.yml, entry proper_subset_100	
+works	set--proper_subset_1000.rb	benchmark/set.yml, entry proper_subset_1000	
+works	set--proper_subset_false_10.rb	benchmark/set.yml, entry proper_subset_false_10	
+works	set--proper_subset_false_100.rb	benchmark/set.yml, entry proper_subset_false_100	
+works	set--proper_subset_false_1000.rb	benchmark/set.yml, entry proper_subset_false_1000	
+works	set--proper_superset_0.rb	benchmark/set.yml, entry proper_superset_0	
+works	set--proper_superset_10.rb	benchmark/set.yml, entry proper_superset_10	
+works	set--proper_superset_100.rb	benchmark/set.yml, entry proper_superset_100	
+works	set--proper_superset_1000.rb	benchmark/set.yml, entry proper_superset_1000	
+works	set--proper_superset_false_10.rb	benchmark/set.yml, entry proper_superset_false_10	
+works	set--proper_superset_false_100.rb	benchmark/set.yml, entry proper_superset_false_100	
+works	set--proper_superset_false_1000.rb	benchmark/set.yml, entry proper_superset_false_1000	
+works	set--reject_0.rb	benchmark/set.yml, entry reject_0	
+works	set--reject_10.rb	benchmark/set.yml, entry reject_10	
+works	set--reject_100.rb	benchmark/set.yml, entry reject_100	
+works	set--reject_1000.rb	benchmark/set.yml, entry reject_1000	
+works	set--replace_0.rb	benchmark/set.yml, entry replace_0	
+works	set--replace_10.rb	benchmark/set.yml, entry replace_10	
+works	set--replace_100.rb	benchmark/set.yml, entry replace_100	
+works	set--replace_1000.rb	benchmark/set.yml, entry replace_1000	
+works	set--reset_0.rb	benchmark/set.yml, entry reset_0	
+works	set--reset_10.rb	benchmark/set.yml, entry reset_10	
+works	set--reset_100.rb	benchmark/set.yml, entry reset_100	
+works	set--reset_1000.rb	benchmark/set.yml, entry reset_1000	
+works	set--select_0.rb	benchmark/set.yml, entry select_0	
+works	set--select_10.rb	benchmark/set.yml, entry select_10	
+works	set--select_100.rb	benchmark/set.yml, entry select_100	
+works	set--select_1000.rb	benchmark/set.yml, entry select_1000	
+works	set--size_0.rb	benchmark/set.yml, entry size_0	
+works	set--size_10.rb	benchmark/set.yml, entry size_10	
+works	set--size_100.rb	benchmark/set.yml, entry size_100	
+works	set--size_1000.rb	benchmark/set.yml, entry size_1000	
+works	set--spaceship_0.rb	benchmark/set.yml, entry spaceship_0	
+works	set--spaceship_diff_10.rb	benchmark/set.yml, entry spaceship_diff_10	
+works	set--spaceship_diff_100.rb	benchmark/set.yml, entry spaceship_diff_100	
+works	set--spaceship_diff_1000.rb	benchmark/set.yml, entry spaceship_diff_1000	
+works	set--spaceship_sub_10.rb	benchmark/set.yml, entry spaceship_sub_10	
+works	set--spaceship_sub_100.rb	benchmark/set.yml, entry spaceship_sub_100	
+works	set--spaceship_sub_1000.rb	benchmark/set.yml, entry spaceship_sub_1000	
+works	set--spaceship_sup_10.rb	benchmark/set.yml, entry spaceship_sup_10	
+works	set--spaceship_sup_100.rb	benchmark/set.yml, entry spaceship_sup_100	
+works	set--spaceship_sup_1000.rb	benchmark/set.yml, entry spaceship_sup_1000	
+works	set--subset_0.rb	benchmark/set.yml, entry subset_0	
+works	set--subset_10.rb	benchmark/set.yml, entry subset_10	
+works	set--subset_100.rb	benchmark/set.yml, entry subset_100	
+works	set--subset_1000.rb	benchmark/set.yml, entry subset_1000	
+works	set--subset_false_10.rb	benchmark/set.yml, entry subset_false_10	
+works	set--subset_false_100.rb	benchmark/set.yml, entry subset_false_100	
+works	set--subset_false_1000.rb	benchmark/set.yml, entry subset_false_1000	
+works	set--superset_0.rb	benchmark/set.yml, entry superset_0	
+works	set--superset_10.rb	benchmark/set.yml, entry superset_10	
+works	set--superset_100.rb	benchmark/set.yml, entry superset_100	
+works	set--superset_1000.rb	benchmark/set.yml, entry superset_1000	
+works	set--superset_false_10.rb	benchmark/set.yml, entry superset_false_10	
+works	set--superset_false_100.rb	benchmark/set.yml, entry superset_false_100	
+works	set--superset_false_1000.rb	benchmark/set.yml, entry superset_false_1000	
+works	set--to_a_0.rb	benchmark/set.yml, entry to_a_0	
+works	set--to_a_10.rb	benchmark/set.yml, entry to_a_10	
+works	set--to_a_100.rb	benchmark/set.yml, entry to_a_100	
+works	set--to_a_1000.rb	benchmark/set.yml, entry to_a_1000	
+works	set--to_set_0.rb	benchmark/set.yml, entry to_set_0	
+works	set--to_set_10.rb	benchmark/set.yml, entry to_set_10	
+works	set--to_set_100.rb	benchmark/set.yml, entry to_set_100	
+works	set--to_set_1000.rb	benchmark/set.yml, entry to_set_1000	
+works	set--xor_0.rb	benchmark/set.yml, entry xor_0	
+works	set--xor_10.rb	benchmark/set.yml, entry xor_10	
+works	set--xor_100.rb	benchmark/set.yml, entry xor_100	
+works	set--xor_1000.rb	benchmark/set.yml, entry xor_1000	
+works	set--xor_same_0.rb	benchmark/set.yml, entry xor_same_0	
+works	set--xor_same_10.rb	benchmark/set.yml, entry xor_same_10	
+works	set--xor_same_100.rb	benchmark/set.yml, entry xor_same_100	
+works	set--xor_same_1000.rb	benchmark/set.yml, entry xor_same_1000	
 works	string_ascii_only_p--ascii_only_false.rb	benchmark/string_ascii_only_p.yml, entry ascii_only_false	
 works	string_ascii_only_p--ascii_only_true.rb	benchmark/string_ascii_only_p.yml, entry ascii_only_true	
 works	string_capitalize--capitalize-1.rb	benchmark/string_capitalize.yml, entry capitalize-1	
@@ -1184,6 +1171,15 @@ works	string_memsearch--index_mixed_present.rb	benchmark/string_memsearch.yml, e
 works	string_memsearch--index_needle_2_absent.rb	benchmark/string_memsearch.yml, entry index_needle_2_absent	
 works	string_memsearch--index_needle_4_absent.rb	benchmark/string_memsearch.yml, entry index_needle_4_absent	
 works	string_memsearch--index_needle_8_absent.rb	benchmark/string_memsearch.yml, entry index_needle_8_absent	
+works	string_scan_re.rb	benchmark/string_scan_re.rb	
+works	string_split--re_chars-1.rb	benchmark/string_split.yml, entry re_chars-1	
+works	string_split--re_chars-10.rb	benchmark/string_split.yml, entry re_chars-10	
+works	string_split--re_chars-100.rb	benchmark/string_split.yml, entry re_chars-100	
+works	string_split--re_chars-1000.rb	benchmark/string_split.yml, entry re_chars-1000	
+works	string_split--re_space-1.rb	benchmark/string_split.yml, entry re_space-1	
+works	string_split--re_space-10.rb	benchmark/string_split.yml, entry re_space-10	
+works	string_split--re_space-100.rb	benchmark/string_split.yml, entry re_space-100	
+works	string_split--re_space-1000.rb	benchmark/string_split.yml, entry re_space-1000	
 works	string_split--to_chars-1.rb	benchmark/string_split.yml, entry to_chars-1	
 works	string_split--to_chars-10.rb	benchmark/string_split.yml, entry to_chars-10	
 works	string_split--to_chars-100.rb	benchmark/string_split.yml, entry to_chars-100	
@@ -1309,6 +1305,10 @@ works	vm_poly_same_method--vm_poly_same_method.rb	benchmark/vm_poly_same_method.
 works	vm_proc--vm_proc.rb	benchmark/vm_proc.yml, entry vm_proc	
 works	vm_raise1--vm_raise1.rb	benchmark/vm_raise1.yml, entry vm_raise1	
 works	vm_raise2--vm_raise2.rb	benchmark/vm_raise2.yml, entry vm_raise2	
+works	vm_regexp--vm_regexp.rb	benchmark/vm_regexp.yml, entry vm_regexp	
+works	vm_regexp--vm_regexp_alternating.rb	benchmark/vm_regexp.yml, entry vm_regexp_alternating	
+works	vm_regexp--vm_regexp_invert.rb	benchmark/vm_regexp.yml, entry vm_regexp_invert	
+works	vm_regexp--vm_regexp_invert_alternating.rb	benchmark/vm_regexp.yml, entry vm_regexp_invert_alternating	
 works	vm_rescue--vm_rescue.rb	benchmark/vm_rescue.yml, entry vm_rescue	
 works	vm_simplereturn--vm_simplereturn.rb	benchmark/vm_simplereturn.yml, entry vm_simplereturn	
 works	vm_string_literal--vm_string_literal.rb	benchmark/vm_string_literal.yml, entry vm_string_literal	

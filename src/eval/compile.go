@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/radiospiel/amber/src/object"
+	"github.com/radiospiel/amber/src/stdlib"
 	"github.com/radiospiel/amber/src/syntax"
 )
 
@@ -140,6 +141,8 @@ func compile(n syntax.Node) thunk {
 			}
 			return v, in.writeIVar(name, v, fr, line)
 		}
+	case *syntax.Regexp:
+		return compileRegexp(n)
 	case *syntax.Const:
 		name, line := n.Name, n.Line()
 		return func(in *Interp, _ *Env, fr *Frame) (object.Value, error) {
@@ -649,5 +652,53 @@ func compileBinary(n *syntax.Call) thunk {
 			return object.Bool(cmp(x, y)), nil
 		}
 		return dispatch(in, fr, name, op, line, x, y, xv, yv)
+	}
+}
+
+// compileRegexp compiles a regexp literal: once, on first use, when it
+// has no interpolation, and on every evaluation otherwise, where a regexp
+// interpolated embeds as its to_s, (?flags:source), as in Ruby.
+func compileRegexp(n *syntax.Regexp) thunk {
+	line, options := n.Line(), n.Options
+	build := func(in *Interp, source string) (object.Value, error) {
+		re, err := object.NewRegexp(source, options)
+		if err != nil {
+			return object.Value{}, withLine(stdlib.RegexpFailure(in, err, source), line)
+		}
+		return object.RegexpValue(re), nil
+	}
+	if len(n.Parts) == 1 {
+		if s, ok := n.Parts[0].(*syntax.Str); ok {
+			var once sync.Once
+			var cached object.Value
+			var cacheErr error
+			return func(in *Interp, _ *Env, _ *Frame) (object.Value, error) {
+				once.Do(func() { cached, cacheErr = build(in, s.Value) })
+				return cached, cacheErr
+			}
+		}
+	}
+	parts := make([]thunk, len(n.Parts))
+	for i, p := range n.Parts {
+		parts[i] = compile(p)
+	}
+	return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
+		var b strings.Builder
+		for _, p := range parts {
+			v, err := p(in, env, fr)
+			if err != nil {
+				return object.Value{}, err
+			}
+			if re, ok := v.AsRegexp(); ok {
+				b.WriteString(re.String())
+				continue
+			}
+			s, err := in.ToS(v)
+			if err != nil {
+				return object.Value{}, err
+			}
+			b.WriteString(s)
+		}
+		return build(in, b.String())
 	}
 }

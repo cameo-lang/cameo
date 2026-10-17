@@ -44,3 +44,4 @@ The steps:
 - [21. Argument forwarding, `for`, `alias` and other sugar](21-sugar.md)
 - [22. A mutating call on a local rebinds it](22-mutating-calls.md)
 - [23. `Class.new` builds a class at run time](23-class-new.md)
+- [24. `Regexp` and `MatchData` on Go's regexp](24-regexp.md)

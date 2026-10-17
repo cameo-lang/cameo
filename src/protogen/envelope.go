@@ -22,7 +22,7 @@ import (
 //	    bool bool_value = 1; int64 int_value = 2; double float_value = 3;
 //	    string string_value = 4; bytes bytes_value = 5;
 //	    List list = 6; Map map = 7; Set set = 8; Range range = 9; Object object = 10;
-//	    Time time = 11;
+//	    Time time = 11; Regexp regexp = 12;
 //	  }
 //	}
 //	message List { repeated Value items = 1; }
@@ -31,6 +31,7 @@ import (
 //	message Range { Value lo = 1; Value hi = 2; bool exclusive = 3; }
 //	message Object { string class = 1; string digest = 2; bytes message = 3; }
 //	message Time { int64 seconds = 1; int32 nanos = 2; int32 offset = 3; string zone = 4; }
+//	message Regexp { string source = 1; int32 options = 2; }
 //
 // A Value with no kind set is nil. A symbol travels as a string. A map's
 // default value travels with it; a map with a default proc cannot travel. A time is
@@ -56,6 +57,7 @@ const EnvelopeText = `message Value {
     Range range = 9;
     Object object = 10;
     Time time = 11;
+    Regexp regexp = 12;
   }
 }
 
@@ -94,6 +96,11 @@ message Time {
   int32 offset = 3;
   string zone = 4;
 }
+
+message Regexp {
+  string source = 1;
+  int32 options = 2;
+}
 `
 
 func envelope() (protoreflect.FileDescriptor, error) {
@@ -126,6 +133,7 @@ func envelope() (protoreflect.FileDescriptor, error) {
 				oneof(field("range", 9, descriptorpb.FieldDescriptorProto_TYPE_MESSAGE, "Range", opt)),
 				oneof(field("object", 10, descriptorpb.FieldDescriptorProto_TYPE_MESSAGE, "Object", opt)),
 				oneof(field("time", 11, descriptorpb.FieldDescriptorProto_TYPE_MESSAGE, "Time", opt)),
+				oneof(field("regexp", 12, descriptorpb.FieldDescriptorProto_TYPE_MESSAGE, "Regexp", opt)),
 			},
 		}
 		items := func(name string) *descriptorpb.DescriptorProto {
@@ -156,11 +164,15 @@ func envelope() (protoreflect.FileDescriptor, error) {
 			field("offset", 3, descriptorpb.FieldDescriptorProto_TYPE_INT32, "", opt),
 			field("zone", 4, descriptorpb.FieldDescriptorProto_TYPE_STRING, "", opt),
 		}}
+		regexpMsg := &descriptorpb.DescriptorProto{Name: strPtr("Regexp"), Field: []*descriptorpb.FieldDescriptorProto{
+			field("source", 1, descriptorpb.FieldDescriptorProto_TYPE_STRING, "", opt),
+			field("options", 2, descriptorpb.FieldDescriptorProto_TYPE_INT32, "", opt),
+		}}
 		fdp := &descriptorpb.FileDescriptorProto{
 			Name:        strPtr("amber/value.proto"),
 			Package:     strPtr("amber"),
 			Syntax:      strPtr("proto3"),
-			MessageType: []*descriptorpb.DescriptorProto{value, items("List"), items("Set"), mapMsg, rangeMsg, objectMsg, timeMsg},
+			MessageType: []*descriptorpb.DescriptorProto{value, items("List"), items("Set"), mapMsg, rangeMsg, objectMsg, timeMsg, regexpMsg},
 		}
 		envelopeFile, envelopeErr = protodesc.NewFile(fdp, nil)
 	})
@@ -300,6 +312,13 @@ func (e *Encoder) message(fd protoreflect.FileDescriptor, v object.Value) (*dyna
 		m.Set(timeMd.Fields().ByName("offset"), protoreflect.ValueOfInt32(int32(off)))
 		m.Set(timeMd.Fields().ByName("zone"), protoreflect.ValueOfString(zone))
 		set("time", protoreflect.ValueOfMessage(m))
+	case object.KindRegexp:
+		r := v.Regexp()
+		md := fd.Messages().ByName("Regexp")
+		m := dynamicpb.NewMessage(md)
+		m.Set(md.Fields().ByName("source"), protoreflect.ValueOfString(r.Source))
+		m.Set(md.Fields().ByName("options"), protoreflect.ValueOfInt32(int32(r.Options)))
+		set("regexp", protoreflect.ValueOfMessage(m))
 	case object.KindInstance:
 		v := v.Instance()
 		data, err := e.reg.Marshal(v)
@@ -456,6 +475,14 @@ func (d *Decoder) value(msg protoreflect.Message) (object.Value, error) {
 			t = t.In(time.FixedZone("", int(m.Get(fields.ByName("offset")).Int())))
 		}
 		return object.TimeValue(t), nil
+	case "regexp":
+		m := pv.Message()
+		fields := m.Descriptor().Fields()
+		r, err := object.NewRegexp(m.Get(fields.ByName("source")).String(), int(m.Get(fields.ByName("options")).Int()))
+		if err != nil {
+			return object.Value{}, err
+		}
+		return object.RegexpValue(r), nil
 	case "object":
 		o := pv.Message()
 		fields := o.Descriptor().Fields()

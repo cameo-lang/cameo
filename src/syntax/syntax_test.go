@@ -130,6 +130,19 @@ func TestMutationRebindsALocal(t *testing.T) {
 	rejects(t, "class C\n  list :xs, of: :int\n  def add(x) = @xs << x\nend\n", "<< changes its receiver")
 }
 
+func TestBacktrackingRegexpIsRefused(t *testing.T) {
+	// Go's regexp has no backtracking: a literal that needs it is refused
+	// by the syntax check.
+	rejects(t, "x = /(a)\\1/\n", "This regexp is not supported in Amber: /(a)\\1/ uses a backreference")
+}
+
+func TestRegexpLiterals(t *testing.T) {
+	// A regexp literal parses, with flags and with interpolation, whose
+	// bare names may be locals.
+	parse(t, "x = /a+b/i\ny = 1\nz = /#{y}c#{x}/m\n")
+	parse(t, "case \"s\"\nwhen /s/ then 1\nend\n")
+}
+
 func TestSugarParses(t *testing.T) {
 	// Forwarding, anonymous parameters, for loops, alias, a scoped class
 	// name and a top-level def self.x are sugar the converter rewrites.
@@ -153,7 +166,6 @@ func TestRejections(t *testing.T) {
 		"$x = 1\n":                           "global variables are not supported",
 		"@@x = 1\n":                          "class variables are not supported",
 		"class << self; end\n":               "class << self is not supported",
-		"x = /re/\n":                         "regular expressions are not supported",
 		"x = 99999999999999999999\n":         "does not fit in 64 bits",
 		"x = `ls`\n":                         "backtick commands",
 		"def m; def n; end; end\n":           "def n inside a method",

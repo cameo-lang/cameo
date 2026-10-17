@@ -102,6 +102,11 @@ func (in *Interp) evalSlow(n syntax.Node, env *Env, fr *Frame) (object.Value, er
 			return object.Value{}, err
 		}
 		return in.evalModuleDef(n, env, fr)
+	case *syntax.VarOrCall:
+		if v, ok := env.Get(n.Name); ok {
+			return v, nil
+		}
+		return in.evalCall(&syntax.Call{Pos: n.Pos, Name: n.Name}, env, fr)
 	case *syntax.MutCall:
 		return in.evalMutCall(n, env, fr)
 	case *syntax.Seq:
@@ -308,6 +313,12 @@ func (in *Interp) caseEqual(pattern, v object.Value) (bool, error) {
 	case object.KindRange:
 		p := pattern.Range()
 		return in.rangeIncludes(p, v)
+	case object.KindRegexp:
+		switch v.Kind() {
+		case object.KindString, object.KindSymbol:
+			return pattern.Regexp().MatchAt(v.Str(), 0) != nil, nil
+		}
+		return false, nil
 	case object.KindProc:
 		p := proc(pattern)
 		r, err := in.callBlock(procValue(p), []object.Value{v}, nil, object.Value{})
