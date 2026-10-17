@@ -422,6 +422,10 @@ func (c *converter) call(n *ast.Call) Node {
 	name := n.Name
 	if n.Recv == nil {
 		switch name {
+		case "defined?":
+			if len(n.Args) == 1 {
+				return &Defined{c.pos(), c.expr(n.Args[0])}
+			}
 		case "lambda", "proc":
 			if n.Block == nil || len(n.Args) > 0 {
 				c.fail("%s takes a block and nothing else", name)

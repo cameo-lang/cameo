@@ -203,3 +203,61 @@ func (in *Interp) evalClassBody(cls *object.Class, body []syntax.Node, env *Env,
 	_, err := in.evalBody(body, NewEnv(nil), bodyFrame)
 	return err
 }
+
+// defined is `defined?(expr)`: what kind of thing expr names, in Ruby's
+// words, or nil when it names nothing. It evaluates no more than it must:
+// a constant to see that it resolves, a call's receiver but not the call.
+func (in *Interp) defined(n syntax.Node, env *Env, fr *Frame) (object.Value, error) {
+	missing := func(err error) bool {
+		exc, ok := err.(*object.Exception)
+		return ok && exc.Cls.IsA(object.NameError)
+	}
+	switch n := n.(type) {
+	case *syntax.Var:
+		if _, ok := env.Get(n.Name); ok {
+			return object.String("local-variable"), nil
+		}
+		return object.Nil, nil
+	case *syntax.Const, *syntax.ScopedConst:
+		if _, err := in.eval(n, env, fr); err != nil {
+			if missing(err) {
+				return object.Nil, nil
+			}
+			return object.Value{}, err
+		}
+		return object.String("constant"), nil
+	case *syntax.IVar:
+		if inst, ok := fr.Self.AsInstance(); ok {
+			if f, ok := inst.Field(n.Name); ok && !f.IsZero() {
+				return object.String("instance-variable"), nil
+			}
+		}
+		return object.Nil, nil
+	case *syntax.Call:
+		recv := fr.Self
+		if n.Recv != nil {
+			v, err := in.eval(n.Recv, env, fr)
+			if err != nil {
+				if _, ok := err.(*object.Exception); ok {
+					return object.Nil, nil
+				}
+				return object.Value{}, err
+			}
+			recv = v
+		}
+		if recv.Class().Lookup(n.Name) != nil {
+			return object.String("method"), nil
+		}
+		return object.Nil, nil
+	case *syntax.Yield:
+		if fr.Block.IsZero() {
+			return object.Nil, nil
+		}
+		return object.String("yield"), nil
+	case *syntax.Self:
+		return object.String("self"), nil
+	case *syntax.Assign, *syntax.IVarAssign, *syntax.ConstAssign, *syntax.MultiAssign:
+		return object.String("assignment"), nil
+	}
+	return object.String("expression"), nil
+}

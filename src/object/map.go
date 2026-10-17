@@ -6,82 +6,79 @@ import (
 )
 
 // Map is an immutable ordered map: keys in insertion order, looked up by
-// structural equality. A map may have a default, a value or a proc, for a
-// key it does not hold; the copies Put, Merge and WithDefault make keep it,
-// as Ruby's []=, merge and dup do, and a map built anew has none.
+// structural equality. It is a version of a table (table.go), so a copy
+// with one more key costs O(1). A map may have a default, a value or a
+// proc, for a key it does not hold; the copies Put, Merge and WithDefault
+// make keep it, as Ruby's []=, merge and dup do, and a map built anew has
+// none.
 type Map struct {
-	keys  []Value
-	vals  []Value
-	index map[string]int
+	version
 	// dflt is the default value and dfltProc the default proc, at most one
 	// of them set.
 	dflt, dfltProc Value
 }
 
 // NewMap makes an empty map.
-func NewMap() *Map {
-	return &Map{index: map[string]int{}}
+func NewMap() *Map { return &Map{version: version{span: newSpan()}} }
+
+func (m *Map) derive(s span) *Map {
+	return &Map{version: version{span: s}, dflt: m.dflt, dfltProc: m.dfltProc}
 }
 
 // MapOf builds a map from alternating keys and values; a later duplicate
 // key replaces the earlier value in place.
 func MapOf(pairs ...Value) *Map {
-	m := NewMap()
+	b := NewMapBuilder()
 	for i := 0; i+1 < len(pairs); i += 2 {
-		m.set(pairs[i], pairs[i+1])
+		b.Set(pairs[i], pairs[i+1])
 	}
-	return m
+	return b.Map()
 }
 
-// set is the one mutation, used while a map is being built.
-func (m *Map) set(k, v Value) {
-	key := Key(k)
-	if i, ok := m.index[key]; ok {
-		m.vals[i] = v
-		return
-	}
-	m.index[key] = len(m.keys)
-	m.keys = append(m.keys, k)
-	m.vals = append(m.vals, v)
-}
-
-// Builder accumulates entries for a new map.
-type MapBuilder struct{ m *Map }
+// MapBuilder accumulates entries for a new map.
+type MapBuilder struct{ s span }
 
 // NewMapBuilder starts a map.
-func NewMapBuilder() *MapBuilder { return &MapBuilder{m: NewMap()} }
+func NewMapBuilder() *MapBuilder { return &MapBuilder{s: newSpan()} }
 
 // Set adds or replaces an entry.
-func (b *MapBuilder) Set(k, v Value) *MapBuilder { b.m.set(k, v); return b }
+func (b *MapBuilder) Set(k, v Value) *MapBuilder {
+	b.s.appendLocked(Key(k), k, v, false)
+	return b
+}
 
 // Map finishes the map; the builder must not be used afterwards.
-func (b *MapBuilder) Map() *Map { return b.m }
+func (b *MapBuilder) Map() *Map {
+	b.s.t.live = b.s.len
+	return &Map{version: version{span: b.s}}
+}
 
 // Value finishes the map as a value.
-func (b *MapBuilder) Value() Value { return MapValue(b.m) }
+func (b *MapBuilder) Value() Value { return MapValue(b.Map()) }
 
 // Len returns the number of entries.
-func (m *Map) Len() int { return len(m.keys) }
+func (m *Map) Len() int { return m.len }
 
 // Get returns the value for k, and false when absent.
-func (m *Map) Get(k Value) (Value, bool) {
-	i, ok := m.index[Key(k)]
-	if !ok {
-		return Value{}, false
-	}
-	return m.vals[i], true
-}
+func (m *Map) Get(k Value) (Value, bool) { return m.get(Key(k)) }
 
 // Has reports whether k is a key.
 func (m *Map) Has(k Value) bool {
-	_, ok := m.index[Key(k)]
+	_, ok := m.get(Key(k))
 	return ok
 }
 
 // Keys and Values return the entries in order. The slices are the map's own
 // and must not be changed.
-func (m *Map) Keys() []Value   { return m.keys }
-func (m *Map) Values() []Value { return m.vals }
+func (m *Map) Keys() []Value {
+	keys, _ := m.keysAndValues()
+	return keys
+}
+
+func (m *Map) Values() []Value {
+	_, vals := m.keysAndValues()
+	return vals
+}
 
 // Default returns the default value and the default proc; each is zero
 // when unset.
@@ -90,102 +87,83 @@ func (m *Map) Default() (value, proc Value) { return m.dflt, m.dfltProc }
 // WithDefault returns a copy whose default is value or, when proc is set,
 // proc.
 func (m *Map) WithDefault(value, proc Value) *Map {
-	out := m.clone()
-	out.dflt, out.dfltProc = value, proc
-	return out
+	return &Map{version: version{span: m.span}, dflt: value, dfltProc: proc}
 }
 
 // Put returns a copy with k set to v.
-func (m *Map) Put(k, v Value) *Map {
-	out := m.clone()
-	out.set(k, v)
-	return out
-}
+func (m *Map) Put(k, v Value) *Map { return m.derive(m.with(Key(k), k, v, false)) }
 
 // Merge returns a copy with every entry of other set.
 func (m *Map) Merge(other *Map) *Map {
-	out := m.clone()
-	for i, k := range other.keys {
-		out.set(k, other.vals[i])
+	out := m
+	keys, vals := other.keysAndValues()
+	for i, k := range keys {
+		out = out.Put(k, vals[i])
+	}
+	if out == m {
+		return m.derive(m.span)
 	}
 	return out
 }
 
-// Without returns a copy without the keys.
+// Without returns a copy without the keys, and without a default, as
+// Ruby's except returns.
 func (m *Map) Without(keys ...Value) *Map {
-	drop := map[string]bool{}
+	out := &Map{version: version{span: m.span}}
 	for _, k := range keys {
-		drop[Key(k)] = true
-	}
-	out := NewMap()
-	for i, k := range m.keys {
-		if !drop[Key(k)] {
-			out.set(k, m.vals[i])
-		}
+		out = &Map{version: version{span: out.with(Key(k), k, Value{}, true)}}
 	}
 	return out
 }
 
-func (m *Map) clone() *Map {
-	out := &Map{
-		keys:  append([]Value(nil), m.keys...),
-		vals:  append([]Value(nil), m.vals...),
-		index: make(map[string]int, len(m.index)),
-		dflt:  m.dflt, dfltProc: m.dfltProc,
-	}
-	for k, i := range m.index {
-		out.index[k] = i
-	}
-	return out
-}
-
-// Set is an immutable set in insertion order.
-type Set struct {
-	elems []Value
-	index map[string]bool
-}
+// Set is an immutable set in insertion order, a version of a table whose
+// values are unused.
+type Set struct{ version }
 
 // NewSet makes a set of the elements, dropping duplicates.
 func NewSet(elems ...Value) *Set {
-	s := &Set{index: map[string]bool{}}
+	s := newSpan()
 	for _, e := range elems {
-		s.add(e)
+		s.appendLocked(Key(e), e, True, false)
 	}
-	return s
-}
-
-func (s *Set) add(e Value) {
-	key := Key(e)
-	if s.index[key] {
-		return
-	}
-	s.index[key] = true
-	s.elems = append(s.elems, e)
+	s.t.live = s.len
+	return &Set{version{span: s}}
 }
 
 // Len returns the number of elements.
-func (s *Set) Len() int { return len(s.elems) }
+func (s *Set) Len() int { return s.len }
 
 // Has reports whether e is a member.
-func (s *Set) Has(e Value) bool { return s.index[Key(e)] }
+func (s *Set) Has(e Value) bool {
+	_, ok := s.get(Key(e))
+	return ok
+}
 
 // Elems returns the members in order; the slice is the set's own.
-func (s *Set) Elems() []Value { return s.elems }
+func (s *Set) Elems() []Value {
+	keys, _ := s.keysAndValues()
+	return keys
+}
+
+// With and Without return the set with e added or removed, in O(1) when
+// the set is the newest of its table.
+func (s *Set) With(e Value) *Set    { return &Set{version{span: s.with(Key(e), e, True, false)}} }
+func (s *Set) Without(e Value) *Set { return &Set{version{span: s.with(Key(e), e, Value{}, true)}} }
 
 // Union, Intersection and Difference return new sets.
 func (s *Set) Union(o *Set) *Set {
-	out := NewSet(s.elems...)
-	for _, e := range o.elems {
-		out.add(e)
+	out := s
+	for _, e := range o.Elems() {
+		out = out.With(e)
 	}
 	return out
 }
 
 func (s *Set) Intersection(o *Set) *Set {
 	out := NewSet()
-	for _, e := range s.elems {
+	for _, e := range s.Elems() {
 		if o.Has(e) {
-			out.add(e)
+			out = out.With(e)
 		}
 	}
 	return out
@@ -193,9 +171,9 @@ func (s *Set) Intersection(o *Set) *Set {
 
 func (s *Set) Difference(o *Set) *Set {
 	out := NewSet()
-	for _, e := range s.elems {
+	for _, e := range s.Elems() {
 		if !o.Has(e) {
-			out.add(e)
+			out = out.With(e)
 		}
 	}
 	return out
@@ -250,9 +228,10 @@ func writeKey(b *strings.Builder, v Value) {
 	case KindMap:
 		// A map's identity does not depend on insertion order.
 		m := v.Map()
-		entries := make([]string, 0, len(m.keys))
-		for i, k := range m.keys {
-			entries = append(entries, Key(k)+">"+Key(m.vals[i]))
+		keys, vals := m.keysAndValues()
+		entries := make([]string, 0, len(keys))
+		for i, k := range keys {
+			entries = append(entries, Key(k)+">"+Key(vals[i]))
 		}
 		sortStrings(entries)
 		b.WriteString("{")
@@ -264,8 +243,8 @@ func writeKey(b *strings.Builder, v Value) {
 	case KindSet:
 		// A set's identity does not depend on insertion order.
 		s := v.Set()
-		keys := make([]string, 0, len(s.elems))
-		for _, e := range s.elems {
+		keys := make([]string, 0, s.Len())
+		for _, e := range s.Elems() {
 			keys = append(keys, Key(e))
 		}
 		sortStrings(keys)

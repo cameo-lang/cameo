@@ -44,10 +44,18 @@ func installSet() {
 		return self, nil
 	})
 	def(c, "add", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.SetValue(object.NewSet(append(append([]object.Value{}, set(self).Elems()...), args...)...)), nil
+		out := set(self)
+		for _, a := range args {
+			out = out.With(a)
+		}
+		return object.SetValue(out), nil
 	})
 	def(c, "without", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.SetValue(set(self).Difference(object.NewSet(args...))), nil
+		out := set(self)
+		for _, a := range args {
+			out = out.Without(a)
+		}
+		return object.SetValue(out), nil
 	})
 	binary := func(names []string, f func(a, b *object.Set) *object.Set) {
 		for _, name := range names {

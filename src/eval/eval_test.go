@@ -115,6 +115,18 @@ func TestExceptions(t *testing.T) {
 	_ = object.Nil
 }
 
+func TestDefinedNamesWithoutEvaluating(t *testing.T) {
+	// defined? answers in Ruby's words and does not call what it names.
+	src := `
+class A; end unless defined?(A)
+x = 1
+p defined?(A), defined?(Zz), defined?(x), defined?(zz), defined?(puts), defined?(x.succ), defined?(x.nope), defined?(self)
+p Object.new, Object.new.class, 42.infinite?
+p (0..3).reverse_each { }, (0..9).to_a.values_at(1..3, 8..12, -2..-1, 0)
+`
+	expectOutput(t, src, "\"constant\"\nnil\n\"local-variable\"\nnil\n\"method\"\n\"method\"\nnil\n\"self\"\n#<Object>\nObject\nnil\n0..3\n[1, 2, 3, 8, 9, nil, nil, nil, 8, 9, 0]\n")
+}
+
 func TestTimeCrossesAsync(t *testing.T) {
 	// A time travels to a process and back with its instant and offset.
 	src := `

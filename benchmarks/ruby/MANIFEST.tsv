@@ -1,30 +1,4 @@
 directory	file	source	reason
-bugs	array_values_at_range.rb	benchmark/array_values_at_range.rb	Array#values_at with a range nests the range's elements and does not pad past the end
-bugs	bighash.rb	benchmark/bighash.rb	quadratic: each h[k] = v copies the whole map
-bugs	gc_hash1.rb	benchmark/gc/hash1.rb	quadratic: each h[k] = v copies the whole map
-bugs	gc_hash2.rb	benchmark/gc/hash2.rb	quadratic: each h[k] = v copies the whole map
-bugs	hash_aref_dsym_long.rb	benchmark/hash_aref_dsym_long.rb	quadratic: each h[k] = v copies the whole map
-bugs	hash_key--hash_key.rb	benchmark/hash_key.yml, entry hash_key	Object is not bound as a constant
-bugs	kernel_clone--clone.rb	benchmark/kernel_clone.yml, entry clone	Object is not bound as a constant
-bugs	kernel_clone--clone_false.rb	benchmark/kernel_clone.yml, entry clone_false	Object is not bound as a constant
-bugs	kernel_clone--clone_true.rb	benchmark/kernel_clone.yml, entry clone_true	Object is not bound as a constant
-bugs	kernel_tap--kernel_tap.rb	benchmark/kernel_tap.yml, entry kernel_tap	Object is not bound as a constant
-bugs	nil_p--nil_p_0.rb	benchmark/nil_p.yml, entry nil_p_0	Object is not bound as a constant
-bugs	nil_p--nil_p_1.rb	benchmark/nil_p.yml, entry nil_p_1	Object is not bound as a constant
-bugs	nil_p--nil_p_2.rb	benchmark/nil_p.yml, entry nil_p_2	Object is not bound as a constant
-bugs	numeric_methods--infinite_.rb	benchmark/numeric_methods.yml, entry infinite_	Integer#infinite? returns false, Ruby returns nil
-bugs	object_id--baseline.rb	benchmark/object_id.yml, entry baseline	Object is not bound as a constant
-bugs	object_id--object_id.rb	benchmark/object_id.yml, entry object_id	Object is not bound as a constant
-bugs	ractor_const--ractor_const.rb	benchmark/ractor_const.yml, entry ractor_const	Object is not bound as a constant
-bugs	range_reverse_each--Fixnum_1.rb	benchmark/range_reverse_each.yml, entry Fixnum_1	Range#reverse_each returns a list, Ruby returns the range
-bugs	range_reverse_each--Fixnum_1K.rb	benchmark/range_reverse_each.yml, entry Fixnum_1K	Range#reverse_each returns a list, Ruby returns the range
-bugs	range_reverse_each--Fixnum_1M.rb	benchmark/range_reverse_each.yml, entry Fixnum_1M	Range#reverse_each returns a list, Ruby returns the range
-bugs	vm_dstr_class_module.rb	benchmark/vm_dstr_class_module.rb	defined?(X) raises NameError instead of returning nil
-bugs	vm_dstr_obj.rb	benchmark/vm_dstr_obj.rb	Object is not bound as a constant
-bugs	vm_freezeobj--vm_freeze_obj.rb	benchmark/vm_freezeobj.yml, entry vm_freeze_obj	Object is not bound as a constant
-bugs	vm_gc_short_with_complex_long--vm_gc_short_with_complex_long.rb	benchmark/vm_gc_short_with_complex_long.yml, entry vm_gc_short_with_complex_long	Object is not bound as a constant
-bugs	vm_neq--vm_neq.rb	benchmark/vm_neq.yml, entry vm_neq	Object is not bound as a constant
-bugs	vm_not--vm_not.rb	benchmark/vm_not.yml, entry vm_not	Object is not bound as a constant
 stdlib/array	string_downcase--downcase-1.rb	benchmark/string_downcase.yml, entry downcase-1	Array#pack
 stdlib/array	string_downcase--downcase-10.rb	benchmark/string_downcase.yml, entry downcase-10	Array#pack
 stdlib/array	string_downcase--downcase-100.rb	benchmark/string_downcase.yml, entry downcase-100	Array#pack
@@ -299,6 +273,8 @@ unsupported/freeze	vm_zsuper_splat_calls--splat_kw_splat_block.rb	benchmark/vm_z
 unsupported/globals	app_pentomino.rb	benchmark/app_pentomino.rb	global variables
 unsupported/globals	constant_invalidation.rb	benchmark/constant_invalidation.rb	global variables
 unsupported/globals	vm_module_const_set--vm_module_const_set.rb	benchmark/vm_module_const_set.yml, entry vm_module_const_set	global variables
+unsupported/identity	object_id--object_id.rb	benchmark/object_id.yml, entry object_id	object identity (amber compares structurally: two bare Objects are equal)
+unsupported/identity	vm_neq--vm_neq.rb	benchmark/vm_neq.yml, entry vm_neq	object identity (amber compares structurally: two bare Objects are equal)
 unsupported/identity-hash	hash_ident_num.rb	benchmark/hash_ident_num.rb	identity hashes (compare_by_identity)
 unsupported/identity-hash	hash_ident_obj.rb	benchmark/hash_ident_obj.rb	identity hashes (compare_by_identity)
 unsupported/identity-hash	hash_ident_str.rb	benchmark/hash_ident_str.rb	identity hashes (compare_by_identity)
@@ -493,6 +469,7 @@ unsupported/mutation	buffer_get--buffer.get_value.rb	benchmark/buffer_get.yml, e
 unsupported/mutation	buffer_get--buffer.get_values.rb	benchmark/buffer_get.yml, entry buffer.get_values	index assignment on a non-local
 unsupported/mutation	buffer_get--string.unpack.rb	benchmark/buffer_get.yml, entry string.unpack	index assignment on a non-local
 unsupported/mutation	buffer_get--string.unpack1.rb	benchmark/buffer_get.yml, entry string.unpack1	index assignment on a non-local
+unsupported/mutation	hash_aref_dsym_long.rb	benchmark/hash_aref_dsym_long.rb	Random.new (a generator object changes as it draws)
 unsupported/mutation	hash_aref_flo.rb	benchmark/hash_aref_flo.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/mutation	hash_aref_miss.rb	benchmark/hash_aref_miss.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/mutation	hash_aref_str.rb	benchmark/hash_aref_str.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
@@ -892,6 +869,7 @@ unsupported/struct	vm_struct_small_aref--vm_struct_small_aref.rb	benchmark/vm_st
 unsupported/struct	vm_struct_small_aset--vm_struct_small_aset.rb	benchmark/vm_struct_small_aset.yml, entry vm_struct_small_aset	Struct (left out: untyped members, setters)
 unsupported/struct	vm_struct_small_href--vm_struct_small_href.rb	benchmark/vm_struct_small_href.yml, entry vm_struct_small_href	Struct (left out: untyped members, setters)
 unsupported/struct	vm_struct_small_hset--vm_struct_small_hset.rb	benchmark/vm_struct_small_hset.yml, entry vm_struct_small_hset	Struct (left out: untyped members, setters)
+unsupported/tap	kernel_tap--kernel_tap.rb	benchmark/kernel_tap.yml, entry kernel_tap	tap with a block for its side effect (amber's tap builds a copy from the map the block returns)
 unsupported/threads	fiber_chain--make_chain.rb	benchmark/fiber_chain.yml, entry make_chain	threads and fibers (amber has async)
 unsupported/threads	fiber_chain--resume_chain.rb	benchmark/fiber_chain.yml, entry resume_chain	threads and fibers (amber has async)
 unsupported/threads	fiber_locals--__.rb	benchmark/fiber_locals.yml, entry __	threads and fibers (amber has async)
@@ -924,6 +902,7 @@ unsupported/vm-introspection	vm_gc.rb	benchmark/vm_gc.rb	GC and VM introspection
 unsupported/vm-introspection	vm_gc_old_full.rb	benchmark/vm_gc_old_full.rb	GC and VM introspection
 unsupported/vm-introspection	vm_gc_old_immediate.rb	benchmark/vm_gc_old_immediate.rb	GC and VM introspection
 unsupported/vm-introspection	vm_gc_old_lazy.rb	benchmark/vm_gc_old_lazy.rb	GC and VM introspection
+unsupported/vm-introspection	vm_gc_short_with_complex_long--vm_gc_short_with_complex_long.rb	benchmark/vm_gc_short_with_complex_long.yml, entry vm_gc_short_with_complex_long	GC and VM introspection
 unsupported/vm-introspection	vm_gc_short_with_long--vm_gc_short_with_long.rb	benchmark/vm_gc_short_with_long.yml, entry vm_gc_short_with_long	GC and VM introspection
 unsupported/vm-introspection	vm_gc_short_with_symbol--vm_gc_short_with_symbol.rb	benchmark/vm_gc_short_with_symbol.yml, entry vm_gc_short_with_symbol	GC and VM introspection
 unsupported/vm-introspection	vm_gc_wb_ary_promoted--vm_gc_wb_ary_promoted.rb	benchmark/vm_gc_wb_ary_promoted.yml, entry vm_gc_wb_ary_promoted	GC and VM introspection
@@ -1026,6 +1005,8 @@ works	array_sort_int--ary1000.sort.rb	benchmark/array_sort_int.yml, entry ary100
 works	array_sort_int--ary10000.sort.rb	benchmark/array_sort_int.yml, entry ary10000.sort	
 works	array_sort_int--ary2.sort.rb	benchmark/array_sort_int.yml, entry ary2.sort	
 works	array_values_at_int.rb	benchmark/array_values_at_int.rb	
+works	array_values_at_range.rb	benchmark/array_values_at_range.rb	
+works	bighash.rb	benchmark/bighash.rb	
 works	enum_lazy_grep_v_100.rb	benchmark/enum_lazy_grep_v_100.rb	
 works	enum_lazy_grep_v_20.rb	benchmark/enum_lazy_grep_v_20.rb	
 works	enum_lazy_grep_v_50.rb	benchmark/enum_lazy_grep_v_50.rb	
@@ -1094,6 +1075,8 @@ works	float_predicate--float_negative_.rb	benchmark/float_predicate.yml, entry f
 works	float_predicate--float_positive_.rb	benchmark/float_predicate.yml, entry float_positive_	
 works	float_predicate--float_zero_.rb	benchmark/float_predicate.yml, entry float_zero_	
 works	float_to_s--to_s.rb	benchmark/float_to_s.yml, entry to_s	
+works	gc_hash1.rb	benchmark/gc/hash1.rb	
+works	gc_hash2.rb	benchmark/gc/hash2.rb	
 works	gc_null.rb	benchmark/gc/null.rb	
 works	hash_ar_aref--hit_first.rb	benchmark/hash_ar_aref.yml, entry hit_first	
 works	hash_ar_aref--hit_fourth.rb	benchmark/hash_ar_aref.yml, entry hit_fourth	
@@ -1109,6 +1092,7 @@ works	hash_defaults--default_method.rb	benchmark/hash_defaults.yml, entry defaul
 works	hash_dup--dup_larger.rb	benchmark/hash_dup.yml, entry dup_larger	
 works	hash_dup--dup_small.rb	benchmark/hash_dup.yml, entry dup_small	
 works	hash_flatten.rb	benchmark/hash_flatten.rb	
+works	hash_key--hash_key.rb	benchmark/hash_key.yml, entry hash_key	
 works	hash_keys.rb	benchmark/hash_keys.rb	
 works	hash_literal_small2.rb	benchmark/hash_literal_small2.rb	
 works	hash_literal_small4.rb	benchmark/hash_literal_small4.rb	
@@ -1131,6 +1115,9 @@ works	int_to_s--interp_mixed.rb	benchmark/int_to_s.yml, entry interp_mixed
 works	integer_predicate--integer_even_.rb	benchmark/integer_predicate.yml, entry integer_even_	
 works	integer_predicate--integer_odd_.rb	benchmark/integer_predicate.yml, entry integer_odd_	
 works	integer_predicate--integer_zero_.rb	benchmark/integer_predicate.yml, entry integer_zero_	
+works	kernel_clone--clone.rb	benchmark/kernel_clone.yml, entry clone	
+works	kernel_clone--clone_false.rb	benchmark/kernel_clone.yml, entry clone_false	
+works	kernel_clone--clone_true.rb	benchmark/kernel_clone.yml, entry clone_true	
 works	kernel_float--float.rb	benchmark/kernel_float.yml, entry float	
 works	kernel_float--float_false.rb	benchmark/kernel_float.yml, entry float_false	
 works	kernel_float--float_true.rb	benchmark/kernel_float.yml, entry float_true	
@@ -1148,17 +1135,23 @@ works	loop_each--loop_each.rb	benchmark/loop_each.yml, entry loop_each
 works	loop_times.rb	benchmark/loop_times.rb	
 works	loop_whileloop.rb	benchmark/loop_whileloop.rb	
 works	loop_whileloop2.rb	benchmark/loop_whileloop2.rb	
+works	nil_p--nil_p_0.rb	benchmark/nil_p.yml, entry nil_p_0	
+works	nil_p--nil_p_1.rb	benchmark/nil_p.yml, entry nil_p_1	
+works	nil_p--nil_p_2.rb	benchmark/nil_p.yml, entry nil_p_2	
 works	nilclass--splat.rb	benchmark/nilclass.yml, entry splat	
 works	nilclass--to_f.rb	benchmark/nilclass.yml, entry to_f	
 works	nilclass--to_i.rb	benchmark/nilclass.yml, entry to_i	
 works	num_zero_p--num_zero_p_0.rb	benchmark/num_zero_p.yml, entry num_zero_p_0	
 works	num_zero_p--num_zero_p_1.rb	benchmark/num_zero_p.yml, entry num_zero_p_1	
 works	numeric_methods--finite_.rb	benchmark/numeric_methods.yml, entry finite_	
+works	numeric_methods--infinite_.rb	benchmark/numeric_methods.yml, entry infinite_	
 works	numeric_methods--integer_.rb	benchmark/numeric_methods.yml, entry integer_	
+works	object_id--baseline.rb	benchmark/object_id.yml, entry baseline	
 works	pm_array--first_match.rb	benchmark/pm_array.yml, entry first_match	
 works	pm_array--fourth_match.rb	benchmark/pm_array.yml, entry fourth_match	
 works	pm_array--second_match.rb	benchmark/pm_array.yml, entry second_match	
 works	pm_array--third_match.rb	benchmark/pm_array.yml, entry third_match	
+works	ractor_const--ractor_const.rb	benchmark/ractor_const.yml, entry ractor_const	
 works	ractor_float_to_s--ractor_float_to_s.rb	benchmark/ractor_float_to_s.yml, entry ractor_float_to_s	
 works	ractor_string_fstring--ractor_fstring_same.rb	benchmark/ractor_string_fstring.yml, entry ractor_fstring_same	
 works	range_bsearch_endpointless--beginless_-10__0.rb	benchmark/range_bsearch_endpointless.yml, entry beginless_-10__0	
@@ -1186,6 +1179,9 @@ works	range_last--range_last_0.rb	benchmark/range_last.yml, entry range_last_0
 works	range_last--range_last_1.rb	benchmark/range_last.yml, entry range_last_1	
 works	range_last--range_last_2.rb	benchmark/range_last.yml, entry range_last_2	
 works	range_min--range_min_0.rb	benchmark/range_min.yml, entry range_min_0	
+works	range_reverse_each--Fixnum_1.rb	benchmark/range_reverse_each.yml, entry Fixnum_1	
+works	range_reverse_each--Fixnum_1K.rb	benchmark/range_reverse_each.yml, entry Fixnum_1K	
+works	range_reverse_each--Fixnum_1M.rb	benchmark/range_reverse_each.yml, entry Fixnum_1M	
 works	string_ascii_only_p--ascii_only_false.rb	benchmark/string_ascii_only_p.yml, entry ascii_only_false	
 works	string_ascii_only_p--ascii_only_true.rb	benchmark/string_ascii_only_p.yml, entry ascii_only_true	
 works	string_capitalize--capitalize-1.rb	benchmark/string_capitalize.yml, entry capitalize-1	
@@ -1283,13 +1279,16 @@ works	vm_const--vm_const_many.rb	benchmark/vm_const.yml, entry vm_const_many
 works	vm_dstr--vm_dstr.rb	benchmark/vm_dstr.yml, entry vm_dstr	
 works	vm_dstr_ary.rb	benchmark/vm_dstr_ary.rb	
 works	vm_dstr_bool.rb	benchmark/vm_dstr_bool.rb	
+works	vm_dstr_class_module.rb	benchmark/vm_dstr_class_module.rb	
 works	vm_dstr_digit.rb	benchmark/vm_dstr_digit.rb	
 works	vm_dstr_int.rb	benchmark/vm_dstr_int.rb	
 works	vm_dstr_nil.rb	benchmark/vm_dstr_nil.rb	
+works	vm_dstr_obj.rb	benchmark/vm_dstr_obj.rb	
 works	vm_dstr_str.rb	benchmark/vm_dstr_str.rb	
 works	vm_dstr_sym.rb	benchmark/vm_dstr_sym.rb	
 works	vm_ensure--vm_ensure.rb	benchmark/vm_ensure.yml, entry vm_ensure	
 works	vm_float_simple--vm_float_simple.rb	benchmark/vm_float_simple.yml, entry vm_float_simple	
+works	vm_freezeobj--vm_freeze_obj.rb	benchmark/vm_freezeobj.yml, entry vm_freeze_obj	
 works	vm_gc_short_lived--vm_gc_short_lived.rb	benchmark/vm_gc_short_lived.yml, entry vm_gc_short_lived	
 works	vm_length--vm_length.rb	benchmark/vm_length.yml, entry vm_length	
 works	vm_lvar_cond_set--vm_lvar_cond_set.rb	benchmark/vm_lvar_cond_set.yml, entry vm_lvar_cond_set	
@@ -1304,6 +1303,7 @@ works	vm_method_splat_calls--splat_kw_splat.rb	benchmark/vm_method_splat_calls.y
 works	vm_method_splat_calls--splat_kw_splat_block.rb	benchmark/vm_method_splat_calls.yml, entry splat_kw_splat_block	
 works	vm_method_with_block--vm_method_with_block.rb	benchmark/vm_method_with_block.yml, entry vm_method_with_block	
 works	vm_newlambda--vm_newlambda.rb	benchmark/vm_newlambda.yml, entry vm_newlambda	
+works	vm_not--vm_not.rb	benchmark/vm_not.yml, entry vm_not	
 works	vm_poly_method--vm_poly_method.rb	benchmark/vm_poly_method.yml, entry vm_poly_method	
 works	vm_poly_method_ov--vm_poly_method_ov.rb	benchmark/vm_poly_method_ov.yml, entry vm_poly_method_ov	
 works	vm_proc--vm_proc.rb	benchmark/vm_proc.yml, entry vm_proc	

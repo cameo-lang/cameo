@@ -283,6 +283,12 @@ type Or struct {
 	Left, Right Node
 }
 
+// Defined is `defined?(expr)`: what expr names, without evaluating it.
+type Defined struct {
+	Pos
+	Expr Node
+}
+
 // Not is `!a`.
 type Not struct {
 	Pos
