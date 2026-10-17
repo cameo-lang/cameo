@@ -9,7 +9,7 @@ assignments into copies.
 
 ## amber's own tree
 
-`syntax.Parse` ([src/syntax/syntax.go:47](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/syntax/syntax.go#L47)) parses the
+`syntax.Parse` ([src/syntax/syntax.go:47](https://github.com/radiospiel/amber/blob/c4af3b344d35e822bc74bebd58743e15c7a118c7/src/syntax/syntax.go#L47)) parses the
 source and converts it, node by node, into the types in
 [src/syntax/node.go](../../src/syntax/node.go). amber's tree is smaller than
 Ruby's: there is one `Call` for every way Ruby spells a method call, and
@@ -37,7 +37,7 @@ to write instead. The reasons are in
 | `/a+/` | `regular expressions are not supported` |
 
 `amber check` reports every error, not only the first: the converter
-collects them and keeps going ([src/syntax/convert.go:36](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/syntax/convert.go#L36)).
+collects them and keeps going ([src/syntax/convert.go:36](https://github.com/radiospiel/amber/blob/c4af3b344d35e822bc74bebd58743e15c7a118c7/src/syntax/convert.go#L36)).
 Several of these rejections are lifted in later steps, once the benchmarks
 show what scripts need: `for` and regular expressions among them.
 
@@ -46,7 +46,7 @@ show what scripts need: `for` and regular expressions among them.
 `a.x.y = 3` cannot change `a.x`, since nothing changes. It means: a copy of
 `a` whose `x` is a copy of `a.x` whose `y` is 3, bound to `a` again. The
 converter builds that from the inside out
-([src/syntax/convert.go:750](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/syntax/convert.go#L750-L774)): each link of
+([src/syntax/convert.go:750](https://github.com/radiospiel/amber/blob/c4af3b344d35e822bc74bebd58743e15c7a118c7/src/syntax/convert.go#L750-L774)): each link of
 the chain becomes a `With` node, a copy of its target with one key
 replaced, and the outermost becomes an assignment to the variable the chain
 starts at. Index assignment, `h[:k] = v` and `list[0] = v`, takes the same
@@ -63,7 +63,7 @@ meant.
 
 A class is a value identified by its body (see step 1). The converter
 hashes each class and module body into a digest
-([src/syntax/syntax.go:70](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/syntax/syntax.go#L70)), over the tree with line
+([src/syntax/syntax.go:70](https://github.com/radiospiel/amber/blob/c4af3b344d35e822bc74bebd58743e15c7a118c7/src/syntax/syntax.go#L70)), over the tree with line
 numbers left out, so the same definition in two files, or loaded twice, is
 one class, and a changed body is another.
 
