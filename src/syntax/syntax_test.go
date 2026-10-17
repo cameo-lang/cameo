@@ -181,7 +181,7 @@ func TestRejections(t *testing.T) {
 		"def m; def n; end; end\n":           "def n inside a method",
 		"string :x\n":                        "which only a class body can do",
 		"class P\n list :x\nend\n":           "needs of: the element type",
-		"class P\n map :x, key: :float, value: :int\nend\n": "a key is a string, int or bool",
+		"class P\n map :x, key: :float, value: :int\nend\n": "a key is a string, a bool or an integer type of 32 or 64 bits",
 		"class P\n enum :k\nend\n":                          "needs values:",
 		"class P\n reserved :x\nend\n":                      "the field number is a positive integer",
 		"async foo\n":                                       "async takes a receiver, a method name",

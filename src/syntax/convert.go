@@ -10,6 +10,7 @@ import (
 	"github.com/go-ruby-parser/parser"
 	"github.com/go-ruby-parser/parser/ast"
 
+	"github.com/radiospiel/amber/src/object"
 	"github.com/radiospiel/amber/src/rx"
 )
 
@@ -429,11 +430,12 @@ var mutators = map[string]string{
 	"exit!":                 "exit",
 }
 
-// fieldTypes are the typed field helpers a class body takes.
-var fieldTypes = map[string]bool{
-	"string": true, "int": true, "float": true, "bool": true, "bytes": true,
-	"list": true, "set": true, "map": true, "ref": true, "enum": true,
-}
+// compositeFieldTypes are the typed field helpers a class body takes
+// besides the scalar types of object.Scalar.
+var compositeFieldTypes = map[string]bool{"list": true, "set": true, "map": true, "ref": true, "enum": true}
+
+// isFieldType reports a typed field helper.
+func isFieldType(name string) bool { return compositeFieldTypes[name] || object.Scalar(name) != nil }
 
 func (c *converter) call(n *ast.Call) Node {
 	name := n.Name
@@ -471,7 +473,7 @@ func (c *converter) call(n *ast.Call) Node {
 				return c.include(n)
 			}
 		}
-		if fieldTypes[name] && len(n.Args) > 0 {
+		if isFieldType(name) && len(n.Args) > 0 {
 			if _, isSym := n.Args[0].(*ast.SymbolLit); isSym {
 				if !c.inClassBody() {
 					c.fail("%s :%s declares a field, which only a class body can do", name, n.Args[0].(*ast.SymbolLit).Name)
@@ -972,10 +974,6 @@ func (c *converter) await(n *ast.Call) Node {
 	return &Await{Pos: c.pos(), Recv: args[0], Method: args[1], Args: args[2:], KwArgs: kwargs}
 }
 
-// scalarFieldTypes are the element types a list, set or map field may carry,
-// besides a class name.
-var scalarFieldTypes = map[string]bool{"string": true, "int": true, "float": true, "bool": true, "bytes": true}
-
 func (c *converter) fieldDecl(n *ast.Call) Node {
 	decl := &FieldDecl{Pos: c.pos(), Type: n.Name}
 	args, kwargs, blockArg := c.args(n.Args)
@@ -1064,8 +1062,8 @@ func (c *converter) fieldDecl(n *ast.Call) Node {
 			c.fail("map :%s needs key: and value: types", decl.Names[0])
 			return nil
 		}
-		if !scalarFieldTypes[decl.Key] || decl.Key == "float" || decl.Key == "bytes" {
-			c.fail("map :%s: a key is a string, int or bool", decl.Names[0])
+		if k := object.Scalar(decl.Key); k == nil || !k.MapKey() {
+			c.fail("map :%s: a key is a string, a bool or an integer type of 32 or 64 bits", decl.Names[0])
 			return nil
 		}
 	case "ref":
@@ -1087,10 +1085,10 @@ func (c *converter) fieldDecl(n *ast.Call) Node {
 func (c *converter) elementType(decl string, v Node) string {
 	switch v := v.(type) {
 	case *Sym:
-		if scalarFieldTypes[v.Name] {
+		if object.Scalar(v.Name) != nil {
 			return v.Name
 		}
-		c.fail("%s: %s is not an element type; use :string, :int, :float, :bool, :bytes or a class", decl, v.Name)
+		c.fail("%s: %s is not an element type; use a scalar type (:%s) or a class", decl, v.Name, strings.Join(object.ScalarNames(), ", :"))
 	case *Const:
 		return v.Name
 	default:

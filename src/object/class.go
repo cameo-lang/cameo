@@ -68,14 +68,17 @@ func (c *Class) cache() *lookupCache {
 	return lc
 }
 
-// FieldType is the declared type of a field.
+// FieldType is the declared type of a field. A scalar type's comes from
+// ScalarField, which sets Scalar.
 type FieldType struct {
-	Kind  string     // string, int, float, bool, bytes, list, set, map, ref, enum
+	Kind  string     // a scalar type's name (see ScalarType), or list, set, map, ref, enum
 	Elem  *FieldType // list and set element, map value
-	Key   string     // map key: string, int, bool
+	Key   string     // map key: a scalar type that MapKey
 	Ref   *Class     // the class of a ref field (resolved when the class is built)
 	Enum  []string   // the symbols of an enum field
 	Named string     // an element or ref type named by a constant, resolved later
+	// Scalar is the scalar type when Kind names one, nil otherwise.
+	Scalar *ScalarType
 }
 
 // Field is one declared field of a class.
