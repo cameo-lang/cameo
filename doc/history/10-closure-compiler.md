@@ -2,14 +2,14 @@
 
 Steps 8 and 9 took the allocations out of a call. What remained of the
 evaluator's own cost was the evaluator: every visit to a node went through
-one type switch of 47 cases ([src/eval/eval.go:23](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/eval/eval.go#L23)),
+one type switch of 47 cases ([src/eval/eval.go:23](https://github.com/radiospiel/amber/blob/bcd8d78e20341fbcaecce63d9cabc12d938158c8/src/eval/eval.go#L23)),
 and a call's receiver and arguments each went through it again.
 
 ## Compiling to closures
 
 `compile.go` turns a node into a Go function, a thunk, the first time the
 node is evaluated, and keeps it
-([src/eval/compile.go:14](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/eval/compile.go#L14-L27)). The hot
+([src/eval/compile.go:14](https://github.com/radiospiel/amber/blob/bcd8d78e20341fbcaecce63d9cabc12d938158c8/src/eval/compile.go#L14-L27)). The hot
 kinds compile with their children inline: literals, variables, fields,
 constants, calls with the operator fast path of step 9, blocks, control
 flow and `begin`/`rescue`. A call to `n - 1` becomes a function that calls
