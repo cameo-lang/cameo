@@ -558,27 +558,15 @@ func installEnumerable() {
 		}
 		return object.Nil, nil
 	})
-	each("grep", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
-		if len(args) != 1 {
-			return object.Value{}, argError(ctx, len(args), "1")
-		}
-		out := []object.Value{}
-		for _, el := range elems {
-			r, err := ctx.Call(args[0], "===", el)
-			if err != nil {
-				return object.Value{}, err
-			}
-			if r.Truthy() {
-				if !block.IsZero() {
-					if el, err = ctx.Yield(block, el); err != nil {
-						return object.Value{}, err
-					}
-				}
-				out = append(out, el)
-			}
-		}
-		return object.NewList(out...), nil
-	})
+	// grep keeps the elements pattern === matches, and grep_v the others;
+	// a block maps what is kept.
+	grep := func(name string, keep bool) {
+		each(name, func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
+			return grepElems(ctx, elems, args, block, keep)
+		})
+	}
+	grep("grep", true)
+	grep("grep_v", false)
 	each("lazy", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		return object.NewList(append([]object.Value{}, elems...)...), nil
 	})
@@ -798,5 +786,27 @@ func chunks(ctx object.Context, elems []object.Value, block object.Value, togeth
 		}
 	}
 	out = append(out, object.NewList(cur...))
+	return object.NewList(out...), nil
+}
+
+func grepElems(ctx object.Context, elems []object.Value, args []object.Value, block object.Value, keep bool) (object.Value, error) {
+	if len(args) != 1 {
+		return object.Value{}, argError(ctx, len(args), "1")
+	}
+	out := []object.Value{}
+	for _, el := range elems {
+		r, err := ctx.Call(args[0], "===", el)
+		if err != nil {
+			return object.Value{}, err
+		}
+		if r.Truthy() == keep {
+			if !block.IsZero() {
+				if el, err = ctx.Yield(block, el); err != nil {
+					return object.Value{}, err
+				}
+			}
+			out = append(out, el)
+		}
+	}
 	return object.NewList(out...), nil
 }

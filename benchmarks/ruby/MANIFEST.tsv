@@ -25,11 +25,6 @@ bugs	vm_freezeobj--vm_freeze_obj.rb	benchmark/vm_freezeobj.yml, entry vm_freeze_
 bugs	vm_gc_short_with_complex_long--vm_gc_short_with_complex_long.rb	benchmark/vm_gc_short_with_complex_long.yml, entry vm_gc_short_with_complex_long	Object is not bound as a constant
 bugs	vm_neq--vm_neq.rb	benchmark/vm_neq.yml, entry vm_neq	Object is not bound as a constant
 bugs	vm_not--vm_not.rb	benchmark/vm_not.yml, entry vm_not	Object is not bound as a constant
-stdlib/array	array_intersection--big-intersection.rb	benchmark/array_intersection.yml, entry big-intersection	Array#intersection with several arguments, Array#sample(n)
-stdlib/array	array_intersection--small-intersection.rb	benchmark/array_intersection.yml, entry small-intersection	Array#intersection with several arguments, Array#sample(n)
-stdlib/array	enum_lazy_grep_v_100.rb	benchmark/enum_lazy_grep_v_100.rb	Array#grep_v
-stdlib/array	enum_lazy_grep_v_20.rb	benchmark/enum_lazy_grep_v_20.rb	Array#grep_v
-stdlib/array	enum_lazy_grep_v_50.rb	benchmark/enum_lazy_grep_v_50.rb	Array#grep_v
 stdlib/array	string_downcase--downcase-1.rb	benchmark/string_downcase.yml, entry downcase-1	Array#pack
 stdlib/array	string_downcase--downcase-10.rb	benchmark/string_downcase.yml, entry downcase-10	Array#pack
 stdlib/array	string_downcase--downcase-100.rb	benchmark/string_downcase.yml, entry downcase-100	Array#pack
@@ -54,40 +49,6 @@ stdlib/array	string_upcase--upcase-nonascii1.rb	benchmark/string_upcase.yml, ent
 stdlib/array	string_upcase--upcase-nonascii10.rb	benchmark/string_upcase.yml, entry upcase-nonascii10	Array#pack
 stdlib/array	string_upcase--upcase-nonascii100.rb	benchmark/string_upcase.yml, entry upcase-nonascii100	Array#pack
 stdlib/array	string_upcase--upcase-nonascii1000.rb	benchmark/string_upcase.yml, entry upcase-nonascii1000	Array#pack
-stdlib/float	float_to_s--to_s.rb	benchmark/float_to_s.yml, entry to_s	Float#step
-stdlib/float	ractor_float_to_s--ractor_float_to_s.rb	benchmark/ractor_float_to_s.yml, entry ractor_float_to_s	Float#step
-stdlib/hash	hash_flatten.rb	benchmark/hash_flatten.rb	Hash#flatten
-stdlib/hash	hash_to_proc.rb	benchmark/hash_to_proc.rb	Hash#to_proc
-stdlib/kernel	kernel_then--kernel_yield_self.rb	benchmark/kernel_then.yml, entry kernel_yield_self	Integer#yield_self
-stdlib/kernel	kernel_then--kernel_yield_self_enum.rb	benchmark/kernel_then.yml, entry kernel_yield_self_enum	Integer#yield_self
-stdlib/range	range_bsearch_bignum--first.rb	benchmark/range_bsearch_bignum.yml, entry first	Range#bsearch
-stdlib/range	range_bsearch_bignum--last.rb	benchmark/range_bsearch_bignum.yml, entry last	Range#bsearch
-stdlib/range	range_bsearch_bignum--mid.rb	benchmark/range_bsearch_bignum.yml, entry mid	Range#bsearch
-stdlib/range	range_bsearch_endpointless--beginless_-10__0.rb	benchmark/range_bsearch_endpointless.yml, entry beginless_-10__0	Range#bsearch
-stdlib/range	range_bsearch_endpointless--beginless_-10__1.rb	benchmark/range_bsearch_endpointless.yml, entry beginless_-10__1	Range#bsearch
-stdlib/range	range_bsearch_endpointless--beginless_-10__10.rb	benchmark/range_bsearch_endpointless.yml, entry beginless_-10__10	Range#bsearch
-stdlib/range	range_bsearch_endpointless--beginless_-10__2.rb	benchmark/range_bsearch_endpointless.yml, entry beginless_-10__2	Range#bsearch
-stdlib/range	range_bsearch_endpointless--beginless_-10__3.rb	benchmark/range_bsearch_endpointless.yml, entry beginless_-10__3	Range#bsearch
-stdlib/range	range_bsearch_endpointless--beginless_-10__4.rb	benchmark/range_bsearch_endpointless.yml, entry beginless_-10__4	Range#bsearch
-stdlib/range	range_bsearch_endpointless--beginless_-10__5.rb	benchmark/range_bsearch_endpointless.yml, entry beginless_-10__5	Range#bsearch
-stdlib/range	range_bsearch_endpointless--endless_10__0.rb	benchmark/range_bsearch_endpointless.yml, entry endless_10__0	Range#bsearch
-stdlib/range	range_bsearch_endpointless--endless_10__1.rb	benchmark/range_bsearch_endpointless.yml, entry endless_10__1	Range#bsearch
-stdlib/range	range_bsearch_endpointless--endless_10__10.rb	benchmark/range_bsearch_endpointless.yml, entry endless_10__10	Range#bsearch
-stdlib/range	range_bsearch_endpointless--endless_10__2.rb	benchmark/range_bsearch_endpointless.yml, entry endless_10__2	Range#bsearch
-stdlib/range	range_bsearch_endpointless--endless_10__3.rb	benchmark/range_bsearch_endpointless.yml, entry endless_10__3	Range#bsearch
-stdlib/range	range_bsearch_endpointless--endless_10__4.rb	benchmark/range_bsearch_endpointless.yml, entry endless_10__4	Range#bsearch
-stdlib/range	range_bsearch_endpointless--endless_10__5.rb	benchmark/range_bsearch_endpointless.yml, entry endless_10__5	Range#bsearch
-stdlib/range	range_bsearch_fixnum--first.rb	benchmark/range_bsearch_fixnum.yml, entry first	Range#bsearch
-stdlib/range	range_bsearch_fixnum--last.rb	benchmark/range_bsearch_fixnum.yml, entry last	Range#bsearch
-stdlib/range	range_bsearch_fixnum--mid.rb	benchmark/range_bsearch_fixnum.yml, entry mid	Range#bsearch
-stdlib/string	ractor_string_fstring--ractor_fstring_same.rb	benchmark/ractor_string_fstring.yml, entry ractor_fstring_same	String#-@
-stdlib/string	string_codepoints--codepoints_mixed_ascii256.rb	benchmark/string_codepoints.yml, entry codepoints_mixed_ascii256	String#codepoints
-stdlib/string	string_codepoints--codepoints_mixed_ascii64.rb	benchmark/string_codepoints.yml, entry codepoints_mixed_ascii64	String#codepoints
-stdlib/string	string_codepoints--codepoints_utf8_2byte.rb	benchmark/string_codepoints.yml, entry codepoints_utf8_2byte	String#codepoints
-stdlib/string	string_dup--uplus.rb	benchmark/string_dup.yml, entry uplus	String#+@
-stdlib/string	string_fstring--fstring_same.rb	benchmark/string_fstring.yml, entry fstring_same	String#-@
-stdlib/string	string_memsearch--byteindex_first_byte_absent.rb	benchmark/string_memsearch.yml, entry byteindex_first_byte_absent	String#byteindex
-stdlib/string	string_memsearch--byteindex_first_byte_common.rb	benchmark/string_memsearch.yml, entry byteindex_first_byte_common	String#byteindex
 stdlib/string	string_rpartition--rpartition-1.rb	benchmark/string_rpartition.yml, entry rpartition-1	String#rpartition
 stdlib/string	string_rpartition--rpartition-10.rb	benchmark/string_rpartition.yml, entry rpartition-10	String#rpartition
 stdlib/string	string_rpartition--rpartition-100.rb	benchmark/string_rpartition.yml, entry rpartition-100	String#rpartition
@@ -210,6 +171,9 @@ unsupported/bignum	num_zero_p--num_zero_p_2.rb	benchmark/num_zero_p.yml, entry n
 unsupported/bignum	num_zero_p--num_zero_p_3.rb	benchmark/num_zero_p.yml, entry num_zero_p_3	bignum, rational and complex literals
 unsupported/bignum	num_zero_p--num_zero_p_4.rb	benchmark/num_zero_p.yml, entry num_zero_p_4	bignum, rational and complex literals
 unsupported/bignum	num_zero_p--num_zero_p_5.rb	benchmark/num_zero_p.yml, entry num_zero_p_5	bignum, rational and complex literals
+unsupported/bignum	range_bsearch_bignum--first.rb	benchmark/range_bsearch_bignum.yml, entry first	bignum arithmetic (amber wraps at 64 bits, silently)
+unsupported/bignum	range_bsearch_bignum--last.rb	benchmark/range_bsearch_bignum.yml, entry last	bignum arithmetic (amber wraps at 64 bits, silently)
+unsupported/bignum	range_bsearch_bignum--mid.rb	benchmark/range_bsearch_bignum.yml, entry mid	bignum arithmetic (amber wraps at 64 bits, silently)
 unsupported/bignum	range_bsearch_endpointless--beginless_-10__100.rb	benchmark/range_bsearch_endpointless.yml, entry beginless_-10__100	bignum, rational and complex literals
 unsupported/bignum	range_bsearch_endpointless--endless_10__100.rb	benchmark/range_bsearch_endpointless.yml, entry endless_10__100	bignum, rational and complex literals
 unsupported/bignum	range_reverse_each--Bignum_1.rb	benchmark/range_reverse_each.yml, entry Bignum_1	bignum arithmetic (amber wraps at 64 bits, silently)
@@ -256,6 +220,7 @@ unsupported/enumerators	enum_lazy_zip--take3_ary.rb	benchmark/enum_lazy_zip.yml,
 unsupported/enumerators	enum_lazy_zip--take3_noarg.rb	benchmark/enum_lazy_zip.yml, entry take3_noarg	lazy enumerators and blockless enumerators
 unsupported/enumerators	enum_lazy_zip--take3_nonary.rb	benchmark/enum_lazy_zip.yml, entry take3_nonary	lazy enumerators and blockless enumerators
 unsupported/enumerators	kernel_then--kernel_then_enum.rb	benchmark/kernel_then.yml, entry kernel_then_enum	lazy enumerators and blockless enumerators
+unsupported/enumerators	kernel_then--kernel_yield_self_enum.rb	benchmark/kernel_then.yml, entry kernel_yield_self_enum	lazy enumerators and blockless enumerators
 unsupported/environment	array_small_and.rb	benchmark/array_small_and.rb	environment and process
 unsupported/environment	array_small_diff.rb	benchmark/array_small_diff.rb	environment and process
 unsupported/environment	array_small_or.rb	benchmark/array_small_or.rb	environment and process
@@ -973,7 +938,9 @@ works	array_eql--large_ary.eql_.rb	benchmark/array_eql.yml, entry large_ary.eql_
 works	array_eql--small_ary.eql_.rb	benchmark/array_eql.yml, entry small_ary.eql_	
 works	array_eql--str_ary.eql_.rb	benchmark/array_eql.yml, entry str_ary.eql_	
 works	array_intersection--big-_.rb	benchmark/array_intersection.yml, entry big-_	
+works	array_intersection--big-intersection.rb	benchmark/array_intersection.yml, entry big-intersection	
 works	array_intersection--small-_.rb	benchmark/array_intersection.yml, entry small-_	
+works	array_intersection--small-intersection.rb	benchmark/array_intersection.yml, entry small-intersection	
 works	array_join--join_nl_n100_e1.rb	benchmark/array_join.yml, entry join_nl_n100_e1	
 works	array_join--join_nl_n100_e40.rb	benchmark/array_join.yml, entry join_nl_n100_e40	
 works	array_join--join_nl_n100_e8.rb	benchmark/array_join.yml, entry join_nl_n100_e8	
@@ -1059,6 +1026,9 @@ works	array_sort_int--ary1000.sort.rb	benchmark/array_sort_int.yml, entry ary100
 works	array_sort_int--ary10000.sort.rb	benchmark/array_sort_int.yml, entry ary10000.sort	
 works	array_sort_int--ary2.sort.rb	benchmark/array_sort_int.yml, entry ary2.sort	
 works	array_values_at_int.rb	benchmark/array_values_at_int.rb	
+works	enum_lazy_grep_v_100.rb	benchmark/enum_lazy_grep_v_100.rb	
+works	enum_lazy_grep_v_20.rb	benchmark/enum_lazy_grep_v_20.rb	
+works	enum_lazy_grep_v_50.rb	benchmark/enum_lazy_grep_v_50.rb	
 works	enum_lazy_uniq_100.rb	benchmark/enum_lazy_uniq_100.rb	
 works	enum_lazy_uniq_20.rb	benchmark/enum_lazy_uniq_20.rb	
 works	enum_lazy_uniq_50.rb	benchmark/enum_lazy_uniq_50.rb	
@@ -1123,6 +1093,7 @@ works	float_predicate--float_nan_.rb	benchmark/float_predicate.yml, entry float_
 works	float_predicate--float_negative_.rb	benchmark/float_predicate.yml, entry float_negative_	
 works	float_predicate--float_positive_.rb	benchmark/float_predicate.yml, entry float_positive_	
 works	float_predicate--float_zero_.rb	benchmark/float_predicate.yml, entry float_zero_	
+works	float_to_s--to_s.rb	benchmark/float_to_s.yml, entry to_s	
 works	gc_null.rb	benchmark/gc/null.rb	
 works	hash_ar_aref--hit_first.rb	benchmark/hash_ar_aref.yml, entry hit_first	
 works	hash_ar_aref--hit_fourth.rb	benchmark/hash_ar_aref.yml, entry hit_fourth	
@@ -1137,6 +1108,7 @@ works	hash_defaults--default_aref.rb	benchmark/hash_defaults.yml, entry default_
 works	hash_defaults--default_method.rb	benchmark/hash_defaults.yml, entry default_method	
 works	hash_dup--dup_larger.rb	benchmark/hash_dup.yml, entry dup_larger	
 works	hash_dup--dup_small.rb	benchmark/hash_dup.yml, entry dup_small	
+works	hash_flatten.rb	benchmark/hash_flatten.rb	
 works	hash_keys.rb	benchmark/hash_keys.rb	
 works	hash_literal_small2.rb	benchmark/hash_literal_small2.rb	
 works	hash_literal_small4.rb	benchmark/hash_literal_small4.rb	
@@ -1145,6 +1117,7 @@ works	hash_long.rb	benchmark/hash_long.rb
 works	hash_small2.rb	benchmark/hash_small2.rb	
 works	hash_small4.rb	benchmark/hash_small4.rb	
 works	hash_small8.rb	benchmark/hash_small8.rb	
+works	hash_to_proc.rb	benchmark/hash_to_proc.rb	
 works	hash_values.rb	benchmark/hash_values.rb	
 works	int_to_s--fix_10digit.rb	benchmark/int_to_s.yml, entry fix_10digit	
 works	int_to_s--fix_19digit.rb	benchmark/int_to_s.yml, entry fix_19digit	
@@ -1162,6 +1135,7 @@ works	kernel_float--float.rb	benchmark/kernel_float.yml, entry float
 works	kernel_float--float_false.rb	benchmark/kernel_float.yml, entry float_false	
 works	kernel_float--float_true.rb	benchmark/kernel_float.yml, entry float_true	
 works	kernel_then--kernel_then.rb	benchmark/kernel_then.yml, entry kernel_then	
+works	kernel_then--kernel_yield_self.rb	benchmark/kernel_then.yml, entry kernel_yield_self	
 works	keyword_arguments--kw_and_splat_to_kw.rb	benchmark/keyword_arguments.yml, entry kw_and_splat_to_kw	
 works	keyword_arguments--kw_and_splat_to_kw_splat.rb	benchmark/keyword_arguments.yml, entry kw_and_splat_to_kw_splat	
 works	keyword_arguments--kw_splat_to_kw.rb	benchmark/keyword_arguments.yml, entry kw_splat_to_kw	
@@ -1185,6 +1159,25 @@ works	pm_array--first_match.rb	benchmark/pm_array.yml, entry first_match
 works	pm_array--fourth_match.rb	benchmark/pm_array.yml, entry fourth_match	
 works	pm_array--second_match.rb	benchmark/pm_array.yml, entry second_match	
 works	pm_array--third_match.rb	benchmark/pm_array.yml, entry third_match	
+works	ractor_float_to_s--ractor_float_to_s.rb	benchmark/ractor_float_to_s.yml, entry ractor_float_to_s	
+works	ractor_string_fstring--ractor_fstring_same.rb	benchmark/ractor_string_fstring.yml, entry ractor_fstring_same	
+works	range_bsearch_endpointless--beginless_-10__0.rb	benchmark/range_bsearch_endpointless.yml, entry beginless_-10__0	
+works	range_bsearch_endpointless--beginless_-10__1.rb	benchmark/range_bsearch_endpointless.yml, entry beginless_-10__1	
+works	range_bsearch_endpointless--beginless_-10__10.rb	benchmark/range_bsearch_endpointless.yml, entry beginless_-10__10	
+works	range_bsearch_endpointless--beginless_-10__2.rb	benchmark/range_bsearch_endpointless.yml, entry beginless_-10__2	
+works	range_bsearch_endpointless--beginless_-10__3.rb	benchmark/range_bsearch_endpointless.yml, entry beginless_-10__3	
+works	range_bsearch_endpointless--beginless_-10__4.rb	benchmark/range_bsearch_endpointless.yml, entry beginless_-10__4	
+works	range_bsearch_endpointless--beginless_-10__5.rb	benchmark/range_bsearch_endpointless.yml, entry beginless_-10__5	
+works	range_bsearch_endpointless--endless_10__0.rb	benchmark/range_bsearch_endpointless.yml, entry endless_10__0	
+works	range_bsearch_endpointless--endless_10__1.rb	benchmark/range_bsearch_endpointless.yml, entry endless_10__1	
+works	range_bsearch_endpointless--endless_10__10.rb	benchmark/range_bsearch_endpointless.yml, entry endless_10__10	
+works	range_bsearch_endpointless--endless_10__2.rb	benchmark/range_bsearch_endpointless.yml, entry endless_10__2	
+works	range_bsearch_endpointless--endless_10__3.rb	benchmark/range_bsearch_endpointless.yml, entry endless_10__3	
+works	range_bsearch_endpointless--endless_10__4.rb	benchmark/range_bsearch_endpointless.yml, entry endless_10__4	
+works	range_bsearch_endpointless--endless_10__5.rb	benchmark/range_bsearch_endpointless.yml, entry endless_10__5	
+works	range_bsearch_fixnum--first.rb	benchmark/range_bsearch_fixnum.yml, entry first	
+works	range_bsearch_fixnum--last.rb	benchmark/range_bsearch_fixnum.yml, entry last	
+works	range_bsearch_fixnum--mid.rb	benchmark/range_bsearch_fixnum.yml, entry mid	
 works	range_count--int_1.rb	benchmark/range_count.yml, entry int_1	
 works	range_count--int_1K.rb	benchmark/range_count.yml, entry int_1K	
 works	range_count--int_1M.rb	benchmark/range_count.yml, entry int_1M	
@@ -1209,12 +1202,19 @@ works	string_casecmp--casecmp-nonascii10.rb	benchmark/string_casecmp.yml, entry 
 works	string_casecmp--casecmp-nonascii100.rb	benchmark/string_casecmp.yml, entry casecmp-nonascii100	
 works	string_casecmp--casecmp-nonascii1000.rb	benchmark/string_casecmp.yml, entry casecmp-nonascii1000	
 works	string_casecmp--casecmp-nonascii1000vs10.rb	benchmark/string_casecmp.yml, entry casecmp-nonascii1000vs10	
+works	string_codepoints--codepoints_mixed_ascii256.rb	benchmark/string_codepoints.yml, entry codepoints_mixed_ascii256	
+works	string_codepoints--codepoints_mixed_ascii64.rb	benchmark/string_codepoints.yml, entry codepoints_mixed_ascii64	
+works	string_codepoints--codepoints_utf8_2byte.rb	benchmark/string_codepoints.yml, entry codepoints_utf8_2byte	
 works	string_dup--dup.rb	benchmark/string_dup.yml, entry dup	
+works	string_dup--uplus.rb	benchmark/string_dup.yml, entry uplus	
+works	string_fstring--fstring_same.rb	benchmark/string_fstring.yml, entry fstring_same	
 works	string_index.rb	benchmark/string_index.rb	
 works	string_inspect--inspect_ascii.rb	benchmark/string_inspect.yml, entry inspect_ascii	
 works	string_inspect--inspect_escapy.rb	benchmark/string_inspect.yml, entry inspect_escapy	
 works	string_inspect--inspect_mixed.rb	benchmark/string_inspect.yml, entry inspect_mixed	
 works	string_inspect--inspect_utf8.rb	benchmark/string_inspect.yml, entry inspect_utf8	
+works	string_memsearch--byteindex_first_byte_absent.rb	benchmark/string_memsearch.yml, entry byteindex_first_byte_absent	
+works	string_memsearch--byteindex_first_byte_common.rb	benchmark/string_memsearch.yml, entry byteindex_first_byte_common	
 works	string_memsearch--include_first_byte_absent.rb	benchmark/string_memsearch.yml, entry include_first_byte_absent	
 works	string_memsearch--include_first_byte_common.rb	benchmark/string_memsearch.yml, entry include_first_byte_common	
 works	string_memsearch--index_first_byte_absent_large.rb	benchmark/string_memsearch.yml, entry index_first_byte_absent_large	

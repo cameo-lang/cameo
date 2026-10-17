@@ -1,0 +1,17 @@
+# String, Array and Hash methods from Ruby's core.
+p "aé€😀".codepoints, "héllo".byteindex("l"), "hello".byteindex("l", 3), "hello".byteindex("z")
+begin
+  "héllo".byteindex("l", 2)
+rescue IndexError => e
+  puts "#{e.class}: #{e.message}"
+end
+s = "same"
+p(-s, +s)
+
+p (1..10).to_a.grep_v(2..8), [1, 2, 3].grep_v(2) { |x| x * 10 }
+p [1, 1, 2, 3].intersection([1, 2, 3], [2, 1]), [1, 1, 2].intersection, 1.yield_self { |i| i + 1 }
+
+# A hash's proc looks keys up.
+h = {a: 1, b: 2}
+p [:a, :b, :c].map(&h), h.to_proc.lambda?, h.to_proc.arity
+p({a: [1, [2]], b: 3}.flatten, {a: [1, [2]], b: 3}.flatten(2), {a: [1, [2]], b: 3}.flatten(-1))

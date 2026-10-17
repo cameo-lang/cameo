@@ -200,6 +200,8 @@ func (in *Interp) toProc(v object.Value, line int) (object.Value, error) {
 	case object.KindSymbol:
 		v := v.Str()
 		return procValue(&Proc{Sym: v}), nil
+	case object.KindMap:
+		return hashProc(v), nil
 	}
 	if v.IsNil() {
 		return object.Value{}, nil
@@ -471,6 +473,9 @@ func (in *Interp) callBlock(block object.Value, args []object.Value, kw *object.
 		return object.Value{}, in.raise(object.TypeError, 0, "no block given")
 	}
 	if p.Sym != "" {
+		if !p.Recv.IsZero() {
+			return in.call(nil, p.Recv, p.Sym, args, kw, inner, false, 0)
+		}
 		if len(args) == 0 {
 			return object.Value{}, in.raise(object.ArgumentError, 0, "no receiver given")
 		}

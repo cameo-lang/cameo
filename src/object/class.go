@@ -307,6 +307,8 @@ var (
 	Enumerable = NewModule("Enumerable")
 	// Comparable is the module Integer, Float, String and Time include.
 	Comparable = NewModule("Comparable")
+	// MathModule is Math: module functions and constants.
+	MathModule = NewModule("Math")
 
 	StandardError     = NewClass("StandardError", ExceptionClass)
 	RuntimeError      = NewClass("RuntimeError", StandardError)
@@ -338,7 +340,7 @@ func init() {
 	BasicClasses = []*Class{
 		ObjectClass, ModuleClass, ClassClass, NilClass, BoolClass, IntegerClass, FloatClass,
 		StringClass, SymbolClass, BytesClass, ListClass, MapClass, SetClass, RangeClass, TimeClass, ProcClass,
-		ProcessClass, ExceptionClass, Enumerable, Comparable,
+		ProcessClass, ExceptionClass, Enumerable, Comparable, MathModule,
 		StandardError, RuntimeError, ArgumentError, TypeError, NameError, NoMethodError, KeyError,
 		IndexError, RangeError, ZeroDivisionError, StopIteration, NoMatchingPattern, FrozenError,
 		NotImplementedErr, LocalJumpError, AmberError,

@@ -78,6 +78,7 @@ func installObject() {
 		}
 		return ctx.Yield(block, self)
 	})
+	def(o, "yield_self", 0, o.Methods["then"].Native)
 	def(o, "instance_variables", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		inst, ok := self.AsInstance()
 		if !ok {

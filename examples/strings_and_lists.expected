@@ -1,0 +1,18 @@
+[97, 233, 8364, 128512]
+3
+3
+nil
+IndexError: offset 2 does not land on character boundary
+"same"
+"same"
+[1, 9, 10]
+[10, 30]
+[1, 2]
+[1, 1, 2]
+2
+[1, 2, nil]
+true
+1
+[:a, [1, [2]], :b, 3]
+[:a, 1, [2], :b, 3]
+[:a, 1, 2, :b, 3]

@@ -185,6 +185,12 @@ func installRange() {
 		return yieldEach(ctx, out, block)
 	})
 	def(c, "%", 1, c.Methods["step"].Native)
+	def(c, "bsearch", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if err := needBlock(ctx, block, "bsearch"); err != nil {
+			return object.Value{}, err
+		}
+		return bsearch(ctx, r(self), block)
+	})
 	def(c, "to_a", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		elems, err := RangeElems(ctx, r(self))
 		if err != nil {
@@ -369,4 +375,121 @@ func RangeElems(ctx object.Context, r *object.Range) ([]object.Value, error) {
 		out = append(out, object.Int(i))
 	}
 	return out, nil
+}
+
+// bsearch is Range#bsearch over integers or floats, after CRuby's
+// range_bsearch. In find-minimum mode the block returns true or false and
+// bsearch returns the smallest value it is true for; in find-any mode the
+// block returns a number, 0 for a value it accepts, negative to look
+// lower, positive to look higher. An endless or beginless integer range is
+// probed at doubling distances from its end until the block turns.
+func bsearch(ctx object.Context, r *object.Range, block object.Value) (object.Value, error) {
+	satisfied := object.Nil
+	// check yields v; found is a value accepted in find-any mode, smaller
+	// says to look below v.
+	check := func(v object.Value) (found, smaller bool, err error) {
+		res, err := ctx.Yield(block, v)
+		if err != nil {
+			return false, false, err
+		}
+		switch {
+		case res.Kind() == object.KindBool && res.Bool():
+			satisfied = v
+			return false, true, nil
+		case !res.Truthy():
+			return false, false, nil
+		}
+		f, ok := res.AsNumber()
+		if !ok {
+			return false, false, ctx.Raise(object.TypeError, "wrong argument type %s (must be numeric, true, false or nil)", kindName(res))
+		}
+		return f == 0, f < 0, nil
+	}
+	// search bisects low..high, high excluded when exclusive, over int64s
+	// that conv turns into values.
+	search := func(low, high int64, exclusive bool, conv func(int64) object.Value) (object.Value, error) {
+		if !exclusive {
+			high++
+		}
+		low--
+		for low+1 < high {
+			var mid int64
+			if (high < 0) == (low < 0) {
+				mid = low + (high-low)/2
+			} else {
+				mid = (low + high) / 2
+			}
+			found, smaller, err := check(conv(mid))
+			if err != nil || found {
+				return conv(mid), err
+			}
+			if smaller {
+				high = mid
+			} else {
+				low = mid
+			}
+		}
+		return satisfied, nil
+	}
+	lo, hi := object.OrNil(r.Lo), object.OrNil(r.Hi)
+	_, loFloat := lo.AsFloat()
+	_, hiFloat := hi.AsFloat()
+	if loFloat || hiFloat {
+		l, h := math.Inf(-1), math.Inf(1)
+		if !lo.IsNil() {
+			l, _ = lo.AsNumber()
+		}
+		if !hi.IsNil() {
+			h, _ = hi.AsNumber()
+		}
+		return search(floatOrder(l), floatOrder(h), r.Exclusive, func(i int64) object.Value { return object.Float(orderFloat(i)) })
+	}
+	asInt := func(i int64) object.Value { return object.Int(i) }
+	l, loInt := lo.AsInt()
+	h, hiInt := hi.AsInt()
+	switch {
+	case loInt && hiInt:
+		return search(l, h, r.Exclusive, asInt)
+	case loInt && hi.IsNil():
+		for diff := int64(1); diff > 0; diff *= 2 {
+			found, smaller, err := check(object.Int(l + diff))
+			if err != nil || found {
+				return object.Int(l + diff), err
+			}
+			if smaller {
+				return search(l, l+diff, false, asInt)
+			}
+		}
+	case lo.IsNil() && hiInt:
+		for diff := int64(-1); diff < 0; diff *= 2 {
+			found, smaller, err := check(object.Int(h + diff))
+			if err != nil || found {
+				return object.Int(h + diff), err
+			}
+			if !smaller {
+				return search(h+diff, h, r.Exclusive, asInt)
+			}
+		}
+	default:
+		return object.Value{}, ctx.Raise(object.TypeError, "can't do binary search for %s", kindName(lo))
+	}
+	return object.Value{}, ctx.Raise(object.RangeError, "bsearch went past the 64-bit integers")
+}
+
+// floatOrder maps a float to an int64 in the same order, as CRuby's
+// double_as_int64 does, so that bisecting the integers bisects the floats;
+// orderFloat maps it back.
+func floatOrder(f float64) int64 {
+	i := int64(math.Float64bits(math.Abs(f)))
+	if f < 0 {
+		return -i
+	}
+	return i
+}
+
+func orderFloat(i int64) float64 {
+	if i < 0 {
+		return -math.Float64frombits(uint64(-i))
+	}
+	return math.Float64frombits(uint64(i))
 }

@@ -235,6 +235,35 @@ func installMap() {
 		}
 		return object.MapValue(b.Map()), nil
 	})
+	// flatten is to_a.flatten(depth), one level by default.
+	def(c, "flatten", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		depth := int64(1)
+		if len(args) > 1 {
+			return object.Value{}, argError(ctx, len(args), "0..1")
+		}
+		if len(args) == 1 {
+			var err error
+			if depth, err = wantInt(ctx, args[0], ""); err != nil {
+				return object.Value{}, err
+			}
+		}
+		if depth == 0 {
+			return object.NewList(pairs(self)...), nil
+		}
+		// One level goes into flattening the pairs themselves, without
+		// building them.
+		out := make([]object.Value, 0, 2*m(self).Len())
+		for i, k := range m(self).Keys() {
+			for _, e := range []object.Value{k, m(self).Values()[i]} {
+				if l, ok := e.AsList(); ok && depth != 1 {
+					out = append(out, flatten(l.Elems, depth-2)...)
+					continue
+				}
+				out = append(out, e)
+			}
+		}
+		return object.NewList(out...), nil
+	})
 	def(c, "compact", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		b := object.NewMapBuilder()
 		for i, k := range m(self).Keys() {
