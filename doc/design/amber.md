@@ -333,7 +333,9 @@ unmarshalled on the other without any amber code in between.
 **The value envelope.** Values that are not instances — scalars, lists, maps,
 sets, ranges — travel in `amber.Value`, a message with a `oneof` over the
 scalar kinds plus `List`, `Map`, `Set`, `Range`, `Time` and `Object` (a
-class name and the packed message). A symbol travels as a string, see *Symbols*. It is what `async` serialises, what the
+class name and the packed message). A symbol travels as a string, see *Symbols*.
+A hash's default value travels with it; a hash with a default block cannot
+travel. It is what `async` serialises, what the
 Go host API takes and returns, and what `amber proto` emits alongside the
 classes.
 
@@ -470,8 +472,11 @@ re-opened by accident:
   - `Time` is an immutable value with fixed UTC offsets and the local zone.
     `utc` and `localtime`, which change their receiver in Ruby, return a
     new time as `getutc` and `getlocal` do, and `subsec` is a Float.
-  - `Hash.new` takes a default value or a default block; a block that
-    stores into the hash raises, as any mutation does.
+  - `Hash.new` takes a default value or a default block. The syntax check
+    rejects a block that stores into the hash, as it rejects any mutation;
+    the block returns the default instead. The default travels with the
+    copies `[]=`, `merge` and `compact` make, and a hash built anew has
+    none, as in Ruby.
   - Left out: `Struct` (its members are untyped and its point is setters;
     amber classes declare typed fields), `Rational` and `Complex` (with
     their literals), and `RUBY_VERSION`.

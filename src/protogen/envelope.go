@@ -27,12 +27,13 @@ import (
 //	}
 //	message List { repeated Value items = 1; }
 //	message Set { repeated Value items = 1; }
-//	message Map { repeated Entry entries = 1; message Entry { Value key = 1; Value value = 2; } }
+//	message Map { repeated Entry entries = 1; Value default = 2; message Entry { Value key = 1; Value value = 2; } }
 //	message Range { Value lo = 1; Value hi = 2; bool exclusive = 3; }
 //	message Object { string class = 1; string digest = 2; bytes message = 3; }
 //	message Time { int64 seconds = 1; int32 nanos = 2; int32 offset = 3; string zone = 4; }
 //
-// A Value with no kind set is nil. A symbol travels as a string. A time is
+// A Value with no kind set is nil. A symbol travels as a string. A map's
+// default value travels with it; a map with a default proc cannot travel. A time is
 // its instant, its UTC offset in seconds, and a zone of "UTC" for a UTC
 // time, "local" for the local zone, or none for a fixed offset.
 var (
@@ -72,6 +73,7 @@ message Map {
     Value value = 2;
   }
   repeated Entry entries = 1;
+  Value default = 2;
 }
 
 message Range {
@@ -134,7 +136,10 @@ func envelope() (protoreflect.FileDescriptor, error) {
 			field("value", 2, descriptorpb.FieldDescriptorProto_TYPE_MESSAGE, "Value", opt),
 		}}
 		mapMsg := &descriptorpb.DescriptorProto{Name: strPtr("Map"), NestedType: []*descriptorpb.DescriptorProto{entry},
-			Field: []*descriptorpb.FieldDescriptorProto{field("entries", 1, descriptorpb.FieldDescriptorProto_TYPE_MESSAGE, "Map.Entry", rep)}}
+			Field: []*descriptorpb.FieldDescriptorProto{
+				field("entries", 1, descriptorpb.FieldDescriptorProto_TYPE_MESSAGE, "Map.Entry", rep),
+				field("default", 2, descriptorpb.FieldDescriptorProto_TYPE_MESSAGE, "Value", opt),
+			}}
 		rangeMsg := &descriptorpb.DescriptorProto{Name: strPtr("Range"), Field: []*descriptorpb.FieldDescriptorProto{
 			field("lo", 1, descriptorpb.FieldDescriptorProto_TYPE_MESSAGE, "Value", opt),
 			field("hi", 2, descriptorpb.FieldDescriptorProto_TYPE_MESSAGE, "Value", opt),
@@ -245,6 +250,17 @@ func (e *Encoder) message(fd protoreflect.FileDescriptor, v object.Value) (*dyna
 			entry.Set(entryMd.Fields().ByName("key"), protoreflect.ValueOfMessage(km))
 			entry.Set(entryMd.Fields().ByName("value"), protoreflect.ValueOfMessage(vm))
 			entries.Append(protoreflect.ValueOfMessage(entry))
+		}
+		value, proc := v.Default()
+		if !proc.IsZero() {
+			return nil, &NotSerialisable{Kind: "Hash with a default proc"}
+		}
+		if !value.IsZero() {
+			dm, err := e.message(fd, value)
+			if err != nil {
+				return nil, err
+			}
+			m.Set(mapMd.Fields().ByName("default"), protoreflect.ValueOfMessage(dm))
 		}
 		set("map", protoreflect.ValueOfMessage(m))
 	case object.KindRange:
@@ -399,7 +415,15 @@ func (d *Decoder) value(msg protoreflect.Message) (object.Value, error) {
 			}
 			b.Set(k, v)
 		}
-		return object.MapValue(b.Map()), nil
+		out := b.Map()
+		if f := m.Descriptor().Fields().ByName("default"); m.Has(f) {
+			value, err := d.value(m.Get(f).Message())
+			if err != nil {
+				return object.Value{}, err
+			}
+			out = out.WithDefault(value, object.Value{})
+		}
+		return object.MapValue(out), nil
 	case "range":
 		r := pv.Message()
 		fields := r.Descriptor().Fields()

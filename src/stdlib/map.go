@@ -4,9 +4,27 @@ import "github.com/radiospiel/amber/src/object"
 
 func installMap() {
 	c := object.MapClass
+	// Hash.new takes a default value, or a block that computes the default
+	// from the hash and the key. The block cannot store what it computes,
+	// since the hash is immutable; the syntax check rejects a block that
+	// tries.
 	c.DefineSingleton("new", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if len(args) > 0 || !block.IsZero() {
-			return object.Value{}, ctx.Raise(object.NotImplementedErr, "Hash.new with a default is not supported yet")
+		if kw != nil && kw.Len() > 0 {
+			s, err := ctx.Inspect(kw.Keys()[0])
+			if err != nil {
+				return object.Value{}, err
+			}
+			return object.Value{}, ctx.Raise(object.ArgumentError, "unknown keyword: %s", s)
+		}
+		switch {
+		case len(args) > 1:
+			return object.Value{}, argError(ctx, len(args), "0..1")
+		case len(args) == 1 && !block.IsZero():
+			return object.Value{}, argError(ctx, 1, "0")
+		case !block.IsZero():
+			return object.MapValue(object.NewMap().WithDefault(object.Value{}, block)), nil
+		case len(args) == 1:
+			return object.MapValue(object.NewMap().WithDefault(args[0], object.Value{})), nil
 		}
 		return object.MapValue(object.NewMap()), nil
 	})
@@ -29,10 +47,7 @@ func installMap() {
 		return object.Bool(m(self).Len() == 0), nil
 	})
 	def(c, "[]", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if v, ok := m(self).Get(args[0]); ok {
-			return v, nil
-		}
-		return object.Nil, nil
+		return mapGet(ctx, self, args[0])
 	})
 	def(c, "fetch", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) < 1 || len(args) > 2 {
@@ -95,9 +110,9 @@ func installMap() {
 	def(c, "values_at", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		out := make([]object.Value, len(args))
 		for i, a := range args {
-			v, ok := m(self).Get(a)
-			if !ok {
-				v = object.Nil
+			v, err := mapGet(ctx, self, a)
+			if err != nil {
+				return object.Value{}, err
 			}
 			out[i] = v
 		}
@@ -134,7 +149,7 @@ func installMap() {
 			}
 			out = b.Map()
 		}
-		return object.MapValue(out), nil
+		return object.MapValue(keepDefault(m(self), out)), nil
 	})
 	def(c, "without", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.MapValue(m(self).Without(args...)), nil
@@ -227,7 +242,7 @@ func installMap() {
 				b.Set(k, v)
 			}
 		}
-		return object.MapValue(b.Map()), nil
+		return object.MapValue(keepDefault(m(self), b.Map())), nil
 	})
 	eachPair := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if block.IsZero() {
@@ -328,7 +343,48 @@ func installMap() {
 	def(c, "find_all", 0, object.Enumerable.Methods["find_all"].Native)
 	def(c, "to_set", 0, object.Enumerable.Methods["to_set"].Native)
 	def(c, "first", -1, object.Enumerable.Methods["first"].Native)
+	// default is the default value, or with a key the default for that key,
+	// which a default proc computes.
 	def(c, "default", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Nil, nil
+		switch len(args) {
+		case 0:
+			value, _ := m(self).Default()
+			return object.OrNil(value), nil
+		case 1:
+			return mapDefault(ctx, self, args[0])
+		}
+		return object.Value{}, argError(ctx, len(args), "0..1")
 	})
+	def(c, "default_proc", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		_, proc := m(self).Default()
+		return object.OrNil(proc), nil
+	})
+}
+
+// mapGet is h[key]: the entry, or the default for a key h does not hold.
+func mapGet(ctx object.Context, h object.Value, key object.Value) (object.Value, error) {
+	if v, ok := h.Map().Get(key); ok {
+		return v, nil
+	}
+	return mapDefault(ctx, h, key)
+}
+
+// mapDefault is the default for key: the default proc's result for the
+// hash and key, the default value, or nil.
+func mapDefault(ctx object.Context, h object.Value, key object.Value) (object.Value, error) {
+	value, proc := h.Map().Default()
+	if !proc.IsZero() {
+		return ctx.Yield(proc, h, key)
+	}
+	return object.OrNil(value), nil
+}
+
+// keepDefault gives out the default of from, for a method that keeps it,
+// as merge and compact do in Ruby.
+func keepDefault(from, out *object.Map) *object.Map {
+	value, proc := from.Default()
+	if v, p := out.Default(); object.Same(v, value) && object.Same(p, proc) {
+		return out
+	}
+	return out.WithDefault(value, proc)
 }

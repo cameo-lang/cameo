@@ -38,3 +38,4 @@ The steps:
 - [15. Random numbers from a seedable generator](15-random.md)
 - [16. `String#succ` and ranges of strings](16-string-succ.md)
 - [17. `Time`, an immutable instant with its offset](17-time.md)
+- [18. `Hash.new` with a default value or block](18-hash-defaults.md)

@@ -2,6 +2,7 @@ package syntax
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/go-ruby-parser/parser/ast"
@@ -31,6 +32,9 @@ type converter struct {
 	line  int
 	errs  ErrorList
 	stack []frame
+	// lent names the hash parameters of the Hash.new blocks being
+	// converted, which the block must not store into.
+	lent []string
 }
 
 func (c *converter) fail(format string, args ...any) {
@@ -473,6 +477,10 @@ func (c *converter) call(n *ast.Call) Node {
 		if call.BlockArg != nil {
 			c.fail("both a &block argument and a literal block")
 		}
+		if r, isConst := n.Recv.(*ast.ConstRef); isConst && r.Name == "Hash" && name == "new" && len(n.Block.Params) > 0 {
+			c.lent = append(c.lent, n.Block.Params[0])
+			defer func() { c.lent = c.lent[:len(c.lent)-1] }()
+		}
 		call.Block = c.block(n.Block)
 	}
 	return call
@@ -751,6 +759,10 @@ func (c *converter) update(recv ast.Node, key, value Node, origin *ast.Call) Nod
 	with := func(target Node) Node { return &With{c.pos(), target, key, value} }
 	switch r := recv.(type) {
 	case *ast.VarRef:
+		if slices.Contains(c.lent, r.Name) {
+			c.fail("Hash.new's block cannot store into its hash %s: amber values are immutable; return the default instead", r.Name)
+			return nil
+		}
 		return &Assign{c.pos(), r.Name, with(&Var{c.pos(), r.Name})}
 	case *ast.IvarRef:
 		name := strings.TrimPrefix(r.Name, "@")

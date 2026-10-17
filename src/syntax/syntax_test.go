@@ -115,26 +115,34 @@ func TestAssignmentNeedsALocalAtTheStart(t *testing.T) {
 	parse(t, "x = 1\nx = 2\n")
 }
 
+func TestHashNewBlockMayReadItsHash(t *testing.T) {
+	// Only a store into the hash is rejected: reading it, or storing into
+	// another local, is fine.
+	parse(t, "h = Hash.new { |m, k| m.size + k }\n")
+	parse(t, "h = Hash.new { |m, k| x = {}\nx[k] = 1\nx }\n")
+}
+
 func TestRejections(t *testing.T) {
 	cases := map[string]string{
-		"attr_accessor :x\n":            "attr_accessor is not supported",
-		"def x=(v); end\n":              "def x=: setters are not supported",
-		"def save!; end\n":              "bang methods are not supported",
-		"a = []\na << 1\n":              "<< mutates its receiver",
-		"a = []\na.push(1)\n":           "push is not supported",
-		"a = {}\na.merge!({})\n":        "merge!: bang methods mutate",
-		"$x = 1\n":                      "global variables are not supported",
-		"@@x = 1\n":                     "class variables are not supported",
-		"class << self; end\n":          "class << self is not supported",
-		"for i in [1]; end\n":           "for loops are not supported",
-		"x = /re/\n":                    "regular expressions are not supported",
-		"x = 99999999999999999999\n":    "does not fit in 64 bits",
-		"def foo(...); bar(...); end\n": "argument forwarding",
-		"alias b a\n":                   "alias is not supported",
-		"x = `ls`\n":                    "backtick commands",
-		"def m; def n; end; end\n":      "def n inside a method",
-		"string :x\n":                   "which only a class body can do",
-		"class P\n list :x\nend\n":      "needs of: the element type",
+		"attr_accessor :x\n":                 "attr_accessor is not supported",
+		"def x=(v); end\n":                   "def x=: setters are not supported",
+		"def save!; end\n":                   "bang methods are not supported",
+		"a = []\na << 1\n":                   "<< mutates its receiver",
+		"a = []\na.push(1)\n":                "push is not supported",
+		"a = {}\na.merge!({})\n":             "merge!: bang methods mutate",
+		"h = Hash.new { |m, k| m[k] = 1 }\n": "Hash.new's block cannot store into its hash m",
+		"$x = 1\n":                           "global variables are not supported",
+		"@@x = 1\n":                          "class variables are not supported",
+		"class << self; end\n":               "class << self is not supported",
+		"for i in [1]; end\n":                "for loops are not supported",
+		"x = /re/\n":                         "regular expressions are not supported",
+		"x = 99999999999999999999\n":         "does not fit in 64 bits",
+		"def foo(...); bar(...); end\n":      "argument forwarding",
+		"alias b a\n":                        "alias is not supported",
+		"x = `ls`\n":                         "backtick commands",
+		"def m; def n; end; end\n":           "def n inside a method",
+		"string :x\n":                        "which only a class body can do",
+		"class P\n list :x\nend\n":           "needs of: the element type",
 		"class P\n map :x, key: :float, value: :int\nend\n": "a key is a string, int or bool",
 		"class P\n enum :k\nend\n":                          "needs values:",
 		"class P\n reserved :x\nend\n":                      "the field number is a positive integer",

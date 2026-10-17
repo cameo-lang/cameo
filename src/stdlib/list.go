@@ -547,10 +547,9 @@ func dig(ctx object.Context, v object.Value, path []object.Value) (object.Value,
 			}
 			v = r
 		case object.KindMap:
-			cur := v.Map()
-			r, ok := cur.Get(p)
-			if !ok {
-				return object.Nil, nil
+			r, err := mapGet(ctx, v, p)
+			if err != nil {
+				return object.Value{}, err
 			}
 			v = r
 		case object.KindInstance:

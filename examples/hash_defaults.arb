@@ -1,0 +1,23 @@
+# Hash.new with a default value, or a block that computes the default.
+counts = Hash.new(0)
+%w[a b a c a].each { |w| counts[w] = counts[w] + 1 }
+p counts.to_a, counts["zz"], counts.default, counts.fetch("zz", :none), counts.key?("zz")
+
+squares = Hash.new { |hash, n| n * n }
+p squares[7], squares.size, squares.default, squares.default(3), squares.default_proc.class
+
+# The default travels with the copies []=, merge and compact make, and a
+# hash built anew, as select builds one, has none.
+more = counts.merge("d" => 9)
+p more["q"], counts.compact["q"], counts.select { |k, v| v > 1 }["q"]
+
+p squares.values_at(2, 3), squares.dig(4), Hash.new(:x).to_h[1], Hash.new.default
+p Hash.new(5) == {}, Hash.new { 1 }.inspect
+
+[-> { Hash.new(1, 2) }, -> { Hash.new(1) { 2 } }].each do |l|
+  begin
+    l.()
+  rescue ArgumentError => e
+    puts "#{e.class}: #{e.message}"
+  end
+end
