@@ -11,7 +11,7 @@ into [specs/](../../specs), sorted, and runs none of it.
 
 [specs/sort.rb](../../specs/sort.rb) runs `amber check` on each of the
 3 841 `*_spec.rb` files and files it under the first thing that stops it
-([specs/sort.rb:50](https://github.com/radiospiel/amber/blob/@@COMMIT@@/specs/sort.rb#L50)):
+([specs/sort.rb:50](https://github.com/radiospiel/amber/blob/7edfea71404014cde9a6b2995e90fef439e6b685/specs/sort.rb#L50)):
 
 - a `require` of a library amber does not build in goes to
   `unsupported/require`;
