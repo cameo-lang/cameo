@@ -6,6 +6,7 @@ package eval
 import (
 	"fmt"
 	"io"
+	"math/rand/v2"
 	"sync"
 
 	"github.com/radiospiel/amber/src/object"
@@ -35,6 +36,10 @@ type Interp struct {
 	procs *processList
 	// code is the compiled program, shared with the workers.
 	code *code
+	// rng is this interpreter's random number generator and seed the seed
+	// it started from; see Rand and Srand.
+	rng  *rand.Rand
+	seed uint64
 }
 
 // New makes an interpreter writing to stdout and stderr.
@@ -42,7 +47,7 @@ func New(stdout, stderr io.Writer) *Interp {
 	installOnce.Do(installStdlib)
 	mainClass := object.NewClass("Object", object.ObjectClass)
 	mainClass.Digest = "main"
-	return &Interp{
+	in := &Interp{
 		stdout:    stdout,
 		stderr:    stderr,
 		outMu:     &sync.Mutex{},
@@ -54,6 +59,19 @@ func New(stdout, stderr io.Writer) *Interp {
 		procs:     &processList{},
 		code:      &code{},
 	}
+	in.Srand(rand.Uint64())
+	return in
+}
+
+// Rand implements object.Context.
+func (in *Interp) Rand() *rand.Rand { return in.rng }
+
+// Srand implements object.Context: a new generator from seed.
+func (in *Interp) Srand(seed uint64) uint64 {
+	old := in.seed
+	in.seed = seed
+	in.rng = rand.New(rand.NewPCG(seed, seed^0x9e3779b97f4a7c15))
+	return old
 }
 
 var installOnce sync.Once

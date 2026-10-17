@@ -27,14 +27,6 @@ bugs	vm_neq--vm_neq.rb	benchmark/vm_neq.yml, entry vm_neq	Object is not bound as
 bugs	vm_not--vm_not.rb	benchmark/vm_not.yml, entry vm_not	Object is not bound as a constant
 stdlib/array	array_intersection--big-intersection.rb	benchmark/array_intersection.yml, entry big-intersection	Array#intersection with several arguments, Array#sample(n)
 stdlib/array	array_intersection--small-intersection.rb	benchmark/array_intersection.yml, entry small-intersection	Array#intersection with several arguments, Array#sample(n)
-stdlib/array	array_sample--array_sample_1.rb	benchmark/array_sample.yml, entry array_sample_1	Array#intersection with several arguments, Array#sample(n)
-stdlib/array	array_sample_100k_10.rb	benchmark/array_sample_100k_10.rb	Array#intersection with several arguments, Array#sample(n)
-stdlib/array	array_sample_100k_11.rb	benchmark/array_sample_100k_11.rb	Array#intersection with several arguments, Array#sample(n)
-stdlib/array	array_sample_100k__100.rb	benchmark/array_sample_100k__100.rb	Array#intersection with several arguments, Array#sample(n)
-stdlib/array	array_sample_100k__1k.rb	benchmark/array_sample_100k__1k.rb	Array#intersection with several arguments, Array#sample(n)
-stdlib/array	array_sample_100k__6k.rb	benchmark/array_sample_100k__6k.rb	Array#intersection with several arguments, Array#sample(n)
-stdlib/array	array_sample_100k___10k.rb	benchmark/array_sample_100k___10k.rb	Array#intersection with several arguments, Array#sample(n)
-stdlib/array	array_sample_100k___50k.rb	benchmark/array_sample_100k___50k.rb	Array#intersection with several arguments, Array#sample(n)
 stdlib/array	enum_lazy_grep_v_100.rb	benchmark/enum_lazy_grep_v_100.rb	Array#grep_v
 stdlib/array	enum_lazy_grep_v_20.rb	benchmark/enum_lazy_grep_v_20.rb	Array#grep_v
 stdlib/array	enum_lazy_grep_v_50.rb	benchmark/enum_lazy_grep_v_50.rb	Array#grep_v
@@ -46,110 +38,6 @@ stdlib/hash	hash_flatten.rb	benchmark/hash_flatten.rb	Hash#flatten
 stdlib/hash	hash_to_proc.rb	benchmark/hash_to_proc.rb	Hash#to_proc
 stdlib/kernel	kernel_then--kernel_yield_self.rb	benchmark/kernel_then.yml, entry kernel_yield_self	Integer#yield_self
 stdlib/kernel	kernel_then--kernel_yield_self_enum.rb	benchmark/kernel_then.yml, entry kernel_yield_self_enum	Integer#yield_self
-stdlib/random	array_max_float--ary10.max.rb	benchmark/array_max_float.yml, entry ary10.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_float--ary100.max.rb	benchmark/array_max_float.yml, entry ary100.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_float--ary1000.max.rb	benchmark/array_max_float.yml, entry ary1000.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_float--ary10000.max.rb	benchmark/array_max_float.yml, entry ary10000.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_float--ary100000.max.rb	benchmark/array_max_float.yml, entry ary100000.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_float--ary2.max.rb	benchmark/array_max_float.yml, entry ary2.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_float--ary2000.max.rb	benchmark/array_max_float.yml, entry ary2000.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_float--ary20000.max.rb	benchmark/array_max_float.yml, entry ary20000.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_float--ary3000.max.rb	benchmark/array_max_float.yml, entry ary3000.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_float--ary500.max.rb	benchmark/array_max_float.yml, entry ary500.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_float--ary5000.max.rb	benchmark/array_max_float.yml, entry ary5000.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_float--ary50000.max.rb	benchmark/array_max_float.yml, entry ary50000.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_int--ary10.max.rb	benchmark/array_max_int.yml, entry ary10.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_int--ary100.max.rb	benchmark/array_max_int.yml, entry ary100.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_int--ary1000.max.rb	benchmark/array_max_int.yml, entry ary1000.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_int--ary10000.max.rb	benchmark/array_max_int.yml, entry ary10000.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_int--ary100000.max.rb	benchmark/array_max_int.yml, entry ary100000.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_int--ary1000000.max.rb	benchmark/array_max_int.yml, entry ary1000000.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_int--ary2.max.rb	benchmark/array_max_int.yml, entry ary2.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_int--ary2000.max.rb	benchmark/array_max_int.yml, entry ary2000.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_int--ary20000.max.rb	benchmark/array_max_int.yml, entry ary20000.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_int--ary3000.max.rb	benchmark/array_max_int.yml, entry ary3000.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_int--ary500.max.rb	benchmark/array_max_int.yml, entry ary500.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_int--ary5000.max.rb	benchmark/array_max_int.yml, entry ary5000.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_int--ary50000.max.rb	benchmark/array_max_int.yml, entry ary50000.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_str--ary10.max.rb	benchmark/array_max_str.yml, entry ary10.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_str--ary100.max.rb	benchmark/array_max_str.yml, entry ary100.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_str--ary1000.max.rb	benchmark/array_max_str.yml, entry ary1000.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_str--ary10000.max.rb	benchmark/array_max_str.yml, entry ary10000.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_str--ary100000.max.rb	benchmark/array_max_str.yml, entry ary100000.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_str--ary2.max.rb	benchmark/array_max_str.yml, entry ary2.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_str--ary2000.max.rb	benchmark/array_max_str.yml, entry ary2000.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_str--ary20000.max.rb	benchmark/array_max_str.yml, entry ary20000.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_str--ary3000.max.rb	benchmark/array_max_str.yml, entry ary3000.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_str--ary500.max.rb	benchmark/array_max_str.yml, entry ary500.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_str--ary5000.max.rb	benchmark/array_max_str.yml, entry ary5000.max	Random (rand, sample, shuffle)
-stdlib/random	array_max_str--ary50000.max.rb	benchmark/array_max_str.yml, entry ary50000.max	Random (rand, sample, shuffle)
-stdlib/random	array_min--ary10.min.rb	benchmark/array_min.yml, entry ary10.min	Random (rand, sample, shuffle)
-stdlib/random	array_min--ary100.min.rb	benchmark/array_min.yml, entry ary100.min	Random (rand, sample, shuffle)
-stdlib/random	array_min--ary1000.min.rb	benchmark/array_min.yml, entry ary1000.min	Random (rand, sample, shuffle)
-stdlib/random	array_min--ary10000.min.rb	benchmark/array_min.yml, entry ary10000.min	Random (rand, sample, shuffle)
-stdlib/random	array_min--ary100000.min.rb	benchmark/array_min.yml, entry ary100000.min	Random (rand, sample, shuffle)
-stdlib/random	array_min--ary1000000.min.rb	benchmark/array_min.yml, entry ary1000000.min	Random (rand, sample, shuffle)
-stdlib/random	array_min--ary2.min.rb	benchmark/array_min.yml, entry ary2.min	Random (rand, sample, shuffle)
-stdlib/random	array_min--ary2000.min.rb	benchmark/array_min.yml, entry ary2000.min	Random (rand, sample, shuffle)
-stdlib/random	array_min--ary20000.min.rb	benchmark/array_min.yml, entry ary20000.min	Random (rand, sample, shuffle)
-stdlib/random	array_min--ary3000.min.rb	benchmark/array_min.yml, entry ary3000.min	Random (rand, sample, shuffle)
-stdlib/random	array_min--ary500.min.rb	benchmark/array_min.yml, entry ary500.min	Random (rand, sample, shuffle)
-stdlib/random	array_min--ary5000.min.rb	benchmark/array_min.yml, entry ary5000.min	Random (rand, sample, shuffle)
-stdlib/random	array_min--ary50000.min.rb	benchmark/array_min.yml, entry ary50000.min	Random (rand, sample, shuffle)
-stdlib/random	array_sample--array_sample_0.rb	benchmark/array_sample.yml, entry array_sample_0	Random (rand, sample, shuffle)
-stdlib/random	array_sort_block.rb	benchmark/array_sort_block.rb	Random (rand, sample, shuffle)
-stdlib/random	array_sort_float.rb	benchmark/array_sort_float.rb	Random (rand, sample, shuffle)
-stdlib/random	array_sort_int--ary10.sort.rb	benchmark/array_sort_int.yml, entry ary10.sort	Random (rand, sample, shuffle)
-stdlib/random	array_sort_int--ary100.sort.rb	benchmark/array_sort_int.yml, entry ary100.sort	Random (rand, sample, shuffle)
-stdlib/random	array_sort_int--ary1000.sort.rb	benchmark/array_sort_int.yml, entry ary1000.sort	Random (rand, sample, shuffle)
-stdlib/random	array_sort_int--ary10000.sort.rb	benchmark/array_sort_int.yml, entry ary10000.sort	Random (rand, sample, shuffle)
-stdlib/random	array_sort_int--ary2.sort.rb	benchmark/array_sort_int.yml, entry ary2.sort	Random (rand, sample, shuffle)
-stdlib/random	complex_float_add--complex_float_add.rb	benchmark/complex_float_add.yml, entry complex_float_add	Random (rand, sample, shuffle)
-stdlib/random	complex_float_div--complex_float_div.rb	benchmark/complex_float_div.yml, entry complex_float_div	Random (rand, sample, shuffle)
-stdlib/random	complex_float_mul--complex_float_mul.rb	benchmark/complex_float_mul.yml, entry complex_float_mul	Random (rand, sample, shuffle)
-stdlib/random	complex_float_new--complex_float_new.rb	benchmark/complex_float_new.yml, entry complex_float_new	Random (rand, sample, shuffle)
-stdlib/random	complex_float_power--complex_float_power.rb	benchmark/complex_float_power.yml, entry complex_float_power	Random (rand, sample, shuffle)
-stdlib/random	complex_float_sub--complex_float_sub.rb	benchmark/complex_float_sub.yml, entry complex_float_sub	Random (rand, sample, shuffle)
-stdlib/random	enum_minmax--set10.max.rb	benchmark/enum_minmax.yml, entry set10.max	Random (rand, sample, shuffle)
-stdlib/random	enum_minmax--set10.min.rb	benchmark/enum_minmax.yml, entry set10.min	Random (rand, sample, shuffle)
-stdlib/random	enum_minmax--set10.minmax.rb	benchmark/enum_minmax.yml, entry set10.minmax	Random (rand, sample, shuffle)
-stdlib/random	enum_minmax--set100.max.rb	benchmark/enum_minmax.yml, entry set100.max	Random (rand, sample, shuffle)
-stdlib/random	enum_minmax--set100.min.rb	benchmark/enum_minmax.yml, entry set100.min	Random (rand, sample, shuffle)
-stdlib/random	enum_minmax--set100.minmax.rb	benchmark/enum_minmax.yml, entry set100.minmax	Random (rand, sample, shuffle)
-stdlib/random	enum_minmax--set1000.max.rb	benchmark/enum_minmax.yml, entry set1000.max	Random (rand, sample, shuffle)
-stdlib/random	enum_minmax--set1000.min.rb	benchmark/enum_minmax.yml, entry set1000.min	Random (rand, sample, shuffle)
-stdlib/random	enum_minmax--set1000.minmax.rb	benchmark/enum_minmax.yml, entry set1000.minmax	Random (rand, sample, shuffle)
-stdlib/random	enum_minmax--set10000.max.rb	benchmark/enum_minmax.yml, entry set10000.max	Random (rand, sample, shuffle)
-stdlib/random	enum_minmax--set10000.min.rb	benchmark/enum_minmax.yml, entry set10000.min	Random (rand, sample, shuffle)
-stdlib/random	enum_minmax--set10000.minmax.rb	benchmark/enum_minmax.yml, entry set10000.minmax	Random (rand, sample, shuffle)
-stdlib/random	enum_minmax--set2.max.rb	benchmark/enum_minmax.yml, entry set2.max	Random (rand, sample, shuffle)
-stdlib/random	enum_minmax--set2.min.rb	benchmark/enum_minmax.yml, entry set2.min	Random (rand, sample, shuffle)
-stdlib/random	enum_minmax--set2.minmax.rb	benchmark/enum_minmax.yml, entry set2.minmax	Random (rand, sample, shuffle)
-stdlib/random	enum_sort--set10.sort_by.rb	benchmark/enum_sort.yml, entry set10.sort_by	Random (rand, sample, shuffle)
-stdlib/random	enum_sort--set100.sort_by.rb	benchmark/enum_sort.yml, entry set100.sort_by	Random (rand, sample, shuffle)
-stdlib/random	enum_sort--set1000.sort_by.rb	benchmark/enum_sort.yml, entry set1000.sort_by	Random (rand, sample, shuffle)
-stdlib/random	enum_sort--set10000.sort_by.rb	benchmark/enum_sort.yml, entry set10000.sort_by	Random (rand, sample, shuffle)
-stdlib/random	enum_sort--set2.sort_by.rb	benchmark/enum_sort.yml, entry set2.sort_by	Random (rand, sample, shuffle)
-stdlib/random	enum_sort_by--all_zero10.sort_by.rb	benchmark/enum_sort_by.yml, entry all_zero10.sort_by	Random (rand, sample, shuffle)
-stdlib/random	enum_sort_by--all_zero1000.sort_by.rb	benchmark/enum_sort_by.yml, entry all_zero1000.sort_by	Random (rand, sample, shuffle)
-stdlib/random	enum_sort_by--all_zero100000.sort_by.rb	benchmark/enum_sort_by.yml, entry all_zero100000.sort_by	Random (rand, sample, shuffle)
-stdlib/random	enum_sort_by--all_zero2.sort_by.rb	benchmark/enum_sort_by.yml, entry all_zero2.sort_by	Random (rand, sample, shuffle)
-stdlib/random	enum_sort_by--fixnum_array10.sort_by.rb	benchmark/enum_sort_by.yml, entry fixnum_array10.sort_by	Random (rand, sample, shuffle)
-stdlib/random	enum_sort_by--fixnum_array1000.sort_by.rb	benchmark/enum_sort_by.yml, entry fixnum_array1000.sort_by	Random (rand, sample, shuffle)
-stdlib/random	enum_sort_by--fixnum_array100000.sort_by.rb	benchmark/enum_sort_by.yml, entry fixnum_array100000.sort_by	Random (rand, sample, shuffle)
-stdlib/random	enum_sort_by--fixnum_array2.sort_by.rb	benchmark/enum_sort_by.yml, entry fixnum_array2.sort_by	Random (rand, sample, shuffle)
-stdlib/random	enum_sort_by--float_array10.sort_by.rb	benchmark/enum_sort_by.yml, entry float_array10.sort_by	Random (rand, sample, shuffle)
-stdlib/random	enum_sort_by--float_array1000.sort_by.rb	benchmark/enum_sort_by.yml, entry float_array1000.sort_by	Random (rand, sample, shuffle)
-stdlib/random	enum_sort_by--float_array100000.sort_by.rb	benchmark/enum_sort_by.yml, entry float_array100000.sort_by	Random (rand, sample, shuffle)
-stdlib/random	enum_sort_by--float_array2.sort_by.rb	benchmark/enum_sort_by.yml, entry float_array2.sort_by	Random (rand, sample, shuffle)
-stdlib/random	enum_sort_by--mix_array10.sort_by.rb	benchmark/enum_sort_by.yml, entry mix_array10.sort_by	Random (rand, sample, shuffle)
-stdlib/random	enum_sort_by--mix_array1000.sort_by.rb	benchmark/enum_sort_by.yml, entry mix_array1000.sort_by	Random (rand, sample, shuffle)
-stdlib/random	enum_sort_by--mix_array100000.sort_by.rb	benchmark/enum_sort_by.yml, entry mix_array100000.sort_by	Random (rand, sample, shuffle)
-stdlib/random	enum_sort_by--mix_array2.sort_by.rb	benchmark/enum_sort_by.yml, entry mix_array2.sort_by	Random (rand, sample, shuffle)
-stdlib/random	enum_sort_by--string_length10.sort_by.rb	benchmark/enum_sort_by.yml, entry string_length10.sort_by	Random (rand, sample, shuffle)
-stdlib/random	enum_sort_by--string_length1000.sort_by.rb	benchmark/enum_sort_by.yml, entry string_length1000.sort_by	Random (rand, sample, shuffle)
-stdlib/random	enum_sort_by--string_length100000.sort_by.rb	benchmark/enum_sort_by.yml, entry string_length100000.sort_by	Random (rand, sample, shuffle)
-stdlib/random	enum_sort_by--string_length2.sort_by.rb	benchmark/enum_sort_by.yml, entry string_length2.sort_by	Random (rand, sample, shuffle)
 stdlib/range	range_bsearch_bignum--first.rb	benchmark/range_bsearch_bignum.yml, entry first	Range#bsearch
 stdlib/range	range_bsearch_bignum--last.rb	benchmark/range_bsearch_bignum.yml, entry last	Range#bsearch
 stdlib/range	range_bsearch_bignum--mid.rb	benchmark/range_bsearch_bignum.yml, entry mid	Range#bsearch
@@ -383,6 +271,12 @@ unsupported/bignum	range_reverse_each--Bignum_1K.rb	benchmark/range_reverse_each
 unsupported/bignum	range_reverse_each--Bignum_1M.rb	benchmark/range_reverse_each.yml, entry Bignum_1M	bignum arithmetic (amber wraps at 64 bits, silently)
 unsupported/bignum	vm_case_lit--vm_case_lit.rb	benchmark/vm_case_lit.yml, entry vm_case_lit	bignum, rational and complex literals
 unsupported/class-variables	vm_cvar--vm_cvar.rb	benchmark/vm_cvar.yml, entry vm_cvar	class variables
+unsupported/complex	complex_float_add--complex_float_add.rb	benchmark/complex_float_add.yml, entry complex_float_add	Rational and Complex (left out)
+unsupported/complex	complex_float_div--complex_float_div.rb	benchmark/complex_float_div.yml, entry complex_float_div	Rational and Complex (left out)
+unsupported/complex	complex_float_mul--complex_float_mul.rb	benchmark/complex_float_mul.yml, entry complex_float_mul	Rational and Complex (left out)
+unsupported/complex	complex_float_new--complex_float_new.rb	benchmark/complex_float_new.yml, entry complex_float_new	Rational and Complex (left out)
+unsupported/complex	complex_float_power--complex_float_power.rb	benchmark/complex_float_power.yml, entry complex_float_power	Rational and Complex (left out)
+unsupported/complex	complex_float_sub--complex_float_sub.rb	benchmark/complex_float_sub.yml, entry complex_float_sub	Rational and Complex (left out)
 unsupported/complex	int_quo.rb	benchmark/int_quo.rb	Rational and Complex (left out)
 unsupported/complex	nilclass--rationalize.rb	benchmark/nilclass.yml, entry rationalize	Rational and Complex (left out)
 unsupported/complex	nilclass--to_c.rb	benchmark/nilclass.yml, entry to_c	Rational and Complex (left out)
@@ -1142,6 +1036,72 @@ works	array_join--join_sp_n100k_e8.rb	benchmark/array_join.yml, entry join_sp_n1
 works	array_join--join_sp_n1k_e1.rb	benchmark/array_join.yml, entry join_sp_n1k_e1	
 works	array_join--join_sp_n1k_e40.rb	benchmark/array_join.yml, entry join_sp_n1k_e40	
 works	array_join--join_sp_n1k_e8.rb	benchmark/array_join.yml, entry join_sp_n1k_e8	
+works	array_max_float--ary10.max.rb	benchmark/array_max_float.yml, entry ary10.max	
+works	array_max_float--ary100.max.rb	benchmark/array_max_float.yml, entry ary100.max	
+works	array_max_float--ary1000.max.rb	benchmark/array_max_float.yml, entry ary1000.max	
+works	array_max_float--ary10000.max.rb	benchmark/array_max_float.yml, entry ary10000.max	
+works	array_max_float--ary100000.max.rb	benchmark/array_max_float.yml, entry ary100000.max	
+works	array_max_float--ary2.max.rb	benchmark/array_max_float.yml, entry ary2.max	
+works	array_max_float--ary2000.max.rb	benchmark/array_max_float.yml, entry ary2000.max	
+works	array_max_float--ary20000.max.rb	benchmark/array_max_float.yml, entry ary20000.max	
+works	array_max_float--ary3000.max.rb	benchmark/array_max_float.yml, entry ary3000.max	
+works	array_max_float--ary500.max.rb	benchmark/array_max_float.yml, entry ary500.max	
+works	array_max_float--ary5000.max.rb	benchmark/array_max_float.yml, entry ary5000.max	
+works	array_max_float--ary50000.max.rb	benchmark/array_max_float.yml, entry ary50000.max	
+works	array_max_int--ary10.max.rb	benchmark/array_max_int.yml, entry ary10.max	
+works	array_max_int--ary100.max.rb	benchmark/array_max_int.yml, entry ary100.max	
+works	array_max_int--ary1000.max.rb	benchmark/array_max_int.yml, entry ary1000.max	
+works	array_max_int--ary10000.max.rb	benchmark/array_max_int.yml, entry ary10000.max	
+works	array_max_int--ary100000.max.rb	benchmark/array_max_int.yml, entry ary100000.max	
+works	array_max_int--ary1000000.max.rb	benchmark/array_max_int.yml, entry ary1000000.max	
+works	array_max_int--ary2.max.rb	benchmark/array_max_int.yml, entry ary2.max	
+works	array_max_int--ary2000.max.rb	benchmark/array_max_int.yml, entry ary2000.max	
+works	array_max_int--ary20000.max.rb	benchmark/array_max_int.yml, entry ary20000.max	
+works	array_max_int--ary3000.max.rb	benchmark/array_max_int.yml, entry ary3000.max	
+works	array_max_int--ary500.max.rb	benchmark/array_max_int.yml, entry ary500.max	
+works	array_max_int--ary5000.max.rb	benchmark/array_max_int.yml, entry ary5000.max	
+works	array_max_int--ary50000.max.rb	benchmark/array_max_int.yml, entry ary50000.max	
+works	array_max_str--ary10.max.rb	benchmark/array_max_str.yml, entry ary10.max	
+works	array_max_str--ary100.max.rb	benchmark/array_max_str.yml, entry ary100.max	
+works	array_max_str--ary1000.max.rb	benchmark/array_max_str.yml, entry ary1000.max	
+works	array_max_str--ary10000.max.rb	benchmark/array_max_str.yml, entry ary10000.max	
+works	array_max_str--ary100000.max.rb	benchmark/array_max_str.yml, entry ary100000.max	
+works	array_max_str--ary2.max.rb	benchmark/array_max_str.yml, entry ary2.max	
+works	array_max_str--ary2000.max.rb	benchmark/array_max_str.yml, entry ary2000.max	
+works	array_max_str--ary20000.max.rb	benchmark/array_max_str.yml, entry ary20000.max	
+works	array_max_str--ary3000.max.rb	benchmark/array_max_str.yml, entry ary3000.max	
+works	array_max_str--ary500.max.rb	benchmark/array_max_str.yml, entry ary500.max	
+works	array_max_str--ary5000.max.rb	benchmark/array_max_str.yml, entry ary5000.max	
+works	array_max_str--ary50000.max.rb	benchmark/array_max_str.yml, entry ary50000.max	
+works	array_min--ary10.min.rb	benchmark/array_min.yml, entry ary10.min	
+works	array_min--ary100.min.rb	benchmark/array_min.yml, entry ary100.min	
+works	array_min--ary1000.min.rb	benchmark/array_min.yml, entry ary1000.min	
+works	array_min--ary10000.min.rb	benchmark/array_min.yml, entry ary10000.min	
+works	array_min--ary100000.min.rb	benchmark/array_min.yml, entry ary100000.min	
+works	array_min--ary1000000.min.rb	benchmark/array_min.yml, entry ary1000000.min	
+works	array_min--ary2.min.rb	benchmark/array_min.yml, entry ary2.min	
+works	array_min--ary2000.min.rb	benchmark/array_min.yml, entry ary2000.min	
+works	array_min--ary20000.min.rb	benchmark/array_min.yml, entry ary20000.min	
+works	array_min--ary3000.min.rb	benchmark/array_min.yml, entry ary3000.min	
+works	array_min--ary500.min.rb	benchmark/array_min.yml, entry ary500.min	
+works	array_min--ary5000.min.rb	benchmark/array_min.yml, entry ary5000.min	
+works	array_min--ary50000.min.rb	benchmark/array_min.yml, entry ary50000.min	
+works	array_sample--array_sample_0.rb	benchmark/array_sample.yml, entry array_sample_0	
+works	array_sample--array_sample_1.rb	benchmark/array_sample.yml, entry array_sample_1	
+works	array_sample_100k_10.rb	benchmark/array_sample_100k_10.rb	
+works	array_sample_100k_11.rb	benchmark/array_sample_100k_11.rb	
+works	array_sample_100k__100.rb	benchmark/array_sample_100k__100.rb	
+works	array_sample_100k__1k.rb	benchmark/array_sample_100k__1k.rb	
+works	array_sample_100k__6k.rb	benchmark/array_sample_100k__6k.rb	
+works	array_sample_100k___10k.rb	benchmark/array_sample_100k___10k.rb	
+works	array_sample_100k___50k.rb	benchmark/array_sample_100k___50k.rb	
+works	array_sort_block.rb	benchmark/array_sort_block.rb	
+works	array_sort_float.rb	benchmark/array_sort_float.rb	
+works	array_sort_int--ary10.sort.rb	benchmark/array_sort_int.yml, entry ary10.sort	
+works	array_sort_int--ary100.sort.rb	benchmark/array_sort_int.yml, entry ary100.sort	
+works	array_sort_int--ary1000.sort.rb	benchmark/array_sort_int.yml, entry ary1000.sort	
+works	array_sort_int--ary10000.sort.rb	benchmark/array_sort_int.yml, entry ary10000.sort	
+works	array_sort_int--ary2.sort.rb	benchmark/array_sort_int.yml, entry ary2.sort	
 works	array_values_at_int.rb	benchmark/array_values_at_int.rb	
 works	enum_lazy_uniq_100.rb	benchmark/enum_lazy_uniq_100.rb	
 works	enum_lazy_uniq_20.rb	benchmark/enum_lazy_uniq_20.rb	
@@ -1150,6 +1110,46 @@ works	enum_lazy_zip--chain-first_ary.rb	benchmark/enum_lazy_zip.yml, entry chain
 works	enum_lazy_zip--chain-first_noarg.rb	benchmark/enum_lazy_zip.yml, entry chain-first_noarg	
 works	enum_lazy_zip--first_ary.rb	benchmark/enum_lazy_zip.yml, entry first_ary	
 works	enum_lazy_zip--first_noarg.rb	benchmark/enum_lazy_zip.yml, entry first_noarg	
+works	enum_minmax--set10.max.rb	benchmark/enum_minmax.yml, entry set10.max	
+works	enum_minmax--set10.min.rb	benchmark/enum_minmax.yml, entry set10.min	
+works	enum_minmax--set10.minmax.rb	benchmark/enum_minmax.yml, entry set10.minmax	
+works	enum_minmax--set100.max.rb	benchmark/enum_minmax.yml, entry set100.max	
+works	enum_minmax--set100.min.rb	benchmark/enum_minmax.yml, entry set100.min	
+works	enum_minmax--set100.minmax.rb	benchmark/enum_minmax.yml, entry set100.minmax	
+works	enum_minmax--set1000.max.rb	benchmark/enum_minmax.yml, entry set1000.max	
+works	enum_minmax--set1000.min.rb	benchmark/enum_minmax.yml, entry set1000.min	
+works	enum_minmax--set1000.minmax.rb	benchmark/enum_minmax.yml, entry set1000.minmax	
+works	enum_minmax--set10000.max.rb	benchmark/enum_minmax.yml, entry set10000.max	
+works	enum_minmax--set10000.min.rb	benchmark/enum_minmax.yml, entry set10000.min	
+works	enum_minmax--set10000.minmax.rb	benchmark/enum_minmax.yml, entry set10000.minmax	
+works	enum_minmax--set2.max.rb	benchmark/enum_minmax.yml, entry set2.max	
+works	enum_minmax--set2.min.rb	benchmark/enum_minmax.yml, entry set2.min	
+works	enum_minmax--set2.minmax.rb	benchmark/enum_minmax.yml, entry set2.minmax	
+works	enum_sort--set10.sort_by.rb	benchmark/enum_sort.yml, entry set10.sort_by	
+works	enum_sort--set100.sort_by.rb	benchmark/enum_sort.yml, entry set100.sort_by	
+works	enum_sort--set1000.sort_by.rb	benchmark/enum_sort.yml, entry set1000.sort_by	
+works	enum_sort--set10000.sort_by.rb	benchmark/enum_sort.yml, entry set10000.sort_by	
+works	enum_sort--set2.sort_by.rb	benchmark/enum_sort.yml, entry set2.sort_by	
+works	enum_sort_by--all_zero10.sort_by.rb	benchmark/enum_sort_by.yml, entry all_zero10.sort_by	
+works	enum_sort_by--all_zero1000.sort_by.rb	benchmark/enum_sort_by.yml, entry all_zero1000.sort_by	
+works	enum_sort_by--all_zero100000.sort_by.rb	benchmark/enum_sort_by.yml, entry all_zero100000.sort_by	
+works	enum_sort_by--all_zero2.sort_by.rb	benchmark/enum_sort_by.yml, entry all_zero2.sort_by	
+works	enum_sort_by--fixnum_array10.sort_by.rb	benchmark/enum_sort_by.yml, entry fixnum_array10.sort_by	
+works	enum_sort_by--fixnum_array1000.sort_by.rb	benchmark/enum_sort_by.yml, entry fixnum_array1000.sort_by	
+works	enum_sort_by--fixnum_array100000.sort_by.rb	benchmark/enum_sort_by.yml, entry fixnum_array100000.sort_by	
+works	enum_sort_by--fixnum_array2.sort_by.rb	benchmark/enum_sort_by.yml, entry fixnum_array2.sort_by	
+works	enum_sort_by--float_array10.sort_by.rb	benchmark/enum_sort_by.yml, entry float_array10.sort_by	
+works	enum_sort_by--float_array1000.sort_by.rb	benchmark/enum_sort_by.yml, entry float_array1000.sort_by	
+works	enum_sort_by--float_array100000.sort_by.rb	benchmark/enum_sort_by.yml, entry float_array100000.sort_by	
+works	enum_sort_by--float_array2.sort_by.rb	benchmark/enum_sort_by.yml, entry float_array2.sort_by	
+works	enum_sort_by--mix_array10.sort_by.rb	benchmark/enum_sort_by.yml, entry mix_array10.sort_by	
+works	enum_sort_by--mix_array1000.sort_by.rb	benchmark/enum_sort_by.yml, entry mix_array1000.sort_by	
+works	enum_sort_by--mix_array100000.sort_by.rb	benchmark/enum_sort_by.yml, entry mix_array100000.sort_by	
+works	enum_sort_by--mix_array2.sort_by.rb	benchmark/enum_sort_by.yml, entry mix_array2.sort_by	
+works	enum_sort_by--string_length10.sort_by.rb	benchmark/enum_sort_by.yml, entry string_length10.sort_by	
+works	enum_sort_by--string_length1000.sort_by.rb	benchmark/enum_sort_by.yml, entry string_length1000.sort_by	
+works	enum_sort_by--string_length100000.sort_by.rb	benchmark/enum_sort_by.yml, entry string_length100000.sort_by	
+works	enum_sort_by--string_length2.sort_by.rb	benchmark/enum_sort_by.yml, entry string_length2.sort_by	
 works	float_methods---_.rb	benchmark/float_methods.yml, entry -_	
 works	float_methods--abs.rb	benchmark/float_methods.yml, entry abs	
 works	float_methods--magnitude.rb	benchmark/float_methods.yml, entry magnitude	

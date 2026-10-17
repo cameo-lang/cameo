@@ -35,3 +35,4 @@ The steps:
 - [12. A Value is a tagged struct](12-tagged-values.md)
 - [13. CRuby's benchmark suite, sorted by what amber lacks](13-ruby-benchmarks.md)
 - [14. `Array.new`, `Array[]` and `Hash.new`](14-array-hash-new.md)
+- [15. Random numbers from a seedable generator](15-random.md)

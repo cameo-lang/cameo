@@ -1,0 +1,24 @@
+# Random numbers. The draws differ between runs and from Ruby's, so this
+# prints only what holds for every draw.
+ints = (1..200).map { rand(10) }
+puts ints.all? { |i| i.is_a?(Integer) && i >= 0 && i < 10 }
+puts ints.uniq.size > 5
+puts (1..200).map { rand(1..6) }.all? { |i| i >= 1 && i <= 6 }
+puts (1..200).map { rand(1...3) }.uniq.sort.inspect
+puts rand(1...1).inspect
+f = rand
+puts f.is_a?(Float) && f >= 0 && f < 1
+puts rand(10000.0).is_a?(Integer)
+puts rand(1.5..2.5).between?(1.5, 2.5)
+deck = (1..52).to_a
+shuffled = deck.shuffle
+puts shuffled.sort == deck, shuffled.size
+hand = deck.sample(5)
+puts hand.size, hand.uniq.size, (hand - deck).empty?
+puts deck.sample(60).size, [].sample.inspect, [].sample(3).inspect
+puts deck.include?(deck.sample)
+begin
+  deck.sample(-1)
+rescue ArgumentError => e
+  puts e.message
+end

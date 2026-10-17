@@ -45,6 +45,11 @@ checked by hand with their result printed. A case CRuby 3.3 cannot run
 (master's benchmarks use Ruby 3.4 and later, such as `it` and the core `Set`)
 was classified by what amber does with it.
 
+A case that draws random numbers cannot match Ruby's values, since amber's
+generator is not Ruby's: it works when it runs cleanly and its result holds
+what holds for any draw (a sorted result is sorted, a sample has distinct
+elements of the array).
+
 A failing case is filed under the first thing that stops it. Fixing that may
 uncover a second blocker, so a file can move from `stdlib/` to another
 directory rather than to `works/`.
@@ -69,7 +74,7 @@ computes `5000!` as 0.
 ```sh
 ruby run.rb                 # every directory
 ruby run.rb works           # what must keep working; exits 1 when one fails
-ruby run.rb --amber /path/to/amber --jobs 8 --timeout 60 stdlib
+ruby run.rb --amber /path/to/amber --jobs 8 --timeout 60 stdlib   # default: 4 jobs, 300 s
 ```
 
 [run.rb](run.rb) builds amber from this component unless `--amber` names a

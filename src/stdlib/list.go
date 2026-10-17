@@ -375,10 +375,50 @@ func installList() {
 		}
 		return object.NewList(out...), nil
 	})
-	def(c, "sample", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Value{}, ctx.Raise(object.NotImplementedErr, "sample is not supported: amber has no random source yet")
+	// sample and shuffle draw from the interpreter's generator.
+	def(c, "shuffle", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		out := append([]object.Value{}, elems(self)...)
+		ctx.Rand().Shuffle(len(out), func(i, j int) { out[i], out[j] = out[j], out[i] })
+		return object.NewList(out...), nil
 	})
-	def(c, "shuffle", 0, c.Methods["sample"].Native)
+	def(c, "sample", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		es := elems(self)
+		if len(args) == 0 {
+			if len(es) == 0 {
+				return object.Nil, nil
+			}
+			return es[ctx.Rand().IntN(len(es))], nil
+		}
+		if len(args) > 1 {
+			return object.Value{}, argError(ctx, len(args), "0..1")
+		}
+		n, err := wantInt(ctx, args[0], "")
+		if err != nil {
+			return object.Value{}, err
+		}
+		if n < 0 {
+			return object.Value{}, ctx.Raise(object.ArgumentError, "negative sample number")
+		}
+		// The first k steps of a Fisher-Yates shuffle over the indices,
+		// with the swapped positions kept in a map, so a small sample of a
+		// large array costs k, not the array's length.
+		k := min(int(n), len(es))
+		swapped := make(map[int]int, k)
+		at := func(i int) int {
+			if j, ok := swapped[i]; ok {
+				return j
+			}
+			return i
+		}
+		out := make([]object.Value, k)
+		for i := 0; i < k; i++ {
+			j := i + ctx.Rand().IntN(len(es)-i)
+			vi, vj := at(i), at(j)
+			swapped[j] = vi
+			out[i] = es[vj]
+		}
+		return object.NewList(out...), nil
+	})
 	def(c, "hash", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Int(hashString(object.Key(self))), nil
 	})
