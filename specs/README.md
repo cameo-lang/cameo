@@ -23,16 +23,16 @@ the first thing that stops it:
 - A `require` of a library amber does not build in (anything but `set`,
   `time`, `pp`, `pathname` and `cgi`) files it under `unsupported/require`.
 - Otherwise the checker's first message names the directory, through the
-  table in `sort.rb`'s `reason`: instance variables outside a class's
-  `initialize`, global variables, mutating methods, singleton methods and so
+  table in `sort.rb`'s `reason`: instance variables, which amber leaves
+  out, global variables, mutating methods, singleton methods and so
   on. A message the table does not know goes to `unsupported/other`.
 - A parse error goes to `bug/` when `ruby -c` accepts the file, and to
   `unsupported/newer-syntax` when MRI rejects it too.
 
 The `require_relative` lines that load mspec's `spec_helper` and a spec's
 fixtures are the harness's business, so they do not count against a file.
-mspec's own idioms do count: a `before` block that sets `@object` is an
-instance variable outside a class, and that alone files 830 specs under
+mspec's own idioms do count: a `before` block that sets `@object` uses an
+instance variable, and that alone files most of the 852 specs under
 `unsupported/instance-variables`. A harness that runs the specs on amber
 will have to give those blocks somewhere to keep their state.
 

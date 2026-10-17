@@ -3,7 +3,7 @@ class Worker
   int :factor
 
   def initialize(factor)
-    @factor = factor
+    self.factor = factor
   end
 
   def times(n) = n * factor

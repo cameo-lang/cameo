@@ -9,8 +9,8 @@ module Geo
     int :x, :y
 
     def initialize(x, y)
-      @x = x
-      @y = y
+      self.x = x
+      self.y = y
     end
 
     def to_s = "(#{x}, #{y})"

@@ -4,9 +4,9 @@ class Address
   int :zip
 
   def initialize(street, city, zip)
-    @street = street
-    @city = city
-    @zip = zip
+    self.street = street
+    self.city = city
+    self.zip = zip
   end
 end
 
@@ -19,11 +19,11 @@ class Person
   enum :role, values: [:admin, :user]
 
   def initialize(name, address, emails: [], scores: {}, role: :user)
-    @name = name
-    @address = address
-    @emails = emails
-    @scores = scores
-    @role = role
+    self.name = name
+    self.address = address
+    self.emails = emails
+    self.scores = scores
+    self.role = role
   end
 end
 

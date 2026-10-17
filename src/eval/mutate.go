@@ -68,8 +68,8 @@ func (in *Interp) rebind(target syntax.Node, v object.Value, env *Env, fr *Frame
 	case *syntax.Var:
 		env.Set(t.Name, v)
 		return nil
-	case *syntax.IVar:
-		return in.writeIVar(t.Name, v, fr, t.Line())
+	case *syntax.Field:
+		return in.writeField(t.Name, v, fr, t.Line())
 	}
 	return in.raise(object.AmberError, 0, "cannot rebind %T", target)
 }

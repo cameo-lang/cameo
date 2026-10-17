@@ -133,19 +133,19 @@ func compile(n syntax.Node) thunk {
 			env.Set(name, v)
 			return v, nil
 		}
-	case *syntax.IVar:
+	case *syntax.Field:
 		name, line := n.Name, n.Line()
 		return func(in *Interp, _ *Env, fr *Frame) (object.Value, error) {
-			return in.readIVar(name, fr, line)
+			return in.readField(name, fr, line)
 		}
-	case *syntax.IVarAssign:
+	case *syntax.FieldAssign:
 		name, line, value := n.Name, n.Line(), compile(n.Value)
 		return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 			v, err := value(in, env, fr)
 			if err != nil {
 				return object.Value{}, err
 			}
-			return v, in.writeIVar(name, v, fr, line)
+			return v, in.writeField(name, v, fr, line)
 		}
 	case *syntax.Regexp:
 		return compileRegexp(n)

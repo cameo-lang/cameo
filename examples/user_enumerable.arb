@@ -12,9 +12,9 @@ end
 class Nums
   include Enumerable
   list :n, of: :int
-  def initialize(*n) = @n = n
+  def initialize(*n) = self.n = n
   def each(&block)
-    @n.each(&block)
+    self.n.each(&block)
     self
   end
 end

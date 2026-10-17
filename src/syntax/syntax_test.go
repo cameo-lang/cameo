@@ -101,17 +101,25 @@ func TestIndexAssignmentRewrites(t *testing.T) {
 	}
 }
 
-func TestIvarAssignmentInsideInitializeOnly(t *testing.T) {
-	parse(t, "class P\n int :x\n def initialize(x)\n  @x = x\n  @x.y = 1\n end\nend\n")
-	rejects(t, "class P\n def set(x)\n  @x = x\n end\nend\n", "test.arb:3: @x = …: a field is set in initialize only")
-	rejects(t, "@x = 1\n", "a field is set in initialize only")
-	rejects(t, "puts @x\n", "there is no class here")
+func TestFieldAssignmentInsideInitializeOnly(t *testing.T) {
+	parse(t, "class P\n int :x\n def initialize(x)\n  self.x = x\n  self.x.y = 1\n  self.x += 1\n end\nend\n")
+	rejects(t, "class P\n def set(x)\n  self.x = x\n end\nend\n", "test.arb:3: self.x = …: a field is set in initialize only")
+	rejects(t, "self.x = 1\n", "a field is set in initialize only")
+	rejects(t, "class P\n def initialize\n  self[:x] = 1\n end\nend\n", "self[…] = …: amber has no setters")
+}
+
+func TestNoInstanceVariables(t *testing.T) {
+	// @ is free: initialize sets a field with self.x =, and a field is read
+	// with its reader.
+	rejects(t, "class P\n int :x\n def initialize(x)\n  @x = x\n end\nend\n", "@x = …: amber has no instance variables; initialize sets a field with self.x = …")
+	rejects(t, "class P\n int :x\n def x2 = @x * 2\nend\n", "@x: amber has no instance variables; a field is read with its reader, x or self.x")
+	rejects(t, "class P\n int :x\n def initialize\n  @x.y = 1\n end\nend\n", "@x: amber has no instance variables")
+	rejects(t, "puts @x\n", "amber has no instance variables")
 }
 
 func TestAssignmentNeedsALocalAtTheStart(t *testing.T) {
 	rejects(t, "foo.x = 1\n", "the left side of an assignment must start with a local variable")
 	rejects(t, "A.x = 1\n", "must start with a local variable")
-	rejects(t, "self.x = 1\n", "must start with a local variable")
 	parse(t, "x = 1\nx = 2\n")
 }
 
@@ -126,8 +134,8 @@ func TestMutationRebindsALocal(t *testing.T) {
 	// A mutating call on a local or a field in initialize parses; the
 	// evaluator rebinds the local.
 	parse(t, "a = []\na << 1 << 2\na.push(3)\na.map! { _1 }\n")
-	parse(t, "class C\n  list :xs, of: :int\n  def initialize\n    @xs = []\n    @xs << 1\n  end\nend\n")
-	rejects(t, "class C\n  list :xs, of: :int\n  def add(x) = @xs << x\nend\n", "<< changes its receiver")
+	parse(t, "class C\n  list :xs, of: :int\n  def initialize\n    self.xs = []\n    self.xs << 1\n    self.xs.push(2)\n  end\nend\n")
+	rejects(t, "class C\n  list :xs, of: :int\n  def add(x) = self.xs << x\nend\n", "<< changes its receiver")
 }
 
 func TestBacktrackingRegexpIsRefused(t *testing.T) {
@@ -207,7 +215,7 @@ class Person
   ref :home, Address
   enum :role, values: [:admin, :user]
   include Describable
-  def initialize(name); @name = name; end
+  def initialize(name); self.name = name; end
   def self.build = new("x")
 end
 `)

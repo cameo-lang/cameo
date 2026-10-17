@@ -230,13 +230,12 @@ func (c *converter) expr(n ast.Node) Node {
 		return nil
 	case *ast.IvarRef:
 		name := strings.TrimPrefix(n.Name, "@")
-		if !c.insideClass() {
-			c.fail("@%s: instance variables read fields, and there is no class here", name)
-			return nil
-		}
-		return &IVar{c.pos(), name}
+		c.fail("@%s: amber has no instance variables; a field is read with its reader, %s or self.%s", name, name, name)
+		return nil
 	case *ast.IvarAssign:
-		return c.ivarAssign(strings.TrimPrefix(n.Name, "@"), c.expr(n.Value))
+		name := strings.TrimPrefix(n.Name, "@")
+		c.fail("@%s = …: amber has no instance variables; initialize sets a field with self.%s = …", name, name)
+		return nil
 	case *ast.ClassDef:
 		return c.classDef(n)
 	case *ast.ModuleDef:
@@ -386,13 +385,33 @@ func (c *converter) scopedConst(n *ast.ScopedConst) Node {
 	return &ScopedConst{c.pos(), scope, n.Name}
 }
 
-func (c *converter) ivarAssign(name string, value Node) Node {
-	def, ok := c.enclosingDef()
-	if !ok || def.name != "initialize" || !c.insideClass() {
-		c.fail("@%s = …: a field is set in initialize only; elsewhere use with", name)
+// fieldAssign is `self.name = value`, which sets a field while initialize
+// builds the instance; anywhere else there is nothing to set.
+func (c *converter) fieldAssign(name string, value Node) Node {
+	if !c.inInitialize() {
+		c.fail("self.%s = …: a field is set in initialize only; elsewhere use with", name)
 		return nil
 	}
-	return &IVarAssign{c.pos(), name, value}
+	return &FieldAssign{c.pos(), name, value}
+}
+
+// inInitialize reports a position inside a class's initialize.
+func (c *converter) inInitialize() bool {
+	def, ok := c.enclosingDef()
+	return ok && def.name == "initialize" && c.insideClass()
+}
+
+// selfField is the field name of `self.name`, a reader call on self that
+// initialize may rebind; ok is false for anything else.
+func (c *converter) selfField(n ast.Node) (string, bool) {
+	call, ok := n.(*ast.Call)
+	if !ok || call.Safe || call.Block != nil || len(call.Args) > 0 || !isPlainName(call.Name) {
+		return "", false
+	}
+	if _, isSelf := call.Recv.(*ast.SelfLit); !isSelf || !c.inInitialize() {
+		return "", false
+	}
+	return call.Name, true
 }
 
 // mutators are methods of Ruby's core that change their receiver. amber has
@@ -865,13 +884,14 @@ func (c *converter) assignment(n *ast.Call) Node {
 		c.fail("%s: amber has no setters", n.Name)
 		return nil
 	}
-	return c.update(n.Recv, key, value, n)
+	return c.update(n.Recv, key, n.Name != "[]=", value, n)
 }
 
 // update binds a copy of recv with key replaced by value to wherever recv came
-// from, following attribute and index reads down to a local or instance
-// variable.
-func (c *converter) update(recv ast.Node, key, value Node, origin *ast.Call) Node {
+// from, following attribute and index reads down to a local variable, or to
+// self in initialize. attr tells that key names an attribute, `.key`, rather
+// than an index, `[key]`.
+func (c *converter) update(recv ast.Node, key Node, attr bool, value Node, origin *ast.Call) Node {
 	with := func(target Node) Node { return &With{c.pos(), target, key, value} }
 	switch r := recv.(type) {
 	case *ast.VarRef:
@@ -882,18 +902,22 @@ func (c *converter) update(recv ast.Node, key, value Node, origin *ast.Call) Nod
 		return &Assign{c.pos(), r.Name, with(&Var{c.pos(), r.Name})}
 	case *ast.IvarRef:
 		name := strings.TrimPrefix(r.Name, "@")
-		if !c.insideClass() {
-			c.fail("@%s: instance variables read fields, and there is no class here", name)
+		c.fail("@%s: amber has no instance variables; initialize sets a field with self.%s = …", name, name)
+		return nil
+	case *ast.SelfLit:
+		// self.name = value, or the end of a chain such as self.a.b = value.
+		if !attr {
+			c.fail("self[…] = …: amber has no setters; initialize sets a field by name, self.name = …")
 			return nil
 		}
-		return c.ivarAssign(name, with(&IVar{c.pos(), name}))
+		return c.fieldAssign(key.(*Sym).Name, value)
 	case *ast.Call:
 		if r.Recv != nil && r.Block == nil && !r.Safe {
 			switch {
 			case len(r.Args) == 0 && isPlainName(r.Name):
-				return c.update(r.Recv, &Sym{c.pos(), r.Name}, with(c.expr(r)), origin)
+				return c.update(r.Recv, &Sym{c.pos(), r.Name}, true, with(c.expr(r)), origin)
 			case r.Name == "[]" && len(r.Args) == 1:
-				return c.update(r.Recv, c.expr(r.Args[0]), with(c.expr(r)), origin)
+				return c.update(r.Recv, c.expr(r.Args[0]), false, with(c.expr(r)), origin)
 			}
 		}
 	}
@@ -1189,14 +1213,11 @@ func (c *converter) mutCall(n ast.Node) Node {
 		default:
 			return nil
 		}
-		switch r := recv.(type) {
-		case *ast.VarRef:
+		if r, ok := recv.(*ast.VarRef); ok {
 			return &MutCall{c.pos(), &Var{c.pos(), r.Name}, steps}
-		case *ast.IvarRef:
-			if def, ok := c.enclosingDef(); ok && def.name == "initialize" {
-				return &MutCall{c.pos(), &IVar{c.pos(), strings.TrimPrefix(r.Name, "@")}, steps}
-			}
-			return nil
+		}
+		if name, ok := c.selfField(recv); ok {
+			return &MutCall{c.pos(), &Field{c.pos(), name}, steps}
 		}
 		cur = recv
 	}

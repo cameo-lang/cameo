@@ -147,15 +147,16 @@ type MultiAssign struct {
 	Values     []Node
 }
 
-// IVar reads a field of self through its instance variable.
-type IVar struct {
+// Field reads a field of self. The converter makes one only as the target
+// of a MutCall in initialize, `self.items << x`, which rebinds the field.
+type Field struct {
 	Pos
 	Name string
 }
 
-// IVarAssign sets a field inside initialize. The checker rejects it anywhere
-// else.
-type IVarAssign struct {
+// FieldAssign is `self.name = value` inside initialize, which sets a field
+// of the instance being built. The checker rejects it anywhere else.
+type FieldAssign struct {
 	Pos
 	Name  string
 	Value Node
@@ -315,7 +316,7 @@ type Or struct {
 // nil.
 type MutCall struct {
 	Pos
-	Target Node // *Var or *IVar
+	Target Node // *Var or *Field
 	Steps  []*Call
 }
 

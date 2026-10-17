@@ -4,7 +4,7 @@ class Greeter
   string :name
 
   def initialize(name)
-    @name = name
+    self.name = name
   end
 
   def greet = "hi #{name}"
@@ -16,7 +16,7 @@ class Greeter
   string :name
 
   def initialize(name)
-    @name = name
+    self.name = name
   end
 
   def greet = "hi #{name}"
@@ -29,7 +29,7 @@ class Greeter
   string :name
 
   def initialize(name)
-    @name = name
+    self.name = name
   end
 
   def greet = "hello #{name}"
