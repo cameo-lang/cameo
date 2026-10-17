@@ -23,7 +23,7 @@ type code struct {
 	bodies sync.Map // *syntax.Def or *syntax.Block -> thunk of its body
 }
 
-// expr answers the thunk of n, compiling it on first use.
+// expr returns the thunk of n, compiling it on first use.
 func (c *code) expr(n syntax.Node) thunk {
 	if t, ok := c.exprs.Load(n); ok {
 		return t.(thunk)
@@ -33,7 +33,7 @@ func (c *code) expr(n syntax.Node) thunk {
 	return t
 }
 
-// body answers the thunk of the body of a def or a block, compiling it on
+// body returns the thunk of the body of a def or a block, compiling it on
 // first use.
 func (c *code) body(owner syntax.Node, body []syntax.Node) thunk {
 	if t, ok := c.bodies.Load(owner); ok {
@@ -358,26 +358,8 @@ func compileCall(n *syntax.Call) thunk {
 		recv = compile(n.Recv)
 	}
 	block := n.Block
-	if op := binaryOp(name); op != nil && recv != nil && len(n.Args) == 1 && block == nil {
-		arg := compile(n.Args[0])
-		return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
-			r, err := recv(in, env, fr)
-			if err != nil {
-				return nil, err
-			}
-			if safe && r == object.Nil {
-				return object.Nil, nil
-			}
-			a, err := arg(in, env, fr)
-			if err != nil {
-				return nil, err
-			}
-			if v := op(r, a); v != nil {
-				return v, nil
-			}
-			v, err := in.call(fr, r, name, []object.Value{a}, nil, nil, false, line)
-			return v, withLine(err, line)
-		}
+	if t := compileBinary(n); t != nil {
+		return t
 	}
 	return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 		r := fr.Self
@@ -459,5 +441,212 @@ func compileBegin(n *syntax.Begin) thunk {
 			return nil, ensureErr
 		}
 		return result, err
+	}
+}
+
+// Operators on integers.
+//
+// An intThunk evaluates an expression and returns an integer result
+// unboxed: v is nil and i holds the integer. Any other result, nil
+// included, comes back boxed in v. An arithmetic expression over integers
+// compiles to a tree of these, so its intermediate results are never
+// boxed; only the value the tree is finally used as is.
+type intThunk func(in *Interp, env *Env, fr *Frame) (i int64, v object.Value, err error)
+
+// compileInt compiles n for an operator that wants an integer operand.
+func compileInt(n syntax.Node) intThunk {
+	switch n := n.(type) {
+	case *syntax.Int:
+		c := n.Value
+		return func(*Interp, *Env, *Frame) (int64, object.Value, error) { return c, nil, nil }
+	case *syntax.Var:
+		name := n.Name
+		return func(_ *Interp, env *Env, _ *Frame) (int64, object.Value, error) {
+			v, ok := env.Get(name)
+			if !ok {
+				return 0, object.Nil, nil
+			}
+			if i, ok := v.(object.Int); ok {
+				return int64(i), nil, nil
+			}
+			return 0, v, nil
+		}
+	case *syntax.Call:
+		if operatorCall(n) {
+			if t := compileIntArith(n); t != nil {
+				return t
+			}
+		}
+	}
+	t := compile(n)
+	return func(in *Interp, env *Env, fr *Frame) (int64, object.Value, error) {
+		v, err := t(in, env, fr)
+		if err != nil {
+			return 0, nil, err
+		}
+		if i, ok := v.(object.Int); ok {
+			return int64(i), nil, nil
+		}
+		return 0, v, nil
+	}
+}
+
+// intArith returns the integer arithmetic for an operator name, or nil.
+// ok is false when the operands need the ordinary call: a zero divisor.
+func intArith(name string) func(x, y int64) (r int64, ok bool) {
+	switch name {
+	case "+":
+		return func(x, y int64) (int64, bool) { return x + y, true }
+	case "-":
+		return func(x, y int64) (int64, bool) { return x - y, true }
+	case "*":
+		return func(x, y int64) (int64, bool) { return x * y, true }
+	case "/":
+		return func(x, y int64) (int64, bool) {
+			if y == 0 {
+				return 0, false
+			}
+			q := x / y
+			if x%y != 0 && (x < 0) != (y < 0) {
+				q--
+			}
+			return q, true
+		}
+	case "%":
+		return func(x, y int64) (int64, bool) {
+			if y == 0 {
+				return 0, false
+			}
+			m := x % y
+			if m != 0 && (m < 0) != (y < 0) {
+				m += y
+			}
+			return m, true
+		}
+	}
+	return nil
+}
+
+// intCompare returns the integer comparison for an operator name, or nil.
+func intCompare(name string) func(x, y int64) bool {
+	switch name {
+	case "<":
+		return func(x, y int64) bool { return x < y }
+	case "<=":
+		return func(x, y int64) bool { return x <= y }
+	case ">":
+		return func(x, y int64) bool { return x > y }
+	case ">=":
+		return func(x, y int64) bool { return x >= y }
+	case "==":
+		return func(x, y int64) bool { return x == y }
+	case "!=":
+		return func(x, y int64) bool { return x != y }
+	}
+	return nil
+}
+
+// operatorCall reports whether n has the shape the operator fast paths
+// take: a receiver, one plain argument, nothing else. A safe call `&.`
+// is left to the ordinary path.
+func operatorCall(n *syntax.Call) bool {
+	if n.Recv == nil || len(n.Args) != 1 || n.Block != nil || n.BlockArg != nil || len(n.KwArgs) > 0 || n.Safe {
+		return false
+	}
+	_, splat := n.Args[0].(*syntax.Splat)
+	return !splat
+}
+
+// operands compiles the two operands of an operator call and evaluates
+// them, left first; both come back unboxed when both are integers.
+type operands func(in *Interp, env *Env, fr *Frame) (x, y int64, xv, yv object.Value, err error)
+
+func compileOperands(n *syntax.Call) operands {
+	left, right := compileInt(n.Recv), compileInt(n.Args[0])
+	return func(in *Interp, env *Env, fr *Frame) (int64, int64, object.Value, object.Value, error) {
+		x, xv, err := left(in, env, fr)
+		if err != nil {
+			return 0, 0, nil, nil, err
+		}
+		y, yv, err := right(in, env, fr)
+		if err != nil {
+			return 0, 0, nil, nil, err
+		}
+		return x, y, xv, yv, nil
+	}
+}
+
+// dispatch is the ordinary call for operands the fast path does not
+// cover: boxes what is unboxed, tries the boxed fast path (two floats),
+// then dispatches.
+func dispatch(in *Interp, fr *Frame, name string, op func(a, b object.Value) object.Value, line int, x, y int64, xv, yv object.Value) (object.Value, error) {
+	a, b := xv, yv
+	if a == nil {
+		a = object.IntValue(x)
+	}
+	if b == nil {
+		b = object.IntValue(y)
+	}
+	if v := op(a, b); v != nil {
+		return v, nil
+	}
+	v, err := in.call(fr, a, name, []object.Value{b}, nil, nil, false, line)
+	return v, withLine(err, line)
+}
+
+// compileIntArith compiles an arithmetic operator call to an intThunk,
+// or nil when the name is not one.
+func compileIntArith(n *syntax.Call) intThunk {
+	arith := intArith(n.Name)
+	if arith == nil {
+		return nil
+	}
+	ops, op, name, line := compileOperands(n), binaryOp(n.Name), n.Name, n.Line()
+	return func(in *Interp, env *Env, fr *Frame) (int64, object.Value, error) {
+		x, y, xv, yv, err := ops(in, env, fr)
+		if err != nil {
+			return 0, nil, err
+		}
+		if xv == nil && yv == nil {
+			if r, ok := arith(x, y); ok {
+				return r, nil, nil
+			}
+		}
+		v, err := dispatch(in, fr, name, op, line, x, y, xv, yv)
+		return 0, v, err
+	}
+}
+
+// compileBinary compiles an operator call with one argument to a thunk,
+// or nil when the operator has no fast path. Arithmetic keeps its
+// operands' intermediate results unboxed; a comparison reads them
+// unboxed and returns a boolean.
+func compileBinary(n *syntax.Call) thunk {
+	if !operatorCall(n) {
+		return nil
+	}
+	if arith := compileIntArith(n); arith != nil {
+		return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
+			i, v, err := arith(in, env, fr)
+			if err != nil || v != nil {
+				return v, err
+			}
+			return object.IntValue(i), nil
+		}
+	}
+	cmp := intCompare(n.Name)
+	if cmp == nil {
+		return nil
+	}
+	ops, op, name, line := compileOperands(n), binaryOp(n.Name), n.Name, n.Line()
+	return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
+		x, y, xv, yv, err := ops(in, env, fr)
+		if err != nil {
+			return nil, err
+		}
+		if xv == nil && yv == nil {
+			return object.BoolOf(cmp(x, y)), nil
+		}
+		return dispatch(in, fr, name, op, line, x, y, xv, yv)
 	}
 }

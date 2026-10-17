@@ -134,7 +134,7 @@ func (in *Interp) evalDef(n *syntax.Def, fr *Frame) (object.Value, error) {
 }
 
 // evalClassDef binds a class to its name. The same definition (by digest)
-// evaluated again answers the class already bound; a different one makes a
+// evaluated again returns the class already bound; a different one makes a
 // new class and rebinds the name, leaving the old class to its instances.
 func (in *Interp) evalClassDef(n *syntax.ClassDef, env *Env, fr *Frame) (object.Value, error) {
 	table := in.constTable(fr)

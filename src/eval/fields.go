@@ -133,7 +133,7 @@ func (in *Interp) elementType(name string, fr *Frame, line int) (*object.FieldTy
 	return &object.FieldType{Kind: "ref", Ref: cls}, nil
 }
 
-// checkField checks a value against a field's declared type and answers
+// checkField checks a value against a field's declared type and returns
 // the value as stored: an Integer given to a float field becomes a Float.
 func (in *Interp) checkField(f *object.Field, v object.Value, line int) (object.Value, error) {
 	if v == object.Nil {
@@ -161,7 +161,7 @@ func emptyFor(t *object.FieldType) object.Value {
 	return object.Nil
 }
 
-// coerce checks v against a type, answering the stored form.
+// coerce checks v against a type and returns the stored form.
 func (in *Interp) coerce(t *object.FieldType, v object.Value) (object.Value, bool) {
 	switch t.Kind {
 	case "string":
@@ -385,7 +385,7 @@ func (in *Interp) evalWith(n *syntax.With, env *Env, fr *Frame) (object.Value, e
 	return out, withLine(err, n.Line())
 }
 
-// with answers target with key set to value: a field on an instance, an
+// with returns target with key set to value: a field on an instance, an
 // entry in a map, an element of a list.
 func (in *Interp) with(target, key, value object.Value) (object.Value, error) {
 	switch t := target.(type) {
@@ -435,7 +435,7 @@ func (in *Interp) with(target, key, value object.Value) (object.Value, error) {
 }
 
 // tap is `value.tap { |v| { key: new, … } }`: a copy with every entry of
-// the map the block answers applied.
+// the map the block returns applied.
 func (in *Interp) tap(self object.Value, block object.Value) (object.Value, error) {
 	if block == nil {
 		return nil, in.raise(object.LocalJumpError, 0, "no block given (tap)")
@@ -451,7 +451,7 @@ func (in *Interp) tap(self object.Value, block object.Value) (object.Value, erro
 	}
 	m, ok := changes.(*object.Map)
 	if !ok {
-		return nil, in.raise(object.TypeError, 0, "tap's block answers a map of the changes, not %s", typeName(changes))
+		return nil, in.raise(object.TypeError, 0, "tap's block returns a map of the changes, not %s", typeName(changes))
 	}
 	out := self
 	for i, k := range m.Keys() {

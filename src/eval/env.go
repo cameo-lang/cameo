@@ -136,7 +136,7 @@ type Proc struct {
 func (*Proc) Class() *object.Class { return object.ProcClass }
 
 // Arity is the number of required positional parameters, negative when the
-// block takes a splat or optional parameters, as Proc#arity answers.
+// block takes a splat or optional parameters, as Proc#arity reports.
 func (p *Proc) Arity() int {
 	if p.Block == nil {
 		return -2

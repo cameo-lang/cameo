@@ -173,7 +173,7 @@ type Call struct {
 	KwArgs   []MapEntry
 	BlockArg Node
 	Block    *Block
-	Safe     bool // &. : a nil receiver answers nil
+	Safe     bool // &. : the call on a nil receiver returns nil
 }
 
 // Block is a literal block or a lambda body.
@@ -320,7 +320,7 @@ type InClause struct {
 }
 
 // MatchPattern is `subject => pattern` (Test false, raises on mismatch) or
-// `subject in pattern` (Test true, answers a boolean).
+// `subject in pattern` (Test true, returns a boolean).
 type MatchPattern struct {
 	Pos
 	Subject Node
@@ -477,7 +477,7 @@ type With struct {
 }
 
 // Async is `async recv, :method, *args`: it starts recv.method(*args) on an
-// AsyncProcess and answers the process.
+// AsyncProcess and returns the process.
 type Async struct {
 	Pos
 	Recv   Node
@@ -498,5 +498,5 @@ type Await struct {
 }
 
 // AwaitAll is `await :all`: it waits for every process started in the current
-// scope and answers their results as a list.
+// scope and returns their results as a list.
 type AwaitAll struct{ Pos }

@@ -1,4 +1,4 @@
-# Collections never change: every operation answers a new value.
+# Collections never change: every operation returns a new value.
 list = [1, 2, 3]
 longer = list.append(4, 5)
 puts list.inspect

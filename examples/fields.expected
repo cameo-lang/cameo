@@ -24,7 +24,7 @@ TypeError: field home of Person takes an Address, not an instance of String
 TypeError: field street of Address takes a string, not an instance of Integer
 ArgumentError: wrong number of arguments (given 1, expected 0): Address takes its fields as keywords
 TypeError: field age of Person takes an int, not an instance of Float
-TypeError: tap's block answers a map of the changes, not an instance of Integer
+TypeError: tap's block returns a map of the changes, not an instance of Integer
 Address(street: nil, city: nil, zip: nil)
 nil
 [:a, 2, :c]
