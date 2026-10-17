@@ -1,28 +1,4 @@
 directory	file	source	reason
-stdlib/array	string_downcase--downcase-1.rb	benchmark/string_downcase.yml, entry downcase-1	Array#pack
-stdlib/array	string_downcase--downcase-10.rb	benchmark/string_downcase.yml, entry downcase-10	Array#pack
-stdlib/array	string_downcase--downcase-100.rb	benchmark/string_downcase.yml, entry downcase-100	Array#pack
-stdlib/array	string_downcase--downcase-1000.rb	benchmark/string_downcase.yml, entry downcase-1000	Array#pack
-stdlib/array	string_downcase--downcase-ascii8bit-256.rb	benchmark/string_downcase.yml, entry downcase-ascii8bit-256	Array#pack
-stdlib/array	string_downcase--downcase-ascii8bit-2560.rb	benchmark/string_downcase.yml, entry downcase-ascii8bit-2560	Array#pack
-stdlib/array	string_downcase--downcase-ascii8bit-25600.rb	benchmark/string_downcase.yml, entry downcase-ascii8bit-25600	Array#pack
-stdlib/array	string_downcase--downcase-ascii8bit-256000.rb	benchmark/string_downcase.yml, entry downcase-ascii8bit-256000	Array#pack
-stdlib/array	string_downcase--downcase-nonascii1.rb	benchmark/string_downcase.yml, entry downcase-nonascii1	Array#pack
-stdlib/array	string_downcase--downcase-nonascii10.rb	benchmark/string_downcase.yml, entry downcase-nonascii10	Array#pack
-stdlib/array	string_downcase--downcase-nonascii100.rb	benchmark/string_downcase.yml, entry downcase-nonascii100	Array#pack
-stdlib/array	string_downcase--downcase-nonascii1000.rb	benchmark/string_downcase.yml, entry downcase-nonascii1000	Array#pack
-stdlib/array	string_upcase--upcase-1.rb	benchmark/string_upcase.yml, entry upcase-1	Array#pack
-stdlib/array	string_upcase--upcase-10.rb	benchmark/string_upcase.yml, entry upcase-10	Array#pack
-stdlib/array	string_upcase--upcase-100.rb	benchmark/string_upcase.yml, entry upcase-100	Array#pack
-stdlib/array	string_upcase--upcase-1000.rb	benchmark/string_upcase.yml, entry upcase-1000	Array#pack
-stdlib/array	string_upcase--upcase-ascii8bit-256.rb	benchmark/string_upcase.yml, entry upcase-ascii8bit-256	Array#pack
-stdlib/array	string_upcase--upcase-ascii8bit-2560.rb	benchmark/string_upcase.yml, entry upcase-ascii8bit-2560	Array#pack
-stdlib/array	string_upcase--upcase-ascii8bit-25600.rb	benchmark/string_upcase.yml, entry upcase-ascii8bit-25600	Array#pack
-stdlib/array	string_upcase--upcase-ascii8bit-256000.rb	benchmark/string_upcase.yml, entry upcase-ascii8bit-256000	Array#pack
-stdlib/array	string_upcase--upcase-nonascii1.rb	benchmark/string_upcase.yml, entry upcase-nonascii1	Array#pack
-stdlib/array	string_upcase--upcase-nonascii10.rb	benchmark/string_upcase.yml, entry upcase-nonascii10	Array#pack
-stdlib/array	string_upcase--upcase-nonascii100.rb	benchmark/string_upcase.yml, entry upcase-nonascii100	Array#pack
-stdlib/array	string_upcase--upcase-nonascii1000.rb	benchmark/string_upcase.yml, entry upcase-nonascii1000	Array#pack
 stdlib/string	string_tr--tr_escape.rb	benchmark/string_tr.yml, entry tr_escape	String#tr with a hash (newer than Ruby 3.3)
 unsupported/anonymous-classes	class_superclass--large_class_superclass.rb	benchmark/class_superclass.yml, entry large_class_superclass	Module.new (a module built at run time, to include or extend)
 unsupported/anonymous-classes	class_superclass--medium_class_superclass.rb	benchmark/class_superclass.yml, entry medium_class_superclass	Module.new (a module built at run time, to include or extend)
@@ -140,24 +116,6 @@ unsupported/complex	numeric_methods--integer_real.rb	benchmark/numeric_methods.y
 unsupported/complex	numeric_methods--integr_imag.rb	benchmark/numeric_methods.yml, entry integr_imag	Rational and Complex (left out)
 unsupported/complex	numeric_methods--real_.rb	benchmark/numeric_methods.yml, entry real_	Rational and Complex (left out)
 unsupported/complex	time_strptime--time_strptime_5.rb	benchmark/time_strptime.yml, entry time_strptime_5	Rational and Complex (left out)
-unsupported/encodings	string_coderange_scan--coderange_alternating.rb	benchmark/string_coderange_scan.yml, entry coderange_alternating	string encodings (force_encoding, .b)
-unsupported/encodings	string_coderange_scan--coderange_ascii.rb	benchmark/string_coderange_scan.yml, entry coderange_ascii	string encodings (force_encoding, .b)
-unsupported/encodings	string_coderange_scan--coderange_multibyte.rb	benchmark/string_coderange_scan.yml, entry coderange_multibyte	string encodings (force_encoding, .b)
-unsupported/encodings	string_gsub--escape.rb	benchmark/string_gsub.yml, entry escape	string encodings (force_encoding, .b)
-unsupported/encodings	string_gsub--escape_bin.rb	benchmark/string_gsub.yml, entry escape_bin	string encodings (force_encoding, .b)
-unsupported/encodings	string_gsub--escape_utf8.rb	benchmark/string_gsub.yml, entry escape_utf8	string encodings (force_encoding, .b)
-unsupported/encodings	string_gsub--escape_utf8_bin.rb	benchmark/string_gsub.yml, entry escape_utf8_bin	string encodings (force_encoding, .b)
-unsupported/encodings	string_gsub--gsub_no_match_shared.rb	benchmark/string_gsub.yml, entry gsub_no_match_shared	string encodings (force_encoding, .b)
-unsupported/encodings	string_gsub--sub_no_match_shared.rb	benchmark/string_gsub.yml, entry sub_no_match_shared	string encodings (force_encoding, .b)
-unsupported/encodings	string_inspect--inspect_binary.rb	benchmark/string_inspect.yml, entry inspect_binary	string encodings (force_encoding, .b)
-unsupported/encodings	string_scrub--scrub_known_invalid.rb	benchmark/string_scrub.yml, entry scrub_known_invalid	string encodings (force_encoding, .b)
-unsupported/encodings	string_scrub--scrub_known_valid.rb	benchmark/string_scrub.yml, entry scrub_known_valid	string encodings (force_encoding, .b)
-unsupported/encodings	string_scrub--scrub_unknown_and_invalid_coderange.rb	benchmark/string_scrub.yml, entry scrub_unknown_and_invalid_coderange	string encodings (force_encoding, .b)
-unsupported/encodings	string_scrub--scrub_unknown_and_invalid_coderange_worst_case.rb	benchmark/string_scrub.yml, entry scrub_unknown_and_invalid_coderange_worst_case	string encodings (force_encoding, .b)
-unsupported/encodings	string_scrub--scrub_unknown_but_valid_coderange.rb	benchmark/string_scrub.yml, entry scrub_unknown_but_valid_coderange	string encodings (force_encoding, .b)
-unsupported/encodings	string_scrub--scrub_unknown_but_valid_coderange_worst_case.rb	benchmark/string_scrub.yml, entry scrub_unknown_but_valid_coderange_worst_case	string encodings (force_encoding, .b)
-unsupported/encodings	string_valid_encoding_p--valid_enc_false.rb	benchmark/string_valid_encoding_p.yml, entry valid_enc_false	string encodings (force_encoding, .b)
-unsupported/encodings	string_valid_encoding_p--valid_enc_true.rb	benchmark/string_valid_encoding_p.yml, entry valid_enc_true	string encodings (force_encoding, .b)
 unsupported/environment	array_small_and.rb	benchmark/array_small_and.rb	environment and process
 unsupported/environment	array_small_diff.rb	benchmark/array_small_diff.rb	environment and process
 unsupported/environment	array_small_or.rb	benchmark/array_small_or.rb	environment and process
@@ -1103,12 +1061,34 @@ works	string_casecmp--casecmp-nonascii1000vs10.rb	benchmark/string_casecmp.yml, 
 works	string_codepoints--codepoints_mixed_ascii256.rb	benchmark/string_codepoints.yml, entry codepoints_mixed_ascii256	
 works	string_codepoints--codepoints_mixed_ascii64.rb	benchmark/string_codepoints.yml, entry codepoints_mixed_ascii64	
 works	string_codepoints--codepoints_utf8_2byte.rb	benchmark/string_codepoints.yml, entry codepoints_utf8_2byte	
+works	string_coderange_scan--coderange_alternating.rb	benchmark/string_coderange_scan.yml, entry coderange_alternating	
+works	string_coderange_scan--coderange_ascii.rb	benchmark/string_coderange_scan.yml, entry coderange_ascii	
+works	string_coderange_scan--coderange_multibyte.rb	benchmark/string_coderange_scan.yml, entry coderange_multibyte	
+works	string_downcase--downcase-1.rb	benchmark/string_downcase.yml, entry downcase-1	
+works	string_downcase--downcase-10.rb	benchmark/string_downcase.yml, entry downcase-10	
+works	string_downcase--downcase-100.rb	benchmark/string_downcase.yml, entry downcase-100	
+works	string_downcase--downcase-1000.rb	benchmark/string_downcase.yml, entry downcase-1000	
+works	string_downcase--downcase-ascii8bit-256.rb	benchmark/string_downcase.yml, entry downcase-ascii8bit-256	
+works	string_downcase--downcase-ascii8bit-2560.rb	benchmark/string_downcase.yml, entry downcase-ascii8bit-2560	
+works	string_downcase--downcase-ascii8bit-25600.rb	benchmark/string_downcase.yml, entry downcase-ascii8bit-25600	
+works	string_downcase--downcase-ascii8bit-256000.rb	benchmark/string_downcase.yml, entry downcase-ascii8bit-256000	
+works	string_downcase--downcase-nonascii1.rb	benchmark/string_downcase.yml, entry downcase-nonascii1	
+works	string_downcase--downcase-nonascii10.rb	benchmark/string_downcase.yml, entry downcase-nonascii10	
+works	string_downcase--downcase-nonascii100.rb	benchmark/string_downcase.yml, entry downcase-nonascii100	
+works	string_downcase--downcase-nonascii1000.rb	benchmark/string_downcase.yml, entry downcase-nonascii1000	
 works	string_dup--dup.rb	benchmark/string_dup.yml, entry dup	
 works	string_dup--uplus.rb	benchmark/string_dup.yml, entry uplus	
 works	string_fstring--fstring_random.rb	benchmark/string_fstring.yml, entry fstring_random	
 works	string_fstring--fstring_same.rb	benchmark/string_fstring.yml, entry fstring_same	
+works	string_gsub--escape.rb	benchmark/string_gsub.yml, entry escape	
+works	string_gsub--escape_bin.rb	benchmark/string_gsub.yml, entry escape_bin	
+works	string_gsub--escape_utf8.rb	benchmark/string_gsub.yml, entry escape_utf8	
+works	string_gsub--escape_utf8_bin.rb	benchmark/string_gsub.yml, entry escape_utf8_bin	
+works	string_gsub--gsub_no_match_shared.rb	benchmark/string_gsub.yml, entry gsub_no_match_shared	
+works	string_gsub--sub_no_match_shared.rb	benchmark/string_gsub.yml, entry sub_no_match_shared	
 works	string_index.rb	benchmark/string_index.rb	
 works	string_inspect--inspect_ascii.rb	benchmark/string_inspect.yml, entry inspect_ascii	
+works	string_inspect--inspect_binary.rb	benchmark/string_inspect.yml, entry inspect_binary	
 works	string_inspect--inspect_escapy.rb	benchmark/string_inspect.yml, entry inspect_escapy	
 works	string_inspect--inspect_mixed.rb	benchmark/string_inspect.yml, entry inspect_mixed	
 works	string_inspect--inspect_utf8.rb	benchmark/string_inspect.yml, entry inspect_utf8	
@@ -1139,6 +1119,12 @@ works	string_rpartition--rpartition-nonascii100.rb	benchmark/string_rpartition.y
 works	string_rpartition--rpartition-nonascii1000.rb	benchmark/string_rpartition.yml, entry rpartition-nonascii1000	
 works	string_scan_re.rb	benchmark/string_scan_re.rb	
 works	string_scan_str.rb	benchmark/string_scan_str.rb	
+works	string_scrub--scrub_known_invalid.rb	benchmark/string_scrub.yml, entry scrub_known_invalid	
+works	string_scrub--scrub_known_valid.rb	benchmark/string_scrub.yml, entry scrub_known_valid	
+works	string_scrub--scrub_unknown_and_invalid_coderange.rb	benchmark/string_scrub.yml, entry scrub_unknown_and_invalid_coderange	
+works	string_scrub--scrub_unknown_and_invalid_coderange_worst_case.rb	benchmark/string_scrub.yml, entry scrub_unknown_and_invalid_coderange_worst_case	
+works	string_scrub--scrub_unknown_but_valid_coderange.rb	benchmark/string_scrub.yml, entry scrub_unknown_but_valid_coderange	
+works	string_scrub--scrub_unknown_but_valid_coderange_worst_case.rb	benchmark/string_scrub.yml, entry scrub_unknown_but_valid_coderange_worst_case	
 works	string_split--re_chars-1.rb	benchmark/string_split.yml, entry re_chars-1	
 works	string_split--re_chars-10.rb	benchmark/string_split.yml, entry re_chars-10	
 works	string_split--re_chars-100.rb	benchmark/string_split.yml, entry re_chars-100	
@@ -1165,6 +1151,20 @@ works	string_swapcase--swapcase-nonascii100.rb	benchmark/string_swapcase.yml, en
 works	string_swapcase--swapcase-nonascii1000.rb	benchmark/string_swapcase.yml, entry swapcase-nonascii1000	
 works	string_tr--cgi_escape.rb	benchmark/string_tr.yml, entry cgi_escape	
 works	string_tr--gsub_escape.rb	benchmark/string_tr.yml, entry gsub_escape	
+works	string_upcase--upcase-1.rb	benchmark/string_upcase.yml, entry upcase-1	
+works	string_upcase--upcase-10.rb	benchmark/string_upcase.yml, entry upcase-10	
+works	string_upcase--upcase-100.rb	benchmark/string_upcase.yml, entry upcase-100	
+works	string_upcase--upcase-1000.rb	benchmark/string_upcase.yml, entry upcase-1000	
+works	string_upcase--upcase-ascii8bit-256.rb	benchmark/string_upcase.yml, entry upcase-ascii8bit-256	
+works	string_upcase--upcase-ascii8bit-2560.rb	benchmark/string_upcase.yml, entry upcase-ascii8bit-2560	
+works	string_upcase--upcase-ascii8bit-25600.rb	benchmark/string_upcase.yml, entry upcase-ascii8bit-25600	
+works	string_upcase--upcase-ascii8bit-256000.rb	benchmark/string_upcase.yml, entry upcase-ascii8bit-256000	
+works	string_upcase--upcase-nonascii1.rb	benchmark/string_upcase.yml, entry upcase-nonascii1	
+works	string_upcase--upcase-nonascii10.rb	benchmark/string_upcase.yml, entry upcase-nonascii10	
+works	string_upcase--upcase-nonascii100.rb	benchmark/string_upcase.yml, entry upcase-nonascii100	
+works	string_upcase--upcase-nonascii1000.rb	benchmark/string_upcase.yml, entry upcase-nonascii1000	
+works	string_valid_encoding_p--valid_enc_false.rb	benchmark/string_valid_encoding_p.yml, entry valid_enc_false	
+works	string_valid_encoding_p--valid_enc_true.rb	benchmark/string_valid_encoding_p.yml, entry valid_enc_true	
 works	time_at--time_at_0.rb	benchmark/time_at.yml, entry time_at_0	
 works	time_at--time_at_1.rb	benchmark/time_at.yml, entry time_at_1	
 works	time_at--time_at_2.rb	benchmark/time_at.yml, entry time_at_2	

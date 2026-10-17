@@ -123,7 +123,7 @@ func (in *Interp) newInstance(cls *object.Class, args []object.Value, kw *object
 			case object.KindSymbol:
 				k := k.Str()
 				name = string(k)
-			case object.KindString:
+			case object.KindString, object.KindBytes, object.KindASCII:
 				k := k.Str()
 				name = string(k)
 			default:

@@ -392,12 +392,36 @@ func installInteger() {
 		f, _ := self.AsNumber()
 		return object.Float(f), nil
 	})
-	def(c, "chr", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	// chr is a byte, US-ASCII below 128 and binary to 255, or given an
+	// encoding a character of it.
+	def(c, "chr", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		v, ok := self.AsInt()
-		if !ok || v < 0 || v > 0x10ffff {
+		k := object.KindBytes
+		if len(args) > 0 {
+			var err error
+			if k, err = encodingArg(ctx, args[0]); err != nil {
+				return object.Value{}, err
+			}
+		} else if ok && v < 0x80 {
+			k = object.KindASCII
+		}
+		limit := int64(0xff)
+		switch k {
+		case object.KindString:
+			limit = 0x10ffff
+		case object.KindASCII:
+			limit = 0x7f
+		}
+		if !ok || v < 0 || v > limit || k == object.KindString && v >= 0xd800 && v <= 0xdfff {
+			if k == object.KindString && ok && v >= 0 && v <= 0x10ffff {
+				return object.Value{}, ctx.Raise(object.RangeError, "invalid codepoint 0x%X in UTF-8", v)
+			}
 			return object.Value{}, ctx.Raise(object.RangeError, "%s out of char range", integerText(self, 10))
 		}
-		return object.String(string(rune(v))), nil
+		if k == object.KindString {
+			return object.String(string(rune(v))), nil
+		}
+		return object.StringOf(k, string([]byte{byte(v)})), nil
 	})
 	def(c, "ord", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return self, nil

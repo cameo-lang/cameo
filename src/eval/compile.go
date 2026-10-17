@@ -162,6 +162,10 @@ func compile(n syntax.Node) thunk {
 		line := n.Line()
 		return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 			var b strings.Builder
+			// The result takes the encoding its parts are compatible in, as
+			// Ruby's does: a binary part in UTF-8 text makes it binary.
+			// UTF-8 parts alone, the usual case, need no looking at.
+			kind := object.KindString
 			for _, part := range parts {
 				v, err := part(in, env, fr)
 				if err != nil {
@@ -171,9 +175,17 @@ func compile(n syntax.Node) thunk {
 				if err != nil {
 					return object.Value{}, withLine(err, line)
 				}
+				if pk := v.Kind(); v.IsString() && (pk != kind || kind != object.KindString) {
+					sofar := b.String()
+					next, ok := stdlib.CombineEncodings(kind, sofar == "", object.ASCIIOnly(sofar), pk, s == "", object.ASCIIOnly(s))
+					if !ok {
+						return object.Value{}, in.raise(object.CompatibilityError, line, "%s", stdlib.IncompatibleEncodings(kind, pk))
+					}
+					kind = next
+				}
 				b.WriteString(s)
 			}
-			return object.String(b.String()), nil
+			return object.StringOf(kind, b.String()), nil
 		}
 	case *syntax.List:
 		if elems, ok := compileArgs(n.Elems); ok {

@@ -1,8 +1,6 @@
 package stdlib
 
 import (
-	"strings"
-
 	"github.com/radiospiel/amber/src/object"
 )
 
@@ -213,7 +211,7 @@ func installList() {
 				out = append(out, elems(self)...)
 			}
 			return object.NewList(out...), nil
-		case object.KindString:
+		case object.KindString, object.KindBytes, object.KindASCII:
 			a := args[0].Str()
 			return join(ctx, elems(self), string(a))
 		}
@@ -458,9 +456,6 @@ func installList() {
 		return self, nil
 	})
 	def(c, "to_ary", 0, c.Methods["to_list"].Native)
-	def(c, "pack", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Value{}, ctx.Raise(object.NotImplementedErr, "pack is not supported")
-	})
 	def(c, "each_slice", -1, object.Enumerable.Methods["each_slice"].Native)
 	def(c, "sum", -1, object.Enumerable.Methods["sum"].Native)
 	def(c, "assoc", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -531,23 +526,33 @@ func flatten(elems []object.Value, depth int64) []object.Value {
 	return out
 }
 
+// join is Array#join, whose result takes the encoding its strings are
+// compatible in.
 func join(ctx object.Context, elems []object.Value, sep string) (object.Value, error) {
-	parts := make([]string, len(elems))
+	parts := make([]object.Value, 0, 2*len(elems))
 	for i, e := range elems {
-		var s string
-		var err error
+		if i > 0 && sep != "" {
+			parts = append(parts, object.String(sep))
+		}
 		if l, ok := e.AsList(); ok {
 			v, err := join(ctx, l.Elems, sep)
 			if err != nil {
 				return object.Value{}, err
 			}
-			s = string(v.Str())
-		} else if s, err = ctx.ToS(e); err != nil {
+			parts = append(parts, v)
+			continue
+		}
+		if e.IsString() {
+			parts = append(parts, e)
+			continue
+		}
+		s, err := ctx.ToS(e)
+		if err != nil {
 			return object.Value{}, err
 		}
-		parts[i] = s
+		parts = append(parts, object.String(s))
 	}
-	return object.String(strings.Join(parts, sep)), nil
+	return joinEncoded(ctx, object.KindString, parts)
 }
 
 func equalOrBlock(ctx object.Context, el object.Value, args []object.Value, block object.Value) (bool, error) {

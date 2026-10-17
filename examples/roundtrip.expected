@@ -1,4 +1,4 @@
-Bytes
+String
 true
 true
 Springfield
@@ -23,5 +23,5 @@ true true
 {"k" => [1]} true
 #<Set: {1, 2}> true
 1..3 true
-Person(name: "ann", age: 31, home: Address(street: "Main 1", city: "Springfield", zip: 12345), emails: ["a@x", "b@x"], scores: {"art" => 2, "math" => 1}, tags: #<Set: {"x", "y"}>, role: :admin, active: true, height: 1.7, avatar: "\x00\x01".b) true
+Person(name: "ann", age: 31, home: Address(street: "Main 1", city: "Springfield", zip: 12345), emails: ["a@x", "b@x"], scores: {"art" => 2, "math" => 1}, tags: #<Set: {"x", "y"}>, role: :admin, active: true, height: 1.7, avatar: "\x00\x01") true
 a Proc cannot be serialised

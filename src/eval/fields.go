@@ -2,6 +2,7 @@ package eval
 
 import (
 	"strings"
+	"unicode/utf8"
 
 	"github.com/radiospiel/amber/src/object"
 	"github.com/radiospiel/amber/src/syntax"
@@ -169,8 +170,13 @@ func emptyFor(t *object.FieldType) object.Value {
 func (in *Interp) coerce(t *object.FieldType, v object.Value) (object.Value, bool) {
 	switch t.Kind {
 	case "string":
-		_, ok := v.AsString()
-		return v, ok
+		// A protobuf string is UTF-8: a string of another encoding fits
+		// when its bytes are.
+		s, ok := v.AsString()
+		if !ok || v.Kind() != object.KindString && !utf8.ValidString(s) {
+			return object.Value{}, false
+		}
+		return object.String(s), true
 	case "int":
 		_, ok := v.AsInt()
 		return v, ok
@@ -192,7 +198,7 @@ func (in *Interp) coerce(t *object.FieldType, v object.Value) (object.Value, boo
 		case object.KindBytes:
 			x := v.Bytes()
 			return object.Bytes(x), true
-		case object.KindString:
+		case object.KindString, object.KindASCII:
 			x := v.Str()
 			return object.Bytes([]byte(x)), true
 		}
@@ -259,7 +265,7 @@ func (in *Interp) coerce(t *object.FieldType, v object.Value) (object.Value, boo
 		case object.KindSymbol:
 			x := v.Str()
 			name = string(x)
-		case object.KindString:
+		case object.KindString, object.KindBytes, object.KindASCII:
 			x := v.Str()
 			name = string(x)
 		default:
@@ -281,7 +287,7 @@ func (in *Interp) coerceKey(kind string, k object.Value) (object.Value, bool) {
 	switch kind {
 	case "string":
 		switch k.Kind() {
-		case object.KindString:
+		case object.KindString, object.KindBytes, object.KindASCII:
 			x := k.Str()
 			return object.String(x), true
 		case object.KindSymbol:

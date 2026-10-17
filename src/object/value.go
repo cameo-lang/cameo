@@ -27,6 +27,9 @@ const (
 	KindBool
 	KindInt
 	KindFloat
+	// KindString, KindBytes and KindASCII are a String in its three
+	// encodings: UTF-8, ASCII-8BIT (binary) and US-ASCII. All three are
+	// Ruby's String; the kind is the encoding.
 	KindString
 	KindSymbol
 	KindBytes
@@ -47,6 +50,7 @@ const (
 	KindBig
 	// KindEnumerator is an Enumerator or an Enumerator::Lazy.
 	KindEnumerator
+	KindASCII
 	// KindProc and KindProcess are the evaluator's: a block or lambda and
 	// an async process. The object is opaque here; see Opaque.
 	KindProc
@@ -95,6 +99,8 @@ func (k Kind) String() string {
 		return "int"
 	case KindEnumerator:
 		return "enumerator"
+	case KindASCII:
+		return "ascii"
 	case KindProc:
 		return "proc"
 	case KindProcess:
@@ -156,12 +162,10 @@ func (v Value) Class() *Class {
 		return IntegerClass
 	case KindFloat:
 		return FloatClass
-	case KindString:
+	case KindString, KindBytes, KindASCII:
 		return StringClass
 	case KindSymbol:
 		return SymbolClass
-	case KindBytes:
-		return BytesClass
 	case KindList:
 		return ListClass
 	case KindMap:
@@ -226,10 +230,32 @@ func Symbol(name string) Value {
 	return Value{kind: KindSymbol, n: int64(len(name)), p: unsafe.Pointer(unsafe.StringData(name))}
 }
 
-// Bytes makes a byte string value sharing b, which must not be changed
-// afterwards.
+// Bytes makes a binary (ASCII-8BIT) string sharing b, which must not be
+// changed afterwards.
 func Bytes(b []byte) Value {
 	return Value{kind: KindBytes, n: int64(len(b)), p: unsafe.Pointer(unsafe.SliceData(b))}
+}
+
+// StringOf makes a string of s in the encoding kind names: KindString
+// (UTF-8), KindBytes (binary) or KindASCII (US-ASCII).
+func StringOf(kind Kind, s string) Value {
+	return Value{kind: kind, n: int64(len(s)), p: unsafe.Pointer(unsafe.StringData(s))}
+}
+
+// IsString reports a String in any encoding.
+func (v Value) IsString() bool {
+	return v.kind == KindString || v.kind == KindBytes || v.kind == KindASCII
+}
+
+// ASCIIOnly reports a string of 7-bit bytes alone, which reads the same in
+// every encoding.
+func ASCIIOnly(s string) bool {
+	for i := 0; i < len(s); i++ {
+		if s[i] >= 0x80 {
+			return false
+		}
+	}
+	return true
 }
 
 // ListValue, MapValue, SetValue, RangeValue, InstanceValue, ClassValue and
@@ -273,9 +299,9 @@ func (v Value) Bool() bool {
 	return v.n != 0
 }
 
-// Str returns the text of a string or a symbol.
+// Str returns the text of a string, in any encoding, or a symbol.
 func (v Value) Str() string {
-	if v.kind != KindString && v.kind != KindSymbol {
+	if !v.IsString() && v.kind != KindSymbol {
 		v.must(KindString)
 	}
 	if v.n == 0 {
@@ -371,8 +397,9 @@ func (v Value) AsBool() (bool, bool) {
 	return v.n != 0, true
 }
 
+// AsString reads a String in any encoding as its bytes.
 func (v Value) AsString() (string, bool) {
-	if v.kind != KindString {
+	if !v.IsString() {
 		return "", false
 	}
 	return v.Str(), true

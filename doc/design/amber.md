@@ -68,7 +68,7 @@ Every value is immutable. The kinds of value are:
 | `true`, `false` | `bool` |
 | Integer | `int64`; arbitrary precision in amber, so beyond 64 bits it travels in `amber.Value` as `big_value`, its decimal digits, and an `int` field, a protobuf `int64`, refuses it |
 | Float | `double` |
-| String | `string` |
+| String | `string` for UTF-8, `bytes` for a binary string; a `string` field takes a string of any encoding whose bytes are UTF-8, a `bytes` field any string |
 | Symbol | an `enum` field's value where the class declares one; a `string` everywhere else, see *Symbols* |
 | Array | `repeated` |
 | Hash | `map<,>`; keys are String, Symbol (stored as `string`), Integer or `bool`, see *Symbols* |
@@ -77,7 +77,7 @@ Every value is immutable. The kinds of value are:
 | Regexp | in `amber.Value`, a `Regexp` message: source and options; a MatchData does not travel |
 | Time | in `amber.Value`, a `Time` message: seconds, nanoseconds, UTC offset and zone; there is no field type for it yet |
 | an instance of a user class | the message that class declares |
-| Class, Proc, AsyncProcess, Enumerator, Pathname | not serialisable; see *Async* |
+| Class, Proc, AsyncProcess, Enumerator, Encoding, Pathname | not serialisable; see *Async* |
 
 Equality is structural everywhere: two lists with equal elements are `==`,
 two instances of one class with equal fields are `==` and hash alike. There
@@ -558,6 +558,19 @@ re-opened by accident:
     `method_missing`, with the name as a symbol, the arguments and the
     block; `super` from it reaches Object's, which raises NoMethodError.
     `respond_to?` asks `respond_to_missing?` for a name it does not find.
+  - A String carries its encoding, as Ruby's does: UTF-8, ASCII-8BIT
+    (binary) or US-ASCII, the value's kind. Literals are UTF-8; `.b`,
+    `pack` and a protobuf `bytes` field make binary strings; `force_encoding`
+    relabels the same bytes and `encode` converts them. A binary or
+    US-ASCII string has one character per byte, changes case in ASCII
+    alone, prints a byte past 7 bits as `\xNN`, and gives its methods'
+    results its encoding; `+`, `<<`, `join` and interpolation take the
+    encoding their parts are compatible in, or raise
+    Encoding::CompatibilityError. `valid_encoding?` and `scrub` deal with
+    bytes an encoding does not allow. `force_encoding` rebinds a local, as
+    Ruby's changes its receiver; on anything else it returns the relabelled
+    string, which is all Ruby's leaves to see. Integer and Symbol `to_s`
+    give UTF-8 where Ruby gives US-ASCII; only `encoding` tells.
   - Paths are arithmetic, not I/O: `File.join`, `basename`, `dirname`,
     `extname`, `split`, `expand_path` and `absolute_path`, and `Pathname`,
     an immutable path whose `+`, `join`, `cleanpath`, `parent` and

@@ -143,6 +143,12 @@ func TestRegexpLiterals(t *testing.T) {
 	parse(t, "case \"s\"\nwhen /s/ then 1\nend\n")
 }
 
+func TestForceEncodingOnATemporary(t *testing.T) {
+	// force_encoding rebinds a local, and on anything else is a plain call
+	// whose value is the converted string.
+	parse(t, "s = \"a\".b\ns.force_encoding(\"UTF-8\")\nt = \"b\".b.force_encoding(\"UTF-8\")\n")
+}
+
 func TestBigIntLiterals(t *testing.T) {
 	// An integer literal beyond 64 bits, negated or not, is a BigInt.
 	parse(t, "x = 99999999999999999999\ny = -0xffffffffffffffff\n")

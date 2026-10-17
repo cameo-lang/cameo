@@ -223,20 +223,22 @@ func writeKey(b *strings.Builder, v Value) {
 	case KindFloat:
 		b.WriteString("d")
 		b.WriteString(strconv.FormatFloat(v.Float(), 'g', -1, 64))
-	case KindString, KindSymbol:
-		if v.kind == KindString {
-			b.WriteString("s")
-		} else {
+	case KindString, KindBytes, KindASCII, KindSymbol:
+		// A string of ASCII alone is the same key in every encoding, as
+		// in Ruby; one with other bytes is its encoding's.
+		switch {
+		case v.kind == KindSymbol:
 			b.WriteString("y")
+		case v.kind == KindString || ASCIIOnly(v.Str()):
+			b.WriteString("s")
+		case v.kind == KindBytes:
+			b.WriteString("b")
+		default:
+			b.WriteString("a")
 		}
 		b.WriteString(strconv.Itoa(int(v.n)))
 		b.WriteByte(':')
 		b.WriteString(v.Str())
-	case KindBytes:
-		b.WriteString("b")
-		b.WriteString(strconv.Itoa(int(v.n)))
-		b.WriteByte(':')
-		b.Write(v.Bytes())
 	case KindList:
 		b.WriteString("[")
 		for _, e := range v.List().Elems {
@@ -352,6 +354,9 @@ func Equal(a, b Value) bool {
 		}
 		r, ok := compareNumbers(a, b)
 		return ok && r == 0
+	}
+	if a.IsString() && b.IsString() {
+		return Key(a) == Key(b)
 	}
 	if a.kind != b.kind || a.Class() != b.Class() {
 		return false

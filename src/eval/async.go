@@ -197,7 +197,7 @@ func (in *Interp) start(recvNode, methodNode syntax.Node, argNodes []syntax.Node
 	case object.KindSymbol:
 		m := m.Str()
 		method = string(m)
-	case object.KindString:
+	case object.KindString, object.KindBytes, object.KindASCII:
 		m := m.Str()
 		method = string(m)
 	default:

@@ -50,3 +50,4 @@ The steps:
 - [27. `require` of built-in libraries, CGI escaping and Time parsing](27-require.md)
 - [28. `method_missing`](28-method-missing.md)
 - [29. Path functions and `Pathname`](29-paths.md)
+- [30. Strings carry their encoding, and `Array#pack`](30-encodings.md)

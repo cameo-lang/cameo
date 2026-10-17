@@ -1148,7 +1148,7 @@ func mayMutate(name string) bool {
 	switch name {
 	case "<<", "push", "pop", "shift", "unshift", "insert", "concat", "delete", "delete_at", "prepend",
 		"delete_if", "keep_if", "clear", "store", "replace", "fill",
-		"add", "add?", "delete?", "merge", "subtract", "update", "reset":
+		"add", "add?", "delete?", "merge", "subtract", "update", "reset", "force_encoding":
 		return true
 	case "!", "!=", "exit!":
 		return false

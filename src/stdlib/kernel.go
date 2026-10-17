@@ -107,7 +107,7 @@ func installKernel() {
 			return args[0], nil
 		case object.KindFloat:
 			return floatToInteger(ctx, args[0].Float())
-		case object.KindString:
+		case object.KindString, object.KindBytes, object.KindASCII:
 			v := args[0].Str()
 			i, ok := parseInteger(strings.TrimSpace(v))
 			if !ok {
@@ -125,7 +125,7 @@ func installKernel() {
 		case object.KindFloat:
 			v := args[0].Float()
 			return object.Float(v), nil
-		case object.KindString:
+		case object.KindString, object.KindBytes, object.KindASCII:
 			v := args[0].Str()
 			f, ok := parseFloat(strings.TrimSpace(string(v)))
 			if !ok {
@@ -191,7 +191,7 @@ func raise(ctx object.Context, args []object.Value) error {
 		return &object.Exception{Cls: object.RuntimeError, Message: "unhandled exception"}
 	}
 	switch args[0].Kind() {
-	case object.KindString:
+	case object.KindString, object.KindBytes, object.KindASCII:
 		v := args[0].Str()
 		if len(args) > 1 {
 			return argError(ctx, len(args), "1")
