@@ -26,3 +26,4 @@ The steps:
 - [3. The evaluator core and the scalar library](03-evaluator.md)
 - [4. The collection library](04-collections.md)
 - [5. Classes with typed fields, copies through `tap`, and modules](05-classes.md)
+- [6. Every class is a protobuf message; the host API](06-protobuf.md)

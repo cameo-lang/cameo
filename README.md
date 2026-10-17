@@ -31,16 +31,32 @@ interpreter is built in the milestones listed there.
 
 ## Status
 
-Milestone 4 of the plan in the design: classes. Besides everything the
-evaluator core and the library brought, a class declares typed fields, sets
-them in `initialize` or takes them as keywords, reads them, copies itself
-through `tap` and through `a.x.y = 3`, overrides and calls `super`, includes
-and extends modules, and is a value bound to its name. Protobuf and async are
-the milestones still to come.
+Milestone 5 of the plan in the design: protobuf. Every class is a protobuf
+message: `Point.proto` is its `.proto` text, `pt.to_proto` its wire form,
+`Point.from_proto(bytes)` the value back, and any value travels through the
+`amber.Value` envelope with `to_value_proto` and `from_value_proto`. `amber
+proto script.arb` prints the `.proto` files of a script's classes, and the
+`amber` Go package loads a script, calls its methods with Go values and gets
+Go values and `proto.Message`s back. Async is the one milestone still to come.
 
 ```sh
 amber script.arb            # run; an uncaught exception prints script:line: message (Class)
 amber check script.arb      # parse and check only, report every error with its line
+amber proto script.arb      # the .proto files of the script's classes, one per package
+amber proto script.arb out/ # the same, written into out/
+```
+
+From Go:
+
+```go
+import "github.com/radiospiel/amber/src/amber"
+
+prog, err := amber.Load("script.arb", src, os.Stdout, os.Stderr)
+err = prog.Run()                                       // defines the classes
+out, err := prog.Call("Point", "new", map[string]any{"x": 1, "y": 2})
+msg := out.(proto.Message)                             // a dynamicpb message of amber.Point
+sum, err := prog.Call(msg, "+", msg)                   // call a method on it
+text, err := prog.Proto("Point")                       // the .proto text
 ```
 
 The scripts under [examples/](examples) are the specification: each
@@ -52,7 +68,8 @@ An example that is also plain Ruby has its expected output generated with
 
 The packages under `src/`: `syntax` is the front end (`syntax.Parse`),
 `object` the value model, `eval` the evaluator, `stdlib` the builtin methods,
-`amber` the host API (`amber.Run`), and `cmd/amber` the binary.
+`protogen` the descriptors, `.proto` text and the envelope, `amber` the host
+API (`amber.Load`, `amber.Run`), and `cmd/amber` the binary.
 
 ## Building
 

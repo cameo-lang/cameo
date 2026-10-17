@@ -1,28 +1,32 @@
-// Package amber is the host API: load and run amber scripts from Go. The
-// language is in doc/design/amber.md.
+// Package amber is the host API: load and run amber scripts from Go, call
+// their methods, and move values across the boundary. The language is in
+// doc/design/amber.md.
 package amber
 
 import (
+	"fmt"
 	"io"
 	"os"
+	"sort"
+
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 
 	"github.com/radiospiel/amber/src/eval"
+	"github.com/radiospiel/amber/src/object"
+	"github.com/radiospiel/amber/src/protogen"
 	"github.com/radiospiel/amber/src/syntax"
 )
 
 // Run parses, checks and runs a script, writing its output to stdout and
 // stderr. It returns a syntax.ErrorList when the script does not check, or
-// the exception that ended it, formatted by Format.
+// a *RunError for the exception that ended it.
 func Run(file, src string, stdout, stderr io.Writer) error {
-	prog, err := syntax.Parse(file, src)
+	prog, err := Load(file, src, stdout, stderr)
 	if err != nil {
 		return err
 	}
-	in := eval.New(stdout, stderr)
-	if err := in.Run(file, prog); err != nil {
-		return &RunError{Err: err, Message: in.FormatError(err)}
-	}
-	return nil
+	return prog.Run()
 }
 
 // RunFile runs the script at path.
@@ -43,3 +47,304 @@ type RunError struct {
 
 func (e *RunError) Error() string { return e.Message }
 func (e *RunError) Unwrap() error { return e.Err }
+
+// Program is a loaded script: parsed and checked, with an interpreter that
+// runs it and keeps its classes afterwards.
+type Program struct {
+	file string
+	prog *syntax.Program
+	in   *eval.Interp
+	ran  bool
+}
+
+// Load parses and checks a script. The program's output goes to stdout and
+// stderr when it runs.
+func Load(file, src string, stdout, stderr io.Writer) (*Program, error) {
+	prog, err := syntax.Parse(file, src)
+	if err != nil {
+		return nil, err
+	}
+	return &Program{file: file, prog: prog, in: eval.New(stdout, stderr)}, nil
+}
+
+// Run evaluates the script once; its classes stay loaded for Call.
+func (p *Program) Run() error {
+	p.ran = true
+	if err := p.in.Run(p.file, p.prog); err != nil {
+		return &RunError{Err: err, Message: p.in.FormatError(err)}
+	}
+	return nil
+}
+
+// Call invokes method on recv with args, converting Go values in and the
+// result out. recv may be a Go value, an object.Value, a class name
+// (string, for a class method), a proto.Message of a loaded class, or nil
+// for the script's top level and its own methods.
+func (p *Program) Call(recv any, method string, args ...any) (any, error) {
+	if !p.ran {
+		if err := p.Run(); err != nil {
+			return nil, err
+		}
+	}
+	values := make([]object.Value, len(args))
+	for i, a := range args {
+		v, err := p.ToValue(a)
+		if err != nil {
+			return nil, err
+		}
+		values[i] = v
+	}
+	var out object.Value
+	var err error
+	if recv == nil {
+		// A nil receiver is the script's top level, where its own methods
+		// are called without a receiver.
+		out, err = p.in.CallTop(method, values, nil, nil)
+	} else {
+		r, convErr := p.ToValue(recv)
+		if convErr != nil {
+			return nil, convErr
+		}
+		if s, ok := recv.(string); ok {
+			if cls := p.Class(s); cls != nil {
+				r = cls
+			}
+		}
+		out, err = p.in.Call(r, method, values...)
+	}
+	if err != nil {
+		return nil, &RunError{Err: err, Message: p.in.FormatError(err)}
+	}
+	return p.ToGo(out)
+}
+
+// Class finds a loaded class by its qualified name (Geo::Point), nil when
+// there is none.
+func (p *Program) Class(name string) *object.Class {
+	for _, cls := range p.in.Classes() {
+		if cls.QualifiedName() == name {
+			return cls
+		}
+	}
+	return nil
+}
+
+// Classes lists the loaded classes.
+func (p *Program) Classes() []*object.Class { return p.in.Classes() }
+
+// Proto is the .proto text of a loaded class.
+func (p *Program) Proto(name string) (string, error) {
+	cls := p.Class(name)
+	if cls == nil {
+		return "", fmt.Errorf("no class %s", name)
+	}
+	if _, err := p.in.Proto().Message(cls); err != nil {
+		return "", err
+	}
+	return protogen.Text(cls), nil
+}
+
+// ProtoFiles renders every loaded class as .proto files, one per package,
+// keyed by file name, plus the envelope in amber/value.proto.
+func (p *Program) ProtoFiles() map[string]string {
+	files := protogen.Files(p.Classes())
+	files["amber/value.proto"] = "syntax = \"proto3\";\n\npackage amber;\n\n" + protogen.EnvelopeText
+	return files
+}
+
+// Descriptor is the message descriptor of a loaded class.
+func (p *Program) Descriptor(name string) (protoreflect.MessageDescriptor, error) {
+	cls := p.Class(name)
+	if cls == nil {
+		return nil, fmt.Errorf("no class %s", name)
+	}
+	return p.in.Proto().Message(cls)
+}
+
+// Encode is the envelope wire form of a value (an object.Value or a Go
+// value), for storing or sending it.
+func (p *Program) Encode(v any) ([]byte, error) {
+	val, err := p.ToValue(v)
+	if err != nil {
+		return nil, err
+	}
+	return p.in.Encoder().Encode(val)
+}
+
+// Decode reads an envelope back into a Go value.
+func (p *Program) Decode(data []byte) (any, error) {
+	v, err := p.in.Decoder().Decode(data)
+	if err != nil {
+		return nil, err
+	}
+	return p.ToGo(v)
+}
+
+// ToValue converts a Go value to an amber value: nil, bool, integers,
+// floats, string, []byte, []any, map[string]any or map[any]any, an
+// object.Value as it is, or a proto.Message whose descriptor full name is a
+// loaded class's.
+func (p *Program) ToValue(v any) (object.Value, error) {
+	switch v := v.(type) {
+	case nil:
+		return object.Nil, nil
+	case object.Value:
+		return v, nil
+	case bool:
+		return object.Bool(v), nil
+	case int:
+		return object.Int(v), nil
+	case int8:
+		return object.Int(v), nil
+	case int16:
+		return object.Int(v), nil
+	case int32:
+		return object.Int(v), nil
+	case int64:
+		return object.Int(v), nil
+	case uint:
+		return object.Int(v), nil
+	case uint8:
+		return object.Int(v), nil
+	case uint16:
+		return object.Int(v), nil
+	case uint32:
+		return object.Int(v), nil
+	case uint64:
+		return object.Int(v), nil
+	case float32:
+		return object.Float(v), nil
+	case float64:
+		return object.Float(v), nil
+	case string:
+		return object.String(v), nil
+	case []byte:
+		return object.Bytes(v), nil
+	case []any:
+		elems := make([]object.Value, len(v))
+		for i, e := range v {
+			val, err := p.ToValue(e)
+			if err != nil {
+				return nil, err
+			}
+			elems[i] = val
+		}
+		return object.NewList(elems...), nil
+	case []string:
+		elems := make([]object.Value, len(v))
+		for i, e := range v {
+			elems[i] = object.String(e)
+		}
+		return object.NewList(elems...), nil
+	case map[string]any:
+		keys := make([]string, 0, len(v))
+		for k := range v {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		b := object.NewMapBuilder()
+		for _, k := range keys {
+			val, err := p.ToValue(v[k])
+			if err != nil {
+				return nil, err
+			}
+			b.Set(object.String(k), val)
+		}
+		return b.Map(), nil
+	case map[any]any:
+		b := object.NewMapBuilder()
+		for k, e := range v {
+			key, err := p.ToValue(k)
+			if err != nil {
+				return nil, err
+			}
+			val, err := p.ToValue(e)
+			if err != nil {
+				return nil, err
+			}
+			b.Set(key, val)
+		}
+		return b.Map(), nil
+	case proto.Message:
+		full := string(v.ProtoReflect().Descriptor().FullName())
+		for _, cls := range p.Classes() {
+			if protogen.Package(cls)+"."+cls.Name != full {
+				continue
+			}
+			data, err := proto.Marshal(v)
+			if err != nil {
+				return nil, err
+			}
+			return p.in.Proto().Unmarshal(cls, data)
+		}
+		return nil, fmt.Errorf("no loaded class has the message %s", full)
+	}
+	return nil, fmt.Errorf("cannot convert %T to an amber value", v)
+}
+
+// ToGo converts an amber value to a Go value: nil, bool, int64, float64,
+// string, []byte, []any, map[any]any, a proto.Message for an instance, and
+// the object.Value itself for everything else (symbols, ranges, classes).
+func (p *Program) ToGo(v object.Value) (any, error) {
+	switch v := v.(type) {
+	case object.Bool:
+		return bool(v), nil
+	case object.Int:
+		return int64(v), nil
+	case object.Float:
+		return float64(v), nil
+	case object.String:
+		return string(v), nil
+	case object.Bytes:
+		return []byte(v), nil
+	case *object.List:
+		out := make([]any, len(v.Elems))
+		for i, e := range v.Elems {
+			g, err := p.ToGo(e)
+			if err != nil {
+				return nil, err
+			}
+			out[i] = g
+		}
+		return out, nil
+	case *object.Set:
+		out := make([]any, v.Len())
+		for i, e := range v.Elems() {
+			g, err := p.ToGo(e)
+			if err != nil {
+				return nil, err
+			}
+			out[i] = g
+		}
+		return out, nil
+	case *object.Map:
+		out := make(map[any]any, v.Len())
+		for i, k := range v.Keys() {
+			key, err := p.ToGo(k)
+			if err != nil {
+				return nil, err
+			}
+			val, err := p.ToGo(v.Values()[i])
+			if err != nil {
+				return nil, err
+			}
+			if _, hashable := key.(map[any]any); hashable {
+				return nil, fmt.Errorf("a map key cannot be a map in Go")
+			}
+			if _, hashable := key.([]any); hashable {
+				return nil, fmt.Errorf("a list key cannot be a map key in Go")
+			}
+			out[key] = val
+		}
+		return out, nil
+	case *object.Instance:
+		if v.Cls.Digest == "" {
+			return v, nil
+		}
+		return p.in.Proto().ToMessage(v)
+	}
+	if v == object.Nil {
+		return nil, nil
+	}
+	return v, nil
+}

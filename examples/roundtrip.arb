@@ -1,0 +1,59 @@
+# An instance is a protobuf message: bytes out, the same value back.
+class Address
+  string :street, :city
+  int :zip
+end
+
+class Person
+  string :name
+  int :age
+  ref :home, Address
+  list :emails, of: :string
+  map :scores, key: :string, value: :int
+  set :tags, of: :string
+  enum :role, values: [:admin, :user]
+  bool :active
+  float :height
+  bytes :avatar
+end
+
+class Employee < Person
+  string :team
+end
+
+home = Address.new(street: "Main 1", city: "Springfield", zip: 12345)
+ann = Person.new(name: "ann", age: 31, home: home, emails: ["a@x", "b@x"], scores: {"math" => 1, "art" => 2},
+                 tags: ["x", "y"].to_set, role: :admin, active: true, height: 1.7, avatar: "\x00\x01".b)
+bytes = ann.to_proto
+puts bytes.class
+puts bytes.length > 20
+back = Person.from_proto(bytes)
+puts back == ann
+puts back.home.city
+puts back.scores["art"]
+puts back.tags.include?("y")
+puts back.role
+puts back.avatar.length
+
+empty = Person.from_proto(Person.new.to_proto)
+puts empty.name.inspect
+puts empty.emails.inspect
+puts empty.scores.inspect
+puts empty.role.inspect
+
+eve = Employee.new(name: "eve", team: "ops", home: home)
+puts Employee.fields.inspect
+puts Employee.from_proto(eve.to_proto) == eve
+puts Person.from_proto(eve.to_proto).name
+
+values = [1, 2.5, "s", :sym, nil, true, [1, [2]], {"k" => [1]}, [1, 2].to_set, (1..3), ann]
+values.each do |v|
+  back = from_value_proto(v.to_value_proto)
+  puts "#{back.inspect} #{back == v || (v == :sym && back == "sym")}"
+end
+
+begin
+  -> {}.to_value_proto
+rescue TypeError => e
+  puts e.message
+end

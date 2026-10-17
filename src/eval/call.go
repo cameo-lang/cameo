@@ -65,6 +65,12 @@ func (in *Interp) Call(recv object.Value, name string, args ...object.Value) (ob
 	return in.call(nil, recv, name, args, nil, nil, false, 0)
 }
 
+// CallTop invokes a method the way a bare call in the script would: on the
+// top-level self, reaching the script's top-level methods.
+func (in *Interp) CallTop(name string, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	return in.call(nil, in.main, name, args, kw, block, true, 0)
+}
+
 // CallWith implements object.Context.
 func (in *Interp) CallWith(recv object.Value, name string, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 	return in.call(nil, recv, name, args, kw, block, false, 0)

@@ -58,6 +58,9 @@ func (in *Interp) newInstance(cls *object.Class, args []object.Value, kw *object
 	inst := &object.Instance{Cls: cls, Fields: make([]object.Value, len(cls.Fields))}
 	for i, f := range cls.Fields {
 		inst.Fields[i] = f.Default
+		if f.Default == nil {
+			inst.Fields[i] = emptyFor(f.Type)
+		}
 	}
 	if m := cls.Lookup("initialize"); m != nil && m.Body != nil {
 		if _, err := in.invoke(m, inst, args, kw, block, 0); err != nil {
@@ -65,16 +68,27 @@ func (in *Interp) newInstance(cls *object.Class, args []object.Value, kw *object
 		}
 		return inst, nil
 	}
+	// One positional map stands for the keywords: what a Go host passes.
+	if len(args) == 1 && kw == nil {
+		if m, ok := args[0].(*object.Map); ok {
+			kw, args = m, nil
+		}
+	}
 	if len(args) > 0 {
 		return nil, in.raise(object.ArgumentError, 0, "wrong number of arguments (given %d, expected 0): %s takes its fields as keywords", len(args), cls.QualifiedName())
 	}
 	if kw != nil {
 		for i, k := range kw.Keys() {
-			name, ok := k.(object.Symbol)
-			if !ok {
+			var name string
+			switch k := k.(type) {
+			case object.Symbol:
+				name = string(k)
+			case object.String:
+				name = string(k)
+			default:
 				return nil, in.raise(object.ArgumentError, 0, "%s.new: fields are named by symbols", cls.QualifiedName())
 			}
-			idx, ok := cls.FieldIndex[string(name)]
+			idx, ok := cls.FieldIndex[name]
 			if !ok {
 				return nil, in.raise(object.ArgumentError, 0, "%s.new: unknown field %s", cls.QualifiedName(), name)
 			}

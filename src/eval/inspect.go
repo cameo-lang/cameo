@@ -187,6 +187,22 @@ func (in *Interp) Equal(a, b object.Value) (bool, error) {
 			}
 		}
 		return true, nil
+	case *object.Map:
+		bm, ok := b.(*object.Map)
+		if !ok || a.Len() != bm.Len() {
+			return false, nil
+		}
+		for i, k := range a.Keys() {
+			bv, found := bm.Get(k)
+			if !found {
+				return false, nil
+			}
+			eq, err := in.Equal(a.Values()[i], bv)
+			if err != nil || !eq {
+				return false, err
+			}
+		}
+		return true, nil
 	case *object.Instance:
 		bi, ok := b.(*object.Instance)
 		if !ok || a.Cls != bi.Cls {

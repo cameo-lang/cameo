@@ -137,13 +137,28 @@ func (in *Interp) elementType(name string, fr *Frame, line int) (*object.FieldTy
 // the value as stored: an Integer given to a float field becomes a Float.
 func (in *Interp) checkField(f *object.Field, v object.Value, line int) (object.Value, error) {
 	if v == object.Nil {
-		return object.Nil, nil
+		return emptyFor(f.Type), nil
 	}
 	out, ok := in.coerce(f.Type, v)
 	if !ok {
 		return nil, in.raise(object.TypeError, line, "field %s of %s takes %s, not %s", f.Name, f.Owner.QualifiedName(), describeType(f.Type), typeName(v))
 	}
 	return out, nil
+}
+
+// emptyFor is what a list, set or map field holds when given nil: the
+// empty collection, since the wire form cannot tell absent from empty. Any
+// other field holds nil.
+func emptyFor(t *object.FieldType) object.Value {
+	switch t.Kind {
+	case "list":
+		return object.NewList()
+	case "set":
+		return object.NewSet()
+	case "map":
+		return object.NewMap()
+	}
+	return object.Nil
 }
 
 // coerce checks v against a type, answering the stored form.

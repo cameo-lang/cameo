@@ -335,15 +335,28 @@ classes.
 **The Go host API**, package `amber`:
 
 ```go
-prog, err := amber.Load(src)                       // parse, check, load classes
-v, err   := prog.Call(ctx, recv, "method", args...) // recv and args are amber.Value or Go values
-out      := v.Go()                                  // nil, bool, int64, float64, string, []any, map[any]any, proto.Message
-err       = amber.Run(ctx, path, stdout, stderr)    // what the binary does
+prog, err := amber.Load(file, src, stdout, stderr) // parse and check
+err        = prog.Run()                            // run once; the classes stay loaded
+out, err  := prog.Call(recv, "method", args...)    // recv: a Go value, a class name, a proto.Message
+text, err := prog.Proto("Geo::Point")              // the .proto text of a class
+files     := prog.ProtoFiles()                     // every package's .proto, and amber/value.proto
+data, err := prog.Encode(v); v, err = prog.Decode(data)   // the envelope
+err        = amber.Run(file, src, stdout, stderr)  // what the binary does
 ```
 
-Go values convert to amber values by the table under *Values*; a
-`proto.Message` whose descriptor names a loaded class converts to an
-instance; anything else is a `TypeError`.
+Go values convert to amber values by the table under *Values*: nil, bool,
+the integer and float kinds, string, `[]byte`, `[]any`, `map[string]any`,
+and a `proto.Message` whose full name is a loaded class's message. Results
+come back as nil, bool, int64, float64, string, `[]byte`, `[]any`,
+`map[any]any`, and a `proto.Message` for an instance; a symbol, range or
+class stays an `object.Value`.
+
+**Two consequences of the wire form.** A protobuf map has no order and
+cannot tell an absent repeated field from an empty one. So a map's identity
+in amber does not depend on insertion order, a decoded map comes back
+sorted by key, and a list, set or map field never holds nil: given nil it
+holds the empty collection. A value therefore survives `from_proto(to_proto)`
+equal to itself.
 
 ## The Ruby adapter
 
