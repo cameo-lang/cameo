@@ -1,0 +1,52 @@
+# amber — a small language with Ruby's syntax, run by an interpreter in Go.
+#
+# The same entry points as every ark component: prerequisites, deps, build,
+# tests, integration-tests, lint. `make check` runs them all, as CI does.
+
+BINARY := bin/amber
+
+.PHONY: default help prerequisites deps build tests integration-tests lint check clean install
+
+default: build
+	@echo "Build succeeded. Run tests via 'make tests'. Show help via 'make help'."
+
+help: ## Show this help
+	@grep -Eh '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | sort | awk -F ':.*## ' '{printf "  %-18s %s\n", $$1, $$2}'
+
+prerequisites: ## Install the tools needed to build amber
+	@command -v go >/dev/null 2>&1 || { \
+	  echo "go is not installed. See https://go.dev/dl/ (amber builds with the version in go.mod)." >&2; \
+	  exit 1; \
+	}
+	@echo "amber: go $$(go env GOVERSION) is the only tool amber needs"
+
+deps: prerequisites ## Resolve all dependencies
+	go mod download
+
+# No staleness check of our own: the Go toolchain knows the import graph and
+# caches on it, and a no-op rebuild costs a fraction of a second.
+build: prerequisites ## Build the amber binary into bin/
+	go build -o $(BINARY) ./src/cmd/amber
+
+tests: prerequisites ## Run the Go tests, and check formatting and go.mod
+	@unformatted=$$(gofmt -l src tests); if [ -n "$$unformatted" ]; then \
+	  echo "not gofmt-clean, run: gofmt -w $$unformatted" >&2; exit 1; fi
+	go mod tidy -diff
+	go test ./...
+
+# The shell tests drive the built binary, which reaches them through AMBER_BIN.
+integration-tests: prerequisites build ## Run the shell-based integration tests
+	@for t in tests/integration/test_*.sh; do \
+	  echo "==> $$t"; AMBER_BIN=$(CURDIR)/$(BINARY) bash $$t || exit 1; \
+	done
+
+lint: prerequisites ## Run static checks
+	go vet ./...
+
+check: lint tests integration-tests ## Everything CI runs
+
+install: prerequisites ## Install the amber binary into GOBIN (or ~/go/bin)
+	go install ./src/cmd/amber
+
+clean: ## Remove build output
+	rm -rf bin
