@@ -10,7 +10,7 @@ benchmarks use, none of which needed a decision of its own.
   outside a function's domain, as Ruby does: `Math.sqrt(-1)` raises rather
   than returning `NaN`.
 - `Range#bsearch` follows CRuby's `range_bsearch`
-  ([src/stdlib/range.go:386](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/stdlib/range.go#L386-L477)) over integer ranges,
+  ([src/stdlib/range.go:386](https://github.com/radiospiel/amber/blob/0f439526a9f799b11a6e47fb13aefd0558604570/src/stdlib/range.go#L386-L477)) over integer ranges,
   endless and beginless ones included, and over floats, in both of Ruby's
   modes: find-minimum, where the block returns true or false, and find-any,
   where it returns a number.
