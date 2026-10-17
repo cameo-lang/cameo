@@ -31,24 +31,29 @@ interpreter is built in the milestones listed there.
 
 ## Status
 
-Milestone 1 of the plan in the design: the front end. `amber check` parses a
-script, turns it into amber's own tree, rejects what amber leaves out (setters,
-mutating methods, globals, reopening, `for`, regular expressions, …) with the
-line of each finding, and rewrites `a.x.y = 3` into a copy. Running a script
-is not implemented yet.
+Milestone 2 of the plan in the design: the evaluator core. `amber script.arb`
+runs scripts that use literals, variables, operators, control flow, methods
+with every parameter kind, blocks, closures and lambdas, `case`/`when` and
+pattern matching, exceptions with `rescue`/`ensure`/`retry`, classes with
+methods, and `puts`, `print`, `p`, `warn`, `format`. Integer, Float, String
+and Symbol have their methods; the collection library, typed fields,
+protobuf and async are the milestones still to come.
 
 ```sh
-amber check script.arb      # parse and check, report every error with its line
-amber script.arb            # fails until milestone 2
+amber script.arb            # run; an uncaught exception prints script:line: message (Class)
+amber check script.arb      # parse and check only, report every error with its line
 ```
 
 The scripts under [examples/](examples) are the specification: each
 `<name>.arb` has the output it must produce in `<name>.expected`, and `go test`
-holds the interpreter to them as milestones land. Today the test proves every
-example passes the checker.
+runs every script and holds it to that output. The examples a later milestone
+brings are listed as pending in the test and must keep failing until it lands.
+An example that is also plain Ruby has its expected output generated with
+`ruby`, so amber is held to Ruby's behaviour where the two overlap.
 
-The packages under `src/`: `syntax` is the front end (`syntax.Parse`), and
-`cmd/amber` the binary.
+The packages under `src/`: `syntax` is the front end (`syntax.Parse`),
+`object` the value model, `eval` the evaluator, `stdlib` the builtin methods,
+`amber` the host API (`amber.Run`), and `cmd/amber` the binary.
 
 ## Building
 

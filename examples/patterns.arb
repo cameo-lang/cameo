@@ -1,0 +1,60 @@
+# Pattern matching over lists, maps and constants.
+def describe(v)
+  case v
+  in Integer => n if n > 100 then "big #{n}"
+  in Integer | Float then "number"
+  in String then "string"
+  in [] then "empty list"
+  in [x] then "one: #{x}"
+  in [x, *rest] then "first #{x}, #{rest.length} more"
+  in {name: String => name, age:} then "#{name} is #{age}"
+  in {kind: :circle, r:} then "circle #{r}"
+  in nil then "nothing"
+  else "something else"
+  end
+end
+
+puts describe(5)
+puts describe(500)
+puts describe(2.5)
+puts describe("s")
+puts describe([])
+puts describe([1])
+puts describe([1, 2, 3])
+puts describe({name: "ann", age: 30})
+puts describe({kind: :circle, r: 2})
+puts describe(nil)
+puts describe(:sym)
+
+config = {db: {host: "localhost", port: 5432}, debug: true}
+config => {db: {host:, port:}}
+puts "#{host}:#{port}"
+debug_on = (config in {debug: true})
+puts debug_on
+debug_off = (config in {debug: false})
+puts debug_off
+
+case [1, [2, 3]]
+in [a, [b, c]]
+  puts a + b + c
+end
+
+case {status: "ok", items: [1, 2]}
+in {status: "ok", items: [*, last]}
+  puts last
+end
+
+case [1, 42, "x", :y, 7]
+in [*pre, String => s, *post]
+  puts pre.inspect
+  puts s
+  puts post.inspect
+end
+
+begin
+  case 99
+  in String then puts "no"
+  end
+rescue NoMatchingPatternError => e
+  puts "no match: #{e.class}"
+end

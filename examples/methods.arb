@@ -1,0 +1,78 @@
+# Methods: parameters, blocks, closures, lambdas, recursion.
+def greet(name, greeting = "hi", *rest, loud: false, **opts, &blk)
+  s = "#{greeting} #{name}"
+  s = s.upcase if loud
+  s += " +#{rest.length}" unless rest.empty?
+  s += " #{opts.size}" unless opts.empty?
+  s = blk.call(s) if blk
+  s
+end
+
+puts greet("amber")
+puts greet("amber", "hello")
+puts greet("amber", "hello", 1, 2, loud: true)
+puts greet("amber", extra: 1, more: 2)
+puts greet("amber") { |s| s + "!" }
+
+def each_twice(list)
+  return "no block" unless block_given?
+  list.each { |x| yield x; yield x }
+  list.length
+end
+puts each_twice([1, 2])
+puts each_twice([1, 2]) { |x| print x }
+puts
+
+def fib(n) = n < 2 ? n : fib(n - 1) + fib(n - 2)
+puts fib(15)
+
+counter = 0
+bump = -> { counter += 1 }
+3.times { bump.call }
+puts counter
+
+add = ->(a, b = 10) { a + b }
+puts add.(1)
+puts add[1, 2]
+puts add.lambda?
+puts add.arity
+
+square = proc { |x| x * x }
+puts square.call(4)
+puts square.call(4, 5)
+puts square.lambda?
+
+def find_first(list)
+  list.each { |x| return x if x > 1 }
+  nil
+end
+puts find_first([0, 1, 2, 3])
+
+def with_default(a, b = a * 2) = [a, b]
+puts with_default(3).inspect
+puts with_default(3, 4).inspect
+
+def kw_only(a:, b: 2) = a + b
+puts kw_only(a: 1)
+puts kw_only(b: 5, a: 1)
+
+begin
+  kw_only
+rescue ArgumentError => e
+  puts e.message
+end
+
+begin
+  greet
+rescue ArgumentError => e
+  puts e.message
+end
+
+def splat_mid(a, *m, z) = [a, m, z]
+puts splat_mid(1, 2, 3, 4).inspect
+puts splat_mid(1, 2).inspect
+
+compose = ->(f, g) { ->(x) { f.(g.(x)) } }
+inc = ->(x) { x + 1 }
+dbl = ->(x) { x * 2 }
+puts compose.(inc, dbl).(5)

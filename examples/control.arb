@@ -1,0 +1,72 @@
+# Control flow: conditionals, loops, case, multiple assignment, compound assignment.
+x = 7
+puts "big" if x > 5
+puts "small" unless x > 5
+puts x > 5 ? "yes" : "no"
+
+if x < 3
+  puts "low"
+elsif x < 10
+  puts "mid"
+else
+  puts "high"
+end
+
+kind = case x
+       when 0 then "zero"
+       when 1..5 then "few"
+       when 6, 7, 8 then "several"
+       else "many"
+       end
+puts kind
+
+case "hello"
+when String then puts "a string"
+when Integer then puts "an integer"
+end
+
+case
+when x.even? then puts "even"
+when x.odd? then puts "odd"
+end
+
+i = 0
+total = 0
+while i < 10
+  i += 1
+  next if i.odd?
+  break if i > 6
+  total += i
+end
+puts total
+
+n = 3
+until n == 0
+  n -= 1
+end
+puts n
+
+a, b = 1, 2
+a, b = b, a
+puts a, b
+first, *rest = [10, 20, 30]
+puts first
+puts rest.length
+c = nil
+c ||= 5
+c ||= 6
+puts c
+d = 2
+d &&= d * 10
+puts d
+d **= 2
+puts d
+
+result = loop do
+  i += 1
+  break i * 2 if i > 12
+end
+puts result
+
+puts [1, 2, 3].each { |v| break v * 100 if v == 2 }
+puts (1..3).each { |v| v }.inspect

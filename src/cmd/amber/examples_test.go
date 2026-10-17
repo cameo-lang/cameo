@@ -1,20 +1,36 @@
 package main
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/radiospiel/amber/src/amber"
 )
 
 // examplesDir is the corpus of scripts that specify the language, relative
 // to this package.
 const examplesDir = "../../../examples"
 
-// TestExamplesCheck holds every example script to the front end: a script
-// the checker rejects cannot specify anything. Each example also needs its
-// expected output beside it, or the corpus stops being a specification.
-func TestExamplesCheck(t *testing.T) {
+// pending names the examples that need a milestone not built yet, with the
+// milestone. A pending example must still fail: when it passes, it comes
+// off this list.
+var pending = map[string]string{
+	"enumerable.arb":        "milestone 3: the collection library",
+	"point.arb":             "milestone 4: classes with fields",
+	"nested_assignment.arb": "milestone 4: classes with fields",
+	"redefinition.arb":      "milestone 4: classes with fields",
+	"inheritance.arb":       "milestone 4: classes with fields",
+	"modules.arb":           "milestone 4: modules",
+	"proto.arb":             "milestone 5: protobuf",
+	"async.arb":             "milestone 6: async",
+}
+
+// TestExamples runs every example script and holds its standard output to
+// the expected file beside it. Pending examples are run too, and must fail.
+func TestExamples(t *testing.T) {
 	scripts, err := filepath.Glob(filepath.Join(examplesDir, "*.arb"))
 	if err != nil {
 		t.Fatal(err)
@@ -23,13 +39,25 @@ func TestExamplesCheck(t *testing.T) {
 		t.Fatalf("no example scripts under %s", examplesDir)
 	}
 	for _, script := range scripts {
-		t.Run(filepath.Base(script), func(t *testing.T) {
-			if err := check(script); err != nil {
-				t.Fatalf("rejected: %v", err)
+		name := filepath.Base(script)
+		t.Run(name, func(t *testing.T) {
+			expected, err := os.ReadFile(strings.TrimSuffix(script, ".arb") + ".expected")
+			if err != nil {
+				t.Fatalf("missing expected output: %v", err)
 			}
-			expected := strings.TrimSuffix(script, ".arb") + ".expected"
-			if _, err := os.Stat(expected); err != nil {
-				t.Fatalf("missing expected output %s", filepath.Base(expected))
+			var stdout, stderr bytes.Buffer
+			runErr := amber.RunFile(script, &stdout, &stderr)
+			if why, isPending := pending[name]; isPending {
+				if runErr == nil && stdout.String() == string(expected) {
+					t.Fatalf("passes, but is listed as pending (%s): take it off the list", why)
+				}
+				t.Skipf("pending: %s", why)
+			}
+			if runErr != nil {
+				t.Fatalf("failed: %v\nstdout so far:\n%s", runErr, stdout.String())
+			}
+			if stdout.String() != string(expected) {
+				t.Fatalf("output differs\n--- got ---\n%s--- want ---\n%s", stdout.String(), expected)
 			}
 		})
 	}
@@ -58,7 +86,27 @@ func TestCheckReportsErrors(t *testing.T) {
 	if status := run([]string{"check", broken}); status != 1 {
 		t.Fatalf("exit status %d for a syntax error, want 1", status)
 	}
-	if status := run([]string{broken}); status != 2 {
-		t.Fatalf("exit status %d for running a script, want 2 while unimplemented", status)
+	if status := run([]string{broken}); status != 1 {
+		t.Fatalf("exit status %d for running a broken script, want 1", status)
+	}
+}
+
+// TestRunReportsExceptions proves an uncaught exception names its line and
+// class and fails the run.
+func TestRunReportsExceptions(t *testing.T) {
+	script := filepath.Join(t.TempDir(), "boom.arb")
+	if err := os.WriteFile(script, []byte("puts 1\nraise ArgumentError, \"boom\"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr bytes.Buffer
+	err := amber.RunFile(script, &stdout, &stderr)
+	if err == nil {
+		t.Fatal("an uncaught exception did not fail the run")
+	}
+	if !strings.Contains(err.Error(), "boom.arb:2: boom (ArgumentError)") {
+		t.Fatalf("error message: %v", err)
+	}
+	if stdout.String() != "1\n" {
+		t.Fatalf("output before the exception: %q", stdout.String())
 	}
 }

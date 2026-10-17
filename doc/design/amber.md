@@ -295,8 +295,12 @@ to hand to Go, to another goroutine, or over a wire.
 field per declared field, numbered in declaration order, `optional` for
 presence, nested `ref` fields as message fields, each `enum` field as a
 nested enum named after the field, with a `<NAME>_UNSPECIFIED = 0` value
-that stands for `nil` and the declared symbols upper-cased after it) and
-instantiates values as `dynamicpb.Message` over that descriptor. Lists, maps and sets of scalars map
+that stands for `nil` and the declared symbols upper-cased after it). An
+instance holds its fields as amber values, and builds the
+`dynamicpb.Message` over that descriptor on first use and keeps it, which
+is sound because the fields never change: the evaluator reads fields
+without going through protobuf, and the host gets a `proto.Message` that
+is the instance. Lists, maps and sets of scalars map
 to `repeated` and `map<,>`. So an instance *is* a `proto.Message`, and
 `proto.Marshal` of it is the wire form of that class.
 
