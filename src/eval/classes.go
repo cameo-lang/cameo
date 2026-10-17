@@ -261,3 +261,40 @@ func (in *Interp) defined(n syntax.Node, env *Env, fr *Frame) (object.Value, err
 	}
 	return object.String("expression"), nil
 }
+
+// scopedFrame is the frame `class A::B` defines B in: fr with module A as
+// its innermost lexical scope, so B becomes A's constant. A nil scope
+// leaves fr as it is.
+func (in *Interp) scopedFrame(scope syntax.Node, env *Env, fr *Frame, line int) (*Frame, error) {
+	if scope == nil {
+		return fr, nil
+	}
+	v, err := in.eval(scope, env, fr)
+	if err != nil {
+		return nil, err
+	}
+	mod, ok := v.AsClass()
+	if !ok {
+		return nil, in.raise(object.TypeError, line, "%s is not a class/module", typeName(v))
+	}
+	out := *fr
+	out.Lexical = append(append([]*object.Class{}, fr.Lexical...), mod)
+	return &out, nil
+}
+
+// evalAlias gives a method a second name, in the class being defined or at
+// the top level. The new name must be free: a method is defined once.
+func (in *Interp) evalAlias(n *syntax.Alias, fr *Frame) (object.Value, error) {
+	target := fr.DefTarget
+	m := target.Lookup(n.Old)
+	if m == nil {
+		return object.Value{}, in.raise(object.NameError, n.Line(), "undefined method '%s' for %s", n.Old, target.QualifiedName())
+	}
+	if _, taken := target.Methods[n.New]; taken {
+		return object.Value{}, in.raise(object.AmberError, n.Line(), "method %s is already defined in %s", n.New, target.QualifiedName())
+	}
+	alias := *m
+	alias.Name = n.New
+	target.SetMethod(&alias)
+	return object.Nil, nil
+}

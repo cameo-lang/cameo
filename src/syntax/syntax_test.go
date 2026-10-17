@@ -122,6 +122,17 @@ func TestHashNewBlockMayReadItsHash(t *testing.T) {
 	parse(t, "h = Hash.new { |m, k| x = {}\nx[k] = 1\nx }\n")
 }
 
+func TestSugarParses(t *testing.T) {
+	// Forwarding, anonymous parameters, for loops, alias, a scoped class
+	// name and a top-level def self.x are sugar the converter rewrites.
+	parse(t, "def f(...) = g(...)\ndef h(*, **, &) = g(*, **, &)\n")
+	parse(t, "for a, b in [[1, 2]]\nend\n")
+	parse(t, "def a = 1\nalias b a\n")
+	parse(t, "module M; end\nclass M::C; end\n")
+	parse(t, "def self.top = 1\n")
+	rejects(t, "alias :\"#{x}\" y\n", "computed name")
+}
+
 func TestRejections(t *testing.T) {
 	cases := map[string]string{
 		"attr_accessor :x\n":                 "attr_accessor is not supported",
@@ -134,11 +145,8 @@ func TestRejections(t *testing.T) {
 		"$x = 1\n":                           "global variables are not supported",
 		"@@x = 1\n":                          "class variables are not supported",
 		"class << self; end\n":               "class << self is not supported",
-		"for i in [1]; end\n":                "for loops are not supported",
 		"x = /re/\n":                         "regular expressions are not supported",
 		"x = 99999999999999999999\n":         "does not fit in 64 bits",
-		"def foo(...); bar(...); end\n":      "argument forwarding",
-		"alias b a\n":                        "alias is not supported",
 		"x = `ls`\n":                         "backtick commands",
 		"def m; def n; end; end\n":           "def n inside a method",
 		"string :x\n":                        "which only a class body can do",

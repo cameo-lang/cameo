@@ -36,6 +36,10 @@ What amber keeps from Ruby:
 - `class` with single inheritance, method overriding and `super`; `module`
   as a namespace and as a mixin through `include` and `extend`
 - `begin`/`rescue`/`else`/`ensure`, `raise`, `retry`, exception classes
+- sugar the checker rewrites: argument forwarding (`...`, and `*`, `**`,
+  `&` without a name), `for x in xs` (as `each`), `alias new old` for a
+  name not yet taken, `class A::B` inside an existing `A`, and a top-level
+  `def self.x`, which defines a top-level method
 - `puts`, `print`, `p`, `warn`
 
 What amber leaves out, and the checker rejects by name:
@@ -44,10 +48,11 @@ What amber leaves out, and the checker rejects by name:
 - instance variables outside `initialize`; class variables; global variables
 - reopening a class: a second `class X` never changes the first, see
   *Classes*; a second `def` of one name in a class body; `define_method`,
-  `method_missing`, `send`, `instance_variable_set`, `eval`, `alias`, `undef`,
+  `method_missing`, `send`, `instance_variable_set`, `eval`, `undef`,
   `extend`, singleton classes, `def self.x` on an instance
 - mutating methods: `<<`, `push`, `pop`, `delete`, `merge!`, `map!`, every
-  bang method, `freeze` (everything already is)
+  bang method; `freeze` is accepted and changes nothing, since everything
+  already is frozen
 - threads, fibers, `fork`, files, sockets, `require`, `$stdin`. Standard
   output and standard error are the whole of I/O.
 

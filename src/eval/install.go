@@ -28,6 +28,11 @@ func installStdlib() {
 	procClass.Define("arity", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Int(proc(self).Arity()), nil
 	})
+	// A symbol's proc calls the method of that name on its first argument,
+	// as &:name does.
+	object.SymbolClass.Define("to_proc", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return procValue(&Proc{Sym: self.Str()}), nil
+	})
 	// A hash's proc is a lambda that looks a key up, as Ruby's
 	// Hash#to_proc is.
 	object.MapClass.Define("to_proc", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {

@@ -41,3 +41,4 @@ The steps:
 - [18. `Hash.new` with a default value or block](18-hash-defaults.md)
 - [19. `Math`, `Range#bsearch`, `Float#step` and other builtins](19-small-builtins.md)
 - [20. Linear maps, and the benchmark bugs fixed](20-linear-maps.md)
+- [21. Argument forwarding, `for`, `alias` and other sugar](21-sugar.md)

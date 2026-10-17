@@ -191,8 +191,7 @@ func (c *converter) expr(n ast.Node) Node {
 	case *ast.While:
 		return &While{c.pos(), c.expr(n.Cond), c.body(n.Body)}
 	case *ast.For:
-		c.fail("for loops are not supported: use each")
-		return nil
+		return c.forLoop(n)
 	case *ast.MethodDef:
 		return c.def(n)
 	case *ast.Return:
@@ -270,8 +269,11 @@ func (c *converter) expr(n ast.Node) Node {
 	case *ast.MatchPattern:
 		return &MatchPattern{c.pos(), c.expr(n.Subject), c.pattern(n.Pattern), n.Bool}
 	case *ast.Alias:
-		c.fail("alias is not supported: a method is defined once")
-		return nil
+		if n.NewNameExpr != nil || n.OldNameExpr != nil {
+			c.fail("alias with a computed name is not supported")
+			return nil
+		}
+		return &Alias{c.pos(), n.NewName, n.OldName}
 	case *ast.Undef:
 		c.fail("undef is not supported: a method is defined once")
 		return nil
@@ -288,6 +290,11 @@ func (c *converter) entries(h *ast.HashLit) []MapEntry {
 		var key Node
 		if k != nil {
 			key = c.expr(k)
+		}
+		if k == nil && h.Values[i] == nil {
+			// A bare `**` passes the anonymous keyword rest on.
+			out = append(out, MapEntry{Value: c.anonymous(kwRestParam)})
+			continue
 		}
 		out = append(out, MapEntry{Key: key, Value: c.expr(h.Values[i])})
 	}
@@ -390,7 +397,6 @@ var mutators = map[string]string{
 	"clear":                 "an empty literal",
 	"store":                 "put",
 	"replace":               "rebinding the variable",
-	"freeze":                "nothing: every value is immutable",
 	"fill":                  "a list literal",
 	"rotate!":               "rotate",
 	"<<":                    "append, or +",
@@ -512,17 +518,28 @@ func (c *converter) args(nodes []ast.Node) (args []Node, kwargs []MapEntry, bloc
 	for i, a := range nodes {
 		switch a := a.(type) {
 		case *ast.SplatArg:
+			if a.Value == nil {
+				args = append(args, &Splat{c.pos(), c.anonymous(restParam)})
+				continue
+			}
 			args = append(args, &Splat{c.pos(), c.expr(a.Value)})
 		case *ast.BlockPass:
+			if a.Value == nil {
+				blockArg = c.anonymous(blockParam)
+				continue
+			}
 			blockArg = c.expr(a.Value)
 		case *ast.HashLit:
-			if !a.Braced && i == len(nodes)-1 || (!a.Braced && i == len(nodes)-2 && isBlockPass(nodes[i+1])) {
-				kwargs = c.entries(a)
+			if !a.Braced && i == len(nodes)-1 || (!a.Braced && i >= len(nodes)-2 && isBlockPass(nodes[len(nodes)-1])) {
+				kwargs = append(kwargs, c.entries(a)...)
 			} else {
 				args = append(args, c.expr(a))
 			}
 		case *ast.ForwardArgs:
-			c.fail("argument forwarding with ... is not supported")
+			// `...` passes the enclosing method's forwarded arguments on.
+			args = append(args, &Splat{c.pos(), c.anonymous(restParam)})
+			kwargs = append(kwargs, MapEntry{Value: c.anonymous(kwRestParam)})
+			blockArg = c.anonymous(blockParam)
 		default:
 			if e := c.expr(a); e != nil {
 				args = append(args, e)
@@ -576,16 +593,58 @@ func (c *converter) params(d *ast.MethodDef) Params {
 	}
 	p.KwRest = d.KwRest
 	p.BlockParam = d.BlockParam
+	if d.Forward {
+		// `...` takes the anonymous rest, keyword rest and block, under the
+		// names a bare `*`, `**` and `&` take, which no script can write.
+		p.Positional = append(p.Positional, Param{Name: restParam, Splat: true})
+		p.KwRest, p.BlockParam = kwRestParam, blockParam
+	}
 	return p
+}
+
+// The parameters `*`, `**` and `&` without a name, and `...`, bind these
+// names, which are not identifiers and so cannot clash with a script's.
+const (
+	restParam   = "*"
+	kwRestParam = "**"
+	blockParam  = "&"
+)
+
+// anonymous reads an anonymous parameter, which a bare `*`, `**` or `&`
+// argument passes on.
+func (c *converter) anonymous(name string) Node { return &Var{c.pos(), name} }
+
+// forLoop rewrites `for x in xs ... end` into `xs.each { |v| x = v ... }`,
+// declaring x first, since a for loop's variables outlive it in Ruby.
+func (c *converter) forLoop(n *ast.For) Node {
+	if n.Target != nil {
+		c.fail("for with a nested or non-local target is not supported")
+		return nil
+	}
+	const item = "for"
+	var bind Node
+	if len(n.Vars) == 1 {
+		bind = &Assign{c.pos(), n.Vars[0], &Var{c.pos(), item}}
+	} else {
+		bind = &MultiAssign{c.pos(), n.Vars, -1, []Node{&Var{c.pos(), item}}}
+	}
+	block := &Block{Pos: c.pos()}
+	block.Params.Positional = []Param{{Name: item}}
+	c.push(ctxBlock, "")
+	block.Body = append([]Node{bind}, c.body(n.Body)...)
+	c.pop()
+	out := []Node{}
+	for _, v := range n.Vars {
+		out = append(out, &Assign{c.pos(), v, &Nil{c.pos()}})
+	}
+	iter := c.expr(n.Iter)
+	out = append(out, &Call{Pos: c.pos(), Recv: iter, Name: "each", Block: block}, iter)
+	return &Seq{c.pos(), out}
 }
 
 func (c *converter) def(d *ast.MethodDef) Node {
 	if d.Recv != nil {
 		c.fail("def %s on an object: methods belong to classes", d.Name)
-		return nil
-	}
-	if d.Forward {
-		c.fail("def %s(...): argument forwarding is not supported", d.Name)
 		return nil
 	}
 	if isSetter(d.Name) {
@@ -600,11 +659,17 @@ func (c *converter) def(d *ast.MethodDef) Node {
 		c.fail("def %s inside a method", d.Name)
 		return nil
 	}
-	if d.Singleton && !c.inClassOrModuleBody() {
+	singleton := d.Singleton
+	switch {
+	case singleton && c.top().kind == ctxTop:
+		// At the top level self is main, and its methods are the top-level
+		// methods.
+		singleton = false
+	case singleton && !c.inClassOrModuleBody():
 		c.fail("def self.%s outside a class body", d.Name)
 		return nil
 	}
-	out := &Def{Pos: c.pos(), Name: d.Name, Singleton: d.Singleton}
+	out := &Def{Pos: c.pos(), Name: d.Name, Singleton: singleton}
 	out.Params = c.params(d)
 	c.push(ctxDef, d.Name)
 	out.Body = c.body(d.Body)
@@ -613,15 +678,18 @@ func (c *converter) def(d *ast.MethodDef) Node {
 }
 
 func (c *converter) classDef(d *ast.ClassDef) Node {
+	var scope Node
 	if d.NamePath != nil {
-		c.fail("class %s with a scoped name: define it inside its module", d.Name)
-		return nil
+		if scope = c.scopeOf(d.NamePath); scope == nil {
+			c.fail("class %s with a top-level scope (::) is not supported", d.Name)
+			return nil
+		}
 	}
 	if _, inDef := c.enclosingDef(); inDef {
 		c.fail("class %s inside a method", d.Name)
 		return nil
 	}
-	out := &ClassDef{Pos: c.pos(), Name: d.Name}
+	out := &ClassDef{Pos: c.pos(), Name: d.Name, Scope: scope}
 	switch {
 	case d.SuperExpr != nil:
 		out.Super = c.expr(d.SuperExpr)
@@ -636,15 +704,18 @@ func (c *converter) classDef(d *ast.ClassDef) Node {
 }
 
 func (c *converter) moduleDef(d *ast.ModuleDef) Node {
+	var scope Node
 	if d.NamePath != nil {
-		c.fail("module %s with a scoped name: define it inside its module", d.Name)
-		return nil
+		if scope = c.scopeOf(d.NamePath); scope == nil {
+			c.fail("module %s with a top-level scope (::) is not supported", d.Name)
+			return nil
+		}
 	}
 	if _, inDef := c.enclosingDef(); inDef {
 		c.fail("module %s inside a method", d.Name)
 		return nil
 	}
-	out := &ModuleDef{Pos: c.pos(), Name: d.Name}
+	out := &ModuleDef{Pos: c.pos(), Name: d.Name, Scope: scope}
 	c.push(ctxModule, d.Name)
 	out.Body = c.body(d.Body)
 	c.pop()
@@ -1025,4 +1096,14 @@ func (c *converter) include(n *ast.Call) Node {
 		return nil
 	}
 	return &Include{Pos: c.pos(), Module: args[0], Extend: n.Name == "extend"}
+}
+
+// scopeOf is the module `class A::B` defines B in: A, or nil for a
+// leading `::`.
+func (c *converter) scopeOf(path ast.Node) Node {
+	sc, ok := path.(*ast.ScopedConst)
+	if !ok || sc.Recv == nil {
+		return nil
+	}
+	return c.expr(sc.Recv)
 }
