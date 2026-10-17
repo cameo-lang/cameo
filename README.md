@@ -31,18 +31,24 @@ interpreter is built in the milestones listed there.
 
 ## Status
 
-Milestone 0. The component parses scripts and reports syntax errors;
-running them is not implemented yet.
+Milestone 1 of the plan in the design: the front end. `amber check` parses a
+script, turns it into amber's own tree, rejects what amber leaves out (setters,
+mutating methods, globals, reopening, `for`, regular expressions, …) with the
+line of each finding, and rewrites `a.x.y = 3` into a copy. Running a script
+is not implemented yet.
 
 ```sh
-amber check script.arb      # parse, report syntax errors, exit 0 if it parses
+amber check script.arb      # parse and check, report every error with its line
 amber script.arb            # fails until milestone 2
 ```
 
 The scripts under [examples/](examples) are the specification: each
 `<name>.arb` has the output it must produce in `<name>.expected`, and `go test`
 holds the interpreter to them as milestones land. Today the test proves every
-example parses.
+example passes the checker.
+
+The packages under `src/`: `syntax` is the front end (`syntax.Parse`), and
+`cmd/amber` the binary.
 
 ## Building
 

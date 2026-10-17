@@ -1,19 +1,20 @@
 // Command amber runs amber scripts.
 //
-// Milestone 0: `amber check script.arb` parses a script and reports syntax
-// errors; `amber script.arb` fails, since the evaluator does not exist yet.
-// The language and the plan are in doc/design/amber.md.
+// Milestone 1: `amber check script.arb` parses and checks a script and reports
+// what the parser rejects and what amber leaves out, with line numbers;
+// `amber script.arb` fails, since the evaluator does not exist yet. The
+// language and the plan are in doc/design/amber.md.
 package main
 
 import (
 	"fmt"
 	"os"
 
-	"github.com/go-ruby-parser/parser"
 	"github.com/radiospiel/amber/src/amber"
+	"github.com/radiospiel/amber/src/syntax"
 )
 
-const usage = `usage: amber check <script.arb>    parse the script and report syntax errors
+const usage = `usage: amber check <script.arb>    parse and check the script, report every error
        amber <script.arb>          run the script (not implemented yet)`
 
 func main() {
@@ -33,12 +34,12 @@ func run(args []string) int {
 		return 0
 	case len(args) == 2 && args[0] == "check":
 		if err := check(args[1]); err != nil {
-			fmt.Fprintf(os.Stderr, "amber: %v\n", err)
+			fmt.Fprintln(os.Stderr, err)
 			return 1
 		}
 		return 0
 	case len(args) == 1 && args[0] != "check":
-		fmt.Fprintf(os.Stderr, "amber: running scripts is not implemented yet; `amber check %s` parses it\n", args[0])
+		fmt.Fprintf(os.Stderr, "amber: running scripts is not implemented yet; `amber check %s` checks it\n", args[0])
 		return 2
 	default:
 		fmt.Fprintln(os.Stderr, usage)
@@ -46,15 +47,13 @@ func run(args []string) int {
 	}
 }
 
-// check parses the script at path and returns the parser's error, which names
-// the line, when the script is not valid Ruby syntax.
+// check parses and checks the script at path and returns every error found,
+// each naming its line.
 func check(path string) error {
 	src, err := os.ReadFile(path)
 	if err != nil {
-		return err
+		return fmt.Errorf("amber: %w", err)
 	}
-	if _, err := parser.Parse(string(src)); err != nil {
-		return fmt.Errorf("%s: %w", path, err)
-	}
-	return nil
+	_, err = syntax.Parse(path, string(src))
+	return err
 }
