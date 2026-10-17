@@ -505,7 +505,13 @@ func (c *converter) call(n *ast.Call) Node {
 			c.lent = append(c.lent, n.Block.Params[0])
 			defer func() { c.lent = c.lent[:len(c.lent)-1] }()
 		}
-		call.Block = c.block(n.Block)
+		if r, isConst := n.Recv.(*ast.ConstRef); isConst && r.Name == "Class" && name == "new" {
+			// Class.new's block is a class body: defs and field
+			// declarations belong to the class it builds.
+			call.Block = c.blockAs(n.Block, ctxClass)
+		} else {
+			call.Block = c.block(n.Block)
+		}
 	}
 	return call
 }
@@ -568,7 +574,11 @@ func isBlockPass(n ast.Node) bool {
 	return ok
 }
 
-func (c *converter) block(b *ast.Block) *Block {
+func (c *converter) block(b *ast.Block) *Block { return c.blockAs(b, ctxBlock) }
+
+// blockAs converts a block whose body is in the given context: a block's
+// own, or a class body's for Class.new.
+func (c *converter) blockAs(b *ast.Block, kind context) *Block {
 	saved := c.line
 	if b.Line != 0 {
 		c.line = b.Line
@@ -582,7 +592,7 @@ func (c *converter) block(b *ast.Block) *Block {
 		out.Params.Positional = append(out.Params.Positional, p)
 	}
 	out.Params.BlockParam = b.BlockParam
-	c.push(ctxBlock, "")
+	c.push(kind, "")
 	out.Body = c.body(b.Body)
 	c.pop()
 	c.line = saved

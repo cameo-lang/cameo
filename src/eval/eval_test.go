@@ -127,6 +127,18 @@ p (0..3).reverse_each { }, (0..9).to_a.values_at(1..3, 8..12, -2..-1, 0)
 	expectOutput(t, src, "\"constant\"\nnil\n\"local-variable\"\nnil\n\"method\"\n\"method\"\nnil\n\"self\"\n#<Object>\nObject\nnil\n0..3\n[1, 2, 3, 8, 9, nil, nil, nil, 8, 9, 0]\n")
 }
 
+func TestClassNewTakesFields(t *testing.T) {
+	// Class.new's block is a class body: fields and defs belong to it.
+	src := `
+Pt = Class.new do
+  int :x
+  def double = x * 2
+end
+p Pt.new(x: 4).double, Pt.new(x: 1), Class.new
+`
+	expectOutput(t, src, "8\nPt(x: 1)\n#<Class>\n")
+}
+
 func TestTimeCrossesAsync(t *testing.T) {
 	// A time travels to a process and back with its instant and offset.
 	src := `
