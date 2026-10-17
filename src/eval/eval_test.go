@@ -232,3 +232,33 @@ puts srand(9) == 7
 `
 	expectOutput(t, src, "true\ntrue\ntrue\n")
 }
+
+func TestSortsWithoutDispatch(t *testing.T) {
+	// Arrays of one builtin kind sort without calling <=>; a NaN, a mix of
+	// kinds or a block takes the general path, which raises where Ruby does.
+	src := `
+p [3.5, -0.0, 0.0, -2.0, 1e300, -Float::INFINITY].sort
+p ["b", "a".b, "é", "a", "", "B", "ab"].sort
+p ["b", "a".b, "é"].sort.map(&:encoding)
+p [1, 2.5, 0].sort
+p ["b", "a"].sort { |x, y| y <=> x }
+begin
+  [1.0, Float::NAN].sort
+rescue ArgumentError
+  puts "nan"
+end
+begin
+  ["b", :a].sort
+rescue ArgumentError
+  puts "mixed"
+end
+`
+	expectOutput(t, src, `[-Infinity, -2.0, -0.0, 0.0, 3.5, 1.0e+300]
+["", "B", "a", "a", "ab", "b", "é"]
+[#<Encoding:ASCII-8BIT>, #<Encoding:UTF-8>, #<Encoding:UTF-8>]
+[0, 1, 2.5]
+["b", "a"]
+nan
+mixed
+`)
+}
