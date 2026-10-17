@@ -1,11 +1,15 @@
 package syntax
 
 import (
+	"errors"
 	"fmt"
 	"slices"
 	"strings"
 
+	"github.com/go-ruby-parser/parser"
 	"github.com/go-ruby-parser/parser/ast"
+
+	"github.com/radiospiel/amber/src/rx"
 )
 
 // context names where the converter stands in the source, which decides what
@@ -32,6 +36,9 @@ type converter struct {
 	line  int
 	errs  ErrorList
 	stack []frame
+	// interpolating counts the regexp interpolations being converted, in
+	// which a bare name may be a local the parser did not see.
+	interpolating int
 	// lent names the hash parameters of the Hash.new blocks being
 	// converted, which the block must not store into.
 	lent []string
@@ -143,8 +150,7 @@ func (c *converter) expr(n ast.Node) Node {
 	case *ast.SymbolLit:
 		return &Sym{c.pos(), n.Name}
 	case *ast.RegexpLit:
-		c.fail("regular expressions are not supported")
-		return nil
+		return c.regexp(n)
 	case *ast.XStr:
 		c.fail("backtick commands are not supported: amber has no shell")
 		return nil
@@ -431,6 +437,9 @@ var fieldTypes = map[string]bool{
 
 func (c *converter) call(n *ast.Call) Node {
 	name := n.Name
+	if c.interpolating > 0 && n.Recv == nil && len(n.Args) == 0 && n.Block == nil && !n.Paren {
+		return &VarOrCall{c.pos(), name}
+	}
 	if n.Recv == nil {
 		switch name {
 		case "defined?":
@@ -1187,4 +1196,81 @@ func (c *converter) mutCall(n ast.Node) Node {
 		}
 		cur = recv
 	}
+}
+
+// regexp converts a regexp literal. The parser leaves `#{...}` in the
+// source, so the converter cuts it out and parses each piece itself.
+func (c *converter) regexp(n *ast.RegexpLit) Node {
+	options := 0
+	for _, f := range n.Flags {
+		switch f {
+		case 'i':
+			options |= 1
+		case 'x':
+			options |= 2
+		case 'm':
+			options |= 4
+		case 'n':
+			options |= 32
+		}
+	}
+	var parts []Node
+	var lit strings.Builder
+	src := n.Source
+	for i := 0; i < len(src); i++ {
+		switch {
+		case src[i] == '\\' && i+1 < len(src):
+			lit.WriteString(src[i : i+2])
+			i++
+		case src[i] == '#' && i+1 < len(src) && src[i+1] == '{':
+			end, depth := -1, 0
+			for j := i + 2; j < len(src); j++ {
+				if src[j] == '{' {
+					depth++
+				} else if src[j] == '}' {
+					if depth == 0 {
+						end = j
+						break
+					}
+					depth--
+				}
+			}
+			if end < 0 {
+				lit.WriteByte(src[i])
+				continue
+			}
+			tree, err := parser.Parse(src[i+2 : end])
+			if err != nil {
+				c.fail("in a regexp's interpolation: %v", err)
+				return nil
+			}
+			if lit.Len() > 0 {
+				parts = append(parts, &Str{c.pos(), lit.String()})
+				lit.Reset()
+			}
+			var body []Node
+			c.interpolating++
+			for _, stmt := range tree.Body {
+				body = append(body, c.expr(stmt))
+			}
+			c.interpolating--
+			parts = append(parts, &Seq{c.pos(), body})
+			i = end
+		default:
+			lit.WriteByte(src[i])
+		}
+	}
+	if lit.Len() > 0 || len(parts) == 0 {
+		parts = append(parts, &Str{c.pos(), lit.String()})
+	}
+	// A literal without interpolation is checked now: one Go's regexp
+	// cannot match is refused like any construct amber leaves out.
+	if s, ok := parts[0].(*Str); ok && len(parts) == 1 {
+		var unsupported *rx.Unsupported
+		if _, _, err := rx.Translate(s.Value, options); errors.As(err, &unsupported) {
+			c.fail("%s", unsupported.Error())
+			return nil
+		}
+	}
+	return &Regexp{c.pos(), parts, options}
 }

@@ -73,6 +73,7 @@ Every value is immutable. The kinds of value are:
 | Hash | `map<,>`; keys are String, Symbol (stored as `string`), Integer or `bool`, see *Symbols* |
 | Set | `repeated`, deduplicated on construction |
 | Range | a `Range` message with `from`, `to`, `exclusive` |
+| Regexp | in `amber.Value`, a `Regexp` message: source and options; a MatchData does not travel |
 | Time | in `amber.Value`, a `Time` message: seconds, nanoseconds, UTC offset and zone; there is no field type for it yet |
 | an instance of a user class | the message that class declares |
 | Class, Proc, AsyncProcess | not serialisable; see *Async* |
@@ -352,7 +353,7 @@ unmarshalled on the other without any amber code in between.
 
 **The value envelope.** Values that are not instances — scalars, lists, maps,
 sets, ranges — travel in `amber.Value`, a message with a `oneof` over the
-scalar kinds plus `List`, `Map`, `Set`, `Range`, `Time` and `Object` (a
+scalar kinds plus `List`, `Map`, `Set`, `Range`, `Time`, `Regexp` and `Object` (a
 class name and the packed message). A symbol travels as a string, see *Symbols*.
 A hash's default value travels with it; a hash with a default block cannot
 travel. It is what `async` serialises, what the
@@ -414,10 +415,11 @@ One Go module, `github.com/radiospiel/amber`, with the packages under `src/`:
 | Package | Does |
 |---|---|
 | `amber` | the host API: `Load`, `Run`, `Program`, `Value` |
+| `rx` | translates a Ruby regular expression into one for Go's regexp, and names what it uses that Go's cannot do |
 | `syntax` | wraps the parser; normalises its tree into amber's own AST, rewrites `a.x.y =` and index assignment into `tap`, rejects what amber leaves out, with line numbers; hashes class bodies so equal definitions are one class |
 | `object` | the value model: a `Value` is a tagged 24-byte struct (kind, integer payload, pointer), so an integer, a float, a boolean and nil never touch the heap and a string shares its bytes; kinds, structural equality, hashing, the class table, dynamic messages, conversion to and from `amber.Value` and Go values |
 | `eval` | the evaluator: compiles each node to a closure on first use (`compile.go`), with a tree walker for the rare kinds; scopes, method dispatch with a per-class lookup cache, blocks, exceptions, intrinsics (`tap`, `async`, `await`, the field helpers) |
-| `stdlib` | Kernel, Integer, Float, String, Symbol, Array, Hash, Set, Range, Time, Math, Enumerable, Proc, the exception classes |
+| `stdlib` | Kernel, Integer, Float, String, Symbol, Array, Hash, Set, Range, Time, Math, Regexp, MatchData, Enumerable, Proc, the exception classes |
 | `eval/async.go` | the scheduler: `AsyncProcess`, the per-scope process list, the worker interpreter a process runs in, goroutine lifecycle |
 | `protogen` | descriptors from class declarations, `.proto` text, the `amber.Value` envelope (`proto/amber.proto`, compiled in) |
 | `cmd/amber` | the binary: `amber script.arb`, `amber check script.arb`, `amber proto script.arb` |
@@ -512,11 +514,26 @@ re-opened by accident:
     are immutable and have no identity; argument forwarding (`...`, `*`,
     `**`, `&`); a top-level `def self.x`; `:sym.to_proc` as a value;
     `Class.new(Base) { ... }` as a class value; regular expressions,
-    through `go-ruby-regexp`; integers of any size; lazy enumerators;
+    on Go's regexp; integers of any size; lazy enumerators;
     `require` of a library amber builds in, with `CGI.escape` and its
     kin; `method_missing`; string encodings to and from bytes; `pack`;
     `for` loops, `alias` and `class A::B`; path arithmetic without I/O
     (`File.join`, `Pathname`).
+  - Regular expressions run on Go's regexp, RE2, which matches in linear
+    time and has no backtracking. `rx` translates Ruby's syntax: `^` and
+    `$` at every line, `m` as Go's `s`, `x`, `\h`, `{,n}`, `\e`, `\u{}`,
+    `\xHH` sequences, Ruby's property names; a named group alone captures.
+    A pattern that needs backtracking (a backreference, lookahead or
+    lookbehind, an atomic group, a possessive quantifier, a subexpression
+    call, `\G`, `\K`, `\Z`, class intersection) is refused with "This
+    regexp is not supported in Amber": a literal by the syntax check, one
+    built at run time with a NotImplementedError. A Regexp is an immutable
+    value of source and options, and every String method that takes a
+    pattern takes a string or a regexp. There are no `$~` or `$1` globals:
+    a match is what `match` returns, or a block's argument. A search from a
+    position past 0 reads the text from there, so `^`, `\A` and `\b` take
+    that position for the start. An Onigmo engine (go-ruby-regexp) was
+    tried and set aside for now: it needs Go 1.27.
   - Kept out: `GC`, `ENV`, metaprogramming (`define_method`, `send`,
     `eval`, `instance_variable_set`), setters and untyped fields, fibers
     and threads, and anything that touches the file system.

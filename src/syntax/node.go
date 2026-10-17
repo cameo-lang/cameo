@@ -59,6 +59,22 @@ type Interp struct {
 	Parts []Node
 }
 
+// VarOrCall is a bare name inside a regexp's interpolation, which the
+// converter parses apart from its scope: the local of that name when there
+// is one, and a call of the method otherwise.
+type VarOrCall struct {
+	Pos
+	Name string
+}
+
+// Regexp is a regexp literal: its source, interpolated from Parts like a
+// string, and its option bits.
+type Regexp struct {
+	Pos
+	Parts   []Node
+	Options int
+}
+
 // Sym is a symbol literal; Name has no leading colon.
 type Sym struct {
 	Pos

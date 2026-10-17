@@ -71,7 +71,128 @@ func installSet() {
 	binary([]string{"|", "union", "+"}, (*object.Set).Union)
 	binary([]string{"&", "intersection"}, (*object.Set).Intersection)
 	binary([]string{"-", "difference"}, (*object.Set).Difference)
-	binary([]string{"^"}, func(a, b *object.Set) *object.Set { return a.Union(b).Difference(a.Intersection(b)) })
+	// ^ is in Ruby's order: the other's elements this set lacks, then this
+	// set's the other lacks.
+	binary([]string{"^"}, func(a, b *object.Set) *object.Set { return b.Difference(a).Union(a.Difference(b)) })
+	def(c, "<=>", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		o, ok := args[0].AsSet()
+		if !ok {
+			return object.Nil, nil
+		}
+		a := set(self)
+		switch {
+		case a.Len() == o.Len() && setSubset(a, o):
+			return object.Int(0), nil
+		case a.Len() < o.Len() && setSubset(a, o):
+			return object.Int(-1), nil
+		case a.Len() > o.Len() && setSubset(o, a):
+			return object.Int(1), nil
+		}
+		return object.Nil, nil
+	})
+	def(c, "join", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		sep := ""
+		if len(args) == 1 && !args[0].IsNil() {
+			var err error
+			if sep, err = wantString(ctx, args[0]); err != nil {
+				return object.Value{}, err
+			}
+		}
+		return join(ctx, set(self).Elems(), sep)
+	})
+	def(c, "flatten", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		var flat func(s *object.Set, out *object.Set) *object.Set
+		flat = func(s *object.Set, out *object.Set) *object.Set {
+			for _, e := range s.Elems() {
+				if inner, ok := e.AsSet(); ok {
+					out = flat(inner, out)
+					continue
+				}
+				out = out.With(e)
+			}
+			return out
+		}
+		return object.SetValue(flat(set(self), object.NewSet())), nil
+	})
+	// classify groups the members by the block's value, as a hash of sets.
+	def(c, "classify", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if err := needBlock(ctx, block, "classify"); err != nil {
+			return object.Value{}, err
+		}
+		groups := object.NewMap()
+		for _, e := range set(self).Elems() {
+			k, err := ctx.Yield(block, e)
+			if err != nil {
+				return object.Value{}, err
+			}
+			g, ok := groups.Get(k)
+			if !ok {
+				g = object.SetValue(object.NewSet())
+			}
+			groups = groups.Put(k, object.SetValue(g.Set().With(e)))
+		}
+		return object.MapValue(groups), nil
+	})
+	// divide is classify's sets with a one-argument block, and with a
+	// two-argument one the sets of members the block relates, directly or
+	// through others.
+	def(c, "divide", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if err := needBlock(ctx, block, "divide"); err != nil {
+			return object.Value{}, err
+		}
+		arity, err := ctx.Call(block, "arity")
+		if err != nil {
+			return object.Value{}, err
+		}
+		elems := set(self).Elems()
+		if n, _ := arity.AsInt(); n != 2 {
+			groups, err := c.Methods["classify"].Native(ctx, self, nil, nil, block)
+			if err != nil {
+				return object.Value{}, err
+			}
+			return object.SetValue(object.NewSet(groups.Map().Values()...)), nil
+		}
+		parent := make([]int, len(elems))
+		for i := range parent {
+			parent[i] = i
+		}
+		var find func(i int) int
+		find = func(i int) int {
+			for parent[i] != i {
+				parent[i] = parent[parent[i]]
+				i = parent[i]
+			}
+			return i
+		}
+		for i := range elems {
+			for j := range elems {
+				if i == j || find(i) == find(j) {
+					continue
+				}
+				r, err := ctx.Yield(block, elems[i], elems[j])
+				if err != nil {
+					return object.Value{}, err
+				}
+				if r.Truthy() {
+					parent[find(j)] = find(i)
+				}
+			}
+		}
+		var order []int
+		members := map[int][]object.Value{}
+		for i, e := range elems {
+			root := find(i)
+			if _, seen := members[root]; !seen {
+				order = append(order, root)
+			}
+			members[root] = append(members[root], e)
+		}
+		out := make([]object.Value, len(order))
+		for k, root := range order {
+			out[k] = object.SetValue(object.NewSet(members[root]...))
+		}
+		return object.SetValue(object.NewSet(out...)), nil
+	})
 	predicate := func(names []string, f func(a, b *object.Set) bool) {
 		for _, name := range names {
 			def(c, name, 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -83,14 +204,7 @@ func installSet() {
 			})
 		}
 	}
-	subset := func(a, b *object.Set) bool {
-		for _, e := range a.Elems() {
-			if !b.Has(e) {
-				return false
-			}
-		}
-		return true
-	}
+	subset := setSubset
 	predicate([]string{"subset?", "<="}, subset)
 	predicate([]string{"superset?", ">="}, func(a, b *object.Set) bool { return subset(b, a) })
 	predicate([]string{"proper_subset?", "<"}, func(a, b *object.Set) bool { return subset(a, b) && a.Len() < b.Len() })
@@ -141,4 +255,13 @@ func installSet() {
 	object.SetClass.DefineSingleton("[]", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.SetValue(object.NewSet(args...)), nil
 	})
+}
+
+func setSubset(a, b *object.Set) bool {
+	for _, e := range a.Elems() {
+		if !b.Has(e) {
+			return false
+		}
+	}
+	return true
 }

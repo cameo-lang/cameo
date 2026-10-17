@@ -207,3 +207,24 @@ func TestEnvelopeMapDefault(t *testing.T) {
 		t.Fatal("a map with a default proc cannot be encoded")
 	}
 }
+
+// A regexp travels as its source and options.
+func TestEnvelopeRegexp(t *testing.T) {
+	reg := NewRegistry()
+	enc, dec := NewEncoder(reg), NewDecoder(reg, nil)
+	re, err := object.NewRegexp(`(?<y>\d+)-x`, object.RegexpIgnoreCase)
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, err := enc.Encode(object.RegexpValue(re))
+	if err != nil {
+		t.Fatal(err)
+	}
+	back, err := dec.Decode(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := back.Regexp(); got.Source != re.Source || got.Options != re.Options || got.MatchAt("12-X", 0) == nil {
+		t.Fatalf("round trip changed %s into %s", re.Inspect(), got.Inspect())
+	}
+}

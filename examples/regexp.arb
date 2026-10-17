@@ -1,0 +1,26 @@
+# Regular expressions, on Onigmo's rules through go-ruby-regexp. There are no
+# $~ or $1 globals: a match is what match returns, or a block's argument.
+p "1a2b3c".gsub(/\D/, ''), "hello world".sub(/o/, "0"), "hello world".gsub(/(l+)/) { _1.upcase }
+p "a1b22".scan(/\d+/), "k=v; x=y".scan(/(\w)=(\w)/), "a,b;c".split(/[,;]/), "a1b2".split(/(\d)/), "abc".split(//), " a  b ".split
+p "foo bar" =~ /bar/, /x/ =~ "abc", "héllo" =~ /l/, "abc".match?(/b/), "abc".match(/(?<first>.)(?<rest>.*)/)
+m = /(\d+)-(\d+)/.match("tel 12-345 x")
+p m[0], m[1], m[2], m.pre_match, m.post_match, m.captures, m.begin(0), m.end(2), m.to_a, m.size
+n = /(?<y>\d{4})-(?<mo>\d\d)/.match("on 2024-05")
+p n[:y], n["mo"], n.named_captures.to_a, n.names
+p "John Smith".sub(/(\w+) (\w+)/, '\2, \1'), "aaa".gsub(/a/, "a" => "b"), "abc".gsub(/b/, '[\0]'), "abc".gsub("b", '<\&>')
+p "abcabc".index(/c/), "abcabc".rindex(/b/), "abcabc".index(/c/, 3), "x-y-z".rpartition("-"), "x-y-z".partition(/-/), "x-y-z".rpartition(/-./)
+p "hello"[/l+/], "hello"[/(h)(e)/, 2], "Hello".start_with?(/h/i), /a.c/m.source, /a/i.options, /a/ix.inspect, /x/.to_s
+case "2024"
+when /^\d+$/ then p :digits
+end
+p %w[apple banana cherry].grep(/an/), Regexp.escape("a.b*c"), Regexp.union("a", /b/i), Regexp.new("a+b", Regexp::IGNORECASE).match?("AAB")
+y = "wor"
+p "hello world" =~ /#{y}ld/, /#{y}/i
+p "café crème".scan(/\w+/), "ab\ncd" =~ /b.c/m
+s = "a-b"
+s.gsub!(/-/, "+")
+p s, (s.sub!(/zzz/, "")), s
+a = Set[1, 2, 3]
+b = Set[3, 4]
+p a ^ b, a <=> Set[1, 2], Set[1] <=> a, a <=> a, a <=> b, a.join("-"), Set[Set[1, 2], 3].flatten
+p a.classify(&:odd?).to_a, Set[1, 2, 4, 5, 7].divide { |x, y| (x - y).abs == 1 }, Set[1, 2, 3, 4].divide(&:even?)

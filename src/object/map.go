@@ -305,6 +305,15 @@ func writeKey(b *strings.Builder, v Value) {
 		b.WriteString(strconv.FormatInt(t.Unix(), 10))
 		b.WriteByte('.')
 		b.WriteString(strconv.Itoa(t.Nanosecond()))
+	case KindRegexp:
+		r := v.Regexp()
+		b.WriteString("x")
+		b.WriteString(strconv.Itoa(r.Options))
+		b.WriteByte(':')
+		b.WriteString(r.Source)
+	case KindMatch:
+		b.WriteString("m")
+		b.WriteString(v.Match().key())
 	case KindException:
 		e := v.Exception()
 		b.WriteString("e")

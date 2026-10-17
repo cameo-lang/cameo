@@ -27,6 +27,8 @@ func Install() {
 	installRange()
 	installTime()
 	installMath()
+	installRegexp()
+	installStringPatterns()
 }
 
 type fn = func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error)

@@ -53,6 +53,11 @@ func (in *Interp) ToS(v object.Value) (string, error) {
 		return v.Message, nil
 	case object.KindTime:
 		return stdlib.TimeToS(v.Time()), nil
+	case object.KindRegexp:
+		return v.Regexp().String(), nil
+	case object.KindMatch:
+		s, _ := v.Match().Group(0)
+		return s, nil
 	case object.KindInstance:
 		switch v.Instance().Cls {
 		case in.mainClass:
@@ -92,6 +97,10 @@ func (in *Interp) inspectBuiltin(v object.Value) (string, error) {
 		return object.QuoteBytes(v) + ".b", nil
 	case object.KindTime:
 		return stdlib.TimeInspect(v.Time()), nil
+	case object.KindRegexp:
+		return v.Regexp().Inspect(), nil
+	case object.KindMatch:
+		return stdlib.MatchInspect(v.Match()), nil
 	case object.KindList:
 		v := v.List()
 		parts := make([]string, len(v.Elems))
