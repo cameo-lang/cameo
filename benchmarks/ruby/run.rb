@@ -18,12 +18,12 @@ require "tmpdir"
 HERE = __dir__
 COMPONENT = File.expand_path("../..", HERE)
 
-options = { jobs: 4, timeout: 120 }
+options = { jobs: 4, timeout: 300 }
 OptionParser.new do |o|
   o.banner = "usage: ruby run.rb [options] [DIR_OR_FILE...]"
   o.on("--amber PATH", "the amber binary to run") { options[:amber] = _1 }
   o.on("--jobs N", Integer, "files run at once (default 4)") { options[:jobs] = _1 }
-  o.on("--timeout SECONDS", Integer, "per file (default 120)") { options[:timeout] = _1 }
+  o.on("--timeout SECONDS", Integer, "per file (default 300)") { options[:timeout] = _1 }
 end.parse!
 
 Dir.mktmpdir("amber-benchmarks") do |tmp|

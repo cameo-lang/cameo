@@ -272,6 +272,9 @@ func (in *Interp) worker() *Interp {
 	for name, v := range in.consts {
 		w.consts[name] = v
 	}
+	// The worker's generator is seeded from this one, here on the
+	// parent's goroutine, so a seeded script stays reproducible.
+	w.Srand(in.rng.Uint64())
 	return w
 }
 

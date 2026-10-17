@@ -114,3 +114,25 @@ func TestExceptions(t *testing.T) {
 	}
 	_ = object.Nil
 }
+
+func TestRandomIsSeedable(t *testing.T) {
+	// The same seed gives the same draws, in the script and in its
+	// processes; srand returns the previous seed.
+	src := `
+class Draw
+  def go(n) = (1..n).map { rand(1000) }
+end
+def draws
+  srand(42)
+  local = [rand, rand(10), rand(1..6), [1, 2, 3, 4, 5].shuffle, [1, 2, 3, 4, 5].sample(2)]
+  remote = await(async(Draw.new, :go, 5))
+  [local, remote]
+end
+first = draws
+second = draws
+puts first == second
+puts srand(7) == 42
+puts srand(9) == 7
+`
+	expectOutput(t, src, "true\ntrue\ntrue\n")
+}

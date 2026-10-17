@@ -2,6 +2,7 @@ package object
 
 import (
 	"maps"
+	"math/rand/v2"
 	"sort"
 	"sync/atomic"
 )
@@ -369,4 +370,9 @@ type Context interface {
 	Write(stderr bool, s string) error
 	// RespondsTo reports whether v has a method name.
 	RespondsTo(v Value, name string) bool
+	// Rand returns the interpreter's random number generator, and Srand
+	// reseeds it, returning the previous seed. A generator is not shared
+	// between goroutines: an async process has its own.
+	Rand() *rand.Rand
+	Srand(seed uint64) uint64
 }
