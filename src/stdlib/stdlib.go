@@ -34,6 +34,8 @@ func Install() {
 	installEncodings()
 	installPack()
 	installPaths()
+	// After Enumerable and Enumerator: it wraps Enumerable's methods.
+	installUserEnumerable()
 	// Last: it wraps every String method defined before it.
 	installStringEncodings()
 }
@@ -118,5 +120,34 @@ func toList(ctx object.Context, v object.Value) ([]object.Value, error) {
 		}
 		return out, nil
 	}
+	if v.Kind() == object.KindInstance {
+		return eachElems(ctx, v)
+	}
 	return nil, ctx.Raise(object.TypeError, "no implicit conversion of %s into List", kindName(v))
+}
+
+// eachElems collects what an object's own each yields, as Ruby's
+// Enumerable does for a class that includes it.
+func eachElems(ctx object.Context, v object.Value) ([]object.Value, error) {
+	var out []object.Value
+	collect := ctx.Block(func(args []object.Value) (object.Value, error) {
+		out = append(out, yielded(args))
+		return object.Nil, nil
+	})
+	if _, err := ctx.CallWith(v, "each", nil, nil, collect); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// yielded is the one element a yield of args makes: nil for none, the value
+// for one, a list of them for several.
+func yielded(args []object.Value) object.Value {
+	switch len(args) {
+	case 0:
+		return object.Nil
+	case 1:
+		return args[0]
+	}
+	return object.NewList(args...)
 }

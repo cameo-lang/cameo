@@ -107,10 +107,11 @@ that would mutate in Ruby: `list + [x]`, `list.append(x)`, `map.merge(other)`,
 `sort_by`, `group_by`, `each_with_index`, `each_with_object`, `zip`, `take`,
 `drop`, `first`, `last`, `find`, `any?`, `all?`, `none?`, `count`, `include?`,
 `flat_map`, `to_a`, `to_h`, `to_set`, `uniq`, `partition`, `min_by`,
-`max_by`, `each_slice`, `each_cons`, `tally`, `chunk_while`. There are no
-enumerators: a method that iterates returns a list when called without a
-block, so `each_slice(2).map { … }` works and `each_with_index.to_a` is
-`each_with_index` with a block. `each_with_object` cannot rely on the memo
+`max_by`, `each_slice`, `each_cons`, `tally`, `chunk_while`. A class that
+includes Enumerable and defines `each` gets the same methods, over what its
+`each` yields: one value as itself, several as a list of them, as in Ruby.
+`to_enum` and `enum_for` make an enumerator over any method that yields.
+`each_with_object` cannot rely on the memo
 changing, so the block's value becomes the next memo, as in `reduce`. A
 collection that Ruby would change in place returns a copy: `list.append(x)`,
 `list.prepend(x)`, `list.without(x)`, `list.without_at(i)`, `map.put(k, v)`,
@@ -553,6 +554,12 @@ re-opened by accident:
     and the rest make another and do no work until `first`, `to_a`,
     `force` or `each` asks; a blockless `cycle` or `then` gives an eager
     Enumerator. There is no external iteration (`next`, `peek`).
+  - A user class that includes Enumerable and defines `each` gets
+    Enumerable's methods. They run on an enumerator over its `each`, so
+    `first`, `find`, `take_while` and `lazy` stop once they have their
+    answer and an endless `each` works with them; the rest read all it
+    yields. A builtin passes a Go function as the block, which the
+    evaluator calls like any other.
   - `require` of a library amber builds in (`set`, `time`, `cgi`,
     `cgi/escape`, `pp`) returns true the first time and false after, and
     any other is a LoadError: a script is one file. The libraries are
