@@ -1,6 +1,8 @@
 package eval
 
 import (
+	"unsafe"
+
 	"github.com/radiospiel/amber/src/object"
 	"github.com/radiospiel/amber/src/syntax"
 )
@@ -24,7 +26,7 @@ type Env struct {
 }
 
 // envInline is how many variables a scope holds without a map.
-const envInline = 6
+const envInline = 4
 
 // NewEnv makes a scope inside parent (nil for a method body).
 func NewEnv(parent *Env) *Env {
@@ -42,7 +44,7 @@ func (e *Env) lookup(name string) (object.Value, bool) {
 		v, ok := e.more[name]
 		return v, ok
 	}
-	return nil, false
+	return object.Value{}, false
 }
 
 // bind binds name in this scope alone, rebinding it when it is bound.
@@ -72,7 +74,7 @@ func (e *Env) Get(name string) (object.Value, bool) {
 			return v, true
 		}
 	}
-	return nil, false
+	return object.Value{}, false
 }
 
 // Set rebinds a variable where it is bound, or binds it in this scope when
@@ -133,7 +135,23 @@ type Proc struct {
 	Sym string
 }
 
-func (*Proc) Class() *object.Class { return object.ProcClass }
+// procValue wraps a proc as a value; proc and asProc read it back.
+func procValue(p *Proc) object.Value { return object.Opaque(object.KindProc, unsafe.Pointer(p)) }
+
+func proc(v object.Value) *Proc {
+	p, ok := asProc(v)
+	if !ok {
+		panic("eval: " + v.Kind().String() + " read as proc")
+	}
+	return p
+}
+
+func asProc(v object.Value) (*Proc, bool) {
+	if v.Kind() != object.KindProc {
+		return nil, false
+	}
+	return (*Proc)(v.Opaque()), true
+}
 
 // Arity is the number of required positional parameters, negative when the
 // block takes a splat or optional parameters, as Proc#arity reports.

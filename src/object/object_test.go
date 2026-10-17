@@ -3,8 +3,8 @@ package object
 import "testing"
 
 func TestKeyIsStructural(t *testing.T) {
-	a := NewList(Int(1), String("x"), MapOf(Symbol("k"), Float(2.5)))
-	b := NewList(Int(1), String("x"), MapOf(Symbol("k"), Float(2.5)))
+	a := NewList(Int(1), String("x"), MapValue(MapOf(Symbol("k"), Float(2.5))))
+	b := NewList(Int(1), String("x"), MapValue(MapOf(Symbol("k"), Float(2.5))))
 	if Key(a) != Key(b) {
 		t.Fatalf("equal lists have different keys: %s %s", Key(a), Key(b))
 	}
@@ -14,7 +14,7 @@ func TestKeyIsStructural(t *testing.T) {
 	if Key(String("a")) == Key(Symbol("a")) {
 		t.Fatal(`"a" and :a are different keys`)
 	}
-	if Key(NewSet(Int(1), Int(2))) != Key(NewSet(Int(2), Int(1))) {
+	if Key(SetValue(NewSet(Int(1), Int(2)))) != Key(SetValue(NewSet(Int(2), Int(1)))) {
 		t.Fatal("a set's key does not depend on insertion order")
 	}
 	if !Equal(Int(1), Float(1)) || Equal(Int(1), String("1")) {
@@ -27,7 +27,7 @@ func TestMapKeepsOrderAndIsImmutable(t *testing.T) {
 	if m.Len() != 2 {
 		t.Fatalf("len %d", m.Len())
 	}
-	if m.Keys()[0] != String("b") || m.Values()[0] != Int(3) {
+	if !Equal(m.Keys()[0], String("b")) || !Equal(m.Values()[0], Int(3)) {
 		t.Fatalf("a repeated key keeps its place and takes the last value: %v %v", m.Keys(), m.Values())
 	}
 	m2 := m.Put(String("c"), Int(4))
@@ -37,7 +37,7 @@ func TestMapKeepsOrderAndIsImmutable(t *testing.T) {
 	if m3 := m.Without(String("b")); m3.Len() != 1 || m.Len() != 2 {
 		t.Fatal("Without changed the original")
 	}
-	if v, ok := m2.Get(String("c")); !ok || v != Int(4) {
+	if v, ok := m2.Get(String("c")); !ok || !Equal(v, Int(4)) {
 		t.Fatal("Get after Put")
 	}
 }
@@ -116,18 +116,31 @@ func TestLookupCacheFollowsDefinitions(t *testing.T) {
 	}
 }
 
-func TestIntValueBoxesSmallIntegersOnce(t *testing.T) {
-	for _, i := range []int64{-1023, -1, 0, 255, 256, 1024} {
-		if IntValue(i) != Int(i) {
-			t.Fatalf("IntValue(%d) = %v", i, IntValue(i))
-		}
-		if allocs := testing.AllocsPerRun(10, func() { _ = IntValue(i) }); allocs != 0 {
-			t.Fatalf("IntValue(%d) allocates (%v per run)", i, allocs)
-		}
+func TestValuesAreTagged(t *testing.T) {
+	if allocs := testing.AllocsPerRun(10, func() { _ = Int(1 << 40) }); allocs != 0 {
+		t.Fatalf("Int allocates (%v per run)", allocs)
 	}
-	for _, i := range []int64{-1024, 1025, 1 << 40} {
-		if IntValue(i) != Int(i) {
-			t.Fatalf("IntValue(%d) = %v", i, IntValue(i))
-		}
+	if allocs := testing.AllocsPerRun(10, func() { _ = Float(2.5) }); allocs != 0 {
+		t.Fatalf("Float allocates (%v per run)", allocs)
+	}
+	if Int(7).Int() != 7 || Float(2.5).Float() != 2.5 || !True.Bool() || String("ab").Str() != "ab" || Symbol("k").Str() != "k" {
+		t.Fatal("round trips")
+	}
+	if String("ab").Kind() != KindString || Symbol("ab").Kind() != KindSymbol || Equal(String("ab"), Symbol("ab")) {
+		t.Fatal("a string and a symbol of the same text are different values")
+	}
+	var zero Value
+	if !Same(Nil, Nil) || Same(Nil, zero) || !zero.IsZero() || zero.IsNil() || zero.Truthy() {
+		t.Fatal("nil and the zero value are distinct, and both are falsy")
+	}
+	if s := "hello"; Same(String(s), String(s)) != true || Same(String(s), String(s[:5]+"")) != true {
+		t.Fatal("strings sharing bytes are the same")
+	}
+	if Equal(Int(1), Float(1)) != true || Equal(Int(2), Float(1)) {
+		t.Fatal("integers and floats compare by magnitude")
+	}
+	b := []byte("xyz")
+	if string(Bytes(b).Bytes()) != "xyz" || Bytes(nil).Bytes() == nil || len(Bytes(nil).Bytes()) != 0 {
+		t.Fatal("bytes round trip, and an empty byte string is an empty slice")
 	}
 }

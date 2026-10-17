@@ -8,12 +8,12 @@ import (
 func (in *Interp) evalCaseIn(n *syntax.CaseIn, env *Env, fr *Frame) (object.Value, error) {
 	subject, err := in.eval(n.Subject, env, fr)
 	if err != nil {
-		return nil, err
+		return object.Value{}, err
 	}
 	for _, cl := range n.Clauses {
 		ok, err := in.match(cl.Pattern, subject, env, fr, n.Line())
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		if !ok {
 			continue
@@ -21,9 +21,9 @@ func (in *Interp) evalCaseIn(n *syntax.CaseIn, env *Env, fr *Frame) (object.Valu
 		if cl.Guard != nil {
 			g, err := in.eval(cl.Guard, env, fr)
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
-			if object.Truthy(g) == cl.GuardNeg {
+			if g.Truthy() == cl.GuardNeg {
 				continue
 			}
 		}
@@ -33,24 +33,24 @@ func (in *Interp) evalCaseIn(n *syntax.CaseIn, env *Env, fr *Frame) (object.Valu
 		return in.evalBody(n.Else, env, fr)
 	}
 	s, _ := in.Inspect(subject)
-	return nil, in.raise(object.NoMatchingPattern, n.Line(), "%s", s)
+	return object.Value{}, in.raise(object.NoMatchingPattern, n.Line(), "%s", s)
 }
 
 func (in *Interp) evalMatchPattern(n *syntax.MatchPattern, env *Env, fr *Frame) (object.Value, error) {
 	subject, err := in.eval(n.Subject, env, fr)
 	if err != nil {
-		return nil, err
+		return object.Value{}, err
 	}
 	ok, err := in.match(n.Pattern, subject, env, fr, n.Line())
 	if err != nil {
-		return nil, err
+		return object.Value{}, err
 	}
 	if n.Test {
-		return object.BoolOf(ok), nil
+		return object.Bool(ok), nil
 	}
 	if !ok {
 		s, _ := in.Inspect(subject)
-		return nil, in.raise(object.NoMatchingPattern, n.Line(), "%s", s)
+		return object.Value{}, in.raise(object.NoMatchingPattern, n.Line(), "%s", s)
 	}
 	return object.Nil, nil
 }
@@ -182,12 +182,12 @@ func (in *Interp) match(p syntax.Pattern, v object.Value, env *Env, fr *Frame, l
 		if p.HasRest && p.RestName != "" {
 			rest := object.NewMapBuilder()
 			for i, k := range m.Keys() {
-				if s, isSym := k.(object.Symbol); isSym && used[string(s)] {
+				if s, isSym := k.AsSymbol(); isSym && used[string(s)] {
 					continue
 				}
 				rest.Set(k, m.Values()[i])
 			}
-			env.Set(p.RestName, rest.Map())
+			env.Set(p.RestName, object.MapValue(rest.Map()))
 		}
 		return true, nil
 	}
@@ -208,13 +208,15 @@ func (in *Interp) matchConst(c syntax.Node, v object.Value, env *Env, fr *Frame)
 // deconstruct returns a value's elements for a list pattern: a list's
 // elements, an instance's fields.
 func (in *Interp) deconstruct(v object.Value) ([]object.Value, bool) {
-	switch v := v.(type) {
-	case *object.List:
+	switch v.Kind() {
+	case object.KindList:
+		v := v.List()
 		return v.Elems, true
-	case *object.Instance:
+	case object.KindInstance:
+		v := v.Instance()
 		out := make([]object.Value, len(v.Fields))
 		for i, f := range v.Fields {
-			out[i] = orNil(f)
+			out[i] = object.OrNil(f)
 		}
 		return out, true
 	}
@@ -224,22 +226,17 @@ func (in *Interp) deconstruct(v object.Value) ([]object.Value, bool) {
 // deconstructKeys returns a value as a map for a map pattern: a map itself,
 // an instance's fields by name.
 func (in *Interp) deconstructKeys(v object.Value) (*object.Map, bool) {
-	switch v := v.(type) {
-	case *object.Map:
+	switch v.Kind() {
+	case object.KindMap:
+		v := v.Map()
 		return v, true
-	case *object.Instance:
+	case object.KindInstance:
+		v := v.Instance()
 		b := object.NewMapBuilder()
 		for i, f := range v.Cls.Fields {
-			b.Set(object.Symbol(f.Name), orNil(v.Fields[i]))
+			b.Set(object.Symbol(f.Name), object.OrNil(v.Fields[i]))
 		}
 		return b.Map(), true
 	}
 	return nil, false
-}
-
-func orNil(v object.Value) object.Value {
-	if v == nil {
-		return object.Nil
-	}
-	return v
 }

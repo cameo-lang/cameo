@@ -87,9 +87,9 @@ func TestInstanceRoundTrip(t *testing.T) {
 	reg := NewRegistry()
 	home := &object.Instance{Cls: address, Fields: []object.Value{object.String("Springfield")}}
 	ann := &object.Instance{Cls: p, Fields: []object.Value{
-		object.String("ann"), home,
+		object.String("ann"), object.InstanceValue(home),
 		object.NewList(object.String("a"), object.String("b")),
-		object.MapOf(object.String("math"), object.Int(1)),
+		object.MapValue(object.MapOf(object.String("math"), object.Int(1))),
 		object.Symbol("user"),
 	}}
 	data, err := reg.Marshal(ann)
@@ -100,8 +100,8 @@ func TestInstanceRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if object.Key(back) != object.Key(ann) {
-		t.Fatalf("round trip changed the value: %s vs %s", object.Key(back), object.Key(ann))
+	if object.Key(object.InstanceValue(back)) != object.Key(object.InstanceValue(ann)) {
+		t.Fatalf("round trip changed the value: %s vs %s", object.Key(object.InstanceValue(back)), object.Key(object.InstanceValue(ann)))
 	}
 	msg, err := reg.ToMessage(ann)
 	if err != nil {
@@ -128,10 +128,10 @@ func TestEnvelopeRoundTrip(t *testing.T) {
 	}
 	enc, dec := NewEncoder(reg), NewDecoder(reg, resolve)
 	values := []object.Value{
-		object.Nil, object.True, object.Int(-7), object.Float(2.5), object.String("s"), object.Bytes("b"),
-		object.NewList(object.Int(1), object.NewList()), object.MapOf(object.String("k"), object.Int(1)),
-		object.NewSet(object.Int(1), object.Int(2)), &object.Range{Lo: object.Int(1), Hi: object.Int(3)},
-		&object.Instance{Cls: p, Fields: []object.Value{object.String("ann"), nil, object.NewList(), object.NewMap(), nil}},
+		object.Nil, object.True, object.Int(-7), object.Float(2.5), object.String("s"), object.Bytes([]byte("b")),
+		object.NewList(object.Int(1), object.NewList()), object.MapValue(object.MapOf(object.String("k"), object.Int(1))),
+		object.SetValue(object.NewSet(object.Int(1), object.Int(2))), object.RangeValue(&object.Range{Lo: object.Int(1), Hi: object.Int(3)}),
+		object.InstanceValue(&object.Instance{Cls: p, Fields: []object.Value{object.String("ann"), {}, object.NewList(), object.MapValue(object.NewMap()), {}}}),
 	}
 	for _, v := range values {
 		data, err := enc.Encode(v)
@@ -150,10 +150,10 @@ func TestEnvelopeRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if back, _ := dec.Decode(data); back != object.String("sym") {
+	if back, _ := dec.Decode(data); !object.Equal(back, object.String("sym")) {
 		t.Fatalf("a symbol travels as a string, got %s", object.Key(back))
 	}
-	if _, err := enc.Encode(object.ProcClass); err == nil {
+	if _, err := enc.Encode(object.ClassValue(object.ProcClass)); err == nil {
 		t.Fatal("a class cannot be encoded")
 	}
 }

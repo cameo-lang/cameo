@@ -39,10 +39,12 @@ func argError(ctx object.Context, given int, expected string) error {
 
 // wantInt reads an Integer argument or fails with a TypeError.
 func wantInt(ctx object.Context, v object.Value, what string) (int64, error) {
-	switch v := v.(type) {
-	case object.Int:
+	switch v.Kind() {
+	case object.KindInt:
+		v := v.Int()
 		return int64(v), nil
-	case object.Float:
+	case object.KindFloat:
+		v := v.Float()
 		return int64(v), nil
 	}
 	return 0, ctx.Raise(object.TypeError, "no implicit conversion of %s into Integer%s", kindName(v), what)
@@ -50,10 +52,12 @@ func wantInt(ctx object.Context, v object.Value, what string) (int64, error) {
 
 // wantString reads a String argument or fails with a TypeError.
 func wantString(ctx object.Context, v object.Value) (string, error) {
-	switch v := v.(type) {
-	case object.String:
+	switch v.Kind() {
+	case object.KindString:
+		v := v.Str()
 		return string(v), nil
-	case object.Symbol:
+	case object.KindSymbol:
+		v := v.Str()
 		return string(v), nil
 	}
 	return "", ctx.Raise(object.TypeError, "no implicit conversion of %s into String", kindName(v))
@@ -61,19 +65,19 @@ func wantString(ctx object.Context, v object.Value) (string, error) {
 
 // kindName names a value's class in a TypeError, the way Ruby does.
 func kindName(v object.Value) string {
-	if v == object.Nil {
+	if v.IsNil() {
 		return "nil"
 	}
-	switch v.(type) {
-	case object.Bool:
-		return fmt.Sprint(object.Truthy(v))
+	switch v.Kind() {
+	case object.KindBool:
+		return fmt.Sprint(v.Truthy())
 	}
 	return v.Class().QualifiedName()
 }
 
 // blockOrEnumerator fails when a method that needs a block has none.
 func needBlock(ctx object.Context, block object.Value, name string) error {
-	if block == nil {
+	if block.IsZero() {
 		return ctx.Raise(object.LocalJumpError, "no block given (%s)", name)
 	}
 	return nil
@@ -81,14 +85,18 @@ func needBlock(ctx object.Context, block object.Value, name string) error {
 
 // toList reads an iterable argument as a list of elements.
 func toList(ctx object.Context, v object.Value) ([]object.Value, error) {
-	switch v := v.(type) {
-	case *object.List:
+	switch v.Kind() {
+	case object.KindList:
+		v := v.List()
 		return v.Elems, nil
-	case *object.Set:
+	case object.KindSet:
+		v := v.Set()
 		return v.Elems(), nil
-	case *object.Range:
+	case object.KindRange:
+		v := v.Range()
 		return rangeElems(ctx, v)
-	case *object.Map:
+	case object.KindMap:
+		v := v.Map()
 		out := make([]object.Value, v.Len())
 		for i, k := range v.Keys() {
 			out[i] = object.NewList(k, v.Values()[i])

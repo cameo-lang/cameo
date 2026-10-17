@@ -32,3 +32,4 @@ The steps:
 - [9. Two allocations per method call instead of seven](09-allocations.md)
 - [10. Each node compiles to a closure on first use](10-closure-compiler.md)
 - [11. Integer intermediates stay unboxed](11-unboxed-intermediates.md)
+- [12. A Value is a tagged struct](12-tagged-values.md)

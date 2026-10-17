@@ -4,7 +4,7 @@ import "github.com/radiospiel/amber/src/object"
 
 func installMap() {
 	c := object.MapClass
-	m := func(self object.Value) *object.Map { return self.(*object.Map) }
+	m := func(self object.Value) *object.Map { return self.Map() }
 	pairs := func(self object.Value) []object.Value {
 		out := make([]object.Value, m(self).Len())
 		for i, k := range m(self).Keys() {
@@ -13,14 +13,14 @@ func installMap() {
 		return out
 	}
 	def(c, "size", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.IntValue(m(self).Len()), nil
+		return object.Int(m(self).Len()), nil
 	})
 	def(c, "length", 0, c.Methods["size"].Native)
 	def(c, "count", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Enumerable.Methods["count"].Native(ctx, self, args, kw, block)
 	})
 	def(c, "empty?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.BoolOf(m(self).Len() == 0), nil
+		return object.Bool(m(self).Len() == 0), nil
 	})
 	def(c, "[]", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if v, ok := m(self).Get(args[0]); ok {
@@ -30,25 +30,25 @@ func installMap() {
 	})
 	def(c, "fetch", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) < 1 || len(args) > 2 {
-			return nil, argError(ctx, len(args), "1..2")
+			return object.Value{}, argError(ctx, len(args), "1..2")
 		}
 		if v, ok := m(self).Get(args[0]); ok {
 			return v, nil
 		}
 		switch {
-		case block != nil:
+		case !block.IsZero():
 			return ctx.Yield(block, args[0])
 		case len(args) == 2:
 			return args[1], nil
 		}
 		s, _ := ctx.Inspect(args[0])
-		return nil, ctx.Raise(object.KeyError, "key not found: %s", s)
+		return object.Value{}, ctx.Raise(object.KeyError, "key not found: %s", s)
 	})
 	def(c, "dig", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return dig(ctx, self, args)
 	})
 	hasKey := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.BoolOf(m(self).Has(args[0])), nil
+		return object.Bool(m(self).Has(args[0])), nil
 	}
 	def(c, "key?", 1, hasKey)
 	def(c, "has_key?", 1, hasKey)
@@ -58,7 +58,7 @@ func installMap() {
 		for _, v := range m(self).Values() {
 			eq, err := ctx.Equal(v, args[0])
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			if eq {
 				return object.True, nil
@@ -72,7 +72,7 @@ func installMap() {
 		for i, v := range m(self).Values() {
 			eq, err := ctx.Equal(v, args[0])
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			if eq {
 				return m(self).Keys()[i], nil
@@ -98,16 +98,16 @@ func installMap() {
 		return object.NewList(out...), nil
 	})
 	def(c, "put", 2, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return m(self).Put(args[0], args[1]), nil
+		return object.MapValue(m(self).Put(args[0], args[1])), nil
 	})
 	def(c, "merge", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		out := m(self)
 		for _, a := range args {
-			other, ok := a.(*object.Map)
+			other, ok := a.AsMap()
 			if !ok {
-				return nil, ctx.Raise(object.TypeError, "no implicit conversion of %s into Map", kindName(a))
+				return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into Map", kindName(a))
 			}
-			if block == nil {
+			if block.IsZero() {
 				out = out.Merge(other)
 				continue
 			}
@@ -120,7 +120,7 @@ func installMap() {
 				if old, ok := out.Get(k); ok {
 					r, err := ctx.Yield(block, k, old, v)
 					if err != nil {
-						return nil, err
+						return object.Value{}, err
 					}
 					v = r
 				}
@@ -128,10 +128,10 @@ func installMap() {
 			}
 			out = b.Map()
 		}
-		return out, nil
+		return object.MapValue(out), nil
 	})
 	def(c, "without", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return m(self).Without(args...), nil
+		return object.MapValue(m(self).Without(args...)), nil
 	})
 	def(c, "except", -1, c.Methods["without"].Native)
 	def(c, "slice", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -141,25 +141,25 @@ func installMap() {
 				b.Set(k, v)
 			}
 		}
-		return b.Map(), nil
+		return object.MapValue(b.Map()), nil
 	})
 	filter := func(name string, keep bool) {
 		def(c, name, 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			if err := needBlock(ctx, block, name); err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			b := object.NewMapBuilder()
 			for i, k := range m(self).Keys() {
 				v := m(self).Values()[i]
 				r, err := ctx.Yield(block, k, v)
 				if err != nil {
-					return nil, err
+					return object.Value{}, err
 				}
-				if object.Truthy(r) == keep {
+				if r.Truthy() == keep {
 					b.Set(k, v)
 				}
 			}
-			return b.Map(), nil
+			return object.MapValue(b.Map()), nil
 		})
 	}
 	filter("select", true)
@@ -167,26 +167,26 @@ func installMap() {
 	filter("reject", false)
 	def(c, "transform_values", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if err := needBlock(ctx, block, "transform_values"); err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		b := object.NewMapBuilder()
 		for i, k := range m(self).Keys() {
 			r, err := ctx.Yield(block, m(self).Values()[i])
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			b.Set(k, r)
 		}
-		return b.Map(), nil
+		return object.MapValue(b.Map()), nil
 	})
 	def(c, "transform_keys", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		var mapping *object.Map
 		if len(args) == 1 {
-			mapping, _ = args[0].(*object.Map)
+			mapping, _ = args[0].AsMap()
 		}
 		if mapping == nil {
 			if err := needBlock(ctx, block, "transform_keys"); err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 		}
 		b := object.NewMapBuilder()
@@ -199,37 +199,37 @@ func installMap() {
 			} else {
 				r, err := ctx.Yield(block, k)
 				if err != nil {
-					return nil, err
+					return object.Value{}, err
 				}
 				nk = r
 			}
 			b.Set(nk, m(self).Values()[i])
 		}
-		return b.Map(), nil
+		return object.MapValue(b.Map()), nil
 	})
 	def(c, "invert", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		b := object.NewMapBuilder()
 		for i, k := range m(self).Keys() {
 			b.Set(m(self).Values()[i], k)
 		}
-		return b.Map(), nil
+		return object.MapValue(b.Map()), nil
 	})
 	def(c, "compact", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		b := object.NewMapBuilder()
 		for i, k := range m(self).Keys() {
-			if v := m(self).Values()[i]; v != object.Nil {
+			if v := m(self).Values()[i]; !v.IsNil() {
 				b.Set(k, v)
 			}
 		}
-		return b.Map(), nil
+		return object.MapValue(b.Map()), nil
 	})
 	eachPair := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if block == nil {
+		if block.IsZero() {
 			return self, nil
 		}
 		for i, k := range m(self).Keys() {
 			if _, err := ctx.Yield(block, k, m(self).Values()[i]); err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 		}
 		return self, nil
@@ -238,28 +238,28 @@ func installMap() {
 	def(c, "each_pair", 0, eachPair)
 	def(c, "each_key", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if err := needBlock(ctx, block, "each_key"); err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		for _, k := range m(self).Keys() {
 			if _, err := ctx.Yield(block, k); err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 		}
 		return self, nil
 	})
 	def(c, "each_value", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if err := needBlock(ctx, block, "each_value"); err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		for _, v := range m(self).Values() {
 			if _, err := ctx.Yield(block, v); err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 		}
 		return self, nil
 	})
 	def(c, "to_h", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if block == nil {
+		if block.IsZero() {
 			return self, nil
 		}
 		return object.Enumerable.Methods["to_h"].Native(ctx, self, args, kw, block)
@@ -270,12 +270,12 @@ func installMap() {
 	def(c, "sort", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		sorted, err := sortValues(ctx, pairs(self), block)
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		return object.NewList(sorted...), nil
 	})
 	def(c, "==", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		other, ok := args[0].(*object.Map)
+		other, ok := args[0].AsMap()
 		if !ok || other.Len() != m(self).Len() {
 			return object.False, nil
 		}
@@ -286,7 +286,7 @@ func installMap() {
 			}
 			eq, err := ctx.Equal(m(self).Values()[i], ov)
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			if !eq {
 				return object.False, nil
@@ -295,11 +295,11 @@ func installMap() {
 		return object.True, nil
 	})
 	def(c, "hash", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.IntValue(hashString(object.Key(self))), nil
+		return object.Int(hashString(object.Key(self))), nil
 	})
 	def(c, "any?", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if len(args) == 0 && block == nil {
-			return object.BoolOf(m(self).Len() > 0), nil
+		if len(args) == 0 && block.IsZero() {
+			return object.Bool(m(self).Len() > 0), nil
 		}
 		return object.Enumerable.Methods["any?"].Native(ctx, self, args, kw, block)
 	})

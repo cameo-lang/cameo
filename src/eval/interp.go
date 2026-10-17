@@ -62,7 +62,7 @@ var installOnce sync.Once
 // exception, or nil.
 func (in *Interp) Run(file string, prog *syntax.Program) error {
 	in.file = file
-	fr := &Frame{Self: in.main, DefTarget: in.mainClass}
+	fr := &Frame{Self: object.InstanceValue(in.main), DefTarget: in.mainClass}
 	_, err := in.code.body(prog, prog.Body)(in, in.top, fr)
 	if c, ok := err.(*control); ok {
 		if c.kind == ctrlReturn {

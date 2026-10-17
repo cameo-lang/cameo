@@ -65,19 +65,21 @@ func withLine(err error, line int) error {
 // typeName names a value's kind in error messages, as Ruby 3.4 does: "nil",
 // "true", "an instance of Integer".
 func typeName(v object.Value) string {
-	switch v := v.(type) {
-	case object.Bool:
+	switch v.Kind() {
+	case object.KindBool:
+		v := v.Bool()
 		if v {
 			return "true"
 		}
 		return "false"
-	case *object.Class:
+	case object.KindClass:
+		v := v.Cls()
 		if v.IsModule {
 			return "module " + v.QualifiedName()
 		}
 		return "class " + v.QualifiedName()
 	}
-	if v == object.Nil {
+	if v.IsNil() {
 		return "nil"
 	}
 	return "an instance of " + v.Class().QualifiedName()

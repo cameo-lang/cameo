@@ -1,6 +1,8 @@
 package eval
 
 import (
+	"unsafe"
+
 	"errors"
 	"fmt"
 	"sync"
@@ -24,7 +26,26 @@ type Process struct {
 	awaited bool
 }
 
-func (*Process) Class() *object.Class { return object.ProcessClass }
+// processValue wraps a process as a value; process and asProcess read it
+// back.
+func processValue(p *Process) object.Value {
+	return object.Opaque(object.KindProcess, unsafe.Pointer(p))
+}
+
+func process(v object.Value) *Process {
+	p, ok := asProcess(v)
+	if !ok {
+		panic("eval: " + v.Kind().String() + " read as process")
+	}
+	return p
+}
+
+func asProcess(v object.Value) (*Process, bool) {
+	if v.Kind() != object.KindProcess {
+		return nil, false
+	}
+	return (*Process)(v.Opaque()), true
+}
 
 // wait blocks until the process is done and returns its result or the
 // exception it raised.
@@ -87,9 +108,9 @@ func (l *processList) waitAll(in *Interp) {
 func (in *Interp) evalAsync(n *syntax.Async, env *Env, fr *Frame) (object.Value, error) {
 	p, err := in.start(n.Recv, n.Method, n.Args, n.KwArgs, env, fr, n.Line())
 	if err != nil {
-		return nil, err
+		return object.Value{}, err
 	}
-	return p, nil
+	return processValue(p), nil
 }
 
 // evalAwait waits for a process, or starts one and waits for it.
@@ -98,23 +119,23 @@ func (in *Interp) evalAwait(n *syntax.Await, env *Env, fr *Frame) (object.Value,
 	if n.Process != nil {
 		v, err := in.eval(n.Process, env, fr)
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
-		proc, ok := v.(*Process)
+		proc, ok := asProcess(v)
 		if !ok {
-			return nil, in.raise(object.TypeError, n.Line(), "await takes an AsyncProcess, not %s", typeName(v))
+			return object.Value{}, in.raise(object.TypeError, n.Line(), "await takes an AsyncProcess, not %s", typeName(v))
 		}
 		p = proc
 	} else {
 		proc, err := in.start(n.Recv, n.Method, n.Args, n.KwArgs, env, fr, n.Line())
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		p = proc
 	}
 	result, exc := p.wait()
 	if exc != nil {
-		return nil, exc
+		return object.Value{}, exc
 	}
 	return result, nil
 }
@@ -144,7 +165,7 @@ func (in *Interp) evalAwaitAll(env *Env, line int) (object.Value, error) {
 		results = append(results, v)
 	}
 	if first != nil {
-		return nil, first
+		return object.Value{}, first
 	}
 	return object.NewList(results...), nil
 }
@@ -172,10 +193,12 @@ func (in *Interp) start(recvNode, methodNode syntax.Node, argNodes []syntax.Node
 		return nil, err
 	}
 	var method string
-	switch m := m.(type) {
-	case object.Symbol:
+	switch m.Kind() {
+	case object.KindSymbol:
+		m := m.Str()
 		method = string(m)
-	case object.String:
+	case object.KindString:
+		m := m.Str()
 		method = string(m)
 	default:
 		return nil, in.raise(object.TypeError, line, "async names the method by a symbol, not %s", typeName(m))
@@ -211,7 +234,7 @@ func (in *Interp) start(recvNode, methodNode syntax.Node, argNodes []syntax.Node
 	}
 	var kwData []byte
 	if kw != nil {
-		if kwData, err = encode(kw); err != nil {
+		if kwData, err = encode(object.MapValue(kw)); err != nil {
 			return nil, err
 		}
 	}
@@ -269,25 +292,25 @@ func (w *Interp) runCall(recvData []byte, method string, argData [][]byte, kwDat
 	dec := w.Decoder()
 	recv, err := dec.Decode(recvData)
 	if err != nil {
-		return nil, w.raise(object.TypeError, 0, "%s", err.Error()).(*object.Exception)
+		return object.Value{}, w.raise(object.TypeError, 0, "%s", err.Error()).(*object.Exception)
 	}
 	args := make([]object.Value, len(argData))
 	for i, d := range argData {
 		if args[i], err = dec.Decode(d); err != nil {
-			return nil, w.raise(object.TypeError, 0, "%s", err.Error()).(*object.Exception)
+			return object.Value{}, w.raise(object.TypeError, 0, "%s", err.Error()).(*object.Exception)
 		}
 	}
 	var kw *object.Map
 	if kwData != nil {
 		v, err := dec.Decode(kwData)
 		if err != nil {
-			return nil, w.raise(object.TypeError, 0, "%s", err.Error()).(*object.Exception)
+			return object.Value{}, w.raise(object.TypeError, 0, "%s", err.Error()).(*object.Exception)
 		}
 		// Keywords are symbols, which travelled as strings.
-		if m, ok := v.(*object.Map); ok {
+		if m, ok := v.AsMap(); ok {
 			b := object.NewMapBuilder()
 			for i, k := range m.Keys() {
-				if s, isStr := k.(object.String); isStr {
+				if s, isStr := k.AsString(); isStr {
 					k = object.Symbol(s)
 				}
 				b.Set(k, m.Values()[i])
@@ -295,25 +318,25 @@ func (w *Interp) runCall(recvData []byte, method string, argData [][]byte, kwDat
 			kw = b.Map()
 		}
 	}
-	fr := &Frame{Self: w.main, DefTarget: w.mainClass}
-	result, callErr := w.call(fr, recv, method, args, kw, nil, false, 0)
+	fr := &Frame{Self: object.InstanceValue(w.main), DefTarget: w.mainClass}
+	result, callErr := w.call(fr, recv, method, args, kw, object.Value{}, false, 0)
 	if callErr != nil {
 		if exc, ok := callErr.(*object.Exception); ok {
-			return nil, exc
+			return object.Value{}, exc
 		}
 		if c, ok := callErr.(*control); ok {
-			return nil, w.raise(object.LocalJumpError, c.line, "%s from a process", c.kind).(*object.Exception)
+			return object.Value{}, w.raise(object.LocalJumpError, c.line, "%s from a process", c.kind).(*object.Exception)
 		}
-		return nil, w.raise(object.AmberError, 0, "%s", callErr.Error()).(*object.Exception)
+		return object.Value{}, w.raise(object.AmberError, 0, "%s", callErr.Error()).(*object.Exception)
 	}
 	// The result crosses back to the awaiting scope, so it has to be a
 	// value that could travel.
 	if _, err := w.Encoder().Encode(result); err != nil {
 		var ns *protogen.NotSerialisable
 		if errors.As(err, &ns) {
-			return nil, w.raise(object.TypeError, 0, "a process returned a %s, which cannot be passed back", ns.Kind).(*object.Exception)
+			return object.Value{}, w.raise(object.TypeError, 0, "a process returned a %s, which cannot be passed back", ns.Kind).(*object.Exception)
 		}
-		return nil, w.raise(object.TypeError, 0, "%s", err.Error()).(*object.Exception)
+		return object.Value{}, w.raise(object.TypeError, 0, "%s", err.Error()).(*object.Exception)
 	}
 	// Processes the call started and never awaited are waited for at the
 	// end of the run through the shared list.
@@ -323,17 +346,17 @@ func (w *Interp) runCall(recvData []byte, method string, argData [][]byte, kwDat
 func init() {
 	c := object.ProcessClass
 	c.Define("done?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.BoolOf(self.(*Process).isDone()), nil
+		return object.Bool(process(self).isDone()), nil
 	})
 	c.Define("value", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		v, exc := self.(*Process).wait()
+		v, exc := process(self).wait()
 		if exc != nil {
-			return nil, exc
+			return object.Value{}, exc
 		}
 		return v, nil
 	})
 	c.Define("inspect", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		p := self.(*Process)
+		p := process(self)
 		state := "running"
 		if p.isDone() {
 			state = "done"

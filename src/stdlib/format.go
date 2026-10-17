@@ -16,7 +16,7 @@ func format(ctx object.Context, f string, args []object.Value) (string, error) {
 	next := 0
 	var named *object.Map
 	if len(args) == 1 {
-		named, _ = args[0].(*object.Map)
+		named, _ = args[0].AsMap()
 	}
 	for i := 0; i < len(f); i++ {
 		c := f[i]
@@ -56,7 +56,7 @@ func format(ctx object.Context, f string, args []object.Value) (string, error) {
 		}
 		spec := f[start:i]
 		verb := f[i]
-		if arg == nil {
+		if arg.IsZero() {
 			if next >= len(args) {
 				return "", ctx.Raise(object.ArgumentError, "too few arguments")
 			}
@@ -104,12 +104,15 @@ func formatOne(ctx object.Context, spec string, verb byte, arg object.Value) (st
 		return fmt.Sprintf("%"+spec+string(v), i), nil
 	case 'f', 'e', 'E', 'g', 'G':
 		var x float64
-		switch v := arg.(type) {
-		case object.Int:
+		switch arg.Kind() {
+		case object.KindInt:
+			v := arg.Int()
 			x = float64(v)
-		case object.Float:
+		case object.KindFloat:
+			v := arg.Float()
 			x = float64(v)
-		case object.String:
+		case object.KindString:
+			v := arg.Str()
 			p, err := strconv.ParseFloat(string(v), 64)
 			if err != nil {
 				return "", ctx.Raise(object.ArgumentError, "invalid value for Float(): %s", object.QuoteString(string(v)))
@@ -123,10 +126,12 @@ func formatOne(ctx object.Context, spec string, verb byte, arg object.Value) (st
 		}
 		return fmt.Sprintf("%"+spec+string(verb), x), nil
 	case 'c':
-		switch v := arg.(type) {
-		case object.Int:
+		switch arg.Kind() {
+		case object.KindInt:
+			v := arg.Int()
 			return string(rune(v)), nil
-		case object.String:
+		case object.KindString:
+			v := arg.Str()
 			if len(v) > 0 {
 				return string([]rune(string(v))[0]), nil
 			}

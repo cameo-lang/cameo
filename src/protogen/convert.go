@@ -24,7 +24,7 @@ func (r *Registry) ToMessage(inst *object.Instance) (*dynamicpb.Message, error) 
 	msg := dynamicpb.NewMessage(md)
 	for i, f := range inst.Cls.Fields {
 		v := inst.Fields[i]
-		if v == nil || v == object.Nil {
+		if v.IsZero() || v.IsNil() {
 			continue
 		}
 		fd := md.Fields().ByName(protoreflect.Name(f.Name))
@@ -43,10 +43,12 @@ func (r *Registry) toProto(fd protoreflect.FieldDescriptor, t *object.FieldType,
 	case "list", "set":
 		list := parent.NewField(fd).List()
 		var elems []object.Value
-		switch v := v.(type) {
-		case *object.List:
+		switch v.Kind() {
+		case object.KindList:
+			v := v.List()
 			elems = v.Elems
-		case *object.Set:
+		case object.KindSet:
+			v := v.Set()
 			elems = v.Elems()
 		}
 		for _, e := range elems {
@@ -59,7 +61,7 @@ func (r *Registry) toProto(fd protoreflect.FieldDescriptor, t *object.FieldType,
 		return protoreflect.ValueOfList(list), nil
 	case "map":
 		m := parent.NewField(fd).Map()
-		src := v.(*object.Map)
+		src := v.Map()
 		for i, k := range src.Keys() {
 			key, err := r.scalar(fd.MapKey(), &object.FieldType{Kind: t.Key}, k)
 			if err != nil {
@@ -80,22 +82,24 @@ func (r *Registry) toProto(fd protoreflect.FieldDescriptor, t *object.FieldType,
 func (r *Registry) scalar(fd protoreflect.FieldDescriptor, t *object.FieldType, v object.Value) (protoreflect.Value, error) {
 	switch t.Kind {
 	case "string":
-		return protoreflect.ValueOfString(string(v.(object.String))), nil
+		return protoreflect.ValueOfString(string(v.Str())), nil
 	case "int":
-		return protoreflect.ValueOfInt64(int64(v.(object.Int))), nil
+		return protoreflect.ValueOfInt64(int64(v.Int())), nil
 	case "float":
-		switch x := v.(type) {
-		case object.Float:
+		switch v.Kind() {
+		case object.KindFloat:
+			x := v.Float()
 			return protoreflect.ValueOfFloat64(float64(x)), nil
-		case object.Int:
+		case object.KindInt:
+			x := v.Int()
 			return protoreflect.ValueOfFloat64(float64(x)), nil
 		}
 	case "bool":
-		return protoreflect.ValueOfBool(bool(v.(object.Bool))), nil
+		return protoreflect.ValueOfBool(bool(v.Bool())), nil
 	case "bytes":
-		return protoreflect.ValueOfBytes([]byte(v.(object.Bytes))), nil
+		return protoreflect.ValueOfBytes([]byte(v.Bytes())), nil
 	case "enum":
-		name := string(v.(object.Symbol))
+		name := string(v.Str())
 		for i, e := range t.Enum {
 			if e == name {
 				return protoreflect.ValueOfEnum(protoreflect.EnumNumber(i + 1)), nil
@@ -103,7 +107,7 @@ func (r *Registry) scalar(fd protoreflect.FieldDescriptor, t *object.FieldType, 
 		}
 		return protoreflect.Value{}, fmt.Errorf("%s is not among the enum's values", name)
 	case "ref":
-		inst, ok := v.(*object.Instance)
+		inst, ok := v.AsInstance()
 		if !ok {
 			break
 		}
@@ -173,12 +177,12 @@ func (r *Registry) fromProto(fd protoreflect.FieldDescriptor, t *object.FieldTyp
 		for i := range elems {
 			v, err := r.fromScalar(t.Elem, list.Get(i))
 			if err != nil {
-				return nil, err
+				return object.Value{}, err
 			}
 			elems[i] = v
 		}
 		if t.Kind == "set" {
-			return object.NewSet(elems...), nil
+			return object.SetValue(object.NewSet(elems...)), nil
 		}
 		return object.NewList(elems...), nil
 	case "map":
@@ -202,14 +206,14 @@ func (r *Registry) fromProto(fd protoreflect.FieldDescriptor, t *object.FieldTyp
 			return true
 		})
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
 		sort.Slice(entries, func(i, j int) bool { return object.Key(entries[i].key) < object.Key(entries[j].key) })
 		b := object.NewMapBuilder()
 		for _, e := range entries {
 			b.Set(e.key, e.val)
 		}
-		return b.Map(), nil
+		return object.MapValue(b.Map()), nil
 	}
 	return r.fromScalar(t, pv)
 }
@@ -219,7 +223,7 @@ func (r *Registry) fromScalar(t *object.FieldType, pv protoreflect.Value) (objec
 	case "string":
 		return object.String(pv.String()), nil
 	case "int":
-		return object.IntValue(pv.Int()), nil
+		return object.Int(pv.Int()), nil
 	case "float":
 		return object.Float(pv.Float()), nil
 	case "bool":
@@ -232,13 +236,17 @@ func (r *Registry) fromScalar(t *object.FieldType, pv protoreflect.Value) (objec
 			return object.Nil, nil
 		}
 		if n > len(t.Enum) {
-			return nil, fmt.Errorf("enum value %d out of range", n)
+			return object.Value{}, fmt.Errorf("enum value %d out of range", n)
 		}
 		return object.Symbol(t.Enum[n-1]), nil
 	case "ref":
-		return r.FromMessage(t.Ref, pv.Message())
+		inst, err := r.FromMessage(t.Ref, pv.Message())
+		if err != nil {
+			return object.Value{}, err
+		}
+		return object.InstanceValue(inst), nil
 	}
-	return nil, fmt.Errorf("cannot read a %s field", t.Kind)
+	return object.Value{}, fmt.Errorf("cannot read a %s field", t.Kind)
 }
 
 // Marshal is the wire form of an instance.

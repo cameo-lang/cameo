@@ -6,15 +6,15 @@ import (
 )
 
 func (in *Interp) readIVar(name string, fr *Frame, line int) (object.Value, error) {
-	inst, ok := fr.Self.(*object.Instance)
+	inst, ok := fr.Self.AsInstance()
 	if !ok {
-		return nil, in.raise(object.NameError, line, "@%s: %s has no fields", name, typeName(fr.Self))
+		return object.Value{}, in.raise(object.NameError, line, "@%s: %s has no fields", name, typeName(fr.Self))
 	}
 	v, ok := inst.Field(name)
 	if !ok {
-		return nil, in.raise(object.NameError, line, "@%s: %s has no field %s", name, inst.Cls.QualifiedName(), name)
+		return object.Value{}, in.raise(object.NameError, line, "@%s: %s has no field %s", name, inst.Cls.QualifiedName(), name)
 	}
-	if v == nil {
+	if v.IsZero() {
 		return object.Nil, nil
 	}
 	return v, nil
@@ -58,7 +58,7 @@ func (in *Interp) lookupConst(name string, fr *Frame, line int) (object.Value, e
 	if v, ok := object.ObjectClass.Consts[name]; ok {
 		return v, nil
 	}
-	return nil, in.raise(object.NameError, line, "uninitialized constant %s", name)
+	return object.Value{}, in.raise(object.NameError, line, "uninitialized constant %s", name)
 }
 
 func (in *Interp) evalScopedConst(n *syntax.ScopedConst, env *Env, fr *Frame) (object.Value, error) {
@@ -69,22 +69,22 @@ func (in *Interp) evalScopedConst(n *syntax.ScopedConst, env *Env, fr *Frame) (o
 		if v, ok := object.ObjectClass.Consts[n.Name]; ok {
 			return v, nil
 		}
-		return nil, in.raise(object.NameError, n.Line(), "uninitialized constant %s", n.Name)
+		return object.Value{}, in.raise(object.NameError, n.Line(), "uninitialized constant %s", n.Name)
 	}
 	v, err := in.eval(n.Scope, env, fr)
 	if err != nil {
-		return nil, err
+		return object.Value{}, err
 	}
-	scope, ok := v.(*object.Class)
+	scope, ok := v.AsClass()
 	if !ok {
-		return nil, in.raise(object.TypeError, n.Line(), "%s is not a class/module", typeName(v))
+		return object.Value{}, in.raise(object.TypeError, n.Line(), "%s is not a class/module", typeName(v))
 	}
 	for _, a := range scope.Ancestors() {
 		if v, ok := a.Consts[n.Name]; ok {
 			return v, nil
 		}
 	}
-	return nil, in.raise(object.NameError, n.Line(), "uninitialized constant %s::%s", scope.QualifiedName(), n.Name)
+	return object.Value{}, in.raise(object.NameError, n.Line(), "uninitialized constant %s::%s", scope.QualifiedName(), n.Name)
 }
 
 // defineConst binds a constant in the innermost lexical scope. A constant
@@ -114,15 +114,15 @@ func (in *Interp) evalDef(n *syntax.Def, fr *Frame) (object.Value, error) {
 	}
 	if existing, ok := table[n.Name]; ok && existing.Owner == target && existing.Body != nil {
 		if target == in.mainClass {
-			return nil, in.raise(object.AmberError, n.Line(), "method %s is already defined at the top level", n.Name)
+			return object.Value{}, in.raise(object.AmberError, n.Line(), "method %s is already defined at the top level", n.Name)
 		}
-		return nil, in.raise(object.AmberError, n.Line(), "method %s is already defined in %s", n.Name, target.QualifiedName())
+		return object.Value{}, in.raise(object.AmberError, n.Line(), "method %s is already defined in %s", n.Name, target.QualifiedName())
 	}
 	if existing, ok := table[n.Name]; ok && existing.Native != nil && existing.Owner == target {
 		if _, isField := target.FieldIndex[n.Name]; isField {
-			return nil, in.raise(object.AmberError, n.Line(), "def %s: %s is a field of %s, and fields read themselves", n.Name, n.Name, target.QualifiedName())
+			return object.Value{}, in.raise(object.AmberError, n.Line(), "def %s: %s is a field of %s, and fields read themselves", n.Name, n.Name, target.QualifiedName())
 		}
-		return nil, in.raise(object.AmberError, n.Line(), "cannot replace the builtin method %s of %s", n.Name, target.Name)
+		return object.Value{}, in.raise(object.AmberError, n.Line(), "cannot replace the builtin method %s of %s", n.Name, target.Name)
 	}
 	m := &object.Method{Name: n.Name, Owner: target, Body: &compiledDef{def: n, body: in.code.body(n, n.Body)}, Arity: -1, Lexical: fr.Lexical}
 	if n.Singleton {
@@ -142,21 +142,21 @@ func (in *Interp) evalClassDef(n *syntax.ClassDef, env *Env, fr *Frame) (object.
 	if n.Super != nil {
 		v, err := in.eval(n.Super, env, fr)
 		if err != nil {
-			return nil, err
+			return object.Value{}, err
 		}
-		cls, ok := v.(*object.Class)
+		cls, ok := v.AsClass()
 		if !ok || cls.IsModule {
-			return nil, in.raise(object.TypeError, n.Line(), "superclass must be a Class (%s given)", typeName(v))
+			return object.Value{}, in.raise(object.TypeError, n.Line(), "superclass must be a Class (%s given)", typeName(v))
 		}
 		super = cls
 	}
-	if existing, ok := table[n.Name].(*object.Class); ok {
+	if existing, ok := table[n.Name].AsClass(); ok {
 		if existing.Digest == n.Digest && existing.Super == super {
-			return existing, nil
+			return object.ClassValue(existing), nil
 		}
 	}
 	if _, builtin := object.ObjectClass.Consts[n.Name]; builtin && len(fr.Lexical) == 0 {
-		return nil, in.raise(object.AmberError, n.Line(), "cannot redefine the builtin class %s", n.Name)
+		return object.Value{}, in.raise(object.AmberError, n.Line(), "cannot redefine the builtin class %s", n.Name)
 	}
 	cls := object.NewClass(n.Name, super)
 	cls.Digest = n.Digest
@@ -164,24 +164,24 @@ func (in *Interp) evalClassDef(n *syntax.ClassDef, env *Env, fr *Frame) (object.
 		cls.Lexical = fr.Lexical[len(fr.Lexical)-1]
 	}
 	if err := in.inheritFields(cls, super); err != nil {
-		return nil, withLine(err, n.Line())
+		return object.Value{}, withLine(err, n.Line())
 	}
 	if err := in.evalClassBody(cls, n.Body, env, fr); err != nil {
-		return nil, err
+		return object.Value{}, err
 	}
-	table[n.Name] = cls
-	return cls, nil
+	table[n.Name] = object.ClassValue(cls)
+	return object.ClassValue(cls), nil
 }
 
 func (in *Interp) evalModuleDef(n *syntax.ModuleDef, env *Env, fr *Frame) (object.Value, error) {
 	table := in.constTable(fr)
-	if existing, ok := table[n.Name].(*object.Class); ok && existing.IsModule {
+	if existing, ok := table[n.Name].AsClass(); ok && existing.IsModule {
 		if existing.Digest == n.Digest {
-			return existing, nil
+			return object.ClassValue(existing), nil
 		}
 	}
 	if _, builtin := object.ObjectClass.Consts[n.Name]; builtin && len(fr.Lexical) == 0 {
-		return nil, in.raise(object.AmberError, n.Line(), "cannot redefine the builtin module %s", n.Name)
+		return object.Value{}, in.raise(object.AmberError, n.Line(), "cannot redefine the builtin module %s", n.Name)
 	}
 	mod := object.NewModule(n.Name)
 	mod.Digest = n.Digest
@@ -189,17 +189,17 @@ func (in *Interp) evalModuleDef(n *syntax.ModuleDef, env *Env, fr *Frame) (objec
 		mod.Lexical = fr.Lexical[len(fr.Lexical)-1]
 	}
 	if err := in.evalClassBody(mod, n.Body, env, fr); err != nil {
-		return nil, err
+		return object.Value{}, err
 	}
-	table[n.Name] = mod
-	return mod, nil
+	table[n.Name] = object.ClassValue(mod)
+	return object.ClassValue(mod), nil
 }
 
 // evalClassBody runs a class or module body with the class as self and as
 // the target of def, and with the class added to the lexical scopes.
 func (in *Interp) evalClassBody(cls *object.Class, body []syntax.Node, env *Env, fr *Frame) error {
 	lexical := append(append([]*object.Class{}, fr.Lexical...), cls)
-	bodyFrame := &Frame{Self: cls, Lexical: lexical, DefTarget: cls}
+	bodyFrame := &Frame{Self: object.ClassValue(cls), Lexical: lexical, DefTarget: cls}
 	_, err := in.evalBody(body, NewEnv(nil), bodyFrame)
 	return err
 }
