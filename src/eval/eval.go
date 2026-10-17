@@ -315,7 +315,7 @@ func (in *Interp) caseEqual(pattern, v object.Value) (bool, error) {
 		return in.rangeIncludes(p, v)
 	case object.KindRegexp:
 		switch v.Kind() {
-		case object.KindString, object.KindSymbol:
+		case object.KindString, object.KindBytes, object.KindASCII, object.KindSymbol:
 			return pattern.Regexp().MatchAt(v.Str(), 0) != nil, nil
 		}
 		return false, nil

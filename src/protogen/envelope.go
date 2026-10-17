@@ -226,7 +226,7 @@ func (e *Encoder) message(fd protoreflect.FileDescriptor, v object.Value) (*dyna
 	case object.KindFloat:
 		v := v.Float()
 		set("float_value", protoreflect.ValueOfFloat64(float64(v)))
-	case object.KindString:
+	case object.KindString, object.KindASCII:
 		v := v.Str()
 		set("string_value", protoreflect.ValueOfString(string(v)))
 	case object.KindSymbol:

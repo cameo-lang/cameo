@@ -1,0 +1,34 @@
+# Strings are UTF-8 text and bytes are binary; force_encoding moves between
+# them, valid_encoding? and scrub deal with text that is not UTF-8, and
+# pack and unpack turn numbers and strings into bytes and back.
+x = (0..255).to_a.pack("C*")
+p x.size, x.encoding, (x * 2).size, x.downcase.bytes.first(70).last(5), x.upcase.bytes[97, 3]
+p [1, 2, 3].pack("C*").bytes, [-1].pack("c").bytes, [258].pack("n").bytes, [258].pack("v").bytes, [1].pack("N").bytes, [1].pack("V").bytes
+p [65, 0x263a].pack("U*"), [65, 0x263a].pack("U*").encoding, [1.5].pack("e").bytes, [1.5].pack("G").bytes
+p ["ab", "c"].pack("a3A3").bytes, ["hi"].pack("Z*").bytes, ["414243"].pack("H*").bytes, ["hello world"].pack("m").bytes.size, ["hello"].pack("m0").unpack1("m").bytes
+p [1, 2].pack("s<l>").bytes, [2**63].pack("Q").bytes, [-2].pack("q").unpack1("q"), [2**64 - 1].pack("Q").unpack1("Q")
+p "ABC".unpack("C*"), "\x01\x02".b.unpack("n"), "\x01\x02".b.unpack("v"), "☺A".unpack("U*"), "ab".unpack1("H*"), "abc".unpack("a2 a1").map(&:bytes)
+s = "h\xC3llo\xFF\xE3\x81".dup
+p s.valid_encoding?, s.scrub, s.scrub("?"), s.scrub { |b| "<#{b.bytes.size}>" }
+t = "caf\xC3\xA9".b
+p t.encoding, t.valid_encoding?, t.force_encoding("UTF-8"), t.encoding, t.size
+u = "héllo".b.force_encoding(Encoding::UTF_8)
+p u, u.encoding, u.valid_encoding?, "x".force_encoding("BINARY").encoding, Encoding::UTF_8, Encoding::BINARY.to_s, "a".encoding.name
+w = "\xff\xfe".dup.force_encoding("UTF-8")
+p w.valid_encoding?
+v = "ok\xff".dup
+v.scrub!
+p v
+begin
+  "x".force_encoding("EBCDIC")
+rescue ArgumentError => e
+  p e.message
+end
+E = { " ".b => ' '.b, ">".b => '>'.b, "<".b => '<'.b }
+P = Regexp.union(E.keys)
+s = ("ab<c d>" * 2).b
+s.gsub!(P, E)
+p s.force_encoding(Encoding::UTF_8)
+t = "x<y".b
+p t.sub("<".b, "&lt;").force_encoding("UTF-8"), t.gsub(P) { |m| "[#{m.bytes.size}]" }.force_encoding("UTF-8")
+p Regexp.union("a.b", "c").source, "a b".gsub(Regexp.union([" "]), "!")

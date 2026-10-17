@@ -36,7 +36,7 @@ func installRegexp() {
 			switch o := args[1]; o.Kind() {
 			case object.KindInt:
 				options = int(o.Int())
-			case object.KindString:
+			case object.KindString, object.KindBytes, object.KindASCII:
 				for _, f := range o.Str() {
 					switch f {
 					case 'i':
@@ -75,9 +75,16 @@ func installRegexp() {
 			}
 		}
 		parts := make([]string, len(args))
+		options := 0
 		for i, a := range args {
 			if r, ok := a.AsRegexp(); ok {
 				parts[i] = r.String()
+				continue
+			}
+			// Bytes make a pattern over bytes, as binary strings do.
+			if b, ok := a.AsBytes(); ok {
+				parts[i] = regexpEscape(string(b))
+				options |= object.RegexpNoEncoding
 				continue
 			}
 			s, err := wantString(ctx, a)
@@ -89,7 +96,7 @@ func installRegexp() {
 		if len(parts) == 0 {
 			return compileRegexp(ctx, "(?!)", 0)
 		}
-		return compileRegexp(ctx, strings.Join(parts, "|"), 0)
+		return compileRegexp(ctx, strings.Join(parts, "|"), options)
 	})
 
 	def(c, "source", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -149,7 +156,7 @@ func installRegexp() {
 	def(c, "===", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		var s string
 		switch args[0].Kind() {
-		case object.KindString, object.KindSymbol:
+		case object.KindString, object.KindBytes, object.KindASCII, object.KindSymbol:
 			s = args[0].Str()
 		default:
 			return object.False, nil
@@ -191,7 +198,7 @@ func stringList(ss []string) object.Value {
 // backslashed, and whitespace as escapes.
 func regexpEscape(s string) string {
 	var b strings.Builder
-	for _, r := range s {
+	for i, r := range s {
 		switch r {
 		case '.', '*', '?', '+', '^', '$', '|', '(', ')', '[', ']', '{', '}', '\\', '/', '-', '#':
 			b.WriteByte('\\')
@@ -209,7 +216,9 @@ func regexpEscape(s string) string {
 		case '\v':
 			b.WriteString(`\v`)
 		default:
-			b.WriteRune(r)
+			// A byte that is not UTF-8 stays the byte it is.
+			_, size := utf8.DecodeRuneInString(s[i:])
+			b.WriteString(s[i : i+size])
 		}
 	}
 	return b.String()
@@ -220,7 +229,7 @@ func regexpEscape(s string) string {
 func matchFrom(ctx object.Context, r *object.Regexp, args []object.Value, block object.Value) (object.Value, error) {
 	var s string
 	switch args[0].Kind() {
-	case object.KindString, object.KindSymbol:
+	case object.KindString, object.KindBytes, object.KindASCII, object.KindSymbol:
 		s = args[0].Str()
 	default:
 		return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into String", kindName(args[0]))
@@ -291,7 +300,7 @@ func installMatchData() {
 				i += m.Groups() + 1
 			}
 			return i, nil
-		case object.KindString, object.KindSymbol:
+		case object.KindString, object.KindBytes, object.KindASCII, object.KindSymbol:
 			if i := m.Re.GroupIndex(v.Str()); i >= 0 {
 				return i, nil
 			}

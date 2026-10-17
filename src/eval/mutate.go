@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/radiospiel/amber/src/object"
+	"github.com/radiospiel/amber/src/stdlib"
 	"github.com/radiospiel/amber/src/syntax"
 )
 
@@ -103,7 +104,7 @@ func mutationFor(cur object.Value, name string) mutation {
 		return m
 	}
 	switch cur.Kind() {
-	case object.KindList, object.KindString, object.KindMap, object.KindSet:
+	case object.KindList, object.KindString, object.KindMap, object.KindSet, object.KindBytes, object.KindASCII:
 	default:
 		return nil
 	}
@@ -154,7 +155,7 @@ func keepDefault(from, out *object.Map) *object.Map {
 var bangReturnsSelf = map[string]bool{
 	"map!": true, "collect!": true, "sort!": true, "sort_by!": true, "shuffle!": true,
 	"reverse!": true, "rotate!": true, "transform_values!": true, "transform_keys!": true,
-	"merge!": true, "succ!": true, "next!": true,
+	"merge!": true, "succ!": true, "next!": true, "scrub!": true,
 }
 
 // returns wraps a mutation whose value is the changed receiver.
@@ -469,8 +470,12 @@ func init() {
 			return cur, nil
 		}),
 	}
+	// force_encoding changes what a string is, text or bytes, and returns
+	// it changed.
+	str["force_encoding"] = via("force_encoding")
 	mutations = map[object.Kind]map[string]mutation{
 		object.KindList: list, object.KindString: str, object.KindMap: hash, object.KindSet: set,
+		object.KindBytes: str, object.KindASCII: str,
 	}
 }
 
@@ -505,9 +510,16 @@ func takeEnd(end bool) mutation {
 func appendStrings(in *Interp, cur object.Value, args []object.Value, line int) (object.Value, error) {
 	var b strings.Builder
 	b.WriteString(cur.Str())
+	kind, ascii := cur.Kind(), object.ASCIIOnly(cur.Str())
 	for _, a := range args {
 		switch a.Kind() {
-		case object.KindString:
+		case object.KindString, object.KindBytes, object.KindASCII:
+			partASCII := object.ASCIIOnly(a.Str())
+			next, ok := stdlib.CombineEncodings(kind, b.Len() == 0, ascii, a.Kind(), a.Str() == "", partASCII)
+			if !ok {
+				return object.Value{}, in.raise(object.CompatibilityError, line, "%s", stdlib.IncompatibleEncodings(kind, a.Kind()))
+			}
+			kind, ascii = next, ascii && partASCII
 			b.WriteString(a.Str())
 		case object.KindInt:
 			if c := a.Int(); c < 0 || c > 0x10ffff {
@@ -520,7 +532,7 @@ func appendStrings(in *Interp, cur object.Value, args []object.Value, line int) 
 			return object.Value{}, in.raise(object.TypeError, line, "no implicit conversion of %s into String", typeName(a))
 		}
 	}
-	return object.String(b.String()), nil
+	return object.StringOf(kind, b.String()), nil
 }
 
 // elemsOf is the elements of a list, set, range or map, as Set#merge

@@ -311,7 +311,7 @@ func (p *Program) ToGo(v object.Value) (any, error) {
 	case object.KindFloat:
 		v := v.Float()
 		return float64(v), nil
-	case object.KindString:
+	case object.KindString, object.KindASCII:
 		v := v.Str()
 		return string(v), nil
 	case object.KindBytes:

@@ -42,7 +42,7 @@ func (in *Interp) ToS(v object.Value) (string, error) {
 		return in.inspectBuiltin(r)
 	}
 	switch v.Kind() {
-	case object.KindString:
+	case object.KindString, object.KindBytes, object.KindASCII:
 		v := v.Str()
 		return string(v), nil
 	case object.KindSymbol:
@@ -66,7 +66,7 @@ func (in *Interp) ToS(v object.Value) (string, error) {
 			return "main", nil
 		case object.ObjectClass:
 			return "#<Object>", nil
-		case object.PathnameClass:
+		case object.EncodingClass, object.PathnameClass:
 			return v.Instance().Fields[0].Str(), nil
 		}
 	}
@@ -98,9 +98,9 @@ func (in *Interp) inspectBuiltin(v object.Value) (string, error) {
 	case object.KindSymbol:
 		v := v.Str()
 		return object.SymbolInspect(string(v)), nil
-	case object.KindBytes:
-		v := v.Bytes()
-		return object.QuoteBytes(v) + ".b", nil
+	case object.KindBytes, object.KindASCII:
+		// A binary or US-ASCII string shows a byte past 7 bits as \xNN.
+		return object.QuoteBytes([]byte(v.Str())), nil
 	case object.KindTime:
 		return stdlib.TimeInspect(v.Time()), nil
 	case object.KindRegexp:
@@ -185,6 +185,8 @@ func (in *Interp) inspectBuiltin(v object.Value) (string, error) {
 		case object.ObjectClass:
 			// A bare Object has no fields to show, and amber no address.
 			return "#<Object>", nil
+		case object.EncodingClass:
+			return "#<Encoding:" + v.Fields[0].Str() + ">", nil
 		case object.PathnameClass:
 			return "#<Pathname:" + v.Fields[0].Str() + ">", nil
 		}
@@ -296,7 +298,7 @@ func (in *Interp) Compare(a, b object.Value) (int, error) {
 		if r, ok := object.CompareNumbers(a, b); ok {
 			return r, nil
 		}
-	case object.KindString:
+	case object.KindString, object.KindBytes, object.KindASCII:
 		a := a.Str()
 		if b, ok := b.AsString(); ok {
 			return strings.Compare(string(a), string(b)), nil

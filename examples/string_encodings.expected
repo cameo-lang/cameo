@@ -1,0 +1,69 @@
+"h\xC3\xA9llo\xFF"
+String
+#<Encoding:ASCII-8BIT>
+7
+7
+7
+"\xC3"
+"\xC3\xA9"
+"\xFF"
+["h", "\xC3", "\xA9"]
+"\xFFoll\xA9\xC3h"
+"H\xC3\xA9LLO\xFF"
+#<Encoding:ASCII-8BIT>
+3
+true
+true
+["h\xC3\xA9", "", "o\xFF"]
+"**h\xC3\xA9llo\xFF***"
+104
+7
+7
+true
+false
+true
+1
+nil
+true
+"a\xFF"
+#<Encoding:ASCII-8BIT>
+#<Encoding:ASCII-8BIT>
+#<Encoding:UTF-8>
+Encoding::CompatibilityError
+#<Encoding:ASCII-8BIT>
+#<Encoding:ASCII-8BIT>
+#<Encoding:ASCII-8BIT>
+"US"
+#<Encoding:US-ASCII>
+true
+#<Encoding:UTF-8>
+#<Encoding:US-ASCII>
+false
+"?"
+"A"
+#<Encoding:US-ASCII>
+"\xE9"
+#<Encoding:ASCII-8BIT>
+"é"
+"☺"
+"héllo"
+"café"
+"a�b"
+"a?"
+"x?"
+"U+00E9 from UTF-8 to US-ASCII"
+"\"\\xE9\" from ASCII-8BIT to UTF-8"
+"ab\xFF"
+#<Encoding:ASCII-8BIT>
+3
+#<Encoding:ASCII-8BIT>
+#<Encoding:ASCII-8BIT>
+#<Encoding:UTF-8>
+[195, 169]
+"é"
+[255, 254]
+"aXc"
+"a!c"
+"zb"
+"ab"
+2

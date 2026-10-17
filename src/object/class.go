@@ -296,7 +296,6 @@ var (
 	FloatClass   = NewClass("Float", ObjectClass)
 	StringClass  = NewClass("String", ObjectClass)
 	SymbolClass  = NewClass("Symbol", ObjectClass)
-	BytesClass   = NewClass("Bytes", ObjectClass)
 	// A list and a map are Ruby's Array and Hash: those are the names a
 	// script sees, in inspect, in errors and as constants.
 	ListClass      = NewClass("Array", ObjectClass)
@@ -308,11 +307,13 @@ var (
 	MatchDataClass = NewClass("MatchData", ObjectClass)
 	ProcClass      = NewClass("Proc", ObjectClass)
 	ProcessClass   = NewClass("AsyncProcess", ObjectClass)
-	// PathnameClass is Pathname: an instance holds its path, as its one
-	// field.
-	PathnameClass = NewClass("Pathname", ObjectClass)
 	// EnumeratorClass is Enumerator; LazyClass, Enumerator::Lazy, is
 	// bound inside it.
+	// EncodingClass is Encoding: an instance names one, as its one field.
+	EncodingClass = NewClass("Encoding", ObjectClass)
+	// PathnameClass is Pathname: an instance holds its path, as its one
+	// field.
+	PathnameClass   = NewClass("Pathname", ObjectClass)
 	EnumeratorClass = NewClass("Enumerator", ObjectClass)
 	LazyClass       = NewClass("Lazy", EnumeratorClass)
 	ExceptionClass  = NewClass("Exception", ObjectClass)
@@ -345,6 +346,12 @@ var (
 	// rescue does not catch a failed require, as in Ruby.
 	ScriptError = NewClass("ScriptError", ExceptionClass)
 	LoadError   = NewClass("LoadError", ScriptError)
+	// EncodingError and the three below it, bound in Encoding, are what
+	// combining and converting strings of different encodings raises.
+	EncodingError            = NewClass("EncodingError", StandardError)
+	CompatibilityError       = NewClass("CompatibilityError", EncodingError)
+	UndefinedConversionError = NewClass("UndefinedConversionError", EncodingError)
+	InvalidByteSequenceError = NewClass("InvalidByteSequenceError", EncodingError)
 	// MathDomainError is Math::DomainError, bound in Math, not at the top.
 	MathDomainError = NewClass("DomainError", ArgumentError)
 )
@@ -356,6 +363,10 @@ func init() {
 	RangeClass.Include(Enumerable)
 	EnumeratorClass.Include(Enumerable)
 	LazyClass.Lexical = EnumeratorClass
+	for _, c := range []*Class{CompatibilityError, UndefinedConversionError, InvalidByteSequenceError} {
+		c.Lexical = EncodingClass
+		EncodingClass.Consts[c.Name] = ClassValue(c)
+	}
 	EnumeratorClass.Consts["Lazy"] = ClassValue(LazyClass)
 	IntegerClass.Include(Comparable)
 	FloatClass.Include(Comparable)
@@ -363,11 +374,11 @@ func init() {
 	TimeClass.Include(Comparable)
 	BasicClasses = []*Class{
 		ObjectClass, ModuleClass, ClassClass, NilClass, BoolClass, IntegerClass, FloatClass,
-		StringClass, SymbolClass, BytesClass, ListClass, MapClass, SetClass, RangeClass, TimeClass, RegexpClass, MatchDataClass, EnumeratorClass, PathnameClass, ProcClass,
+		StringClass, SymbolClass, ListClass, MapClass, SetClass, RangeClass, TimeClass, RegexpClass, MatchDataClass, EnumeratorClass, EncodingClass, PathnameClass, ProcClass,
 		ProcessClass, ExceptionClass, Enumerable, Comparable, MathModule,
 		StandardError, RuntimeError, ArgumentError, TypeError, NameError, NoMethodError, KeyError,
 		IndexError, RangeError, ZeroDivisionError, StopIteration, NoMatchingPattern, FrozenError,
-		NotImplementedErr, LocalJumpError, AmberError, RegexpError, FloatDomainError, ScriptError, LoadError,
+		NotImplementedErr, LocalJumpError, AmberError, RegexpError, FloatDomainError, ScriptError, LoadError, EncodingError,
 	}
 	for _, c := range BasicClasses {
 		ObjectClass.Consts[c.Name] = ClassValue(c)

@@ -14,10 +14,10 @@ func installStringPatterns() {
 	str := func(self object.Value) string { return self.Str() }
 
 	def(c, "sub", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return substitute(ctx, str(self), args, kw, block, 1)
+		return substitute(ctx, str(self), args, kw, block, 1, self.Kind() == object.KindBytes)
 	})
 	def(c, "gsub", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return substitute(ctx, str(self), args, kw, block, -1)
+		return substitute(ctx, str(self), args, kw, block, -1, self.Kind() == object.KindBytes)
 	})
 	def(c, "scan", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		p, err := patternOf(ctx, args[0])
@@ -142,7 +142,7 @@ func installStringPatterns() {
 					switch a := args[1]; a.Kind() {
 					case object.KindInt:
 						g = int(a.Int())
-					case object.KindString, object.KindSymbol:
+					case object.KindString, object.KindBytes, object.KindASCII, object.KindSymbol:
 						if g = r.GroupIndex(a.Str()); g < 0 {
 							return object.Value{}, ctx.Raise(object.IndexError, "undefined group name reference: %s", a.Str())
 						}
@@ -218,7 +218,7 @@ func installStringPatterns() {
 // substitute is sub (limit 1) and gsub (limit -1): each match replaced by
 // a string with its backreferences filled in, by a hash's value for the
 // matched text, or by a block's value for it.
-func substitute(ctx object.Context, s string, args []object.Value, kw *object.Map, block object.Value, limit int) (object.Value, error) {
+func substitute(ctx object.Context, s string, args []object.Value, kw *object.Map, block object.Value, limit int, binary bool) (object.Value, error) {
 	// `gsub(/a/, "a" => "b")` passes its hash as keywords.
 	if kw != nil && kw.Len() > 0 && len(args) == 1 {
 		args = append(args, object.MapValue(kw))
@@ -232,10 +232,27 @@ func substitute(ctx object.Context, s string, args []object.Value, kw *object.Ma
 	}
 	if len(args) == 2 {
 		switch args[1].Kind() {
-		case object.KindString, object.KindMap:
+		case object.KindString, object.KindASCII, object.KindMap:
+		case object.KindBytes:
+			args = []object.Value{args[0], object.String(string(args[1].Bytes()))}
 		default:
 			return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into String", kindName(args[1]))
 		}
+	}
+	// Over bytes the matched text, a hash's keys and a block's argument
+	// are bytes too.
+	text := func(m *object.Match) object.Value {
+		if binary {
+			g, _ := m.Group(0)
+			return object.Bytes([]byte(g))
+		}
+		return matchText(m)
+	}
+	textOrToS := func(v object.Value) (string, error) {
+		if b, ok := v.AsBytes(); ok {
+			return string(b), nil
+		}
+		return ctx.ToS(v)
 	}
 	var b strings.Builder
 	at := 0
@@ -243,20 +260,20 @@ func substitute(ctx object.Context, s string, args []object.Value, kw *object.Ma
 		b.WriteString(s[at:m.Caps[0]])
 		var repl string
 		switch {
-		case len(args) == 2 && args[1].Kind() == object.KindString:
+		case len(args) == 2 && args[1].IsString():
 			repl = expand(args[1].Str(), m)
 		case len(args) == 2:
-			if v, ok := args[1].Map().Get(matchText(m)); ok {
-				if repl, err = ctx.ToS(v); err != nil {
+			if v, ok := args[1].Map().Get(text(m)); ok {
+				if repl, err = textOrToS(v); err != nil {
 					return object.Value{}, err
 				}
 			}
 		default:
-			v, err := ctx.Yield(block, matchText(m))
+			v, err := ctx.Yield(block, text(m))
 			if err != nil {
 				return object.Value{}, err
 			}
-			if repl, err = ctx.ToS(v); err != nil {
+			if repl, err = textOrToS(v); err != nil {
 				return object.Value{}, err
 			}
 		}
@@ -264,6 +281,9 @@ func substitute(ctx object.Context, s string, args []object.Value, kw *object.Ma
 		at = m.Caps[1]
 	}
 	b.WriteString(s[at:])
+	if binary {
+		return object.Bytes([]byte(b.String())), nil
+	}
 	return object.String(b.String()), nil
 }
 

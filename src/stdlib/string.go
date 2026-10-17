@@ -480,7 +480,7 @@ func stringIndex(ctx object.Context, s string, args []object.Value) (object.Valu
 				return object.Nil, nil
 			}
 			return object.String(string(runes[i])), nil
-		case object.KindString:
+		case object.KindString, object.KindBytes, object.KindASCII:
 			a := args[0].Str()
 			if strings.Contains(s, string(a)) {
 				return object.String(a), nil

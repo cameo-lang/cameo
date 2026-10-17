@@ -93,7 +93,7 @@ func init() {
 		case object.KindBytes:
 			v := args[0].Bytes()
 			data = v
-		case object.KindString:
+		case object.KindString, object.KindASCII:
 			v := args[0].Str()
 			data = []byte(v)
 		default:

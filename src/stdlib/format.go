@@ -117,7 +117,7 @@ func formatOne(ctx object.Context, spec string, verb byte, arg object.Value) (st
 		case object.KindFloat:
 			v := arg.Float()
 			x = float64(v)
-		case object.KindString:
+		case object.KindString, object.KindBytes, object.KindASCII:
 			v := arg.Str()
 			p, err := strconv.ParseFloat(string(v), 64)
 			if err != nil {
@@ -136,7 +136,7 @@ func formatOne(ctx object.Context, spec string, verb byte, arg object.Value) (st
 		case object.KindInt:
 			v := arg.Int()
 			return string(rune(v)), nil
-		case object.KindString:
+		case object.KindString, object.KindBytes, object.KindASCII:
 			v := arg.Str()
 			if len(v) > 0 {
 				return string([]rune(string(v))[0]), nil

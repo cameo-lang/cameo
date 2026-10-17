@@ -16,7 +16,6 @@ func Install() {
 	installNilBool()
 	installNumeric()
 	installString()
-	installBytes()
 	installSymbol()
 	installException()
 	installClass()
@@ -32,7 +31,11 @@ func Install() {
 	installEnumerator()
 	installTimeParsing()
 	installCGI()
+	installEncodings()
+	installPack()
 	installPaths()
+	// Last: it wraps every String method defined before it.
+	installStringEncodings()
 }
 
 type fn = func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error)
@@ -63,7 +66,7 @@ func wantInt(ctx object.Context, v object.Value, what string) (int64, error) {
 // wantString reads a String argument or fails with a TypeError.
 func wantString(ctx object.Context, v object.Value) (string, error) {
 	switch v.Kind() {
-	case object.KindString:
+	case object.KindString, object.KindBytes, object.KindASCII:
 		v := v.Str()
 		return string(v), nil
 	case object.KindSymbol:

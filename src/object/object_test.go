@@ -144,3 +144,17 @@ func TestValuesAreTagged(t *testing.T) {
 		t.Fatal("bytes round trip, and an empty byte string is an empty slice")
 	}
 }
+
+func TestStringsCompareAcrossEncodings(t *testing.T) {
+	// ASCII alone is the same string in every encoding; other bytes are
+	// their encoding's, as in Ruby.
+	if !Equal(String("ab"), Bytes([]byte("ab"))) || !Equal(String("ab"), StringOf(KindASCII, "ab")) || Key(String("ab")) != Key(Bytes([]byte("ab"))) {
+		t.Fatal(`"ab" is "ab".b`)
+	}
+	if Equal(String("é"), Bytes([]byte("é"))) {
+		t.Fatal(`"é" is not "é".b`)
+	}
+	if Bytes([]byte{0xff}).Class() != StringClass || StringOf(KindASCII, "x").Str() != "x" {
+		t.Fatal("a binary or US-ASCII string is a String")
+	}
+}
