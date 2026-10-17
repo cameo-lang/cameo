@@ -82,9 +82,12 @@ type Range struct {
 func (*Range) Class() *Class { return RangeClass }
 
 // Instance is an instance of a user class: its fields, in declaration order.
+// Message caches the protobuf message the instance is, once built; the
+// fields never change, so it stays valid.
 type Instance struct {
-	Cls    *Class
-	Fields []Value
+	Cls     *Class
+	Fields  []Value
+	Message any
 }
 
 func (i *Instance) Class() *Class { return i.Cls }
@@ -182,8 +185,12 @@ func QuoteString(s string) string {
 			b.WriteByte('#')
 		default:
 			if r < 0x20 || r == 0x7f {
+				h := strings.ToUpper(strconv.FormatInt(int64(r), 16))
+				if len(h) == 1 {
+					h = "0" + h
+				}
 				b.WriteString(`\x`)
-				b.WriteString(strings.ToUpper(strconv.FormatInt(int64(r), 16)))
+				b.WriteString(h)
 			} else {
 				b.WriteRune(r)
 			}

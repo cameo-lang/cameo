@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/radiospiel/amber/src/object"
+	"github.com/radiospiel/amber/src/protogen"
 	"github.com/radiospiel/amber/src/syntax"
 )
 
@@ -27,6 +28,7 @@ type Interp struct {
 	// consts are the script's top-level constants, looked up after the
 	// lexical scopes and before the builtin classes.
 	consts map[string]object.Value
+	proto  *protogen.Registry
 }
 
 // New makes an interpreter writing to stdout and stderr.
@@ -42,6 +44,7 @@ func New(stdout, stderr io.Writer) *Interp {
 		main:      &object.Instance{Cls: mainClass},
 		top:       NewEnv(nil),
 		consts:    map[string]object.Value{},
+		proto:     protogen.NewRegistry(),
 	}
 }
 

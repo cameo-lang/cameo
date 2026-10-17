@@ -232,11 +232,15 @@ func writeKey(b *strings.Builder, v Value) {
 		}
 		b.WriteString("]")
 	case *Map:
-		b.WriteString("{")
+		// A map's identity does not depend on insertion order.
+		entries := make([]string, 0, len(v.keys))
 		for i, k := range v.keys {
-			writeKey(b, k)
-			b.WriteByte('>')
-			writeKey(b, v.vals[i])
+			entries = append(entries, Key(k)+">"+Key(v.vals[i]))
+		}
+		sortStrings(entries)
+		b.WriteString("{")
+		for _, e := range entries {
+			b.WriteString(e)
 			b.WriteByte(',')
 		}
 		b.WriteString("}")

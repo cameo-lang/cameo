@@ -1,0 +1,126 @@
+package amber
+
+import (
+	"bytes"
+	"strings"
+	"testing"
+
+	"google.golang.org/protobuf/proto"
+)
+
+const script = `
+module Geo
+  class Point
+    int :x, :y
+    def +(other) = Point.new(x: x + other.x, y: y + other.y)
+    def to_s = "(#{x}, #{y})"
+  end
+end
+
+def total(list) = list.sum
+puts "loaded"
+`
+
+func load(t *testing.T) (*Program, *bytes.Buffer) {
+	t.Helper()
+	var out bytes.Buffer
+	prog, err := Load("t.arb", script, &out, &out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := prog.Run(); err != nil {
+		t.Fatal(err)
+	}
+	return prog, &out
+}
+
+func TestCallWithGoValues(t *testing.T) {
+	prog, out := load(t)
+	if out.String() != "loaded\n" {
+		t.Fatalf("output %q", out.String())
+	}
+	sum, err := prog.Call(nil, "total", []any{1, 2, 3.5})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sum != 6.5 {
+		t.Fatalf("total: %#v", sum)
+	}
+	pt, err := prog.Call("Geo::Point", "new", map[string]any{"x": 1, "y": 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	msg, ok := pt.(proto.Message)
+	if !ok {
+		t.Fatalf("an instance comes back as a proto.Message, got %T", pt)
+	}
+	if name := msg.ProtoReflect().Descriptor().FullName(); name != "geo.Point" {
+		t.Fatalf("message %s", name)
+	}
+	twice, err := prog.Call(msg, "+", msg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s, err := prog.Call(twice, "to_s")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if s != "(2, 4)" {
+		t.Fatalf("to_s: %#v", s)
+	}
+	data, err := proto.Marshal(twice.(proto.Message))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(data) == 0 {
+		t.Fatal("empty wire form")
+	}
+}
+
+func TestProtoAndEnvelope(t *testing.T) {
+	prog, _ := load(t)
+	text, err := prog.Proto("Geo::Point")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(text, "package geo;\n\nmessage Point {\n  optional int64 x = 1;\n") {
+		t.Fatalf("proto text:\n%s", text)
+	}
+	files := prog.ProtoFiles()
+	if _, ok := files["geo.proto"]; !ok {
+		t.Fatalf("files: %v", files)
+	}
+	if !strings.Contains(files["amber/value.proto"], "message Value {") {
+		t.Fatal("the envelope is among the files")
+	}
+	data, err := prog.Encode(map[string]any{"k": []any{1, "x", nil}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	back, err := prog.Decode(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, ok := back.(map[any]any)
+	if !ok || len(m) != 1 {
+		t.Fatalf("decoded %#v", back)
+	}
+	list := m["k"].([]any)
+	if list[0] != int64(1) || list[1] != "x" || list[2] != nil {
+		t.Fatalf("decoded list %#v", list)
+	}
+}
+
+func TestErrorsAreReported(t *testing.T) {
+	prog, _ := load(t)
+	_, err := prog.Call("Geo::Point", "nope")
+	if err == nil || !strings.Contains(err.Error(), "undefined method 'nope'") {
+		t.Fatalf("error: %v", err)
+	}
+	if _, err := Load("t.arb", "a << 1\n", nil, nil); err == nil {
+		t.Fatal("a rejected script does not load")
+	}
+	if _, err := prog.ToValue(struct{}{}); err == nil {
+		t.Fatal("an unknown Go type does not convert")
+	}
+}

@@ -16,6 +16,7 @@ func Install() {
 	installNilBool()
 	installNumeric()
 	installString()
+	installBytes()
 	installSymbol()
 	installException()
 	installClass()

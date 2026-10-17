@@ -18,7 +18,6 @@ const examplesDir = "../../../examples"
 // milestone. A pending example must still fail: when it passes, it comes
 // off this list.
 var pending = map[string]string{
-	"proto.arb": "milestone 5: protobuf",
 	"async.arb": "milestone 6: async",
 }
 
@@ -102,5 +101,30 @@ func TestRunReportsExceptions(t *testing.T) {
 	}
 	if stdout.String() != "1\n" {
 		t.Fatalf("output before the exception: %q", stdout.String())
+	}
+}
+
+// TestProtoCommand proves `amber proto` prints one file per package, with
+// the envelope, and writes them into a directory when given one.
+func TestProtoCommand(t *testing.T) {
+	var out bytes.Buffer
+	if err := protoFiles(filepath.Join(examplesDir, "proto.arb"), "", &out); err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"// amber.proto\n", "// amber/value.proto\n", "// geo.proto\n", "message Person {", "message Address {", "message Point {", "message Value {"} {
+		if !strings.Contains(out.String(), want) {
+			t.Fatalf("missing %q in:\n%s", want, out.String())
+		}
+	}
+	dir := t.TempDir()
+	out.Reset()
+	if err := protoFiles(filepath.Join(examplesDir, "proto.arb"), dir, &out); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "geo.proto")); err != nil {
+		t.Fatalf("geo.proto not written: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "amber", "value.proto")); err != nil {
+		t.Fatalf("amber/value.proto not written: %v", err)
 	}
 }
