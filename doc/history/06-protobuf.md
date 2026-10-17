@@ -9,7 +9,7 @@ into them.
 ## From fields to a descriptor
 
 The `protogen` package builds one protobuf file descriptor per class from
-its field declarations ([src/protogen/descriptor.go:121](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/protogen/descriptor.go#L121-L171)):
+its field declarations ([src/protogen/descriptor.go:121](https://github.com/radiospiel/amber/blob/1ee671755232184b664b9eb632428340681954dc/src/protogen/descriptor.go#L121-L171)):
 
 - scalars are proto3 `optional`, so an unset field reads back as `nil`;
 - `list` and `set` are `repeated`, `map` a protobuf `map<,>`;
@@ -52,7 +52,7 @@ matches what the interpreter produces.
 Values that are not instances, an array, a hash, a range, a scalar,
 travel in `amber.Value`, a message with a `oneof` over the scalar kinds and
 `List`, `Map`, `Set`, `Range` and `Object`
-([src/protogen/envelope.go:16](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/protogen/envelope.go#L16-L33)). The envelope's
+([src/protogen/envelope.go:16](https://github.com/radiospiel/amber/blob/1ee671755232184b664b9eb632428340681954dc/src/protogen/envelope.go#L16-L33)). The envelope's
 message names keep protobuf's vocabulary, which is why they are `List` and
 `Map` and not Ruby's names. A symbol travels as a string. The envelope is
 what step 7's `async` serialises, and what the host API takes and returns.
@@ -78,7 +78,7 @@ is binary, as in Ruby.
 ## The host API
 
 The `amber` package loads a script and calls into it
-([src/amber/amber.go:83](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/amber/amber.go#L83-L119)):
+([src/amber/amber.go:83](https://github.com/radiospiel/amber/blob/1ee671755232184b664b9eb632428340681954dc/src/amber/amber.go#L83-L119)):
 
 ```go
 prog, err := amber.Load("script.arb", src, os.Stdout, os.Stderr)
