@@ -122,23 +122,6 @@ unsupported/attr-accessor	vm_attr_ivar--vm_attr_ivar.rb	benchmark/vm_attr_ivar.y
 unsupported/attr-accessor	vm_attr_ivar_set--vm_attr_ivar_set.rb	benchmark/vm_attr_ivar_set.yml, entry vm_attr_ivar_set	attr_* accessors (fields are declared, no setters)
 unsupported/attr-accessor	vm_gc_wb_obj--vm_gc_wb_obj.rb	benchmark/vm_gc_wb_obj.yml, entry vm_gc_wb_obj	attr_* accessors (fields are declared, no setters)
 unsupported/attr-accessor	vm_ivar_generic_get--vm_ivar_generic_get.rb	benchmark/vm_ivar_generic_get.yml, entry vm_ivar_generic_get	attr_* accessors (fields are declared, no setters)
-unsupported/bignum	app_factorial.rb	benchmark/app_factorial.rb	bignum arithmetic (amber wraps at 64 bits, silently)
-unsupported/bignum	int_to_s--big_100digit.rb	benchmark/int_to_s.yml, entry big_100digit	bignum arithmetic (amber wraps at 64 bits, silently)
-unsupported/bignum	int_to_s--big_20digit.rb	benchmark/int_to_s.yml, entry big_20digit	bignum arithmetic (amber wraps at 64 bits, silently)
-unsupported/bignum	int_to_s--big_40digit.rb	benchmark/int_to_s.yml, entry big_40digit	bignum arithmetic (amber wraps at 64 bits, silently)
-unsupported/bignum	num_zero_p--num_zero_p_2.rb	benchmark/num_zero_p.yml, entry num_zero_p_2	bignum, rational and complex literals
-unsupported/bignum	num_zero_p--num_zero_p_3.rb	benchmark/num_zero_p.yml, entry num_zero_p_3	bignum, rational and complex literals
-unsupported/bignum	num_zero_p--num_zero_p_4.rb	benchmark/num_zero_p.yml, entry num_zero_p_4	bignum, rational and complex literals
-unsupported/bignum	num_zero_p--num_zero_p_5.rb	benchmark/num_zero_p.yml, entry num_zero_p_5	bignum, rational and complex literals
-unsupported/bignum	range_bsearch_bignum--first.rb	benchmark/range_bsearch_bignum.yml, entry first	bignum arithmetic (amber wraps at 64 bits, silently)
-unsupported/bignum	range_bsearch_bignum--last.rb	benchmark/range_bsearch_bignum.yml, entry last	bignum arithmetic (amber wraps at 64 bits, silently)
-unsupported/bignum	range_bsearch_bignum--mid.rb	benchmark/range_bsearch_bignum.yml, entry mid	bignum arithmetic (amber wraps at 64 bits, silently)
-unsupported/bignum	range_bsearch_endpointless--beginless_-10__100.rb	benchmark/range_bsearch_endpointless.yml, entry beginless_-10__100	bignum, rational and complex literals
-unsupported/bignum	range_bsearch_endpointless--endless_10__100.rb	benchmark/range_bsearch_endpointless.yml, entry endless_10__100	bignum, rational and complex literals
-unsupported/bignum	range_reverse_each--Bignum_1.rb	benchmark/range_reverse_each.yml, entry Bignum_1	bignum arithmetic (amber wraps at 64 bits, silently)
-unsupported/bignum	range_reverse_each--Bignum_1K.rb	benchmark/range_reverse_each.yml, entry Bignum_1K	bignum arithmetic (amber wraps at 64 bits, silently)
-unsupported/bignum	range_reverse_each--Bignum_1M.rb	benchmark/range_reverse_each.yml, entry Bignum_1M	bignum arithmetic (amber wraps at 64 bits, silently)
-unsupported/bignum	vm_case_lit--vm_case_lit.rb	benchmark/vm_case_lit.yml, entry vm_case_lit	bignum, rational and complex literals
 unsupported/class-variables	vm_cvar--vm_cvar.rb	benchmark/vm_cvar.yml, entry vm_cvar	class variables
 unsupported/complex	complex_float_add--complex_float_add.rb	benchmark/complex_float_add.yml, entry complex_float_add	Rational and Complex (left out)
 unsupported/complex	complex_float_div--complex_float_div.rb	benchmark/complex_float_div.yml, entry complex_float_div	Rational and Complex (left out)
@@ -150,6 +133,10 @@ unsupported/complex	int_quo.rb	benchmark/int_quo.rb	Rational and Complex (left o
 unsupported/complex	nilclass--rationalize.rb	benchmark/nilclass.yml, entry rationalize	Rational and Complex (left out)
 unsupported/complex	nilclass--to_c.rb	benchmark/nilclass.yml, entry to_c	Rational and Complex (left out)
 unsupported/complex	nilclass--to_r.rb	benchmark/nilclass.yml, entry to_r	Rational and Complex (left out)
+unsupported/complex	num_zero_p--num_zero_p_2.rb	benchmark/num_zero_p.yml, entry num_zero_p_2	Rational and Complex (left out)
+unsupported/complex	num_zero_p--num_zero_p_3.rb	benchmark/num_zero_p.yml, entry num_zero_p_3	Rational and Complex (left out)
+unsupported/complex	num_zero_p--num_zero_p_4.rb	benchmark/num_zero_p.yml, entry num_zero_p_4	Rational and Complex (left out)
+unsupported/complex	num_zero_p--num_zero_p_5.rb	benchmark/num_zero_p.yml, entry num_zero_p_5	Rational and Complex (left out)
 unsupported/complex	numeric_methods--float_conj.rb	benchmark/numeric_methods.yml, entry float_conj	Rational and Complex (left out)
 unsupported/complex	numeric_methods--float_imag.rb	benchmark/numeric_methods.yml, entry float_imag	Rational and Complex (left out)
 unsupported/complex	numeric_methods--float_real.rb	benchmark/numeric_methods.yml, entry float_real	Rational and Complex (left out)
@@ -288,6 +275,7 @@ unsupported/instance-variables	struct_accessor--member_reader_method.rb	benchmar
 unsupported/instance-variables	struct_accessor--member_writer.rb	benchmark/struct_accessor.yml, entry member_writer	instance variables outside initialize
 unsupported/instance-variables	struct_accessor--member_writer_heap.rb	benchmark/struct_accessor.yml, entry member_writer_heap	instance variables outside initialize
 unsupported/instance-variables	struct_accessor--member_writer_method.rb	benchmark/struct_accessor.yml, entry member_writer_method	instance variables outside initialize
+unsupported/instance-variables	vm_case_lit--vm_case_lit.rb	benchmark/vm_case_lit.yml, entry vm_case_lit	instance variables outside initialize
 unsupported/instance-variables	vm_ivar--vm_ivar.rb	benchmark/vm_ivar.yml, entry vm_ivar	instance variables outside initialize
 unsupported/instance-variables	vm_ivar_embedded_obj_init--vm_ivar_embedded_obj_init.rb	benchmark/vm_ivar_embedded_obj_init.yml, entry vm_ivar_embedded_obj_init	instance variables outside initialize
 unsupported/instance-variables	vm_ivar_extended_obj_init--vm_ivar_extended_obj_init.rb	benchmark/vm_ivar_extended_obj_init.yml, entry vm_ivar_extended_obj_init	instance variables outside initialize
@@ -635,6 +623,7 @@ unsupported/vm-introspection	vm_gc_short_with_symbol--vm_gc_short_with_symbol.rb
 unsupported/vm-introspection	vm_gc_wb_ary_promoted--vm_gc_wb_ary_promoted.rb	benchmark/vm_gc_wb_ary_promoted.yml, entry vm_gc_wb_ary_promoted	GC and VM introspection
 unsupported/vm-introspection	vm_gc_wb_obj_promoted--vm_gc_wb_obj_promoted.rb	benchmark/vm_gc_wb_obj_promoted.yml, entry vm_gc_wb_obj_promoted	GC and VM introspection
 works	app_answer.rb	benchmark/app_answer.rb	
+works	app_factorial.rb	benchmark/app_factorial.rb	
 works	app_fib.rb	benchmark/app_fib.rb	
 works	app_lc_fizzbuzz.rb	benchmark/app_lc_fizzbuzz.rb	
 works	app_raise.rb	benchmark/app_raise.rb	
@@ -841,6 +830,9 @@ works	hash_small4.rb	benchmark/hash_small4.rb
 works	hash_small8.rb	benchmark/hash_small8.rb	
 works	hash_to_proc.rb	benchmark/hash_to_proc.rb	
 works	hash_values.rb	benchmark/hash_values.rb	
+works	int_to_s--big_100digit.rb	benchmark/int_to_s.yml, entry big_100digit	
+works	int_to_s--big_20digit.rb	benchmark/int_to_s.yml, entry big_20digit	
+works	int_to_s--big_40digit.rb	benchmark/int_to_s.yml, entry big_40digit	
 works	int_to_s--fix_10digit.rb	benchmark/int_to_s.yml, entry fix_10digit	
 works	int_to_s--fix_19digit.rb	benchmark/int_to_s.yml, entry fix_19digit	
 works	int_to_s--fix_1digit.rb	benchmark/int_to_s.yml, entry fix_1digit	
@@ -896,9 +888,13 @@ works	ractor_const--ractor_const.rb	benchmark/ractor_const.yml, entry ractor_con
 works	ractor_float_to_s--ractor_float_to_s.rb	benchmark/ractor_float_to_s.yml, entry ractor_float_to_s	
 works	ractor_string_fstring--ractor_fstring_random.rb	benchmark/ractor_string_fstring.yml, entry ractor_fstring_random	
 works	ractor_string_fstring--ractor_fstring_same.rb	benchmark/ractor_string_fstring.yml, entry ractor_fstring_same	
+works	range_bsearch_bignum--first.rb	benchmark/range_bsearch_bignum.yml, entry first	
+works	range_bsearch_bignum--last.rb	benchmark/range_bsearch_bignum.yml, entry last	
+works	range_bsearch_bignum--mid.rb	benchmark/range_bsearch_bignum.yml, entry mid	
 works	range_bsearch_endpointless--beginless_-10__0.rb	benchmark/range_bsearch_endpointless.yml, entry beginless_-10__0	
 works	range_bsearch_endpointless--beginless_-10__1.rb	benchmark/range_bsearch_endpointless.yml, entry beginless_-10__1	
 works	range_bsearch_endpointless--beginless_-10__10.rb	benchmark/range_bsearch_endpointless.yml, entry beginless_-10__10	
+works	range_bsearch_endpointless--beginless_-10__100.rb	benchmark/range_bsearch_endpointless.yml, entry beginless_-10__100	
 works	range_bsearch_endpointless--beginless_-10__2.rb	benchmark/range_bsearch_endpointless.yml, entry beginless_-10__2	
 works	range_bsearch_endpointless--beginless_-10__3.rb	benchmark/range_bsearch_endpointless.yml, entry beginless_-10__3	
 works	range_bsearch_endpointless--beginless_-10__4.rb	benchmark/range_bsearch_endpointless.yml, entry beginless_-10__4	
@@ -906,6 +902,7 @@ works	range_bsearch_endpointless--beginless_-10__5.rb	benchmark/range_bsearch_en
 works	range_bsearch_endpointless--endless_10__0.rb	benchmark/range_bsearch_endpointless.yml, entry endless_10__0	
 works	range_bsearch_endpointless--endless_10__1.rb	benchmark/range_bsearch_endpointless.yml, entry endless_10__1	
 works	range_bsearch_endpointless--endless_10__10.rb	benchmark/range_bsearch_endpointless.yml, entry endless_10__10	
+works	range_bsearch_endpointless--endless_10__100.rb	benchmark/range_bsearch_endpointless.yml, entry endless_10__100	
 works	range_bsearch_endpointless--endless_10__2.rb	benchmark/range_bsearch_endpointless.yml, entry endless_10__2	
 works	range_bsearch_endpointless--endless_10__3.rb	benchmark/range_bsearch_endpointless.yml, entry endless_10__3	
 works	range_bsearch_endpointless--endless_10__4.rb	benchmark/range_bsearch_endpointless.yml, entry endless_10__4	
@@ -921,6 +918,9 @@ works	range_last--range_last_0.rb	benchmark/range_last.yml, entry range_last_0
 works	range_last--range_last_1.rb	benchmark/range_last.yml, entry range_last_1	
 works	range_last--range_last_2.rb	benchmark/range_last.yml, entry range_last_2	
 works	range_min--range_min_0.rb	benchmark/range_min.yml, entry range_min_0	
+works	range_reverse_each--Bignum_1.rb	benchmark/range_reverse_each.yml, entry Bignum_1	
+works	range_reverse_each--Bignum_1K.rb	benchmark/range_reverse_each.yml, entry Bignum_1K	
+works	range_reverse_each--Bignum_1M.rb	benchmark/range_reverse_each.yml, entry Bignum_1M	
 works	range_reverse_each--Fixnum_1.rb	benchmark/range_reverse_each.yml, entry Fixnum_1	
 works	range_reverse_each--Fixnum_1K.rb	benchmark/range_reverse_each.yml, entry Fixnum_1K	
 works	range_reverse_each--Fixnum_1M.rb	benchmark/range_reverse_each.yml, entry Fixnum_1M	

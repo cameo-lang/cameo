@@ -140,6 +140,10 @@ func (in *Interp) checkField(f *object.Field, v object.Value, line int) (object.
 		return emptyFor(f.Type), nil
 	}
 	out, ok := in.coerce(f.Type, v)
+	if !ok && v.Kind() == object.KindBig {
+		// An int field is a protobuf int64.
+		return object.Value{}, in.raise(object.RangeError, line, "field %s of %s takes %s, which holds 64 bits; %s does not fit", f.Name, f.Owner.QualifiedName(), describeType(f.Type), v.Big())
+	}
 	if !ok {
 		return object.Value{}, in.raise(object.TypeError, line, "field %s of %s takes %s, not %s", f.Name, f.Owner.QualifiedName(), describeType(f.Type), typeName(v))
 	}
@@ -175,8 +179,9 @@ func (in *Interp) coerce(t *object.FieldType, v object.Value) (object.Value, boo
 		case object.KindFloat:
 			x := v.Float()
 			return object.Float(x), true
-		case object.KindInt:
-			return object.Float(float64(v.Int())), true
+		case object.KindInt, object.KindBig:
+			x, _ := v.AsNumber()
+			return object.Float(x), true
 		}
 		return object.Value{}, false
 	case "bool":

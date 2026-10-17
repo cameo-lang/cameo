@@ -60,9 +60,8 @@ directory rather than to `works/`.
 prints as `#<Object>`, without the address Ruby shows, since amber values
 have no identity; the cases that print one count as working.
 
-`unsupported/bignum/` holds files that exit cleanly with a wrong result:
-amber's integers wrap at 64 bits where Ruby's grow, and `app_factorial`
-computes `5000!` as 0.
+Integers grow past 64 bits as Ruby's do, so `unsupported/bignum/` is gone;
+its rational and imaginary literal cases are under `unsupported/complex/`.
 
 ## Running them
 
@@ -76,4 +75,4 @@ ruby run.rb --amber /path/to/amber --jobs 8 --timeout 60 stdlib   # default: 4 j
 binary, runs the files in parallel, prints the outcome and time of each, and
 lists the files outside `works/` that now run cleanly. Such a file is a
 candidate for `works/` once its result matches Ruby's; a clean exit alone is
-not enough, as `unsupported/bignum/` shows.
+not enough: a wrong result exits cleanly too.

@@ -2,6 +2,7 @@ package stdlib
 
 import (
 	"fmt"
+	"math/big"
 	"strconv"
 	"strings"
 
@@ -87,27 +88,32 @@ func formatOne(ctx object.Context, spec string, verb byte, arg object.Value) (st
 		}
 		return fmt.Sprintf("%"+spec+"s", s), nil
 	case 'd', 'i', 'u':
+		if arg.Kind() == object.KindBig {
+			return fmt.Sprintf("%"+spec+"d", arg.Big()), nil
+		}
 		i, err := wantInt(ctx, arg, "")
 		if err != nil {
 			return "", err
 		}
 		return fmt.Sprintf("%"+spec+"d", i), nil
 	case 'x', 'X', 'o', 'b', 'B':
-		i, err := wantInt(ctx, arg, "")
-		if err != nil {
-			return "", err
-		}
 		v := verb
 		if v == 'B' {
 			v = 'b'
+		}
+		if arg.Kind() == object.KindBig {
+			return fmt.Sprintf("%"+spec+string(v), arg.Big()), nil
+		}
+		i, err := wantInt(ctx, arg, "")
+		if err != nil {
+			return "", err
 		}
 		return fmt.Sprintf("%"+spec+string(v), i), nil
 	case 'f', 'e', 'E', 'g', 'G':
 		var x float64
 		switch arg.Kind() {
-		case object.KindInt:
-			v := arg.Int()
-			x = float64(v)
+		case object.KindInt, object.KindBig:
+			x, _ = arg.AsNumber()
 		case object.KindFloat:
 			v := arg.Float()
 			x = float64(v)
@@ -142,12 +148,25 @@ func formatOne(ctx object.Context, spec string, verb byte, arg object.Value) (st
 }
 
 func parseInt(s string) (int64, bool) {
-	s = strings.ReplaceAll(s, "_", "")
-	i, err := strconv.ParseInt(s, 0, 64)
-	if err != nil {
+	i, ok := parseInteger(s)
+	if !ok {
 		return 0, false
 	}
-	return i, true
+	return i.AsInt()
+}
+
+// parseInteger reads an integer literal, with an optional sign, base
+// prefix and underscores, as Integer() does.
+func parseInteger(s string) (object.Value, bool) {
+	s = strings.ReplaceAll(s, "_", "")
+	if i, err := strconv.ParseInt(s, 0, 64); err == nil {
+		return object.Int(i), true
+	}
+	b, ok := new(big.Int).SetString(s, 0)
+	if !ok {
+		return object.Value{}, false
+	}
+	return object.BigInt(b), true
 }
 
 func parseFloat(s string) (float64, bool) {
@@ -161,7 +180,7 @@ func parseFloat(s string) (float64, bool) {
 
 // leadingInt reads the integer at the start of s the way String#to_i does:
 // optional sign and digits, 0 when there are none.
-func leadingInt(s string) int64 {
+func leadingInt(s string) object.Value {
 	s = strings.TrimLeft(s, " \t\n")
 	end := 0
 	if end < len(s) && (s[end] == '-' || s[end] == '+') {
@@ -170,8 +189,14 @@ func leadingInt(s string) int64 {
 	for end < len(s) && (s[end] >= '0' && s[end] <= '9' || s[end] == '_' && end > 0) {
 		end++
 	}
-	i, _ := strconv.ParseInt(strings.ReplaceAll(s[:end], "_", ""), 10, 64)
-	return i
+	digits := strings.ReplaceAll(s[:end], "_", "")
+	if i, err := strconv.ParseInt(digits, 10, 64); err == nil {
+		return object.Int(i)
+	}
+	if b, ok := new(big.Int).SetString(digits, 10); ok {
+		return object.BigInt(b)
+	}
+	return object.Int(0)
 }
 
 // leadingFloat reads the float at the start of s the way String#to_f does.

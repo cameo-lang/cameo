@@ -1,6 +1,7 @@
 package protogen
 
 import (
+	"math/big"
 	"strings"
 	"testing"
 	"time"
@@ -226,5 +227,24 @@ func TestEnvelopeRegexp(t *testing.T) {
 	}
 	if got := back.Regexp(); got.Source != re.Source || got.Options != re.Options || got.MatchAt("12-X", 0) == nil {
 		t.Fatalf("round trip changed %s into %s", re.Inspect(), got.Inspect())
+	}
+}
+
+// An integer beyond 64 bits travels as its digits.
+func TestEnvelopeBigInt(t *testing.T) {
+	reg := NewRegistry()
+	enc, dec := NewEncoder(reg), NewDecoder(reg, nil)
+	b, _ := new(big.Int).SetString("-123456789012345678901234567890", 10)
+	data, err := enc.Encode(object.NewList(object.BigInt(b), object.Int(7)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	back, err := dec.Decode(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	elems := back.List().Elems
+	if elems[0].Kind() != object.KindBig || elems[0].Big().Cmp(b) != 0 || elems[1].Kind() != object.KindInt {
+		t.Fatalf("round trip gave %v", elems)
 	}
 }

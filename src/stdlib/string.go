@@ -1,6 +1,7 @@
 package stdlib
 
 import (
+	"math/big"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -158,20 +159,24 @@ func installString() {
 			if !ok {
 				return object.Int(0), nil
 			}
-			return object.Int(i), nil
+			return i, nil
 		}
-		return object.Int(leadingInt(str(self))), nil
+		return leadingInt(str(self)), nil
 	})
 	def(c, "to_f", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Float(leadingFloat(str(self))), nil
 	})
 	def(c, "hex", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		i, _ := parseIntBase(strings.TrimPrefix(strings.TrimSpace(str(self)), "0x"), 16)
-		return object.Int(i), nil
+		if i, ok := parseIntBase(strings.TrimPrefix(strings.TrimSpace(str(self)), "0x"), 16); ok {
+			return i, nil
+		}
+		return object.Int(0), nil
 	})
 	def(c, "oct", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		i, _ := parseIntBase(strings.TrimSpace(str(self)), 8)
-		return object.Int(i), nil
+		if i, ok := parseIntBase(strings.TrimSpace(str(self)), 8); ok {
+			return i, nil
+		}
+		return object.Int(0), nil
 	})
 	def(c, "ord", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if str(self) == "" {
@@ -538,34 +543,14 @@ func rangeBounds(ctx object.Context, r *object.Range, n int) (start, length int,
 	return lo, hi - lo + 1, true
 }
 
-func parseIntBase(s string, base int) (int64, bool) {
+func parseIntBase(s string, base int) (object.Value, bool) {
 	s = strings.ReplaceAll(s, "_", "")
-	var v int64
-	neg := false
-	if strings.HasPrefix(s, "-") {
-		neg = true
-		s = s[1:]
+	if base < 2 || base > 36 || s == "" || s[0] == '+' {
+		return object.Value{}, false
 	}
-	if s == "" {
-		return 0, false
+	b, ok := new(big.Int).SetString(strings.ToLower(s), base)
+	if !ok {
+		return object.Value{}, false
 	}
-	for _, r := range strings.ToLower(s) {
-		var d int
-		switch {
-		case r >= '0' && r <= '9':
-			d = int(r - '0')
-		case r >= 'a' && r <= 'z':
-			d = int(r-'a') + 10
-		default:
-			return 0, false
-		}
-		if d >= base {
-			return 0, false
-		}
-		v = v*int64(base) + int64(d)
-	}
-	if neg {
-		v = -v
-	}
-	return v, true
+	return object.BigInt(b), true
 }

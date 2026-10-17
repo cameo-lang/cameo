@@ -65,7 +65,7 @@ Every value is immutable. The kinds of value are:
 |---|---|
 | `nil` | absence (proto3 `optional` not set) |
 | `true`, `false` | `bool` |
-| Integer | `int64` |
+| Integer | `int64`; arbitrary precision in amber, so beyond 64 bits it travels in `amber.Value` as `big_value`, its decimal digits, and an `int` field, a protobuf `int64`, refuses it |
 | Float | `double` |
 | String | `string` |
 | Symbol | an `enum` field's value where the class declares one; a `string` everywhere else, see *Symbols* |
@@ -373,9 +373,9 @@ err        = amber.Run(file, src, stdout, stderr)  // what the binary does
 ```
 
 Go values convert to amber values by the table under *Values*: nil, bool,
-the integer and float kinds, string, `[]byte`, `[]any`, `map[string]any`,
+the integer and float kinds and `*big.Int`, string, `[]byte`, `[]any`, `map[string]any`,
 and a `proto.Message` whose full name is a loaded class's message. Results
-come back as nil, bool, int64, float64, string, `[]byte`, `[]any`,
+come back as nil, bool, int64 (a `*big.Int` beyond 64 bits), float64, string, `[]byte`, `[]any`,
 `map[any]any`, and a `proto.Message` for an instance; a symbol, range or
 class stays an `object.Value`.
 
@@ -534,6 +534,10 @@ re-opened by accident:
     position past 0 reads the text from there, so `^`, `\A` and `\b` take
     that position for the start. An Onigmo engine (go-ruby-regexp) was
     tried and set aside for now: it needs Go 1.27.
+  - An Integer has two forms, `int64` and, once arithmetic leaves 64 bits,
+    a `big.Int`; a result that fits moves back, so a number has one form
+    and equality and hash keys need no conversion. The 64-bit fast paths
+    check for overflow and hand that case to the ordinary call.
   - Kept out: `GC`, `ENV`, metaprogramming (`define_method`, `send`,
     `eval`, `instance_variable_set`), setters and untyped fields, fibers
     and threads, and anything that touches the file system.

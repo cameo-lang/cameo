@@ -2,6 +2,7 @@ package eval
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/radiospiel/amber/src/object"
 	"github.com/radiospiel/amber/src/syntax"
@@ -57,7 +58,10 @@ func binaryOp(name string) func(a, b object.Value) object.Value {
 	case "+":
 		return func(a, b object.Value) object.Value {
 			if x, y, ok := ints(a, b); ok {
-				return object.Int(x + y)
+				if r, ok := object.AddInt(x, y); ok {
+					return object.Int(r)
+				}
+				return object.Value{}
 			}
 			if x, y, ok := floats(a, b); ok {
 				return object.Float(x + y)
@@ -67,7 +71,10 @@ func binaryOp(name string) func(a, b object.Value) object.Value {
 	case "-":
 		return func(a, b object.Value) object.Value {
 			if x, y, ok := ints(a, b); ok {
-				return object.Int(x - y)
+				if r, ok := object.SubInt(x, y); ok {
+					return object.Int(r)
+				}
+				return object.Value{}
 			}
 			if x, y, ok := floats(a, b); ok {
 				return object.Float(x - y)
@@ -77,7 +84,10 @@ func binaryOp(name string) func(a, b object.Value) object.Value {
 	case "*":
 		return func(a, b object.Value) object.Value {
 			if x, y, ok := ints(a, b); ok {
-				return object.Int(x * y)
+				if r, ok := object.MulInt(x, y); ok {
+					return object.Int(r)
+				}
+				return object.Value{}
 			}
 			if x, y, ok := floats(a, b); ok {
 				return object.Float(x * y)
@@ -85,10 +95,10 @@ func binaryOp(name string) func(a, b object.Value) object.Value {
 			return object.Value{}
 		}
 	case "/":
-		// Integer division floors, as Ruby's does; a zero divisor and the
-		// floats go the ordinary way.
+		// Integer division floors, as Ruby's does; a zero divisor, the one
+		// quotient that overflows and the floats go the ordinary way.
 		return func(a, b object.Value) object.Value {
-			if x, y, ok := ints(a, b); ok && y != 0 {
+			if x, y, ok := ints(a, b); ok && y != 0 && (y != -1 || x != math.MinInt64) {
 				q := x / y
 				if x%y != 0 && (x < 0) != (y < 0) {
 					q--

@@ -1,0 +1,26 @@
+# Integers have arbitrary precision: arithmetic that leaves 64 bits moves
+# to a big integer, and a result that fits moves back.
+def fact(n) = n > 1 ? n * fact(n - 1) : 1
+
+p fact(30)
+p fact(30) / fact(28)
+p 2**64, 2**64 - 1, -(2**63) - 1
+p 9223372036854775807 + 1, (2**64 - 2**64).class
+p 99999999999999999999 % 7, -99999999999999999999 / 7
+p (2**100).divmod(3**20)
+p 2**100 > 2**99, 2**64 == 18446744073709551616.0
+p (2**100).to_s(16), (2**70).digits.first(3), (2**70).bit_length
+p (2**70) & (2**69 + 5), 1 << 70, (2**70) >> 60
+p 3.pow(1000, 1000000007)
+p Integer("123456789012345678901234567890"), "98765432109876543210".to_i
+p (10**20).to_f, 1e20.to_i, (10**25).fdiv(10**5)
+p 12345678901234567890123.round(-5), -12345678901234567890150.round(-2)
+p [2**70, 1, -(2**80)].sort, { 2**70 => :big }[2**70]
+p Integer.sqrt(10**40), (2**70).gcd(2**35 * 3)
+p "%d %x" % [2**70, 2**70]
+
+big = 2**100
+p (big..big + 3).to_a.size, (big..big + 3).sum
+p (1..).bsearch { |x| x >= 10**30 } == 10**30
+p (1..10**10).sum
+

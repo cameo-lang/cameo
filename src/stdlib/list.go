@@ -201,6 +201,8 @@ func installList() {
 	})
 	def(c, "*", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		switch args[0].Kind() {
+		case object.KindBig:
+			return object.Value{}, ctx.Raise(object.RangeError, "bignum too big to convert into 'long'")
 		case object.KindInt:
 			a := args[0].Int()
 			if a < 0 {
@@ -612,6 +614,8 @@ func listIndex(ctx object.Context, l *object.List, args []object.Value) (object.
 	switch len(args) {
 	case 1:
 		switch args[0].Kind() {
+		case object.KindBig:
+			return object.Value{}, ctx.Raise(object.RangeError, "bignum too big to convert into 'long'")
 		case object.KindInt:
 			a := args[0].Int()
 			i := int(a)
