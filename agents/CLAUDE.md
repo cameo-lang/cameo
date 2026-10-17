@@ -107,8 +107,8 @@ Always, without being asked: a pushed branch is not a deliverable. Open it to
 the template in [WRITING.md](WRITING.md) (GitHub pre-fills it from
 `.github/pull_request_template.md`), then **follow CI to a conclusion** on the
 top of the stack (see above): read a failure, fix it, push again. Handing back
-a red pull request is handing back the task. An empty list of checks means the run has not started, not that it
-passed.
+a red pull request is handing back the task. An empty list of checks means
+the run has not started, not that it passed.
 
 ### Stacked pull requests
 
