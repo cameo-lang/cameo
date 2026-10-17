@@ -9,7 +9,7 @@ the first two of them were thrown away by the next operator.
 ## A tree of unboxed results
 
 An arithmetic expression over integers now compiles to a tree of
-`intThunk`s ([src/eval/compile.go:449](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/eval/compile.go#L449-L457)). An
+`intThunk`s ([src/eval/compile.go:449](https://github.com/radiospiel/amber/blob/7931e0d7ee41f94fb90f86cf3b7fb80916003751/src/eval/compile.go#L449-L457)). An
 `intThunk` returns its result as a plain `int64` when it is an integer,
 and boxed only when it is anything else. An operator node asks its operands
 for integers, computes, and passes an `int64` up; only the root of the tree
