@@ -308,7 +308,11 @@ var (
 	MatchDataClass = NewClass("MatchData", ObjectClass)
 	ProcClass      = NewClass("Proc", ObjectClass)
 	ProcessClass   = NewClass("AsyncProcess", ObjectClass)
-	ExceptionClass = NewClass("Exception", ObjectClass)
+	// EnumeratorClass is Enumerator; LazyClass, Enumerator::Lazy, is
+	// bound inside it.
+	EnumeratorClass = NewClass("Enumerator", ObjectClass)
+	LazyClass       = NewClass("Lazy", EnumeratorClass)
+	ExceptionClass  = NewClass("Exception", ObjectClass)
 	// Enumerable is the module List, Map, Set and Range include.
 	Enumerable = NewModule("Enumerable")
 	// Comparable is the module Integer, Float, String and Time include.
@@ -343,13 +347,16 @@ func init() {
 	MapClass.Include(Enumerable)
 	SetClass.Include(Enumerable)
 	RangeClass.Include(Enumerable)
+	EnumeratorClass.Include(Enumerable)
+	LazyClass.Lexical = EnumeratorClass
+	EnumeratorClass.Consts["Lazy"] = ClassValue(LazyClass)
 	IntegerClass.Include(Comparable)
 	FloatClass.Include(Comparable)
 	StringClass.Include(Comparable)
 	TimeClass.Include(Comparable)
 	BasicClasses = []*Class{
 		ObjectClass, ModuleClass, ClassClass, NilClass, BoolClass, IntegerClass, FloatClass,
-		StringClass, SymbolClass, BytesClass, ListClass, MapClass, SetClass, RangeClass, TimeClass, RegexpClass, MatchDataClass, ProcClass,
+		StringClass, SymbolClass, BytesClass, ListClass, MapClass, SetClass, RangeClass, TimeClass, RegexpClass, MatchDataClass, EnumeratorClass, ProcClass,
 		ProcessClass, ExceptionClass, Enumerable, Comparable, MathModule,
 		StandardError, RuntimeError, ArgumentError, TypeError, NameError, NoMethodError, KeyError,
 		IndexError, RangeError, ZeroDivisionError, StopIteration, NoMatchingPattern, FrozenError,

@@ -1,0 +1,22 @@
+# Lazy enumerators: lazy builds a pipeline that does no work until first,
+# to_a, force or each asks, so an endless source works; take stops it. A
+# blockless cycle or then is an enumerator too.
+p (1..).lazy.map { |x| x * 2 }.select { |x| x % 3 == 0 }.first(3)
+p (1..3).lazy, (1..3).lazy.map { |x| x }, (1..).lazy.take(5), [1].cycle, 1.then, [1, 2].cycle.lazy
+p [[1, 2]].cycle.lazy.take(10).flat_map { |x| x }.take(3).to_a
+a = (1..3).lazy
+b = a.map { |x| x }
+p b.zip(["a", "b", "c"]).take(3).force, a.zip.take(3).force, b.zip("a".."c").take(3).force
+p (1..).lazy.zip(10..).first(2)
+p [1, 2].cycle.take(5), [1, 2].cycle.first(3), [3, 4].cycle.find { |x| x > 3 }, [1, 2].cycle(2).to_a
+p (1..20).lazy.reject(&:odd?).drop(2).take_while { |x| x < 12 }.to_a
+p [1, nil, 2, 1, 3].lazy.compact.uniq.with_index.to_a, [4, 5].lazy.each_with_index.map { |x, i| x * i }.to_a
+p (1..).lazy.filter_map { |x| x * 2 if x.even? }.first(2), (1..).lazy.take(0).to_a, ["a", 1, :b].lazy.grep(Integer).to_a
+p (1..3).lazy.eager, (1..3).lazy.map { _1 + 1 }.sum, (1..3).lazy.include?(2), (1..).lazy.include?(5)
+p 1.then.to_a, 5.then { _1 + 1 }, (1..Float::INFINITY).lazy.map { _1 * 2 }.first(2)
+c = 0
+(1..).lazy.map { |x| c += 1; x }.first(3)
+p c
+x = [1, 2, 3].lazy.map { |v| v * 10 }
+p x.to_a, x.to_a, x.class, x.eager.class
+p (1..3).lazy.zip("a".."c") { |x, y| p [x, y] }

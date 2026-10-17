@@ -164,21 +164,6 @@ unsupported/encodings	string_scrub--scrub_unknown_but_valid_coderange.rb	benchma
 unsupported/encodings	string_scrub--scrub_unknown_but_valid_coderange_worst_case.rb	benchmark/string_scrub.yml, entry scrub_unknown_but_valid_coderange_worst_case	string encodings (force_encoding, .b)
 unsupported/encodings	string_valid_encoding_p--valid_enc_false.rb	benchmark/string_valid_encoding_p.yml, entry valid_enc_false	string encodings (force_encoding, .b)
 unsupported/encodings	string_valid_encoding_p--valid_enc_true.rb	benchmark/string_valid_encoding_p.yml, entry valid_enc_true	string encodings (force_encoding, .b)
-unsupported/enumerators	enum_lazy_flat_map--ary10.rb	benchmark/enum_lazy_flat_map.yml, entry ary10	lazy enumerators and blockless enumerators
-unsupported/enumerators	enum_lazy_flat_map--ary100.rb	benchmark/enum_lazy_flat_map.yml, entry ary100	lazy enumerators and blockless enumerators
-unsupported/enumerators	enum_lazy_flat_map--ary2.rb	benchmark/enum_lazy_flat_map.yml, entry ary2	lazy enumerators and blockless enumerators
-unsupported/enumerators	enum_lazy_flat_map--ary20.rb	benchmark/enum_lazy_flat_map.yml, entry ary20	lazy enumerators and blockless enumerators
-unsupported/enumerators	enum_lazy_flat_map--ary50.rb	benchmark/enum_lazy_flat_map.yml, entry ary50	lazy enumerators and blockless enumerators
-unsupported/enumerators	enum_lazy_flat_map--num10.rb	benchmark/enum_lazy_flat_map.yml, entry num10	lazy enumerators and blockless enumerators
-unsupported/enumerators	enum_lazy_flat_map--num3.rb	benchmark/enum_lazy_flat_map.yml, entry num3	lazy enumerators and blockless enumerators
-unsupported/enumerators	enum_lazy_zip--chain-take3_ary.rb	benchmark/enum_lazy_zip.yml, entry chain-take3_ary	lazy enumerators and blockless enumerators
-unsupported/enumerators	enum_lazy_zip--chain-take3_noarg.rb	benchmark/enum_lazy_zip.yml, entry chain-take3_noarg	lazy enumerators and blockless enumerators
-unsupported/enumerators	enum_lazy_zip--chain-take3_nonary.rb	benchmark/enum_lazy_zip.yml, entry chain-take3_nonary	lazy enumerators and blockless enumerators
-unsupported/enumerators	enum_lazy_zip--take3_ary.rb	benchmark/enum_lazy_zip.yml, entry take3_ary	lazy enumerators and blockless enumerators
-unsupported/enumerators	enum_lazy_zip--take3_noarg.rb	benchmark/enum_lazy_zip.yml, entry take3_noarg	lazy enumerators and blockless enumerators
-unsupported/enumerators	enum_lazy_zip--take3_nonary.rb	benchmark/enum_lazy_zip.yml, entry take3_nonary	lazy enumerators and blockless enumerators
-unsupported/enumerators	kernel_then--kernel_then_enum.rb	benchmark/kernel_then.yml, entry kernel_then_enum	lazy enumerators and blockless enumerators
-unsupported/enumerators	kernel_then--kernel_yield_self_enum.rb	benchmark/kernel_then.yml, entry kernel_yield_self_enum	lazy enumerators and blockless enumerators
 unsupported/environment	array_small_and.rb	benchmark/array_small_and.rb	environment and process
 unsupported/environment	array_small_diff.rb	benchmark/array_small_diff.rb	environment and process
 unsupported/environment	array_small_or.rb	benchmark/array_small_or.rb	environment and process
@@ -725,6 +710,13 @@ works	array_sort_int--ary2.sort.rb	benchmark/array_sort_int.yml, entry ary2.sort
 works	array_values_at_int.rb	benchmark/array_values_at_int.rb	
 works	array_values_at_range.rb	benchmark/array_values_at_range.rb	
 works	bighash.rb	benchmark/bighash.rb	
+works	enum_lazy_flat_map--ary10.rb	benchmark/enum_lazy_flat_map.yml, entry ary10	
+works	enum_lazy_flat_map--ary100.rb	benchmark/enum_lazy_flat_map.yml, entry ary100	
+works	enum_lazy_flat_map--ary2.rb	benchmark/enum_lazy_flat_map.yml, entry ary2	
+works	enum_lazy_flat_map--ary20.rb	benchmark/enum_lazy_flat_map.yml, entry ary20	
+works	enum_lazy_flat_map--ary50.rb	benchmark/enum_lazy_flat_map.yml, entry ary50	
+works	enum_lazy_flat_map--num10.rb	benchmark/enum_lazy_flat_map.yml, entry num10	
+works	enum_lazy_flat_map--num3.rb	benchmark/enum_lazy_flat_map.yml, entry num3	
 works	enum_lazy_grep_v_100.rb	benchmark/enum_lazy_grep_v_100.rb	
 works	enum_lazy_grep_v_20.rb	benchmark/enum_lazy_grep_v_20.rb	
 works	enum_lazy_grep_v_50.rb	benchmark/enum_lazy_grep_v_50.rb	
@@ -735,9 +727,15 @@ works	enum_lazy_zip--block.rb	benchmark/enum_lazy_zip.yml, entry block
 works	enum_lazy_zip--chain-first_ary.rb	benchmark/enum_lazy_zip.yml, entry chain-first_ary	
 works	enum_lazy_zip--chain-first_noarg.rb	benchmark/enum_lazy_zip.yml, entry chain-first_noarg	
 works	enum_lazy_zip--chain-first_nonary.rb	benchmark/enum_lazy_zip.yml, entry chain-first_nonary	
+works	enum_lazy_zip--chain-take3_ary.rb	benchmark/enum_lazy_zip.yml, entry chain-take3_ary	
+works	enum_lazy_zip--chain-take3_noarg.rb	benchmark/enum_lazy_zip.yml, entry chain-take3_noarg	
+works	enum_lazy_zip--chain-take3_nonary.rb	benchmark/enum_lazy_zip.yml, entry chain-take3_nonary	
 works	enum_lazy_zip--first_ary.rb	benchmark/enum_lazy_zip.yml, entry first_ary	
 works	enum_lazy_zip--first_noarg.rb	benchmark/enum_lazy_zip.yml, entry first_noarg	
 works	enum_lazy_zip--first_nonary.rb	benchmark/enum_lazy_zip.yml, entry first_nonary	
+works	enum_lazy_zip--take3_ary.rb	benchmark/enum_lazy_zip.yml, entry take3_ary	
+works	enum_lazy_zip--take3_noarg.rb	benchmark/enum_lazy_zip.yml, entry take3_noarg	
+works	enum_lazy_zip--take3_nonary.rb	benchmark/enum_lazy_zip.yml, entry take3_nonary	
 works	enum_minmax--set10.max.rb	benchmark/enum_minmax.yml, entry set10.max	
 works	enum_minmax--set10.min.rb	benchmark/enum_minmax.yml, entry set10.min	
 works	enum_minmax--set10.minmax.rb	benchmark/enum_minmax.yml, entry set10.minmax	
@@ -852,7 +850,9 @@ works	kernel_float--float.rb	benchmark/kernel_float.yml, entry float
 works	kernel_float--float_false.rb	benchmark/kernel_float.yml, entry float_false	
 works	kernel_float--float_true.rb	benchmark/kernel_float.yml, entry float_true	
 works	kernel_then--kernel_then.rb	benchmark/kernel_then.yml, entry kernel_then	
+works	kernel_then--kernel_then_enum.rb	benchmark/kernel_then.yml, entry kernel_then_enum	
 works	kernel_then--kernel_yield_self.rb	benchmark/kernel_then.yml, entry kernel_yield_self	
+works	kernel_then--kernel_yield_self_enum.rb	benchmark/kernel_then.yml, entry kernel_yield_self_enum	
 works	keyword_arguments--kw_and_splat_to_kw.rb	benchmark/keyword_arguments.yml, entry kw_and_splat_to_kw	
 works	keyword_arguments--kw_and_splat_to_kw_splat.rb	benchmark/keyword_arguments.yml, entry kw_and_splat_to_kw_splat	
 works	keyword_arguments--kw_splat_to_kw.rb	benchmark/keyword_arguments.yml, entry kw_splat_to_kw	
