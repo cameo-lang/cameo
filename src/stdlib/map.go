@@ -322,7 +322,7 @@ func installMap() {
 		return object.NewList(pairs(self)...), nil
 	})
 	def(c, "sort", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		sorted, err := sortValues(ctx, pairs(self), block)
+		sorted, err := sortValues(ctx, pairs(self), 0, block)
 		if err != nil {
 			return object.Value{}, err
 		}

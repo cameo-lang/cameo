@@ -1,6 +1,9 @@
 package object
 
-import "testing"
+import (
+	"math"
+	"testing"
+)
 
 func TestKeyIsStructural(t *testing.T) {
 	a := NewList(Int(1), String("x"), MapValue(MapOf(Symbol("k"), Float(2.5))))
@@ -156,5 +159,26 @@ func TestStringsCompareAcrossEncodings(t *testing.T) {
 	}
 	if Bytes([]byte{0xff}).Class() != StringClass || StringOf(KindASCII, "x").Str() != "x" {
 		t.Fatal("a binary or US-ASCII string is a String")
+	}
+}
+
+func TestListKinds(t *testing.T) {
+	// The kinds fit below the two bits Kinds keeps for itself.
+	if KindProcess >= 30 {
+		t.Fatalf("Kind %d does not fit in Kinds", KindProcess)
+	}
+	l := NewList(Int(1), Float(2), StringOf(KindASCII, "a"), Nil).List()
+	if want := Kinds(1<<KindInt | 1<<KindFloat | 1<<KindASCII | 1<<KindNil); l.Kinds() != want || l.Kinds() != want {
+		t.Fatalf("kinds %b, want %b", l.Kinds(), want)
+	}
+	if !NewList(Int(1), Int(2)).List().Kinds().Only(KindInt) {
+		t.Fatal("a list of integers is not Only(KindInt)")
+	}
+	nan := NewList(Float(1), Float(math.NaN())).List().Kinds()
+	if nan.Only(KindFloat) || nan&KindsNaN == 0 {
+		t.Fatalf("a NaN is not marked: %b", nan)
+	}
+	if NewList().List().Kinds().Only(KindInt) {
+		t.Fatal("an empty list is Only(KindInt)")
 	}
 }

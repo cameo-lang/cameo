@@ -234,8 +234,9 @@ puts srand(9) == 7
 }
 
 func TestSortsWithoutDispatch(t *testing.T) {
-	// Arrays of one builtin kind sort without calling <=>; a NaN, a mix of
-	// kinds or a block takes the general path, which raises where Ruby does.
+	// Collections of one builtin kind sort and find their extremes without
+	// calling <=>; a NaN, a mix of kinds or a block takes the general path,
+	// which raises where Ruby does.
 	src := `
 p [3.5, -0.0, 0.0, -2.0, 1e300, -Float::INFINITY].sort
 p ["b", "a".b, "é", "a", "", "B", "ab"].sort
@@ -252,6 +253,13 @@ begin
 rescue ArgumentError
   puts "mixed"
 end
+p [2.5, -1.0, 7.0].max, ["b", "a", "c"].min, [3, 1, 2].minmax, [1.0, 1, 0.5].min
+p Set[3.0, 1.5].sort, Set["b", "a"].max, (1..4).max(2)
+begin
+  [1.0, Float::NAN].max
+rescue ArgumentError
+  puts "nan"
+end
 `
 	expectOutput(t, src, `[-Infinity, -2.0, -0.0, 0.0, 3.5, 1.0e+300]
 ["", "B", "a", "a", "ab", "b", "é"]
@@ -260,5 +268,13 @@ end
 ["b", "a"]
 nan
 mixed
+7.0
+"a"
+[1, 3]
+0.5
+[1.5, 3.0]
+"b"
+[4, 3]
+nan
 `)
 }
