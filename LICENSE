@@ -1,0 +1,14 @@
+Copyright (c) 2026 the amber authors. All rights reserved.
+
+amber is proprietary software. This repository, its source code and the
+programs built from it are not licensed for use, copying, modification,
+distribution or sublicensing, in whole or in part, except with the prior
+written permission of the copyright holders.
+
+Access to this repository grants no licence beyond what that permission
+says. Unless agreed in writing, the software is provided "as is", without
+warranty of any kind, express or implied.
+
+Third-party code included in this repository remains under its own licence,
+in a LICENSE file beside it: src/assert is from simple-go, under the BSD
+3-Clause licence in src/assert/LICENSE.
