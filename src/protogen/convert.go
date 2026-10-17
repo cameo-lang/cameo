@@ -90,9 +90,9 @@ func (r *Registry) scalar(fd protoreflect.FieldDescriptor, t *object.FieldType, 
 		case object.KindFloat:
 			x := v.Float()
 			return protoreflect.ValueOfFloat64(float64(x)), nil
-		case object.KindInt:
-			x := v.Int()
-			return protoreflect.ValueOfFloat64(float64(x)), nil
+		case object.KindInt, object.KindBig:
+			x, _ := v.AsNumber()
+			return protoreflect.ValueOfFloat64(x), nil
 		}
 	case "bool":
 		return protoreflect.ValueOfBool(bool(v.Bool())), nil

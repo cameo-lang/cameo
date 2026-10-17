@@ -40,6 +40,12 @@ type Int struct {
 	Value int64
 }
 
+// BigInt is an integer literal beyond 64 bits, in decimal digits.
+type BigInt struct {
+	Pos
+	Digits string
+}
+
 // Float is a floating-point literal.
 type Float struct {
 	Pos

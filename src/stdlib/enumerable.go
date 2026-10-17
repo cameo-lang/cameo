@@ -521,14 +521,19 @@ func installEnumerable() {
 		}
 		return object.NewList(out...), nil
 	})
-	// reverse_each returns its receiver, as each does.
+	// reverse_each returns its receiver, as each does; without a block it
+	// returns the elements reversed.
 	def(e, "reverse_each", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if err := needBlock(ctx, block, "reverse_each"); err != nil {
-			return object.Value{}, err
-		}
 		elems, err := toList(ctx, self)
 		if err != nil {
 			return object.Value{}, err
+		}
+		if block.IsZero() {
+			out := make([]object.Value, len(elems))
+			for i, el := range elems {
+				out[len(elems)-1-i] = el
+			}
+			return object.NewList(out...), nil
 		}
 		for i := len(elems) - 1; i >= 0; i-- {
 			if _, err := ctx.Yield(block, elems[i]); err != nil {

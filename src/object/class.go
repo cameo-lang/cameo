@@ -325,6 +325,7 @@ var (
 	KeyError          = NewClass("KeyError", StandardError)
 	IndexError        = NewClass("IndexError", StandardError)
 	RangeError        = NewClass("RangeError", StandardError)
+	FloatDomainError  = NewClass("FloatDomainError", RangeError)
 	ZeroDivisionError = NewClass("ZeroDivisionError", StandardError)
 	StopIteration     = NewClass("StopIteration", StandardError)
 	NoMatchingPattern = NewClass("NoMatchingPatternError", StandardError)
@@ -333,6 +334,8 @@ var (
 	RegexpError       = NewClass("RegexpError", StandardError)
 	LocalJumpError    = NewClass("LocalJumpError", StandardError)
 	AmberError        = NewClass("AmberError", StandardError)
+	// MathDomainError is Math::DomainError, bound in Math, not at the top.
+	MathDomainError = NewClass("DomainError", ArgumentError)
 )
 
 func init() {
@@ -350,7 +353,7 @@ func init() {
 		ProcessClass, ExceptionClass, Enumerable, Comparable, MathModule,
 		StandardError, RuntimeError, ArgumentError, TypeError, NameError, NoMethodError, KeyError,
 		IndexError, RangeError, ZeroDivisionError, StopIteration, NoMatchingPattern, FrozenError,
-		NotImplementedErr, LocalJumpError, AmberError, RegexpError,
+		NotImplementedErr, LocalJumpError, AmberError, RegexpError, FloatDomainError,
 	}
 	for _, c := range BasicClasses {
 		ObjectClass.Consts[c.Name] = ClassValue(c)

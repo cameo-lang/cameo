@@ -2,6 +2,7 @@ package protogen
 
 import (
 	"fmt"
+	"math/big"
 	"sync"
 	"time"
 
@@ -22,7 +23,7 @@ import (
 //	    bool bool_value = 1; int64 int_value = 2; double float_value = 3;
 //	    string string_value = 4; bytes bytes_value = 5;
 //	    List list = 6; Map map = 7; Set set = 8; Range range = 9; Object object = 10;
-//	    Time time = 11; Regexp regexp = 12;
+//	    Time time = 11; Regexp regexp = 12; string big_value = 13;
 //	  }
 //	}
 //	message List { repeated Value items = 1; }
@@ -33,7 +34,8 @@ import (
 //	message Time { int64 seconds = 1; int32 nanos = 2; int32 offset = 3; string zone = 4; }
 //	message Regexp { string source = 1; int32 options = 2; }
 //
-// A Value with no kind set is nil. A symbol travels as a string. A map's
+// A Value with no kind set is nil. A symbol travels as a string. An integer
+// beyond 64 bits travels as big_value, its decimal digits. A map's
 // default value travels with it; a map with a default proc cannot travel. A time is
 // its instant, its UTC offset in seconds, and a zone of "UTC" for a UTC
 // time, "local" for the local zone, or none for a fixed offset.
@@ -58,6 +60,7 @@ const EnvelopeText = `message Value {
     Object object = 10;
     Time time = 11;
     Regexp regexp = 12;
+    string big_value = 13;
   }
 }
 
@@ -134,6 +137,7 @@ func envelope() (protoreflect.FileDescriptor, error) {
 				oneof(field("object", 10, descriptorpb.FieldDescriptorProto_TYPE_MESSAGE, "Object", opt)),
 				oneof(field("time", 11, descriptorpb.FieldDescriptorProto_TYPE_MESSAGE, "Time", opt)),
 				oneof(field("regexp", 12, descriptorpb.FieldDescriptorProto_TYPE_MESSAGE, "Regexp", opt)),
+				oneof(field("big_value", 13, descriptorpb.FieldDescriptorProto_TYPE_STRING, "", opt)),
 			},
 		}
 		items := func(name string) *descriptorpb.DescriptorProto {
@@ -217,6 +221,8 @@ func (e *Encoder) message(fd protoreflect.FileDescriptor, v object.Value) (*dyna
 	case object.KindInt:
 		v := v.Int()
 		set("int_value", protoreflect.ValueOfInt64(int64(v)))
+	case object.KindBig:
+		set("big_value", protoreflect.ValueOfString(v.Big().String()))
 	case object.KindFloat:
 		v := v.Float()
 		set("float_value", protoreflect.ValueOfFloat64(float64(v)))
@@ -403,6 +409,12 @@ func (d *Decoder) value(msg protoreflect.Message) (object.Value, error) {
 		return object.Bool(pv.Bool()), nil
 	case "int_value":
 		return object.Int(pv.Int()), nil
+	case "big_value":
+		b, ok := new(big.Int).SetString(pv.String(), 10)
+		if !ok {
+			return object.Value{}, fmt.Errorf("amber: %q is not an integer", pv.String())
+		}
+		return object.BigInt(b), nil
 	case "float_value":
 		return object.Float(pv.Float()), nil
 	case "string_value":

@@ -3,6 +3,7 @@ package syntax
 import (
 	"errors"
 	"fmt"
+	"math/big"
 	"slices"
 	"strings"
 
@@ -133,8 +134,7 @@ func (c *converter) expr(n ast.Node) Node {
 	case *ast.IntLit:
 		return &Int{c.pos(), n.Value}
 	case *ast.BignumLit:
-		c.fail("integer literal %s does not fit in 64 bits", n.Val)
-		return nil
+		return &BigInt{c.pos(), n.Val.String()}
 	case *ast.FloatLit:
 		return &Float{c.pos(), n.Value}
 	case *ast.RationalLit:
@@ -351,6 +351,8 @@ func (c *converter) unary(n *ast.UnaryExpr) Node {
 		switch lit := n.Operand.(type) {
 		case *ast.IntLit:
 			return &Int{c.pos(), -lit.Value}
+		case *ast.BignumLit:
+			return &BigInt{c.pos(), new(big.Int).Neg(lit.Val).String()}
 		case *ast.FloatLit:
 			return &Float{c.pos(), -lit.Value}
 		}

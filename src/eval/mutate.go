@@ -510,7 +510,12 @@ func appendStrings(in *Interp, cur object.Value, args []object.Value, line int) 
 		case object.KindString:
 			b.WriteString(a.Str())
 		case object.KindInt:
+			if c := a.Int(); c < 0 || c > 0x10ffff {
+				return object.Value{}, in.raise(object.RangeError, line, "%d out of char range", c)
+			}
 			b.WriteRune(rune(a.Int()))
+		case object.KindBig:
+			return object.Value{}, in.raise(object.RangeError, line, "bignum out of char range")
 		default:
 			return object.Value{}, in.raise(object.TypeError, line, "no implicit conversion of %s into String", typeName(a))
 		}

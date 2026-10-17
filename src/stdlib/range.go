@@ -3,6 +3,7 @@ package stdlib
 import (
 	"iter"
 	"math"
+	"math/big"
 
 	"github.com/radiospiel/amber/src/object"
 )
@@ -30,6 +31,12 @@ func installRange() {
 			if lo, ok := r(self).Lo.AsInt(); ok {
 				for i := int64(0); i < n; i++ {
 					out = append(out, object.Int(lo+i))
+				}
+				return object.NewList(out...), nil
+			}
+			if lo := r(self).Lo; lo.IsInteger() {
+				for i := int64(0); i < n; i++ {
+					out = append(out, object.BigInt(new(big.Int).Add(bigOf(lo), big.NewInt(i))))
 				}
 				return object.NewList(out...), nil
 			}
@@ -78,31 +85,27 @@ func installRange() {
 		return object.Bool(r(self).Exclusive), nil
 	})
 	def(c, "size", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		lo, ok1 := r(self).Lo.AsInt()
-		hi, ok2 := r(self).Hi.AsInt()
-		if !ok1 {
+		if !r(self).Lo.IsInteger() {
 			if _, _, _, ok := rangeStrings(r(self)); ok {
 				return object.Nil, nil
 			}
 			return object.Value{}, ctx.Raise(object.TypeError, "can't iterate from %s", kindName(object.OrNil(r(self).Lo)))
 		}
-		if !ok2 {
+		lo, hi, ok := intEnds(r(self))
+		if !ok {
 			if r(self).Hi.IsZero() {
 				return object.Float(math.Inf(1)), nil
 			}
 			return object.Nil, nil
 		}
-		n := int64(hi - lo + 1)
-		if r(self).Exclusive {
-			n--
+		n := new(big.Int).Sub(bigOf(hi), bigOf(lo))
+		if n.Add(n, big.NewInt(1)).Sign() < 0 {
+			return object.Int(0), nil
 		}
-		if n < 0 {
-			n = 0
-		}
-		return object.Int(n), nil
+		return object.BigInt(n), nil
 	})
 	def(c, "count", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if _, ok := r(self).Lo.AsInt(); ok && len(args) == 0 && block.IsZero() {
+		if r(self).Lo.IsInteger() && len(args) == 0 && block.IsZero() {
 			return c.Methods["size"].Native(ctx, self, nil, nil, object.Value{})
 		}
 		return object.Enumerable.Methods["count"].Native(ctx, self, args, kw, block)
@@ -144,25 +147,47 @@ func installRange() {
 			}
 			return self, nil
 		}
-		lo, ok := r(self).Lo.AsInt()
-		if !ok {
+		if !r(self).Lo.IsInteger() {
 			return object.Value{}, ctx.Raise(object.TypeError, "can't iterate from %s", kindName(object.OrNil(r(self).Lo)))
 		}
 		if r(self).Hi.IsZero() {
-			for i := lo; ; i++ {
-				if _, err := ctx.Yield(block, object.Int(i)); err != nil {
+			for i := r(self).Lo; ; {
+				if _, err := ctx.Yield(block, i); err != nil {
 					return object.Value{}, err
+				}
+				if x, ok := i.AsInt(); ok && x < math.MaxInt64 {
+					i = object.Int(x + 1)
+				} else {
+					i = object.BigInt(new(big.Int).Add(bigOf(i), big.NewInt(1)))
 				}
 			}
 		}
-		elems, err := RangeElems(ctx, r(self))
+		lo, hi, ok := intEnds(r(self))
+		if !ok {
+			return object.Value{}, ctx.Raise(object.TypeError, "can't iterate from %s", kindName(object.OrNil(r(self).Lo)))
+		}
+		err := eachInteger(lo, hi, 1, func(v object.Value) error {
+			_, err := ctx.Yield(block, v)
+			return err
+		})
 		if err != nil {
 			return object.Value{}, err
 		}
-		for _, e := range elems {
-			if _, err := ctx.Yield(block, e); err != nil {
-				return object.Value{}, err
-			}
+		return self, nil
+	})
+	// reverse_each walks a range of integers down from its end, without
+	// listing it first; any other range reverses its list.
+	def(c, "reverse_each", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		lo, hi, ok := intEnds(r(self))
+		if !ok || block.IsZero() {
+			return object.Enumerable.Methods["reverse_each"].Native(ctx, self, args, kw, block)
+		}
+		err := eachInteger(hi, lo, -1, func(v object.Value) error {
+			_, err := ctx.Yield(block, v)
+			return err
+		})
+		if err != nil {
+			return object.Value{}, err
 		}
 		return self, nil
 	})
@@ -200,16 +225,16 @@ func installRange() {
 	})
 	def(c, "to_list", 0, c.Methods["to_a"].Native)
 	def(c, "sum", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		lo, ok1 := r(self).Lo.AsInt()
-		hi, ok2 := r(self).Hi.AsInt()
-		if ok1 && ok2 && block.IsZero() && len(args) == 0 {
-			if r(self).Exclusive {
-				hi--
-			}
-			if hi < lo {
+		if lo, hi, ok := intEnds(r(self)); ok && block.IsZero() && len(args) == 0 {
+			l, h := bigOf(lo), bigOf(hi)
+			if h.Cmp(l) < 0 {
 				return object.Int(0), nil
 			}
-			return object.Int((int64(lo) + int64(hi)) * (int64(hi) - int64(lo) + 1) / 2), nil
+			// (lo+hi) * (hi-lo+1) / 2, which one of the factors makes even.
+			n := new(big.Int).Sub(h, l)
+			n.Add(n, big.NewInt(1))
+			sum := new(big.Int).Add(l, h)
+			return object.BigInt(sum.Rsh(sum.Mul(sum, n), 1)), nil
 		}
 		return object.Enumerable.Methods["sum"].Native(ctx, self, args, kw, block)
 	})
@@ -258,17 +283,17 @@ func installRange() {
 		if !r(self).Exclusive {
 			return hi, nil
 		}
-		hiI, ok := hi.AsInt()
-		if !ok {
+		if !hi.IsInteger() {
 			return object.Value{}, ctx.Raise(object.TypeError, "cannot exclude non Integer end value")
 		}
 		if cmp == 0 {
 			return object.Nil, nil
 		}
-		if _, ok := lo.AsInt(); !ok {
+		if !lo.IsInteger() {
 			return object.Value{}, ctx.Raise(object.TypeError, "cannot exclude end value with non Integer begin value")
 		}
-		return object.Int(hiI - 1), nil
+		_, last, _ := intEnds(r(self))
+		return last, nil
 	})
 	def(c, "==", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Bool(object.Equal(self, args[0])), nil
@@ -359,22 +384,44 @@ func RangeElems(ctx object.Context, r *object.Range) ([]object.Value, error) {
 		}
 		return out, nil
 	}
-	lo, ok1 := r.Lo.AsInt()
-	hi, ok2 := r.Hi.AsInt()
-	if !ok1 || !ok2 {
-		if r.Hi.IsZero() && ok1 {
+	lo, hi, ok := intEnds(r)
+	if !ok {
+		if r.Hi.IsZero() && r.Lo.IsInteger() {
 			return nil, ctx.Raise(object.RangeError, "cannot convert endless range to a list")
 		}
 		return nil, ctx.Raise(object.TypeError, "can't iterate from %s", kindName(object.OrNil(r.Lo)))
 	}
-	if r.Exclusive {
-		hi--
-	}
 	out := []object.Value{}
-	for i := lo; i <= hi; i++ {
-		out = append(out, object.Int(i))
+	if lo, ok := lo.AsInt(); ok {
+		if hi, ok := hi.AsInt(); ok {
+			for i := lo; i <= hi; i++ {
+				out = append(out, object.Int(i))
+			}
+			return out, nil
+		}
 	}
-	return out, nil
+	err := eachInteger(lo, hi, 1, func(v object.Value) error {
+		out = append(out, v)
+		return nil
+	})
+	return out, err
+}
+
+// intEnds reads a range of integers as its first and last, the end less
+// one for an exclusive range; ok is false for any other range.
+func intEnds(r *object.Range) (lo, hi object.Value, ok bool) {
+	if !r.Lo.IsInteger() || !r.Hi.IsInteger() {
+		return object.Value{}, object.Value{}, false
+	}
+	hi = r.Hi
+	if r.Exclusive {
+		if h, ok := hi.AsInt(); ok && h > math.MinInt64 {
+			hi = object.Int(h - 1)
+		} else {
+			hi = object.BigInt(new(big.Int).Sub(bigOf(hi), big.NewInt(1)))
+		}
+	}
+	return r.Lo, hi, true
 }
 
 // bsearch is Range#bsearch over integers or floats, after CRuby's
@@ -445,35 +492,67 @@ func bsearch(ctx object.Context, r *object.Range, block object.Value) (object.Va
 		return search(floatOrder(l), floatOrder(h), r.Exclusive, func(i int64) object.Value { return object.Float(orderFloat(i)) })
 	}
 	asInt := func(i int64) object.Value { return object.Int(i) }
-	l, loInt := lo.AsInt()
-	h, hiInt := hi.AsInt()
-	switch {
-	case loInt && hiInt:
-		return search(l, h, r.Exclusive, asInt)
-	case loInt && hi.IsNil():
-		for diff := int64(1); diff > 0; diff *= 2 {
-			found, smaller, err := check(object.Int(l + diff))
+	// searchBig is CRuby's bsearch_integer_range, for bounds beyond 64 bits.
+	searchBig := func(low, high *big.Int, exclusive bool) (object.Value, error) {
+		low, high = new(big.Int).Sub(low, big.NewInt(1)), new(big.Int).Set(high)
+		if !exclusive {
+			high.Add(high, big.NewInt(1))
+		}
+		next := new(big.Int)
+		for next.Add(low, big.NewInt(1)).Cmp(high) < 0 {
+			mid := new(big.Int).Rsh(new(big.Int).Add(low, high), 1)
+			v := object.BigInt(mid)
+			found, smaller, err := check(v)
 			if err != nil || found {
-				return object.Int(l + diff), err
+				return v, err
 			}
 			if smaller {
-				return search(l, l+diff, false, asInt)
+				high = mid
+			} else {
+				low = mid
 			}
 		}
-	case lo.IsNil() && hiInt:
-		for diff := int64(-1); diff < 0; diff *= 2 {
-			found, smaller, err := check(object.Int(h + diff))
-			if err != nil || found {
-				return object.Int(h + diff), err
-			}
-			if !smaller {
-				return search(h+diff, h, r.Exclusive, asInt)
-			}
-		}
-	default:
-		return object.Value{}, ctx.Raise(object.TypeError, "can't do binary search for %s", kindName(lo))
+		return satisfied, nil
 	}
-	return object.Value{}, ctx.Raise(object.RangeError, "bsearch went past the 64-bit integers")
+	// between searches low..high, in 64 bits where both fit.
+	between := func(low, high *big.Int, exclusive bool) (object.Value, error) {
+		if low.IsInt64() && high.IsInt64() {
+			return search(low.Int64(), high.Int64(), exclusive, asInt)
+		}
+		return searchBig(low, high, exclusive)
+	}
+	// probe looks at from+diff for doubling diffs, toward the end a range
+	// lacks, and searches between from and the first value that turns.
+	probe := func(from *big.Int, up bool) (object.Value, error) {
+		diff := big.NewInt(1)
+		if !up {
+			diff.Neg(diff)
+		}
+		for {
+			at := new(big.Int).Add(from, diff)
+			v := object.BigInt(at)
+			found, smaller, err := check(v)
+			if err != nil || found {
+				return v, err
+			}
+			if smaller == up {
+				if up {
+					return between(from, at, false)
+				}
+				return between(at, from, r.Exclusive)
+			}
+			diff.Lsh(diff, 1)
+		}
+	}
+	switch {
+	case lo.IsInteger() && hi.IsInteger():
+		return between(bigOf(lo), bigOf(hi), r.Exclusive)
+	case lo.IsInteger() && hi.IsNil():
+		return probe(bigOf(lo), true)
+	case lo.IsNil() && hi.IsInteger():
+		return probe(bigOf(hi), false)
+	}
+	return object.Value{}, ctx.Raise(object.TypeError, "can't do binary search for %s", kindName(lo))
 }
 
 // floatOrder maps a float to an int64 in the same order, as CRuby's

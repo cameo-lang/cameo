@@ -1,6 +1,8 @@
 package eval
 
 import (
+	"math"
+	"math/big"
 	"strings"
 	"sync"
 
@@ -97,6 +99,10 @@ func compile(n syntax.Node) thunk {
 		return func(*Interp, *Env, *Frame) (object.Value, error) { return v, nil }
 	case *syntax.Int:
 		v := object.Int(n.Value)
+		return func(*Interp, *Env, *Frame) (object.Value, error) { return v, nil }
+	case *syntax.BigInt:
+		b, _ := new(big.Int).SetString(n.Digits, 10)
+		v := object.BigInt(b)
 		return func(*Interp, *Env, *Frame) (object.Value, error) { return v, nil }
 	case *syntax.Float:
 		v := object.Float(n.Value)
@@ -496,18 +502,19 @@ func compileInt(n syntax.Node) intThunk {
 }
 
 // intArith returns the integer arithmetic for an operator name, or nil.
-// ok is false when the operands need the ordinary call: a zero divisor.
+// ok is false when the operands need the ordinary call: a zero divisor, or
+// a result beyond 64 bits, which the ordinary call makes a big integer.
 func intArith(name string) func(x, y int64) (r int64, ok bool) {
 	switch name {
 	case "+":
-		return func(x, y int64) (int64, bool) { return x + y, true }
+		return object.AddInt
 	case "-":
-		return func(x, y int64) (int64, bool) { return x - y, true }
+		return object.SubInt
 	case "*":
-		return func(x, y int64) (int64, bool) { return x * y, true }
+		return object.MulInt
 	case "/":
 		return func(x, y int64) (int64, bool) {
-			if y == 0 {
+			if y == 0 || (y == -1 && x == math.MinInt64) {
 				return 0, false
 			}
 			q := x / y

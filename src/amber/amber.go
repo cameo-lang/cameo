@@ -6,6 +6,7 @@ package amber
 import (
 	"fmt"
 	"io"
+	"math/big"
 	"os"
 	"sort"
 	"time"
@@ -181,7 +182,8 @@ func (p *Program) Decode(data []byte) (any, error) {
 	return p.ToGo(v)
 }
 
-// ToValue converts a Go value to an amber value: nil, bool, integers,
+// ToValue converts a Go value to an amber value: nil, bool, integers (a
+// *big.Int among them),
 // floats, string, []byte, time.Time, []any, map[string]any or
 // map[any]any, an object.Value as it is, or a proto.Message whose descriptor full name is a
 // loaded class's.
@@ -204,7 +206,7 @@ func (p *Program) ToValue(v any) (object.Value, error) {
 	case int64:
 		return object.Int(v), nil
 	case uint:
-		return object.Int(v), nil
+		return object.BigInt(new(big.Int).SetUint64(uint64(v))), nil
 	case uint8:
 		return object.Int(v), nil
 	case uint16:
@@ -212,7 +214,9 @@ func (p *Program) ToValue(v any) (object.Value, error) {
 	case uint32:
 		return object.Int(v), nil
 	case uint64:
-		return object.Int(v), nil
+		return object.BigInt(new(big.Int).SetUint64(v)), nil
+	case *big.Int:
+		return object.BigInt(new(big.Int).Set(v)), nil
 	case float32:
 		return object.Float(float64(v)), nil
 	case float64:
@@ -289,7 +293,8 @@ func (p *Program) ToValue(v any) (object.Value, error) {
 	return object.Value{}, fmt.Errorf("cannot convert %T to an amber value", v)
 }
 
-// ToGo converts an amber value to a Go value: nil, bool, int64, float64,
+// ToGo converts an amber value to a Go value: nil, bool, int64 (a *big.Int
+// beyond 64 bits), float64,
 // string, []byte, time.Time, []any, map[any]any, a proto.Message for an
 // instance, and the object.Value itself for everything else (symbols,
 // ranges, classes).
@@ -301,6 +306,8 @@ func (p *Program) ToGo(v object.Value) (any, error) {
 	case object.KindInt:
 		v := v.Int()
 		return int64(v), nil
+	case object.KindBig:
+		return new(big.Int).Set(v.Big()), nil
 	case object.KindFloat:
 		v := v.Float()
 		return float64(v), nil

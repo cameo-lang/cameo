@@ -2,6 +2,7 @@ package stdlib
 
 import (
 	"math"
+	"math/big"
 	"math/rand/v2"
 	"strings"
 
@@ -102,26 +103,25 @@ func installKernel() {
 	})
 	def(o, "Integer", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		switch args[0].Kind() {
-		case object.KindInt:
-			v := args[0].Int()
-			return object.Int(v), nil
+		case object.KindInt, object.KindBig:
+			return args[0], nil
 		case object.KindFloat:
-			v := args[0].Float()
-			return object.Int(int64(v)), nil
+			return floatToInteger(ctx, args[0].Float())
 		case object.KindString:
 			v := args[0].Str()
-			i, ok := parseInt(strings.TrimSpace(string(v)))
+			i, ok := parseInteger(strings.TrimSpace(v))
 			if !ok {
-				return object.Value{}, ctx.Raise(object.ArgumentError, "invalid value for Integer(): %s", object.QuoteString(string(v)))
+				return object.Value{}, ctx.Raise(object.ArgumentError, "invalid value for Integer(): %s", object.QuoteString(v))
 			}
-			return object.Int(i), nil
+			return i, nil
 		}
 		return object.Value{}, ctx.Raise(object.TypeError, "can't convert %s into Integer", kindName(args[0]))
 	})
 	def(o, "Float", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		switch args[0].Kind() {
-		case object.KindInt:
-			return object.Float(float64(args[0].Int())), nil
+		case object.KindInt, object.KindBig:
+			f, _ := args[0].AsNumber()
+			return object.Float(f), nil
 		case object.KindFloat:
 			v := args[0].Float()
 			return object.Float(v), nil
@@ -235,6 +235,8 @@ func kernelRand(ctx object.Context, self object.Value, args []object.Value, kw *
 		return object.Float(r.Float64()), nil
 	}
 	switch a := args[0]; a.Kind() {
+	case object.KindBig:
+		return object.BigInt(randBelow(r, new(big.Int).Abs(a.Big()))), nil
 	case object.KindInt, object.KindFloat:
 		f, _ := a.AsNumber()
 		n := int64(math.Abs(f))
@@ -266,4 +268,20 @@ func kernelRand(ctx object.Context, self object.Value, args []object.Value, kw *
 		}
 	}
 	return object.Value{}, ctx.Raise(object.ArgumentError, "invalid argument - %s", kindName(args[0]))
+}
+
+// randBelow is a uniform integer in [0, n), for an n beyond 64 bits: random
+// words with the bits of n, drawn again while they reach n.
+func randBelow(r *rand.Rand, n *big.Int) *big.Int {
+	words := (n.BitLen() + 63) / 64
+	extra := uint(words*64 - n.BitLen())
+	for {
+		v := new(big.Int)
+		for i := 0; i < words; i++ {
+			v.Lsh(v, 64).Or(v, new(big.Int).SetUint64(r.Uint64()))
+		}
+		if v.Rsh(v, extra).Cmp(n) < 0 {
+			return v
+		}
+	}
 }

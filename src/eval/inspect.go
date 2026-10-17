@@ -83,6 +83,8 @@ func (in *Interp) inspectBuiltin(v object.Value) (string, error) {
 	case object.KindInt:
 		v := v.Int()
 		return itoa(int64(v)), nil
+	case object.KindBig:
+		return v.Big().String(), nil
 	case object.KindFloat:
 		v := v.Float()
 		return object.FormatFloat(float64(v)), nil
@@ -276,15 +278,15 @@ func (in *Interp) Compare(a, b object.Value) (int, error) {
 	}
 	switch a.Kind() {
 	case object.KindInt:
-		switch b.Kind() {
-		case object.KindInt:
+		if b.Kind() == object.KindInt {
 			return cmp(a.Int(), b.Int()), nil
-		case object.KindFloat:
-			return cmpFloat(float64(a.Int()), b.Float()), nil
 		}
-	case object.KindFloat:
-		if y, ok := b.AsNumber(); ok {
-			return cmpFloat(a.Float(), y), nil
+		if r, ok := object.CompareNumbers(a, b); ok {
+			return r, nil
+		}
+	case object.KindBig, object.KindFloat:
+		if r, ok := object.CompareNumbers(a, b); ok {
+			return r, nil
 		}
 	case object.KindString:
 		a := a.Str()
@@ -334,16 +336,6 @@ func kindName(v object.Value) string {
 }
 
 func cmp(a, b int64) int {
-	switch {
-	case a < b:
-		return -1
-	case a > b:
-		return 1
-	}
-	return 0
-}
-
-func cmpFloat(a, b float64) int {
 	switch {
 	case a < b:
 		return -1

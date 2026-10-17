@@ -43,6 +43,8 @@ const (
 	// one: Ruby's Regexp and MatchData.
 	KindRegexp
 	KindMatch
+	// KindBig is an Integer beyond 64 bits; see BigInt.
+	KindBig
 	// KindProc and KindProcess are the evaluator's: a block or lambda and
 	// an async process. The object is opaque here; see Opaque.
 	KindProc
@@ -87,6 +89,8 @@ func (k Kind) String() string {
 		return "regexp"
 	case KindMatch:
 		return "match"
+	case KindBig:
+		return "int"
 	case KindProc:
 		return "proc"
 	case KindProcess:
@@ -144,7 +148,7 @@ func (v Value) Class() *Class {
 		return NilClass
 	case KindBool:
 		return BoolClass
-	case KindInt:
+	case KindInt, KindBig:
 		return IntegerClass
 	case KindFloat:
 		return FloatClass
@@ -343,6 +347,8 @@ func (v Value) AsNumber() (float64, bool) {
 	switch v.kind {
 	case KindInt:
 		return float64(v.n), true
+	case KindBig:
+		return BigToFloat(v.Big()), true
 	case KindFloat:
 		return math.Float64frombits(uint64(v.n)), true
 	}

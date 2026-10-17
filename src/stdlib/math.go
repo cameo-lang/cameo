@@ -12,7 +12,7 @@ func installMath() {
 	m := object.MathModule
 	m.Consts["PI"] = object.Float(math.Pi)
 	m.Consts["E"] = object.Float(math.E)
-	domainError := object.NewClass("DomainError", object.StandardError)
+	domainError := object.MathDomainError
 	domainError.Lexical = m
 	m.Consts["DomainError"] = object.ClassValue(domainError)
 

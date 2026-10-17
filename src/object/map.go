@@ -216,6 +216,10 @@ func writeKey(b *strings.Builder, v Value) {
 	case KindInt:
 		b.WriteString("i")
 		b.WriteString(strconv.FormatInt(v.n, 10))
+	case KindBig:
+		// A big integer never equals a KindInt, so the same prefix is safe.
+		b.WriteString("i")
+		b.WriteString(v.Big().String())
 	case KindFloat:
 		b.WriteString("d")
 		b.WriteString(strconv.FormatFloat(v.Float(), 'g', -1, 64))
@@ -339,16 +343,15 @@ func OrNil(v Value) Value {
 // compares class and fields; user-defined == is the evaluator's business.
 // An integer and a float compare by magnitude.
 func Equal(a, b Value) bool {
-	if a.kind == KindInt || a.kind == KindFloat {
-		if b.kind != KindInt && b.kind != KindFloat {
+	if a.isNumber() {
+		if !b.isNumber() {
 			return false
 		}
 		if a.kind == KindInt && b.kind == KindInt {
 			return a.n == b.n
 		}
-		x, _ := a.AsNumber()
-		y, _ := b.AsNumber()
-		return x == y
+		r, ok := compareNumbers(a, b)
+		return ok && r == 0
 	}
 	if a.kind != b.kind || a.Class() != b.Class() {
 		return false

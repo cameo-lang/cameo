@@ -50,6 +50,8 @@ func wantInt(ctx object.Context, v object.Value, what string) (int64, error) {
 	case object.KindFloat:
 		v := v.Float()
 		return int64(v), nil
+	case object.KindBig:
+		return 0, ctx.Raise(object.RangeError, "bignum too big to convert into 'long'")
 	}
 	return 0, ctx.Raise(object.TypeError, "no implicit conversion of %s into Integer%s", kindName(v), what)
 }

@@ -139,6 +139,28 @@ p Pt.new(x: 4).double, Pt.new(x: 1), Class.new
 	expectOutput(t, src, "8\nPt(x: 1)\n#<Class>\n")
 }
 
+func TestBigIntegers(t *testing.T) {
+	// A big integer travels to a process and back; a float field takes one,
+	// an int field, a protobuf int64, does not.
+	src := `
+class Twice
+  def go(n) = n * 2
+end
+class Account
+  int :cents
+  float :rate
+end
+p await(async(Twice.new, :go, 2**70))
+p Account.new(rate: 2**64).rate
+begin
+  Account.new(cents: 2**64)
+rescue RangeError => e
+  puts e.message
+end
+`
+	expectOutput(t, src, "2361183241434822606848\n1.8446744073709552e+19\nfield cents of Account takes an int, which holds 64 bits; 18446744073709551616 does not fit\n")
+}
+
 func TestTimeCrossesAsync(t *testing.T) {
 	// A time travels to a process and back with its instant and offset.
 	src := `

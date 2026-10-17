@@ -143,6 +143,11 @@ func TestRegexpLiterals(t *testing.T) {
 	parse(t, "case \"s\"\nwhen /s/ then 1\nend\n")
 }
 
+func TestBigIntLiterals(t *testing.T) {
+	// An integer literal beyond 64 bits, negated or not, is a BigInt.
+	parse(t, "x = 99999999999999999999\ny = -0xffffffffffffffff\n")
+}
+
 func TestSugarParses(t *testing.T) {
 	// Forwarding, anonymous parameters, for loops, alias, a scoped class
 	// name and a top-level def self.x are sugar the converter rewrites.
@@ -166,7 +171,6 @@ func TestRejections(t *testing.T) {
 		"$x = 1\n":                           "global variables are not supported",
 		"@@x = 1\n":                          "class variables are not supported",
 		"class << self; end\n":               "class << self is not supported",
-		"x = 99999999999999999999\n":         "does not fit in 64 bits",
 		"x = `ls`\n":                         "backtick commands",
 		"def m; def n; end; end\n":           "def n inside a method",
 		"string :x\n":                        "which only a class body can do",
