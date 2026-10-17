@@ -115,3 +115,19 @@ func TestLookupCacheFollowsDefinitions(t *testing.T) {
 		t.Fatalf("ancestors after include: %v", anc)
 	}
 }
+
+func TestIntValueBoxesSmallIntegersOnce(t *testing.T) {
+	for _, i := range []int64{-1023, -1, 0, 255, 256, 1024} {
+		if IntValue(i) != Int(i) {
+			t.Fatalf("IntValue(%d) = %v", i, IntValue(i))
+		}
+		if allocs := testing.AllocsPerRun(10, func() { _ = IntValue(i) }); allocs != 0 {
+			t.Fatalf("IntValue(%d) allocates (%v per run)", i, allocs)
+		}
+	}
+	for _, i := range []int64{-1024, 1025, 1 << 40} {
+		if IntValue(i) != Int(i) {
+			t.Fatalf("IntValue(%d) = %v", i, IntValue(i))
+		}
+	}
+}

@@ -319,7 +319,7 @@ func (d *Decoder) value(msg protoreflect.Message) (object.Value, error) {
 	case "bool_value":
 		return object.Bool(pv.Bool()), nil
 	case "int_value":
-		return object.Int(pv.Int()), nil
+		return object.IntValue(pv.Int()), nil
 	case "float_value":
 		return object.Float(pv.Float()), nil
 	case "string_value":

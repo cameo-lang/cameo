@@ -86,13 +86,13 @@ func installKernel() {
 		case object.Int:
 			return v, nil
 		case object.Float:
-			return object.Int(int64(v)), nil
+			return object.IntValue(int64(v)), nil
 		case object.String:
 			i, ok := parseInt(strings.TrimSpace(string(v)))
 			if !ok {
 				return nil, ctx.Raise(object.ArgumentError, "invalid value for Integer(): %s", object.QuoteString(string(v)))
 			}
-			return object.Int(i), nil
+			return object.IntValue(i), nil
 		}
 		return nil, ctx.Raise(object.TypeError, "can't convert %s into Integer", kindName(args[0]))
 	})

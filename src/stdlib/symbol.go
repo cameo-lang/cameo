@@ -29,10 +29,10 @@ func installSymbol() {
 		if !ok {
 			return object.Nil, nil
 		}
-		return object.Int(strings.Compare(sym(self), string(o))), nil
+		return object.IntValue(strings.Compare(sym(self), string(o))), nil
 	})
 	def(c, "length", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Int(len([]rune(sym(self)))), nil
+		return object.IntValue(len([]rune(sym(self)))), nil
 	})
 	def(c, "size", 0, c.Methods["length"].Native)
 	def(c, "empty?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -70,7 +70,7 @@ func installSymbol() {
 		return nil, ctx.Raise(object.NotImplementedErr, "Symbol#to_proc is written &:%s", sym(self))
 	})
 	def(c, "hash", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Int(hashString(object.Key(self))), nil
+		return object.IntValue(hashString(object.Key(self))), nil
 	})
 }
 
@@ -86,7 +86,7 @@ func installNilBool() {
 		return object.NewMap(), nil
 	})
 	def(n, "to_i", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Int(0), nil
+		return object.IntValue(0), nil
 	})
 	def(n, "to_f", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Float(0), nil

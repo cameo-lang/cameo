@@ -36,6 +36,37 @@ type Int int64
 
 func (Int) Class() *Class { return IntegerClass }
 
+// Boxing an Int into a Value allocates, except for the values Go keeps
+// static (0 to 255). smallInts extends that to -1023 through 1024, the
+// range most counters, indexes and small results fall in.
+const (
+	smallIntMin = -1023
+	smallIntMax = 1025 // exclusive
+)
+
+var smallInts [smallIntMax - smallIntMin]Value
+
+func init() {
+	for i := range smallInts {
+		smallInts[i] = Int(int64(i) + smallIntMin)
+	}
+}
+
+// integer is any Go integer type, which IntValue converts.
+type integer interface {
+	~int | ~int8 | ~int16 | ~int32 | ~int64 | ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64
+}
+
+// IntValue boxes i as a Value, without allocating for a small value. Every
+// integer result that becomes a Value should go through it.
+func IntValue[T integer](v T) Value {
+	i := int64(v)
+	if i >= smallIntMin && i < smallIntMax {
+		return smallInts[i-smallIntMin]
+	}
+	return Int(i)
+}
+
 // Float is a 64-bit float.
 type Float float64
 

@@ -47,16 +47,16 @@ func installString() {
 		if !ok {
 			return object.Nil, nil
 		}
-		return object.Int(strings.Compare(str(self), string(o))), nil
+		return object.IntValue(strings.Compare(str(self), string(o))), nil
 	})
 	def(c, "eql?", 1, c.Methods["=="].Native)
 	def(c, "===", 1, c.Methods["=="].Native)
 	def(c, "length", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Int(utf8.RuneCountInString(str(self))), nil
+		return object.IntValue(utf8.RuneCountInString(str(self))), nil
 	})
 	def(c, "size", 0, c.Methods["length"].Native)
 	def(c, "bytesize", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Int(len(str(self))), nil
+		return object.IntValue(len(str(self))), nil
 	})
 	def(c, "empty?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.BoolOf(str(self) == ""), nil
@@ -132,29 +132,29 @@ func installString() {
 			}
 			i, ok := parseIntBase(strings.TrimSpace(str(self)), int(base))
 			if !ok {
-				return object.Int(0), nil
+				return object.IntValue(0), nil
 			}
-			return object.Int(i), nil
+			return object.IntValue(i), nil
 		}
-		return object.Int(leadingInt(str(self))), nil
+		return object.IntValue(leadingInt(str(self))), nil
 	})
 	def(c, "to_f", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Float(leadingFloat(str(self))), nil
 	})
 	def(c, "hex", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		i, _ := parseIntBase(strings.TrimPrefix(strings.TrimSpace(str(self)), "0x"), 16)
-		return object.Int(i), nil
+		return object.IntValue(i), nil
 	})
 	def(c, "oct", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		i, _ := parseIntBase(strings.TrimSpace(str(self)), 8)
-		return object.Int(i), nil
+		return object.IntValue(i), nil
 	})
 	def(c, "ord", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if str(self) == "" {
 			return nil, ctx.Raise(object.ArgumentError, "empty string")
 		}
 		r, _ := utf8.DecodeRuneInString(str(self))
-		return object.Int(r), nil
+		return object.IntValue(r), nil
 	})
 	def(c, "chr", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if str(self) == "" {
@@ -164,7 +164,7 @@ func installString() {
 		return object.String(string(r)), nil
 	})
 	def(c, "hash", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Int(hashString(object.Key(self))), nil
+		return object.IntValue(hashString(object.Key(self))), nil
 	})
 	def(c, "chars", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		elems := []object.Value{}
@@ -187,7 +187,7 @@ func installString() {
 	def(c, "bytes", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		elems := make([]object.Value, len(str(self)))
 		for i := 0; i < len(str(self)); i++ {
-			elems[i] = object.Int(str(self)[i])
+			elems[i] = object.IntValue(str(self)[i])
 		}
 		return object.NewList(elems...), nil
 	})
@@ -280,25 +280,25 @@ func installString() {
 				n++
 			}
 		}
-		return object.Int(n)
+		return object.IntValue(n)
 	})
 	strArg("casecmp?", func(s, a string) object.Value { return object.BoolOf(strings.EqualFold(s, a)) })
 	strArg("casecmp", func(s, a string) object.Value {
-		return object.Int(strings.Compare(strings.ToLower(s), strings.ToLower(a)))
+		return object.IntValue(strings.Compare(strings.ToLower(s), strings.ToLower(a)))
 	})
 	strArg("index", func(s, a string) object.Value {
 		i := strings.Index(s, a)
 		if i < 0 {
 			return object.Nil
 		}
-		return object.Int(utf8.RuneCountInString(s[:i]))
+		return object.IntValue(utf8.RuneCountInString(s[:i]))
 	})
 	strArg("rindex", func(s, a string) object.Value {
 		i := strings.LastIndex(s, a)
 		if i < 0 {
 			return object.Nil
 		}
-		return object.Int(utf8.RuneCountInString(s[:i]))
+		return object.IntValue(utf8.RuneCountInString(s[:i]))
 	})
 	def(c, "sub", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return substitute(ctx, str(self), args, block, 1)

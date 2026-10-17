@@ -8,23 +8,67 @@ import (
 // Env is a lexical scope of local variables. A block's scope has the scope
 // it was written in as parent and sees its variables; a method body starts
 // a scope with no parent.
+//
+// The first few variables live in the scope itself, so a scope of a method
+// with a handful of locals costs no allocation beyond its own; more spill
+// into a map.
 type Env struct {
-	vars   map[string]object.Value
+	names  [envInline]string
+	values [envInline]object.Value
+	n      int
+	more   map[string]object.Value
 	parent *Env
 	// processes are the async processes started in this scope, which
 	// `await :all` collects.
 	processes []*Process
 }
 
+// envInline is how many variables a scope holds without a map.
+const envInline = 6
+
 // NewEnv makes a scope inside parent (nil for a method body).
 func NewEnv(parent *Env) *Env {
-	return &Env{vars: map[string]object.Value{}, parent: parent}
+	return &Env{parent: parent}
+}
+
+// lookup finds name in this scope alone.
+func (e *Env) lookup(name string) (object.Value, bool) {
+	for i := 0; i < e.n; i++ {
+		if e.names[i] == name {
+			return e.values[i], true
+		}
+	}
+	if e.more != nil {
+		v, ok := e.more[name]
+		return v, ok
+	}
+	return nil, false
+}
+
+// bind binds name in this scope alone, rebinding it when it is bound.
+func (e *Env) bind(name string, v object.Value) {
+	for i := 0; i < e.n; i++ {
+		if e.names[i] == name {
+			e.values[i] = v
+			return
+		}
+	}
+	if e.n < envInline {
+		e.names[e.n] = name
+		e.values[e.n] = v
+		e.n++
+		return
+	}
+	if e.more == nil {
+		e.more = map[string]object.Value{}
+	}
+	e.more[name] = v
 }
 
 // Get reads a variable, searching outwards, and false when it is unbound.
 func (e *Env) Get(name string) (object.Value, bool) {
 	for s := e; s != nil; s = s.parent {
-		if v, ok := s.vars[name]; ok {
+		if v, ok := s.lookup(name); ok {
 			return v, true
 		}
 	}
@@ -35,17 +79,23 @@ func (e *Env) Get(name string) (object.Value, bool) {
 // it is new: a block's new variable is the block's own.
 func (e *Env) Set(name string, v object.Value) {
 	for s := e; s != nil; s = s.parent {
-		if _, ok := s.vars[name]; ok {
-			s.vars[name] = v
+		if _, ok := s.lookup(name); ok {
+			s.bind(name, v)
 			return
 		}
 	}
-	e.vars[name] = v
+	e.bind(name, v)
 }
 
 // Define binds a variable in this scope, shadowing an outer one: what a
 // parameter does.
-func (e *Env) Define(name string, v object.Value) { e.vars[name] = v }
+func (e *Env) Define(name string, v object.Value) { e.bind(name, v) }
+
+// activation is a method's frame and its scope in one allocation.
+type activation struct {
+	frame Frame
+	env   Env
+}
 
 // Frame is one method activation: who self is, which method runs, with what
 // arguments and block, and the lexical scopes constants are looked up in.

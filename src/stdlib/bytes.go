@@ -6,7 +6,7 @@ func installBytes() {
 	c := object.BytesClass
 	bytes := func(self object.Value) []byte { return []byte(self.(object.Bytes)) }
 	def(c, "length", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Int(len(bytes(self))), nil
+		return object.IntValue(len(bytes(self))), nil
 	})
 	def(c, "size", 0, c.Methods["length"].Native)
 	def(c, "bytesize", 0, c.Methods["length"].Native)
@@ -30,7 +30,7 @@ func installBytes() {
 	def(c, "bytes", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		out := make([]object.Value, len(bytes(self)))
 		for i, b := range bytes(self) {
-			out[i] = object.Int(b)
+			out[i] = object.IntValue(b)
 		}
 		return object.NewList(out...), nil
 	})
@@ -51,12 +51,12 @@ func installBytes() {
 				if idx < 0 || idx >= len(bytes(self)) {
 					return object.Nil, nil
 				}
-				return object.Int(bytes(self)[idx]), nil
+				return object.IntValue(bytes(self)[idx]), nil
 			}
 		}
 		return nil, ctx.Raise(object.TypeError, "bytes are indexed by an integer")
 	})
 	def(c, "hash", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Int(hashString(object.Key(self))), nil
+		return object.IntValue(hashString(object.Key(self))), nil
 	})
 }

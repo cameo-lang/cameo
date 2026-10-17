@@ -23,6 +23,21 @@ func (in *Interp) evalCall(n *syntax.Call, env *Env, fr *Frame) (object.Value, e
 			return object.Nil, nil
 		}
 	}
+	if n.Recv != nil && len(n.Args) == 1 && n.KwArgs == nil && n.Block == nil && n.BlockArg == nil {
+		if op := binaryOp(n.Name); op != nil {
+			if _, splat := n.Args[0].(*syntax.Splat); !splat {
+				arg, err := in.eval(n.Args[0], env, fr)
+				if err != nil {
+					return nil, err
+				}
+				if v := op(recv, arg); v != nil {
+					return v, nil
+				}
+				v, err := in.call(fr, recv, n.Name, []object.Value{arg}, nil, nil, false, n.Line())
+				return v, withLine(err, n.Line())
+			}
+		}
+	}
 	args, kw, err := in.evalCallArgs(n.Args, n.KwArgs, env, fr, n.Line())
 	if err != nil {
 		return nil, err
@@ -43,6 +58,126 @@ func (in *Interp) evalCall(n *syntax.Call, env *Env, fr *Frame) (object.Value, e
 	}
 	v, err := in.call(fr, recv, n.Name, args, kw, block, selfCall, n.Line())
 	return v, withLine(err, n.Line())
+}
+
+// binaryOp answers the fast path for an arithmetic or comparison operator
+// on two integers or two floats, or nil for any other name. The fast path
+// answers nil when the operands are not both integers or both floats, and
+// the call goes the ordinary way. It is sound because Integer and Float
+// are builtin classes, which a script can neither reopen nor replace a
+// method of, so `+` on an integer can only ever mean this.
+func binaryOp(name string) func(a, b object.Value) object.Value {
+	switch name {
+	case "+":
+		return func(a, b object.Value) object.Value {
+			if x, y, ok := ints(a, b); ok {
+				return object.IntValue(x + y)
+			}
+			if x, y, ok := floats(a, b); ok {
+				return object.Float(x + y)
+			}
+			return nil
+		}
+	case "-":
+		return func(a, b object.Value) object.Value {
+			if x, y, ok := ints(a, b); ok {
+				return object.IntValue(x - y)
+			}
+			if x, y, ok := floats(a, b); ok {
+				return object.Float(x - y)
+			}
+			return nil
+		}
+	case "*":
+		return func(a, b object.Value) object.Value {
+			if x, y, ok := ints(a, b); ok {
+				return object.IntValue(x * y)
+			}
+			if x, y, ok := floats(a, b); ok {
+				return object.Float(x * y)
+			}
+			return nil
+		}
+	case "<":
+		return func(a, b object.Value) object.Value {
+			if x, y, ok := ints(a, b); ok {
+				return object.BoolOf(x < y)
+			}
+			if x, y, ok := floats(a, b); ok {
+				return object.BoolOf(x < y)
+			}
+			return nil
+		}
+	case "<=":
+		return func(a, b object.Value) object.Value {
+			if x, y, ok := ints(a, b); ok {
+				return object.BoolOf(x <= y)
+			}
+			if x, y, ok := floats(a, b); ok {
+				return object.BoolOf(x <= y)
+			}
+			return nil
+		}
+	case ">":
+		return func(a, b object.Value) object.Value {
+			if x, y, ok := ints(a, b); ok {
+				return object.BoolOf(x > y)
+			}
+			if x, y, ok := floats(a, b); ok {
+				return object.BoolOf(x > y)
+			}
+			return nil
+		}
+	case ">=":
+		return func(a, b object.Value) object.Value {
+			if x, y, ok := ints(a, b); ok {
+				return object.BoolOf(x >= y)
+			}
+			if x, y, ok := floats(a, b); ok {
+				return object.BoolOf(x >= y)
+			}
+			return nil
+		}
+	case "==":
+		return func(a, b object.Value) object.Value {
+			if x, y, ok := ints(a, b); ok {
+				return object.BoolOf(x == y)
+			}
+			if x, y, ok := floats(a, b); ok {
+				return object.BoolOf(x == y)
+			}
+			return nil
+		}
+	case "!=":
+		return func(a, b object.Value) object.Value {
+			if x, y, ok := ints(a, b); ok {
+				return object.BoolOf(x != y)
+			}
+			if x, y, ok := floats(a, b); ok {
+				return object.BoolOf(x != y)
+			}
+			return nil
+		}
+	}
+	return nil
+}
+
+func ints(a, b object.Value) (int64, int64, bool) {
+	x, ok := a.(object.Int)
+	if !ok {
+		return 0, 0, false
+	}
+	y, ok := b.(object.Int)
+	return int64(x), int64(y), ok
+}
+
+func floats(a, b object.Value) (float64, float64, bool) {
+	x, ok := a.(object.Float)
+	if !ok {
+		return 0, 0, false
+	}
+	y, ok := b.(object.Float)
+	return float64(x), float64(y), ok
 }
 
 // toProc turns a &argument into a block: a proc as it is, a symbol into a
@@ -124,8 +259,7 @@ func (in *Interp) call(fr *Frame, recv object.Value, name string, args []object.
 // invoke runs a user method.
 func (in *Interp) invoke(m *object.Method, recv object.Value, args []object.Value, kw *object.Map, block object.Value, line int) (object.Value, error) {
 	def := m.Body.(*syntax.Def)
-	env := NewEnv(nil)
-	fr := &Frame{
+	act := &activation{frame: Frame{
 		Self:    recv,
 		Method:  m,
 		Owner:   m.Owner,
@@ -133,7 +267,8 @@ func (in *Interp) invoke(m *object.Method, recv object.Value, args []object.Valu
 		Kw:      kw,
 		Block:   block,
 		Lexical: m.Lexical,
-	}
+	}}
+	fr, env := &act.frame, &act.env
 	if len(m.Lexical) > 0 {
 		fr.DefTarget = m.Lexical[len(m.Lexical)-1]
 	} else {
