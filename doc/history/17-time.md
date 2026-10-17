@@ -9,7 +9,7 @@ offset, which is what amber's `Time` is.
 `Time.now`, `Time.at` and `Time.new` (with `in:` and a trailing zone in
 Ruby's forms: `"+09:00"`, `"UTC"`, `"Z"`, a military letter) make a time in
 UTC, the local zone or a fixed offset
-([src/stdlib/time.go:17](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/stdlib/time.go#L17-L282)). A time compares, hashes
+([src/stdlib/time.go:17](https://github.com/radiospiel/amber/blob/c33eeec735837cc66c0dbfc31dd9b27332c3e18f/src/stdlib/time.go#L17-L282)). A time compares, hashes
 and is equal as an instant, so two times in different zones for the same
 moment are `==`, as in Ruby. `strftime` follows Ruby's directives and
 flags, and `to_s` and `inspect` print what Ruby prints.
