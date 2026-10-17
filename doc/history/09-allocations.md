@@ -12,7 +12,7 @@ slice, look up `-` on Integer, call it. But Integer and Float cannot be
 reopened and no method of theirs can be replaced, so `-` on two integers
 can only mean integer subtraction. The evaluator now checks for two
 integers or two floats before it builds anything, and computes the result
-directly ([src/eval/call.go:63](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/eval/call.go#L63)). Every other receiver goes
+directly ([src/eval/call.go:63](https://github.com/radiospiel/amber/blob/2a159c857877fbfa1d1704cf5e965e977a4b7668/src/eval/call.go#L63)). Every other receiver goes
 through dispatch as before, so the semantics do not change.
 
 ## A scope without a map
@@ -20,7 +20,7 @@ through dispatch as before, so the semantics do not change.
 A scope kept its variables in a Go map, allocated with the scope. Most
 scopes hold a handful of variables, so a scope now holds its first six
 inline, in two arrays, and makes a map only for the seventh
-([src/eval/env.go:15](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/eval/env.go#L15-L24)). `invoke` allocates the frame
+([src/eval/env.go:15](https://github.com/radiospiel/amber/blob/2a159c857877fbfa1d1704cf5e965e977a4b7668/src/eval/env.go#L15-L24)). `invoke` allocates the frame
 and the scope of a call together.
 
 ## Integers that need no box
@@ -30,7 +30,7 @@ every integer result was an allocation. Go itself keeps the values 0 to 255
 boxed statically; amber extends that with a table of boxes made once at
 start, and every integer result goes through `IntValue`, which returns the
 shared box when the value is in the table
-([src/object/value.go:42](https://github.com/radiospiel/amber/blob/@@COMMIT@@/src/object/value.go#L42-L62)).
+([src/object/value.go:42](https://github.com/radiospiel/amber/blob/2a159c857877fbfa1d1704cf5e965e977a4b7668/src/object/value.go#L42-L62)).
 
 ![An integer in a Go interface, and the table](09-boxing.svg)
 
