@@ -1,8 +1,6 @@
 package eval
 
 import (
-	"strings"
-
 	"github.com/radiospiel/amber/src/object"
 	"github.com/radiospiel/amber/src/syntax"
 )
@@ -21,35 +19,17 @@ func (in *Interp) evalBody(body []syntax.Node, env *Env, fr *Frame) (object.Valu
 	return last, nil
 }
 
-// eval evaluates one node.
+// eval evaluates one node through its compiled thunk.
 func (in *Interp) eval(n syntax.Node, env *Env, fr *Frame) (object.Value, error) {
+	return in.code.expr(n)(in, env, fr)
+}
+
+// evalSlow is the tree walker: it evaluates the kinds of node the compiler
+// does not specialise, and the cases the compiler leaves to it (a list or
+// a yield with a splat, a call with keywords). Children are evaluated
+// through eval, so they are compiled.
+func (in *Interp) evalSlow(n syntax.Node, env *Env, fr *Frame) (object.Value, error) {
 	switch n := n.(type) {
-	case *syntax.Nil:
-		return object.Nil, nil
-	case *syntax.Bool:
-		return object.BoolOf(n.Value), nil
-	case *syntax.Int:
-		return object.IntValue(n.Value), nil
-	case *syntax.Float:
-		return object.Float(n.Value), nil
-	case *syntax.Str:
-		return object.String(n.Value), nil
-	case *syntax.Sym:
-		return object.Symbol(n.Name), nil
-	case *syntax.Interp:
-		var b strings.Builder
-		for _, part := range n.Parts {
-			v, err := in.eval(part, env, fr)
-			if err != nil {
-				return nil, err
-			}
-			s, err := in.ToS(v)
-			if err != nil {
-				return nil, withLine(err, n.Line())
-			}
-			b.WriteString(s)
-		}
-		return object.String(b.String()), nil
 	case *syntax.List:
 		elems, err := in.evalArgs(n.Elems, env, fr)
 		if err != nil {
@@ -72,32 +52,8 @@ func (in *Interp) eval(n syntax.Node, env *Env, fr *Frame) (object.Value, error)
 			}
 		}
 		return r, nil
-	case *syntax.Self:
-		return fr.Self, nil
-	case *syntax.Var:
-		if v, ok := env.Get(n.Name); ok {
-			return v, nil
-		}
-		return object.Nil, nil
-	case *syntax.Assign:
-		v, err := in.eval(n.Value, env, fr)
-		if err != nil {
-			return nil, err
-		}
-		env.Set(n.Name, v)
-		return v, nil
 	case *syntax.MultiAssign:
 		return in.evalMultiAssign(n, env, fr)
-	case *syntax.IVar:
-		return in.readIVar(n.Name, fr, n.Line())
-	case *syntax.IVarAssign:
-		v, err := in.eval(n.Value, env, fr)
-		if err != nil {
-			return nil, err
-		}
-		return v, in.writeIVar(n.Name, v, fr, n.Line())
-	case *syntax.Const:
-		return in.lookupConst(n.Name, fr, n.Line())
 	case *syntax.ScopedConst:
 		return in.evalScopedConst(n, env, fr)
 	case *syntax.ConstAssign:
@@ -106,10 +62,6 @@ func (in *Interp) eval(n syntax.Node, env *Env, fr *Frame) (object.Value, error)
 			return nil, err
 		}
 		return v, in.defineConst(n.Name, v, fr, n.Line())
-	case *syntax.Call:
-		return in.evalCall(n, env, fr)
-	case *syntax.Lambda:
-		return &Proc{Block: n.Block, Env: env, Frame: fr, Strict: n.Strict}, nil
 	case *syntax.Yield:
 		if fr.Block == nil {
 			return nil, in.raise(object.LocalJumpError, n.Line(), "no block given (yield)")
@@ -122,63 +74,14 @@ func (in *Interp) eval(n syntax.Node, env *Env, fr *Frame) (object.Value, error)
 		return v, withLine(err, n.Line())
 	case *syntax.Super:
 		return in.evalSuper(n, env, fr)
-	case *syntax.Return:
-		v, err := in.optional(n.Value, env, fr)
-		if err != nil {
-			return nil, err
-		}
-		return nil, &control{kind: ctrlReturn, value: v, target: fr, line: n.Line()}
-	case *syntax.Break:
-		v, err := in.optional(n.Value, env, fr)
-		if err != nil {
-			return nil, err
-		}
-		return nil, &control{kind: ctrlBreak, value: v, line: n.Line()}
-	case *syntax.Next:
-		v, err := in.optional(n.Value, env, fr)
-		if err != nil {
-			return nil, err
-		}
-		return nil, &control{kind: ctrlNext, value: v, line: n.Line()}
 	case *syntax.Retry:
 		return nil, &control{kind: ctrlRetry, line: n.Line()}
-	case *syntax.If:
-		c, err := in.eval(n.Cond, env, fr)
-		if err != nil {
-			return nil, err
-		}
-		if object.Truthy(c) {
-			return in.evalBody(n.Then, env, fr)
-		}
-		return in.evalBody(n.Else, env, fr)
-	case *syntax.While:
-		return in.evalWhile(n, env, fr)
-	case *syntax.And:
-		l, err := in.eval(n.Left, env, fr)
-		if err != nil || !object.Truthy(l) {
-			return l, err
-		}
-		return in.eval(n.Right, env, fr)
-	case *syntax.Or:
-		l, err := in.eval(n.Left, env, fr)
-		if err != nil || object.Truthy(l) {
-			return l, err
-		}
-		return in.eval(n.Right, env, fr)
-	case *syntax.Not:
-		v, err := in.eval(n.Value, env, fr)
-		if err != nil {
-			return nil, err
-		}
-		return object.BoolOf(!object.Truthy(v)), nil
 	case *syntax.Case:
 		return in.evalCase(n, env, fr)
 	case *syntax.CaseIn:
 		return in.evalCaseIn(n, env, fr)
 	case *syntax.MatchPattern:
 		return in.evalMatchPattern(n, env, fr)
-	case *syntax.Begin:
-		return in.evalBegin(n, env, fr)
 	case *syntax.Def:
 		return in.evalDef(n, fr)
 	case *syntax.ClassDef:
@@ -203,14 +106,6 @@ func (in *Interp) eval(n syntax.Node, env *Env, fr *Frame) (object.Value, error)
 		return nil, in.raise(object.AmberError, n.Line(), "a splat belongs in a list or an argument list")
 	}
 	return nil, in.raise(object.AmberError, n.Line(), "cannot evaluate %T", n)
-}
-
-// optional evaluates a node that may be absent, reading nil for it.
-func (in *Interp) optional(n syntax.Node, env *Env, fr *Frame) (object.Value, error) {
-	if n == nil {
-		return object.Nil, nil
-	}
-	return in.eval(n, env, fr)
 }
 
 // evalArgs evaluates a list of expressions, splicing splats.
@@ -348,30 +243,6 @@ func at(values []object.Value, i int) object.Value {
 	return object.Nil
 }
 
-func (in *Interp) evalWhile(n *syntax.While, env *Env, fr *Frame) (object.Value, error) {
-	for {
-		c, err := in.eval(n.Cond, env, fr)
-		if err != nil {
-			return nil, err
-		}
-		if !object.Truthy(c) {
-			return object.Nil, nil
-		}
-		_, err = in.evalBody(n.Body, env, fr)
-		if err != nil {
-			if c, ok := err.(*control); ok && c.target == nil {
-				switch c.kind {
-				case ctrlBreak:
-					return c.value, nil
-				case ctrlNext:
-					continue
-				}
-			}
-			return nil, err
-		}
-	}
-}
-
 func (in *Interp) evalCase(n *syntax.Case, env *Env, fr *Frame) (object.Value, error) {
 	var subject object.Value
 	if n.Subject != nil {
@@ -422,70 +293,30 @@ func (in *Interp) caseEqual(pattern, v object.Value) (bool, error) {
 	return in.Equal(pattern, v)
 }
 
-func (in *Interp) evalBegin(n *syntax.Begin, env *Env, fr *Frame) (object.Value, error) {
-	result, err := in.beginBody(n, env, fr)
-	if n.Ensure != nil {
-		if _, ensureErr := in.evalBody(n.Ensure, env, fr); ensureErr != nil {
-			return nil, ensureErr
-		}
-	}
-	return result, err
-}
-
-func (in *Interp) beginBody(n *syntax.Begin, env *Env, fr *Frame) (object.Value, error) {
-	for {
-		result, err := in.evalBody(n.Body, env, fr)
-		if err == nil {
-			if n.Else != nil {
-				return in.evalBody(n.Else, env, fr)
-			}
-			return result, nil
-		}
-		exc, ok := err.(*object.Exception)
-		if !ok {
-			return nil, err
-		}
-		clause, err := in.matchRescue(n.Rescues, exc, env, fr)
-		if err != nil {
-			return nil, err
-		}
-		if clause == nil {
-			return nil, exc
-		}
-		if clause.Var != "" {
-			env.Set(clause.Var, exc)
-		}
-		result, err = in.evalBody(clause.Body, env, fr)
-		if c, ok := err.(*control); ok && c.kind == ctrlRetry {
-			continue
-		}
-		return result, err
-	}
-}
-
-// matchRescue finds the rescue clause for an exception, nil when none fits.
-func (in *Interp) matchRescue(rescues []syntax.Rescue, exc *object.Exception, env *Env, fr *Frame) (*syntax.Rescue, error) {
+// matchRescue finds the rescue clause for an exception: its index, or -1
+// when none fits.
+func (in *Interp) matchRescue(rescues []syntax.Rescue, exc *object.Exception, env *Env, fr *Frame) (int, error) {
 	for i := range rescues {
 		r := &rescues[i]
 		if len(r.Classes) == 0 {
 			if exc.Cls.IsA(object.StandardError) {
-				return r, nil
+				return i, nil
 			}
 			continue
 		}
 		classes, err := in.evalArgs(r.Classes, env, fr)
 		if err != nil {
-			return nil, err
+			return -1, err
 		}
 		for _, c := range classes {
 			cls, ok := c.(*object.Class)
 			if !ok {
-				return nil, in.raise(object.TypeError, 0, "class or module required for rescue clause")
+				return -1, in.raise(object.TypeError, 0, "class or module required for rescue clause")
 			}
 			if exc.Cls.IsA(cls) {
-				return r, nil
+				return i, nil
 			}
 		}
 	}
-	return nil, nil
+	return -1, nil
 }

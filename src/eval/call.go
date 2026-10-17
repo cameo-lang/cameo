@@ -98,6 +98,30 @@ func binaryOp(name string) func(a, b object.Value) object.Value {
 			}
 			return nil
 		}
+	case "/":
+		// Integer division floors, as Ruby's does; a zero divisor and the
+		// floats go the ordinary way.
+		return func(a, b object.Value) object.Value {
+			if x, y, ok := ints(a, b); ok && y != 0 {
+				q := x / y
+				if x%y != 0 && (x < 0) != (y < 0) {
+					q--
+				}
+				return object.IntValue(q)
+			}
+			return nil
+		}
+	case "%":
+		return func(a, b object.Value) object.Value {
+			if x, y, ok := ints(a, b); ok && y != 0 {
+				m := x % y
+				if m != 0 && (m < 0) != (y < 0) {
+					m += y
+				}
+				return object.IntValue(m)
+			}
+			return nil
+		}
 	case "<":
 		return func(a, b object.Value) object.Value {
 			if x, y, ok := ints(a, b); ok {
@@ -258,7 +282,8 @@ func (in *Interp) call(fr *Frame, recv object.Value, name string, args []object.
 
 // invoke runs a user method.
 func (in *Interp) invoke(m *object.Method, recv object.Value, args []object.Value, kw *object.Map, block object.Value, line int) (object.Value, error) {
-	def := m.Body.(*syntax.Def)
+	cd := m.Body.(*compiledDef)
+	def := cd.def
 	act := &activation{frame: Frame{
 		Self:    recv,
 		Method:  m,
@@ -280,7 +305,7 @@ func (in *Interp) invoke(m *object.Method, recv object.Value, args []object.Valu
 	if err := in.bindParams(&def.Params, args, kw, block, env, fr, true, m.Name, line); err != nil {
 		return nil, err
 	}
-	v, err := in.evalBody(def.Body, env, fr)
+	v, err := cd.body(in, env, fr)
 	if err != nil {
 		if c, ok := err.(*control); ok {
 			switch {
@@ -473,7 +498,7 @@ func (in *Interp) callBlock(block object.Value, args []object.Value, kw *object.
 	if err := in.bindParams(&p.Block.Params, args, kw, inner, env, fr, p.Strict, "block", p.Block.Line()); err != nil {
 		return nil, err
 	}
-	v, err := in.evalBody(p.Block.Body, env, fr)
+	v, err := in.code.body(p.Block, p.Block.Body)(in, env, fr)
 	if err != nil {
 		if c, ok := err.(*control); ok {
 			switch {

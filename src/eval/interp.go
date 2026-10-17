@@ -1,6 +1,6 @@
-// Package eval runs amber programs: a tree-walking evaluator over the syntax
-// package's AST and the object package's values. The design is in
-// doc/design/amber.md.
+// Package eval runs amber programs: it compiles the syntax package's AST
+// into closures, one per node, and runs them over the object package's
+// values. The design is in doc/design/amber.md.
 package eval
 
 import (
@@ -33,6 +33,8 @@ type Interp struct {
 	// so the run can wait for all of them and report the failures nobody
 	// awaited.
 	procs *processList
+	// code is the compiled program, shared with the workers.
+	code *code
 }
 
 // New makes an interpreter writing to stdout and stderr.
@@ -50,6 +52,7 @@ func New(stdout, stderr io.Writer) *Interp {
 		consts:    map[string]object.Value{},
 		proto:     protogen.NewRegistry(),
 		procs:     &processList{},
+		code:      &code{},
 	}
 }
 
@@ -60,7 +63,7 @@ var installOnce sync.Once
 func (in *Interp) Run(file string, prog *syntax.Program) error {
 	in.file = file
 	fr := &Frame{Self: in.main, DefTarget: in.mainClass}
-	_, err := in.evalBody(prog.Body, in.top, fr)
+	_, err := in.code.body(prog, prog.Body)(in, in.top, fr)
 	if c, ok := err.(*control); ok {
 		if c.kind == ctrlReturn {
 			return nil
