@@ -133,7 +133,11 @@ func (m *Map) Without(keys ...Value) *Map {
 
 // Set is an immutable set in insertion order, a version of a table whose
 // values are unused.
-type Set struct{ version }
+type Set struct {
+	version
+	// kinds caches Kinds; see there.
+	kinds uint32
+}
 
 // NewSet makes a set of the elements, dropping duplicates.
 func NewSet(elems ...Value) *Set {
@@ -142,7 +146,7 @@ func NewSet(elems ...Value) *Set {
 		s.appendLocked(Key(e), e, True, false)
 	}
 	s.t.live = s.len
-	return &Set{version{span: s}}
+	return &Set{version: version{span: s}}
 }
 
 // Len returns the number of elements.
@@ -162,8 +166,10 @@ func (s *Set) Elems() []Value {
 
 // With and Without return the set with e added or removed, in O(1) when
 // the set is the newest of its table.
-func (s *Set) With(e Value) *Set    { return &Set{version{span: s.with(Key(e), e, True, false)}} }
-func (s *Set) Without(e Value) *Set { return &Set{version{span: s.with(Key(e), e, Value{}, true)}} }
+func (s *Set) With(e Value) *Set { return &Set{version: version{span: s.with(Key(e), e, True, false)}} }
+func (s *Set) Without(e Value) *Set {
+	return &Set{version: version{span: s.with(Key(e), e, Value{}, true)}}
+}
 
 // Union, Intersection and Difference return new sets.
 func (s *Set) Union(o *Set) *Set {

@@ -181,4 +181,15 @@ func TestListKinds(t *testing.T) {
 	if NewList().List().Kinds().Only(KindInt) {
 		t.Fatal("an empty list is Only(KindInt)")
 	}
+	// A set keeps its kinds too, and a set made from it starts afresh.
+	s := NewSet(Int(1), Int(2))
+	if !s.Kinds().Only(KindInt) {
+		t.Fatalf("set kinds %b", s.Kinds())
+	}
+	if w := s.With(Float(1.5)).Kinds(); w != 1<<KindInt|1<<KindFloat {
+		t.Fatalf("kinds after With: %b", w)
+	}
+	if !s.With(Float(1.5)).Without(Float(1.5)).Kinds().Only(KindInt) || !s.Kinds().Only(KindInt) {
+		t.Fatal("kinds after Without")
+	}
 }

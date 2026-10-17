@@ -39,11 +39,19 @@ func (k Kinds) Only(kinds ...Kind) bool {
 
 // Kinds returns the kinds of the list's elements. It is computed on the
 // first call and kept, which is sound because Elems never changes.
-func (l *List) Kinds() Kinds {
-	if k := Kinds(atomic.LoadUint32(&l.kinds)); k&kindsKnown != 0 {
+func (l *List) Kinds() Kinds { return cachedKinds(&l.kinds, func() []Value { return l.Elems }) }
+
+// Kinds returns the kinds of the set's members, computed on the first call
+// and kept: a set never changes.
+func (s *Set) Kinds() Kinds { return cachedKinds(&s.kinds, s.Elems) }
+
+// cachedKinds returns the Kinds cached in *p, computing them from elems
+// and storing them on the first call.
+func cachedKinds(p *uint32, elems func() []Value) Kinds {
+	if k := Kinds(atomic.LoadUint32(p)); k&kindsKnown != 0 {
 		return k &^ kindsKnown
 	}
-	k := KindsOf(l.Elems)
-	atomic.StoreUint32(&l.kinds, uint32(k|kindsKnown))
+	k := KindsOf(elems())
+	atomic.StoreUint32(p, uint32(k|kindsKnown))
 	return k
 }
