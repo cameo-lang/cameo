@@ -31,7 +31,7 @@ ran, and say what you did not run.
 
 **Use the reader's vocabulary.** A word that means something specific in this
 repository must not be used for something else without saying so — a "value"
-is an cameo value here, so a Go value is "a Go value". Pick one word per
+is a cameo value here, so a Go value is "a Go value". Pick one word per
 concept and keep it: if a comment says "repository", the next sentence does not
 say "repo", "checkout" or "project" for the same thing.
 

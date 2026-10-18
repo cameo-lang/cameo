@@ -7,7 +7,7 @@ import (
 	"strconv"
 )
 
-// ScalarKind is what an cameo value of a scalar field type is.
+// ScalarKind is what a cameo value of a scalar field type is.
 type ScalarKind int
 
 const (

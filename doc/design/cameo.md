@@ -360,7 +360,7 @@ allowed and nests the same way.
 
 ## Protobuf
 
-Every class is a protobuf message, which is what makes an cameo value cheap
+Every class is a protobuf message, which is what makes a cameo value cheap
 to hand to Go, to another goroutine, or over a wire.
 
 **Representation.** When a class is loaded the interpreter builds a

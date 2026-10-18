@@ -73,7 +73,7 @@ An example that is also plain Ruby has its expected output generated with
 `ruby`, so cameo is held to Ruby's behaviour where the two overlap.
 
 [benchmarks/ruby/](benchmarks/ruby) holds CRuby's own benchmark suite, one
-script per case, grouped into what works, what fails on an cameo bug, what
+script per case, grouped into what works, what fails on a cameo bug, what
 needs a builtin cameo does not have yet, and what uses a feature cameo leaves
 out; its `run.rb` checks that the working ones keep working.
 

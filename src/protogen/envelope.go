@@ -199,7 +199,7 @@ func (e *Encoder) Encode(v object.Value) ([]byte, error) {
 	return proto.Marshal(msg)
 }
 
-// Message is a value as an cameo.Value message.
+// Message is a value as a cameo.Value message.
 func (e *Encoder) Message(v object.Value) (*dynamicpb.Message, error) {
 	fd, err := envelope()
 	if err != nil {
@@ -394,7 +394,7 @@ func (d *Decoder) Decode(data []byte) (object.Value, error) {
 	return d.value(msg)
 }
 
-// Value reads an cameo.Value message.
+// Value reads a cameo.Value message.
 func (d *Decoder) Value(msg protoreflect.Message) (object.Value, error) { return d.value(msg) }
 
 func (d *Decoder) value(msg protoreflect.Message) (object.Value, error) {

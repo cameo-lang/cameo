@@ -215,7 +215,7 @@ func (p *Program) Decode(data []byte) (any, error) {
 	return p.ToGo(v)
 }
 
-// ToValue converts a Go value to an cameo value: nil, bool, integers (a
+// ToValue converts a Go value to a cameo value: nil, bool, integers (a
 // *big.Int among them),
 // floats, string, []byte, time.Time, []any, map[string]any or
 // map[any]any, an object.Value as it is, or a proto.Message whose descriptor full name is a
@@ -323,10 +323,10 @@ func (p *Program) ToValue(v any) (object.Value, error) {
 		}
 		return object.Value{}, fmt.Errorf("no loaded class has the message %s", full)
 	}
-	return object.Value{}, fmt.Errorf("cannot convert %T to an cameo value", v)
+	return object.Value{}, fmt.Errorf("cannot convert %T to a cameo value", v)
 }
 
-// ToGo converts an cameo value to a Go value: nil, bool, int64 (a *big.Int
+// ToGo converts a cameo value to a Go value: nil, bool, int64 (a *big.Int
 // beyond 64 bits), float64,
 // string, []byte, time.Time, []any, map[any]any, a proto.Message for an
 // instance, and the object.Value itself for everything else (symbols,
