@@ -3,33 +3,33 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>amber — native code</title>
-<meta name="description" content="Extend amber with Go: host modules of Go methods and exception classes, and builtin classes in amber's standard library.">
+<title>cameo — native code</title>
+<meta name="description" content="Extend cameo with Go: host modules of Go methods and exception classes, and builtin classes in cameo's standard library.">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header class="site"><div class="inner">
-  <a class="name" href="index.html">amber</a>
+  <a class="name" href="index.html">cameo</a>
   <nav>
     <a href="index.html">Overview</a>
     <a href="ruby.html">Coming from Ruby</a>
     <a href="go.html">Embedding in Go</a>
     <a href="native.html" aria-current="page">Native code</a>
-    <a href="https://github.com/radiospiel/amber">GitHub</a>
+    <a href="https://github.com/radiospiel/cameo">GitHub</a>
   </nav>
 </div></header>
 
 <main>
-<h1>Extending amber with native code</h1>
+<h1>Extending cameo with native code</h1>
 <p class="lead">There are two places to add Go code that a script calls:
-a module the host program gives one script, and a builtin class in amber's
+a module the host program gives one script, and a builtin class in cameo's
 standard library, which every script has.</p>
 
 <nav class="toc" aria-label="On this page">
 <ol>
   <li><a href="#host">From a host: modules of Go methods</a></li>
   <li><a href="#classes">Classes from a host</a></li>
-  <li><a href="#stdlib">Inside amber: a builtin class</a></li>
+  <li><a href="#stdlib">Inside cameo: a builtin class</a></li>
 </ol>
 </nav>
 
@@ -41,11 +41,11 @@ for the script:</p>
 <ul>
   <li><code>prog.Module(name)</code> defines the module <code>name</code>
   as a constant at the script's top level, as <code>Math</code> is, and
-  returns a <code>*amber.Module</code>. A script cannot redefine or reopen
+  returns a <code>*cameo.Module</code>. A script cannot redefine or reopen
   it.</li>
   <li><code>mod.Def(name, fn)</code> defines the method the script calls
   as <code>Name.name(args)</code>. <code>fn</code> is an
-  <code>amber.Func</code>, <code>func(args []any, kwargs map[string]any)
+  <code>cameo.Func</code>, <code>func(args []any, kwargs map[string]any)
   (any, error)</code>: it gets the positional and keyword arguments as Go
   values, as <code>ToGo</code> converts them, except that a Symbol is a
   <code>string</code> and a Hash with String or Symbol keys is a
@@ -65,7 +65,7 @@ import (
 	&quot;os&quot;
 	&quot;strings&quot;
 
-	&quot;github.com/radiospiel/amber/src/amber&quot;
+	&quot;github.com/radiospiel/cameo/src/cameo&quot;
 )
 
 const script = `
@@ -78,7 +78,7 @@ end
 `
 
 func main() {
-	prog, err := amber.Load(&quot;text.arb&quot;, script, os.Stdout, os.Stderr)
+	prog, err := cameo.Load(&quot;text.cameo&quot;, script, os.Stdout, os.Stderr)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -110,7 +110,7 @@ the host passed to <code>RunContext</code>.</p>
 <h3>A worked example: ark's <code>Spicy.tools</code></h3>
 
 <p><a href="https://github.com/radiospiel/ark">ark</a> runs scripts that
-call tools on amber, in
+call tools on cameo, in
 <a href="https://github.com/radiospiel/ark/blob/main/parts/golang/agentic/src/coderuby/amber.go"><code>parts/golang/agentic/src/coderuby/amber.go</code></a>.
 Its <code>defineSpicy</code> gives every script the module
 <code>Spicy</code>:</p>
@@ -130,24 +130,15 @@ Its <code>defineSpicy</code> gives every script the module
 <h2 id="classes">Classes from a host</h2>
 
 <div class="callout">
-<p><strong>A host cannot define a class.</strong> In v0.1.1 the host API
-defines modules, their methods and their exception classes. It has no way
-to define a class whose instances a script creates with <code>new</code>
-and whose methods are Go functions, and no way to keep Go state in an
-instance.</p>
+<p><strong>Coming:</strong> native classes from a host, whose fields are
+a generated protobuf message and whose methods are Go functions. This
+section describes them once they land.</p>
 </div>
 
-<p>Two things come close:</p>
-
-<ul>
-  <li>The script declares the class, with typed fields and methods in
-  amber, and a host method returns instances of it. A
-  <code>proto.Message</code> whose descriptor is a loaded class's becomes
-  an instance of that class.</li>
-  <li>A builtin class in amber's standard library, below, which needs a
-  change to amber itself and is then there for every script and every
-  host.</li>
-</ul>
+<p>Until then a script declares the class, with typed fields and methods
+in cameo, and a host method returns instances of it: a
+<code>proto.Message</code> whose descriptor is a loaded class's becomes an
+instance of that class.</p>
 
 <pre class="go"><code>package main
 
@@ -158,7 +149,7 @@ import (
 	&quot;google.golang.org/protobuf/reflect/protoreflect&quot;
 	&quot;google.golang.org/protobuf/types/dynamicpb&quot;
 
-	&quot;github.com/radiospiel/amber/src/amber&quot;
+	&quot;github.com/radiospiel/cameo/src/cameo&quot;
 )
 
 const script = `
@@ -175,7 +166,7 @@ p user.with(age: user.age + 1)
 `
 
 func main() {
-	prog, err := amber.Load(&quot;users.arb&quot;, script, os.Stdout, os.Stderr)
+	prog, err := cameo.Load(&quot;users.cameo&quot;, script, os.Stdout, os.Stderr)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -197,9 +188,9 @@ func main() {
 <pre class="output"><code>ada is 36
 User(name: &quot;ada&quot;, age: 37)</code></pre>
 
-<h2 id="stdlib">Inside amber: a builtin class</h2>
+<h2 id="stdlib">Inside cameo: a builtin class</h2>
 
-<p>amber's builtin classes live in <code>src/stdlib</code>, one file per
+<p>cameo's builtin classes live in <code>src/stdlib</code>, one file per
 area. A class is an <code>*object.Class</code> from
 <code>object.NewClass(name, super)</code>:</p>
 
@@ -229,7 +220,7 @@ area. A class is an <code>*object.Class</code> from
 import (
 	&quot;fmt&quot;
 
-	&quot;github.com/radiospiel/amber/src/object&quot;
+	&quot;github.com/radiospiel/cameo/src/object&quot;
 )
 
 // MoneyClass is Money: an amount in cents, held as its instance&#39;s one field.
@@ -307,9 +298,9 @@ diff --git a/src/stdlib/stdlib.go b/src/stdlib/stdlib.go
  	installUserEnumerable()
  	// Last: it wraps every String method defined before it.</code></pre>
 
-<p>Built with these changes, amber runs:</p>
+<p>Built with these changes, cameo runs:</p>
 
-<pre class="amber unbuilt"><code>total = Money.new(1250) + Money.new(199)
+<pre class="cameo unbuilt"><code>total = Money.new(1250) + Money.new(199)
 puts total
 p total
 p total.cents
@@ -330,12 +321,12 @@ passed to <code>async</code>, which raises "Money is not a class with
 fields", and they reach a host as an <code>*object.Instance</code>. A new
 builtin also comes with an example in <code>examples/</code>, whose
 <code>.expected</code> output <code>go test</code> holds it to, and a line
-in <code>doc/amber-vs-ruby.md</code> if Ruby has the class too.</p>
+in <code>doc/cameo-vs-ruby.md</code> if Ruby has the class too.</p>
 </main>
 
 <footer class="site"><div class="inner">
-  amber · <a href="https://github.com/radiospiel/amber">github.com/radiospiel/amber</a> ·
-  every sample on this site was run against amber v0.1.1
+  cameo · <a href="https://github.com/radiospiel/cameo">github.com/radiospiel/cameo</a> ·
+  every sample on this site was run
 </div></footer>
 </body>
 </html>

@@ -4,7 +4,7 @@
 **Ended:** 2026-10-18 10:59:00
 **Strategy:** Feature (TDD)
 **Status:** Completed
-**Complexity:** Simple
+**Complexity:** Medium
 **Used Models:** Opus
 **Token usage (Estimated):** 250k input, 60k output
 
@@ -40,6 +40,15 @@ programmers, deployed by a Pages workflow.
   src/eval/inspect.go, as Pathname is; verified in a worktree of v0.1.1.
 - **Issue:** headless Chromium renders at least 500px wide, so a 390px
   screenshot clips. **Resolution:** checked the layout at 500px.
+
+- **Issue:** after the pull request was open, the brief changed: the
+  language is renamed to cameo (radiospiel/amber#89), and native classes
+  from a host are being designed, so the site gives them a placeholder.
+  A rebase onto the rename branch was refused as a rewrite of a pushed
+  branch. **Resolution:** merged the rename branch in instead, renamed the
+  site, and ran every sample again against the renamed code: the cameo
+  samples through tests/site_test.go, the Go programs in a scratch module
+  with a replace directive, the stdlib example in a worktree.
 
 ## Outcome
 Four pages and a stylesheet in doc/gh_pages, a Pages workflow, and a test

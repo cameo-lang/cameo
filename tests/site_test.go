@@ -18,7 +18,7 @@ import (
 // siteSample is a cameo sample on the site, and the output block that
 // follows it, if any. A sample marked rejected must fail the check with
 // the output block as its error.
-var siteSample = regexp.MustCompile(`(?s)<pre class="amber( rejected)?"><code>(.*?)</code></pre>\s*(?:<pre class="output(?: error)?"><code>(.*?)</code></pre>)?`)
+var siteSample = regexp.MustCompile(`(?s)<pre class="cameo( rejected)?"><code>(.*?)</code></pre>\s*(?:<pre class="output(?: error)?"><code>(.*?)</code></pre>)?`)
 
 // TestSiteSamplesPrintTheirOutput runs every cameo sample on the GitHub
 // Pages site in doc/gh_pages and holds it to the output printed under it.

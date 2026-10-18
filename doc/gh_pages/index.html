@@ -3,25 +3,25 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>amber — Ruby, but immutable</title>
-<meta name="description" content="amber is a language with Ruby's syntax, run by an interpreter written in Go, for embedding in Go programs.">
+<title>cameo — Ruby, but immutable</title>
+<meta name="description" content="cameo is a language with Ruby's syntax, run by an interpreter written in Go, for embedding in Go programs.">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header class="site"><div class="inner">
-  <a class="name" href="index.html">amber</a>
+  <a class="name" href="index.html">cameo</a>
   <nav>
     <a href="index.html" aria-current="page">Overview</a>
     <a href="ruby.html">Coming from Ruby</a>
     <a href="go.html">Embedding in Go</a>
     <a href="native.html">Native code</a>
-    <a href="https://github.com/radiospiel/amber">GitHub</a>
+    <a href="https://github.com/radiospiel/cameo">GitHub</a>
   </nav>
 </div></header>
 
 <main>
 <h1>Ruby, but immutable.</h1>
-<p class="lead">amber is a language with Ruby's syntax, run by an interpreter
+<p class="lead">cameo is a language with Ruby's syntax, run by an interpreter
 written in Go. It is made to be embedded in Go programs.</p>
 
 <p>Every value is immutable. A call that would change a value in Ruby
@@ -29,7 +29,7 @@ rebinds the local variable it is called on to a changed copy; every other
 reference keeps what it held. Classes declare typed fields, and every
 instance is a protobuf message.</p>
 
-<pre class="amber"><code>class Point
+<pre class="cameo"><code>class Point
   int :x, :y
 
   def +(other) = Point.new(x: x + other.x, y: y + other.y)
@@ -50,7 +50,7 @@ Point(x: 20, y: 12)</code></pre>
 
 <h2>What it is for: scripting a Go program</h2>
 
-<p>A Go program loads an amber script, runs it, calls its methods, and
+<p>A Go program loads an cameo script, runs it, calls its methods, and
 passes values and protobuf messages both ways. A script's classes are
 protobuf messages, so the host reads an instance as a
 <code>proto.Message</code>, and a message the host builds becomes an
@@ -59,12 +59,12 @@ instance in the script.</p>
 <ul>
   <li><strong>It starts in microseconds.</strong> Loading, checking and
   running a five-line script with a class takes 60 to 75&nbsp;µs in a Go
-  process (measured with <code>amber.Run</code> in a loop of 1000, on
+  process (measured with <code>cameo.Run</code> in a loop of 1000, on
   the four-core Linux machine this site was built on).</li>
   <li><strong>It needs no cgo.</strong> The interpreter and its parser,
   <a href="https://github.com/go-ruby-parser/parser">go-ruby-parser</a>,
   are pure Go: no Ruby installation and no code generation.</li>
-  <li><strong>It builds wherever Go does.</strong> The <code>amber</code>
+  <li><strong>It builds wherever Go does.</strong> The <code>cameo</code>
   package compiles with <code>CGO_ENABLED=0</code> for ios/arm64,
   android/arm64, darwin/arm64, windows/amd64, js/wasm and wasip1/wasm.</li>
   <li><strong>A script reads no file and starts no process.</strong> It
@@ -79,12 +79,12 @@ it, with every worker it started, when the host's context ends.</p>
 
 <h2>How fast it is</h2>
 
-<p>amber runs the 824 cases of CRuby's own benchmark suite that use only
-what amber supports, every one with CRuby 3.4's output. From
-<a href="https://github.com/radiospiel/amber/blob/main/benchmarks/compare/README.md">benchmarks/compare</a>,
+<p>cameo runs the 824 cases of CRuby's own benchmark suite that use only
+what cameo supports, every one with CRuby 3.4's output. From
+<a href="https://github.com/radiospiel/cameo/blob/main/benchmarks/compare/README.md">benchmarks/compare</a>,
 measured on 2026-10-18 against CRuby 3.3.6 (mri):</p>
 
-<blockquote class="callout">amber takes about two and a half times MRI's
+<blockquote class="callout">cameo takes about two and a half times MRI's
 time on the typical case, a geometric mean of 265% over the 783 cases both
 run, and is faster in 185 of them.</blockquote>
 
@@ -98,24 +98,24 @@ to WebAssembly (708% of MRI's time) and go-embedded-ruby (1019%).</p>
 <div class="cards">
   <a href="ruby.html"><strong>Coming from Ruby</strong>
     <span>What works as in Ruby, and the differences: immutability, typed
-    fields, what the checker rejects, missing builtins, what only amber
+    fields, what the checker rejects, missing builtins, what only cameo
     has.</span></a>
   <a href="go.html"><strong>Embedding in Go</strong>
     <span>Load, run and call a script; convert values; pass protobuf
     messages; handle errors; run workers.</span></a>
   <a href="native.html"><strong>Native code</strong>
     <span>Give a script a module of Go methods from the host, or add a
-    builtin class to amber's standard library.</span></a>
+    builtin class to cameo's standard library.</span></a>
 </div>
 
 <p>The status: the interpreter is complete to its
-<a href="https://github.com/radiospiel/amber/blob/main/doc/design/amber.md">design</a>,
-and the current release is v0.1.1. amber is MIT-licensed.</p>
+<a href="https://github.com/radiospiel/cameo/blob/main/doc/design/cameo.md">design</a>,
+and cameo is MIT-licensed.</p>
 </main>
 
 <footer class="site"><div class="inner">
-  amber · <a href="https://github.com/radiospiel/amber">github.com/radiospiel/amber</a> ·
-  every sample on this site was run against amber v0.1.1
+  cameo · <a href="https://github.com/radiospiel/cameo">github.com/radiospiel/cameo</a> ·
+  every sample on this site was run
 </div></footer>
 </body>
 </html>

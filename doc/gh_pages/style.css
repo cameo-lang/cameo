@@ -1,4 +1,4 @@
-/* amber's site: one stylesheet, system fonts, light and dark. */
+/* cameo's site: one stylesheet, system fonts, light and dark. */
 
 :root {
   --bg: #fdfcf9;
@@ -145,7 +145,7 @@ pre.output::before {
 pre.output.error { background: var(--bad-bg); color: var(--bad-fg); }
 pre.output.error::before { content: "rejected"; }
 
-/* A Ruby sample beside the amber way. */
+/* A Ruby sample beside the cameo way. */
 .pair {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);

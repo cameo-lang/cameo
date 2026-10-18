@@ -3,27 +3,27 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>amber — coming from Ruby</title>
-<meta name="description" content="What amber shares with Ruby, and how it differs: immutability, typed fields, what the checker rejects, missing builtins, and what only amber has.">
+<title>cameo — coming from Ruby</title>
+<meta name="description" content="What cameo shares with Ruby, and how it differs: immutability, typed fields, what the checker rejects, missing builtins, and what only cameo has.">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header class="site"><div class="inner">
-  <a class="name" href="index.html">amber</a>
+  <a class="name" href="index.html">cameo</a>
   <nav>
     <a href="index.html">Overview</a>
     <a href="ruby.html" aria-current="page">Coming from Ruby</a>
     <a href="go.html">Embedding in Go</a>
     <a href="native.html">Native code</a>
-    <a href="https://github.com/radiospiel/amber">GitHub</a>
+    <a href="https://github.com/radiospiel/cameo">GitHub</a>
   </nav>
 </div></header>
 
 <main>
 <h1>Coming from Ruby</h1>
-<p class="lead">Everything amber accepts parses as Ruby, and where amber
+<p class="lead">Everything cameo accepts parses as Ruby, and where cameo
 accepts a construct it behaves as CRuby 3.4 does. The differences are
-below, each with the Ruby you would write and the amber way.</p>
+below, each with the Ruby you would write and the cameo way.</p>
 
 <nav class="toc" aria-label="On this page">
 <ol>
@@ -32,17 +32,17 @@ below, each with the Ruby you would write and the amber way.</p>
   <li><a href="#fields">Typed fields instead of instance variables</a></li>
   <li><a href="#rejected">What the checker rejects</a></li>
   <li><a href="#missing">Missing builtins</a></li>
-  <li><a href="#only">Only in amber: with, async and await, protobuf</a></li>
+  <li><a href="#only">Only in cameo: with, async and await, protobuf</a></li>
 </ol>
 </nav>
 
-<p>amber differs from Ruby in three ways: a construct has a different
+<p>cameo differs from Ruby in three ways: a construct has a different
 meaning, almost always because values are immutable; the checker rejects a
 construct before the script runs, and names what to write instead; or a
 builtin is missing, which raises an exception, mostly
 <code>NameError</code> or <code>NoMethodError</code>, when the script
 reaches it. The full list is
-<a href="https://github.com/radiospiel/amber/blob/main/doc/amber-vs-ruby.md">doc/amber-vs-ruby.md</a>.</p>
+<a href="https://github.com/radiospiel/cameo/blob/main/doc/cameo-vs-ruby.md">doc/cameo-vs-ruby.md</a>.</p>
 
 <h2 id="same">The same as in Ruby</h2>
 
@@ -76,9 +76,9 @@ reaches it. The full list is
 </ul>
 
 <p>This script prints the same under <code>ruby</code> 3.3 and under
-<code>amber</code>:</p>
+<code>cameo</code>:</p>
 
-<pre class="amber"><code>def describe(shape)
+<pre class="cameo"><code>def describe(shape)
   case shape
   in { kind: :circle, r: } then "circle, area #{(Math::PI * r**2).round(2)}"
   in { kind: :square, side: } then "square, area #{side * side}"
@@ -108,8 +108,8 @@ end</code></pre>
 rescued ArgumentError: invalid value for Integer(): "12x"
 done</code></pre>
 
-<p>Of the 1318 cases in CRuby's benchmark suite that amber may carry, 824
-run under amber with Ruby's output. The most common reasons the rest stop
+<p>Of the 1318 cases in CRuby's benchmark suite that cameo may carry, 824
+run under cameo with Ruby's output. The most common reasons the rest stop
 are metaprogramming, instance variables, <code>attr_*</code> accessors and
 mutation of something other than a local variable, which the sections
 below cover.</p>
@@ -133,8 +133,8 @@ p a, b</code></pre>
 [1, 2, 3]</code></pre>
 </div>
 <div>
-<h4>amber</h4>
-<pre class="amber"><code>a = [1, 2]
+<h4>cameo</h4>
+<pre class="cameo"><code>a = [1, 2]
 b = a
 a &lt;&lt; 3
 p a, b</code></pre>
@@ -161,12 +161,12 @@ p config[:tags]</code></pre>
 <pre class="output"><code>["a", "b"]</code></pre>
 </div>
 <div>
-<h4>amber</h4>
-<pre class="amber rejected"><code>config = { tags: ["a"] }
+<h4>cameo</h4>
+<pre class="cameo rejected"><code>config = { tags: ["a"] }
 config[:tags] &lt;&lt; "b"
 p config[:tags]</code></pre>
-<pre class="output error"><code>script.arb:2: &lt;&lt; changes its receiver, which amber rebinds only for a local variable or a field in initialize; use + or append</code></pre>
-<pre class="amber"><code>config = { tags: ["a"] }
+<pre class="output error"><code>script.cameo:2: &lt;&lt; changes its receiver, which cameo rebinds only for a local variable or a field in initialize; use + or append</code></pre>
+<pre class="cameo"><code>config = { tags: ["a"] }
 config[:tags] += ["b"]
 p config[:tags]</code></pre>
 <pre class="output"><code>["a", "b"]</code></pre>
@@ -208,8 +208,8 @@ p c.count</code></pre>
 <pre class="output"><code>2</code></pre>
 </div>
 <div>
-<h4>amber</h4>
-<pre class="amber"><code>class Counter
+<h4>cameo</h4>
+<pre class="cameo"><code>class Counter
   int :count, default: 0
 
   def increment = with(count: count + 1)
@@ -232,7 +232,7 @@ wrong type raises <code>TypeError</code>, and one out of range
 <code>RangeError</code>. A class without <code>initialize</code> takes its
 fields as keywords.</p>
 
-<pre class="amber"><code>class Point
+<pre class="cameo"><code>class Point
   int32 :x, :y
   string :label, default: ""
 end
@@ -254,7 +254,7 @@ field x of Point takes an int32, not an instance of String</code></pre>
 is a copy too: <code>line.to.x = 30</code> rebinds <code>line</code> to a
 copy whose <code>to</code> is a copy with <code>x</code> set.</p>
 
-<pre class="amber"><code>class Point
+<pre class="cameo"><code>class Point
   int :x, :y
 end
 
@@ -277,11 +277,11 @@ its body has run, and a builtin class cannot be reopened.</p>
 
 <h2 id="rejected">What the checker rejects</h2>
 
-<p>amber checks a whole script before it runs any of it, and reports every
-construct it leaves out, with its line. <code>amber check script.arb</code>
+<p>cameo checks a whole script before it runs any of it, and reports every
+construct it leaves out, with its line. <code>cameo check script.cameo</code>
 runs the check alone.</p>
 
-<pre class="amber rejected"><code>class Account
+<pre class="cameo rejected"><code>class Account
   attr_reader :balance
 
   def initialize
@@ -292,10 +292,10 @@ runs the check alone.</p>
 end
 
 $total = 0</code></pre>
-<pre class="output error"><code>script.arb:2: attr_reader is not supported: a field declaration defines its reader, and there are no setters
-script.arb:5: @balance = …: amber has no instance variables; initialize sets a field with self.balance = …
-script.arb:8: send is not supported; use a direct call
-script.arb:11: global variables are not supported</code></pre>
+<pre class="output error"><code>script.cameo:2: attr_reader is not supported: a field declaration defines its reader, and there are no setters
+script.cameo:5: @balance = …: cameo has no instance variables; initialize sets a field with self.balance = …
+script.cameo:8: send is not supported; use a direct call
+script.cameo:11: global variables are not supported</code></pre>
 
 <table>
 <thead><tr><th>Rejected</th><th>Write instead</th></tr></thead>
@@ -313,13 +313,13 @@ script.arb:11: global variables are not supported</code></pre>
 <tr><td>backticks, <code>fork</code></td><td>none; a host can give the script a module of Go methods, and <code>async</code> runs a call on a goroutine</td></tr>
 <tr><td>rational and imaginary literals, <code>1r</code> and <code>2i</code></td><td>none</td></tr>
 <tr><td>assignment to a scoped constant, <code>A::B = 1</code></td><td>the assignment inside <code>A</code></td></tr>
-<tr><td>a regular expression that needs backtracking: backreferences, lookahead and lookbehind, atomic groups</td><td>a pattern without them; amber's regular expressions run in linear time</td></tr>
+<tr><td>a regular expression that needs backtracking: backreferences, lookahead and lookbehind, atomic groups</td><td>a pattern without them; cameo's regular expressions run in linear time</td></tr>
 </tbody>
 </table>
 
 <h2 id="missing">Missing builtins</h2>
 
-<p>These do not exist in amber. A script that uses one fails when it
+<p>These do not exist in cameo. A script that uses one fails when it
 reaches it, mostly with <code>NameError</code> or
 <code>NoMethodError</code>, and for a library with
 <code>LoadError</code>.</p>
@@ -337,7 +337,7 @@ reaches it, mostly with <code>NameError</code> or
   <code>STDOUT</code>, <code>STDERR</code>.</li>
   <li><strong>No threads or processes</strong>: <code>Thread</code>,
   <code>Fiber</code>, <code>Mutex</code>, <code>sleep</code>,
-  <code>system</code>, <code>exec</code>, <code>spawn</code>. amber has
+  <code>system</code>, <code>exec</code>, <code>spawn</code>. cameo has
   <code>async</code> and <code>await</code> instead.</li>
   <li><strong>Not there yet</strong>: <code>exit</code>,
   <code>at_exit</code>, <code>catch</code> and <code>throw</code>,
@@ -361,8 +361,8 @@ p item.qty</code></pre>
 <pre class="output"><code>2</code></pre>
 </div>
 <div>
-<h4>amber</h4>
-<pre class="amber"><code>class Item
+<h4>cameo</h4>
+<pre class="cameo"><code>class Item
   string :name
   int :qty
 end
@@ -374,14 +374,14 @@ p item.qty</code></pre>
 </div>
 </div>
 
-<pre class="amber"><code>begin
+<pre class="cameo"><code>begin
   require "json"
 rescue LoadError =&gt; e
   puts e.message
 end</code></pre>
 <pre class="output"><code>cannot load such file -- json</code></pre>
 
-<h2 id="only">Only in amber</h2>
+<h2 id="only">Only in cameo</h2>
 
 <h3><code>with</code></h3>
 
@@ -390,7 +390,7 @@ replaced; it is Ruby's <code>Data#with</code>. With a block, the block gets
 the value and returns a hash of the changes. On a Hash, <code>with</code>
 merges.</p>
 
-<pre class="amber"><code>class Point
+<pre class="cameo"><code>class Point
   int :x, :y
 end
 
@@ -413,7 +413,7 @@ goroutine of its own, over copies of the receiver and the arguments.
 has not awaited. A job shares no memory with the script that started it,
 so a Proc, a class or a block cannot be passed to one.</p>
 
-<pre class="amber"><code>class Worker
+<pre class="cameo"><code>class Worker
   int :factor
 
   def times(n) = n * factor
@@ -451,10 +451,10 @@ job raised: boom</code></pre>
 declaration order, and <code>reserved</code> keeps a removed field's number
 out of use. <code>to_proto</code> returns the wire form,
 <code>from_proto</code> reads it back, and <code>Point.proto</code> returns
-the <code>.proto</code> text. <code>amber proto script.arb</code> writes the
+the <code>.proto</code> text. <code>cameo proto script.cameo</code> writes the
 <code>.proto</code> files of every class a script defines.</p>
 
-<pre class="amber"><code>class Point
+<pre class="cameo"><code>class Point
   int :x, :y
 end
 
@@ -470,14 +470,14 @@ message Point {
   optional int64 y = 2;
 }</code></pre>
 
-<p>A Symbol becomes a String where a value leaves amber, in a protobuf
+<p>A Symbol becomes a String where a value leaves cameo, in a protobuf
 message or an <code>async</code> call, unless an <code>enum</code> field
 declares it.</p>
 </main>
 
 <footer class="site"><div class="inner">
-  amber · <a href="https://github.com/radiospiel/amber">github.com/radiospiel/amber</a> ·
-  every sample on this site was run against amber v0.1.1
+  cameo · <a href="https://github.com/radiospiel/cameo">github.com/radiospiel/cameo</a> ·
+  every sample on this site was run
 </div></footer>
 </body>
 </html>
