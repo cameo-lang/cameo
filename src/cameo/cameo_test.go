@@ -195,3 +195,42 @@ func TestLastValue(t *testing.T) {
 		}
 	}
 }
+
+func TestCallReturnsAHashWithSymbolKeysWithStringKeys(t *testing.T) {
+	prog, err := Load("h.cameo", `def h = {a: 1, "b" => [2]}`, &bytes.Buffer{}, &bytes.Buffer{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := prog.Call(nil, "h")
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, ok := got.(map[any]any)
+	if !ok || len(m) != 2 || m["a"] != int64(1) {
+		t.Fatalf("h: %#v", got)
+	}
+	if list, ok := m["b"].([]any); !ok || len(list) != 1 || list[0] != int64(2) {
+		t.Fatalf("h[b]: %#v", m["b"])
+	}
+}
+
+func TestCallRefusesAHashWhoseKeysHaveNoGoMapForm(t *testing.T) {
+	prog, err := Load("h.cameo", `
+def symbol_and_string = {a: 1, "a" => 2}
+def range_key = {(1..2) => 1}
+def binary_key = {"k".b => 1}
+`, &bytes.Buffer{}, &bytes.Buffer{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for method, want := range map[string]string{
+		"symbol_and_string": `both "a"`,
+		"range_key":         "Range",
+		"binary_key":        "[]uint8",
+	} {
+		_, err := prog.Call(nil, method)
+		if err == nil || !strings.Contains(err.Error(), want) {
+			t.Errorf("%s: error %v, want one naming %s", method, err, want)
+		}
+	}
+}
