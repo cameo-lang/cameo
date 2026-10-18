@@ -10,6 +10,7 @@ import (
 	"io"
 	"math/big"
 	"os"
+	"reflect"
 	"sort"
 	"time"
 
@@ -227,10 +228,12 @@ func (p *Program) ToValue(v any) (object.Value, error) { return conv{p.in}.toVal
 
 // ToGo converts a cameo value to a Go value: nil, bool, int64 (a *big.Int
 // beyond 64 bits), float64,
-// string, []byte, time.Time, []any, map[any]any, a proto.Message for an
-// instance (a value of the registered Go type for a native class, a
-// dynamic message otherwise, either a copy), and the object.Value itself
-// for everything else (symbols, ranges, classes).
+// string, []byte, time.Time, []any, map[any]any (with a Symbol key as a
+// string), a proto.Message for an instance (a value of the registered Go
+// type for a native class, a dynamic message otherwise, either a copy),
+// and the object.Value itself for everything else (symbols, ranges,
+// classes). A Hash with a key that is not comparable in Go, or with two
+// keys that are one in Go, such as :a and "a", is an error.
 func (p *Program) ToGo(v object.Value) (any, error) { return conv{p.in}.toGo(v) }
 
 // conv converts values for one interpreter: a program's, or the one a
@@ -395,19 +398,26 @@ func (c conv) toGo(v object.Value) (any, error) {
 		v := v.Map()
 		out := make(map[any]any, v.Len())
 		for i, k := range v.Keys() {
-			key, err := c.toGo(k)
-			if err != nil {
-				return nil, err
+			// A Symbol key is a Go string, as a Symbol becomes a String wherever a
+			// value leaves cameo.
+			var key any
+			if name, sym := k.AsSymbol(); sym {
+				key = name
+			} else {
+				var err error
+				if key, err = c.toGo(k); err != nil {
+					return nil, err
+				}
+			}
+			if key != nil && !reflect.TypeOf(key).Comparable() {
+				return nil, fmt.Errorf("a Hash key of class %s is a %T in Go, which a Go map cannot hold as a key", k.Class().QualifiedName(), key)
+			}
+			if _, taken := out[key]; taken {
+				return nil, fmt.Errorf("two keys of a Hash are both %#v in Go", key)
 			}
 			val, err := c.toGo(v.Values()[i])
 			if err != nil {
 				return nil, err
-			}
-			if _, hashable := key.(map[any]any); hashable {
-				return nil, fmt.Errorf("a map key cannot be a map in Go")
-			}
-			if _, hashable := key.([]any); hashable {
-				return nil, fmt.Errorf("a list key cannot be a map key in Go")
 			}
 			out[key] = val
 		}
