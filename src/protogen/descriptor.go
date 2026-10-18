@@ -49,6 +49,9 @@ func FileName(cls *object.Class) string {
 
 // Message returns the descriptor of the message a class is.
 func (r *Registry) Message(cls *object.Class) (protoreflect.MessageDescriptor, error) {
+	if n := nativeOf(cls); n != nil {
+		return n.md, nil
+	}
 	fd, err := r.file(cls)
 	if err != nil {
 		return nil, err
@@ -57,6 +60,9 @@ func (r *Registry) Message(cls *object.Class) (protoreflect.MessageDescriptor, e
 }
 
 func (r *Registry) file(cls *object.Class) (protoreflect.FileDescriptor, error) {
+	if n := nativeOf(cls); n != nil {
+		return n.md.ParentFile(), nil
+	}
 	r.mu.Lock()
 	fd, ok := r.files[cls]
 	r.mu.Unlock()
@@ -188,7 +194,7 @@ func setType(fp *descriptorpb.FieldDescriptorProto, t *object.FieldType, cls *ob
 	switch t.Kind {
 	case "ref":
 		fp.Type = descriptorpb.FieldDescriptorProto_TYPE_MESSAGE.Enum()
-		fp.TypeName = strPtr("." + Package(t.Ref) + "." + t.Ref.Name)
+		fp.TypeName = strPtr("." + fullName(t.Ref))
 	}
 }
 

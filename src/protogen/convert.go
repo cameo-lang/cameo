@@ -194,7 +194,9 @@ func (r *Registry) FromMessage(cls *object.Class, msg protoreflect.Message) (*ob
 		if fd == nil {
 			continue
 		}
-		if !msg.Has(fd) && (f.Type.Kind != "list" && f.Type.Kind != "set" && f.Type.Kind != "map") {
+		// A field with presence that is not set is nil; one without
+		// presence, as a native class's scalars may be, is its zero value.
+		if !msg.Has(fd) && fd.HasPresence() {
 			continue
 		}
 		v, err := r.fromProto(fd, f.Type, msg.Get(fd))
