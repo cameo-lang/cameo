@@ -6,9 +6,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/radiospiel/amber/src/object"
-	"github.com/radiospiel/amber/src/stdlib"
-	"github.com/radiospiel/amber/src/syntax"
+	"github.com/radiospiel/cameo/src/object"
+	"github.com/radiospiel/cameo/src/stdlib"
+	"github.com/radiospiel/cameo/src/syntax"
 )
 
 // A thunk is a compiled node: the Go function that evaluates it. The

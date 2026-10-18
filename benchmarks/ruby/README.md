@@ -1,16 +1,16 @@
-# CRuby's benchmarks, grouped by what amber lacks
+# CRuby's benchmarks, grouped by what cameo lacks
 
 CRuby's own benchmark suite, one runnable script per case, sorted by whether
-amber runs it today and, when it does not, by the first thing that stops it.
-It shows what to build next and holds amber to Ruby's behaviour where the two
+cameo runs it today and, when it does not, by the first thing that stops it.
+It shows what to build next and holds cameo to Ruby's behaviour where the two
 overlap.
 
 | Directory | Holds |
 |---|---|
-| `works/` | runs under amber with Ruby's result |
-| `bugs/` | should run, and fails on a defect in amber |
-| `stdlib/<what>/` | stops on a builtin class or method amber is to have and does not yet; `<what>` names it |
-| `unsupported/<what>/` | uses a feature or builtin amber leaves out by design; `<what>` names it |
+| `works/` | runs under cameo with Ruby's result |
+| `bugs/` | should run, and fails on a defect in cameo |
+| `stdlib/<what>/` | stops on a builtin class or method cameo is to have and does not yet; `<what>` names it |
+| `unsupported/<what>/` | uses a feature or builtin cameo leaves out by design; `<what>` names it |
 
 A builtin decided out, such as `Struct`, `Rational` and `Complex`, or
 `RUBY_VERSION`, sits under `unsupported/`; the design document's "Decisions
@@ -42,27 +42,27 @@ license, [COPYING](COPYING), or at your choice the 2-clause BSD license,
 
 ## How each file was classified
 
-Every case ran under `amber check`, under CRuby 3.3.6 and under amber. A case
-works when amber exits cleanly with Ruby's output. Most benchmarks print
+Every case ran under `cameo check`, under CRuby 3.3.6 and under cameo. A case
+works when cameo exits cleanly with Ruby's output. Most benchmarks print
 nothing, so a clean exit proves little: every YAML case that ran cleanly was
 run again printing its value, and the `.rb` benchmarks that ran cleanly were
 checked by hand with their result printed. A case CRuby 3.3 cannot run
 (master's benchmarks use Ruby 3.4 and later, such as `it` and the core `Set`)
-was classified by what amber does with it.
+was classified by what cameo does with it.
 
-A case that draws random numbers cannot match Ruby's values, since amber's
+A case that draws random numbers cannot match Ruby's values, since cameo's
 generator is not Ruby's: it works when it runs cleanly and its result holds
 what holds for any draw (a sorted result is sorted, a sample has distinct
 elements of the array). A case that reads the clock works when its result
 has Ruby's form. `Time#subsec` returns a Float where Ruby returns a
-Rational, which amber leaves out; the case that calls it never prints it.
+Rational, which cameo leaves out; the case that calls it never prints it.
 
 A failing case is filed under the first thing that stops it. Fixing that may
 uncover a second blocker, so a file can move from `stdlib/` to another
 directory rather than to `works/`.
 
 `bugs/` is empty: every case filed there has been fixed. A bare `Object`
-prints as `#<Object>`, without the address Ruby shows, since amber values
+prints as `#<Object>`, without the address Ruby shows, since cameo values
 have no identity; the cases that print one count as working.
 
 Integers grow past 64 bits as Ruby's do, so `unsupported/bignum/` is gone;
@@ -73,10 +73,10 @@ its rational and imaginary literal cases are under `unsupported/complex/`.
 ```sh
 ruby run.rb                 # every directory
 ruby run.rb works           # what must keep working; exits 1 when one fails
-ruby run.rb --amber /path/to/amber --jobs 8 --timeout 60 stdlib   # default: 4 jobs, 300 s
+ruby run.rb --cameo /path/to/cameo --jobs 8 --timeout 60 stdlib   # default: 4 jobs, 300 s
 ```
 
-[run.rb](run.rb) builds amber from this component unless `--amber` names a
+[run.rb](run.rb) builds cameo from this component unless `--cameo` names a
 binary, runs the files in parallel, prints the outcome and time of each, and
 lists the files outside `works/` that now run cleanly. Such a file is a
 candidate for `works/` once its result matches Ruby's; a clean exit alone is

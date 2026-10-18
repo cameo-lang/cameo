@@ -1,12 +1,12 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# Runs amber's supported subset of CRuby's benchmarks, benchmarks/ruby/works,
+# Runs cameo's supported subset of CRuby's benchmarks, benchmarks/ruby/works,
 # on four Rubies and shows how long each took and whether its output was
 # CRuby's:
 #
 #   mri       the ruby on PATH, which every time is a percentage of
-#   amber     this component's interpreter
+#   cameo     this component's interpreter
 #   warmruby  CRuby 3.4 compiled to WASI, on wazero, compiled ahead (../warmruby)
 #   rbgo      go-embedded-ruby, a Ruby interpreter in Go (../rbgo)
 #
@@ -25,7 +25,7 @@
 # time, the geometric mean of its percentages, and how often it was fastest
 # and slowest. The rows also go to a tab-separated file.
 #
-# CRuby 3.4, as warmruby runs it, is the reference output: amber follows 3.4
+# CRuby 3.4, as warmruby runs it, is the reference output: cameo follows 3.4
 # where 3.3 differs.
 #
 #   ruby compare.rb [--jobs N] [--min-time SECONDS] [--timeout SECONDS] [--out FILE] [FILE...]
@@ -117,8 +117,8 @@ end
 PRELUDE_END = /^#--- benchmark: the prelude above runs once, the script below in the loop ---\n/
 # What the harness prints after the warm-up run's output, and the line it
 # reports its timing on.
-WARMED = "\u0001amber-harness: warmed up"
-REPORT = "\u0001amber-harness:"
+WARMED = "\u0001cameo-harness: warmed up"
+REPORT = "\u0001cameo-harness:"
 # Magic comments, which Ruby reads only before the first line of code.
 MAGIC = /\A#.*\b(frozen_string_literal|encoding|coding|warn_indent|shareable_constant_value)\b/
 
@@ -177,7 +177,7 @@ OptionParser.new do |o|
 end.parse!
 
 # The Rubies in the order of the table's columns; MRI is the baseline.
-NAMES = %w[mri amber warmruby rbgo].freeze
+NAMES = %w[mri cameo warmruby rbgo].freeze
 
 if options[:report]
   lines = File.readlines(options[:report], chomp: true)
@@ -199,27 +199,27 @@ if options[:only]
 end
 
 HERE = __dir__
-AMBER = File.expand_path("../..", HERE)
-bin = File.join(Dir.tmpdir, "amber-compare")
+CAMEO = File.expand_path("../..", HERE)
+bin = File.join(Dir.tmpdir, "cameo-compare")
 FileUtils.mkdir_p(bin)
 def build(dir, cmd)
   system(cmd, chdir: dir) or abort("compare.rb: building in #{dir} failed")
 end
-build(AMBER, "go build -o #{bin}/amber ./src/cmd/amber")
-build(File.join(AMBER, "benchmarks/rbgo"), "make build >/dev/null")
-build(File.join(AMBER, "benchmarks/warmruby"), "make build >/dev/null")
+build(CAMEO, "go build -o #{bin}/cameo ./src/cmd/cameo")
+build(File.join(CAMEO, "benchmarks/rbgo"), "make build >/dev/null")
+build(File.join(CAMEO, "benchmarks/warmruby"), "make build >/dev/null")
 
 ENGINES = {
   "mri" => ->(f) { ["ruby", f] },
-  "amber" => ->(f) { ["#{bin}/amber", f] },
-  "warmruby" => ->(f) { ["#{AMBER}/benchmarks/warmruby/bin/warmruby", f] },
-  "rbgo" => ->(f) { ["#{AMBER}/benchmarks/rbgo/bin/rbgo", f] },
+  "cameo" => ->(f) { ["#{bin}/cameo", f] },
+  "warmruby" => ->(f) { ["#{CAMEO}/benchmarks/warmruby/bin/warmruby", f] },
+  "rbgo" => ->(f) { ["#{CAMEO}/benchmarks/rbgo/bin/rbgo", f] },
 }.freeze
 
 # A first run downloads warmruby's module and compiles it into its cache.
-system("#{AMBER}/benchmarks/warmruby/bin/warmruby", File::NULL, out: File::NULL)
+system("#{CAMEO}/benchmarks/warmruby/bin/warmruby", File::NULL, out: File::NULL)
 
-files = ARGV.empty? ? Dir[File.join(AMBER, "benchmarks/ruby/works/*.rb")].sort : ARGV.map { File.expand_path(_1) }
+files = ARGV.empty? ? Dir[File.join(CAMEO, "benchmarks/ruby/works/*.rb")].sort : ARGV.map { File.expand_path(_1) }
 
 # run_harness runs a harness program and returns the result, the timed
 # runs, the mean timed run, the warm-up run, the whole process's seconds
@@ -251,7 +251,7 @@ end
 
 # The start of each Ruby, the median time of an empty script, for the
 # record: the harness keeps it out of every time.
-empty = File.join(Dir.tmpdir, "amber-compare-empty.rb")
+empty = File.join(Dir.tmpdir, "cameo-compare-empty.rb")
 File.write(empty, "nil\n")
 starts = ENGINES.filter_map do |name, argv|
   next if options[:only] && name != options[:only]
@@ -273,7 +273,7 @@ rows = []
 lock = Mutex.new
 options[:jobs].times.map do |job|
   Thread.new do
-    dir = Dir.mktmpdir("amber-compare-#{job}-")
+    dir = Dir.mktmpdir("cameo-compare-#{job}-")
     while (file = queue.pop(true) rescue nil)
       row = { "file" => File.basename(file) }
       outputs = {}

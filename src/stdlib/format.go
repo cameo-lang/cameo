@@ -6,10 +6,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/radiospiel/amber/src/object"
+	"github.com/radiospiel/cameo/src/object"
 )
 
-// format implements the subset of Kernel#format amber supports: %s %d %i %f
+// format implements the subset of Kernel#format cameo supports: %s %d %i %f
 // %e %g %x %o %b %c %% with flags, width and precision, and %<name>s with a
 // map argument.
 func format(ctx object.Context, f string, args []object.Value) (string, error) {

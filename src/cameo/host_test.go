@@ -1,4 +1,4 @@
-package amber
+package cameo
 
 import (
 	"bytes"
@@ -14,7 +14,7 @@ import (
 func host(t *testing.T, src string) (*Program, *bytes.Buffer, *[][]any) {
 	t.Helper()
 	var out bytes.Buffer
-	prog, err := Load("t.arb", src, &out, &out)
+	prog, err := Load("t.cameo", src, &out, &out)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,7 +68,7 @@ rescue => e
 end
 Spicy.fail(2)`)
 	err := prog.Run()
-	if err == nil || err.Error() != "t.arb:11: no 2 (Spicy::ToolError)" {
+	if err == nil || err.Error() != "t.cameo:11: no 2 (Spicy::ToolError)" {
 		t.Errorf("err %v", err)
 	}
 	if out.String() != "Spicy::ToolError: no x\nRuntimeError: plain\n" {

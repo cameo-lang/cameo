@@ -1,6 +1,6 @@
 # warmruby: a command that runs a Ruby script on CRuby 3.4 compiled to
-# WebAssembly, on wazero, for amber's benchmarks. A module of its own, so
-# wazero stays out of amber's go.mod.
+# WebAssembly, on wazero, for cameo's benchmarks. A module of its own, so
+# wazero stays out of cameo's go.mod.
 
 GO := GOWORK=off go
 

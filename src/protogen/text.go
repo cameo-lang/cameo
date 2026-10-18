@@ -5,14 +5,14 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/radiospiel/amber/src/object"
+	"github.com/radiospiel/cameo/src/object"
 )
 
 // Text is the .proto text of one class: its message, preceded by its
 // package line when the class lives in a module.
 func Text(cls *object.Class) string {
 	var b strings.Builder
-	if pkg := Package(cls); pkg != "amber" {
+	if pkg := Package(cls); pkg != "cameo" {
 		fmt.Fprintf(&b, "package %s;\n\n", pkg)
 	}
 	writeMessage(&b, cls)
@@ -52,7 +52,7 @@ func File(pkg string, classes []*object.Class) string {
 }
 
 // Files groups classes by package and renders one file per package, keyed
-// by file name (amber.proto, geo.proto, geo/shapes.proto).
+// by file name (cameo.proto, geo.proto, geo/shapes.proto).
 func Files(classes []*object.Class) map[string]string {
 	byPkg := map[string][]*object.Class{}
 	for _, cls := range classes {

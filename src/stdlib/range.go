@@ -5,7 +5,7 @@ import (
 	"math"
 	"math/big"
 
-	"github.com/radiospiel/amber/src/object"
+	"github.com/radiospiel/cameo/src/object"
 )
 
 func installRange() {

@@ -1,6 +1,6 @@
 package stdlib
 
-import "github.com/radiospiel/amber/src/object"
+import "github.com/radiospiel/cameo/src/object"
 
 func installSet() {
 	c := object.SetClass

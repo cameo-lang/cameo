@@ -1,4 +1,4 @@
-# require of a library amber builds in answers whether it loaded it just
+# require of a library cameo builds in answers whether it loaded it just
 # now; any other is a LoadError, since a script is one file. time and cgi
 # bring parsing and escaping, whether or not a script requires them.
 p require("cgi")

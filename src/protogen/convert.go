@@ -8,7 +8,7 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/dynamicpb"
 
-	"github.com/radiospiel/amber/src/object"
+	"github.com/radiospiel/cameo/src/object"
 )
 
 // ToMessage builds the message an instance is. The instance keeps it, since

@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/radiospiel/amber/src/object"
+	"github.com/radiospiel/cameo/src/object"
 )
 
 // installEnumerable defines the Enumerable methods once, over the elements

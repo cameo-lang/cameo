@@ -1,0 +1,6 @@
+# Standard output and standard error are the whole of cameo's I/O.
+puts "hello, cameo"
+print "no newline"
+print "\n"
+p [1, "two", :three, nil]
+warn "this goes to stderr"

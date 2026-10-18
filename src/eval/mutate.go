@@ -3,13 +3,13 @@ package eval
 import (
 	"strings"
 
-	"github.com/radiospiel/amber/src/object"
-	"github.com/radiospiel/amber/src/stdlib"
-	"github.com/radiospiel/amber/src/syntax"
+	"github.com/radiospiel/cameo/src/object"
+	"github.com/radiospiel/cameo/src/stdlib"
+	"github.com/radiospiel/cameo/src/syntax"
 )
 
 // A mutating call on a local, `x << y` or `x.map! { }`, computes the
-// changed copy and rebinds the local to it, as `h[k] = v` does: amber values
+// changed copy and rebinds the local to it, as `h[k] = v` does: cameo values
 // never change, so another variable holding the old value keeps it. The
 // call's own value is Ruby's: the receiver for most, the removed element
 // for pop, shift and delete, nil from a bang method that changed nothing.
@@ -71,7 +71,7 @@ func (in *Interp) rebind(target syntax.Node, v object.Value, env *Env, fr *Frame
 	case *syntax.Field:
 		return in.writeField(t.Name, v, fr, t.Line())
 	}
-	return in.raise(object.AmberError, 0, "cannot rebind %T", target)
+	return in.raise(object.CameoError, 0, "cannot rebind %T", target)
 }
 
 // stepArgs evaluates a step's arguments and block, as evalCall does.

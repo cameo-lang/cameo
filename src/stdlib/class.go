@@ -1,6 +1,6 @@
 package stdlib
 
-import "github.com/radiospiel/amber/src/object"
+import "github.com/radiospiel/cameo/src/object"
 
 // installClass defines the methods of classes and modules themselves.
 func installClass() {

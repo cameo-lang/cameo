@@ -1,8 +1,8 @@
 package eval
 
 import (
-	"github.com/radiospiel/amber/src/object"
-	"github.com/radiospiel/amber/src/syntax"
+	"github.com/radiospiel/cameo/src/object"
+	"github.com/radiospiel/cameo/src/syntax"
 )
 
 // readField reads a field of self, as `self.name` does.
@@ -26,7 +26,7 @@ func (in *Interp) readField(name string, fr *Frame, line int) (object.Value, err
 func (in *Interp) writeField(name string, v object.Value, fr *Frame, line int) error {
 	inst := fr.Building
 	if inst == nil {
-		return in.raise(object.AmberError, line, "self.%s = …: a field is set in initialize only", name)
+		return in.raise(object.CameoError, line, "self.%s = …: a field is set in initialize only", name)
 	}
 	idx, ok := inst.Cls.FieldIndex[name]
 	if !ok {
@@ -174,9 +174,9 @@ func (in *Interp) evalDef(n *syntax.Def, fr *Frame) (object.Value, error) {
 	}
 	if existing, ok := table[n.Name]; ok && existing.Native != nil && existing.Owner == target {
 		if _, isField := target.FieldIndex[n.Name]; isField {
-			return object.Value{}, in.raise(object.AmberError, n.Line(), "def %s: %s is a field of %s, and fields read themselves", n.Name, n.Name, target.QualifiedName())
+			return object.Value{}, in.raise(object.CameoError, n.Line(), "def %s: %s is a field of %s, and fields read themselves", n.Name, n.Name, target.QualifiedName())
 		}
-		return object.Value{}, in.raise(object.AmberError, n.Line(), "cannot replace the builtin method %s of %s", n.Name, target.Name)
+		return object.Value{}, in.raise(object.CameoError, n.Line(), "cannot replace the builtin method %s of %s", n.Name, target.Name)
 	}
 	m := &object.Method{Name: n.Name, Owner: target, Body: &compiledDef{def: n, body: in.code.body(n, n.Body)}, Arity: -1, Lexical: fr.Lexical}
 	if n.Singleton {
@@ -210,10 +210,10 @@ func (in *Interp) evalClassDef(n *syntax.ClassDef, env *Env, fr *Frame) (object.
 		}
 	}
 	if _, builtin := object.ObjectClass.Consts[n.Name]; builtin && len(fr.Lexical) == 0 {
-		return object.Value{}, in.raise(object.AmberError, n.Line(), "cannot redefine the builtin class %s", n.Name)
+		return object.Value{}, in.raise(object.CameoError, n.Line(), "cannot redefine the builtin class %s", n.Name)
 	}
 	if hostDefined(table[n.Name]) {
-		return object.Value{}, in.raise(object.AmberError, n.Line(), "cannot redefine the module %s, which the host defines", n.Name)
+		return object.Value{}, in.raise(object.CameoError, n.Line(), "cannot redefine the module %s, which the host defines", n.Name)
 	}
 	cls := object.NewClass(n.Name, super)
 	cls.Digest = n.Digest
@@ -238,10 +238,10 @@ func (in *Interp) evalModuleDef(n *syntax.ModuleDef, env *Env, fr *Frame) (objec
 		}
 	}
 	if _, builtin := object.ObjectClass.Consts[n.Name]; builtin && len(fr.Lexical) == 0 {
-		return object.Value{}, in.raise(object.AmberError, n.Line(), "cannot redefine the builtin module %s", n.Name)
+		return object.Value{}, in.raise(object.CameoError, n.Line(), "cannot redefine the builtin module %s", n.Name)
 	}
 	if hostDefined(table[n.Name]) {
-		return object.Value{}, in.raise(object.AmberError, n.Line(), "cannot redefine the module %s, which the host defines", n.Name)
+		return object.Value{}, in.raise(object.CameoError, n.Line(), "cannot redefine the module %s, which the host defines", n.Name)
 	}
 	mod := object.NewModule(n.Name)
 	mod.Digest = n.Digest
@@ -351,7 +351,7 @@ func (in *Interp) evalAlias(n *syntax.Alias, fr *Frame) (object.Value, error) {
 		return object.Value{}, in.raise(object.NameError, n.Line(), "undefined method '%s' for %s", n.Old, target.QualifiedName())
 	}
 	if _, taken := target.Methods[n.New]; taken {
-		return object.Value{}, in.raise(object.AmberError, n.Line(), "method %s is already defined in %s", n.New, target.QualifiedName())
+		return object.Value{}, in.raise(object.CameoError, n.Line(), "method %s is already defined in %s", n.New, target.QualifiedName())
 	}
 	alias := *m
 	alias.Name = n.New

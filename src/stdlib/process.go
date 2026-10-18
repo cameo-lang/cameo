@@ -3,7 +3,7 @@ package stdlib
 import (
 	"time"
 
-	"github.com/radiospiel/amber/src/object"
+	"github.com/radiospiel/cameo/src/object"
 )
 
 // monotonicBase is the origin of CLOCK_MONOTONIC: a time read with Go's
@@ -19,7 +19,7 @@ const (
 
 // installProcess defines Process.clock_gettime, the clock a benchmark
 // reads, for the realtime and monotonic clocks. The rest of Process stays
-// out: amber starts no processes and reads no environment.
+// out: cameo starts no processes and reads no environment.
 func installProcess() {
 	p := object.ProcessModule
 	p.Consts["CLOCK_REALTIME"] = object.Int(clockRealtime)

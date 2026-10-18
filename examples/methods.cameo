@@ -8,11 +8,11 @@ def greet(name, greeting = "hi", *rest, loud: false, **opts, &blk)
   s
 end
 
-puts greet("amber")
-puts greet("amber", "hello")
-puts greet("amber", "hello", 1, 2, loud: true)
-puts greet("amber", extra: 1, more: 2)
-puts greet("amber") { |s| s + "!" }
+puts greet("cameo")
+puts greet("cameo", "hello")
+puts greet("cameo", "hello", 1, 2, loud: true)
+puts greet("cameo", extra: 1, more: 2)
+puts greet("cameo") { |s| s + "!" }
 
 def each_twice(list)
   return "no block" unless block_given?

@@ -6,7 +6,7 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/radiospiel/amber/src/object"
+	"github.com/radiospiel/cameo/src/object"
 )
 
 // An Enumerator produces its elements on demand (object.Enumerator). An
