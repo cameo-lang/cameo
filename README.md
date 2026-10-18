@@ -103,4 +103,5 @@ No cgo, no Ruby installation, no code generation.
 
 ## License
 
-Proprietary; see [LICENSE](LICENSE). Not open source.
+MIT; see [LICENSE](LICENSE). The CRuby benchmarks in `benchmarks/ruby` and
+ruby/spec in `specs` keep their own licences, named there.
