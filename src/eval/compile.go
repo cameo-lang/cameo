@@ -264,6 +264,9 @@ func compile(n syntax.Node) thunk {
 		cond, body := compile(n.Cond), compileBody(n.Body)
 		return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 			for {
+				if err := in.stopped(); err != nil {
+					return object.Value{}, err
+				}
 				c, err := cond(in, env, fr)
 				if err != nil {
 					return object.Value{}, err
