@@ -1,0 +1,76 @@
+name: Tag
+
+# Tags a commit of main as a release. It runs by hand, from the Actions tab
+# or through the API, so a release can be tagged by anyone who can start a
+# workflow, without pushing a tag from a checkout.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "The tag to create: vMAJOR.MINOR.PATCH"
+        required: true
+      commit:
+        description: "The commit of main to tag; empty for the tip of main"
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tag
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Check the version and the commit
+        id: target
+        env:
+          VERSION: ${{ inputs.version }}
+          COMMIT: ${{ inputs.commit }}
+        run: |
+          if ! [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::the version must be vMAJOR.MINOR.PATCH, not '$VERSION'"; exit 1
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/$VERSION" >/dev/null; then
+            echo "::error::$VERSION exists already"; exit 1
+          fi
+          commit=$(git rev-parse --verify --quiet "${COMMIT:-origin/main}^{commit}") || {
+            echo "::error::no commit '$COMMIT'"; exit 1
+          }
+          if ! git merge-base --is-ancestor "$commit" origin/main; then
+            echo "::error::$commit is not on main"; exit 1
+          fi
+          # Go fetches a version only when its go.mod names the module path
+          # the repository is fetched as.
+          module=$(git show "$commit:go.mod" | sed -n 's/^module //p')
+          if [ "$module" != "github.com/$GITHUB_REPOSITORY" ]; then
+            echo "::error::go.mod at $commit declares $module, not github.com/$GITHUB_REPOSITORY"; exit 1
+          fi
+          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+
+      - name: Check out the commit
+        run: git checkout --detach "${{ steps.target.outputs.commit }}"
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Check
+        run: make deps check
+
+      - name: Tag
+        env:
+          VERSION: ${{ inputs.version }}
+          COMMIT: ${{ steps.target.outputs.commit }}
+        run: |
+          git tag "$VERSION" "$COMMIT"
+          git push origin "refs/tags/$VERSION"
+          echo "Tagged $COMMIT as $VERSION." >> "$GITHUB_STEP_SUMMARY"
