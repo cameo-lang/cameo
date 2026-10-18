@@ -55,6 +55,17 @@ type Interp struct {
 // Run returned without an error; nil before.
 func (in *Interp) Last() object.Value { return object.OrNil(in.last) }
 
+// Const returns the top-level constant name the script or the host
+// defined.
+func (in *Interp) Const(name string) (object.Value, bool) {
+	v, ok := in.consts[name]
+	return v, ok
+}
+
+// SetConst defines a top-level constant before the script runs: a module
+// the host gives it.
+func (in *Interp) SetConst(name string, v object.Value) { in.consts[name] = v }
+
 // ErrStopped ends a run that Stop asked to end. It is not an exception, so
 // no rescue catches it.
 var ErrStopped = errors.New("the script was stopped")
