@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cameo — native code</title>
+<meta name="description" content="Extend cameo with Go: host modules of Go methods, native classes backed by a protobuf message, and builtin classes in cameo's standard library.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><div class="inner">
+  <a class="name" href="index.html">cameo</a>
+  <nav>
+    <a href="index.html">Overview</a>
+    <a href="ruby.html">Coming from Ruby</a>
+    <a href="go.html">Embedding in Go</a>
+    <a href="native.html" aria-current="page">Native code</a>
+    <a href="https://github.com/radiospiel/cameo">GitHub</a>
+  </nav>
+</div></header>
+
+<main>
+<h1>Extending cameo with native code</h1>
+<p class="lead">Go code reaches a script in three ways: a module the host
+gives one program, a class the host registers for every program in its
+process, and a builtin class in cameo's standard library.</p>
+
+<nav class="toc" aria-label="On this page">
+<ol>
+  <li><a href="#host">From a host: modules of Go methods</a></li>
+  <li><a href="#classes">Classes from a host</a></li>
+  <li><a href="#stdlib">Inside cameo: a builtin class</a></li>
+</ol>
+</nav>
+
+<h2 id="host">From a host: modules of Go methods</h2>
+
+<p>Between <code>Load</code> and <code>Run</code>, a host defines modules
+for the script:</p>
+
+<ul>
+  <li><code>prog.Module(name)</code> defines the module <code>name</code>
+  as a constant at the script's top level, as <code>Math</code> is, and
+  returns a <code>*cameo.Module</code>. A script cannot redefine or reopen
+  it.</li>
+  <li><code>mod.Def(name, fn)</code> defines the method the script calls
+  as <code>Name.name(args)</code>. <code>fn</code> is an
+  <code>cameo.Func</code>, <code>func(args []any, kwargs map[string]any)
+  (any, error)</code>: it gets the positional and keyword arguments as Go
+  values, as <code>ToGo</code> converts them, except that a Symbol is a
+  <code>string</code> and a Hash with String or Symbol keys is a
+  <code>map[string]any</code>. What it returns converts as
+  <code>Call</code>'s arguments do.</li>
+  <li><code>mod.Exception(name)</code> defines the exception class
+  <code>Name::name</code>, a <code>StandardError</code>. Its
+  <code>New(format, args...)</code> returns the error that raises it when
+  <code>fn</code> returns it. Any other error raises
+  <code>RuntimeError</code> with the error's text.</li>
+</ul>
+
+<pre class="go"><code>package main
+
+import (
+	&quot;log&quot;
+	&quot;os&quot;
+	&quot;strings&quot;
+
+	&quot;github.com/radiospiel/cameo/src/cameo&quot;
+)
+
+const script = `
+puts Text.shout(&quot;hello&quot;, times: 2)
+begin
+  Text.shout(42)
+rescue Text::Invalid =&gt; e
+  puts &quot;rescued: #{e.message}&quot;
+end
+`
+
+func main() {
+	prog, err := cameo.Load(&quot;text.cameo&quot;, script, os.Stdout, os.Stderr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	text := prog.Module(&quot;Text&quot;)
+	invalid := text.Exception(&quot;Invalid&quot;)
+	text.Def(&quot;shout&quot;, func(args []any, kwargs map[string]any) (any, error) {
+		s, ok := args[0].(string)
+		if !ok {
+			return nil, invalid.New(&quot;shout takes a String, not %T&quot;, args[0])
+		}
+		times := int64(1)
+		if n, ok := kwargs[&quot;times&quot;].(int64); ok {
+			times = n
+		}
+		return strings.Repeat(strings.ToUpper(s)+&quot;!&quot;, int(times)), nil
+	})
+	if err := prog.Run(); err != nil {
+		log.Fatal(err)
+	}
+}</code></pre>
+<pre class="output"><code>HELLO!HELLO!
+rescued: shout takes a String, not int64</code></pre>
+
+<p>Workers that <code>async</code> starts call host methods on goroutines
+of their own, so a host method may run on several at once. One that
+blocks keeps the script from stopping until it returns: watch the context
+the host passed to <code>RunContext</code>.</p>
+
+<h3>A worked example: ark's <code>Spicy.tools</code></h3>
+
+<p><a href="https://github.com/radiospiel/ark">ark</a> runs scripts that
+call tools on cameo, in
+<a href="https://github.com/radiospiel/ark/blob/main/parts/golang/agentic/src/coderuby/amber.go"><code>parts/golang/agentic/src/coderuby/amber.go</code></a>.
+Its <code>defineSpicy</code> gives every script the module
+<code>Spicy</code>:</p>
+
+<ul>
+  <li><code>Spicy.tools</code> alone returns the list of tools;
+  <code>Spicy.tools("search", { "q" =&gt; "x" })</code> or
+  <code>Spicy.tools("search", q: "x")</code> calls one, merging the Hash
+  and the keywords into the tool's JSON input.</li>
+  <li>Every failure returns <code>toolError.New(…)</code>, so a script
+  rescues <code>Spicy::ToolError</code>.</li>
+  <li>The host runs the script with <code>RunContext</code> and passes
+  the same <code>context.Context</code> to the tool call, so a cancelled
+  run reaches a tool that is still working.</li>
+</ul>
+
+<h2 id="classes">Classes from a host</h2>
+
+<p>A host registers a class of its own with <code>cameo.Register</code>.
+The class's data layout is a protobuf message, generated with
+<code>protoc-gen-go</code>, and its methods are Go functions.</p>
+
+<h3>1. The message</h3>
+
+<p>Write the fields as a protobuf message:</p>
+
+<pre class="proto"><code>syntax = &quot;proto3&quot;;
+
+package example.geo;
+
+option go_package = &quot;example.com/geo/geopb&quot;;
+
+message Point {
+  int64 x = 1;
+  int64 y = 2;
+}</code></pre>
+
+<h3>2. The Go type</h3>
+
+<p>Generate the Go type with <code>protoc</code> and
+<code>protoc-gen-go</code>:</p>
+
+<pre class="sh"><code>go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+protoc --go_out=. --go_opt=module=example.com/geo geo.proto</code></pre>
+
+<p>This writes <code>geopb/geo.pb.go</code>, with the type
+<code>geopb.Point</code>.</p>
+
+<h3>3. Register the class</h3>
+
+<p>Register the class in an <code>init</code> function, then load
+scripts as usual. Here the script uses <code>Geo::Point</code>, and Go
+creates one through <code>Call</code>:</p>
+
+<pre class="go"><code>package main
+
+import (
+	&quot;fmt&quot;
+	&quot;log&quot;
+	&quot;os&quot;
+
+	&quot;example.com/geo/geopb&quot;
+	&quot;github.com/radiospiel/cameo/src/cameo&quot;
+)
+
+func init() {
+	cameo.Register(&quot;Geo::Point&quot;, &amp;geopb.Point{}).
+		DefineMethod(&quot;norm2&quot;, func(p *geopb.Point, args []any, kwargs map[string]any) (any, error) {
+			return p.X*p.X + p.Y*p.Y, nil
+		}).
+		DefineMethod(&quot;moved&quot;, func(p *geopb.Point, args []any, kwargs map[string]any) (any, error) {
+			p.X += args[0].(int64) // p is a copy; the changed copy is the result
+			return p, nil
+		}).
+		DefineClassMethod(&quot;origin&quot;, func(args []any, kwargs map[string]any) (any, error) {
+			return &amp;geopb.Point{}, nil
+		})
+}
+
+const script = `
+pt = Geo::Point.new(x: 3, y: 4)
+p pt.norm2
+p pt.moved(1).x, pt.x
+p Geo::Point.origin.with(y: 2)
+p Geo::Point.new.x
+`
+
+func main() {
+	prog, err := cameo.Load(&quot;geo.cameo&quot;, script, os.Stdout, os.Stderr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := prog.Run(); err != nil {
+		log.Fatal(err)
+	}
+	pt, err := prog.Call(&quot;Geo::Point&quot;, &quot;new&quot;, map[string]any{&quot;x&quot;: 5, &quot;y&quot;: 12})
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf(&quot;%T x=%d\n&quot;, pt, pt.(*geopb.Point).X) // a registered class leaves cameo as its generated type
+}</code></pre>
+<pre class="output"><code>25
+4
+3
+Geo::Point(x: 0, y: 2)
+0
+*geopb.Point x=5</code></pre>
+
+<h3>The rules</h3>
+
+<ul>
+  <li><strong>The class's fields are the message's.</strong> Every proto3
+  scalar type is supported. Repeated fields are lists, and maps take a
+  scalar key. Enums must be numbered from 0 without a gap; their values
+  become symbols (<code>COLOR_RED</code> is <code>:red</code>). A field
+  may hold a message whose class was registered earlier, or the message
+  itself. <code>oneof</code> is not supported.</li>
+  <li><strong>Unset fields read as they do in Go.</strong> A field without
+  presence reads as its zero value, so <code>Geo::Point.new.x</code> is
+  <code>0</code>. A field with presence (<code>optional</code>, or a
+  message) reads as <code>nil</code>.</li>
+  <li><strong>Methods get copies.</strong> A method gets <code>self</code>
+  as the generated type: a copy it may change without changing the
+  instance. A returned message of a registered type becomes an instance,
+  so a method returns a changed copy, as <code>moved</code> does above.
+  Arguments, results and errors convert as they do for a host module's
+  methods.</li>
+  <li><strong>Instances leave cameo as the generated type.</strong>
+  <code>Call</code> and <code>ToGo</code> return a
+  <code>*geopb.Point</code>, and a <code>*geopb.Point</code> passed in
+  becomes an instance. <code>async</code> passes instances to workers
+  like any other value.</li>
+  <li><strong>Names are closed.</strong> A qualified name creates the
+  modules it needs. A registered class is a constant in every program in
+  the process, and no script can redefine it or define anything inside
+  it.</li>
+  <li><strong>Register before the first <code>Load</code></strong>, from
+  an <code>init</code> function. <code>Register</code> panics after
+  that, or when the name or the message cannot be used. Both are mistakes
+  in the host's code.</li>
+</ul>
+
+<h3>Instances of a class the script declares</h3>
+
+<p>A host can also return instances of a class the script declares
+itself: a <code>proto.Message</code> whose descriptor is a loaded class's
+becomes an instance of that class.</p>
+
+<pre class="go"><code>package main
+
+import (
+	&quot;log&quot;
+	&quot;os&quot;
+
+	&quot;google.golang.org/protobuf/reflect/protoreflect&quot;
+	&quot;google.golang.org/protobuf/types/dynamicpb&quot;
+
+	&quot;github.com/radiospiel/cameo/src/cameo&quot;
+)
+
+const script = `
+class User
+  string :name
+  int :age
+
+  def greeting = &quot;#{name} is #{age}&quot;
+end
+
+user = Users.find(&quot;ada&quot;)
+puts user.greeting
+p user.with(age: user.age + 1)
+`
+
+func main() {
+	prog, err := cameo.Load(&quot;users.cameo&quot;, script, os.Stdout, os.Stderr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	prog.Module(&quot;Users&quot;).Def(&quot;find&quot;, func(args []any, kwargs map[string]any) (any, error) {
+		// The script declares User; Go builds one from its descriptor.
+		desc, err := prog.Descriptor(&quot;User&quot;)
+		if err != nil {
+			return nil, err
+		}
+		user := dynamicpb.NewMessage(desc)
+		user.Set(desc.Fields().ByName(&quot;name&quot;), protoreflect.ValueOfString(args[0].(string)))
+		user.Set(desc.Fields().ByName(&quot;age&quot;), protoreflect.ValueOfInt64(36))
+		return user, nil
+	})
+	if err := prog.Run(); err != nil {
+		log.Fatal(err)
+	}
+}</code></pre>
+<pre class="output"><code>ada is 36
+User(name: &quot;ada&quot;, age: 37)</code></pre>
+
+<h2 id="stdlib">Inside cameo: a builtin class</h2>
+
+<p>cameo's builtin classes live in <code>src/stdlib</code>, one file per
+area. A class is an <code>*object.Class</code> from
+<code>object.NewClass(name, super)</code>:</p>
+
+<ul>
+  <li><code>c.Define(name, arity, fn)</code> adds an instance method and
+  <code>c.DefineSingleton(name, arity, fn)</code> a class method, where
+  <code>fn</code> is an <code>object.NativeFn</code>:
+  <code>func(ctx object.Context, self object.Value, args []object.Value,
+  kw *object.Map, block object.Value) (object.Value, error)</code>. An
+  arity of <code>-1</code> takes any number of arguments.
+  <code>ctx</code> raises exceptions (<code>ctx.Raise</code>), calls
+  methods and blocks, and renders values.</li>
+  <li>An instance is an <code>object.Instance</code> with the class and
+  its <code>Fields</code>, as <code>Pathname</code> holds its path.</li>
+  <li>An <code>install…</code> function defines the methods and binds the
+  constant, and <code>stdlib.Install</code> calls it.</li>
+  <li><code>puts</code> and <code>p</code> render a builtin instance in
+  <code>src/eval/inspect.go</code>, which names each such class: a native
+  <code>to_s</code> or <code>inspect</code> is not enough.</li>
+</ul>
+
+<p>This adds <code>Money</code>, an amount in cents, in
+<code>src/stdlib/money.go</code>:</p>
+
+<pre class="go"><code>package stdlib
+
+import (
+	&quot;fmt&quot;
+
+	&quot;github.com/radiospiel/cameo/src/object&quot;
+)
+
+// MoneyClass is Money: an amount in cents, held as its instance&#39;s one field.
+var MoneyClass = object.NewClass(&quot;Money&quot;, object.ObjectClass)
+
+// installMoney defines Money.new(cents), Money#cents, Money#+ and Money#to_s.
+func installMoney() {
+	c := MoneyClass
+	object.ObjectClass.Consts[&quot;Money&quot;] = object.ClassValue(c)
+	money := func(cents int64) object.Value {
+		return object.InstanceValue(&amp;object.Instance{Cls: c, Fields: []object.Value{object.Int(cents)}})
+	}
+	cents := func(v object.Value) int64 { return v.Instance().Fields[0].Int() }
+
+	c.DefineSingleton(&quot;new&quot;, 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		n, err := wantInt(ctx, args[0], &quot;&quot;)
+		if err != nil {
+			return object.Value{}, err
+		}
+		return money(n), nil
+	})
+	def(c, &quot;cents&quot;, 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return object.Int(cents(self)), nil
+	})
+	def(c, &quot;+&quot;, 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		other, ok := args[0].AsInstance()
+		if !ok || other.Cls != c {
+			return object.Value{}, ctx.Raise(object.TypeError, &quot;Money can&#39;t be added to %s&quot;, kindName(args[0]))
+		}
+		return money(cents(self) + cents(args[0])), nil
+	})
+	def(c, &quot;to_s&quot;, 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return object.String(MoneyToS(self)), nil
+	})
+}
+
+// MoneyToS renders a Money as dollars and cents: $14.49.
+func MoneyToS(v object.Value) string {
+	n := v.Instance().Fields[0].Int()
+	return fmt.Sprintf(&quot;$%d.%02d&quot;, n/100, n%100)
+}</code></pre>
+
+<p>and registers and renders it:</p>
+
+<pre class="diff"><code>diff --git a/src/eval/inspect.go b/src/eval/inspect.go
+--- a/src/eval/inspect.go
++++ b/src/eval/inspect.go
+@@ -68,6 +68,8 @@ func (in *Interp) ToS(v object.Value) (string, error) {
+ 			return &quot;#&lt;Object&gt;&quot;, nil
+ 		case object.EncodingClass, object.PathnameClass:
+ 			return v.Instance().Fields[0].Str(), nil
++		case stdlib.MoneyClass:
++			return stdlib.MoneyToS(v), nil
+ 		}
+ 	}
+ 	if v.IsNil() {
+@@ -189,6 +191,8 @@ func (in *Interp) inspectBuiltin(v object.Value) (string, error) {
+ 			return &quot;#&lt;Encoding:&quot; + v.Fields[0].Str() + &quot;&gt;&quot;, nil
+ 		case object.PathnameClass:
+ 			return &quot;#&lt;Pathname:&quot; + v.Fields[0].Str() + &quot;&gt;&quot;, nil
++		case stdlib.MoneyClass:
++			return &quot;#&lt;Money &quot; + stdlib.MoneyToS(object.InstanceValue(v)) + &quot;&gt;&quot;, nil
+ 		}
+ 		parts := make([]string, len(v.Cls.Fields))
+ 		for i, f := range v.Cls.Fields {
+diff --git a/src/stdlib/stdlib.go b/src/stdlib/stdlib.go
+--- a/src/stdlib/stdlib.go
++++ b/src/stdlib/stdlib.go
+@@ -35,6 +35,7 @@ func Install() {
+ 	installEncodings()
+ 	installPack()
+ 	installPaths()
++	installMoney()
+ 	// After Enumerable and Enumerator: it wraps Enumerable&#39;s methods.
+ 	installUserEnumerable()
+ 	// Last: it wraps every String method defined before it.</code></pre>
+
+<p>Built with these changes, cameo runs:</p>
+
+<pre class="cameo unbuilt"><code>total = Money.new(1250) + Money.new(199)
+puts total
+p total
+p total.cents
+p total == Money.new(1449)
+begin
+  total + 1
+rescue TypeError =&gt; e
+  puts e.message
+end</code></pre>
+<pre class="output"><code>$14.49
+#&lt;Money $14.49&gt;
+1449
+true
+Money can&#39;t be added to Integer</code></pre>
+
+<p>A builtin class's instances are not protobuf messages: they cannot be
+passed to <code>async</code>, which raises "Money is not a class with
+fields", and they reach a host as an <code>*object.Instance</code>. A new
+builtin also comes with an example in <code>examples/</code>, whose
+<code>.expected</code> output <code>go test</code> holds it to, and a line
+in <code>doc/cameo-vs-ruby.md</code> if Ruby has the class too.</p>
+</main>
+
+<footer class="site"><div class="inner">
+  cameo · <a href="https://github.com/radiospiel/cameo">github.com/radiospiel/cameo</a> ·
+  every sample on this site was run
+</div></footer>
+</body>
+</html>

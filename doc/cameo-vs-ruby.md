@@ -8,7 +8,8 @@ accepts parses as Ruby. Where cameo differs it does so in one of three ways:
 - **rejected before the script runs**: the checker names the construct and,
   where there is one, the alternative;
 - **a missing builtin**, which raises `NameError` or `NoMethodError` when the
-  script reaches it.
+  script reaches it (`Proc#curry` raises `NotImplementedError`, and
+  `Integer()` with a base `ArgumentError`).
 
 This page lists each, as of v0.1. The [design document](design/cameo.md)
 says why; its *Decisions taken* records the choices made explicitly.
@@ -162,7 +163,7 @@ The checker rejects these by name, with the line:
 | a mutating or bang method on anything but a local, such as `[3, 1].sort!` or `obj.list << x` | the non-mutating form: `sort`, `+`, `append`, `with` |
 | nested multiple assignment, `a, (b, c) = …` | separate assignments |
 | `require_relative`, `load` | one file per script |
-| backticks, `system`, `exec`, `spawn`, `fork` | none |
+| backticks, `fork` | none; `fork`'s message names `async` |
 | rational and imaginary literals, `1r` and `2i` | none |
 | assignment to a scoped constant, `A::B = 1` | assignment inside `A` |
 
@@ -176,8 +177,8 @@ These are absent, and a script that uses one fails when it reaches it:
   refinements, `binding`, `method` and `Proc#curry`.
 - **No I/O beyond standard output and error**: `File`, `IO`, `Dir`,
   `gets`, `STDIN`, `STDOUT`, `STDERR`, `$stdout`.
-- **No threads or processes**: `Thread`, `Fiber`, `Mutex`, `sleep`; cameo
-  has `async` and `await` instead.
+- **No threads or processes**: `Thread`, `Fiber`, `Mutex`, `sleep`,
+  `system`, `exec`, `spawn`; cameo has `async` and `await` instead.
 - **Not there yet**: `exit`, `at_exit`, `catch` and `throw`, `redo`,
   `printf` (`format` exists), `__method__`, `__LINE__`, `Enumerator.new`,
   `Integer()` with a base, `Random` as a class (`rand` and `srand` exist),

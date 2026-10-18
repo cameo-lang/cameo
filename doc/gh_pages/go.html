@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cameo — embedding in Go</title>
+<meta name="description" content="Load and run cameo scripts from a Go program, call into them, convert values, pass protobuf messages, handle errors and run workers.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><div class="inner">
+  <a class="name" href="index.html">cameo</a>
+  <nav>
+    <a href="index.html">Overview</a>
+    <a href="ruby.html">Coming from Ruby</a>
+    <a href="go.html" aria-current="page">Embedding in Go</a>
+    <a href="native.html">Native code</a>
+    <a href="https://github.com/radiospiel/cameo">GitHub</a>
+  </nav>
+</div></header>
+
+<main>
+<h1>Embedding cameo in a Go program</h1>
+<p class="lead">The package <code>github.com/radiospiel/cameo/src/cameo</code>
+loads a script, runs it, calls its methods and converts values both
+ways.</p>
+
+<nav class="toc" aria-label="On this page">
+<ol>
+  <li><a href="#install">Adding cameo to a module</a></li>
+  <li><a href="#run">Load, Run and RunContext</a></li>
+  <li><a href="#call">Calling into a script</a></li>
+  <li><a href="#values">How Go values map to cameo values</a></li>
+  <li><a href="#proto">Protobuf messages both ways</a></li>
+  <li><a href="#errors">Errors</a></li>
+  <li><a href="#concurrency">Concurrency</a></li>
+</ol>
+</nav>
+
+<h2 id="install">Adding cameo to a module</h2>
+
+<p>cameo needs Go 1.26.4 or later; <code>go get</code> raises a
+module's <code>go</code> line to 1.26.4. Import the package, then:</p>
+
+<pre class="sh"><code>go get github.com/radiospiel/cameo@v0.2.0
+go mod tidy</code></pre>
+
+<p><code>go mod tidy</code> adds cameo's own dependencies,
+<code>google.golang.org/protobuf</code> and
+<code>github.com/go-ruby-parser/parser</code>, to <code>go.sum</code>;
+without it the build fails with "missing go.sum entry". Neither needs cgo.</p>
+
+<h2 id="run">Load, Run and RunContext</h2>
+
+<p><code>cameo.Load(file, src, stdout, stderr)</code> parses and checks a
+script and returns a <code>*cameo.Program</code>; <code>file</code> names
+it in error messages, and the script's <code>puts</code> and
+<code>warn</code> write to <code>stdout</code> and <code>stderr</code>.
+<code>Run</code> evaluates the script once, and its classes and methods
+stay loaded for <code>Call</code>. <code>LastValue</code> returns the
+script's last top-level expression as <code>p</code> shows it.
+<code>cameo.Run</code> does <code>Load</code> and <code>Run</code> in one
+call, as the <code>cameo</code> command does.</p>
+
+<pre class="go"><code>package main
+
+import (
+	&quot;fmt&quot;
+	&quot;log&quot;
+	&quot;os&quot;
+
+	&quot;github.com/radiospiel/cameo/src/cameo&quot;
+)
+
+const script = `
+class Point
+  int :x, :y
+
+  def +(other) = Point.new(x: x + other.x, y: y + other.y)
+end
+
+def greet(name) = &quot;hello, #{name}&quot;
+
+puts &quot;loaded&quot;
+Point.new(x: 1, y: 2)
+`
+
+func main() {
+	prog, err := cameo.Load(&quot;point.cameo&quot;, script, os.Stdout, os.Stderr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := prog.Run(); err != nil {
+		log.Fatal(err)
+	}
+	last, _ := prog.LastValue()
+	fmt.Println(&quot;last value:&quot;, last)
+
+	hello, err := prog.Call(nil, &quot;greet&quot;, &quot;Go&quot;)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(hello)
+
+	pt, err := prog.Call(&quot;Point&quot;, &quot;new&quot;, map[string]any{&quot;x&quot;: 1, &quot;y&quot;: 2})
+	if err != nil {
+		log.Fatal(err)
+	}
+	sum, err := prog.Call(pt, &quot;+&quot;, pt)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf(&quot;%T\n&quot;, sum)
+	x, _ := prog.Call(sum, &quot;x&quot;)
+	fmt.Printf(&quot;%T %v\n&quot;, x, x)
+}</code></pre>
+<pre class="output"><code>loaded
+last value: Point(x: 1, y: 2)
+hello, Go
+*dynamicpb.Message
+int64 2</code></pre>
+
+<p><code>RunContext(ctx)</code> is <code>Run</code> until the context
+ends. Then the script, and every worker it started, stops at its next loop
+pass, method call or block call, no <code>rescue</code> catches it, and
+<code>RunContext</code> returns the context's error.</p>
+
+<pre class="go"><code>package main
+
+import (
+	&quot;context&quot;
+	&quot;fmt&quot;
+	&quot;log&quot;
+	&quot;os&quot;
+	&quot;time&quot;
+
+	&quot;github.com/radiospiel/cameo/src/cameo&quot;
+)
+
+func main() {
+	prog, err := cameo.Load(&quot;spin.cameo&quot;, &quot;loop { }&quot;, os.Stdout, os.Stderr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+	err = prog.RunContext(ctx)
+	fmt.Println(err)
+}</code></pre>
+<pre class="output"><code>context deadline exceeded</code></pre>
+
+<p>A host method that blocks is not interrupted: the script stops once it
+returns, so a method that waits on something should watch the same
+context.</p>
+
+<h2 id="call">Calling into a script</h2>
+
+<p><code>prog.Call(recv, method, args...)</code> calls a method and
+returns its result as a Go value. It runs the script first if
+<code>Run</code> has not. The receiver is one of:</p>
+
+<ul>
+  <li><code>nil</code>, for the script's top-level methods:
+  <code>prog.Call(nil, "greet", "Go")</code>;</li>
+  <li>a class name, for a class method:
+  <code>prog.Call("Geo::Point", "new", …)</code>;</li>
+  <li>a <code>proto.Message</code> of a loaded class, such as an instance
+  a previous <code>Call</code> returned;</li>
+  <li>any other Go value <code>ToValue</code> converts:
+  <code>prog.Call("abc", "upcase")</code> returns <code>"ABC"</code>. A
+  string that names a loaded class is that class.</li>
+</ul>
+
+<p>The arguments are converted with <code>ToValue</code>, and the result
+with <code>ToGo</code>. <code>Call</code> passes positional arguments
+only; a class without <code>initialize</code> also takes its fields as a
+<code>map[string]any</code>, as the example above does.</p>
+
+<h2 id="values">How Go values map to cameo values</h2>
+
+<p><code>prog.ToValue(v)</code> converts a Go value to an cameo value
+(an <code>object.Value</code>), and <code>prog.ToGo(v)</code> converts
+back.</p>
+
+<table>
+<thead><tr><th>Go value</th><th>cameo value</th><th>back in Go</th></tr></thead>
+<tbody>
+<tr><td><code>nil</code></td><td><code>nil</code></td><td><code>nil</code></td></tr>
+<tr><td><code>bool</code></td><td><code>true</code>, <code>false</code></td><td><code>bool</code></td></tr>
+<tr><td><code>int</code>, <code>int8</code> … <code>int64</code>, <code>uint8</code> … <code>uint32</code></td><td>Integer</td><td><code>int64</code></td></tr>
+<tr><td><code>uint</code>, <code>uint64</code>, <code>*big.Int</code></td><td>Integer</td><td><code>int64</code> when it fits, else <code>*big.Int</code></td></tr>
+<tr><td><code>float32</code>, <code>float64</code></td><td>Float</td><td><code>float64</code></td></tr>
+<tr><td><code>string</code></td><td>String (UTF-8)</td><td><code>string</code></td></tr>
+<tr><td><code>[]byte</code></td><td>String (binary)</td><td><code>[]byte</code></td></tr>
+<tr><td><code>time.Time</code></td><td>Time</td><td><code>time.Time</code></td></tr>
+<tr><td><code>[]any</code>, <code>[]string</code></td><td>Array</td><td><code>[]any</code></td></tr>
+<tr><td>—</td><td>Set</td><td><code>[]any</code></td></tr>
+<tr><td><code>map[string]any</code>, <code>map[any]any</code></td><td>Hash</td><td><code>map[any]any</code></td></tr>
+<tr><td><code>proto.Message</code> of a loaded class</td><td>an instance of that class</td><td><code>proto.Message</code> (a <code>*dynamicpb.Message</code>)</td></tr>
+<tr><td><code>object.Value</code></td><td>itself</td><td>—</td></tr>
+<tr><td>—</td><td>Symbol, Range, Class and the rest</td><td>the <code>object.Value</code> itself</td></tr>
+</tbody>
+</table>
+
+<p>Any other Go value is an error: "cannot convert struct {} to an cameo
+value". A Hash whose keys are Symbols cannot come back through
+<code>ToGo</code>: a Symbol key stays an
+<code>object.Value</code>, which a Go map cannot hold as a key, and the
+conversion panics. Return a Hash with String keys to Go, or convert it in
+the script with <code>transform_keys(&amp;:to_s)</code>.</p>
+
+<h2 id="proto">Protobuf messages both ways</h2>
+
+<p>Every class a script defines is a protobuf message, with one field per
+declared field, numbered in declaration order. A class inside
+<code>module Geo</code> is the message <code>Point</code> in package
+<code>geo</code>.</p>
+
+<ul>
+  <li><code>prog.Proto(name)</code> returns the <code>.proto</code> text of
+  one class.</li>
+  <li><code>prog.ProtoFiles()</code> returns the <code>.proto</code> files
+  of every loaded class, one per package and keyed by file name, with the
+  value envelope in <code>cameo/value.proto</code>. Compile them with
+  <code>protoc</code> to get Go types with the same wire form.</li>
+  <li><code>prog.Descriptor(name)</code> returns the class's
+  <code>protoreflect.MessageDescriptor</code>, from which
+  <code>dynamicpb</code> builds a message without generated code.</li>
+  <li><code>prog.Encode(v)</code> writes any value, not only an instance,
+  in the <code>cameo.Value</code> envelope; <code>prog.Decode</code> reads
+  it back.</li>
+</ul>
+
+<pre class="go"><code>package main
+
+import (
+	&quot;fmt&quot;
+	&quot;io&quot;
+	&quot;log&quot;
+	&quot;maps&quot;
+	&quot;slices&quot;
+
+	&quot;google.golang.org/protobuf/proto&quot;
+	&quot;google.golang.org/protobuf/reflect/protoreflect&quot;
+	&quot;google.golang.org/protobuf/types/dynamicpb&quot;
+
+	&quot;github.com/radiospiel/cameo/src/cameo&quot;
+)
+
+const script = `
+module Geo
+  class Point
+    int :x, :y
+
+    def norm2 = x * x + y * y
+  end
+end
+`
+
+func check(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func main() {
+	prog, err := cameo.Load(&quot;geo.cameo&quot;, script, io.Discard, io.Discard)
+	check(err)
+	check(prog.Run())
+
+	// The .proto text of one class, and the files of all of them.
+	text, err := prog.Proto(&quot;Geo::Point&quot;)
+	check(err)
+	fmt.Print(text)
+	files := prog.ProtoFiles()
+	fmt.Println(slices.Sorted(maps.Keys(files)))
+
+	// A message built in Go from the class&#39;s descriptor is an instance in
+	// the script.
+	desc, err := prog.Descriptor(&quot;Geo::Point&quot;)
+	check(err)
+	msg := dynamicpb.NewMessage(desc)
+	msg.Set(desc.Fields().ByName(&quot;x&quot;), protoreflect.ValueOfInt64(3))
+	msg.Set(desc.Fields().ByName(&quot;y&quot;), protoreflect.ValueOfInt64(4))
+	n, err := prog.Call(msg, &quot;norm2&quot;)
+	check(err)
+	fmt.Println(n)
+
+	// An instance comes back as a proto.Message.
+	pt, err := prog.Call(&quot;Geo::Point&quot;, &quot;new&quot;, map[string]any{&quot;x&quot;: 1, &quot;y&quot;: 2})
+	check(err)
+	wire, err := proto.Marshal(pt.(proto.Message))
+	check(err)
+	fmt.Println(len(wire), &quot;bytes&quot;)
+
+	// Any value travels in the cameo.Value envelope.
+	data, err := prog.Encode([]any{&quot;a&quot;, int64(1), pt})
+	check(err)
+	back, err := prog.Decode(data)
+	check(err)
+	fmt.Println(len(back.([]any)), &quot;elements&quot;)
+}</code></pre>
+<pre class="output"><code>package geo;
+
+message Point {
+  optional int64 x = 1;
+  optional int64 y = 2;
+}
+[cameo/value.proto geo.proto]
+25
+4 bytes
+3 elements</code></pre>
+
+<h2 id="errors">Errors</h2>
+
+<p>A script that does not check returns a <code>syntax.ErrorList</code>
+(package <code>github.com/radiospiel/cameo/src/syntax</code>) from
+<code>Load</code>, with every error and its line. An exception that ends
+<code>Run</code> or <code>Call</code> returns a
+<code>*cameo.RunError</code>, whose <code>Message</code> is formatted as
+the <code>cameo</code> command prints it and whose <code>Unwrap</code>
+returns the exception, an <code>*object.Exception</code>.</p>
+
+<pre class="go"><code>package main
+
+import (
+	&quot;errors&quot;
+	&quot;fmt&quot;
+	&quot;io&quot;
+
+	&quot;github.com/radiospiel/cameo/src/cameo&quot;
+	&quot;github.com/radiospiel/cameo/src/syntax&quot;
+)
+
+func main() {
+	_, err := cameo.Load(&quot;bad.cameo&quot;, &quot;@count = 1\n$total = 2\n&quot;, io.Discard, io.Discard)
+	var list syntax.ErrorList
+	if errors.As(err, &amp;list) {
+		for _, e := range list {
+			fmt.Printf(&quot;line %d: %s\n&quot;, e.Line, e.Msg)
+		}
+	}
+
+	err = cameo.Run(&quot;boom.cameo&quot;, &quot;def half(n) = n / 0\nhalf(4)\n&quot;, io.Discard, io.Discard)
+	var runErr *cameo.RunError
+	if errors.As(err, &amp;runErr) {
+		fmt.Println(runErr.Message)
+	}
+}</code></pre>
+<pre class="output"><code>line 1: @count = …: cameo has no instance variables; initialize sets a field with self.count = …
+line 2: global variables are not supported
+boom.cameo:1: divided by 0 (ZeroDivisionError)</code></pre>
+
+<h2 id="concurrency">Concurrency</h2>
+
+<p>Inside a script, <code>async</code> runs a method call on a goroutine of
+its own, over copies of its receiver and arguments; see
+<a href="ruby.html#only">async and await</a>. Every worker reaches the
+host's modules, so a host method may run on several goroutines at once and
+must be safe for that. <code>RunContext</code> stops the workers with the
+script.</p>
+
+<pre class="go"><code>package main
+
+import (
+	&quot;fmt&quot;
+	&quot;log&quot;
+	&quot;os&quot;
+	&quot;sync/atomic&quot;
+
+	&quot;github.com/radiospiel/cameo/src/cameo&quot;
+)
+
+const script = `
+class Fetcher
+  string :base
+
+  def get(path) = Http.get(base + path)
+end
+
+f = Fetcher.new(base: &quot;https://example.com&quot;)
+jobs = [&quot;/a&quot;, &quot;/b&quot;, &quot;/c&quot;].map { |path| async f, :get, path }
+p jobs.map { |job| await job }
+`
+
+func main() {
+	prog, err := cameo.Load(&quot;fetch.cameo&quot;, script, os.Stdout, os.Stderr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var calls atomic.Int64
+	prog.Module(&quot;Http&quot;).Def(&quot;get&quot;, func(args []any, kwargs map[string]any) (any, error) {
+		calls.Add(1) // runs on each worker&#39;s goroutine
+		return &quot;body of &quot; + args[0].(string), nil
+	})
+	if err := prog.Run(); err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(calls.Load(), &quot;calls&quot;)
+}</code></pre>
+<pre class="output"><code>[&quot;body of https://example.com/a&quot;, &quot;body of https://example.com/b&quot;, &quot;body of https://example.com/c&quot;]
+3 calls</code></pre>
+
+<p>The host API does not state that one <code>Program</code> may be used
+from several goroutines at once. Give each goroutine of the host its own
+<code>Program</code>; loading one takes microseconds.</p>
+</main>
+
+<footer class="site"><div class="inner">
+  cameo · <a href="https://github.com/radiospiel/cameo">github.com/radiospiel/cameo</a> ·
+  every sample on this site was run
+</div></footer>
+</body>
+</html>

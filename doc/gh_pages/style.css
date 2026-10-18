@@ -1,0 +1,222 @@
+/* cameo's site: one stylesheet, system fonts, light and dark. */
+
+:root {
+  --bg: #fdfcf9;
+  --fg: #1f1d1a;
+  --muted: #6b655c;
+  --rule: #e4dfd5;
+  --accent: #b5651d;
+  --accent-soft: #f6ead9;
+  --code-bg: #f4f1ea;
+  --out-bg: #eef1ec;
+  --bad-bg: #f8e9e6;
+  --bad-fg: #8a2b1d;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #17150f;
+    --fg: #ece7dc;
+    --muted: #a59e91;
+    --rule: #34302a;
+    --accent: #e3a35b;
+    --accent-soft: #2e2418;
+    --code-bg: #221f19;
+    --out-bg: #1c221c;
+    --bad-bg: #2d1b17;
+    --bad-fg: #f0a597;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+a { color: var(--accent); }
+a:hover { text-decoration-thickness: 2px; }
+
+header.site {
+  border-bottom: 1px solid var(--rule);
+}
+
+header.site .inner, main, footer.site .inner {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+header.site .inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 24px;
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+
+header.site .name {
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--fg);
+  text-decoration: none;
+  letter-spacing: 0.02em;
+}
+
+header.site .name::before {
+  content: "";
+  display: inline-block;
+  width: 0.7em;
+  height: 0.7em;
+  margin-right: 0.35em;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+header.site nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+}
+
+header.site nav a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+header.site nav a[aria-current="page"], header.site nav a:hover {
+  color: var(--fg);
+}
+
+main { padding-top: 24px; padding-bottom: 48px; }
+
+h1 { font-size: 36px; line-height: 1.2; margin: 24px 0 8px; }
+h2 { font-size: 26px; line-height: 1.25; margin: 48px 0 12px; padding-top: 8px; border-top: 1px solid var(--rule); }
+h3 { font-size: 20px; margin: 32px 0 8px; }
+h4 { font-size: 13px; margin: 0 0 6px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+
+.lead { font-size: 20px; color: var(--muted); margin-top: 0; }
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 0.88em;
+}
+
+:not(pre) > code {
+  background: var(--code-bg);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+pre {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  background: var(--code-bg);
+  border-radius: 6px;
+  line-height: 1.45;
+}
+
+pre code { font-size: 14px; }
+
+/* The output a sample printed, set off from the sample above it. */
+pre.output {
+  background: var(--out-bg);
+  margin-top: -8px;
+  border-top: 1px dashed var(--rule);
+  border-radius: 0 0 6px 6px;
+}
+
+pre.output::before {
+  content: "output";
+  display: block;
+  font: 600 11px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+pre.output.error { background: var(--bad-bg); color: var(--bad-fg); }
+pre.output.error::before { content: "rejected"; }
+
+/* A Ruby sample beside the cameo way. */
+.pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  margin: 12px 0 20px;
+}
+
+@media (max-width: 720px) {
+  .pair { grid-template-columns: minmax(0, 1fr); }
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 12px 0 20px;
+  font-size: 15px;
+  display: block;
+  overflow-x: auto;
+}
+
+th, td {
+  text-align: left;
+  vertical-align: top;
+  padding: 6px 12px 6px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+th { font-weight: 600; }
+
+.callout {
+  border-left: 4px solid var(--accent);
+  background: var(--accent-soft);
+  padding: 10px 14px;
+  margin: 16px 0;
+  border-radius: 0 6px 6px 0;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.cards a {
+  display: block;
+  padding: 14px;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  color: var(--fg);
+  text-decoration: none;
+}
+
+.cards a:hover { border-color: var(--accent); }
+.cards strong { display: block; color: var(--accent); }
+.cards span { color: var(--muted); font-size: 15px; }
+
+nav.toc {
+  font-size: 15px;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 8px 16px;
+  margin: 16px 0;
+}
+
+nav.toc ol { margin: 4px 0; padding-left: 20px; }
+
+footer.site {
+  border-top: 1px solid var(--rule);
+  color: var(--muted);
+  font-size: 14px;
+}
+
+footer.site .inner { padding-top: 16px; padding-bottom: 24px; }
