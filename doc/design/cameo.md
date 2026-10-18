@@ -419,7 +419,9 @@ the integer and float kinds and `*big.Int`, string, `[]byte`, `[]any`, `map[stri
 and a `proto.Message` whose full name is a loaded class's message. Results
 come back as nil, bool, int64 (a `*big.Int` beyond 64 bits), float64, string, `[]byte`, `[]any`,
 `map[any]any`, and a `proto.Message` for an instance; a symbol, range or
-class stays an `object.Value`.
+class stays an `object.Value`. A Hash's Symbol keys become strings, as
+symbols do wherever a value leaves cameo; a Hash whose keys have no Go map
+form (a key not comparable in Go, or `:a` beside `"a"`) is an error.
 
 **Host modules.** A host gives the script what cameo does not have, a
 service or a tool, through a module of its own, defined after `Load` and

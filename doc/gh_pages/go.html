@@ -178,7 +178,7 @@ only; a class without <code>initialize</code> also takes its fields as a
 
 <h2 id="values">How Go values map to cameo values</h2>
 
-<p><code>prog.ToValue(v)</code> converts a Go value to an cameo value
+<p><code>prog.ToValue(v)</code> converts a Go value to a cameo value
 (an <code>object.Value</code>), and <code>prog.ToGo(v)</code> converts
 back.</p>
 
@@ -202,12 +202,11 @@ back.</p>
 </tbody>
 </table>
 
-<p>Any other Go value is an error: "cannot convert struct {} to an cameo
-value". A Hash whose keys are Symbols cannot come back through
-<code>ToGo</code>: a Symbol key stays an
-<code>object.Value</code>, which a Go map cannot hold as a key, and the
-conversion panics. Return a Hash with String keys to Go, or convert it in
-the script with <code>transform_keys(&amp;:to_s)</code>.</p>
+<p>Any other Go value is an error: "cannot convert struct {} to a cameo
+value". A Hash's Symbol keys become strings in Go, as a Symbol does
+wherever a value leaves cameo. A Hash that has no Go map form is an error:
+one with both <code>:a</code> and <code>"a"</code> as keys, or with keys
+that are not comparable in Go, such as a Range or a binary String.</p>
 
 <h2 id="proto">Protobuf messages both ways</h2>
 
