@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>amber — coming from Ruby</title>
+<meta name="description" content="What amber shares with Ruby, and how it differs: immutability, typed fields, what the checker rejects, missing builtins, and what only amber has.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><div class="inner">
+  <a class="name" href="index.html">amber</a>
+  <nav>
+    <a href="index.html">Overview</a>
+    <a href="ruby.html" aria-current="page">Coming from Ruby</a>
+    <a href="go.html">Embedding in Go</a>
+    <a href="native.html">Native code</a>
+    <a href="https://github.com/radiospiel/amber">GitHub</a>
+  </nav>
+</div></header>
+
+<main>
+<h1>Coming from Ruby</h1>
+<p class="lead">Everything amber accepts parses as Ruby, and where amber
+accepts a construct it behaves as CRuby 3.4 does. The differences are
+below, each with the Ruby you would write and the amber way.</p>
+
+<nav class="toc" aria-label="On this page">
+<ol>
+  <li><a href="#same">The same as in Ruby</a></li>
+  <li><a href="#immutable">Values are immutable</a></li>
+  <li><a href="#fields">Typed fields instead of instance variables</a></li>
+  <li><a href="#rejected">What the checker rejects</a></li>
+  <li><a href="#missing">Missing builtins</a></li>
+  <li><a href="#only">Only in amber: with, async and await, protobuf</a></li>
+</ol>
+</nav>
+
+<p>amber differs from Ruby in three ways: a construct has a different
+meaning, almost always because values are immutable; the checker rejects a
+construct before the script runs, and names what to write instead; or a
+builtin is missing, which raises an exception, mostly
+<code>NameError</code> or <code>NoMethodError</code>, when the script
+reaches it. The full list is
+<a href="https://github.com/radiospiel/amber/blob/main/doc/amber-vs-ruby.md">doc/amber-vs-ruby.md</a>.</p>
+
+<h2 id="same">The same as in Ruby</h2>
+
+<ul>
+  <li><strong>Literals</strong>: <code>nil</code>, booleans, integers of any
+  size, floats, strings with interpolation and heredocs, symbols, arrays,
+  hashes, ranges, regular expressions, <code>%w[]</code> and
+  <code>%i[]</code>.</li>
+  <li><strong>Control flow</strong>: <code>if</code>, <code>unless</code>,
+  modifiers, <code>case</code>/<code>when</code>, pattern matching with
+  <code>case</code>/<code>in</code>, <code>while</code>, <code>until</code>,
+  <code>loop</code>, <code>break</code> with a value, <code>next</code>,
+  <code>&amp;.</code>.</li>
+  <li><strong>Methods and blocks</strong>: positional, optional, rest,
+  keyword and block parameters; endless <code>def</code>; argument
+  forwarding; <code>yield</code>; lambdas, procs, <code>&amp;:sym</code>,
+  numbered parameters.</li>
+  <li><strong>Classes and modules</strong>: single inheritance and
+  <code>super</code>; modules as namespaces and mixins through
+  <code>include</code> and <code>extend</code>; <code>Comparable</code>,
+  <code>Enumerable</code>, <code>method_missing</code>.</li>
+  <li><strong>Exceptions</strong>: <code>begin</code>/<code>rescue</code>/<code>else</code>/<code>ensure</code>,
+  <code>raise</code>, <code>retry</code>, and Ruby's exception classes.</li>
+  <li><strong>The core classes</strong>: Integer, Float, String, Symbol,
+  Array, Hash, Set, Range, Regexp, MatchData, Time, Math, Enumerator and
+  <code>lazy</code>, with most of their methods; <code>format</code>,
+  <code>pack</code>, <code>rand</code>.</li>
+  <li><strong>The built-in libraries</strong>: <code>require</code> of
+  <code>set</code>, <code>time</code>, <code>pp</code>,
+  <code>pathname</code> and <code>cgi</code>.</li>
+</ul>
+
+<p>This script prints the same under <code>ruby</code> 3.3 and under
+<code>amber</code>:</p>
+
+<pre class="amber"><code>def describe(shape)
+  case shape
+  in { kind: :circle, r: } then "circle, area #{(Math::PI * r**2).round(2)}"
+  in { kind: :square, side: } then "square, area #{side * side}"
+  in [x, y] then "point at #{x},#{y}"
+  end
+end
+
+shapes = [{ kind: :circle, r: 1.5 }, { kind: :square, side: 3 }, [4, 5]]
+shapes.each_with_index { |s, i| puts "#{i + 1}. #{describe(s)}" }
+
+words = %w[pear apple fig apple pear apple]
+p words.tally.max_by { _2 }
+p words.uniq.sort_by(&amp;:length).group_by(&amp;:size).to_a
+
+begin
+  Integer("12x")
+rescue ArgumentError =&gt; e
+  puts "rescued #{e.class}: #{e.message}"
+ensure
+  puts "done"
+end</code></pre>
+<pre class="output"><code>1. circle, area 7.07
+2. square, area 9
+3. point at 4,5
+["apple", 3]
+[[3, ["fig"]], [4, ["pear"]], [5, ["apple"]]]
+rescued ArgumentError: invalid value for Integer(): "12x"
+done</code></pre>
+
+<p>Of the 1318 cases in CRuby's benchmark suite that amber may carry, 824
+run under amber with Ruby's output. The most common reasons the rest stop
+are metaprogramming, instance variables, <code>attr_*</code> accessors and
+mutation of something other than a local variable, which the sections
+below cover.</p>
+
+<h2 id="immutable">Values are immutable</h2>
+
+<p>Nothing changes in place. A call that changes its receiver in Ruby
+(<code>&lt;&lt;</code>, <code>push</code>, <code>delete</code>,
+<code>merge!</code>, any bang method) rebinds the local variable it is
+called on to the changed copy. Another variable that held the old value
+keeps it.</p>
+
+<div class="pair">
+<div>
+<h4>Ruby</h4>
+<pre class="ruby"><code>a = [1, 2]
+b = a
+a &lt;&lt; 3
+p a, b</code></pre>
+<pre class="output"><code>[1, 2, 3]
+[1, 2, 3]</code></pre>
+</div>
+<div>
+<h4>amber</h4>
+<pre class="amber"><code>a = [1, 2]
+b = a
+a &lt;&lt; 3
+p a, b</code></pre>
+<pre class="output"><code>[1, 2, 3]
+[1, 2]</code></pre>
+</div>
+</div>
+
+<p>The call's value is Ruby's: the receiver for most, the removed element
+for <code>pop</code>, <code>shift</code> and <code>delete</code>.
+<code>h[k] = v</code> and <code>a.x = 1</code> rebind the local the same
+way.</p>
+
+<p>Such a call needs a local variable to rebind. On anything else, an
+element, a constant or a call's result, the checker rejects it: write the
+non-mutating form and assign the result.</p>
+
+<div class="pair">
+<div>
+<h4>Ruby</h4>
+<pre class="ruby"><code>config = { tags: ["a"] }
+config[:tags] &lt;&lt; "b"
+p config[:tags]</code></pre>
+<pre class="output"><code>["a", "b"]</code></pre>
+</div>
+<div>
+<h4>amber</h4>
+<pre class="amber rejected"><code>config = { tags: ["a"] }
+config[:tags] &lt;&lt; "b"
+p config[:tags]</code></pre>
+<pre class="output error"><code>script.arb:2: &lt;&lt; changes its receiver, which amber rebinds only for a local variable or a field in initialize; use + or append</code></pre>
+<pre class="amber"><code>config = { tags: ["a"] }
+config[:tags] += ["b"]
+p config[:tags]</code></pre>
+<pre class="output"><code>["a", "b"]</code></pre>
+</div>
+</div>
+
+<p>Equality is structural: two arrays, hashes or instances with equal
+contents are <code>==</code> and hash alike. There is no object identity,
+so <code>equal?</code> and <code>object_id</code> do not exist.
+<code>frozen?</code> is true for every value, and <code>freeze</code> and
+<code>dup</code> change nothing.</p>
+
+<h2 id="fields">Typed fields instead of instance variables</h2>
+
+<p>A class declares its fields with their types. Each field gets a reader.
+There are no instance variables and no setters: <code>initialize</code> is
+the one place a field is set, with <code>self.x = v</code>, and
+<code>with</code> makes a changed copy everywhere else.</p>
+
+<div class="pair">
+<div>
+<h4>Ruby</h4>
+<pre class="ruby"><code>class Counter
+  attr_reader :count
+
+  def initialize
+    @count = 0
+  end
+
+  def increment
+    @count += 1
+    self
+  end
+end
+
+c = Counter.new
+c.increment.increment
+p c.count</code></pre>
+<pre class="output"><code>2</code></pre>
+</div>
+<div>
+<h4>amber</h4>
+<pre class="amber"><code>class Counter
+  int :count, default: 0
+
+  def increment = with(count: count + 1)
+end
+
+c = Counter.new
+c = c.increment.increment
+p c.count</code></pre>
+<pre class="output"><code>2</code></pre>
+</div>
+</div>
+
+<p>A field's type is one of proto3's scalar types (<code>int32</code>,
+<code>uint64</code>, <code>double</code>, <code>bool</code>,
+<code>string</code>, <code>bytes</code> and the rest), <code>int</code> and
+<code>float</code> for Ruby's Integer and Float, <code>bignum</code> for an
+Integer of any size, or <code>list</code>, <code>set</code>,
+<code>map</code>, <code>ref</code> and <code>enum</code>. A value of the
+wrong type raises <code>TypeError</code>, and one out of range
+<code>RangeError</code>. A class without <code>initialize</code> takes its
+fields as keywords.</p>
+
+<pre class="amber"><code>class Point
+  int32 :x, :y
+  string :label, default: ""
+end
+
+pt = Point.new(x: 1, y: 2)
+p pt
+p pt == Point.new(x: 1, y: 2, label: "")
+
+begin
+  Point.new(x: "one")
+rescue TypeError =&gt; e
+  puts e.message
+end</code></pre>
+<pre class="output"><code>Point(x: 1, y: 2, label: "")
+true
+field x of Point takes an int32, not an instance of String</code></pre>
+
+<p>Assignment through a chain of readers that starts at a local variable
+is a copy too: <code>line.to.x = 30</code> rebinds <code>line</code> to a
+copy whose <code>to</code> is a copy with <code>x</code> set.</p>
+
+<pre class="amber"><code>class Point
+  int :x, :y
+end
+
+class Line
+  ref :from, Point
+  ref :to, Point
+end
+
+line = Line.new(from: Point.new(x: 0, y: 0), to: Point.new(x: 3, y: 4))
+before = line
+line.to.x = 30
+p line.to, before.to</code></pre>
+<pre class="output"><code>Point(x: 30, y: 4)
+Point(x: 3, y: 4)</code></pre>
+
+<p>A class is a value bound to its name. Evaluating the same
+<code>class X … end</code> again gives the same class; a different body
+makes a new class and rebinds <code>X</code>. Nothing reopens a class once
+its body has run, and a builtin class cannot be reopened.</p>
+
+<h2 id="rejected">What the checker rejects</h2>
+
+<p>amber checks a whole script before it runs any of it, and reports every
+construct it leaves out, with its line. <code>amber check script.arb</code>
+runs the check alone.</p>
+
+<pre class="amber rejected"><code>class Account
+  attr_reader :balance
+
+  def initialize
+    @balance = 0
+  end
+
+  def deposit(n) = send(:add, n)
+end
+
+$total = 0</code></pre>
+<pre class="output error"><code>script.arb:2: attr_reader is not supported: a field declaration defines its reader, and there are no setters
+script.arb:5: @balance = …: amber has no instance variables; initialize sets a field with self.balance = …
+script.arb:8: send is not supported; use a direct call
+script.arb:11: global variables are not supported</code></pre>
+
+<table>
+<thead><tr><th>Rejected</th><th>Write instead</th></tr></thead>
+<tbody>
+<tr><td>instance variables, <code>@x</code></td><td><code>self.x = v</code> in <code>initialize</code>; read <code>x</code> or <code>self.x</code></td></tr>
+<tr><td>class variables <code>@@x</code>; global variables <code>$x</code>, including <code>$stdout</code>, <code>$!</code> and <code>$~</code></td><td>a constant, a field or a local; <code>rescue =&gt; e</code>; the MatchData that <code>match</code> returns</td></tr>
+<tr><td>setters, <code>def x=(v)</code>; <code>attr_reader</code>, <code>attr_writer</code>, <code>attr_accessor</code></td><td>field declarations, which define readers, and <code>with</code></td></tr>
+<tr><td><code>self.x = v</code> outside <code>initialize</code></td><td><code>with(x: v)</code>, which returns the copy</td></tr>
+<tr><td><code>private</code>, <code>protected</code>, <code>public</code>, <code>module_function</code></td><td>none: every method is public</td></tr>
+<tr><td><code>send</code>, <code>public_send</code>, <code>eval</code>, <code>instance_eval</code>, <code>class_eval</code>, <code>define_method</code>, <code>instance_variable_get</code> and <code>_set</code>, <code>undef</code></td><td>a direct call or a <code>def</code></td></tr>
+<tr><td><code>def obj.x</code>, <code>class &lt;&lt; self</code></td><td><code>def self.x</code> in a class body</td></tr>
+<tr><td>a mutating or bang method on anything but a local, such as <code>[3, 1].sort!</code> or <code>obj.list &lt;&lt; x</code></td><td>the non-mutating form: <code>sort</code>, <code>+</code>, <code>append</code>, <code>with</code></td></tr>
+<tr><td>nested multiple assignment, <code>a, (b, c) = …</code></td><td>separate assignments</td></tr>
+<tr><td><code>require_relative</code>, <code>load</code></td><td>one file per script</td></tr>
+<tr><td>backticks, <code>fork</code></td><td>none; a host can give the script a module of Go methods, and <code>async</code> runs a call on a goroutine</td></tr>
+<tr><td>rational and imaginary literals, <code>1r</code> and <code>2i</code></td><td>none</td></tr>
+<tr><td>assignment to a scoped constant, <code>A::B = 1</code></td><td>the assignment inside <code>A</code></td></tr>
+<tr><td>a regular expression that needs backtracking: backreferences, lookahead and lookbehind, atomic groups</td><td>a pattern without them; amber's regular expressions run in linear time</td></tr>
+</tbody>
+</table>
+
+<h2 id="missing">Missing builtins</h2>
+
+<p>These do not exist in amber. A script that uses one fails when it
+reaches it, mostly with <code>NameError</code> or
+<code>NoMethodError</code>, and for a library with
+<code>LoadError</code>.</p>
+
+<ul>
+  <li><strong>Left out by design</strong>: <code>Struct</code> and
+  <code>Data</code> (classes declare typed fields), <code>Rational</code>
+  and <code>Complex</code>, <code>Marshal</code> (instances are protobuf
+  messages), <code>ObjectSpace</code>, <code>GC</code>, <code>ENV</code>,
+  <code>RUBY_VERSION</code>, <code>Module.new</code>, refinements,
+  <code>binding</code>, <code>method</code>, <code>Proc#curry</code>.</li>
+  <li><strong>No I/O beyond standard output and error</strong>:
+  <code>File</code> beyond path arithmetic, <code>IO</code>,
+  <code>Dir</code>, <code>gets</code>, <code>STDIN</code>,
+  <code>STDOUT</code>, <code>STDERR</code>.</li>
+  <li><strong>No threads or processes</strong>: <code>Thread</code>,
+  <code>Fiber</code>, <code>Mutex</code>, <code>sleep</code>,
+  <code>system</code>, <code>exec</code>, <code>spawn</code>. amber has
+  <code>async</code> and <code>await</code> instead.</li>
+  <li><strong>Not there yet</strong>: <code>exit</code>,
+  <code>at_exit</code>, <code>catch</code> and <code>throw</code>,
+  <code>redo</code>, <code>printf</code> (<code>format</code> exists),
+  <code>__method__</code>, <code>__LINE__</code>,
+  <code>Enumerator.new</code>, <code>Integer()</code> with a base,
+  <code>Random</code> as a class (<code>rand</code> and <code>srand</code>
+  exist), <code>autoload</code>.</li>
+  <li><strong>Libraries</strong>: <code>require</code> of anything but
+  <code>set</code>, <code>time</code>, <code>pp</code>,
+  <code>pathname</code> and <code>cgi</code>, such as <code>json</code>.</li>
+</ul>
+
+<div class="pair">
+<div>
+<h4>Ruby</h4>
+<pre class="ruby"><code>Item = Struct.new(:name, :qty)
+item = Item.new("pen", 1)
+item.qty += 1
+p item.qty</code></pre>
+<pre class="output"><code>2</code></pre>
+</div>
+<div>
+<h4>amber</h4>
+<pre class="amber"><code>class Item
+  string :name
+  int :qty
+end
+
+item = Item.new(name: "pen", qty: 1)
+item.qty += 1
+p item.qty</code></pre>
+<pre class="output"><code>2</code></pre>
+</div>
+</div>
+
+<pre class="amber"><code>begin
+  require "json"
+rescue LoadError =&gt; e
+  puts e.message
+end</code></pre>
+<pre class="output"><code>cannot load such file -- json</code></pre>
+
+<h2 id="only">Only in amber</h2>
+
+<h3><code>with</code></h3>
+
+<p><code>value.with(field: v)</code> returns a copy with the named fields
+replaced; it is Ruby's <code>Data#with</code>. With a block, the block gets
+the value and returns a hash of the changes. On a Hash, <code>with</code>
+merges.</p>
+
+<pre class="amber"><code>class Point
+  int :x, :y
+end
+
+pt = Point.new(x: 1, y: 2)
+p pt.with(x: 10)
+p pt.with { |q| { y: q.y * 5 } }
+p pt
+p({ a: 1 }.with(b: 2))</code></pre>
+<pre class="output"><code>Point(x: 10, y: 2)
+Point(x: 1, y: 10)
+Point(x: 1, y: 2)
+{a: 1, b: 2}</code></pre>
+
+<h3><code>async</code> and <code>await</code></h3>
+
+<p><code>async receiver, :method, args…</code> runs one method call on a
+goroutine of its own, over copies of the receiver and the arguments.
+<code>await</code> returns its result, or raises the exception it raised.
+<code>await :all</code> waits for every job the current method started and
+has not awaited. A job shares no memory with the script that started it,
+so a Proc, a class or a block cannot be passed to one.</p>
+
+<pre class="amber"><code>class Worker
+  int :factor
+
+  def times(n) = n * factor
+
+  def fail(msg)
+    raise ArgumentError, msg
+  end
+end
+
+w = Worker.new(factor: 3)
+
+job = async w, :times, 4       # starts w.times(4) on a goroutine
+p await job
+
+jobs = [1, 2, 3].map { |n| async w, :times, n }
+p jobs.map { |j| await j }
+
+async w, :times, 10
+async w, :times, 20
+p await :all                   # every job this scope started and did not await
+
+begin
+  await w, :fail, "boom"       # async and await in one step
+rescue ArgumentError =&gt; e
+  puts "job raised: #{e.message}"
+end</code></pre>
+<pre class="output"><code>12
+[3, 6, 9]
+[30, 60]
+job raised: boom</code></pre>
+
+<h3>Protobuf</h3>
+
+<p>Every class is a protobuf message. Its fields are numbered in
+declaration order, and <code>reserved</code> keeps a removed field's number
+out of use. <code>to_proto</code> returns the wire form,
+<code>from_proto</code> reads it back, and <code>Point.proto</code> returns
+the <code>.proto</code> text. <code>amber proto script.arb</code> writes the
+<code>.proto</code> files of every class a script defines.</p>
+
+<pre class="amber"><code>class Point
+  int :x, :y
+end
+
+pt = Point.new(x: 3, y: 4)
+data = pt.to_proto
+p data.bytesize
+p Point.from_proto(data) == pt
+puts Point.proto</code></pre>
+<pre class="output"><code>4
+true
+message Point {
+  optional int64 x = 1;
+  optional int64 y = 2;
+}</code></pre>
+
+<p>A Symbol becomes a String where a value leaves amber, in a protobuf
+message or an <code>async</code> call, unless an <code>enum</code> field
+declares it.</p>
+</main>
+
+<footer class="site"><div class="inner">
+  amber · <a href="https://github.com/radiospiel/amber">github.com/radiospiel/amber</a> ·
+  every sample on this site was run against amber v0.1.1
+</div></footer>
+</body>
+</html>
