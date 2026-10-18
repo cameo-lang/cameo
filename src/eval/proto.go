@@ -1,8 +1,8 @@
 package eval
 
 import (
-	"github.com/radiospiel/amber/src/object"
-	"github.com/radiospiel/amber/src/protogen"
+	"github.com/radiospiel/cameo/src/object"
+	"github.com/radiospiel/cameo/src/protogen"
 )
 
 // Proto is the interpreter's protobuf registry: the descriptors of its
@@ -82,7 +82,7 @@ func init() {
 			return object.Value{}, ctx.Raise(object.TypeError, "%s is not a class with fields", c.QualifiedName())
 		}
 		if _, err := ctx.(*Interp).proto.Message(c); err != nil {
-			return object.Value{}, ctx.Raise(object.AmberError, "%s", err.Error())
+			return object.Value{}, ctx.Raise(object.CameoError, "%s", err.Error())
 		}
 		return object.String(protogen.Text(c)), nil
 	})
@@ -112,7 +112,7 @@ func init() {
 		}
 		data, err := ctx.(*Interp).proto.Marshal(inst)
 		if err != nil {
-			return object.Value{}, ctx.Raise(object.AmberError, "%s", err.Error())
+			return object.Value{}, ctx.Raise(object.CameoError, "%s", err.Error())
 		}
 		return object.Bytes(data), nil
 	})

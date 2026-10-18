@@ -1,4 +1,4 @@
-# WRITING.md — how to write in amber
+# WRITING.md — how to write in cameo
 
 Everything an agent writes — pull request titles and descriptions, commit
 messages, code comments, documentation, and messages to the human in a session —
@@ -31,7 +31,7 @@ ran, and say what you did not run.
 
 **Use the reader's vocabulary.** A word that means something specific in this
 repository must not be used for something else without saying so — a "value"
-is an amber value here, so a Go value is "a Go value". Pick one word per
+is a cameo value here, so a Go value is "a Go value". Pick one word per
 concept and keep it: if a comment says "repository", the next sentence does not
 say "repo", "checkout" or "project" for the same thing.
 
@@ -79,7 +79,7 @@ Detail belongs in the pull request description, where a reviewer wants it — no
 in the terminal.
 
 Name a pull request as a link, not a bare number, so it can be followed without
-retyping it: `[radiospiel/amber#35](https://github.com/radiospiel/amber/pull/35)`.
+retyping it: `[radiospiel/cameo#35](https://github.com/radiospiel/cameo/pull/35)`.
 
 ## Comments in code
 
@@ -153,7 +153,7 @@ commit's subject. Five checks:
    | Not | But |
    |---|---|
    | eval: a call site keeps a cache of the method it found, keyed on the receiver's class | eval: caches method lookup per call site |
-   | cli: amber check prints every error it finds, through a new reporter type | cli: amber check reports every error, not only the first |
+   | cli: cameo check prints every error it finds, through a new reporter type | cli: cameo check reports every error, not only the first |
 
 **No person names in pull request titles and descriptions.** It is not
 important who asked for a change, but why someone asked for it. Name no

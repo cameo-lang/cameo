@@ -1,31 +1,31 @@
 # Go rules
 
-amber is one Go module, `github.com/radiospiel/amber`, with `go.mod` at the
+cameo is one Go module, `github.com/radiospiel/cameo`, with `go.mod` at the
 root.
 
 ## Layout
 
 **All Go source lives under `src/`.** The root holds what describes the
 module — `go.mod`, `Makefile`, `README.md`, `doc/` — and nothing else.
-Packages import as `github.com/radiospiel/amber/src/<name>`, and the last
+Packages import as `github.com/radiospiel/cameo/src/<name>`, and the last
 element of the path is the package name:
 
 ```
-src/amber/        the host API a Go program imports
-src/cmd/amber/    the amber command
+src/cameo/        the host API a Go program imports
+src/cmd/cameo/    the cameo command
 src/assert/       the assertions the tests use, vendored
 tests/            Go tests against the packages, as a caller uses them
 tests/integration/  shell tests that drive the built binary
 ```
 
 A package's own unit tests sit beside it in `src/` (`foo_test.go`). Tests
-that use amber the way a program embedding it does — through exported API
+that use cameo the way a program embedding it does — through exported API
 only — go in `tests/`.
 
 ## Building and testing
 
 ```sh
-make deps build        # resolve modules, build bin/amber
+make deps build        # resolve modules, build bin/cameo
 make tests             # gofmt check, go mod tidy check, go test ./...
 make integration-tests # build, then run tests/integration/test_*.sh
 make lint              # go vet ./...
@@ -36,7 +36,7 @@ Integration tests are bash scripts built on
 [tests/integration/testsh.inc](../tests/integration/testsh.inc): define
 `test_*` functions, assert with `assert_eq`, `assert_neq`, `assert_match` or
 `assert_contains`, and end with `run_tests`. The binary under test arrives in
-`AMBER_BIN`; `make integration-tests` sets it. When you add or change
+`CAMEO_BIN`; `make integration-tests` sets it. When you add or change
 behaviour of the command, extend them in the same commit.
 
 ## Session setup: verify Go LSP

@@ -1,10 +1,10 @@
-package amber
+package cameo
 
 import (
 	"errors"
 	"fmt"
 
-	"github.com/radiospiel/amber/src/object"
+	"github.com/radiospiel/cameo/src/object"
 )
 
 // Module is a module the host gives the script: a constant at its top
@@ -17,7 +17,7 @@ type Module struct {
 
 // Func is a host method. It gets the call's positional arguments and its
 // keyword arguments as plain Go values: what ToGo gives, but a Symbol is a
-// String, as everywhere a value leaves amber, and a Hash whose keys are all
+// String, as everywhere a value leaves cameo, and a Hash whose keys are all
 // Strings or Symbols is a map[string]any. What it returns comes back
 // through ToValue. An error raises an exception: an *Exception's class, or
 // a RuntimeError with the error's text.
@@ -162,7 +162,7 @@ func (p *Program) toHost(v object.Value) (any, error) {
 			}
 			switch key.(type) {
 			case []any, map[string]any, map[any]any:
-				return nil, fmt.Errorf("a Hash with %s keys cannot leave amber", k.Class().QualifiedName())
+				return nil, fmt.Errorf("a Hash with %s keys cannot leave cameo", k.Class().QualifiedName())
 			}
 			g, err := p.toHost(m.Values()[i])
 			if err != nil {

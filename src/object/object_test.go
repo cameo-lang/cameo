@@ -221,6 +221,6 @@ func TestScalarRanges(t *testing.T) {
 		}
 	}
 	if Scalar("float").Proto != "double" || Scalar("float32").Proto != "float" || Scalar("int").Proto != "int64" || Scalar("bignum").Proto != "string" {
-		t.Error("an amber name maps to the wrong protobuf type")
+		t.Error("a cameo name maps to the wrong protobuf type")
 	}
 }

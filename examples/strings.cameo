@@ -9,7 +9,7 @@ puts s[0, 5]
 puts s.index("World")
 puts s.include?("lo")
 puts s.start_with?("Hell")
-puts s.sub("World", "amber")
+puts s.sub("World", "cameo")
 puts s.gsub("l", "L")
 puts s.split(", ").inspect
 puts s.chars[0, 3].inspect

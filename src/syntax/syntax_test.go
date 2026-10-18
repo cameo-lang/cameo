@@ -10,7 +10,7 @@ import (
 
 func parse(t *testing.T, src string) *Program {
 	t.Helper()
-	prog, err := Parse("test.arb", src)
+	prog, err := Parse("test.cameo", src)
 	if err != nil {
 		t.Fatalf("parse failed:\n%v", err)
 	}
@@ -19,7 +19,7 @@ func parse(t *testing.T, src string) *Program {
 
 func rejects(t *testing.T, src, want string) {
 	t.Helper()
-	_, err := Parse("test.arb", src)
+	_, err := Parse("test.cameo", src)
 	if err == nil {
 		t.Fatalf("accepted %q, want an error containing %q", src, want)
 	}
@@ -29,9 +29,9 @@ func rejects(t *testing.T, src, want string) {
 }
 
 // TestExamplesPass holds every example script to the checker: the corpus is
-// the specification, so every script in it is a valid amber program.
+// the specification, so every script in it is a valid cameo program.
 func TestExamplesPass(t *testing.T) {
-	scripts, err := filepath.Glob("../../examples/*.arb")
+	scripts, err := filepath.Glob("../../examples/*.cameo")
 	if err != nil || len(scripts) == 0 {
 		t.Fatalf("no examples: %v", err)
 	}
@@ -103,18 +103,18 @@ func TestIndexAssignmentRewrites(t *testing.T) {
 
 func TestFieldAssignmentInsideInitializeOnly(t *testing.T) {
 	parse(t, "class P\n int :x\n def initialize(x)\n  self.x = x\n  self.x.y = 1\n  self.x += 1\n end\nend\n")
-	rejects(t, "class P\n def set(x)\n  self.x = x\n end\nend\n", "test.arb:3: self.x = …: a field is set in initialize only")
+	rejects(t, "class P\n def set(x)\n  self.x = x\n end\nend\n", "test.cameo:3: self.x = …: a field is set in initialize only")
 	rejects(t, "self.x = 1\n", "a field is set in initialize only")
-	rejects(t, "class P\n def initialize\n  self[:x] = 1\n end\nend\n", "self[…] = …: amber has no setters")
+	rejects(t, "class P\n def initialize\n  self[:x] = 1\n end\nend\n", "self[…] = …: cameo has no setters")
 }
 
 func TestNoInstanceVariables(t *testing.T) {
 	// @ is free: initialize sets a field with self.x =, and a field is read
 	// with its reader.
-	rejects(t, "class P\n int :x\n def initialize(x)\n  @x = x\n end\nend\n", "@x = …: amber has no instance variables; initialize sets a field with self.x = …")
-	rejects(t, "class P\n int :x\n def x2 = @x * 2\nend\n", "@x: amber has no instance variables; a field is read with its reader, x or self.x")
-	rejects(t, "class P\n int :x\n def initialize\n  @x.y = 1\n end\nend\n", "@x: amber has no instance variables")
-	rejects(t, "puts @x\n", "amber has no instance variables")
+	rejects(t, "class P\n int :x\n def initialize(x)\n  @x = x\n end\nend\n", "@x = …: cameo has no instance variables; initialize sets a field with self.x = …")
+	rejects(t, "class P\n int :x\n def x2 = @x * 2\nend\n", "@x: cameo has no instance variables; a field is read with its reader, x or self.x")
+	rejects(t, "class P\n int :x\n def initialize\n  @x.y = 1\n end\nend\n", "@x: cameo has no instance variables")
+	rejects(t, "puts @x\n", "cameo has no instance variables")
 }
 
 func TestAssignmentNeedsALocalAtTheStart(t *testing.T) {
@@ -141,7 +141,7 @@ func TestMutationRebindsALocal(t *testing.T) {
 func TestBacktrackingRegexpIsRefused(t *testing.T) {
 	// Go's regexp has no backtracking: a literal that needs it is refused
 	// by the syntax check.
-	rejects(t, "x = /(a)\\1/\n", "This regexp is not supported in Amber: /(a)\\1/ uses a backreference")
+	rejects(t, "x = /(a)\\1/\n", "This regexp is not supported in Cameo: /(a)\\1/ uses a backreference")
 }
 
 func TestRegexpLiterals(t *testing.T) {

@@ -10,8 +10,8 @@ import (
 	"github.com/go-ruby-parser/parser"
 	"github.com/go-ruby-parser/parser/ast"
 
-	"github.com/radiospiel/amber/src/object"
-	"github.com/radiospiel/amber/src/rx"
+	"github.com/radiospiel/cameo/src/object"
+	"github.com/radiospiel/cameo/src/rx"
 )
 
 // context names where the converter stands in the source, which decides what
@@ -153,7 +153,7 @@ func (c *converter) expr(n ast.Node) Node {
 	case *ast.RegexpLit:
 		return c.regexp(n)
 	case *ast.XStr:
-		c.fail("backtick commands are not supported: amber has no shell")
+		c.fail("backtick commands are not supported: cameo has no shell")
 		return nil
 	case *ast.ArrayLit:
 		return &List{c.pos(), c.exprs(n.Elems)}
@@ -230,11 +230,11 @@ func (c *converter) expr(n ast.Node) Node {
 		return nil
 	case *ast.IvarRef:
 		name := strings.TrimPrefix(n.Name, "@")
-		c.fail("@%s: amber has no instance variables; a field is read with its reader, %s or self.%s", name, name, name)
+		c.fail("@%s: cameo has no instance variables; a field is read with its reader, %s or self.%s", name, name, name)
 		return nil
 	case *ast.IvarAssign:
 		name := strings.TrimPrefix(n.Name, "@")
-		c.fail("@%s = …: amber has no instance variables; initialize sets a field with self.%s = …", name, name)
+		c.fail("@%s = …: cameo has no instance variables; initialize sets a field with self.%s = …", name, name)
 		return nil
 	case *ast.ClassDef:
 		return c.classDef(n)
@@ -317,7 +317,7 @@ func (c *converter) opAssign(n *ast.OpAssign) Node {
 	case "&&":
 		rhs = &And{c.pos(), read, value}
 	case "<<":
-		c.fail("<< mutates its receiver: amber values are immutable; use + or append")
+		c.fail("<< mutates its receiver: cameo values are immutable; use + or append")
 		return nil
 	default:
 		rhs = &Call{Pos: c.pos(), Recv: read, Name: n.Op, Args: []Node{value}}
@@ -336,7 +336,7 @@ func (c *converter) binary(n *ast.BinaryExpr) Node {
 			return m
 		}
 		if _, isInt := n.Left.(*ast.IntLit); !isInt {
-			c.fail("<< changes its receiver, which amber rebinds only for a local variable or a field in initialize; use + or append")
+			c.fail("<< changes its receiver, which cameo rebinds only for a local variable or a field in initialize; use + or append")
 			return nil
 		}
 	}
@@ -414,7 +414,7 @@ func (c *converter) selfField(n ast.Node) (string, bool) {
 	return call.Name, true
 }
 
-// mutators are methods of Ruby's core that change their receiver. amber has
+// mutators are methods of Ruby's core that change their receiver. cameo has
 // none; the checker names the alternative where one exists.
 var mutators = map[string]string{
 	"push":                  "append, or +",
@@ -509,14 +509,14 @@ func (c *converter) call(n *ast.Call) Node {
 	}
 	if alt, listed := mutators[name]; listed && name != "[]=" {
 		if mayMutate(name) {
-			c.fail("%s changes its receiver, which amber rebinds only for a local variable or a field in initialize; use %s", name, alt)
+			c.fail("%s changes its receiver, which cameo rebinds only for a local variable or a field in initialize; use %s", name, alt)
 		} else {
 			c.fail("%s is not supported; use %s", name, alt)
 		}
 		return nil
 	}
 	if strings.HasSuffix(name, "!") && name != "!" && name != "!=" {
-		c.fail("%s: a bang method changes its receiver, which amber rebinds only for a local variable or a field in initialize", name)
+		c.fail("%s: a bang method changes its receiver, which cameo rebinds only for a local variable or a field in initialize", name)
 		return nil
 	}
 	if isSetter(name) {
@@ -881,7 +881,7 @@ func (c *converter) assignment(n *ast.Call) Node {
 		value = c.expr(n.Args[0])
 	}
 	if n.Recv == nil {
-		c.fail("%s: amber has no setters", n.Name)
+		c.fail("%s: cameo has no setters", n.Name)
 		return nil
 	}
 	return c.update(n.Recv, key, n.Name != "[]=", value, n)
@@ -896,18 +896,18 @@ func (c *converter) update(recv ast.Node, key Node, attr bool, value Node, origi
 	switch r := recv.(type) {
 	case *ast.VarRef:
 		if slices.Contains(c.lent, r.Name) {
-			c.fail("Hash.new's block cannot store into its hash %s: amber values are immutable; return the default instead", r.Name)
+			c.fail("Hash.new's block cannot store into its hash %s: cameo values are immutable; return the default instead", r.Name)
 			return nil
 		}
 		return &Assign{c.pos(), r.Name, with(&Var{c.pos(), r.Name})}
 	case *ast.IvarRef:
 		name := strings.TrimPrefix(r.Name, "@")
-		c.fail("@%s: amber has no instance variables; initialize sets a field with self.%s = …", name, name)
+		c.fail("@%s: cameo has no instance variables; initialize sets a field with self.%s = …", name, name)
 		return nil
 	case *ast.SelfLit:
 		// self.name = value, or the end of a chain such as self.a.b = value.
 		if !attr {
-			c.fail("self[…] = …: amber has no setters; initialize sets a field by name, self.name = …")
+			c.fail("self[…] = …: cameo has no setters; initialize sets a field by name, self.name = …")
 			return nil
 		}
 		return c.fieldAssign(key.(*Sym).Name, value)
@@ -1289,7 +1289,7 @@ func (c *converter) regexp(n *ast.RegexpLit) Node {
 		parts = append(parts, &Str{c.pos(), lit.String()})
 	}
 	// A literal without interpolation is checked now: one Go's regexp
-	// cannot match is refused like any construct amber leaves out.
+	// cannot match is refused like any construct cameo leaves out.
 	if s, ok := parts[0].(*Str); ok && len(parts) == 1 {
 		var unsupported *rx.Unsupported
 		if _, _, err := rx.Translate(s.Value, options); errors.As(err, &unsupported) {

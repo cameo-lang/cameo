@@ -2,7 +2,7 @@
 // package, RE2, which matches in linear time and so has no backtracking:
 // no backreferences, lookaround, atomic groups, possessive quantifiers or
 // subexpression calls. Translate names the first such feature a pattern
-// uses, and amber refuses the pattern.
+// uses, and cameo refuses the pattern.
 package rx
 
 import (
@@ -27,7 +27,7 @@ type Unsupported struct {
 }
 
 func (e *Unsupported) Error() string {
-	return fmt.Sprintf("This regexp is not supported in Amber: /%s/ uses %s", e.Source, e.Feature)
+	return fmt.Sprintf("This regexp is not supported in Cameo: /%s/ uses %s", e.Source, e.Feature)
 }
 
 // Translate is the Go pattern for a Ruby one with its options, and the

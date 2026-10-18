@@ -1,6 +1,6 @@
-# CLAUDE.md — amber
+# CLAUDE.md — cameo
 
-amber is a small language with Ruby's syntax, run by an interpreter written in
+cameo is a small language with Ruby's syntax, run by an interpreter written in
 Go. This file is the entry point for coding agents. Read it first, then:
 
 1. **[agents/WRITING.md](agents/WRITING.md)** — always. How to write pull
@@ -13,7 +13,7 @@ Go. This file is the entry point for coding agents. Read it first, then:
 3. **[agents/golang.md](agents/golang.md)** — the Go layout and conventions.
 4. **[agents/teamwork.md](agents/teamwork.md)** — what to decide yourself and
    what to ask.
-5. [README.md](README.md) — what amber is and how to build it.
+5. [README.md](README.md) — what cameo is and how to build it.
 
 ## Pull requests
 

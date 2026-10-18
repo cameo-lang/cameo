@@ -1,4 +1,4 @@
-// Package assert holds the assertions amber's tests use. It is vendored
+// Package assert holds the assertions cameo's tests use. It is vendored
 // from github.com/radiospiel/simple-go/src/assert, under the BSD license in
 // LICENSE beside it, with that module's must and preconditions helpers
 // inlined so it depends on the standard library alone.

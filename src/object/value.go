@@ -1,4 +1,4 @@
-// Package object is amber's value model: the kinds of value a script
+// Package object is cameo's value model: the kinds of value a script
 // handles, their classes, structural equality and hashing, and the ordered
 // Map and Set. Every value is immutable; a List, Map or Set is built once and
 // never changed, so sharing one is always safe.
@@ -21,7 +21,7 @@ type Kind uint8
 const (
 	// KindNone is the zero Value: no value at all, where an absent default,
 	// an unset field or a missing range bound is meant. It is never a
-	// script's value; amber's nil is KindNil.
+	// script's value; cameo's nil is KindNil.
 	KindNone Kind = iota
 	KindNil
 	KindBool
@@ -109,7 +109,7 @@ func (k Kind) String() string {
 	return "kind(" + strconv.Itoa(int(k)) + ")"
 }
 
-// Value is one amber value: a kind, an integer payload and a reference,
+// Value is one cameo value: a kind, an integer payload and a reference,
 // three words that are passed and stored by value. An integer, a float, a
 // boolean and nil live entirely in the payload and never touch the heap; a
 // string or a symbol points at its bytes; every other kind points at its
@@ -123,7 +123,7 @@ type Value struct {
 	p    unsafe.Pointer
 }
 
-// Nil is amber's nil; True and False its booleans.
+// Nil is cameo's nil; True and False its booleans.
 var (
 	Nil   = Value{kind: KindNil}
 	True  = Value{kind: KindBool, n: 1}
@@ -136,7 +136,7 @@ func (v Value) Kind() Kind { return v.kind }
 // IsZero reports the zero Value: no value at all.
 func (v Value) IsZero() bool { return v.kind == KindNone }
 
-// IsNil reports amber's nil.
+// IsNil reports cameo's nil.
 func (v Value) IsNil() bool { return v.kind == KindNil }
 
 // Truthy reports whether a value counts as true: everything but nil and

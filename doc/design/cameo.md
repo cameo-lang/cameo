@@ -1,27 +1,27 @@
-# amber — the language
+# cameo — the language
 
-amber is a small language with Ruby's syntax, run by an interpreter written in
+cameo is a small language with Ruby's syntax, run by an interpreter written in
 Go. Every value is immutable, every object is a protobuf message, and a script
 can hand work to other goroutines with `async` and collect it with `await`.
 This document is the design: what the language is, what it leaves out, how the
 interpreter is built, and in which order.
 
 The front end is `github.com/go-ruby-parser/parser`, a Ruby parser in pure Go
-(no cgo, BSD-3-Clause, tested against MRI). amber adds no syntax of its own:
-everything below parses as Ruby, and amber gives some of it a different
-meaning. The constructs amber introduces — `with`, `async`, `await`,
+(no cgo, BSD-3-Clause, tested against MRI). cameo adds no syntax of its own:
+everything below parses as Ruby, and cameo gives some of it a different
+meaning. The constructs cameo introduces — `with`, `async`, `await`,
 the typed field helpers — are ordinary method calls to the parser and
 intrinsics to the interpreter.
 
 ## Source
 
-A script is a `.arb` file. `amber script.arb` runs it. Only current Ruby
+A script is a `.cameo` file. `cameo script.cameo` runs it. Only current Ruby
 syntax is accepted: keyword arguments are passed with `**kwargs` or `key:
 value`, never as a trailing positional hash; `=>` is accepted in hash
-literals. Legacy spellings the parser still accepts are rejected by amber's
+literals. Legacy spellings the parser still accepts are rejected by cameo's
 checker, with the line and the construct named.
 
-What amber keeps from Ruby:
+What cameo keeps from Ruby:
 
 - literals: `nil`, `true`, `false`, integers, floats, strings with
   interpolation, symbols, arrays, hashes, ranges, `%w[]` and `%i[]`
@@ -42,7 +42,7 @@ What amber keeps from Ruby:
   `def self.x`, which defines a top-level method
 - `puts`, `print`, `p`, `warn`
 
-What amber leaves out, and the checker rejects by name:
+What cameo leaves out, and the checker rejects by name:
 
 - any setter: `def x=(v)`, `attr_writer`, `attr_accessor`
 - instance variables, so `@` is free for later use: `initialize` sets a
@@ -57,18 +57,18 @@ What amber leaves out, and the checker rejects by name:
   they rebind, see *Variables rebind*; `freeze` is accepted and changes
   nothing, since everything already is frozen
 - threads, fibers, `fork`, files, sockets, `require` of another file
-  (`require_relative`, `load`, a library amber does not build in), `$stdin`. Standard
+  (`require_relative`, `load`, a library cameo does not build in), `$stdin`. Standard
   output and standard error are the whole of I/O.
 
 ## Values
 
 Every value is immutable. The kinds of value are:
 
-| amber | protobuf scalar or message |
+| cameo | protobuf scalar or message |
 |---|---|
 | `nil` | absence (proto3 `optional` not set) |
 | `true`, `false` | `bool` |
-| Integer | `int64`; arbitrary precision in amber, so beyond 64 bits it travels in `amber.Value` as `big_value`, its decimal digits, and an `int` field, a protobuf `int64`, refuses it |
+| Integer | `int64`; arbitrary precision in cameo, so beyond 64 bits it travels in `cameo.Value` as `big_value`, its decimal digits, and an `int` field, a protobuf `int64`, refuses it |
 | Float | `double` |
 | String | `string` for UTF-8, `bytes` for a binary string; a `string` field takes a string of any encoding whose bytes are UTF-8, a `bytes` field any string |
 | Symbol | an `enum` field's value where the class declares one; a `string` everywhere else, see *Symbols* |
@@ -76,8 +76,8 @@ Every value is immutable. The kinds of value are:
 | Hash | `map<,>`; keys are String, Symbol (stored as `string`), Integer or `bool`, see *Symbols* |
 | Set | `repeated`, deduplicated on construction |
 | Range | a `Range` message with `from`, `to`, `exclusive` |
-| Regexp | in `amber.Value`, a `Regexp` message: source and options; a MatchData does not travel |
-| Time | in `amber.Value`, a `Time` message: seconds, nanoseconds, UTC offset and zone; there is no field type for it yet |
+| Regexp | in `cameo.Value`, a `Regexp` message: source and options; a MatchData does not travel |
+| Time | in `cameo.Value`, a `Time` message: seconds, nanoseconds, UTC offset and zone; there is no field type for it yet |
 | an instance of a user class | the message that class declares |
 | Class, Proc, AsyncProcess, Enumerator, Encoding, Pathname | not serialisable; see *Async* |
 
@@ -138,7 +138,7 @@ checks: `String#delete` returns a new string, `Integer#<<` shifts, and an
 instance's methods are its own. Another variable that held the old value
 keeps it, where Ruby would show the change. On any other receiver -- an
 element, a constant, a call's result -- such a call is rejected, since
-there is no variable to rebind. amber's own `append`, `prepend`, `put` and
+there is no variable to rebind. cameo's own `append`, `prepend`, `put` and
 `without` return a copy and change nothing.
 
 ### `with`
@@ -210,7 +210,7 @@ end
 
 **Fields** are declared with typed helpers, which are class-body intrinsics.
 The scalar ones are proto3's scalar types under their own names, with
-three of amber's beside them:
+three of cameo's beside them:
 
 | field type | holds | protobuf |
 |---|---|---|
@@ -259,7 +259,7 @@ declares, is an error at load time.
 sets field `x`, and `self.x += 1`, `self.items << v` and `self.home.city =
 v` work as they do on a local. A name that is not a field, or a value of the
 wrong type, raises. While `initialize` runs, `self` is the instance being
-built, so its readers return what has been set so far. amber has no
+built, so its readers return what has been set so far. cameo has no
 instance variables: `@x` is rejected everywhere, which leaves `@` free for
 later use. `Class.new(…)`
 takes `initialize`'s parameters; a class without `initialize` takes its
@@ -312,7 +312,7 @@ in Ruby. Procs are values but not serialisable, so they cannot cross `async`.
 Exceptions are Ruby's: `raise "msg"`, `raise ErrorClass, "msg"`,
 `rescue Class => e`, `ensure`, `retry`. `StandardError`, `ArgumentError`,
 `TypeError`, `KeyError`, `IndexError`, `NoMethodError`, `ZeroDivisionError`,
-`RuntimeError`, `StopIteration` and `AmberError` (amber's own, for checker
+`RuntimeError`, `StopIteration` and `CameoError` (cameo's own, for checker
 and type violations) are predefined; a script can subclass `StandardError`.
 
 ## Async
@@ -350,7 +350,7 @@ then raises the first exception in start order. A scope that returns with
 processes still running leaves them running: a process is a value, so a
 caller that receives one may still await it, and one nobody awaits is
 waited for when the run ends, with its failure written to standard error.
-`amber` exits when the script's top-level scope finishes and every process
+`cameo` exits when the script's top-level scope finishes and every process
 has. A process's result has to be able to travel back, so a method that
 returns a Proc or a class to a process raises a `TypeError` there.
 
@@ -360,7 +360,7 @@ allowed and nests the same way.
 
 ## Protobuf
 
-Every class is a protobuf message, which is what makes an amber value cheap
+Every class is a protobuf message, which is what makes a cameo value cheap
 to hand to Go, to another goroutine, or over a wire.
 
 **Representation.** When a class is loaded the interpreter builds a
@@ -369,7 +369,7 @@ field per declared field, numbered in declaration order, `optional` for
 presence, nested `ref` fields as message fields, each `enum` field as a
 nested enum named after the field, with a `<NAME>_UNSPECIFIED = 0` value
 that stands for `nil` and the declared symbols upper-cased after it). An
-instance holds its fields as amber values, and builds the
+instance holds its fields as cameo values, and builds the
 `dynamicpb.Message` over that descriptor on first use and keeps it, which
 is sound because the fields never change: the evaluator reads fields
 without going through protobuf, and the host gets a `proto.Message` that
@@ -380,48 +380,48 @@ to `repeated` and `map<,>`. So an instance *is* a `proto.Message`, and
 **Field numbers follow declaration order**, skipping the numbers `reserved`
 claims, so removing a field is a schema-compatible change when its number is
 reserved, and appending one is always compatible. Reordering or renaming
-fields in the amber source is a schema change, exactly as in protobuf; a
+fields in the cameo source is a schema change, exactly as in protobuf; a
 host program that wants to catch that generates the `.proto` once (below),
 keeps it, and diffs against it.
 
 **Generating a schema.** `Point.proto` returns the `.proto` text of the
-class (for a class inside a module, starting with its `package` line), and `amber proto script.arb` writes one `.proto` file holding every
-class the script defines, in package `amber`. A host that compiles that file
+class (for a class inside a module, starting with its `package` line), and `cameo proto script.cameo` writes one `.proto` file holding every
+class the script defines, in package `cameo`. A host that compiles that file
 with `protoc` gets generated Go types whose wire form matches what the
 interpreter produces, so a message can be marshalled on one side and
-unmarshalled on the other without any amber code in between.
+unmarshalled on the other without any cameo code in between.
 
 **The value envelope.** Values that are not instances — scalars, lists, maps,
-sets, ranges — travel in `amber.Value`, a message with a `oneof` over the
+sets, ranges — travel in `cameo.Value`, a message with a `oneof` over the
 scalar kinds plus `List`, `Map`, `Set`, `Range`, `Time`, `Regexp` and `Object` (a
 class name and the packed message). A symbol travels as a string, see *Symbols*.
 A hash's default value travels with it; a hash with a default block cannot
 travel. It is what `async` serialises, what the
-Go host API takes and returns, and what `amber proto` emits alongside the
+Go host API takes and returns, and what `cameo proto` emits alongside the
 classes.
 
-**The Go host API**, package `amber`:
+**The Go host API**, package `cameo`:
 
 ```go
-prog, err := amber.Load(file, src, stdout, stderr) // parse and check
+prog, err := cameo.Load(file, src, stdout, stderr) // parse and check
 err        = prog.Run()                            // run once; the classes stay loaded
 err        = prog.RunContext(ctx)                  // the same, stopped when ctx ends
 value, err := prog.LastValue()                     // the last expression, as p shows it
 out, err  := prog.Call(recv, "method", args...)    // recv: a Go value, a class name, a proto.Message
 text, err := prog.Proto("Geo::Point")              // the .proto text of a class
-files     := prog.ProtoFiles()                     // every package's .proto, and amber/value.proto
+files     := prog.ProtoFiles()                     // every package's .proto, and cameo/value.proto
 data, err := prog.Encode(v); v, err = prog.Decode(data)   // the envelope
-err        = amber.Run(file, src, stdout, stderr)  // what the binary does
+err        = cameo.Run(file, src, stdout, stderr)  // what the binary does
 ```
 
-Go values convert to amber values by the table under *Values*: nil, bool,
+Go values convert to cameo values by the table under *Values*: nil, bool,
 the integer and float kinds and `*big.Int`, string, `[]byte`, `[]any`, `map[string]any`,
 and a `proto.Message` whose full name is a loaded class's message. Results
 come back as nil, bool, int64 (a `*big.Int` beyond 64 bits), float64, string, `[]byte`, `[]any`,
 `map[any]any`, and a `proto.Message` for an instance; a symbol, range or
 class stays an `object.Value`.
 
-**Host modules.** A host gives the script what amber does not have, a
+**Host modules.** A host gives the script what cameo does not have, a
 service or a tool, through a module of its own, defined after `Load` and
 before `Run`:
 
@@ -435,7 +435,7 @@ mod.Def("tools", func(args []any, kwargs map[string]any) (any, error) {
 
 The script calls `Spicy.tools("search", query: "x")`. A host method gets
 its arguments as results come back, but with a symbol as a string, as
-everywhere a value leaves amber, and a hash with string or symbol keys as
+everywhere a value leaves cameo, and a hash with string or symbol keys as
 a `map[string]any`; what it returns converts as `Call`'s arguments do. An
 error it returns raises an exception, of the class an `Exception` names or
 `RuntimeError`. A host module is a value like a builtin one: no script
@@ -444,27 +444,27 @@ its own goroutine, so a host method may run on several at once.
 
 **Two consequences of the wire form.** A protobuf map has no order and
 cannot tell an absent repeated field from an empty one. So a map's identity
-in amber does not depend on insertion order, a decoded map comes back
+in cameo does not depend on insertion order, a decoded map comes back
 sorted by key, and a list, set or map field never holds nil: given nil it
 holds the empty collection. A value therefore survives `from_proto(to_proto)`
 equal to itself.
 
 ## The Ruby adapter
 
-A script that uses only amber's subset is valid Ruby, so it can run under MRI
-with a library that supplies amber's intrinsics. That is `parts/ruby/amber`,
-a gem with an `Amber` module, and it is explicitly second in line behind the
+A script that uses only cameo's subset is valid Ruby, so it can run under MRI
+with a library that supplies cameo's intrinsics. That is `parts/ruby/cameo`,
+a gem with an `Cameo` module, and it is explicitly second in line behind the
 Go interpreter. Its shape:
 
-- `Amber::Object` as the base class: the typed field helpers (`string :name`
+- `Cameo::Object` as the base class: the typed field helpers (`string :name`
   and the rest) define readers and a frozen initializer, `with` builds a copy, `==` and `hash` are structural, and
   `to_proto` returns the message through `google-protobuf`, built from the
   same descriptor the Go side generates. Values are deep-frozen on
   construction through `simple-immutable`, an existing ark part.
-- `Amber::Kernel` with `async`, `await` and `await :all` on threads, with the
+- `Cameo::Kernel` with `async`, `await` and `await :all` on threads, with the
   same serialisation rule enforced by marshalling the arguments through the
   value envelope.
-- `amber-rb script.arb` runs a script with the module loaded.
+- `cameo-rb script.cameo` runs a script with the module loaded.
 
 What the adapter cannot provide is the `a.x.y = 3` rewrite, since a library
 cannot rebind a caller's local. Scripts that must run under both write the
@@ -472,21 +472,21 @@ cannot rebind a caller's local. Scripts that must run under both write the
 
 ## Architecture
 
-One Go module, `github.com/radiospiel/amber`, with the packages under `src/`:
+One Go module, `github.com/radiospiel/cameo`, with the packages under `src/`:
 
 | Package | Does |
 |---|---|
-| `amber` | the host API: `Load`, `Run`, `Program`, `Value` |
+| `cameo` | the host API: `Load`, `Run`, `Program`, `Value` |
 | `rx` | translates a Ruby regular expression into one for Go's regexp, and names what it uses that Go's cannot do |
-| `syntax` | wraps the parser; normalises its tree into amber's own AST, rewrites `a.x.y =` and index assignment into copies, rejects what amber leaves out, with line numbers; hashes class bodies so equal definitions are one class |
-| `object` | the value model: a `Value` is a tagged 24-byte struct (kind, integer payload, pointer), so an integer, a float, a boolean and nil never touch the heap and a string shares its bytes; kinds, structural equality, hashing, the class table, dynamic messages, conversion to and from `amber.Value` and Go values |
+| `syntax` | wraps the parser; normalises its tree into cameo's own AST, rewrites `a.x.y =` and index assignment into copies, rejects what cameo leaves out, with line numbers; hashes class bodies so equal definitions are one class |
+| `object` | the value model: a `Value` is a tagged 24-byte struct (kind, integer payload, pointer), so an integer, a float, a boolean and nil never touch the heap and a string shares its bytes; kinds, structural equality, hashing, the class table, dynamic messages, conversion to and from `cameo.Value` and Go values |
 | `eval` | the evaluator: compiles each node to a closure on first use (`compile.go`), with a tree walker for the rare kinds; scopes, method dispatch with a per-class lookup cache, blocks, exceptions, intrinsics (`with`, `async`, `await`, the field helpers) |
 | `stdlib` | Kernel, Integer, Float, String, Symbol, Array, Hash, Set, Range, Time, Math, Regexp, MatchData, Enumerable, Proc, the exception classes |
 | `eval/async.go` | the scheduler: `AsyncProcess`, the per-scope process list, the worker interpreter a process runs in, goroutine lifecycle |
-| `protogen` | descriptors from class declarations, `.proto` text, the `amber.Value` envelope (`proto/amber.proto`, compiled in) |
-| `cmd/amber` | the binary: `amber script.arb`, `amber check script.arb`, `amber proto script.arb` |
+| `protogen` | descriptors from class declarations, `.proto` text, the `cameo.Value` envelope (`proto/cameo.proto`, compiled in) |
+| `cmd/cameo` | the binary: `cameo script.cameo`, `cameo check script.cameo`, `cameo proto script.cameo` |
 
-Tests are the example corpus first: `examples/<name>.arb` beside
+Tests are the example corpus first: `examples/<name>.cameo` beside
 `examples/<name>.expected`, run by `go test` which executes each script and
 compares standard output; a script that must fail carries `examples/<name>.expected-error`
 with the expected error instead. The same corpus is the Ruby adapter's suite
@@ -500,13 +500,13 @@ Each is a pull request that leaves `make check` green and the example corpus
 passing for what it covers.
 
 0. **Skeleton** (this document): component, manifest, Makefile, the parser
-   as a dependency, `amber check` that parses a script and reports syntax
+   as a dependency, `cameo check` that parses a script and reports syntax
    errors, the example corpus as the specification, and a test that every
    example parses.
-1. **Front end**: `syntax` — amber's AST, the rejection list, the copy
+1. **Front end**: `syntax` — cameo's AST, the rejection list, the copy
    rewrite, with the checker's messages tested.
 2. **Evaluator core**: literals, variables, operators, control flow, methods,
-   blocks, lambdas, exceptions, `puts`/`print`/`p`/`warn`. `amber script.arb`
+   blocks, lambdas, exceptions, `puts`/`print`/`p`/`warn`. `cameo script.cameo`
    runs scripts without classes.
 3. **Standard library**: String, Integer, Float, Symbol, Array, Hash, Set,
    Range, Enumerable.
@@ -514,10 +514,10 @@ passing for what it covers.
    `with`, chained assignment, classes as values bound to their name,
    inheritance with overriding, modules as namespaces and mixins.
 5. **Protobuf**: `.proto` generation with enums, packages and `reserved`,
-   the value envelope, the Go host API, `amber proto`.
+   the value envelope, the Go host API, `cameo proto`.
 6. **Async**: the scheduler, `async`, `await`, `await :all`, the
    serialisation rule.
-7. **Ruby adapter**: `parts/ruby/amber`, run against the same corpus.
+7. **Ruby adapter**: `parts/ruby/cameo`, run against the same corpus.
 
 ## Decisions taken
 
@@ -559,7 +559,7 @@ re-opened by accident:
 - **Only current Ruby syntax**: keyword arguments are keywords, never a
   trailing hash; `=>` stays for hash literals.
 - **The standard library follows CRuby's benchmarks** (`benchmarks/ruby/`):
-  - `Array` and `Hash` are the Ruby-visible names of amber's lists and maps,
+  - `Array` and `Hash` are the Ruby-visible names of cameo's lists and maps,
     so `[].class`, inspect and error messages match Ruby; the field types
     keep their protobuf names, `list` and `map`.
   - Random numbers come from Go's `math/rand/v2`: one generator per
@@ -579,9 +579,9 @@ re-opened by accident:
     none, as in Ruby.
   - `Process.clock_gettime` reads the realtime and the monotonic clock, in
     any of Ruby's units, so a script can time itself; the rest of `Process`
-    stays out, since amber starts no processes.
+    stays out, since cameo starts no processes.
   - Left out: `Struct` (its members are untyped and its point is setters;
-    amber classes declare typed fields), `Rational` and `Complex` (with
+    cameo classes declare typed fields), `Rational` and `Complex` (with
     their literals), and `RUBY_VERSION`.
 - **The language follows CRuby's benchmarks too**, a second round over
   what they use beyond the standard library:
@@ -592,7 +592,7 @@ re-opened by accident:
     `**`, `&`); a top-level `def self.x`; `:sym.to_proc` as a value;
     `Class.new(Base) { ... }` as a class value; regular expressions,
     on Go's regexp; integers of any size; lazy enumerators;
-    `require` of a library amber builds in, with `CGI.escape` and its
+    `require` of a library cameo builds in, with `CGI.escape` and its
     kin; `method_missing`; string encodings to and from bytes; `pack`;
     `for` loops, `alias` and `class A::B`; path arithmetic without I/O
     (`File.join`, `Pathname`).
@@ -603,7 +603,7 @@ re-opened by accident:
     A pattern that needs backtracking (a backreference, lookahead or
     lookbehind, an atomic group, a possessive quantifier, a subexpression
     call, `\G`, `\K`, `\Z`, class intersection) is refused with "This
-    regexp is not supported in Amber": a literal by the syntax check, one
+    regexp is not supported in Cameo": a literal by the syntax check, one
     built at run time with a NotImplementedError. A Regexp is an immutable
     value of source and options, and every String method that takes a
     pattern takes a string or a regexp. There are no `$~` or `$1` globals:
@@ -629,7 +629,7 @@ re-opened by accident:
     answer and an endless `each` works with them; the rest read all it
     yields. A builtin passes a Go function as the block, which the
     evaluator calls like any other.
-  - `require` of a library amber builds in (`set`, `time`, `cgi`,
+  - `require` of a library cameo builds in (`set`, `time`, `cgi`,
     `cgi/escape`, `pp`) returns true the first time and false after, and
     any other is a LoadError: a script is one file. The libraries are
     there whether or not a script requires them. `time` brings
@@ -667,11 +667,11 @@ re-opened by accident:
   - A mutating call on a temporary (`s.dup.merge!(x)`, `[1, 2].push(3)`,
     `foo.bar[0] = 1`) stays rejected: there is no variable to rebind, and
     the non-mutating form (`merge`, `+`, `with`) says what is meant.
-  - The `amber` binary sets the collector to GOGC=400 with a soft memory
+  - The `cameo` binary sets the collector to GOGC=400 with a soft memory
     limit of 1 GB, unless the environment sets GOGC or GOMEMLIMIT. On
     CRuby's benchmarks that takes a quarter off the total time (5000! in a
     third of it) while the median script's memory is unchanged; the limit
-    keeps a large heap from growing fivefold. A program that embeds amber
+    keeps a large heap from growing fivefold. A program that embeds cameo
     keeps Go's defaults.
   - Kept out: `GC`, `ENV`, metaprogramming (`define_method`, `send`,
     `eval`, `instance_variable_set`), setters and untyped fields, fibers

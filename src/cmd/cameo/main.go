@@ -1,5 +1,5 @@
-// Command amber runs amber scripts. The language and the plan are in
-// doc/design/amber.md.
+// Command cameo runs cameo scripts. The language and the plan are in
+// doc/design/cameo.md.
 package main
 
 import (
@@ -11,13 +11,13 @@ import (
 	"runtime/debug"
 	"sort"
 
-	"github.com/radiospiel/amber/src/amber"
-	"github.com/radiospiel/amber/src/syntax"
+	"github.com/radiospiel/cameo/src/cameo"
+	"github.com/radiospiel/cameo/src/syntax"
 )
 
-const usage = `usage: amber <script.arb>              run the script
-       amber check <script.arb>        parse and check the script, report every error
-       amber proto <script.arb> [dir]  print the .proto files of the script's classes, or write them into dir`
+const usage = `usage: cameo <script.cameo>              run the script
+       cameo check <script.cameo>        parse and check the script, report every error
+       cameo proto <script.cameo> [dir]  print the .proto files of the script's classes, or write them into dir`
 
 func main() {
 	tuneGC()
@@ -29,7 +29,7 @@ func main() {
 // benchmarks; past a soft limit of 1 GB the collector runs as often as it
 // would by default, so a large heap does not grow fivefold. GOGC and
 // GOMEMLIMIT in the environment override either. A program that embeds
-// amber keeps its own settings.
+// cameo keeps its own settings.
 func tuneGC() {
 	if os.Getenv("GOGC") == "" {
 		debug.SetGCPercent(400)
@@ -45,10 +45,10 @@ func tuneGC() {
 func run(args []string) int {
 	switch {
 	case len(args) == 1 && args[0] == "version":
-		fmt.Println(amber.Version())
+		fmt.Println(cameo.Version())
 		return 0
 	case len(args) == 1 && args[0] == "--version":
-		fmt.Printf("amber version %s\n", amber.Version())
+		fmt.Printf("cameo version %s\n", cameo.Version())
 		return 0
 	case len(args) == 2 && args[0] == "check":
 		if err := check(args[1]); err != nil {
@@ -67,7 +67,7 @@ func run(args []string) int {
 		}
 		return 0
 	case len(args) == 1 && args[0] != "check" && args[0] != "proto":
-		if err := amber.RunFile(args[0], os.Stdout, os.Stderr); err != nil {
+		if err := cameo.RunFile(args[0], os.Stdout, os.Stderr); err != nil {
 			var errs syntax.ErrorList
 			if errors.As(err, &errs) {
 				fmt.Fprintln(os.Stderr, errs)
@@ -88,7 +88,7 @@ func run(args []string) int {
 func check(path string) error {
 	src, err := os.ReadFile(path)
 	if err != nil {
-		return fmt.Errorf("amber: %w", err)
+		return fmt.Errorf("cameo: %w", err)
 	}
 	_, err = syntax.Parse(path, string(src))
 	return err
@@ -100,9 +100,9 @@ func check(path string) error {
 func protoFiles(path, dir string, out io.Writer) error {
 	src, err := os.ReadFile(path)
 	if err != nil {
-		return fmt.Errorf("amber: %w", err)
+		return fmt.Errorf("cameo: %w", err)
 	}
-	prog, err := amber.Load(path, string(src), io.Discard, io.Discard)
+	prog, err := cameo.Load(path, string(src), io.Discard, io.Discard)
 	if err != nil {
 		return err
 	}

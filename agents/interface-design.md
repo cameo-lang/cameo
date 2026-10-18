@@ -1,6 +1,6 @@
 # Interface design — lean interfaces, deep modules, facades
 
-How to shape the public surface of anything in amber: a Go package, a Ruby
+How to shape the public surface of anything in cameo: a Go package, a Ruby
 module, an HTTP handler, a CLI command, a C export. The rules are the same in
 every language, so they live here. They follow the "deep modules" school of
 John Ousterhout's *A Philosophy of Software Design*: the value of a module is
@@ -55,7 +55,7 @@ Concretely:
   wrong is precisely how staged deletions ended up rendered as unreadable
   untracked files.
 - The same applies to CLI flags and YAML keys: they are interfaces too.
-  `amber check --all` says what the user wants; a flag named after the
+  `cameo check --all` says what the user wants; a flag named after the
   traversal it uses would not survive the traversal changing.
 
 The test: could you swap the implementation for a completely different one
@@ -77,7 +77,7 @@ Concretely:
   module as the real operation. Three primitives plus a README paragraph is a
   worse interface than one verb.
 - Policy belongs with the module that can enforce it uniformly. In ark,
-  where amber started, critic's "re-read the diff without whitespace flags when the summary said the file
+  where cameo started, critic's "re-read the diff without whitespace flags when the summary said the file
   changed" lives once, above the git backends, precisely so that every
   backend behaves the same instead of each caller (or each backend) deciding
   for itself. That is the pattern.

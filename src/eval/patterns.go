@@ -1,8 +1,8 @@
 package eval
 
 import (
-	"github.com/radiospiel/amber/src/object"
-	"github.com/radiospiel/amber/src/syntax"
+	"github.com/radiospiel/cameo/src/object"
+	"github.com/radiospiel/cameo/src/syntax"
 )
 
 func (in *Interp) evalCaseIn(n *syntax.CaseIn, env *Env, fr *Frame) (object.Value, error) {
@@ -191,7 +191,7 @@ func (in *Interp) match(p syntax.Pattern, v object.Value, env *Env, fr *Frame, l
 		}
 		return true, nil
 	}
-	return false, in.raise(object.AmberError, line, "unsupported pattern %T", p)
+	return false, in.raise(object.CameoError, line, "unsupported pattern %T", p)
 }
 
 func (in *Interp) matchConst(c syntax.Node, v object.Value, env *Env, fr *Frame) (bool, error) {

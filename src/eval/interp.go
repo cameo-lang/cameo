@@ -1,6 +1,6 @@
-// Package eval runs amber programs: it compiles the syntax package's AST
+// Package eval runs cameo programs: it compiles the syntax package's AST
 // into closures, one per node, and runs them over the object package's
-// values. The design is in doc/design/amber.md.
+// values. The design is in doc/design/cameo.md.
 package eval
 
 import (
@@ -11,9 +11,9 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/radiospiel/amber/src/object"
-	"github.com/radiospiel/amber/src/protogen"
-	"github.com/radiospiel/amber/src/syntax"
+	"github.com/radiospiel/cameo/src/object"
+	"github.com/radiospiel/cameo/src/protogen"
+	"github.com/radiospiel/cameo/src/syntax"
 )
 
 // Interp is one interpreter: a top-level scope, the standard output and
@@ -147,7 +147,7 @@ func (in *Interp) Write(stderr bool, s string) error {
 	return err
 }
 
-// FormatError renders an error the way the amber binary reports it: the
+// FormatError renders an error the way the cameo binary reports it: the
 // script, the line, the message and the exception class.
 func (in *Interp) FormatError(err error) string {
 	if exc, ok := err.(*object.Exception); ok {

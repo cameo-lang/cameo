@@ -14,7 +14,7 @@ import (
 )
 
 // Error is one thing wrong with a script: a syntax error from the parser, or
-// a construct amber leaves out.
+// a construct cameo leaves out.
 type Error struct {
 	File string
 	Line int

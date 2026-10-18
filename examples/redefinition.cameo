@@ -10,7 +10,7 @@ class Greeter
   def greet = "hi #{name}"
 end
 
-first = Greeter.new("amber")
+first = Greeter.new("cameo")
 
 class Greeter
   string :name
@@ -36,5 +36,5 @@ class Greeter
 end
 
 puts first.greet
-puts Greeter.new("amber").greet
+puts Greeter.new("cameo").greet
 puts first.class == Greeter

@@ -5,21 +5,21 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/radiospiel/amber/src/object"
-	"github.com/radiospiel/amber/src/syntax"
+	"github.com/radiospiel/cameo/src/object"
+	"github.com/radiospiel/cameo/src/syntax"
 )
 
 // run evaluates a script and returns its standard output and the error that
 // ended it.
 func run(t *testing.T, src string) (string, error) {
 	t.Helper()
-	prog, err := syntax.Parse("t.arb", src)
+	prog, err := syntax.Parse("t.cameo", src)
 	if err != nil {
 		t.Fatalf("parse: %v", err)
 	}
 	var out bytes.Buffer
 	in := New(&out, &out)
-	err = in.Run("t.arb", prog)
+	err = in.Run("t.cameo", prog)
 	if err != nil {
 		err = &formatted{in.FormatError(err), err}
 	}
@@ -56,13 +56,13 @@ func expectError(t *testing.T, src, want string) {
 }
 
 func TestErrorsNameLineAndClass(t *testing.T) {
-	expectError(t, "x = 1\nx.nope\n", "t.arb:2: undefined method 'nope' for an instance of Integer (NoMethodError)")
+	expectError(t, "x = 1\nx.nope\n", "t.cameo:2: undefined method 'nope' for an instance of Integer (NoMethodError)")
 	expectError(t, "nil.foo\n", "undefined method 'foo' for nil (NoMethodError)")
-	expectError(t, "def f(a); end\nf\n", "t.arb:2: wrong number of arguments (given 0, expected 1) (ArgumentError)")
+	expectError(t, "def f(a); end\nf\n", "t.cameo:2: wrong number of arguments (given 0, expected 1) (ArgumentError)")
 	expectError(t, "def f(a, b = 1); end\nf(1, 2, 3)\n", "(given 3, expected 1..2)")
 	expectError(t, "Nope\n", "uninitialized constant Nope (NameError)")
 	expectError(t, "1 / 0\n", "divided by 0 (ZeroDivisionError)")
-	expectError(t, "raise \"custom\"\n", "t.arb:1: custom (RuntimeError)")
+	expectError(t, "raise \"custom\"\n", "t.cameo:1: custom (RuntimeError)")
 	expectError(t, "1 < \"a\"\n", "comparison of Integer with String failed (ArgumentError)")
 }
 
@@ -195,7 +195,7 @@ g.bar
 func TestFileIsTheScript(t *testing.T) {
 	// __FILE__ is the script's path, as it was given, which File's path
 	// functions take apart.
-	expectOutput(t, "p __FILE__, File.extname(__FILE__), File.basename(__FILE__, \".arb\")\n", "\"t.arb\"\n\".arb\"\n\"t\"\n")
+	expectOutput(t, "p __FILE__, File.extname(__FILE__), File.basename(__FILE__, \".cameo\")\n", "\"t.cameo\"\n\".cameo\"\n\"t\"\n")
 }
 
 func TestTimeCrossesAsync(t *testing.T) {

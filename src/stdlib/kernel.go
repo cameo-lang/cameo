@@ -6,7 +6,7 @@ import (
 	"math/rand/v2"
 	"strings"
 
-	"github.com/radiospiel/amber/src/object"
+	"github.com/radiospiel/cameo/src/object"
 )
 
 // installKernel defines puts, print, p, warn, raise and format on every

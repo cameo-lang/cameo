@@ -1,6 +1,6 @@
 # Agent guidance
 
-How to work in amber: picking a strategy, shaping an interface, logging what
+How to work in cameo: picking a strategy, shaping an interface, logging what
 you did, and finishing on a pull request.
 
 | File | Covers |
@@ -20,8 +20,8 @@ you did, and finishing on a pull request.
 split it and apply each strategy to its part. If it is unclear which applies,
 ask.
 
-**Design interfaces for the caller.** Whenever you add to or reshape amber's
-public surface — the `amber` Go package, a command, a flag, a language
+**Design interfaces for the caller.** Whenever you add to or reshape cameo's
+public surface — the `cameo` Go package, a command, a flag, a language
 construct — follow [interface-design.md](interface-design.md): lean interfaces
 named in the caller's terms, deep modules behind them.
 

@@ -3,8 +3,8 @@ package eval
 import (
 	"unsafe"
 
-	"github.com/radiospiel/amber/src/object"
-	"github.com/radiospiel/amber/src/syntax"
+	"github.com/radiospiel/cameo/src/object"
+	"github.com/radiospiel/cameo/src/syntax"
 )
 
 // Env is a lexical scope of local variables. A block's scope has the scope

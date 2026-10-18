@@ -7,7 +7,7 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/radiospiel/amber/src/object"
+	"github.com/radiospiel/cameo/src/object"
 )
 
 // What require 'time' adds to Time: parse, iso8601 (xmlschema) and
