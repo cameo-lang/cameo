@@ -1,4 +1,5 @@
-# A class can describe itself as a protobuf message.
+# A class can describe itself as a protobuf message. A field's number is
+# derived from its name, or given by number:, from 1 to 4096.
 class Address
   string :street, :city
   int :zip
@@ -11,7 +12,7 @@ class Address
 end
 
 class Person
-  string :name
+  string :name, number: 1
   reserved 2, :nickname
   ref :address, Address
   list :emails, of: :string

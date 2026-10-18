@@ -330,3 +330,22 @@ end
 `
 	expectOutput(t, src, "[999999999998, 999999999999, 1000000000000]\n[8, 9]\n[]\n[1, 2, 3]\n[]\n[-2, -1]\n[\"d\", \"e\"]\nnegative array size\ncannot get the last element of endless range\n")
 }
+
+func TestFieldNumbers(t *testing.T) {
+	expectOutput(t, `class P
+  int :x
+  int :y, number: 1
+  int :z, number: 4096
+end
+puts P.proto
+`, `message P {
+  optional int64 x = 64843;
+  optional int64 y = 1;
+  optional int64 z = 4096;
+}
+`)
+	expectOutput(t, "class P\n  int :y\n  int :x\nend\nputs P.proto\n",
+		"message P {\n  optional int64 y = 64608;\n  optional int64 x = 64843;\n}\n")
+	expectError(t, "class P\n  int :x, number: 2\n  int :y, number: 2\nend\n", "field y: number 2 is field x's")
+	expectError(t, "class P\n  reserved 2\n  int :x, number: 2\nend\n", "field x: number 2 is reserved in P")
+}

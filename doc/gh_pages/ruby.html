@@ -447,9 +447,11 @@ job raised: boom</code></pre>
 
 <h3>Protobuf</h3>
 
-<p>Every class is a protobuf message. Its fields are numbered in
-declaration order, and <code>reserved</code> keeps a removed field's number
-out of use. <code>to_proto</code> returns the wire form,
+<p>Every class is a protobuf message. A field's number is derived from a
+hash of its name, so it stays the same when fields are added, removed or
+reordered; <code>number:</code> gives one from 1 to 4096 instead, as in
+<code>int :x, number: 1</code>. <code>reserved</code> keeps a removed
+field's number and name out of use. <code>to_proto</code> returns the wire form,
 <code>from_proto</code> reads it back, and <code>Point.proto</code> returns
 the <code>.proto</code> text. <code>cameo proto script.cameo</code> writes the
 <code>.proto</code> files of every class a script defines.</p>
@@ -463,11 +465,11 @@ data = pt.to_proto
 p data.bytesize
 p Point.from_proto(data) == pt
 puts Point.proto</code></pre>
-<pre class="output"><code>4
+<pre class="output"><code>8
 true
 message Point {
-  optional int64 x = 1;
-  optional int64 y = 2;
+  optional int64 x = 64843;
+  optional int64 y = 64608;
 }</code></pre>
 
 <p>A Symbol becomes a String where a value leaves cameo, in a protobuf

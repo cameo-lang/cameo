@@ -86,7 +86,7 @@ func TestProtoAndEnvelope(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.HasPrefix(text, "package geo;\n\nmessage Point {\n  optional int64 x = 1;\n") {
+	if !strings.HasPrefix(text, "package geo;\n\nmessage Point {\n  optional int64 x = 64843;\n") {
 		t.Fatalf("proto text:\n%s", text)
 	}
 	files := prog.ProtoFiles()

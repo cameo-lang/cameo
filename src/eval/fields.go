@@ -3,16 +3,19 @@ package eval
 import (
 	"fmt"
 	"math"
+	"slices"
 	"strconv"
 	"strings"
 	"unicode/utf8"
 
 	"github.com/cameo-lang/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/protogen"
 	"github.com/cameo-lang/cameo/src/syntax"
 )
 
-// evalFieldDecl declares typed fields in a class body: each gets the next
-// free field number, its default checked against its type, and a reader.
+// evalFieldDecl declares typed fields in a class body: each gets the
+// number its declaration gives, or the one protogen.FieldNumber derives
+// from its name, its default checked against its type, and a reader.
 func (in *Interp) evalFieldDecl(n *syntax.FieldDecl, env *Env, fr *Frame) (object.Value, error) {
 	cls := fr.DefTarget
 	if cls == nil || cls.IsModule || !isClassValue(fr.Self, cls) {
@@ -42,7 +45,11 @@ func (in *Interp) evalFieldDecl(n *syntax.FieldDecl, env *Env, fr *Frame) (objec
 		if m := cls.Lookup(name); m != nil && m.Owner == cls {
 			return object.Value{}, in.raise(object.CameoError, n.Line(), "field %s: %s already defines a method %s", name, cls.QualifiedName(), name)
 		}
-		f := &object.Field{Name: name, Number: in.nextFieldNumber(cls), Type: typ, Owner: cls}
+		number, err := in.fieldNumber(cls, name, n)
+		if err != nil {
+			return object.Value{}, err
+		}
+		f := &object.Field{Name: name, Number: number, Type: typ, Owner: cls}
 		if !def.IsZero() {
 			checked, err := in.checkField(f, def, n.Line())
 			if err != nil {
@@ -69,21 +76,30 @@ func reader(name string) object.NativeFn {
 	}
 }
 
-// nextFieldNumber is the lowest field number no field holds and no
-// reserved statement claims.
-func (in *Interp) nextFieldNumber(cls *object.Class) int64 {
-	used := map[int64]bool{}
+// fieldNumber returns the number of field name: the one n declares, which
+// no field may hold and no reserved statement claim, or the one
+// protogen.FieldNumber derives from the name.
+func (in *Interp) fieldNumber(cls *object.Class, name string, n *syntax.FieldDecl) (int64, error) {
+	taken := func(number int64) bool {
+		for _, f := range cls.Fields {
+			if f.Number == number {
+				return true
+			}
+		}
+		return slices.Contains(cls.ReservedNumbers, number)
+	}
+	if n.Number == 0 {
+		return protogen.FieldNumber(name, taken), nil
+	}
 	for _, f := range cls.Fields {
-		used[f.Number] = true
-	}
-	for _, r := range cls.ReservedNumbers {
-		used[r] = true
-	}
-	for n := int64(1); ; n++ {
-		if !used[n] {
-			return n
+		if f.Number == n.Number {
+			return 0, in.raise(object.CameoError, n.Line(), "field %s: number %d is field %s's", name, n.Number, f.Name)
 		}
 	}
+	if slices.Contains(cls.ReservedNumbers, n.Number) {
+		return 0, in.raise(object.CameoError, n.Line(), "field %s: number %d is reserved in %s", name, n.Number, cls.QualifiedName())
+	}
+	return n.Number, nil
 }
 
 // fieldType builds a field's type from its declaration, resolving the

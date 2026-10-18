@@ -234,26 +234,28 @@ the same after a round trip. The composite helpers are `list :name, of:
 [:a, :b]` for a field that holds one of the listed symbols. An element type
 is any scalar type or a class; a map key is a `string`, a `bool` or an
 integer type of 32 or 64 bits, as protobuf requires. Each helper takes one
-or more names and an optional `default:`. A field without a default is
+or more names and an optional `default:`; a helper that declares one field
+also takes `number:`, its field number, from 1 to 4096 (see *Field numbers*
+under *Protobuf*). A field without a default is
 `nil` until `initialize` sets it. Every field gets a reader of the same
 name.
 
 `reserved <number> [, :name]` is the one other declaration a class body
 takes. It claims a field number, and optionally a field name, that no field
 may use, so a field that was removed leaves its number and name behind as
-protobuf requires. A field declared after a `reserved` takes the next number
-the reservation does not claim:
+protobuf requires:
 
 ```ruby
 class Person
-  string :name            # = 1
-  reserved 2, :nickname   # was `string :nickname`
-  int :age                # = 3, as it was before nickname went
+  string :name, number: 1    # = 1
+  reserved 2, :nickname      # was `string :nickname, number: 2`
+  int :age                   # = 15907, derived from "age"
 end
 ```
 
 A `reserved` whose number a field already holds, or whose name a field
-declares, is an error at load time.
+declares, is an error at load time, and so is a `number:` that a field
+already holds or a `reserved` claims.
 
 **`initialize`** is the one place a field may be set: `self.x = v` there
 sets field `x`, and `self.x += 1`, `self.items << v` and `self.home.city =
@@ -365,7 +367,7 @@ to hand to Go, to another goroutine, or over a wire.
 
 **Representation.** When a class is loaded the interpreter builds a
 `FileDescriptorProto` for it from its field declarations (one message, one
-field per declared field, numbered in declaration order, `optional` for
+field per declared field, numbered as *Field numbers* says, `optional` for
 presence, nested `ref` fields as message fields, each `enum` field as a
 nested enum named after the field, with a `<NAME>_UNSPECIFIED = 0` value
 that stands for `nil` and the declared symbols upper-cased after it). An
@@ -377,12 +379,53 @@ is the instance. Lists, maps and sets of scalars map
 to `repeated` and `map<,>`. So an instance *is* a `proto.Message`, and
 `proto.Marshal` of it is the wire form of that class.
 
-**Field numbers follow declaration order**, skipping the numbers `reserved`
-claims, so removing a field is a schema-compatible change when its number is
-reserved, and appending one is always compatible. Reordering or renaming
-fields in the cameo source is a schema change, exactly as in protobuf; a
-host program that wants to catch that generates the `.proto` once (below),
-keeps it, and diffs against it.
+**Field numbers** come from the field's name, unless its declaration gives
+one with `number:`. A field declared without `number:` is numbered
+
+    5535 + 60000 * fnv32a(name) / (2³² - 1)
+
+(`protogen.FieldNumber`): a number from 5535 to 65535, picked by the FNV-1a
+hash of its name. A number in 19000 to 19999, which protobuf reserves for
+itself, moves up by 1000, and a number that a field of the class already
+holds, or that `reserved` claims, moves to the next free one, wrapping from
+65535 to 5535. `number:` takes 1 to 4096, so a declared number never takes
+one derived from a name. A declared number is cheaper on the wire -- one
+byte of tag up to 15, two up to 2047, three above, where a derived one
+takes three -- and is the choice for a message that is sent often, or one
+whose numbers another program fixed.
+
+So adding, removing or reordering fields does not renumber the others, and
+two programs that each add a field of a different name to the same class
+give it different numbers, but for a hash collision, which a host notices
+when it merges the definitions (below). Renaming a field is a schema change,
+as in protobuf: the field gets the number of its new name. A removed field
+leaves `reserved <number>, :name` behind, its number read off the class's
+`.proto`.
+
+**Merging two definitions.** Programs that keep messages in one store may
+each have a definition of a message of their own: an older one lacks a
+field a newer one added, and two may each add a field the other lacks.
+`protogen.Merge(registered, next)` returns the file of a definition that
+reads what both write. It matches fields by name, as protobuf JSON does:
+
+- A field both have keeps the registered definition's number and type. The
+  other definition must give it the same type -- the same scalar kind, the
+  same enum with the same values, or the same message, which may lack
+  fields -- the same cardinality and the same oneof. Anything else fails.
+- A field only the registered definition has stays.
+- A field only the other definition has is added, numbered by
+  `protogen.FieldNumber` from its name, whatever number the other
+  definition gave it, with the enums and messages it uses and the imports
+  they need. It may not be in a oneof, nor have a name the registered
+  definition reserves.
+
+When the other definition only lacks fields, the result is the registered
+file. The merged message reads the protobuf JSON of both definitions, and
+the wire form of both where their numbers agree, which numbers derived from
+names always do but for a collision. A host that stores schemas registers
+the merged file as its next version: ark's datastore does this for its
+document types, keeping the registered `.proto` source and appending the
+added fields to it.
 
 **Generating a schema.** `Point.proto` returns the `.proto` text of the
 class (for a class inside a module, starting with its `package` line), and `cameo proto script.cameo` writes one `.proto` file holding every
@@ -604,8 +647,12 @@ re-opened by accident:
   protobuf boundary.
 - **Hash keys** are the four protobuf allows. A second representation for
   arbitrary keys was rejected as not worth its cost.
-- **Field numbers** follow declaration order; `reserved` keeps a removed
-  field's number and name out of use.
+- **Field numbers** come from a hash of the field's name, or from
+  `number:` (1 to 4096). Numbering in declaration order made the number
+  depend on the field's position, so reordering fields broke the wire
+  form, and two programs that each appended a field to a shared message
+  gave two fields one number. `reserved` keeps a removed field's number
+  and name out of use.
 - **No instance variables.** `initialize` sets a field with `self.x = v`,
   and a field is read with its reader, so `@` is free for later use. Ruby
   code that sets `@x` in `initialize` no longer runs unchanged; it never
