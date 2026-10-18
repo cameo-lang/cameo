@@ -80,6 +80,17 @@ func (p *Program) Run() error {
 	return nil
 }
 
+// LastValue returns the script's last top-level expression as p shows it,
+// once Run returned without an error: "3" for 1 + 2, "\"x\"" for "x". It
+// returns "" for nil, and before the script ran.
+func (p *Program) LastValue() (string, error) {
+	v := p.in.Last()
+	if v.IsNil() {
+		return "", nil
+	}
+	return p.in.Inspect(v)
+}
+
 // RunContext is Run until ctx ends. Then the script, and every worker it
 // started, stops at its next loop pass, method call or block call, no
 // rescue catches it, and RunContext returns ctx's error.

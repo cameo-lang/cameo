@@ -47,7 +47,13 @@ type Interp struct {
 	loaded map[string]bool
 	// stop is set to end the run, and shared with the workers; see Stop.
 	stop *atomic.Bool
+	// last is the value of the last top-level expression Run evaluated.
+	last object.Value
 }
+
+// Last returns the value of the script's last top-level expression, once
+// Run returned without an error; nil before.
+func (in *Interp) Last() object.Value { return object.OrNil(in.last) }
 
 // ErrStopped ends a run that Stop asked to end. It is not an exception, so
 // no rescue catches it.
@@ -105,7 +111,10 @@ var installOnce sync.Once
 func (in *Interp) Run(file string, prog *syntax.Program) error {
 	in.file = file
 	fr := &Frame{Self: object.InstanceValue(in.main), DefTarget: in.mainClass}
-	_, err := in.code.body(prog, prog.Body)(in, in.top, fr)
+	v, err := in.code.body(prog, prog.Body)(in, in.top, fr)
+	if err == nil {
+		in.last = v
+	}
 	if c, ok := err.(*control); ok {
 		if c.kind == ctrlReturn {
 			return nil
