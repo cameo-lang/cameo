@@ -406,6 +406,7 @@ classes.
 prog, err := amber.Load(file, src, stdout, stderr) // parse and check
 err        = prog.Run()                            // run once; the classes stay loaded
 err        = prog.RunContext(ctx)                  // the same, stopped when ctx ends
+value, err := prog.LastValue()                     // the last expression, as p shows it
 out, err  := prog.Call(recv, "method", args...)    // recv: a Go value, a class name, a proto.Message
 text, err := prog.Proto("Geo::Point")              // the .proto text of a class
 files     := prog.ProtoFiles()                     // every package's .proto, and amber/value.proto
@@ -419,6 +420,27 @@ and a `proto.Message` whose full name is a loaded class's message. Results
 come back as nil, bool, int64 (a `*big.Int` beyond 64 bits), float64, string, `[]byte`, `[]any`,
 `map[any]any`, and a `proto.Message` for an instance; a symbol, range or
 class stays an `object.Value`.
+
+**Host modules.** A host gives the script what amber does not have, a
+service or a tool, through a module of its own, defined after `Load` and
+before `Run`:
+
+```go
+mod := prog.Module("Spicy")                       // the constant Spicy, at the top level
+toolError := mod.Exception("ToolError")           // Spicy::ToolError, a StandardError
+mod.Def("tools", func(args []any, kwargs map[string]any) (any, error) {
+	return nil, toolError.New("no tool %v", args[0]) // raises Spicy::ToolError
+})
+```
+
+The script calls `Spicy.tools("search", query: "x")`. A host method gets
+its arguments as results come back, but with a symbol as a string, as
+everywhere a value leaves amber, and a hash with string or symbol keys as
+a `map[string]any`; what it returns converts as `Call`'s arguments do. An
+error it returns raises an exception, of the class an `Exception` names or
+`RuntimeError`. A host module is a value like a builtin one: no script
+redefines or reopens it. Workers that `async` started reach it too, each on
+its own goroutine, so a host method may run on several at once.
 
 **Two consequences of the wire form.** A protobuf map has no order and
 cannot tell an absent repeated field from an empty one. So a map's identity

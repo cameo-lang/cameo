@@ -212,6 +212,9 @@ func (in *Interp) evalClassDef(n *syntax.ClassDef, env *Env, fr *Frame) (object.
 	if _, builtin := object.ObjectClass.Consts[n.Name]; builtin && len(fr.Lexical) == 0 {
 		return object.Value{}, in.raise(object.AmberError, n.Line(), "cannot redefine the builtin class %s", n.Name)
 	}
+	if hostDefined(table[n.Name]) {
+		return object.Value{}, in.raise(object.AmberError, n.Line(), "cannot redefine the module %s, which the host defines", n.Name)
+	}
 	cls := object.NewClass(n.Name, super)
 	cls.Digest = n.Digest
 	if len(fr.Lexical) > 0 {
@@ -237,6 +240,9 @@ func (in *Interp) evalModuleDef(n *syntax.ModuleDef, env *Env, fr *Frame) (objec
 	if _, builtin := object.ObjectClass.Consts[n.Name]; builtin && len(fr.Lexical) == 0 {
 		return object.Value{}, in.raise(object.AmberError, n.Line(), "cannot redefine the builtin module %s", n.Name)
 	}
+	if hostDefined(table[n.Name]) {
+		return object.Value{}, in.raise(object.AmberError, n.Line(), "cannot redefine the module %s, which the host defines", n.Name)
+	}
 	mod := object.NewModule(n.Name)
 	mod.Digest = n.Digest
 	if len(fr.Lexical) > 0 {
@@ -247,6 +253,13 @@ func (in *Interp) evalModuleDef(n *syntax.ModuleDef, env *Env, fr *Frame) (objec
 	}
 	table[n.Name] = object.ClassValue(mod)
 	return object.ClassValue(mod), nil
+}
+
+// hostDefined reports whether v is a module the host defined: a class
+// value without the digest every definition in a script has.
+func hostDefined(v object.Value) bool {
+	cls, ok := v.AsClass()
+	return ok && cls.IsModule && cls.Digest == ""
 }
 
 // evalClassBody runs a class or module body with the class as self and as
