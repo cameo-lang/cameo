@@ -50,6 +50,15 @@ programmers, deployed by a Pages workflow.
   samples through tests/site_test.go, the Go programs in a scratch module
   with a replace directive, the stdlib example in a worktree.
 
+- **Issue:** the merge order became #89, #91, then this pull request.
+  After #89 squash-merged, main's tree equalled the rename branch's tip,
+  so main merged into #91's branch with #91's tree unchanged. This branch
+  had merged an older tip of the rename, so its merge of main was built
+  as main's tree plus this branch's own diff. **Resolution:** both merged
+  with merge commits, no history rewritten. The native-class walkthrough
+  replaced the placeholder, checked with protoc 32.1 and protoc-gen-go
+  v1.36.12 against main.
+
 ## Outcome
 Four pages and a stylesheet in doc/gh_pages, a Pages workflow, and a test
 that keeps the amber samples true. The host API cannot define classes;

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>cameo — native code</title>
-<meta name="description" content="Extend cameo with Go: host modules of Go methods and exception classes, and builtin classes in cameo's standard library.">
+<meta name="description" content="Extend cameo with Go: host modules of Go methods, native classes backed by a protobuf message, and builtin classes in cameo's standard library.">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -21,9 +21,9 @@
 
 <main>
 <h1>Extending cameo with native code</h1>
-<p class="lead">There are two places to add Go code that a script calls:
-a module the host program gives one script, and a builtin class in cameo's
-standard library, which every script has.</p>
+<p class="lead">Go code reaches a script in three ways: a module the host
+gives one program, a class the host registers for every program in its
+process, and a builtin class in cameo's standard library.</p>
 
 <nav class="toc" aria-label="On this page">
 <ol>
@@ -129,16 +129,135 @@ Its <code>defineSpicy</code> gives every script the module
 
 <h2 id="classes">Classes from a host</h2>
 
-<div class="callout">
-<p><strong>Coming:</strong> native classes from a host, whose fields are
-a generated protobuf message and whose methods are Go functions. This
-section describes them once they land.</p>
-</div>
+<p>A host registers a class of its own with <code>cameo.Register</code>.
+The class's data layout is a protobuf message, generated with
+<code>protoc-gen-go</code>, and its methods are Go functions.</p>
 
-<p>Until then a script declares the class, with typed fields and methods
-in cameo, and a host method returns instances of it: a
-<code>proto.Message</code> whose descriptor is a loaded class's becomes an
-instance of that class.</p>
+<h3>1. The message</h3>
+
+<p>Write the fields as a protobuf message:</p>
+
+<pre class="proto"><code>syntax = &quot;proto3&quot;;
+
+package example.geo;
+
+option go_package = &quot;example.com/geo/geopb&quot;;
+
+message Point {
+  int64 x = 1;
+  int64 y = 2;
+}</code></pre>
+
+<h3>2. The Go type</h3>
+
+<p>Generate the Go type with <code>protoc</code> and
+<code>protoc-gen-go</code>:</p>
+
+<pre class="sh"><code>go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+protoc --go_out=. --go_opt=module=example.com/geo geo.proto</code></pre>
+
+<p>This writes <code>geopb/geo.pb.go</code>, with the type
+<code>geopb.Point</code>.</p>
+
+<h3>3. Register the class</h3>
+
+<p>Register the class in an <code>init</code> function, then load
+scripts as usual. Here the script uses <code>Geo::Point</code>, and Go
+creates one through <code>Call</code>:</p>
+
+<pre class="go"><code>package main
+
+import (
+	&quot;fmt&quot;
+	&quot;log&quot;
+	&quot;os&quot;
+
+	&quot;example.com/geo/geopb&quot;
+	&quot;github.com/radiospiel/cameo/src/cameo&quot;
+)
+
+func init() {
+	cameo.Register(&quot;Geo::Point&quot;, &amp;geopb.Point{}).
+		DefineMethod(&quot;norm2&quot;, func(p *geopb.Point, args []any, kwargs map[string]any) (any, error) {
+			return p.X*p.X + p.Y*p.Y, nil
+		}).
+		DefineMethod(&quot;moved&quot;, func(p *geopb.Point, args []any, kwargs map[string]any) (any, error) {
+			p.X += args[0].(int64) // p is a copy; the changed copy is the result
+			return p, nil
+		}).
+		DefineClassMethod(&quot;origin&quot;, func(args []any, kwargs map[string]any) (any, error) {
+			return &amp;geopb.Point{}, nil
+		})
+}
+
+const script = `
+pt = Geo::Point.new(x: 3, y: 4)
+p pt.norm2
+p pt.moved(1).x, pt.x
+p Geo::Point.origin.with(y: 2)
+p Geo::Point.new.x
+`
+
+func main() {
+	prog, err := cameo.Load(&quot;geo.cameo&quot;, script, os.Stdout, os.Stderr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := prog.Run(); err != nil {
+		log.Fatal(err)
+	}
+	pt, err := prog.Call(&quot;Geo::Point&quot;, &quot;new&quot;, map[string]any{&quot;x&quot;: 5, &quot;y&quot;: 12})
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf(&quot;%T x=%d\n&quot;, pt, pt.(*geopb.Point).X) // a registered class leaves cameo as its generated type
+}</code></pre>
+<pre class="output"><code>25
+4
+3
+Geo::Point(x: 0, y: 2)
+0
+*geopb.Point x=5</code></pre>
+
+<h3>The rules</h3>
+
+<ul>
+  <li><strong>The class's fields are the message's.</strong> Every proto3
+  scalar type is supported. Repeated fields are lists, and maps take a
+  scalar key. Enums must be numbered from 0 without a gap; their values
+  become symbols (<code>COLOR_RED</code> is <code>:red</code>). A field
+  may hold a message whose class was registered earlier, or the message
+  itself. <code>oneof</code> is not supported.</li>
+  <li><strong>Unset fields read as they do in Go.</strong> A field without
+  presence reads as its zero value, so <code>Geo::Point.new.x</code> is
+  <code>0</code>. A field with presence (<code>optional</code>, or a
+  message) reads as <code>nil</code>.</li>
+  <li><strong>Methods get copies.</strong> A method gets <code>self</code>
+  as the generated type: a copy it may change without changing the
+  instance. A returned message of a registered type becomes an instance,
+  so a method returns a changed copy, as <code>moved</code> does above.
+  Arguments, results and errors convert as they do for a host module's
+  methods.</li>
+  <li><strong>Instances leave cameo as the generated type.</strong>
+  <code>Call</code> and <code>ToGo</code> return a
+  <code>*geopb.Point</code>, and a <code>*geopb.Point</code> passed in
+  becomes an instance. <code>async</code> passes instances to workers
+  like any other value.</li>
+  <li><strong>Names are closed.</strong> A qualified name creates the
+  modules it needs. A registered class is a constant in every program in
+  the process, and no script can redefine it or define anything inside
+  it.</li>
+  <li><strong>Register before the first <code>Load</code></strong>, from
+  an <code>init</code> function. <code>Register</code> panics after
+  that, or when the name or the message cannot be used. Both are mistakes
+  in the host's code.</li>
+</ul>
+
+<h3>Instances of a class the script declares</h3>
+
+<p>A host can also return instances of a class the script declares
+itself: a <code>proto.Message</code> whose descriptor is a loaded class's
+becomes an instance of that class.</p>
 
 <pre class="go"><code>package main
 
