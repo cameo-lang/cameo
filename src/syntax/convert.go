@@ -853,6 +853,14 @@ func (c *converter) pattern(p ast.Pattern) Pattern {
 	case *ast.HashPattern:
 		return &MapPattern{Const: c.expr(p.Const), Keys: p.Keys, Values: c.patterns(p.Values), HasRest: p.HasRest, RestName: p.RestName, RestNil: p.RestNil}
 	case *ast.AltPattern:
+		// go-ruby-parser v0.11.1 attaches `=> name` to the last alternative,
+		// `A | (B => name)`; Ruby binds the whole alternation,
+		// `(A | B) => name`.
+		last := len(p.Alts) - 1
+		if b, ok := p.Alts[last].(*ast.BindingPattern); ok {
+			alts := append(append([]ast.Pattern{}, p.Alts[:last]...), b.Sub)
+			return &BindingPattern{&AltPattern{c.patterns(alts)}, b.Name}
+		}
 		return &AltPattern{c.patterns(p.Alts)}
 	case *ast.FindPattern:
 		return &FindPattern{Const: c.expr(p.Const), PreName: p.PreName, Mid: c.patterns(p.Mid), PostName: p.PostName}
