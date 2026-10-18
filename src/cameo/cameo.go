@@ -64,6 +64,7 @@ type Program struct {
 // Load parses and checks a script. The program's output goes to stdout and
 // stderr when it runs.
 func Load(file, src string, stdout, stderr io.Writer) (*Program, error) {
+	loaded.Store(true)
 	prog, err := syntax.Parse(file, src)
 	if err != nil {
 		return nil, err
@@ -153,15 +154,17 @@ func (p *Program) Call(recv any, method string, args ...any) (any, error) {
 	return p.ToGo(out)
 }
 
-// Class finds a loaded class by its qualified name (Geo::Point), nil when
-// there is none.
+// Class finds a loaded or registered class by its qualified name
+// (Geo::Point), nil when there is none.
 func (p *Program) Class(name string) *object.Class {
 	for _, cls := range p.in.Classes() {
 		if cls.QualifiedName() == name {
 			return cls
 		}
 	}
-	return nil
+	registryMu.Lock()
+	defer registryMu.Unlock()
+	return registered[name]
 }
 
 // Classes lists the loaded classes.
@@ -215,12 +218,26 @@ func (p *Program) Decode(data []byte) (any, error) {
 	return p.ToGo(v)
 }
 
-// ToValue converts a Go value to an cameo value: nil, bool, integers (a
+// ToValue converts a Go value to a cameo value: nil, bool, integers (a
 // *big.Int among them),
 // floats, string, []byte, time.Time, []any, map[string]any or
 // map[any]any, an object.Value as it is, or a proto.Message whose descriptor full name is a
 // loaded class's.
-func (p *Program) ToValue(v any) (object.Value, error) {
+func (p *Program) ToValue(v any) (object.Value, error) { return conv{p.in}.toValue(v) }
+
+// ToGo converts a cameo value to a Go value: nil, bool, int64 (a *big.Int
+// beyond 64 bits), float64,
+// string, []byte, time.Time, []any, map[any]any, a proto.Message for an
+// instance (a value of the registered Go type for a native class, a
+// dynamic message otherwise, either a copy), and the object.Value itself
+// for everything else (symbols, ranges, classes).
+func (p *Program) ToGo(v object.Value) (any, error) { return conv{p.in}.toGo(v) }
+
+// conv converts values for one interpreter: a program's, or the one a
+// host method runs in, which may be an async worker's.
+type conv struct{ in *eval.Interp }
+
+func (c conv) toValue(v any) (object.Value, error) {
 	switch v := v.(type) {
 	case nil:
 		return object.Nil, nil
@@ -263,7 +280,7 @@ func (p *Program) ToValue(v any) (object.Value, error) {
 	case []any:
 		elems := make([]object.Value, len(v))
 		for i, e := range v {
-			val, err := p.ToValue(e)
+			val, err := c.toValue(e)
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -284,7 +301,7 @@ func (p *Program) ToValue(v any) (object.Value, error) {
 		sort.Strings(keys)
 		b := object.NewMapBuilder()
 		for _, k := range keys {
-			val, err := p.ToValue(v[k])
+			val, err := c.toValue(v[k])
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -294,11 +311,11 @@ func (p *Program) ToValue(v any) (object.Value, error) {
 	case map[any]any:
 		b := object.NewMapBuilder()
 		for k, e := range v {
-			key, err := p.ToValue(k)
+			key, err := c.toValue(k)
 			if err != nil {
 				return object.Value{}, err
 			}
-			val, err := p.ToValue(e)
+			val, err := c.toValue(e)
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -306,8 +323,15 @@ func (p *Program) ToValue(v any) (object.Value, error) {
 		}
 		return object.MapValue(b.Map()), nil
 	case proto.Message:
+		if cls := protogen.NativeClass(v.ProtoReflect().Descriptor().FullName()); cls != nil {
+			inst, err := c.in.Proto().FromMessage(cls, v.ProtoReflect())
+			if err != nil {
+				return object.Value{}, err
+			}
+			return object.InstanceValue(inst), nil
+		}
 		full := string(v.ProtoReflect().Descriptor().FullName())
-		for _, cls := range p.Classes() {
+		for _, cls := range c.in.Classes() {
 			if protogen.Package(cls)+"."+cls.Name != full {
 				continue
 			}
@@ -315,7 +339,7 @@ func (p *Program) ToValue(v any) (object.Value, error) {
 			if err != nil {
 				return object.Value{}, err
 			}
-			inst, err := p.in.Proto().Unmarshal(cls, data)
+			inst, err := c.in.Proto().Unmarshal(cls, data)
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -323,15 +347,10 @@ func (p *Program) ToValue(v any) (object.Value, error) {
 		}
 		return object.Value{}, fmt.Errorf("no loaded class has the message %s", full)
 	}
-	return object.Value{}, fmt.Errorf("cannot convert %T to an cameo value", v)
+	return object.Value{}, fmt.Errorf("cannot convert %T to a cameo value", v)
 }
 
-// ToGo converts an cameo value to a Go value: nil, bool, int64 (a *big.Int
-// beyond 64 bits), float64,
-// string, []byte, time.Time, []any, map[any]any, a proto.Message for an
-// instance, and the object.Value itself for everything else (symbols,
-// ranges, classes).
-func (p *Program) ToGo(v object.Value) (any, error) {
+func (c conv) toGo(v object.Value) (any, error) {
 	switch v.Kind() {
 	case object.KindBool:
 		v := v.Bool()
@@ -354,7 +373,7 @@ func (p *Program) ToGo(v object.Value) (any, error) {
 		v := v.List()
 		out := make([]any, len(v.Elems))
 		for i, e := range v.Elems {
-			g, err := p.ToGo(e)
+			g, err := c.toGo(e)
 			if err != nil {
 				return nil, err
 			}
@@ -365,7 +384,7 @@ func (p *Program) ToGo(v object.Value) (any, error) {
 		v := v.Set()
 		out := make([]any, v.Len())
 		for i, e := range v.Elems() {
-			g, err := p.ToGo(e)
+			g, err := c.toGo(e)
 			if err != nil {
 				return nil, err
 			}
@@ -376,11 +395,11 @@ func (p *Program) ToGo(v object.Value) (any, error) {
 		v := v.Map()
 		out := make(map[any]any, v.Len())
 		for i, k := range v.Keys() {
-			key, err := p.ToGo(k)
+			key, err := c.toGo(k)
 			if err != nil {
 				return nil, err
 			}
-			val, err := p.ToGo(v.Values()[i])
+			val, err := c.toGo(v.Values()[i])
 			if err != nil {
 				return nil, err
 			}
@@ -400,7 +419,7 @@ func (p *Program) ToGo(v object.Value) (any, error) {
 		if v.Cls.Digest == "" {
 			return v, nil
 		}
-		return p.in.Proto().ToMessage(v)
+		return c.in.Proto().GoMessage(v)
 	}
 	if v.IsNil() {
 		return nil, nil

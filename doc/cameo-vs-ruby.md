@@ -195,4 +195,6 @@ These are absent, and a script that uses one fails when it reaches it:
   `await` collects the result, and `await :all` every one.
 - The Go host API: a Go program loads a script, calls into it, and passes
   protobuf messages both ways. A host can give the script a module of its
-  own, whose methods are Go functions.
+  own, whose methods are Go functions, and native classes: classes whose
+  fields are a generated protobuf message and whose methods are Go
+  functions (`cameo.Register`).

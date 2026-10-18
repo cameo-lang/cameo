@@ -73,14 +73,14 @@ An example that is also plain Ruby has its expected output generated with
 `ruby`, so cameo is held to Ruby's behaviour where the two overlap.
 
 [benchmarks/ruby/](benchmarks/ruby) holds CRuby's own benchmark suite, one
-script per case, grouped into what works, what fails on an cameo bug, what
+script per case, grouped into what works, what fails on a cameo bug, what
 needs a builtin cameo does not have yet, and what uses a feature cameo leaves
 out; its `run.rb` checks that the working ones keep working.
 
 The packages under `src/`: `syntax` is the front end (`syntax.Parse`),
 `object` the value model, `eval` the evaluator and the async scheduler,
 `stdlib` the builtin methods, `protogen` the descriptors, `.proto` text and
-the envelope, `cameo` the host API (`cameo.Load`, `cameo.Run`), and
+the envelope, `cameo` the host API (`cameo.Load`, `cameo.Run`, `cameo.Register`), and
 `cmd/cameo` the binary.
 
 ## Building

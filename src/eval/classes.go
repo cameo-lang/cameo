@@ -1,6 +1,8 @@
 package eval
 
 import (
+	"strings"
+
 	"github.com/radiospiel/cameo/src/object"
 	"github.com/radiospiel/cameo/src/syntax"
 )
@@ -336,6 +338,11 @@ func (in *Interp) scopedFrame(scope syntax.Node, env *Env, fr *Frame, line int) 
 	mod, ok := v.AsClass()
 	if !ok {
 		return nil, in.raise(object.TypeError, line, "%s is not a class/module", typeName(v))
+	}
+	// A builtin module, or a module or class the host registered, is
+	// shared by every program in the process: nothing is defined in it.
+	if mod.Digest == "" || strings.HasPrefix(mod.Digest, "host:") {
+		return nil, in.raise(object.CameoError, line, "cannot define anything inside %s, which the script did not define", mod.QualifiedName())
 	}
 	out := *fr
 	out.Lexical = append(append([]*object.Class{}, fr.Lexical...), mod)

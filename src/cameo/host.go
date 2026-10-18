@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/radiospiel/cameo/src/eval"
 	"github.com/radiospiel/cameo/src/object"
 )
 
@@ -11,7 +12,6 @@ import (
 // level, as Math is, whose methods the host implements in Go. A script
 // cannot redefine it.
 type Module struct {
-	p   *Program
 	cls *object.Class
 }
 
@@ -33,50 +33,68 @@ type Func func(args []any, kwargs map[string]any) (any, error)
 func (p *Program) Module(name string) *Module {
 	if v, ok := p.in.Const(name); ok {
 		if cls, ok := v.AsClass(); ok && cls.IsModule && cls.Digest == "" {
-			return &Module{p: p, cls: cls}
+			return &Module{cls: cls}
 		}
 	}
 	cls := object.NewModule(name)
+	// A module that also names registered classes keeps them: the
+	// program's own module of that name holds them too.
+	registryMu.Lock()
+	if v, ok := object.ObjectClass.Consts[name]; ok {
+		if mod, _ := v.AsClass(); registeredModules[mod] {
+			for k, c := range mod.Consts {
+				cls.Consts[k] = c
+			}
+		}
+	}
+	registryMu.Unlock()
 	p.in.SetConst(name, object.ClassValue(cls))
-	return &Module{p: p, cls: cls}
+	return &Module{cls: cls}
 }
 
 // Def defines the method name on the module: the script calls it as
 // Module.name(args).
 func (m *Module) Def(name string, fn Func) {
 	m.cls.DefineSingleton(name, -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		in := make([]any, len(args))
-		for i, a := range args {
-			g, err := m.p.toHost(a)
+		return hostCall(ctx, conv{ctx.(*eval.Interp)}, args, kw, fn)
+	})
+}
+
+// hostCall calls a host method with a call's arguments and keywords as
+// plain Go values, and turns what it returns into a value or an exception;
+// see Func.
+func hostCall(ctx object.Context, c conv, args []object.Value, kw *object.Map, fn Func) (object.Value, error) {
+	in := make([]any, len(args))
+	for i, a := range args {
+		g, err := c.toHost(a)
+		if err != nil {
+			return object.Value{}, ctx.Raise(object.ArgumentError, "%s", err)
+		}
+		in[i] = g
+	}
+	kwargs := map[string]any{}
+	if kw != nil {
+		for i, k := range kw.Keys() {
+			g, err := c.toHost(kw.Values()[i])
 			if err != nil {
 				return object.Value{}, ctx.Raise(object.ArgumentError, "%s", err)
 			}
-			in[i] = g
+			kwargs[k.Str()] = g
 		}
-		kwargs := map[string]any{}
-		if kw != nil {
-			for i, k := range kw.Keys() {
-				g, err := m.p.toHost(kw.Values()[i])
-				if err != nil {
-					return object.Value{}, ctx.Raise(object.ArgumentError, "%s", err)
-				}
-				kwargs[k.Str()] = g
-			}
+	}
+	out, err := fn(in, kwargs)
+	if err != nil {
+		var exc *Exception
+		if errors.As(err, &exc) {
+			return object.Value{}, ctx.Raise(exc.cls, "%s", exc.Message)
 		}
-		out, err := fn(in, kwargs)
-		if err != nil {
-			var exc *Exception
-			if errors.As(err, &exc) {
-				return object.Value{}, ctx.Raise(exc.cls, "%s", exc.Message)
-			}
-			return object.Value{}, ctx.Raise(object.RuntimeError, "%s", err)
-		}
-		v, err := m.p.ToValue(out)
-		if err != nil {
-			return object.Value{}, ctx.Raise(object.TypeError, "%s.%s returned %s", m.cls.Name, name, err)
-		}
-		return v, nil
-	})
+		return object.Value{}, ctx.Raise(object.RuntimeError, "%s", err)
+	}
+	v, err := c.toValue(out)
+	if err != nil {
+		return object.Value{}, ctx.Raise(object.TypeError, "a host method returned %s", err)
+	}
+	return v, nil
 }
 
 // Exception defines the exception class name in the module, a
@@ -109,7 +127,7 @@ func (e *Exception) Error() string {
 }
 
 // toHost converts a value for a host method; see Func.
-func (p *Program) toHost(v object.Value) (any, error) {
+func (c conv) toHost(v object.Value) (any, error) {
 	switch v.Kind() {
 	case object.KindSymbol:
 		return v.Str(), nil
@@ -117,7 +135,7 @@ func (p *Program) toHost(v object.Value) (any, error) {
 		elems := v.List().Elems
 		out := make([]any, len(elems))
 		for i, e := range elems {
-			g, err := p.toHost(e)
+			g, err := c.toHost(e)
 			if err != nil {
 				return nil, err
 			}
@@ -128,7 +146,7 @@ func (p *Program) toHost(v object.Value) (any, error) {
 		elems := v.Set().Elems()
 		out := make([]any, len(elems))
 		for i, e := range elems {
-			g, err := p.toHost(e)
+			g, err := c.toHost(e)
 			if err != nil {
 				return nil, err
 			}
@@ -146,7 +164,7 @@ func (p *Program) toHost(v object.Value) (any, error) {
 		if named {
 			out := make(map[string]any, m.Len())
 			for i, k := range m.Keys() {
-				g, err := p.toHost(m.Values()[i])
+				g, err := c.toHost(m.Values()[i])
 				if err != nil {
 					return nil, err
 				}
@@ -156,7 +174,7 @@ func (p *Program) toHost(v object.Value) (any, error) {
 		}
 		out := make(map[any]any, m.Len())
 		for i, k := range m.Keys() {
-			key, err := p.toHost(k)
+			key, err := c.toHost(k)
 			if err != nil {
 				return nil, err
 			}
@@ -164,7 +182,7 @@ func (p *Program) toHost(v object.Value) (any, error) {
 			case []any, map[string]any, map[any]any:
 				return nil, fmt.Errorf("a Hash with %s keys cannot leave cameo", k.Class().QualifiedName())
 			}
-			g, err := p.toHost(m.Values()[i])
+			g, err := c.toHost(m.Values()[i])
 			if err != nil {
 				return nil, err
 			}
@@ -172,5 +190,5 @@ func (p *Program) toHost(v object.Value) (any, error) {
 		}
 		return out, nil
 	}
-	return p.ToGo(v)
+	return c.toGo(v)
 }

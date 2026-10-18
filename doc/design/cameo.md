@@ -360,7 +360,7 @@ allowed and nests the same way.
 
 ## Protobuf
 
-Every class is a protobuf message, which is what makes an cameo value cheap
+Every class is a protobuf message, which is what makes a cameo value cheap
 to hand to Go, to another goroutine, or over a wire.
 
 **Representation.** When a class is loaded the interpreter builds a
@@ -441,6 +441,73 @@ error it returns raises an exception, of the class an `Exception` names or
 `RuntimeError`. A host module is a value like a builtin one: no script
 redefines or reopens it. Workers that `async` started reach it too, each on
 its own goroutine, so a host method may run on several at once.
+
+**Native classes.** A host gives the script a class of its own whose data
+layout is a protobuf message. The message is written in a `.proto` file
+and generated with `protoc-gen-go`. The host registers the generated type
+under a name and adds methods in Go:
+
+```proto
+// geo.proto
+syntax = "proto3";
+package example.geo;
+option go_package = "example.com/geo/geopb";
+
+message Point { int64 x = 1; int64 y = 2; }
+```
+
+```go
+func init() {
+	cameo.Register("Geo::Point", &geopb.Point{}).
+		DefineMethod("norm2", func(p *geopb.Point, args []any, kwargs map[string]any) (any, error) {
+			return p.X*p.X + p.Y*p.Y, nil
+		}).
+		DefineMethod("moved", func(p *geopb.Point, args []any, kwargs map[string]any) (any, error) {
+			p.X += args[0].(int64) // p is a copy; the changed copy is the result
+			return p, nil
+		}).
+		DefineClassMethod("origin", func(args []any, kwargs map[string]any) (any, error) {
+			return &geopb.Point{}, nil
+		})
+}
+```
+
+```ruby
+pt = Geo::Point.new(x: 3, y: 4)   # the fields as keywords, as for any class without initialize
+pt.norm2                          # 25
+pt.moved(1).x                     # 4; pt.x is still 3
+Geo::Point.origin.with(y: 2)      # with, ==, inspect, to_proto: what every instance has
+```
+
+Registration rules:
+- **The class's fields are the message's**: every proto3 scalar type,
+  repeated fields as lists, maps with a scalar key, enums numbered from 0
+  without a gap (their values become symbols, lowercase, without the prefix
+  the names share: `COLOR_RED` is `:red`), and fields of messages whose
+  class was registered before, or of the message itself. A `oneof` is not
+  supported.
+- **Unset fields read as Go does.** A field without presence that is not
+  set reads as its zero value, so `Point.new.x` is `0`. A field with
+  presence (`optional`, a message) reads as `nil`.
+- **Methods get copies.** A method gets `self` as the generated type, a copy
+  it may change without changing the instance. The arguments, keywords,
+  result and errors convert as a host method's do. A returned message of a
+  registered type becomes an instance of its class, so a "changed" instance
+  is a returned copy.
+- **Instances leave cameo as the generated type.** `ToGo` and `Call`'s
+  results give a `*geopb.Point`, and a `*geopb.Point` passed in becomes an
+  instance. `async` carries instances to workers like any other.
+- **Names make modules.** A qualified name makes the modules it needs, and
+  classes registered under one namespace share its module.
+- **Registered names are closed.** As builtin ones are, a registered class
+  or module is a constant of every program in the process. No script
+  redefines it, nor defines anything inside it: `class Geo::Point … end`
+  and `module Math::Extra … end` are errors. `Program.Module("Geo")` gives
+  a program a module with methods of its own that still holds the
+  registered classes.
+- **Register before the first Load**, from an `init` function. `Register`
+  panics after that, and when a name or a message does not fit: both are
+  mistakes in the host's code, not in a script.
 
 **Two consequences of the wire form.** A protobuf map has no order and
 cannot tell an absent repeated field from an empty one. So a map's identity
@@ -558,6 +625,12 @@ re-opened by accident:
   time.
 - **Only current Ruby syntax**: keyword arguments are keywords, never a
   trailing hash; `=>` stays for hash literals.
+- **Native classes** take their fields from a generated protobuf message
+  and are registered for the whole process, as builtin classes are, before
+  the first program loads. Classes per program were left out: a class is
+  a value scripts and hosts pass around, and one class per name in a
+  process keeps `async` and the wire form simple. A registered namespace is
+  closed to scripts, and so, now, is a builtin one.
 - **The standard library follows CRuby's benchmarks** (`benchmarks/ruby/`):
   - `Array` and `Hash` are the Ruby-visible names of cameo's lists and maps,
     so `[].class`, inspect and error messages match Ruby; the field types

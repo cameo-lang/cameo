@@ -1,6 +1,8 @@
 package eval
 
 import (
+	"strings"
+
 	"github.com/radiospiel/cameo/src/object"
 	"github.com/radiospiel/cameo/src/protogen"
 )
@@ -18,26 +20,33 @@ func (in *Interp) Decoder() *protogen.Decoder {
 	return protogen.NewDecoder(in.proto, in.FindClass)
 }
 
-// FindClass finds a loaded class by qualified name (Geo::Point) and digest;
-// nil when none matches.
+// FindClass finds a loaded or registered class by qualified name
+// (Geo::Point) and digest; nil when none matches. It follows the name's
+// path rather than walking every constant, which may refer back to a class
+// that holds it.
 func (in *Interp) FindClass(name, digest string) *object.Class {
-	var walk func(consts map[string]object.Value, prefix string) *object.Class
-	walk = func(consts map[string]object.Value, prefix string) *object.Class {
-		for n, v := range consts {
-			cls, ok := v.AsClass()
+	find := func(consts map[string]object.Value) *object.Class {
+		parts := strings.Split(name, "::")
+		for i, p := range parts {
+			cls, ok := consts[p].AsClass()
 			if !ok {
-				continue
+				return nil
 			}
-			if prefix+n == name && cls.Digest == digest {
-				return cls
+			if i == len(parts)-1 {
+				if cls.Digest == digest {
+					return cls
+				}
+				return nil
 			}
-			if found := walk(cls.Consts, prefix+n+"::"); found != nil {
-				return found
-			}
+			consts = cls.Consts
 		}
 		return nil
 	}
-	return walk(in.consts, "")
+	if cls := find(in.consts); cls != nil {
+		return cls
+	}
+	// A class a Go host registered is a constant beside the builtin ones.
+	return find(object.ObjectClass.Consts)
 }
 
 // Classes lists every user class the script defined, in definition order of
