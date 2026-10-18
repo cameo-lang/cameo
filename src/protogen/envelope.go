@@ -12,7 +12,7 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/dynamicpb"
 
-	"github.com/radiospiel/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/object"
 )
 
 // The envelope: cameo.Value carries any serialisable value. It is what async

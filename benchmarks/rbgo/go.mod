@@ -1,4 +1,4 @@
-module github.com/radiospiel/cameo/benchmarks/rbgo
+module github.com/cameo-lang/cameo/benchmarks/rbgo
 
 go 1.27.2
 

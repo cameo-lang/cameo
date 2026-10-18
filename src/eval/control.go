@@ -3,7 +3,7 @@ package eval
 import (
 	"fmt"
 
-	"github.com/radiospiel/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/object"
 )
 
 // control is a non-local exit travelling up the evaluator as an error:

@@ -1,6 +1,6 @@
 package stdlib
 
-import "github.com/radiospiel/cameo/src/object"
+import "github.com/cameo-lang/cameo/src/object"
 
 func installMap() {
 	c := object.MapClass

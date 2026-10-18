@@ -10,7 +10,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/radiospiel/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/object"
 )
 
 // Array#pack and String#unpack, for the directives that carry values:

@@ -6,7 +6,7 @@ import (
 	"math/rand/v2"
 	"strings"
 
-	"github.com/radiospiel/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/object"
 )
 
 // installKernel defines puts, print, p, warn, raise and format on every

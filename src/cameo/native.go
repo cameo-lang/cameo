@@ -9,9 +9,9 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"github.com/radiospiel/cameo/src/eval"
-	"github.com/radiospiel/cameo/src/object"
-	"github.com/radiospiel/cameo/src/protogen"
+	"github.com/cameo-lang/cameo/src/eval"
+	"github.com/cameo-lang/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/protogen"
 )
 
 // Class is a native class: a class a Go host registers, whose fields are

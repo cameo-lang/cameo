@@ -6,9 +6,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/radiospiel/cameo/src/object"
-	"github.com/radiospiel/cameo/src/stdlib"
-	"github.com/radiospiel/cameo/src/syntax"
+	"github.com/cameo-lang/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/stdlib"
+	"github.com/cameo-lang/cameo/src/syntax"
 )
 
 // A thunk is a compiled node: the Go function that evaluates it. The

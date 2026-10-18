@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/radiospiel/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/object"
 )
 
 // installTime defines Time, an immutable instant with the offset it shows

@@ -3,8 +3,8 @@ package eval
 import (
 	"strings"
 
-	"github.com/radiospiel/cameo/src/object"
-	"github.com/radiospiel/cameo/src/protogen"
+	"github.com/cameo-lang/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/protogen"
 )
 
 // Proto is the interpreter's protobuf registry: the descriptors of its

@@ -11,9 +11,9 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/radiospiel/cameo/src/object"
-	"github.com/radiospiel/cameo/src/protogen"
-	"github.com/radiospiel/cameo/src/syntax"
+	"github.com/cameo-lang/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/protogen"
+	"github.com/cameo-lang/cameo/src/syntax"
 )
 
 // Interp is one interpreter: a top-level scope, the standard output and

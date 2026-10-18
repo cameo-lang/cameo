@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/radiospiel/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/object"
 )
 
 // Text is the .proto text of one class: its message, preceded by its

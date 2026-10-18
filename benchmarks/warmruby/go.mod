@@ -1,4 +1,4 @@
-module github.com/radiospiel/cameo/benchmarks/warmruby
+module github.com/cameo-lang/cameo/benchmarks/warmruby
 
 go 1.26.4
 

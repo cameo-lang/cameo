@@ -1,8 +1,8 @@
 package eval
 
 import (
-	"github.com/radiospiel/cameo/src/object"
-	"github.com/radiospiel/cameo/src/stdlib"
+	"github.com/cameo-lang/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/stdlib"
 	"path/filepath"
 )
 

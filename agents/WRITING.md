@@ -79,7 +79,7 @@ Detail belongs in the pull request description, where a reviewer wants it — no
 in the terminal.
 
 Name a pull request as a link, not a bare number, so it can be followed without
-retyping it: `[radiospiel/cameo#35](https://github.com/radiospiel/cameo/pull/35)`.
+retyping it: `[cameo-lang/cameo#35](https://github.com/cameo-lang/cameo/pull/35)`.
 
 ## Comments in code
 

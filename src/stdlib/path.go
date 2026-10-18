@@ -5,7 +5,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/radiospiel/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/object"
 )
 
 // Path arithmetic without the file system: File.join, basename, dirname,

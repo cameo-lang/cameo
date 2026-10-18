@@ -5,7 +5,7 @@ import (
 	"math/big"
 	"strconv"
 
-	"github.com/radiospiel/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/object"
 )
 
 // An Integer comes in two forms, a KindInt and, beyond 64 bits, a KindBig.

@@ -1,6 +1,6 @@
 package stdlib
 
-import "github.com/radiospiel/cameo/src/object"
+import "github.com/cameo-lang/cameo/src/object"
 
 // installClass defines the methods of classes and modules themselves.
 func installClass() {

@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/radiospiel/cameo/src/object"
-	"github.com/radiospiel/cameo/src/syntax"
+	"github.com/cameo-lang/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/syntax"
 )
 
 // run evaluates a script and returns its standard output and the error that

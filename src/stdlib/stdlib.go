@@ -6,7 +6,7 @@ package stdlib
 import (
 	"fmt"
 
-	"github.com/radiospiel/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/object"
 )
 
 // Install defines every builtin method. The evaluator calls it once.

@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/radiospiel/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/object"
 )
 
 // installCGI defines CGI's escaping functions, what require 'cgi/escape'

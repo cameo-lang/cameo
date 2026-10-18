@@ -3,7 +3,7 @@ package stdlib
 import (
 	"time"
 
-	"github.com/radiospiel/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/object"
 )
 
 // monotonicBase is the origin of CLOCK_MONOTONIC: a time read with Go's
