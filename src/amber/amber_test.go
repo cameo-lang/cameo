@@ -167,3 +167,31 @@ func TestRunContextStopsTheScript(t *testing.T) {
 		t.Fatalf("a script that ends: %v", err)
 	}
 }
+
+func TestLastValue(t *testing.T) {
+	// The last top-level expression, as p shows it; "" for nil.
+	cases := map[string]string{
+		"1 + 2\n":                               "3",
+		"x = [1, 2]\nx + [3]\n":                 "[1, 2, 3]",
+		"\"a\" * 2\n":                           `"aa"`,
+		"{a: 1}\n":                              "{a: 1}",
+		"puts 1\n":                              "",
+		"def f = 1\n":                           ":f",
+		"class P\n  int :x\nend\nP.new(x: 1)\n": "P(x: 1)",
+	}
+	for src, want := range cases {
+		prog, err := Load("t.arb", src, &bytes.Buffer{}, &bytes.Buffer{})
+		if err != nil {
+			t.Fatalf("%q: %v", src, err)
+		}
+		if got, _ := prog.LastValue(); got != "" {
+			t.Errorf("%q: %q before the run", src, got)
+		}
+		if err := prog.Run(); err != nil {
+			t.Fatalf("%q: %v", src, err)
+		}
+		if got, err := prog.LastValue(); err != nil || got != want {
+			t.Errorf("%q: LastValue is %q, %v; want %q", src, got, err, want)
+		}
+	}
+}
