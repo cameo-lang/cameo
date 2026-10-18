@@ -58,3 +58,14 @@ begin
 rescue NoMatchingPatternError => e
   puts "no match: #{e.class}"
 end
+
+# `=> name` after alternatives binds whichever alternative matched.
+[1.5, 2, "s"].each do |v|
+  case v
+  in Float | Integer => num then puts "number #{num}"
+  in String | Symbol => text then puts "text #{text}"
+  end
+end
+case {r: 1.5}
+in {r: Float | Integer => radius} then puts "radius #{radius}"
+end

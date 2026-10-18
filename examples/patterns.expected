@@ -18,3 +18,7 @@ false
 x
 [:y, 7]
 no match: NoMatchingPatternError
+number 1.5
+number 2
+text s
+radius 1.5
