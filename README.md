@@ -94,6 +94,15 @@ make install    # puts `cameo` into GOBIN
 The parser is `github.com/go-ruby-parser/parser`, a Ruby parser in pure Go.
 No cgo, no Ruby installation, no code generation.
 
+## Releasing
+
+A release is a tag `vMAJOR.MINOR.PATCH` on a commit of main. The Tag
+workflow ([.github/workflows/tag.yml](.github/workflows/tag.yml)) creates
+it: start it from the Actions tab with the version and, optionally, the
+commit. It refuses a version that exists, a commit that is not on main, and
+a commit whose `go.mod` names another module path than the repository's,
+and it tags only after `make check` passes on that commit.
+
 ## Repository
 
 | Path | Holds |
