@@ -4,10 +4,12 @@
 package eval
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"math/rand/v2"
 	"sync"
+	"sync/atomic"
 
 	"github.com/radiospiel/amber/src/object"
 	"github.com/radiospiel/amber/src/protogen"
@@ -43,6 +45,24 @@ type Interp struct {
 	// loaded is the libraries require has loaded, which a second require
 	// of answers false.
 	loaded map[string]bool
+	// stop is set to end the run, and shared with the workers; see Stop.
+	stop *atomic.Bool
+}
+
+// ErrStopped ends a run that Stop asked to end. It is not an exception, so
+// no rescue catches it.
+var ErrStopped = errors.New("the script was stopped")
+
+// Stop ends the run, and the run of every worker it started: each stops
+// at its next loop pass, method call or block call with ErrStopped.
+func (in *Interp) Stop() { in.stop.Store(true) }
+
+// stopped returns ErrStopped once Stop was called.
+func (in *Interp) stopped() error {
+	if in.stop.Load() {
+		return ErrStopped
+	}
+	return nil
 }
 
 // New makes an interpreter writing to stdout and stderr.
@@ -61,6 +81,7 @@ func New(stdout, stderr io.Writer) *Interp {
 		proto:     protogen.NewRegistry(),
 		procs:     &processList{},
 		code:      &code{},
+		stop:      &atomic.Bool{},
 	}
 	in.Srand(rand.Uint64())
 	return in

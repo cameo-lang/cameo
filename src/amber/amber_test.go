@@ -2,8 +2,11 @@ package amber
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"google.golang.org/protobuf/proto"
 )
@@ -122,5 +125,45 @@ func TestErrorsAreReported(t *testing.T) {
 	}
 	if _, err := prog.ToValue(struct{}{}); err == nil {
 		t.Fatal("an unknown Go type does not convert")
+	}
+}
+
+func TestRunContextStopsTheScript(t *testing.T) {
+	// A script that never ends stops when its context does, in a loop, a
+	// block or a method, past any rescue and in its workers.
+	scripts := map[string]string{
+		"while":  "while true\nend\n",
+		"block":  "loop { }\n",
+		"rescue": "begin\n  loop { }\nrescue Exception\n  puts :caught\nend\n",
+		"method": "def spin(n) = n.times { }\nwhile true\n  spin(1)\nend\n",
+		"worker": "class W\n  def go = loop { }\nend\nawait(async(W.new, :go))\n",
+	}
+	for name, src := range scripts {
+		var out bytes.Buffer
+		prog, err := Load(name+".arb", src, &out, &out)
+		if err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+		start := time.Now()
+		err = prog.RunContext(ctx)
+		cancel()
+		if !errors.Is(err, context.DeadlineExceeded) {
+			t.Errorf("%s: RunContext returned %v, want the deadline", name, err)
+		}
+		if took := time.Since(start); took > 2*time.Second {
+			t.Errorf("%s: stopped after %s", name, took)
+		}
+		if out.Len() > 0 {
+			t.Errorf("%s: printed %q", name, out.String())
+		}
+	}
+	// A script that ends returns as Run does.
+	prog, err := Load("ok.arb", "puts 1\n", &bytes.Buffer{}, &bytes.Buffer{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := prog.RunContext(context.Background()); err != nil {
+		t.Fatalf("a script that ends: %v", err)
 	}
 }

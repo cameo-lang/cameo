@@ -405,6 +405,7 @@ classes.
 ```go
 prog, err := amber.Load(file, src, stdout, stderr) // parse and check
 err        = prog.Run()                            // run once; the classes stay loaded
+err        = prog.RunContext(ctx)                  // the same, stopped when ctx ends
 out, err  := prog.Call(recv, "method", args...)    // recv: a Go value, a class name, a proto.Message
 text, err := prog.Proto("Geo::Point")              // the .proto text of a class
 files     := prog.ProtoFiles()                     // every package's .proto, and amber/value.proto

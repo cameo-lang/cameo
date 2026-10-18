@@ -134,6 +134,9 @@ func (in *Interp) evalAwait(n *syntax.Await, env *Env, fr *Frame) (object.Value,
 		p = proc
 	}
 	result, exc := p.wait()
+	if err := in.stopped(); err != nil {
+		return object.Value{}, err
+	}
 	if exc != nil {
 		return object.Value{}, exc
 	}
@@ -156,6 +159,9 @@ func (in *Interp) evalAwaitAll(env *Env, line int) (object.Value, error) {
 	var first *object.Exception
 	for _, p := range pending {
 		v, exc := p.wait()
+		if err := in.stopped(); err != nil {
+			return object.Value{}, err
+		}
 		if exc != nil {
 			if first == nil {
 				first = exc
@@ -268,6 +274,7 @@ func (in *Interp) worker() *Interp {
 		proto:     in.proto,
 		procs:     in.procs,
 		code:      in.code,
+		stop:      in.stop,
 	}
 	for name, v := range in.consts {
 		w.consts[name] = v
@@ -353,6 +360,12 @@ func init() {
 	})
 	c.Define("value", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		v, exc := process(self).wait()
+		// A worker that was stopped ends the run that waits for it too.
+		if in, ok := ctx.(*Interp); ok {
+			if err := in.stopped(); err != nil {
+				return object.Value{}, err
+			}
+		}
 		if exc != nil {
 			return object.Value{}, exc
 		}

@@ -4,6 +4,8 @@
 package amber
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"io"
 	"math/big"
@@ -76,6 +78,26 @@ func (p *Program) Run() error {
 		return &RunError{Err: err, Message: p.in.FormatError(err)}
 	}
 	return nil
+}
+
+// RunContext is Run until ctx ends. Then the script, and every worker it
+// started, stops at its next loop pass, method call or block call, no
+// rescue catches it, and RunContext returns ctx's error.
+func (p *Program) RunContext(ctx context.Context) error {
+	done := make(chan struct{})
+	defer close(done)
+	go func() {
+		select {
+		case <-ctx.Done():
+			p.in.Stop()
+		case <-done:
+		}
+	}()
+	err := p.Run()
+	if errors.Is(err, eval.ErrStopped) && ctx.Err() != nil {
+		return ctx.Err()
+	}
+	return err
 }
 
 // Call invokes method on recv with args, converting Go values in and the

@@ -287,6 +287,9 @@ func (in *Interp) call(fr *Frame, recv object.Value, name string, args []object.
 
 // invoke runs a user method.
 func (in *Interp) invoke(m *object.Method, recv object.Value, args []object.Value, kw *object.Map, block object.Value, line int) (object.Value, error) {
+	if err := in.stopped(); err != nil {
+		return object.Value{}, err
+	}
 	cd := m.Body.(*compiledDef)
 	def := cd.def
 	act := &activation{frame: Frame{
@@ -488,6 +491,9 @@ func (in *Interp) Block(f func(args []object.Value) (object.Value, error)) objec
 
 // callBlock runs a block or lambda with arguments.
 func (in *Interp) callBlock(block object.Value, args []object.Value, kw *object.Map, inner object.Value) (object.Value, error) {
+	if err := in.stopped(); err != nil {
+		return object.Value{}, err
+	}
 	p, ok := asProc(block)
 	if !ok {
 		return object.Value{}, in.raise(object.TypeError, 0, "no block given")
