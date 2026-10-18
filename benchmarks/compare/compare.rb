@@ -53,7 +53,8 @@ end
 
 # duration prints seconds in eight characters, in the unit that suits them.
 def duration(t)
-  if t < 1e-3 then format("%6.1fµs", t * 1e6)
+  if t < 1e-6 then format("%6.1fns", t * 1e9)
+  elsif t < 1e-3 then format("%6.1fµs", t * 1e6)
   elsif t < 1 then format("%6.1fms", t * 1e3)
   else format("%7.3fs", t)
   end
@@ -122,9 +123,12 @@ REPORT = "\u0001amber-harness:"
 MAGIC = /\A#.*\b(frozen_string_literal|encoding|coding|warn_indent|shareable_constant_value)\b/
 
 # harness is the program that times a case from inside the Ruby that runs
-# it: the prelude once, then the script in a loop whose first pass warms up
-# and whose later passes are timed until they add up to min_time. Its
-# report is the timed runs, their seconds and the warm-up's seconds.
+# it: the prelude once, the script once to warm up, then the script in
+# batches until the batches add up to min_time. A batch reads the clock
+# only before and after, as benchmark-driver's loop does, so what a run
+# costs beyond the script is a counter's test and increment; it doubles
+# until it takes a tenth of a second. Its report is the timed runs, their
+# seconds and the warm-up's seconds.
 def harness(source, min_time)
   prelude, script = source.split(PRELUDE_END, 2)
   prelude, script = "", prelude if script.nil?
@@ -138,22 +142,23 @@ def harness(source, min_time)
   <<~RUBY
     #{head}#{prelude.chomp}
     __harness_t0 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-    __harness_start = __harness_t0
-    __harness_runs = -1
-    __harness_warm = 0.0
-    __harness_secs = 0.0
-    while true
     #{script.chomp}
-      __harness_now = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      __harness_runs += 1
-      if __harness_runs == 0
-        __harness_warm = __harness_now - __harness_t0
-        puts #{WARMED.inspect}
-        __harness_start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      else
-        __harness_secs = __harness_now - __harness_start
-        break if __harness_secs >= #{min_time}
+    __harness_warm = Process.clock_gettime(Process::CLOCK_MONOTONIC) - __harness_t0
+    puts #{WARMED.inspect}
+    __harness_runs = 0
+    __harness_secs = 0.0
+    __harness_batch = 1
+    while __harness_runs == 0 || __harness_secs < #{min_time}
+      __harness_i = 0
+      __harness_start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      while __harness_i < __harness_batch
+    #{script.chomp}
+        __harness_i += 1
       end
+      __harness_took = Process.clock_gettime(Process::CLOCK_MONOTONIC) - __harness_start
+      __harness_secs += __harness_took
+      __harness_runs += __harness_batch
+      __harness_batch *= 2 if __harness_took < 0.1
     end
     warn #{REPORT.inspect} + " \#{__harness_runs} \#{__harness_secs} \#{__harness_warm}"
   RUBY
@@ -290,7 +295,7 @@ options[:jobs].times.map do |job|
         result, runs, secs, warm, wall, out = run_harness(argv.call(harness_file), options[:timeout])
         row["#{name}_result"] = result
         row["#{name}_runs"] = runs
-        row["#{name}_secs"] = secs&.round(7)
+        row["#{name}_secs"] = secs&.round(12)
         row["#{name}_warm_secs"] = warm&.round(4)
         row["#{name}_wall_secs"] = wall.round(3)
         outputs[name] = out
