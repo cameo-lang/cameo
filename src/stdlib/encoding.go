@@ -5,7 +5,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/radiospiel/amber/src/object"
+	"github.com/radiospiel/cameo/src/object"
 )
 
 // A String carries one of three encodings, as its kind: UTF-8 (KindString),
@@ -14,7 +14,7 @@ import (
 // string may hold bytes its encoding does not allow, which valid_encoding?
 // reports and scrub replaces.
 
-// encodings are the encodings amber knows, by the names Ruby accepts for
+// encodings are the encodings cameo knows, by the names Ruby accepts for
 // them.
 var encodings = map[string]object.Kind{
 	"UTF-8": object.KindString, "ASCII-8BIT": object.KindBytes, "BINARY": object.KindBytes,

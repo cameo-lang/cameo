@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# Runs compare.rb on the cases where amber is furthest behind MRI, to time
+# Runs compare.rb on the cases where cameo is furthest behind MRI, to time
 # work on them without the whole suite:
 #
 #   small hash literals built in a loop    hash_small8, hash_literal_small8, hash_small4
@@ -10,7 +10,7 @@
 #   method calls in deep recursion         app_tak, app_tarai, app_fib
 #   blocks called in a loop                loop_each
 #
-# A case is CRuby's, from ../ruby/works, or amber's own, from cases/.
+# A case is CRuby's, from ../ruby/works, or cameo's own, from cases/.
 #
 #   ruby hotspots.rb [compare.rb's options]
 #

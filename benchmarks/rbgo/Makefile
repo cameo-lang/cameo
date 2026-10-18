@@ -1,5 +1,5 @@
 # rbgo — an ark component: a command that runs a Ruby script on go-embedded-ruby, for
-# amber's benchmarks.
+# cameo's benchmarks.
 #
 # Every ark component exposes the same entry points, whatever language it is
 # written in: prerequisites, deps, build, tests, integration-tests. See

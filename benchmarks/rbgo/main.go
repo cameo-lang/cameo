@@ -1,6 +1,6 @@
 // Command rbgo runs a Ruby script on go-embedded-ruby, a Ruby interpreter
 // written in Go, through its embedding API. It is the Go-embedded Ruby
-// amber's benchmarks compare against.
+// cameo's benchmarks compare against.
 //
 //	rbgo [-time FILE] script.rb
 //

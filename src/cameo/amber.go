@@ -1,7 +1,7 @@
-// Package amber is the host API: load and run amber scripts from Go, call
+// Package cameo is the host API: load and run cameo scripts from Go, call
 // their methods, and move values across the boundary. The language is in
-// doc/design/amber.md.
-package amber
+// doc/design/cameo.md.
+package cameo
 
 import (
 	"context"
@@ -16,10 +16,10 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
-	"github.com/radiospiel/amber/src/eval"
-	"github.com/radiospiel/amber/src/object"
-	"github.com/radiospiel/amber/src/protogen"
-	"github.com/radiospiel/amber/src/syntax"
+	"github.com/radiospiel/cameo/src/eval"
+	"github.com/radiospiel/cameo/src/object"
+	"github.com/radiospiel/cameo/src/protogen"
+	"github.com/radiospiel/cameo/src/syntax"
 )
 
 // Run parses, checks and runs a script, writing its output to stdout and
@@ -43,7 +43,7 @@ func RunFile(path string, stdout, stderr io.Writer) error {
 }
 
 // RunError is an exception that ended a script, with its message formatted
-// for the terminal: "script.arb:12: message (Class)".
+// for the terminal: "script.cameo:12: message (Class)".
 type RunError struct {
 	Err     error
 	Message string
@@ -180,10 +180,10 @@ func (p *Program) Proto(name string) (string, error) {
 }
 
 // ProtoFiles renders every loaded class as .proto files, one per package,
-// keyed by file name, plus the envelope in amber/value.proto.
+// keyed by file name, plus the envelope in cameo/value.proto.
 func (p *Program) ProtoFiles() map[string]string {
 	files := protogen.Files(p.Classes())
-	files["amber/value.proto"] = "syntax = \"proto3\";\n\npackage amber;\n\n" + protogen.EnvelopeText
+	files["cameo/value.proto"] = "syntax = \"proto3\";\n\npackage cameo;\n\n" + protogen.EnvelopeText
 	return files
 }
 
@@ -215,7 +215,7 @@ func (p *Program) Decode(data []byte) (any, error) {
 	return p.ToGo(v)
 }
 
-// ToValue converts a Go value to an amber value: nil, bool, integers (a
+// ToValue converts a Go value to an cameo value: nil, bool, integers (a
 // *big.Int among them),
 // floats, string, []byte, time.Time, []any, map[string]any or
 // map[any]any, an object.Value as it is, or a proto.Message whose descriptor full name is a
@@ -323,10 +323,10 @@ func (p *Program) ToValue(v any) (object.Value, error) {
 		}
 		return object.Value{}, fmt.Errorf("no loaded class has the message %s", full)
 	}
-	return object.Value{}, fmt.Errorf("cannot convert %T to an amber value", v)
+	return object.Value{}, fmt.Errorf("cannot convert %T to an cameo value", v)
 }
 
-// ToGo converts an amber value to a Go value: nil, bool, int64 (a *big.Int
+// ToGo converts an cameo value to a Go value: nil, bool, int64 (a *big.Int
 // beyond 64 bits), float64,
 // string, []byte, time.Time, []any, map[any]any, a proto.Message for an
 // instance, and the object.Value itself for everything else (symbols,

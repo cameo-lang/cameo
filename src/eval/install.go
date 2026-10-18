@@ -1,8 +1,8 @@
 package eval
 
 import (
-	"github.com/radiospiel/amber/src/object"
-	"github.com/radiospiel/amber/src/stdlib"
+	"github.com/radiospiel/cameo/src/object"
+	"github.com/radiospiel/cameo/src/stdlib"
 	"path/filepath"
 )
 
@@ -159,7 +159,7 @@ func hashProc(h object.Value) object.Value {
 }
 
 // builtinLibraries are what require loads without a file: libraries
-// amber builds in, each with the ones it loads along with it.
+// cameo builds in, each with the ones it loads along with it.
 var builtinLibraries = map[string][]string{
 	"set":        nil,
 	"time":       nil,
@@ -170,7 +170,7 @@ var builtinLibraries = map[string][]string{
 	"cgi/util":   {"cgi/escape"},
 }
 
-// require loads a library amber builds in, true the first time and false
+// require loads a library cameo builds in, true the first time and false
 // after, as Ruby's does; any other name is a LoadError, since a script is
 // one file.
 func (in *Interp) require(name object.Value) (object.Value, error) {

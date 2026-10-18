@@ -1,9 +1,9 @@
-# amber — a small language with Ruby's syntax, run by an interpreter in Go.
+# cameo — a small language with Ruby's syntax, run by an interpreter in Go.
 #
 # The same entry points as every ark component: prerequisites, deps, build,
 # tests, integration-tests, lint. `make check` runs them all, as CI does.
 
-BINARY := bin/amber
+BINARY := bin/cameo
 
 .PHONY: default help prerequisites deps build tests integration-tests lint check clean install
 
@@ -13,20 +13,20 @@ default: build
 help: ## Show this help
 	@grep -Eh '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | sort | awk -F ':.*## ' '{printf "  %-18s %s\n", $$1, $$2}'
 
-prerequisites: ## Install the tools needed to build amber
+prerequisites: ## Install the tools needed to build cameo
 	@command -v go >/dev/null 2>&1 || { \
-	  echo "go is not installed. See https://go.dev/dl/ (amber builds with the version in go.mod)." >&2; \
+	  echo "go is not installed. See https://go.dev/dl/ (cameo builds with the version in go.mod)." >&2; \
 	  exit 1; \
 	}
-	@echo "amber: go $$(go env GOVERSION) is the only tool amber needs"
+	@echo "cameo: go $$(go env GOVERSION) is the only tool cameo needs"
 
 deps: prerequisites ## Resolve all dependencies
 	go mod download
 
 # No staleness check of our own: the Go toolchain knows the import graph and
 # caches on it, and a no-op rebuild costs a fraction of a second.
-build: prerequisites ## Build the amber binary into bin/
-	go build -o $(BINARY) ./src/cmd/amber
+build: prerequisites ## Build the cameo binary into bin/
+	go build -o $(BINARY) ./src/cmd/cameo
 
 tests: prerequisites ## Run the Go tests, and check formatting and go.mod
 	@unformatted=$$(gofmt -l src tests); if [ -n "$$unformatted" ]; then \
@@ -34,10 +34,10 @@ tests: prerequisites ## Run the Go tests, and check formatting and go.mod
 	go mod tidy -diff
 	go test ./...
 
-# The shell tests drive the built binary, which reaches them through AMBER_BIN.
+# The shell tests drive the built binary, which reaches them through CAMEO_BIN.
 integration-tests: prerequisites build ## Run the shell-based integration tests
 	@for t in tests/integration/test_*.sh; do \
-	  echo "==> $$t"; AMBER_BIN=$(CURDIR)/$(BINARY) bash $$t || exit 1; \
+	  echo "==> $$t"; CAMEO_BIN=$(CURDIR)/$(BINARY) bash $$t || exit 1; \
 	done
 
 lint: prerequisites ## Run static checks
@@ -45,8 +45,8 @@ lint: prerequisites ## Run static checks
 
 check: lint tests integration-tests ## Everything CI runs
 
-install: prerequisites ## Install the amber binary into GOBIN (or ~/go/bin)
-	go install ./src/cmd/amber
+install: prerequisites ## Install the cameo binary into GOBIN (or ~/go/bin)
+	go install ./src/cmd/cameo
 
 clean: ## Remove build output
 	rm -rf bin

@@ -3,7 +3,7 @@ package stdlib
 import (
 	"math"
 
-	"github.com/radiospiel/amber/src/object"
+	"github.com/radiospiel/cameo/src/object"
 )
 
 // installMath defines Math's functions and its constants PI and E. A

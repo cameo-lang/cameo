@@ -1,15 +1,15 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# Runs the benchmarks under amber and reports, per file, whether it ran
+# Runs the benchmarks under cameo and reports, per file, whether it ran
 # cleanly. Exits non-zero when a file under works/ fails, so the grouping
 # cannot go stale silently, and lists the files elsewhere that run cleanly
 # now: candidates to move to works/, once their result has been checked
 # against Ruby's.
 #
-#   ruby run.rb [--amber PATH] [--jobs N] [--timeout SECONDS] [DIR_OR_FILE...]
+#   ruby run.rb [--cameo PATH] [--jobs N] [--timeout SECONDS] [DIR_OR_FILE...]
 #
-# Without paths it runs every directory. Without --amber it builds the
+# Without paths it runs every directory. Without --cameo it builds the
 # binary from this component first.
 
 require "optparse"
@@ -21,18 +21,18 @@ COMPONENT = File.expand_path("../..", HERE)
 options = { jobs: 4, timeout: 300 }
 OptionParser.new do |o|
   o.banner = "usage: ruby run.rb [options] [DIR_OR_FILE...]"
-  o.on("--amber PATH", "the amber binary to run") { options[:amber] = _1 }
+  o.on("--cameo PATH", "the cameo binary to run") { options[:cameo] = _1 }
   o.on("--jobs N", Integer, "files run at once (default 4)") { options[:jobs] = _1 }
   o.on("--timeout SECONDS", Integer, "per file (default 300)") { options[:timeout] = _1 }
 end.parse!
 
-Dir.mktmpdir("amber-benchmarks") do |tmp|
-  amber = options[:amber]
-  unless amber
-    amber = File.join(tmp, "amber")
-    system("go", "build", "-o", amber, "./src/cmd/amber", chdir: COMPONENT, exception: true)
+Dir.mktmpdir("cameo-benchmarks") do |tmp|
+  cameo = options[:cameo]
+  unless cameo
+    cameo = File.join(tmp, "cameo")
+    system("go", "build", "-o", cameo, "./src/cmd/cameo", chdir: COMPONENT, exception: true)
   end
-  amber = File.expand_path(amber)
+  cameo = File.expand_path(cameo)
 
   roots = ARGV.empty? ? [HERE] : ARGV.map { File.expand_path(_1) }
   files = roots.flat_map { File.file?(_1) ? [_1] : Dir.glob(File.join(_1, "**", "*.rb")) }
@@ -49,7 +49,7 @@ Dir.mktmpdir("amber-benchmarks") do |tmp|
       while (file = queue.pop)
         err = File.join(tmp, "err-#{w}")
         started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-        pid = Process.spawn(amber, file, out: File::NULL, err: err, in: File::NULL, chdir: tmp)
+        pid = Process.spawn(cameo, file, out: File::NULL, err: err, in: File::NULL, chdir: tmp)
         status = nil
         until (status = Process.wait2(pid, Process::WNOHANG)&.last)
           if Process.clock_gettime(Process::CLOCK_MONOTONIC) - started > options[:timeout]

@@ -5,7 +5,7 @@ import (
 	"math/big"
 	"strconv"
 
-	"github.com/radiospiel/amber/src/object"
+	"github.com/radiospiel/cameo/src/object"
 )
 
 // An Integer comes in two forms, a KindInt and, beyond 64 bits, a KindBig.
@@ -141,7 +141,7 @@ func installInteger() {
 				}
 			}
 			// Past 32M bits, CRuby gives up on the integer and answers
-			// with a float, Infinity; so does amber.
+			// with a float, Infinity; so does cameo.
 			if x := bigOf(self); int64(x.BitLen()) <= bigPowBits/e || x.BitLen() <= 1 {
 				return object.BigInt(new(big.Int).Exp(x, big.NewInt(e), nil)), nil
 			}

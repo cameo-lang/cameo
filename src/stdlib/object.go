@@ -1,6 +1,6 @@
 package stdlib
 
-import "github.com/radiospiel/amber/src/object"
+import "github.com/radiospiel/cameo/src/object"
 
 // installObject defines the methods every value has.
 func installObject() {
@@ -139,7 +139,7 @@ func installObject() {
 		return object.Nil, nil
 	})
 	def(o, "freeze", 0, identity)
-	// compare_by_identity returns the hash or set as it is: amber values
+	// compare_by_identity returns the hash or set as it is: cameo values
 	// have no identity to compare by, so equality is all there is.
 	for _, c := range []*object.Class{object.MapClass, object.SetClass} {
 		def(c, "compare_by_identity", 0, identity)

@@ -1,4 +1,4 @@
-# ruby/spec sorted by amber's checker
+# ruby/spec sorted by cameo's checker
 
 ruby/spec at commit `0816047460cc5c4ca23d09794b48e8638a7047cc`, 3841 spec files, sorted by `sort.rb`
 without running a spec. See [README.md](README.md).

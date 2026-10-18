@@ -1,6 +1,6 @@
 // Command warmruby runs a Ruby script on CRuby 3.4 compiled to WebAssembly
 // (WASI), on the wazero runtime: the Ruby a Go program can embed without
-// cgo. It is the WASM Ruby amber's benchmarks compare against.
+// cgo. It is the WASM Ruby cameo's benchmarks compare against.
 //
 //	warmruby [-time FILE] [-cache DIR] script.rb
 //
@@ -101,9 +101,9 @@ func run() int {
 
 func defaultCache() string {
 	if dir, err := os.UserCacheDir(); err == nil {
-		return filepath.Join(dir, "amber-warmruby")
+		return filepath.Join(dir, "cameo-warmruby")
 	}
-	return filepath.Join(os.TempDir(), "amber-warmruby")
+	return filepath.Join(os.TempDir(), "cameo-warmruby")
 }
 
 // runScript runs script on the module and returns Ruby's exit status.

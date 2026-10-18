@@ -159,11 +159,11 @@ unsupported/globals	objspace_dump_all--dump_all_string.rb	benchmark/objspace_dum
 unsupported/globals	require--require.rb	benchmark/require.yml, entry require	global variables
 unsupported/globals	require_thread--require_thread.rb	benchmark/require_thread.yml, entry require_thread	global variables
 unsupported/globals	vm_module_const_set--vm_module_const_set.rb	benchmark/vm_module_const_set.yml, entry vm_module_const_set	global variables
-unsupported/identity	hash_ident_obj.rb	benchmark/hash_ident_obj.rb	object identity (amber compares structurally: two bare Objects are equal)
-unsupported/identity	object_id--object_id.rb	benchmark/object_id.yml, entry object_id	object identity (amber compares structurally: two bare Objects are equal)
+unsupported/identity	hash_ident_obj.rb	benchmark/hash_ident_obj.rb	object identity (cameo compares structurally: two bare Objects are equal)
+unsupported/identity	object_id--object_id.rb	benchmark/object_id.yml, entry object_id	object identity (cameo compares structurally: two bare Objects are equal)
 unsupported/identity	set--compare_by_identityq_false.rb	benchmark/set.yml, entry compare_by_identityq_false	compare_by_identity? (compare_by_identity changes nothing, so it cannot tell)
 unsupported/identity	set--compare_by_identityq_true.rb	benchmark/set.yml, entry compare_by_identityq_true	compare_by_identity? (compare_by_identity changes nothing, so it cannot tell)
-unsupported/identity	vm_neq--vm_neq.rb	benchmark/vm_neq.yml, entry vm_neq	object identity (amber compares structurally: two bare Objects are equal)
+unsupported/identity	vm_neq--vm_neq.rb	benchmark/vm_neq.yml, entry vm_neq	object identity (cameo compares structurally: two bare Objects are equal)
 unsupported/instance-variables	io_copy_stream_write.rb	benchmark/io_copy_stream_write.rb	instance variables
 unsupported/instance-variables	io_copy_stream_write_socket.rb	benchmark/io_copy_stream_write_socket.rb	instance variables
 unsupported/instance-variables	ivar_extend--embedded.rb	benchmark/ivar_extend.yml, entry embedded	instance variables
@@ -395,28 +395,28 @@ unsupported/reopening-classes	time_xmlschema--time_xmlschema_5.rb	benchmark/time
 unsupported/reopening-classes	time_xmlschema--time_xmlschema_6.rb	benchmark/time_xmlschema.yml, entry time_xmlschema_6	reopening builtin classes
 unsupported/reopening-classes	time_xmlschema--time_xmlschema_7.rb	benchmark/time_xmlschema.yml, entry time_xmlschema_7	reopening builtin classes
 unsupported/reopening-classes	vm_freezestring--vm_freezestring.rb	benchmark/vm_freezestring.yml, entry vm_freezestring	reopening builtin classes
-unsupported/require	app_erb--app_erb.rb	benchmark/app_erb.yml, entry app_erb	require of a library amber does not build in
-unsupported/require	app_mandelbrot.rb	benchmark/app_mandelbrot.rb	require of a library amber does not build in
-unsupported/require	app_uri.rb	benchmark/app_uri.rb	require of a library amber does not build in
-unsupported/require	array_shift.rb	benchmark/array_shift.rb	require of a library amber does not build in
-unsupported/require	erb_escape_html--erb_escape_html_0.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_0	require of a library amber does not build in
-unsupported/require	erb_escape_html--erb_escape_html_1.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_1	require of a library amber does not build in
-unsupported/require	erb_escape_html--erb_escape_html_2.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_2	require of a library amber does not build in
-unsupported/require	erb_escape_html--erb_escape_html_3.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_3	require of a library amber does not build in
-unsupported/require	erb_escape_html--erb_escape_html_4.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_4	require of a library amber does not build in
-unsupported/require	erb_escape_html--erb_escape_html_5.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_5	require of a library amber does not build in
-unsupported/require	erb_escape_html--erb_escape_html_6.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_6	require of a library amber does not build in
-unsupported/require	erb_render--erb_render.rb	benchmark/erb_render.yml, entry erb_render	require of a library amber does not build in
+unsupported/require	app_erb--app_erb.rb	benchmark/app_erb.yml, entry app_erb	require of a library cameo does not build in
+unsupported/require	app_mandelbrot.rb	benchmark/app_mandelbrot.rb	require of a library cameo does not build in
+unsupported/require	app_uri.rb	benchmark/app_uri.rb	require of a library cameo does not build in
+unsupported/require	array_shift.rb	benchmark/array_shift.rb	require of a library cameo does not build in
+unsupported/require	erb_escape_html--erb_escape_html_0.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_0	require of a library cameo does not build in
+unsupported/require	erb_escape_html--erb_escape_html_1.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_1	require of a library cameo does not build in
+unsupported/require	erb_escape_html--erb_escape_html_2.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_2	require of a library cameo does not build in
+unsupported/require	erb_escape_html--erb_escape_html_3.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_3	require of a library cameo does not build in
+unsupported/require	erb_escape_html--erb_escape_html_4.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_4	require of a library cameo does not build in
+unsupported/require	erb_escape_html--erb_escape_html_5.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_5	require of a library cameo does not build in
+unsupported/require	erb_escape_html--erb_escape_html_6.rb	benchmark/erb_escape_html.yml, entry erb_escape_html_6	require of a library cameo does not build in
+unsupported/require	erb_render--erb_render.rb	benchmark/erb_render.yml, entry erb_render	require of a library cameo does not build in
 unsupported/require	gc_aobench.rb	benchmark/gc/aobench.rb	require / load
 unsupported/require	gc_binary_trees.rb	benchmark/gc/binary_trees.rb	require / load
 unsupported/require	gc_pentomino.rb	benchmark/gc/pentomino.rb	require / load
-unsupported/require	gc_rdoc.rb	benchmark/gc/rdoc.rb	require of a library amber does not build in
-unsupported/require	io_write.rb	benchmark/io_write.rb	require of a library amber does not build in
-unsupported/require	irb_color--irb_color_complete.rb	benchmark/irb_color.yml, entry irb_color_complete	require of a library amber does not build in
-unsupported/require	irb_color--irb_color_incomplete.rb	benchmark/irb_color.yml, entry irb_color_incomplete	require of a library amber does not build in
-unsupported/require	irb_exec--irb_exec.rb	benchmark/irb_exec.yml, entry irb_exec	require of a library amber does not build in
-unsupported/require	loop_generator.rb	benchmark/loop_generator.rb	require of a library amber does not build in
-unsupported/require	securerandom.rb	benchmark/securerandom.rb	require of a library amber does not build in
+unsupported/require	gc_rdoc.rb	benchmark/gc/rdoc.rb	require of a library cameo does not build in
+unsupported/require	io_write.rb	benchmark/io_write.rb	require of a library cameo does not build in
+unsupported/require	irb_color--irb_color_complete.rb	benchmark/irb_color.yml, entry irb_color_complete	require of a library cameo does not build in
+unsupported/require	irb_color--irb_color_incomplete.rb	benchmark/irb_color.yml, entry irb_color_incomplete	require of a library cameo does not build in
+unsupported/require	irb_exec--irb_exec.rb	benchmark/irb_exec.yml, entry irb_exec	require of a library cameo does not build in
+unsupported/require	loop_generator.rb	benchmark/loop_generator.rb	require of a library cameo does not build in
+unsupported/require	securerandom.rb	benchmark/securerandom.rb	require of a library cameo does not build in
 unsupported/ruby-version	vm_gc_wb_ary--vm_gc_wb_ary.rb	benchmark/vm_gc_wb_ary.yml, entry vm_gc_wb_ary	RUBY_VERSION (left out)
 unsupported/singleton-methods	object_class--extended.rb	benchmark/object_class.yml, entry extended	singleton methods outside a class (def self.x at top level, def obj.x)
 unsupported/singleton-methods	object_class--immediate.rb	benchmark/object_class.yml, entry immediate	singleton methods outside a class (def self.x at top level, def obj.x)
@@ -437,30 +437,30 @@ unsupported/struct	vm_struct_small_aref--vm_struct_small_aref.rb	benchmark/vm_st
 unsupported/struct	vm_struct_small_aset--vm_struct_small_aset.rb	benchmark/vm_struct_small_aset.yml, entry vm_struct_small_aset	Struct (left out: untyped members, setters)
 unsupported/struct	vm_struct_small_href--vm_struct_small_href.rb	benchmark/vm_struct_small_href.yml, entry vm_struct_small_href	Struct (left out: untyped members, setters)
 unsupported/struct	vm_struct_small_hset--vm_struct_small_hset.rb	benchmark/vm_struct_small_hset.yml, entry vm_struct_small_hset	Struct (left out: untyped members, setters)
-unsupported/threads	fiber_chain--make_chain.rb	benchmark/fiber_chain.yml, entry make_chain	threads and fibers (amber has async)
-unsupported/threads	fiber_chain--resume_chain.rb	benchmark/fiber_chain.yml, entry resume_chain	threads and fibers (amber has async)
-unsupported/threads	fiber_locals--__.rb	benchmark/fiber_locals.yml, entry __	threads and fibers (amber has async)
-unsupported/threads	fiber_locals--key_.rb	benchmark/fiber_locals.yml, entry key_	threads and fibers (amber has async)
-unsupported/threads	fiber_locals--keys.rb	benchmark/fiber_locals.yml, entry keys	threads and fibers (amber has async)
-unsupported/threads	vm_fiber_count--vm_fiber_count.rb	benchmark/vm_fiber_count.yml, entry vm_fiber_count	threads and fibers (amber has async)
-unsupported/threads	vm_fiber_reuse_gc--vm_fiber_reuse_gc.rb	benchmark/vm_fiber_reuse_gc.yml, entry vm_fiber_reuse_gc	threads and fibers (amber has async)
-unsupported/threads	vm_fiber_switch--vm_fiber_switch.rb	benchmark/vm_fiber_switch.yml, entry vm_fiber_switch	threads and fibers (amber has async)
-unsupported/threads	vm_mutex--vm_mutex.rb	benchmark/vm_mutex.yml, entry vm_mutex	threads and fibers (amber has async)
-unsupported/threads	vm_thread_alive_check--vm_thread_alive_check.rb	benchmark/vm_thread_alive_check.yml, entry vm_thread_alive_check	threads and fibers (amber has async)
-unsupported/threads	vm_thread_close.rb	benchmark/vm_thread_close.rb	threads and fibers (amber has async)
-unsupported/threads	vm_thread_condvar1.rb	benchmark/vm_thread_condvar1.rb	threads and fibers (amber has async)
-unsupported/threads	vm_thread_condvar2.rb	benchmark/vm_thread_condvar2.rb	threads and fibers (amber has async)
-unsupported/threads	vm_thread_create_join.rb	benchmark/vm_thread_create_join.rb	threads and fibers (amber has async)
-unsupported/threads	vm_thread_mutex1.rb	benchmark/vm_thread_mutex1.rb	threads and fibers (amber has async)
-unsupported/threads	vm_thread_mutex2.rb	benchmark/vm_thread_mutex2.rb	threads and fibers (amber has async)
-unsupported/threads	vm_thread_mutex3.rb	benchmark/vm_thread_mutex3.rb	threads and fibers (amber has async)
-unsupported/threads	vm_thread_pass_flood.rb	benchmark/vm_thread_pass_flood.rb	threads and fibers (amber has async)
-unsupported/threads	vm_thread_queue.rb	benchmark/vm_thread_queue.rb	threads and fibers (amber has async)
-unsupported/threads	vm_thread_sized_queue.rb	benchmark/vm_thread_sized_queue.rb	threads and fibers (amber has async)
-unsupported/threads	vm_thread_sized_queue2.rb	benchmark/vm_thread_sized_queue2.rb	threads and fibers (amber has async)
-unsupported/threads	vm_thread_sized_queue3.rb	benchmark/vm_thread_sized_queue3.rb	threads and fibers (amber has async)
-unsupported/threads	vm_thread_sized_queue4.rb	benchmark/vm_thread_sized_queue4.rb	threads and fibers (amber has async)
-unsupported/threads	vm_thread_sleep--vm_thread_sleep.rb	benchmark/vm_thread_sleep.yml, entry vm_thread_sleep	threads and fibers (amber has async)
+unsupported/threads	fiber_chain--make_chain.rb	benchmark/fiber_chain.yml, entry make_chain	threads and fibers (cameo has async)
+unsupported/threads	fiber_chain--resume_chain.rb	benchmark/fiber_chain.yml, entry resume_chain	threads and fibers (cameo has async)
+unsupported/threads	fiber_locals--__.rb	benchmark/fiber_locals.yml, entry __	threads and fibers (cameo has async)
+unsupported/threads	fiber_locals--key_.rb	benchmark/fiber_locals.yml, entry key_	threads and fibers (cameo has async)
+unsupported/threads	fiber_locals--keys.rb	benchmark/fiber_locals.yml, entry keys	threads and fibers (cameo has async)
+unsupported/threads	vm_fiber_count--vm_fiber_count.rb	benchmark/vm_fiber_count.yml, entry vm_fiber_count	threads and fibers (cameo has async)
+unsupported/threads	vm_fiber_reuse_gc--vm_fiber_reuse_gc.rb	benchmark/vm_fiber_reuse_gc.yml, entry vm_fiber_reuse_gc	threads and fibers (cameo has async)
+unsupported/threads	vm_fiber_switch--vm_fiber_switch.rb	benchmark/vm_fiber_switch.yml, entry vm_fiber_switch	threads and fibers (cameo has async)
+unsupported/threads	vm_mutex--vm_mutex.rb	benchmark/vm_mutex.yml, entry vm_mutex	threads and fibers (cameo has async)
+unsupported/threads	vm_thread_alive_check--vm_thread_alive_check.rb	benchmark/vm_thread_alive_check.yml, entry vm_thread_alive_check	threads and fibers (cameo has async)
+unsupported/threads	vm_thread_close.rb	benchmark/vm_thread_close.rb	threads and fibers (cameo has async)
+unsupported/threads	vm_thread_condvar1.rb	benchmark/vm_thread_condvar1.rb	threads and fibers (cameo has async)
+unsupported/threads	vm_thread_condvar2.rb	benchmark/vm_thread_condvar2.rb	threads and fibers (cameo has async)
+unsupported/threads	vm_thread_create_join.rb	benchmark/vm_thread_create_join.rb	threads and fibers (cameo has async)
+unsupported/threads	vm_thread_mutex1.rb	benchmark/vm_thread_mutex1.rb	threads and fibers (cameo has async)
+unsupported/threads	vm_thread_mutex2.rb	benchmark/vm_thread_mutex2.rb	threads and fibers (cameo has async)
+unsupported/threads	vm_thread_mutex3.rb	benchmark/vm_thread_mutex3.rb	threads and fibers (cameo has async)
+unsupported/threads	vm_thread_pass_flood.rb	benchmark/vm_thread_pass_flood.rb	threads and fibers (cameo has async)
+unsupported/threads	vm_thread_queue.rb	benchmark/vm_thread_queue.rb	threads and fibers (cameo has async)
+unsupported/threads	vm_thread_sized_queue.rb	benchmark/vm_thread_sized_queue.rb	threads and fibers (cameo has async)
+unsupported/threads	vm_thread_sized_queue2.rb	benchmark/vm_thread_sized_queue2.rb	threads and fibers (cameo has async)
+unsupported/threads	vm_thread_sized_queue3.rb	benchmark/vm_thread_sized_queue3.rb	threads and fibers (cameo has async)
+unsupported/threads	vm_thread_sized_queue4.rb	benchmark/vm_thread_sized_queue4.rb	threads and fibers (cameo has async)
+unsupported/threads	vm_thread_sleep--vm_thread_sleep.rb	benchmark/vm_thread_sleep.yml, entry vm_thread_sleep	threads and fibers (cameo has async)
 unsupported/vm-introspection	iseq_load_from_binary--all.rb	benchmark/iseq_load_from_binary.yml, entry all	GC and VM introspection
 unsupported/vm-introspection	iseq_load_from_binary--define_method.rb	benchmark/iseq_load_from_binary.yml, entry define_method	GC and VM introspection
 unsupported/vm-introspection	iseq_load_from_binary--symbol.rb	benchmark/iseq_load_from_binary.yml, entry symbol	GC and VM introspection

@@ -1,8 +1,8 @@
 package eval
 
 import (
-	"github.com/radiospiel/amber/src/object"
-	"github.com/radiospiel/amber/src/syntax"
+	"github.com/radiospiel/cameo/src/object"
+	"github.com/radiospiel/cameo/src/syntax"
 )
 
 // evalBody evaluates statements in order and returns the last value, nil
@@ -128,9 +128,9 @@ func (in *Interp) evalSlow(n syntax.Node, env *Env, fr *Frame) (object.Value, er
 	case *syntax.AwaitAll:
 		return in.evalAwaitAll(env, n.Line())
 	case *syntax.Splat:
-		return object.Value{}, in.raise(object.AmberError, n.Line(), "a splat belongs in a list or an argument list")
+		return object.Value{}, in.raise(object.CameoError, n.Line(), "a splat belongs in a list or an argument list")
 	}
-	return object.Value{}, in.raise(object.AmberError, n.Line(), "cannot evaluate %T", n)
+	return object.Value{}, in.raise(object.CameoError, n.Line(), "cannot evaluate %T", n)
 }
 
 // evalArgs evaluates a list of expressions, splicing splats.

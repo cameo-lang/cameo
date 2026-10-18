@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Reruns the whole comparison: every case of benchmarks/ruby/works on MRI,
-# amber, warmruby and rbgo, into benchmarks/compare/results.tsv. It runs on
+# cameo, warmruby and rbgo, into benchmarks/compare/results.tsv. It runs on
 # Linux and macOS and needs Go and a Ruby of 3.1 or later on PATH, which is
 # also the Ruby measured as mri; the first run downloads warmruby's module.
 #
@@ -8,7 +8,7 @@
 #
 # JOBS sets how many cases run at once, half the CPUs by default: more
 # finishes sooner but lets the runs disturb each other's times. Options go
-# to compare.rb, so --min-time 0.5 or --only amber work here too.
+# to compare.rb, so --min-time 0.5 or --only cameo work here too.
 set -euo pipefail
 
 cd "$(dirname "$0")/../.."

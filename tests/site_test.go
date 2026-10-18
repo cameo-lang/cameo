@@ -10,17 +10,17 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/radiospiel/amber/src/assert"
+	"github.com/radiospiel/cameo/src/assert"
 
-	"github.com/radiospiel/amber/src/amber"
+	"github.com/radiospiel/cameo/src/cameo"
 )
 
-// siteSample is an amber sample on the site, and the output block that
+// siteSample is a cameo sample on the site, and the output block that
 // follows it, if any. A sample marked rejected must fail the check with
 // the output block as its error.
 var siteSample = regexp.MustCompile(`(?s)<pre class="amber( rejected)?"><code>(.*?)</code></pre>\s*(?:<pre class="output(?: error)?"><code>(.*?)</code></pre>)?`)
 
-// TestSiteSamplesPrintTheirOutput runs every amber sample on the GitHub
+// TestSiteSamplesPrintTheirOutput runs every cameo sample on the GitHub
 // Pages site in doc/gh_pages and holds it to the output printed under it.
 func TestSiteSamplesPrintTheirOutput(t *testing.T) {
 	pages, err := filepath.Glob("../doc/gh_pages/*.html")
@@ -37,7 +37,7 @@ func TestSiteSamplesPrintTheirOutput(t *testing.T) {
 			name := filepath.Base(page) + "/" + strconv.Itoa(i+1)
 			t.Run(name, func(t *testing.T) {
 				var stdout, stderr bytes.Buffer
-				err := amber.Run("script.arb", script, &stdout, &stderr)
+				err := cameo.Run("script.cameo", script, &stdout, &stderr)
 				if rejected {
 					assert.NotNil(t, err, "a rejected sample ran:\n%s", script)
 					assert.Equals(t, err.Error(), want)

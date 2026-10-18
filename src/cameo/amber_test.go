@@ -1,4 +1,4 @@
-package amber
+package cameo
 
 import (
 	"bytes"
@@ -27,7 +27,7 @@ puts "loaded"
 func load(t *testing.T) (*Program, *bytes.Buffer) {
 	t.Helper()
 	var out bytes.Buffer
-	prog, err := Load("t.arb", script, &out, &out)
+	prog, err := Load("t.cameo", script, &out, &out)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -93,7 +93,7 @@ func TestProtoAndEnvelope(t *testing.T) {
 	if _, ok := files["geo.proto"]; !ok {
 		t.Fatalf("files: %v", files)
 	}
-	if !strings.Contains(files["amber/value.proto"], "message Value {") {
+	if !strings.Contains(files["cameo/value.proto"], "message Value {") {
 		t.Fatal("the envelope is among the files")
 	}
 	data, err := prog.Encode(map[string]any{"k": []any{1, "x", nil}})
@@ -120,7 +120,7 @@ func TestErrorsAreReported(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "undefined method 'nope'") {
 		t.Fatalf("error: %v", err)
 	}
-	if _, err := Load("t.arb", "a << 1\n", nil, nil); err == nil {
+	if _, err := Load("t.cameo", "a << 1\n", nil, nil); err == nil {
 		t.Fatal("a rejected script does not load")
 	}
 	if _, err := prog.ToValue(struct{}{}); err == nil {
@@ -140,7 +140,7 @@ func TestRunContextStopsTheScript(t *testing.T) {
 	}
 	for name, src := range scripts {
 		var out bytes.Buffer
-		prog, err := Load(name+".arb", src, &out, &out)
+		prog, err := Load(name+".cameo", src, &out, &out)
 		if err != nil {
 			t.Fatalf("%s: %v", name, err)
 		}
@@ -159,7 +159,7 @@ func TestRunContextStopsTheScript(t *testing.T) {
 		}
 	}
 	// A script that ends returns as Run does.
-	prog, err := Load("ok.arb", "puts 1\n", &bytes.Buffer{}, &bytes.Buffer{})
+	prog, err := Load("ok.cameo", "puts 1\n", &bytes.Buffer{}, &bytes.Buffer{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -180,7 +180,7 @@ func TestLastValue(t *testing.T) {
 		"class P\n  int :x\nend\nP.new(x: 1)\n": "P(x: 1)",
 	}
 	for src, want := range cases {
-		prog, err := Load("t.arb", src, &bytes.Buffer{}, &bytes.Buffer{})
+		prog, err := Load("t.cameo", src, &bytes.Buffer{}, &bytes.Buffer{})
 		if err != nil {
 			t.Fatalf("%q: %v", src, err)
 		}

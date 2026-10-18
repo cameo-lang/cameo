@@ -1,7 +1,7 @@
 package stdlib
 
 import (
-	"github.com/radiospiel/amber/src/object"
+	"github.com/radiospiel/cameo/src/object"
 )
 
 func installList() {

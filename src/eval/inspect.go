@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/radiospiel/amber/src/object"
-	"github.com/radiospiel/amber/src/stdlib"
+	"github.com/radiospiel/cameo/src/object"
+	"github.com/radiospiel/cameo/src/stdlib"
 )
 
 // userMethod finds a user-defined (not native) method name on v's class.
@@ -183,7 +183,7 @@ func (in *Interp) inspectBuiltin(v object.Value) (string, error) {
 		case in.mainClass:
 			return "main", nil
 		case object.ObjectClass:
-			// A bare Object has no fields to show, and amber no address.
+			// A bare Object has no fields to show, and cameo no address.
 			return "#<Object>", nil
 		case object.EncodingClass:
 			return "#<Encoding:" + v.Fields[0].Str() + ">", nil

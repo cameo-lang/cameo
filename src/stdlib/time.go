@@ -7,13 +7,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/radiospiel/amber/src/object"
+	"github.com/radiospiel/cameo/src/object"
 )
 
 // installTime defines Time, an immutable instant with the offset it shows
 // in: UTC, the local zone, or a fixed offset such as "+09:00". Ruby's utc
-// and localtime change their receiver; amber's return a new time, as
-// getutc and getlocal do. subsec is a Float, since amber has no Rational.
+// and localtime change their receiver; cameo's return a new time, as
+// getutc and getlocal do. subsec is a Float, since cameo has no Rational.
 func installTime() {
 	c := object.TimeClass
 	tm := func(self object.Value) time.Time { return self.Time() }

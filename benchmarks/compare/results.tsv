@@ -1,4 +1,4 @@
-file	mri_result	mri_runs	mri_secs	mri_warm_secs	mri_wall_secs	mri_output	amber_result	amber_runs	amber_secs	amber_warm_secs	amber_wall_secs	amber_output	warmruby_result	warmruby_runs	warmruby_secs	warmruby_warm_secs	warmruby_wall_secs	warmruby_output	rbgo_result	rbgo_runs	rbgo_secs	rbgo_warm_secs	rbgo_wall_secs	rbgo_output
+file	mri_result	mri_runs	mri_secs	mri_warm_secs	mri_wall_secs	mri_output	cameo_result	cameo_runs	cameo_secs	cameo_warm_secs	cameo_wall_secs	cameo_output	warmruby_result	warmruby_runs	warmruby_secs	warmruby_warm_secs	warmruby_wall_secs	warmruby_output	rbgo_result	rbgo_runs	rbgo_secs	rbgo_warm_secs	rbgo_wall_secs	rbgo_output
 app_answer.rb	ok	39	0.028117457026	0.0304	1.199	same	ok	4	0.30721084025	0.321	1.563	same	ok	6	0.1775506035	0.1714	2.75	same	ok	2	0.5533442805	0.5421	1.769	same
 app_factorial.rb	ok	1	1.01400716	0.9866	2.102	same	ok	1	1.404808489	1.5207	2.938	same	ok	1	3.033584653	3.3156	7.461	same	ok	1	3.600824558	3.6554	7.36	same
 app_fib.rb	ok	3	0.420463794667	0.4266	1.762	same	ok	1	4.581008928	4.1408	8.734	same	ok	1	2.61151313	2.4054	6.294	same	ok	1	6.577378235	6.3765	13.064	same

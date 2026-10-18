@@ -59,7 +59,7 @@ func TestBacktrackingIsRefused(t *testing.T) {
 		}
 	}
 	_, _, err := Translate(`(a)\1`, 0)
-	if want := `This regexp is not supported in Amber: /(a)\1/ uses a backreference`; err.Error() != want {
+	if want := `This regexp is not supported in Cameo: /(a)\1/ uses a backreference`; err.Error() != want {
 		t.Fatalf("%q", err)
 	}
 }

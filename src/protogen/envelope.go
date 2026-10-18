@@ -12,10 +12,10 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/dynamicpb"
 
-	"github.com/radiospiel/amber/src/object"
+	"github.com/radiospiel/cameo/src/object"
 )
 
-// The envelope: amber.Value carries any serialisable value. It is what async
+// The envelope: cameo.Value carries any serialisable value. It is what async
 // serialises and what the host API takes and returns.
 //
 //	message Value {
@@ -113,7 +113,7 @@ func envelope() (protoreflect.FileDescriptor, error) {
 		field := func(name string, num int32, typ descriptorpb.FieldDescriptorProto_Type, typeName string, label *descriptorpb.FieldDescriptorProto_Label) *descriptorpb.FieldDescriptorProto {
 			f := &descriptorpb.FieldDescriptorProto{Name: strPtr(name), JsonName: strPtr(jsonName(name)), Number: int32Ptr(num), Type: typ.Enum(), Label: label}
 			if typeName != "" {
-				f.TypeName = strPtr(".amber." + typeName)
+				f.TypeName = strPtr(".cameo." + typeName)
 			}
 			return f
 		}
@@ -173,8 +173,8 @@ func envelope() (protoreflect.FileDescriptor, error) {
 			field("options", 2, descriptorpb.FieldDescriptorProto_TYPE_INT32, "", opt),
 		}}
 		fdp := &descriptorpb.FileDescriptorProto{
-			Name:        strPtr("amber/value.proto"),
-			Package:     strPtr("amber"),
+			Name:        strPtr("cameo/value.proto"),
+			Package:     strPtr("cameo"),
 			Syntax:      strPtr("proto3"),
 			MessageType: []*descriptorpb.DescriptorProto{value, items("List"), items("Set"), mapMsg, rangeMsg, objectMsg, timeMsg, regexpMsg},
 		}
@@ -199,7 +199,7 @@ func (e *Encoder) Encode(v object.Value) ([]byte, error) {
 	return proto.Marshal(msg)
 }
 
-// Message is a value as an amber.Value message.
+// Message is a value as an cameo.Value message.
 func (e *Encoder) Message(v object.Value) (*dynamicpb.Message, error) {
 	fd, err := envelope()
 	if err != nil {
@@ -394,7 +394,7 @@ func (d *Decoder) Decode(data []byte) (object.Value, error) {
 	return d.value(msg)
 }
 
-// Value reads an amber.Value message.
+// Value reads an cameo.Value message.
 func (d *Decoder) Value(msg protoreflect.Message) (object.Value, error) { return d.value(msg) }
 
 func (d *Decoder) value(msg protoreflect.Message) (object.Value, error) {
@@ -412,7 +412,7 @@ func (d *Decoder) value(msg protoreflect.Message) (object.Value, error) {
 	case "big_value":
 		b, ok := new(big.Int).SetString(pv.String(), 10)
 		if !ok {
-			return object.Value{}, fmt.Errorf("amber: %q is not an integer", pv.String())
+			return object.Value{}, fmt.Errorf("cameo: %q is not an integer", pv.String())
 		}
 		return object.BigInt(b), nil
 	case "float_value":

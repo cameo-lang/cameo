@@ -1,4 +1,4 @@
-// Package stdlib is amber's standard library: the methods of the builtin
+// Package stdlib is cameo's standard library: the methods of the builtin
 // classes, implemented in Go against the object package. Everything returns
 // a new value; nothing changes its receiver.
 package stdlib
@@ -6,7 +6,7 @@ package stdlib
 import (
 	"fmt"
 
-	"github.com/radiospiel/amber/src/object"
+	"github.com/radiospiel/cameo/src/object"
 )
 
 // Install defines every builtin method. The evaluator calls it once.

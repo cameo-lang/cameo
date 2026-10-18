@@ -1,4 +1,4 @@
-module github.com/radiospiel/amber
+module github.com/radiospiel/cameo
 
 go 1.26.4
 

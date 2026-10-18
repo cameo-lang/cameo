@@ -6,12 +6,12 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/radiospiel/amber/src/object"
-	"github.com/radiospiel/amber/src/rx"
+	"github.com/radiospiel/cameo/src/object"
+	"github.com/radiospiel/cameo/src/rx"
 )
 
 // installRegexp defines Regexp and MatchData. There are no $~ and $1
-// globals, since amber has no globals: a script reads a match from what
+// globals, since cameo has no globals: a script reads a match from what
 // match returns, or uses a block's argument.
 func installRegexp() {
 	c := object.RegexpClass

@@ -4,7 +4,7 @@ kind: part
 lang: golang
 description: >
   rbgo: a command that runs a Ruby script on go-embedded-ruby, a Ruby
-  interpreter written in Go, through its embedding API. amber's benchmarks
+  interpreter written in Go, through its embedding API. cameo's benchmarks
   compare against it. go-embedded-ruby needs Go 1.27.2, so this module is
   kept out of the go.work workspace and built on its own (GOWORK=off).
 license: BSD-3-Clause

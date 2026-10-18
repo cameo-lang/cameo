@@ -1,8 +1,13 @@
-# amber
+# cameo
 
 A small language with Ruby's syntax, run by an interpreter written in Go.
 Every value is immutable, every object is a protobuf message, and a script
 hands work to goroutines with `async` and collects it with `await`.
+
+cameo was called amber up to v0.1.1. What [doc/history](doc/history) and
+[agents/logs](agents/logs) say was written under that name, and their paths
+are the old ones: `src/amber` is now `src/cameo`, a `.arb` script a
+`.cameo` one.
 
 ```ruby
 class Point
@@ -26,10 +31,10 @@ puts await job                            # Point(x: 20, y: 12)
 
 The language, its differences from Ruby, the object model, the async model
 and the protobuf representation are in
-[doc/design/amber.md](doc/design/amber.md), which is also the plan: the
+[doc/design/cameo.md](doc/design/cameo.md), which is also the plan: the
 interpreter is built in the milestones listed there.
-[doc/amber-vs-ruby.md](doc/amber-vs-ruby.md) lists, for someone who knows
-Ruby, what is the same, what differs, and what amber does not support.
+[doc/cameo-vs-ruby.md](doc/cameo-vs-ruby.md) lists, for someone who knows
+Ruby, what is the same, what differs, and what cameo does not support.
 
 ## Status
 
@@ -41,49 +46,49 @@ waits for everything the current scope started. The Ruby adapter
 (milestone 7) is not built.
 
 ```sh
-amber script.arb            # run; an uncaught exception prints script:line: message (Class)
-amber check script.arb      # parse and check only, report every error with its line
-amber proto script.arb      # the .proto files of the script's classes, one per package
-amber proto script.arb out/ # the same, written into out/
+cameo script.cameo            # run; an uncaught exception prints script:line: message (Class)
+cameo check script.cameo      # parse and check only, report every error with its line
+cameo proto script.cameo      # the .proto files of the script's classes, one per package
+cameo proto script.cameo out/ # the same, written into out/
 ```
 
 From Go:
 
 ```go
-import "github.com/radiospiel/amber/src/amber"
+import "github.com/radiospiel/cameo/src/cameo"
 
-prog, err := amber.Load("script.arb", src, os.Stdout, os.Stderr)
+prog, err := cameo.Load("script.cameo", src, os.Stdout, os.Stderr)
 err = prog.Run()                                       // defines the classes
 out, err := prog.Call("Point", "new", map[string]any{"x": 1, "y": 2})
-msg := out.(proto.Message)                             // a dynamicpb message of amber.Point
+msg := out.(proto.Message)                             // a dynamicpb message of cameo.Point
 sum, err := prog.Call(msg, "+", msg)                   // call a method on it
 text, err := prog.Proto("Point")                       // the .proto text
 ```
 
 The scripts under [examples/](examples) are the specification: each
-`<name>.arb` has the output it must produce in `<name>.expected`, and `go test`
+`<name>.cameo` has the output it must produce in `<name>.expected`, and `go test`
 runs every script and holds it to that output. The examples a later milestone
 brings are listed as pending in the test and must keep failing until it lands.
 An example that is also plain Ruby has its expected output generated with
-`ruby`, so amber is held to Ruby's behaviour where the two overlap.
+`ruby`, so cameo is held to Ruby's behaviour where the two overlap.
 
 [benchmarks/ruby/](benchmarks/ruby) holds CRuby's own benchmark suite, one
-script per case, grouped into what works, what fails on an amber bug, what
-needs a builtin amber does not have yet, and what uses a feature amber leaves
+script per case, grouped into what works, what fails on an cameo bug, what
+needs a builtin cameo does not have yet, and what uses a feature cameo leaves
 out; its `run.rb` checks that the working ones keep working.
 
 The packages under `src/`: `syntax` is the front end (`syntax.Parse`),
 `object` the value model, `eval` the evaluator and the async scheduler,
 `stdlib` the builtin methods, `protogen` the descriptors, `.proto` text and
-the envelope, `amber` the host API (`amber.Load`, `amber.Run`), and
-`cmd/amber` the binary.
+the envelope, `cameo` the host API (`cameo.Load`, `cameo.Run`), and
+`cmd/cameo` the binary.
 
 ## Building
 
 ```sh
-make build      # the amber binary and the packages
+make build      # the cameo binary and the packages
 make tests      # go test ./...
-make install    # puts `amber` into GOBIN
+make install    # puts `cameo` into GOBIN
 ```
 
 The parser is `github.com/go-ruby-parser/parser`, a Ruby parser in pure Go.
@@ -93,11 +98,11 @@ No cgo, no Ruby installation, no code generation.
 
 | Path | Holds |
 |---|---|
-| `src/` | all Go code: the packages above and `src/cmd/amber`, the command |
+| `src/` | all Go code: the packages above and `src/cmd/cameo`, the command |
 | `src/assert/` | the assertions the tests use, vendored from simple-go |
 | `tests/` | Go tests against the packages, as a caller uses them |
 | `tests/integration/` | shell tests that drive the built binary, on `testsh.inc` |
-| `doc/history/` | how amber came to be, one document per step |
+| `doc/history/` | how cameo came to be, one document per step |
 | `agents/` | guidance for coding agents; start at [CLAUDE.md](CLAUDE.md) |
 | `.github/` | the CI workflow and the pull request template |
 

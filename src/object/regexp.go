@@ -6,7 +6,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/radiospiel/amber/src/rx"
+	"github.com/radiospiel/cameo/src/rx"
 )
 
 // Regexp option bits, as Ruby's Regexp constants number them.

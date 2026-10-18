@@ -346,7 +346,7 @@ var (
 	NotImplementedErr = NewClass("NotImplementedError", StandardError)
 	RegexpError       = NewClass("RegexpError", StandardError)
 	LocalJumpError    = NewClass("LocalJumpError", StandardError)
-	AmberError        = NewClass("AmberError", StandardError)
+	CameoError        = NewClass("CameoError", StandardError)
 	// ScriptError and LoadError are outside StandardError, so a bare
 	// rescue does not catch a failed require, as in Ruby.
 	ScriptError = NewClass("ScriptError", ExceptionClass)
@@ -383,7 +383,7 @@ func init() {
 		ProcessClass, ExceptionClass, Enumerable, Comparable, MathModule, ProcessModule,
 		StandardError, RuntimeError, ArgumentError, TypeError, NameError, NoMethodError, KeyError,
 		IndexError, RangeError, ZeroDivisionError, StopIteration, NoMatchingPattern, FrozenError,
-		NotImplementedErr, LocalJumpError, AmberError, RegexpError, FloatDomainError, ScriptError, LoadError, EncodingError,
+		NotImplementedErr, LocalJumpError, CameoError, RegexpError, FloatDomainError, ScriptError, LoadError, EncodingError,
 	}
 	for _, c := range BasicClasses {
 		ObjectClass.Consts[c.Name] = ClassValue(c)

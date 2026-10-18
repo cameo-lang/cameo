@@ -1,14 +1,14 @@
-// Package syntax is amber's front end: it parses a script with go-ruby-parser,
-// turns the parser's tree into amber's own AST, rejects what amber leaves out,
+// Package syntax is cameo's front end: it parses a script with go-ruby-parser,
+// turns the parser's tree into cameo's own AST, rejects what cameo leaves out,
 // and rewrites chained assignment into copies. The language is in
-// doc/design/amber.md.
+// doc/design/cameo.md.
 //
 // Every node carries the line it started on. The parser records lines per
 // statement, so an expression's line is the line of the statement it is part
 // of, which is what an error message needs.
 package syntax
 
-// Node is any node of amber's AST.
+// Node is any node of cameo's AST.
 type Node interface{ Line() int }
 
 // Pos is the source line a node started on, embedded in every node.
@@ -34,7 +34,7 @@ type Bool struct {
 	Value bool
 }
 
-// Int is an integer literal. amber integers are 64-bit.
+// Int is an integer literal. cameo integers are 64-bit.
 type Int struct {
 	Pos
 	Value int64
@@ -523,7 +523,7 @@ type Include struct {
 	Extend bool
 }
 
-// amber's own forms.
+// cameo's own forms.
 
 // With is a copy of Target with Key replaced by Value: what `target.key = v`
 // and `target[key] = v` rewrite to. On an instance Key is a Sym naming a

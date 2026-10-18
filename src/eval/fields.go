@@ -7,8 +7,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/radiospiel/amber/src/object"
-	"github.com/radiospiel/amber/src/syntax"
+	"github.com/radiospiel/cameo/src/object"
+	"github.com/radiospiel/cameo/src/syntax"
 )
 
 // evalFieldDecl declares typed fields in a class body: each gets the next
@@ -16,7 +16,7 @@ import (
 func (in *Interp) evalFieldDecl(n *syntax.FieldDecl, env *Env, fr *Frame) (object.Value, error) {
 	cls := fr.DefTarget
 	if cls == nil || cls.IsModule || !isClassValue(fr.Self, cls) {
-		return object.Value{}, in.raise(object.AmberError, n.Line(), "%s :%s: a field belongs to a class body", n.Type, n.Names[0])
+		return object.Value{}, in.raise(object.CameoError, n.Line(), "%s :%s: a field belongs to a class body", n.Type, n.Names[0])
 	}
 	typ, err := in.fieldType(n, env, fr)
 	if err != nil {
@@ -32,15 +32,15 @@ func (in *Interp) evalFieldDecl(n *syntax.FieldDecl, env *Env, fr *Frame) (objec
 	}
 	for _, name := range n.Names {
 		if _, exists := cls.FieldIndex[name]; exists {
-			return object.Value{}, in.raise(object.AmberError, n.Line(), "field %s is already declared in %s", name, cls.QualifiedName())
+			return object.Value{}, in.raise(object.CameoError, n.Line(), "field %s is already declared in %s", name, cls.QualifiedName())
 		}
 		for _, r := range cls.ReservedNames {
 			if r == name {
-				return object.Value{}, in.raise(object.AmberError, n.Line(), "field %s is reserved in %s", name, cls.QualifiedName())
+				return object.Value{}, in.raise(object.CameoError, n.Line(), "field %s is reserved in %s", name, cls.QualifiedName())
 			}
 		}
 		if m := cls.Lookup(name); m != nil && m.Owner == cls {
-			return object.Value{}, in.raise(object.AmberError, n.Line(), "field %s: %s already defines a method %s", name, cls.QualifiedName(), name)
+			return object.Value{}, in.raise(object.CameoError, n.Line(), "field %s: %s already defines a method %s", name, cls.QualifiedName(), name)
 		}
 		f := &object.Field{Name: name, Number: in.nextFieldNumber(cls), Type: typ, Owner: cls}
 		if !def.IsZero() {
@@ -420,14 +420,14 @@ func article(noun string) string {
 func (in *Interp) evalReserved(n *syntax.Reserved, fr *Frame) (object.Value, error) {
 	cls := fr.DefTarget
 	if cls == nil || cls.IsModule || !isClassValue(fr.Self, cls) {
-		return object.Value{}, in.raise(object.AmberError, n.Line(), "reserved belongs to a class body")
+		return object.Value{}, in.raise(object.CameoError, n.Line(), "reserved belongs to a class body")
 	}
 	for _, f := range cls.Fields {
 		if f.Number == n.Number {
-			return object.Value{}, in.raise(object.AmberError, n.Line(), "reserved %d: field %s already holds that number", n.Number, f.Name)
+			return object.Value{}, in.raise(object.CameoError, n.Line(), "reserved %d: field %s already holds that number", n.Number, f.Name)
 		}
 		if n.Name != "" && f.Name == n.Name {
-			return object.Value{}, in.raise(object.AmberError, n.Line(), "reserved :%s: a field of that name is declared", n.Name)
+			return object.Value{}, in.raise(object.CameoError, n.Line(), "reserved :%s: a field of that name is declared", n.Name)
 		}
 	}
 	cls.ReservedNumbers = append(cls.ReservedNumbers, n.Number)
@@ -440,7 +440,7 @@ func (in *Interp) evalReserved(n *syntax.Reserved, fr *Frame) (object.Value, err
 func (in *Interp) evalInclude(n *syntax.Include, env *Env, fr *Frame) (object.Value, error) {
 	cls := fr.DefTarget
 	if cls == nil || !isClassValue(fr.Self, cls) {
-		return object.Value{}, in.raise(object.AmberError, n.Line(), "include belongs to a class or module body")
+		return object.Value{}, in.raise(object.CameoError, n.Line(), "include belongs to a class or module body")
 	}
 	v, err := in.eval(n.Module, env, fr)
 	if err != nil {

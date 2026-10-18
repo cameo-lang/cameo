@@ -1,8 +1,8 @@
-# amber and Ruby
+# cameo and Ruby
 
-amber runs a subset of Ruby, with Ruby's syntax and, where amber accepts a
-construct, Ruby's behaviour, CRuby 3.4's where 3.3 differs. Everything amber
-accepts parses as Ruby. Where amber differs it does so in one of three ways:
+cameo runs a subset of Ruby, with Ruby's syntax and, where cameo accepts a
+construct, Ruby's behaviour, CRuby 3.4's where 3.3 differs. Everything cameo
+accepts parses as Ruby. Where cameo differs it does so in one of three ways:
 
 - **a different meaning**, almost all of it because every value is immutable;
 - **rejected before the script runs**: the checker names the construct and,
@@ -11,14 +11,14 @@ accepts parses as Ruby. Where amber differs it does so in one of three ways:
   script reaches it (`Proc#curry` raises `NotImplementedError`, and
   `Integer()` with a base `ArgumentError`).
 
-This page lists each, as of v0.1. The [design document](design/amber.md)
+This page lists each, as of v0.1. The [design document](design/cameo.md)
 says why; its *Decisions taken* records the choices made explicitly.
 
 ## How compatible, measured
 
 **CRuby's benchmark suite.** [benchmarks/ruby](../benchmarks/ruby) holds the
-1318 cases of CRuby's `benchmark/` that amber may legally carry. 824 of them
-run under amber with Ruby's output. The others, by the first thing that stops
+1318 cases of CRuby's `benchmark/` that cameo may legally carry. 824 of them
+run under cameo with Ruby's output. The others, by the first thing that stops
 each:
 
 | Cases | Reason |
@@ -32,7 +32,7 @@ each:
 | 31 | the file system |
 | 24 | threads and fibers |
 | 24 | `Rational` and `Complex` |
-| 22 | `require` of a library amber does not build in |
+| 22 | `require` of a library cameo does not build in |
 | 18 | reopening a builtin class |
 | 10 | `Struct` |
 | 9 | singleton methods outside a class |
@@ -44,9 +44,9 @@ each:
 | 1 each | `RUBY_VERSION`, class variables, `String#tr` with a hash |
 
 **ruby/spec.** [specs](../specs) sorts all 3841 spec files of
-[ruby/spec](https://github.com/ruby/spec) by what amber's checker accepts:
+[ruby/spec](https://github.com/ruby/spec) by what cameo's checker accepts:
 1403 are accepted. None has been run, so this counts the constructs a spec
-uses, not whether its examples pass. Most of the rest require a library amber
+uses, not whether its examples pass. Most of the rest require a library cameo
 does not build in (1006), or use an instance variable (852), mostly in
 mspec's own `before` blocks.
 
@@ -79,10 +79,10 @@ mspec's own `before` blocks.
   `Integer()`, `Float()`, `String()` and `Array()`,
   `Process.clock_gettime`.
 - **Libraries**: `require` of `set`, `time`, `pp`, `pathname` and `cgi`,
-  which amber builds in.
+  which cameo builds in.
 - **Output**: `puts`, `print`, `p`, `pp`, `warn`.
 
-## Different in amber
+## Different in cameo
 
 **Values are immutable.** Nothing changes in place, so what would change a
 value in Ruby makes a changed copy:
@@ -142,10 +142,10 @@ q = p.with(x: 3)            # a copy; p is unchanged
   `subsec` is a Float, since `Rational` is left out.
 - A String is UTF-8, ASCII-8BIT (binary) or US-ASCII; other encodings do not
   exist.
-- Regular expressions use Ruby's syntax on amber's own engine; lookbehind
+- Regular expressions use Ruby's syntax on cameo's own engine; lookbehind
   and backreferences are rejected with "This regexp is not supported in
-  Amber".
-- A Symbol becomes a String where a value leaves amber, in a protobuf
+  Cameo".
+- A Symbol becomes a String where a value leaves cameo, in a protobuf
   message or an `async` call, unless an `enum` field declares it.
 
 ## Rejected before the script runs
@@ -178,7 +178,7 @@ These are absent, and a script that uses one fails when it reaches it:
 - **No I/O beyond standard output and error**: `File`, `IO`, `Dir`,
   `gets`, `STDIN`, `STDOUT`, `STDERR`, `$stdout`.
 - **No threads or processes**: `Thread`, `Fiber`, `Mutex`, `sleep`,
-  `system`, `exec`, `spawn`; amber has `async` and `await` instead.
+  `system`, `exec`, `spawn`; cameo has `async` and `await` instead.
 - **Not there yet**: `exit`, `at_exit`, `catch` and `throw`, `redo`,
   `printf` (`format` exists), `__method__`, `__LINE__`, `Enumerator.new`,
   `Integer()` with a base, `Random` as a class (`rand` and `srand` exist),
@@ -186,7 +186,7 @@ These are absent, and a script that uses one fails when it reaches it:
 - **Libraries**: `require` of any library but the five above, such as
   `json`, raises a `LoadError`.
 
-## Only in amber
+## Only in cameo
 
 - Typed fields, with every class a protobuf message: `to_proto`,
   `from_proto`, and `Point.proto` for its `.proto` text.

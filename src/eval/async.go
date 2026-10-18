@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/radiospiel/amber/src/object"
-	"github.com/radiospiel/amber/src/protogen"
-	"github.com/radiospiel/amber/src/syntax"
+	"github.com/radiospiel/cameo/src/object"
+	"github.com/radiospiel/cameo/src/protogen"
+	"github.com/radiospiel/cameo/src/syntax"
 )
 
 // Process is an AsyncProcess: one method call running on its own
@@ -99,7 +99,7 @@ func (l *processList) waitAll(in *Interp) {
 		exc := p.err
 		p.mu.Unlock()
 		if failed {
-			in.Write(true, fmt.Sprintf("amber: process %d (%s) failed and was never awaited: %s (%s)\n", p.id, p.method, exc.Message, exc.Cls.QualifiedName()))
+			in.Write(true, fmt.Sprintf("cameo: process %d (%s) failed and was never awaited: %s (%s)\n", p.id, p.method, exc.Message, exc.Cls.QualifiedName()))
 		}
 	}
 }
@@ -337,7 +337,7 @@ func (w *Interp) runCall(recvData []byte, method string, argData [][]byte, kwDat
 		if c, ok := callErr.(*control); ok {
 			return object.Value{}, w.raise(object.LocalJumpError, c.line, "%s from a process", c.kind).(*object.Exception)
 		}
-		return object.Value{}, w.raise(object.AmberError, 0, "%s", callErr.Error()).(*object.Exception)
+		return object.Value{}, w.raise(object.CameoError, 0, "%s", callErr.Error()).(*object.Exception)
 	}
 	// The result crosses back to the awaiting scope, so it has to be a
 	// value that could travel.

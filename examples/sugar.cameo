@@ -1,4 +1,4 @@
-# Syntax amber rewrites into what it has: argument forwarding, anonymous
+# Syntax cameo rewrites into what it has: argument forwarding, anonymous
 # parameters, a top-level def self.x, for loops, alias, class A::B, and
 # freeze and compare_by_identity, which change nothing.
 def named(*a, **k, &b) = [a, k.to_a, b ? b.call : nil]

@@ -1,7 +1,7 @@
-// Package protogen is amber's protobuf side: the message descriptor each
+// Package protogen is cameo's protobuf side: the message descriptor each
 // class is, the .proto text that describes it, the conversion between an
-// instance and its message, and the amber.Value envelope that carries any
-// value across a boundary. The design is in doc/design/amber.md.
+// instance and its message, and the cameo.Value envelope that carries any
+// value across a boundary. The design is in doc/design/cameo.md.
 package protogen
 
 import (
@@ -13,7 +13,7 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 
-	"github.com/radiospiel/amber/src/object"
+	"github.com/radiospiel/cameo/src/object"
 )
 
 // Registry builds and keeps the descriptors of the classes one interpreter
@@ -29,7 +29,7 @@ func NewRegistry() *Registry {
 	return &Registry{files: map[*object.Class]protoreflect.FileDescriptor{}}
 }
 
-// Package is the protobuf package of a class: amber for a top-level class,
+// Package is the protobuf package of a class: cameo for a top-level class,
 // the lexical modules lower-cased and joined with dots otherwise.
 func Package(cls *object.Class) string {
 	var parts []string
@@ -37,7 +37,7 @@ func Package(cls *object.Class) string {
 		parts = append([]string{strings.ToLower(m.Name)}, parts...)
 	}
 	if len(parts) == 0 {
-		return "amber"
+		return "cameo"
 	}
 	return strings.Join(parts, ".")
 }
