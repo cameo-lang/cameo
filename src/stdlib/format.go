@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/radiospiel/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/object"
 )
 
 // format implements the subset of Kernel#format cameo supports: %s %d %i %f

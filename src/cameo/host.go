@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/radiospiel/cameo/src/eval"
-	"github.com/radiospiel/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/eval"
+	"github.com/cameo-lang/cameo/src/object"
 )
 
 // Module is a module the host gives the script: a constant at its top

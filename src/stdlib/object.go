@@ -1,6 +1,6 @@
 package stdlib
 
-import "github.com/radiospiel/cameo/src/object"
+import "github.com/cameo-lang/cameo/src/object"
 
 // installObject defines the methods every value has.
 func installObject() {

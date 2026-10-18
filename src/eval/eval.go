@@ -1,8 +1,8 @@
 package eval
 
 import (
-	"github.com/radiospiel/cameo/src/object"
-	"github.com/radiospiel/cameo/src/syntax"
+	"github.com/cameo-lang/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/syntax"
 )
 
 // evalBody evaluates statements in order and returns the last value, nil

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/radiospiel/cameo/src/object"
-	"github.com/radiospiel/cameo/src/rx"
+	"github.com/cameo-lang/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/rx"
 )
 
 // installRegexp defines Regexp and MatchData. There are no $~ and $1

@@ -15,13 +15,13 @@
     <a href="ruby.html">Coming from Ruby</a>
     <a href="go.html" aria-current="page">Embedding in Go</a>
     <a href="native.html">Native code</a>
-    <a href="https://github.com/radiospiel/cameo">GitHub</a>
+    <a href="https://github.com/cameo-lang/cameo">GitHub</a>
   </nav>
 </div></header>
 
 <main>
 <h1>Embedding cameo in a Go program</h1>
-<p class="lead">The package <code>github.com/radiospiel/cameo/src/cameo</code>
+<p class="lead">The package <code>github.com/cameo-lang/cameo/src/cameo</code>
 loads a script, runs it, calls its methods and converts values both
 ways.</p>
 
@@ -42,7 +42,7 @@ ways.</p>
 <p>cameo needs Go 1.26.4 or later; <code>go get</code> raises a
 module's <code>go</code> line to 1.26.4. Import the package, then:</p>
 
-<pre class="sh"><code>go get github.com/radiospiel/cameo@v0.2.0
+<pre class="sh"><code>go get github.com/cameo-lang/cameo@v0.2.1
 go mod tidy</code></pre>
 
 <p><code>go mod tidy</code> adds cameo's own dependencies,
@@ -69,7 +69,7 @@ import (
 	&quot;log&quot;
 	&quot;os&quot;
 
-	&quot;github.com/radiospiel/cameo/src/cameo&quot;
+	&quot;github.com/cameo-lang/cameo/src/cameo&quot;
 )
 
 const script = `
@@ -134,7 +134,7 @@ import (
 	&quot;os&quot;
 	&quot;time&quot;
 
-	&quot;github.com/radiospiel/cameo/src/cameo&quot;
+	&quot;github.com/cameo-lang/cameo/src/cameo&quot;
 )
 
 func main() {
@@ -244,7 +244,7 @@ import (
 	&quot;google.golang.org/protobuf/reflect/protoreflect&quot;
 	&quot;google.golang.org/protobuf/types/dynamicpb&quot;
 
-	&quot;github.com/radiospiel/cameo/src/cameo&quot;
+	&quot;github.com/cameo-lang/cameo/src/cameo&quot;
 )
 
 const script = `
@@ -314,7 +314,7 @@ message Point {
 <h2 id="errors">Errors</h2>
 
 <p>A script that does not check returns a <code>syntax.ErrorList</code>
-(package <code>github.com/radiospiel/cameo/src/syntax</code>) from
+(package <code>github.com/cameo-lang/cameo/src/syntax</code>) from
 <code>Load</code>, with every error and its line. An exception that ends
 <code>Run</code> or <code>Call</code> returns a
 <code>*cameo.RunError</code>, whose <code>Message</code> is formatted as
@@ -328,8 +328,8 @@ import (
 	&quot;fmt&quot;
 	&quot;io&quot;
 
-	&quot;github.com/radiospiel/cameo/src/cameo&quot;
-	&quot;github.com/radiospiel/cameo/src/syntax&quot;
+	&quot;github.com/cameo-lang/cameo/src/cameo&quot;
+	&quot;github.com/cameo-lang/cameo/src/syntax&quot;
 )
 
 func main() {
@@ -368,7 +368,7 @@ import (
 	&quot;os&quot;
 	&quot;sync/atomic&quot;
 
-	&quot;github.com/radiospiel/cameo/src/cameo&quot;
+	&quot;github.com/cameo-lang/cameo/src/cameo&quot;
 )
 
 const script = `
@@ -407,7 +407,7 @@ from several goroutines at once. Give each goroutine of the host its own
 </main>
 
 <footer class="site"><div class="inner">
-  cameo · <a href="https://github.com/radiospiel/cameo">github.com/radiospiel/cameo</a> ·
+  cameo · <a href="https://github.com/cameo-lang/cameo">github.com/cameo-lang/cameo</a> ·
   every sample on this site was run
 </div></footer>
 </body>

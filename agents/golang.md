@@ -1,13 +1,13 @@
 # Go rules
 
-cameo is one Go module, `github.com/radiospiel/cameo`, with `go.mod` at the
+cameo is one Go module, `github.com/cameo-lang/cameo`, with `go.mod` at the
 root.
 
 ## Layout
 
 **All Go source lives under `src/`.** The root holds what describes the
 module — `go.mod`, `Makefile`, `README.md`, `doc/` — and nothing else.
-Packages import as `github.com/radiospiel/cameo/src/<name>`, and the last
+Packages import as `github.com/cameo-lang/cameo/src/<name>`, and the last
 element of the path is the package name:
 
 ```

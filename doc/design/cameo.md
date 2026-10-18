@@ -539,7 +539,7 @@ cannot rebind a caller's local. Scripts that must run under both write the
 
 ## Architecture
 
-One Go module, `github.com/radiospiel/cameo`, with the packages under `src/`:
+One Go module, `github.com/cameo-lang/cameo`, with the packages under `src/`:
 
 | Package | Does |
 |---|---|

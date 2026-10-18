@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/radiospiel/cameo/src/assert"
+	"github.com/cameo-lang/cameo/src/assert"
 
-	"github.com/radiospiel/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/cameo"
 )
 
 // siteSample is a cameo sample on the site, and the output block that

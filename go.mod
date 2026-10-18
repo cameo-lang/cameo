@@ -1,4 +1,4 @@
-module github.com/radiospiel/cameo
+module github.com/cameo-lang/cameo
 
 go 1.26.4
 

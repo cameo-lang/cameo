@@ -3,7 +3,7 @@ package stdlib
 import (
 	"strings"
 
-	"github.com/radiospiel/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/object"
 )
 
 func installSymbol() {

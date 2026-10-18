@@ -10,8 +10,8 @@ import (
 	"github.com/go-ruby-parser/parser"
 	"github.com/go-ruby-parser/parser/ast"
 
-	"github.com/radiospiel/cameo/src/object"
-	"github.com/radiospiel/cameo/src/rx"
+	"github.com/cameo-lang/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/rx"
 )
 
 // context names where the converter stands in the source, which decides what

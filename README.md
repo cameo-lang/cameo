@@ -55,7 +55,7 @@ cameo proto script.cameo out/ # the same, written into out/
 From Go:
 
 ```go
-import "github.com/radiospiel/cameo/src/cameo"
+import "github.com/cameo-lang/cameo/src/cameo"
 
 prog, err := cameo.Load("script.cameo", src, os.Stdout, os.Stderr)
 err = prog.Run()                                       // defines the classes

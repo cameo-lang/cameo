@@ -11,8 +11,8 @@ import (
 	"runtime/debug"
 	"sort"
 
-	"github.com/radiospiel/cameo/src/cameo"
-	"github.com/radiospiel/cameo/src/syntax"
+	"github.com/cameo-lang/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/syntax"
 )
 
 const usage = `usage: cameo <script.cameo>              run the script

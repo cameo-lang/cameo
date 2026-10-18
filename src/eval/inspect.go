@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/radiospiel/cameo/src/object"
-	"github.com/radiospiel/cameo/src/stdlib"
+	"github.com/cameo-lang/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/stdlib"
 )
 
 // userMethod finds a user-defined (not native) method name on v's class.

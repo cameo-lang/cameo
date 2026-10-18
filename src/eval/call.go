@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/radiospiel/cameo/src/object"
-	"github.com/radiospiel/cameo/src/syntax"
+	"github.com/cameo-lang/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/syntax"
 )
 
 func (in *Interp) evalCall(n *syntax.Call, env *Env, fr *Frame) (object.Value, error) {

@@ -16,10 +16,10 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
-	"github.com/radiospiel/cameo/src/eval"
-	"github.com/radiospiel/cameo/src/object"
-	"github.com/radiospiel/cameo/src/protogen"
-	"github.com/radiospiel/cameo/src/syntax"
+	"github.com/cameo-lang/cameo/src/eval"
+	"github.com/cameo-lang/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/protogen"
+	"github.com/cameo-lang/cameo/src/syntax"
 )
 
 // Run parses, checks and runs a script, writing its output to stdout and

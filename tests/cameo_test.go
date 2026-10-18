@@ -6,9 +6,9 @@ package tests
 import (
 	"testing"
 
-	"github.com/radiospiel/cameo/src/assert"
+	"github.com/cameo-lang/cameo/src/assert"
 
-	"github.com/radiospiel/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/cameo"
 )
 
 func TestVersionIsSet(t *testing.T) {

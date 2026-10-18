@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/radiospiel/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/cameo"
 )
 
 // examplesDir is the corpus of scripts that specify the language, relative
