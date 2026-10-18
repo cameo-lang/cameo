@@ -8,21 +8,21 @@ false
 0.1
 3.0
 message Numbers {
-  optional int32 i32 = 1;
-  optional int64 i64 = 2;
-  optional uint32 u32 = 3;
-  optional uint64 u64 = 4;
-  optional sint32 s32 = 5;
-  optional sint64 s64 = 6;
-  optional fixed32 f32 = 7;
-  optional fixed64 f64 = 8;
-  optional sfixed32 sf32 = 9;
-  optional sfixed64 sf64 = 10;
-  optional double d = 11;
-  optional float single = 12;
-  optional string huge = 13;
-  repeated sint32 small = 14;
-  map<uint64, string> counts = 15;
+  optional int32 i32 = 53032;
+  optional int64 i64 = 52083;
+  optional uint32 u32 = 6929;
+  optional uint64 u64 = 34124;
+  optional sint32 s32 = 36385;
+  optional sint64 s64 = 10142;
+  optional fixed32 f32 = 36523;
+  optional fixed64 f64 = 5596;
+  optional sfixed32 sf32 = 62062;
+  optional sfixed64 sf64 = 61113;
+  optional double d = 58280;
+  optional float single = 35332;
+  optional string huge = 29806;
+  repeated sint32 small = 43684;
+  map<uint64, string> counts = 26628;
 }
 RangeError: field i32 of Numbers takes an int32, from -2147483648 to 2147483647; 2147483648 does not fit
 RangeError: field u32 of Numbers takes a uint32, from 0 to 4294967295; -1 does not fit

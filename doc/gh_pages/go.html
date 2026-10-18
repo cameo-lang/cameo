@@ -211,7 +211,8 @@ that are not comparable in Go, such as a Range or a binary String.</p>
 <h2 id="proto">Protobuf messages both ways</h2>
 
 <p>Every class a script defines is a protobuf message, with one field per
-declared field, numbered in declaration order. A class inside
+declared field, numbered from a hash of its name, or by the field's
+<code>number:</code>. A class inside
 <code>module Geo</code> is the message <code>Point</code> in package
 <code>geo</code>.</p>
 
@@ -228,6 +229,11 @@ declared field, numbered in declaration order. A class inside
   <li><code>prog.Encode(v)</code> writes any value, not only an instance,
   in the <code>cameo.Value</code> envelope; <code>prog.Decode</code> reads
   it back.</li>
+  <li><code>protogen.Merge(registered, next)</code> merges two definitions
+  of one message, as two programs that share a store have: the fields
+  both have stay as registered, and the fields only <code>next</code> has
+  are added, numbered from their names. The design document says what
+  it accepts.</li>
 </ul>
 
 <pre class="go"><code>package main

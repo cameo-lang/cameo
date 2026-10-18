@@ -501,6 +501,7 @@ type FieldDecl struct {
 	Pos
 	Type    string   // a scalar type (object.Scalar), or list, set, map, ref, enum
 	Names   []string // one or more field names
+	Number  int64    // number: n, or 0 for the number derived from the name
 	Default Node     // default: expr, or nil
 	Of      string   // list/set element type
 	Key     string   // map key type

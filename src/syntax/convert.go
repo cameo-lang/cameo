@@ -1006,6 +1006,10 @@ func (c *converter) await(n *ast.Call) Node {
 	return &Await{Pos: c.pos(), Recv: args[0], Method: args[1], Args: args[2:], KwArgs: kwargs}
 }
 
+// maxDeclaredNumber is the highest number: a field declaration takes, as
+// protogen.MaxDeclaredNumber, which syntax does not import.
+const maxDeclaredNumber = 4096
+
 func (c *converter) fieldDecl(n *ast.Call) Node {
 	decl := &FieldDecl{Pos: c.pos(), Type: n.Name}
 	args, kwargs, blockArg := c.args(n.Args)
@@ -1042,6 +1046,13 @@ func (c *converter) fieldDecl(n *ast.Call) Node {
 		switch key.Name {
 		case "default":
 			decl.Default = kw.Value
+		case "number":
+			num, ok := kw.Value.(*Int)
+			if !ok || num.Value < 1 || num.Value > maxDeclaredNumber {
+				c.fail("%s: number: is an integer from 1 to %d", n.Name, maxDeclaredNumber)
+				return nil
+			}
+			decl.Number = num.Value
 		case "of":
 			if decl.Type != "list" && decl.Type != "set" {
 				c.fail("%s: of: belongs to list and set fields", n.Name)
@@ -1082,6 +1093,10 @@ func (c *converter) fieldDecl(n *ast.Call) Node {
 			c.fail("%s: unknown option %s:", n.Name, key.Name)
 			return nil
 		}
+	}
+	if decl.Number != 0 && len(decl.Names) > 1 {
+		c.fail("%s: number: belongs to a declaration of one field", n.Name)
+		return nil
 	}
 	switch decl.Type {
 	case "list", "set":
