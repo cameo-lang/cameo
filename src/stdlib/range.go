@@ -71,6 +71,40 @@ func installRange() {
 			}
 			return r(self).Hi, nil
 		}
+		if r(self).Hi.IsZero() {
+			return object.Value{}, ctx.Raise(object.RangeError, "cannot get the last element of endless range")
+		}
+		if len(args) == 1 {
+			if n, ok := args[0].AsInt(); ok && n < 0 {
+				return object.Value{}, ctx.Raise(object.ArgumentError, "negative array size")
+			}
+		}
+		// The last n of a range of 64-bit integers count back from its
+		// end, without making the elements before them.
+		if lo, hi, ok := intEnds(r(self)); ok && len(args) == 1 {
+			lo, okLo := lo.AsInt()
+			hi, okHi := hi.AsInt()
+			if okLo && okHi {
+				// The size, which only bounds n, saturates where hi - lo + 1
+				// leaves int.
+				size := 0
+				if hi >= lo {
+					size = math.MaxInt
+					if d := uint64(hi - lo); d < math.MaxInt {
+						size = int(d) + 1
+					}
+				}
+				n, err := countArg(ctx, args, size)
+				if err != nil {
+					return object.Value{}, err
+				}
+				out := make([]object.Value, n)
+				for i := range out {
+					out[i] = object.Int(hi - int64(n-1-i))
+				}
+				return object.NewList(out...), nil
+			}
+		}
 		elems, err := RangeElems(ctx, r(self))
 		if err != nil {
 			return object.Value{}, err
