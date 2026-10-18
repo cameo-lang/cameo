@@ -80,7 +80,7 @@ out; its `run.rb` checks that the working ones keep working.
 The packages under `src/`: `syntax` is the front end (`syntax.Parse`),
 `object` the value model, `eval` the evaluator and the async scheduler,
 `stdlib` the builtin methods, `protogen` the descriptors, `.proto` text and
-the envelope, `cameo` the host API (`cameo.Load`, `cameo.Run`), and
+the envelope, `cameo` the host API (`cameo.Load`, `cameo.Run`, `cameo.Register`), and
 `cmd/cameo` the binary.
 
 ## Building

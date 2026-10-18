@@ -28,7 +28,9 @@ func File(pkg string, classes []*object.Class) string {
 	imports := map[string]bool{}
 	for _, cls := range classes {
 		for _, dep := range refs(cls) {
-			if p := Package(dep); p != pkg {
+			if n := nativeOf(dep); n != nil {
+				imports[n.md.ParentFile().Path()] = true
+			} else if p := Package(dep); p != pkg {
 				imports[strings.ReplaceAll(p, ".", "/")+".proto"] = true
 			}
 		}
@@ -105,8 +107,8 @@ func writeMessage(b *strings.Builder, cls *object.Class) {
 // package is qualified.
 func typeName(t *object.FieldType, from *object.Class) string {
 	if t.Kind == "ref" {
-		if Package(t.Ref) != Package(from) {
-			return Package(t.Ref) + "." + t.Ref.Name
+		if nativeOf(t.Ref) != nil || Package(t.Ref) != Package(from) {
+			return fullName(t.Ref)
 		}
 		return t.Ref.Name
 	}
