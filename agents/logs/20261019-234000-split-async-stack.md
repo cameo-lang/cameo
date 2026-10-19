@@ -1,7 +1,7 @@
 # Task: rework #106 to #110 into pull requests of one concern each
 
 **Started:** 2026-10-19 23:40:00
-**Ended:** 2026-10-20 00:30:00
+**Ended:** 2026-10-20 00:20:44
 **Strategy:** Refactoring of the history; Bug Fix for the review findings
 **Status:** Completed
 **Complexity:** Medium
@@ -19,7 +19,7 @@ what the reviews confirm.
 - [x] #107 kept whole as #114, moved to the bottom of the stack
 - [x] #108 kept whole as #115, #109 as #116
 - [x] #110 split in two: #117 (procedure and scripts), #118 (results)
-- [x] Code review of #111 to #116; fixes pushed as new commits
+- [x] Code review of every pull request; fixes pushed as new commits
 - [x] make check on every branch; go test -race on src/eval, src/cameo and
   tests on every branch that touches eval
 
@@ -36,6 +36,14 @@ what the reviews confirm.
   lost; 40 reruns passed.
   **Resolution:** TestRunContextStopsTheScript bounded a stop at 2 s and
   could hang; it now fails a case after 5 s instead.
+- **Issue:** The skill of #110 lost a run in two places: a clone of its
+  bundle has no origin/main, and its scp read fib.tsv from the laptop just
+  before deleting the server. run.sh recorded failed runs as zero seconds.
+  **Resolution:** Fixed in #117; run.sh tested on macOS with stand-ins for
+  taskset and GNU time, not on a server.
+- **Issue:** The fib README of #110 gave numbers its results.tsv contradicts
+  (77-116 MB for 42-116 MB) and causes nothing measured.
+  **Resolution:** Corrected in #118 against the committed data.
 - **Issue:** gh pr edit fails for lack of the read:org scope.
   **Resolution:** Edited descriptions through gh api.
 - **Issue:** The stack order put Benchmark between async changes it does
