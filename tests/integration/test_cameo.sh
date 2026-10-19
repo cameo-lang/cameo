@@ -56,4 +56,15 @@ CAMEO
   assert_eq $'{"a":[1,2.5,null],"b":{"c":"é"}}\n{\n  "c": "é"\n}\n'"$script"$':4: unexpected token at \']\' (JSON::ParserError)' "$out"
 }
 
+test_benchmark_reports_the_time_inside_the_script() {
+  local script out
+  script="$(mktemp -d)/bench.cameo"
+  cat >"$script" <<'CAMEO'
+require "benchmark"
+Benchmark.bm(4) { |x| x.report("sum") { (1..1000).sum } }
+CAMEO
+  out=$("$CAMEO_BIN" "$script" 2>&1)
+  assert_match $'^ +user +system +total +real\nsum   +[0-9]+\\.[0-9]{6} +[0-9]+\\.[0-9]{6} +[0-9]+\\.[0-9]{6} \\( +[0-9]+\\.[0-9]{6}\\)$' "$out"
+}
+
 run_tests

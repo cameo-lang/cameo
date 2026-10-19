@@ -80,8 +80,8 @@ mspec's own `before` blocks.
   methods. `format` and `String#%`, `pack` and `unpack`, `rand` and `srand`,
   `Integer()`, `Float()`, `String()` and `Array()`,
   `Process.clock_gettime`.
-- **Libraries**: `require` of `set`, `time`, `pp`, `pathname`, `cgi` and
-  `json`, which cameo builds in. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
+- **Libraries**: `require` of `set`, `time`, `pp`, `pathname`, `cgi`,
+  `json` and `benchmark`, which cameo builds in. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
   do without I/O: `escape` and `unescape`, the URI-component pair,
   `escapeHTML` and `unescapeHTML`, `escapeElement` and `unescapeElement`,
   `rfc1123_date` and `pretty`, with their snake_case names. A Symbol
@@ -91,6 +91,11 @@ mspec's own `before` blocks.
   `pretty_generate` and `JSON()`, with the generator's options, `to_json`
   on every value, and `JSON::ParserError`, `NestingError` and
   `GeneratorError`. Output, parsed values and error messages are Ruby's.
+  `benchmark` is Ruby 3.4's benchmark 0.4.0: `Benchmark.measure`,
+  `realtime`, `bm`, `bmbm` and `benchmark`, and `Benchmark::Tms` with its
+  readers, `format`, `to_a`, `to_h`, arithmetic and `add`. The times are
+  read inside the script, so the interpreter's start is not in them; the
+  CPU times are the whole process's, the work of `async` calls included.
 - **Output**: `puts`, `print`, `p`, `pp`, `warn`.
 
 ## Different in cameo
@@ -161,6 +166,8 @@ q = p.with(x: 3)            # a copy; p is unchanged
   `to_s`. A class that defines `to_json` writes itself, as in Ruby, and
   receives the generator's options as a Hash with `depth:` instead of a
   `JSON::State`; passing it on to `to_json` nests the same way.
+- `Benchmark::Tms#add!` does not exist: it changes its receiver. Use
+  `t = t.add { ... }`. `p` of a `Benchmark::Tms` shows no address.
 - A Symbol becomes a String where a value leaves cameo, in a protobuf
   message or an `async` call, unless an `enum` field declares it.
 
@@ -199,7 +206,7 @@ These are absent, and a script that uses one fails when it reaches it:
   `printf` (`format` exists), `__method__`, `__LINE__`, `Enumerator.new`,
   `Integer()` with a base, `Random` as a class (`rand` and `srand` exist),
   and `autoload`.
-- **Libraries**: `require` of any library but the six above, such as
+- **Libraries**: `require` of any library but the seven above, such as
   `yaml`, raises a `LoadError`.
 
 ## Only in cameo
