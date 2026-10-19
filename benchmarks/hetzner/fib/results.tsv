@@ -1,0 +1,35 @@
+who	cores	script	secs	maxrss_mb	result
+cameo-main	1	seq.rb	1.448	74	3524578
+cameo-main	4	seq.rb	1.094	25	3524578
+cameo-main	16	seq.rb	1.299	26	3524578
+cameo-main	1	list.rb	3.632	53	3524578
+cameo-main	4	list.rb	3.020	25	3524578
+cameo-main	16	list.rb	3.301	27	3524578
+cameo-main	1	coarse.rb	1.455	72	3524578
+cameo-main	4	coarse.rb	0.610	85	3524578
+cameo-main	16	coarse.rb	0.422	258	3524578
+cameo-main	1	async.rb	17.183	1025	514229
+cameo-main	4	async.rb	22.445	1740	514229
+cameo-main	16	async.rb	24.427	1845	514229
+cameo-queue	1	seq.rb	1.463	74	3524578
+cameo-queue	4	seq.rb	1.144	24	3524578
+cameo-queue	16	seq.rb	1.276	27	3524578
+cameo-queue	1	list.rb	3.721	52	3524578
+cameo-queue	4	list.rb	3.134	26	3524578
+cameo-queue	16	list.rb	3.304	26	3524578
+cameo-queue	1	coarse.rb	1.498	128	3524578
+cameo-queue	4	coarse.rb	0.603	78	3524578
+cameo-queue	16	coarse.rb	0.459	150	3524578
+cameo-queue	1	async.rb	1.476	77	514229
+cameo-queue	4	async.rb	0.624	42	514229
+cameo-queue	16	async.rb	0.424	116	514229
+ruby-3.4.11	1	seq.rb	0.155	13	3524578
+ruby-3.4.11	1	list.rb	0.318	13	3524578
+ruby-3.4.11 --yjit	1	seq.rb	0.021	13	3524578
+ruby-3.4.11 --yjit	1	list.rb	0.129	13	3524578
+ruby-4.0.7	1	seq.rb	0.144	15	3524578
+ruby-4.0.7	1	list.rb	0.326	14	3524578
+ruby-4.0.7 --yjit	1	seq.rb	0.021	15	3524578
+ruby-4.0.7 --yjit	1	list.rb	0.120	15	3524578
+ruby-4.0.7 --zjit	1	seq.rb	0.139	15	3524578
+ruby-4.0.7 --zjit	1	list.rb	0.242	16	3524578
