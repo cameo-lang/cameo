@@ -765,7 +765,10 @@ re-opened by accident:
     there whether or not a script requires them. `time` brings
     `Time.parse`, `Time.iso8601` and `Time.strptime`, and `Time.new` reads
     a string as Ruby 3.2's does; `cgi` brings `CGI.escapeHTML`,
-    `unescapeHTML`, `escape`, `unescape` and the URI-component pair.
+    `unescapeHTML`, `escape`, `unescape`, the URI-component pair,
+    `escapeElement`, `unescapeElement`, `rfc1123_date` and `pretty`.
+    Ruby writes the last three with regexps that use lookaround, which
+    cameo's regexps lack, so they are scanned by hand in Go.
   - A call to a method a class lacks goes to the class's own
     `method_missing`, with the name as a symbol, the arguments and the
     block; `super` from it reaches Object's, which raises NoMethodError.

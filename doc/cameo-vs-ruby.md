@@ -81,7 +81,11 @@ mspec's own `before` blocks.
   `Integer()`, `Float()`, `String()` and `Array()`,
   `Process.clock_gettime`.
 - **Libraries**: `require` of `set`, `time`, `pp`, `pathname` and `cgi`,
-  which cameo builds in.
+  which cameo builds in. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
+  do without I/O: `escape` and `unescape`, the URI-component pair,
+  `escapeHTML` and `unescapeHTML`, `escapeElement` and `unescapeElement`,
+  `rfc1123_date` and `pretty`, with their snake_case names. A Symbol
+  passes where these take a String; Ruby raises a TypeError.
 - **Output**: `puts`, `print`, `p`, `pp`, `warn`.
 
 ## Different in cameo
