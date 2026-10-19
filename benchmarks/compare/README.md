@@ -1,11 +1,11 @@
 # cameo against three other Rubies
 
 [compare.rb](compare.rb) runs cameo's supported subset of CRuby's
-benchmarks, the 824 files of [../ruby/works](../ruby/works), on four Rubies:
+benchmarks, the 852 files of [../ruby/works](../ruby/works), on four Rubies:
 
 | Ruby | What it is |
 |---|---|
-| `mri` | the `ruby` on `PATH`; CRuby 3.3.6 for the results below |
+| `mri` | the `ruby` on `PATH`; CRuby 3.4.11 for the results below |
 | `cameo` | this component's interpreter |
 | `warmruby` | CRuby 3.4 compiled to WASI, on wazero, from a module compiled ahead ([../warmruby](../warmruby)) |
 | `rbgo` | go-embedded-ruby v0.6.0, a Ruby interpreter in Go ([../rbgo](../rbgo)) |
@@ -42,26 +42,30 @@ the versions first, which the results do not record.
 
 ## Results
 
-On 2026-10-18, two cases at a time on four cores, mri being CRuby 3.3.6.
-The starts the harness keeps out of every time were mri 0.068 s, cameo
-0.005 s, warmruby 1.384 s and rbgo 0.106 s.
+On 2026-10-19, eight cases at a time on a Hetzner ccx43 (16 dedicated AMD
+EPYC-Milan vCPUs), mri being CRuby 3.4.11 and cameo 65b0249 (see
+[../hetzner](../hetzner)). The starts the harness keeps out
+of every time were mri 0.038 s, cameo 0.006 s, warmruby 0.715 s and rbgo
+0.064 s.
 
 | | mri | cameo | warmruby | rbgo |
 |---|---|---|---|---|
-| ran cleanly | 783 | 824 | 811 | 787 |
-| failed or timed out | 41 | 0 | 13 | 37 |
+| ran cleanly | 843 | 852 | 838 | 815 |
+| failed or timed out | 9 | 0 | 14 | 37 |
 | output differs from CRuby 3.4 | 0 | 0 | 0 | 0 |
-| total seconds, one run of each case | 224 | 464 | 722 | 1085 |
-| geometric mean of time vs mri | 100% | 265% | 708% | 1019% |
-| fastest | 591 | 190 | 9 | 25 |
-| slowest | 9 | 58 | 388 | 360 |
+| total seconds, one run of each case | 81 | 262 | 408 | 653 |
+| geometric mean of time vs mri | 100% | 281% | 732% | 994% |
+| fastest | 666 | 168 | 1 | 8 |
+| slowest | 5 | 59 | 388 | 391 |
 
-cameo takes about two and a half times MRI's time on the typical case, a
-geometric mean of 265% over the 783 cases both run, and is faster in 185 of
-them. That holds across sizes: 257% on the 677 cases MRI runs in under a
-millisecond, 269% on the 43 it takes half a second or more, where warmruby
-takes 539% and rbgo 519%. cameo is faster than MRI in 5 of those 43
-(`gc_hash2` 22%, `vm_dstr_obj` 43%, `string_fstring--fstring_random` 80%).
+cameo takes a little under three times MRI's time on the typical case, a
+geometric mean of 281% over the 843 cases both run, and is faster in 174 of
+them. That holds across sizes: 276% on the 744 cases MRI runs in under a
+millisecond, 279% on the 31 it takes half a second or more, where warmruby
+takes 474% and rbgo 460%. cameo is faster than MRI in 3 of those 31
+(`vm_dstr_obj` 56%, `time_subsec` 69%, `string_fstring--fstring_random`
+91%). The same suite on main (6ffe953) the same day gave cameo 283% and 256.6 s;
+that run is not committed.
 
 The earlier harness took a whole process per run and subtracted the Ruby's
 start, which put cameo at 104% of MRI: on a case of a few microseconds it
@@ -70,15 +74,15 @@ is gone.
 
 Of the cases MRI takes at least 0.1 s, cameo is slowest on
 
-- hashes of a few entries built in a loop (`hash_small8` 29×,
-  `hash_literal_small8` 28×, `hash_small4` 10×), and `values_at` with a
-  range (`array_values_at_range` 27×),
-- method calls in deep recursion (`app_tarai` 14×, `app_tak` 12×, `app_fib`
-  11×),
-- hash lookups (`hash_ident_str` 11×, `hash_ident_sym` 9×) and
-  `Hash#shift` in a loop (`hash_shift_u24` 10×),
-- sorting with a block (`array_sort_block` 9×); sorting floats, which needs
-  no dispatch, takes 155% (`array_sort_float`).
+- hashes of a few entries built in a loop (`hash_literal_small8` 56×,
+  `hash_small8` 32×, `hash_literal_small4` 9×, `hash_small4` 8×), and
+  `values_at` with a range (`array_values_at_range` 12×),
+- method calls in deep recursion (`app_tarai`, `app_tak` and `app_fib`
+  10×),
+- hash lookups (`hash_ident_str` and `hash_ident_sym` 7×, `hash_aref_fix`
+  6×),
+- sorting with a block (`array_sort_block` 7×); sorting floats, which needs
+  no dispatch, takes 109% (`array_sort_float`).
 
 [hotspots.rb](hotspots.rb) runs the slow cases alone, and one of cameo's
 own, [cases/array_sort_string.rb](cases/array_sort_string.rb): the suite
@@ -87,13 +91,10 @@ characters 10000 times, as `array_sort_float` does floats.
 
 What the others fail on:
 
-- MRI 3.3 fails 32 `set` cases that use `it`, the block parameter of 3.4;
-  the eight `Pathname()` cases, which need `require "pathname"`; and
-  `CGI.escape_html`, which needs `require "cgi"`.
-- warmruby fails the eight `Pathname()` cases and `CGI.escape_html`, as 3.4
-  does without the `require`. Its VM fails four more when the harness runs
-  them many times: an out-of-bounds memory access on `app_raise` and
-  `vm_raise1`, and an exception raised outside the script on
+- MRI 3.4 fails the eight `Pathname()` cases, which need
+  `require "pathname"`, and `CGI.escape_html`, which needs `require "cgi"`.
+- warmruby fails the same nine. Its VM fails five more when the harness
+  runs them many times: `app_raise`, `vm_raise1` and `vm_raise2`, and
   `set--divide_2arity_100` and `_1000`. Each passes when run once.
 - rbgo fails `CGI.escape_html`, `Pathname`, lazy `zip`, `Time.strptime`,
   reverse `each` over Bignum ranges and a few more, and times out on two
