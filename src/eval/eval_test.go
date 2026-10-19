@@ -254,6 +254,71 @@ p await(pending)
 `, "40\n")
 }
 
+func TestWorkerSeesTheTopLevelAtItsStart(t *testing.T) {
+	// A worker sees the constants and top-level methods defined before its
+	// async, not those defined after.
+	expectOutput(t, `
+include Cameo
+def twice(n) = n * 2
+LIMIT = 1
+class W
+  def go(n) = [twice(n), LIMIT, await(self, :nested, n)]
+  def nested(n) = twice(n) + LIMIT
+end
+first = async W.new, :go, 1
+LIMIT = 2
+def twice(n) = n * 3
+second = async W.new, :go, 1
+third = async W.new, :go, 2
+class W
+  def go(n) = :redefined
+end
+p await([first, second, third])
+`, "[[2, 1, 3], [3, 2, 5], [6, 2, 8]]\n")
+}
+
+func TestArgumentsCrossAsTheEnvelopeCarriesThem(t *testing.T) {
+	// What a worker gets is what the envelope reads back: a symbol is a
+	// string, an instance has its class's fields. What it cannot carry is
+	// a TypeError at the async call.
+	expectOutput(t, `
+include Cameo
+class Echo
+  def go(*args) = args
+end
+class Point
+  int64 :x
+  string :tag
+end
+p await(Echo.new, :go, nil, true, 7, 2**70, 1.5, "s", "\xff".b, :sym, [1, [2, "t"], :u], {a: 1}, Point.new(x: 1), Echo.new)
+`, "[nil, true, 7, 1180591620717411303424, 1.5, \"s\", \"\\xFF\", \"sym\", [1, [2, \"t\"], \"u\"], {\"a\" => 1}, Point(x: 1, tag: nil), Echo()]\n")
+	expectError(t, "include Cameo\nclass Echo\n  def go(x) = x\nend\nawait Echo.new, :go, Echo\n", "a Class cannot be passed to async (TypeError)")
+	expectError(t, "include Cameo\nanon = Class.new { def go = 1 }\nawait anon.new, :go\n", "has an invalid nested name")
+	expectError(t, "include Cameo\nclass Echo\n  def go(x) = x\nend\nawait Echo.new, :go, Object.new\n", "Object is not a class with fields (TypeError)")
+}
+
+func TestRunReportsFailuresNobodyAwaited(t *testing.T) {
+	// The run waits for every call async started, a worker's included,
+	// and names each failure nobody awaited, in start order.
+	expectOutput(t, `
+include Cameo
+class W
+  def boom(tag) = raise(ArgumentError, tag)
+  def fan = async(self, :boom, "inner")
+end
+async W.new, :boom, "first"
+seen = async W.new, :boom, "awaited"
+begin
+  await seen
+rescue ArgumentError
+end
+await W.new, :fan
+async W.new, :boom, "last"
+`, "cameo: promise 1 (boom) failed and was never awaited: first (ArgumentError)\n"+
+		"cameo: promise 4 (boom) failed and was never awaited: inner (ArgumentError)\n"+
+		"cameo: promise 5 (boom) failed and was never awaited: last (ArgumentError)\n")
+}
+
 func TestPromises(t *testing.T) {
 	// A promise is an Integer that resolve or fail settles once, from the
 	// script or a worker; await takes one or a list.

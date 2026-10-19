@@ -3,7 +3,11 @@ package eval
 import (
 	"errors"
 	"fmt"
+	"maps"
+	"runtime"
+	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/protogen"
@@ -61,8 +65,13 @@ func (p *Promise) SettleLater(f func(*Interp) (object.Value, error)) bool {
 func (p *Promise) wait(in *Interp) (object.Value, *object.Exception, error) {
 	select {
 	case <-p.done:
-	case <-in.stop.ch:
-		return object.Value{}, nil, ErrStopped
+	default:
+		// A settled promise does not take the stop channel's lock.
+		select {
+		case <-p.done:
+		case <-in.stop.ch(p.id):
+			return object.Value{}, nil, ErrStopped
+		}
 	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -86,51 +95,67 @@ func asException(in *Interp, err error) *object.Exception {
 }
 
 // promises is every promise of a run, shared with its workers, so a worker
-// settles a promise its parent awaits. started is the ones async started,
-// in start order, which the run waits for before it ends.
+// settles a promise its parent awaits. Ids count up from 1 in start order.
+// The table is split into shards by id, so goroutines that start and await
+// promises at the same time rarely take the same lock.
 type promises struct {
-	mu      sync.Mutex
-	next    int64
-	byID    map[int64]*Promise
-	started []*Promise
+	next   atomic.Int64
+	shards [64]promiseShard
 }
 
-func newPromises() *promises { return &promises{byID: map[int64]*Promise{}} }
+type promiseShard struct {
+	mu   sync.Mutex
+	byID map[int64]*Promise
+	// The padding keeps two shards' locks off one cache line.
+	_ [48]byte
+}
+
+func newPromises() *promises {
+	t := &promises{}
+	for i := range t.shards {
+		t.shards[i].byID = map[int64]*Promise{}
+	}
+	return t
+}
+
+func (t *promises) shard(id int64) *promiseShard {
+	return &t.shards[uint64(id)%uint64(len(t.shards))]
+}
 
 func (t *promises) add(method string) *Promise {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	t.next++
-	p := &Promise{id: t.next, method: method, done: make(chan struct{})}
-	t.byID[p.id] = p
-	if method != "" {
-		t.started = append(t.started, p)
-	}
+	p := &Promise{id: t.next.Add(1), method: method, done: make(chan struct{})}
+	s := t.shard(p.id)
+	s.mu.Lock()
+	s.byID[p.id] = p
+	s.mu.Unlock()
 	return p
 }
 
 func (t *promises) get(id int64) *Promise {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	return t.byID[id]
+	s := t.shard(id)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.byID[id]
 }
 
 // NewPromise makes a pending promise, which the host settles from any
 // goroutine and hands the script by its ID.
 func (in *Interp) NewPromise() *Promise { return in.promises.add("") }
 
-// waitStarted waits for every promise async started and writes the
-// failures nobody awaited to standard error.
+// waitStarted waits for every promise async started, in start order, and
+// writes the failures nobody awaited to standard error.
 func (in *Interp) waitStarted() error {
 	t := in.promises
-	for i := 0; ; i++ {
-		t.mu.Lock()
-		if i >= len(t.started) {
-			t.mu.Unlock()
-			return nil
+	for id := int64(1); id <= t.next.Load(); id++ {
+		p := t.get(id)
+		for p == nil {
+			// add counted the id and has not stored the promise yet.
+			runtime.Gosched()
+			p = t.get(id)
 		}
-		p := t.started[i]
-		t.mu.Unlock()
+		if p.method == "" {
+			continue
+		}
 		p.mu.Lock()
 		seen := p.awaited
 		p.mu.Unlock()
@@ -142,6 +167,7 @@ func (in *Interp) waitStarted() error {
 			in.Write(true, fmt.Sprintf("cameo: promise %d (%s) failed and was never awaited: %s (%s)\n", p.id, p.method, exc.Message, exc.Cls.QualifiedName()))
 		}
 	}
+	return nil
 }
 
 // cameoIncluded reports whether async and the rest of Cameo are in scope:
@@ -315,13 +341,20 @@ func (in *Interp) start(recvNode, methodNode syntax.Node, argNodes []syntax.Node
 		}
 		return data, nil
 	}
-	recvData, err := encode(recv)
+	cross := func(v object.Value) (crossing, error) {
+		if in.readsBackAsIs(v) {
+			return crossing{v: v}, nil
+		}
+		data, err := encode(v)
+		return crossing{data: data, wire: true}, err
+	}
+	recvC, err := cross(recv)
 	if err != nil {
 		return nil, err
 	}
-	argData := make([][]byte, len(args))
+	argC := make([]crossing, len(args))
 	for i, a := range args {
-		if argData[i], err = encode(a); err != nil {
+		if argC[i], err = cross(a); err != nil {
 			return nil, err
 		}
 	}
@@ -335,37 +368,79 @@ func (in *Interp) start(recvNode, methodNode syntax.Node, argNodes []syntax.Node
 	scope := methodScope(env)
 	scope.promises = append(scope.promises, p)
 	worker := in.worker()
-	go worker.run(p, recvData, method, argData, kwData)
+	go worker.run(p, recvC, method, argC, kwData)
 	return p, nil
 }
 
-// worker makes the interpreter a call async started runs in: the same
-// output, the same classes (immutable once bound) through a snapshot of
-// the constants, the same promises, its own scopes.
-func (in *Interp) worker() *Interp {
+// topLevel is a copy of an interpreter's top level: its constants, its
+// top-level methods and whether it included Cameo. Workers share one and
+// only read it.
+type topLevel struct {
+	consts    map[string]object.Value
+	mainClass *object.Class
+	main      *object.Instance
+	cameoTop  bool
+}
+
+// snapshot returns the top level for a worker: the one taken for the
+// last worker, or a new copy when the top level changed since.
+func (in *Interp) snapshot() *topLevel {
+	if in.snap == nil {
+		mainClass := copyMainClass(in.mainClass)
+		in.snap = &topLevel{
+			consts:    maps.Clone(in.consts),
+			mainClass: mainClass,
+			main:      &object.Instance{Cls: mainClass},
+			cameoTop:  in.cameoTop,
+		}
+	}
+	return in.snap
+}
+
+// changeTop is called before the top level changes. The parent's next
+// worker then takes a new snapshot; a worker, whose top level is a
+// snapshot other workers read, first takes a copy of its own.
+func (in *Interp) changeTop() {
+	if in.snap != nil && in.snap.mainClass == in.mainClass {
+		in.consts = maps.Clone(in.consts)
+		in.mainClass = copyMainClass(in.mainClass)
+		in.main = &object.Instance{Cls: in.mainClass}
+	}
+	in.snap = nil
+}
+
+// copyMainClass returns a new class of the top-level self with c's methods
+// and includes.
+func copyMainClass(c *object.Class) *object.Class {
 	mainClass := object.NewClass("Object", object.ObjectClass)
 	mainClass.Digest = "main"
-	for _, m := range in.mainClass.Methods {
-		mainClass.SetMethod(m)
-	}
-	mainClass.Includes = append(mainClass.Includes, in.mainClass.Includes...)
+	// The new class has no lookups cached yet, so its methods go in
+	// directly: SetMethod would invalidate every class's cache.
+	maps.Copy(mainClass.Methods, c.Methods)
+	mainClass.Includes = append(mainClass.Includes, c.Includes...)
+	return mainClass
+}
+
+// worker makes the interpreter a call async started runs in: the same
+// output, the same classes (immutable once bound), the top level as it is
+// now, the same promises, its own scopes.
+func (in *Interp) worker() *Interp {
+	top := in.snapshot()
 	w := &Interp{
 		stdout:    in.stdout,
 		stderr:    in.stderr,
 		outMu:     in.outMu,
 		file:      in.file,
-		mainClass: mainClass,
-		main:      &object.Instance{Cls: mainClass},
+		mainClass: top.mainClass,
+		main:      top.main,
 		top:       NewEnv(nil),
-		consts:    make(map[string]object.Value, len(in.consts)),
+		consts:    top.consts,
 		proto:     in.proto,
 		promises:  in.promises,
-		cameoTop:  in.cameoTop,
+		cameoTop:  top.cameoTop,
 		code:      in.code,
 		stop:      in.stop,
-	}
-	for name, v := range in.consts {
-		w.consts[name] = v
+		snap:      top,
 	}
 	// The worker's generator is seeded from this one, here on the
 	// parent's goroutine, so a seeded script stays reproducible.
@@ -374,20 +449,20 @@ func (in *Interp) worker() *Interp {
 }
 
 // run is the body of a worker's goroutine: decode, call, settle.
-func (w *Interp) run(p *Promise, recvData []byte, method string, argData [][]byte, kwData []byte) {
-	result, exc := w.runCall(recvData, method, argData, kwData)
+func (w *Interp) run(p *Promise, recv crossing, method string, args []crossing, kwData []byte) {
+	result, exc := w.runCall(recv, method, args, kwData)
 	p.settle(result, exc, nil)
 }
 
-func (w *Interp) runCall(recvData []byte, method string, argData [][]byte, kwData []byte) (object.Value, *object.Exception) {
+func (w *Interp) runCall(recvC crossing, method string, argC []crossing, kwData []byte) (object.Value, *object.Exception) {
 	dec := w.Decoder()
-	recv, err := dec.Decode(recvData)
+	recv, err := recvC.value(dec)
 	if err != nil {
 		return object.Value{}, w.raise(object.TypeError, 0, "%s", err.Error()).(*object.Exception)
 	}
-	args := make([]object.Value, len(argData))
-	for i, d := range argData {
-		if args[i], err = dec.Decode(d); err != nil {
+	args := make([]object.Value, len(argC))
+	for i, c := range argC {
+		if args[i], err = c.value(dec); err != nil {
 			return object.Value{}, w.raise(object.TypeError, 0, "%s", err.Error()).(*object.Exception)
 		}
 	}
@@ -426,9 +501,59 @@ func (w *Interp) runCall(recvData []byte, method string, argData [][]byte, kwDat
 	return result, nil
 }
 
+// crossing is a value on its way to a worker: the value itself when it
+// reads back from the envelope unchanged, its wire form otherwise.
+type crossing struct {
+	v    object.Value
+	data []byte
+	wire bool
+}
+
+// value returns the value the worker gets.
+func (c crossing) value(dec *protogen.Decoder) (object.Value, error) {
+	if !c.wire {
+		return c.v, nil
+	}
+	return dec.Decode(c.data)
+}
+
+// readsBackAsIs reports whether v is equal to what a worker decodes from
+// its wire form, so the worker can take v itself: values are immutable,
+// and the round trip costs more than most calls async starts. A symbol
+// reads back as a string and a hash's symbol keys as strings, so neither
+// is one; an instance is one when it has no fields and its class is one
+// the script defined and the worker finds by name and digest.
+func (in *Interp) readsBackAsIs(v object.Value) bool {
+	switch v.Kind() {
+	case object.KindBool, object.KindInt, object.KindBig, object.KindFloat, object.KindString:
+		return true
+	case object.KindList:
+		for _, e := range v.List().Elems {
+			if !in.readsBackAsIs(e) {
+				return false
+			}
+		}
+		return true
+	case object.KindInstance:
+		inst := v.Instance()
+		cls := inst.Cls
+		return len(cls.Fields) == 0 && scriptDefined(cls) && in.FindClass(cls.QualifiedName(), cls.Digest) == cls
+	}
+	return v.IsNil()
+}
+
+// scriptDefined reports whether the script defined cls: a builtin class
+// has no digest, and one the host registered a "host:" one.
+func scriptDefined(cls *object.Class) bool {
+	return cls.Digest != "" && !strings.HasPrefix(cls.Digest, "host:")
+}
+
 // travels is nil when v can cross to another interpreter, the exception to
 // raise when it cannot: a Proc or a class stays where it was made.
 func (in *Interp) travels(v object.Value, what string) *object.Exception {
+	if in.readsBackAsIs(v) {
+		return nil
+	}
 	_, err := in.Encoder().Encode(v)
 	if err == nil {
 		return nil

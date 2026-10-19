@@ -154,12 +154,14 @@ func (in *Interp) constTable(fr *Frame) map[string]object.Value {
 	if len(fr.Lexical) > 0 {
 		return fr.Lexical[len(fr.Lexical)-1].Consts
 	}
+	in.changeTop()
 	return in.consts
 }
 
 func (in *Interp) evalDef(n *syntax.Def, fr *Frame) (object.Value, error) {
 	target := fr.DefTarget
-	if target == nil {
+	if target == nil || target == in.mainClass {
+		in.changeTop()
 		target = in.mainClass
 	}
 	table := target.Methods
