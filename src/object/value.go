@@ -51,10 +51,9 @@ const (
 	// KindEnumerator is an Enumerator or an Enumerator::Lazy.
 	KindEnumerator
 	KindASCII
-	// KindProc and KindProcess are the evaluator's: a block or lambda and
-	// an async process. The object is opaque here; see Opaque.
+	// KindProc is the evaluator's: a block or lambda. The object is opaque
+	// here; see Opaque.
 	KindProc
-	KindProcess
 )
 
 func (k Kind) String() string {
@@ -103,8 +102,6 @@ func (k Kind) String() string {
 		return "ascii"
 	case KindProc:
 		return "proc"
-	case KindProcess:
-		return "process"
 	}
 	return "kind(" + strconv.Itoa(int(k)) + ")"
 }
@@ -193,8 +190,6 @@ func (v Value) Class() *Class {
 		return EnumeratorClass
 	case KindProc:
 		return ProcClass
-	case KindProcess:
-		return ProcessClass
 	}
 	return NilClass
 }

@@ -79,7 +79,7 @@ Every value is immutable. The kinds of value are:
 | Regexp | in `cameo.Value`, a `Regexp` message: source and options; a MatchData does not travel |
 | Time | in `cameo.Value`, a `Time` message: seconds, nanoseconds, UTC offset and zone; there is no field type for it yet |
 | an instance of a user class | the message that class declares |
-| Class, Proc, AsyncProcess, Enumerator, Encoding, Pathname | not serialisable; see *Async* |
+| Class, Proc, Enumerator, Encoding, Pathname | not serialisable; see *Async* |
 
 Equality is structural everywhere: two lists with equal elements are `==`,
 two instances of one class with equal fields are `==` and hash alike. There
@@ -319,46 +319,67 @@ and type violations) are predefined; a script can subclass `StandardError`.
 
 ## Async
 
-`AsyncProcess` is a native class. A process runs one method call on one
-receiver on its own goroutine, with its own interpreter state, over copies of
-the arguments:
+Concurrency is the Cameo module's, which a script includes, at the top level
+for every method or in a class body for that class; `Cameo.async` and
+`Cameo.await` need no include. A promise is a result to come, and the script
+holds it by its id, an Integer:
 
 ```ruby
+include Cameo
 job = async worker, :process, item, retries: 3   # starts worker.process(item, retries: 3)
 result = await job                                # the return value, or re-raises
 result = await worker, :process, item            # async + await in one step
-results = await :all                             # every process started in this scope
+results = await [job1, job2]                      # each result, in order
+results = await :all                             # every call started in this scope
+p = promise                                      # a pending promise
+resolve p, value                                 # settles it with value
+fail p, ArgumentError, "no"                      # settles it with an exception
 ```
 
-`async` and `await` are intrinsics, not methods, so `async xxx, :yyy, *args`
-needs no parentheses. The receiver, the method name and the arguments are
-serialised through the protobuf value envelope before the goroutine starts,
-and deserialised on the other side; a Proc, a Class, an AsyncProcess or a
+`async` runs one method call on one receiver on its own goroutine, with its
+own interpreter state, over copies of the arguments, and returns the call's
+promise. `async` and `await` are intrinsics, not methods, so `async xxx,
+:yyy, *args` needs no parentheses. The receiver, the method name and the
+arguments are serialised through the protobuf value envelope before the
+goroutine starts, and deserialised on the other side; a Proc, a Class or a
 block among them is an error at the `async` call site, not inside the job.
 The receiver is a value (any serialisable value, including an instance of a
 class), and the method is looked up on its class in the worker. Classes are
 shared by every worker: the class table is built when the script loads and is
 immutable afterwards, so it needs no copying and no lock.
 
-`await job` blocks until the process finishes and returns its value; if the
-method raised, `await` raises the same exception class with the same message
-in the awaiting scope. Awaiting a process twice returns the same result.
+A promise is an Integer so that it travels: a script passes one to a worker,
+which settles it with `resolve` or `fail`, and a Go host returns one from a
+method and settles it from a goroutine of its own when its I/O is done
+(`prog.Promise()`, `Resolve`, `Fail`). That is how a script waits for what
+cameo does not do itself: the host's method starts the work and returns at
+once, so a script that starts several before it awaits any has them run at
+the same time. Every promise of a run, the workers' included, is in one
+table; a promise is settled once, and settling it again raises.
 
-`await :all` waits for every process started in the current method (its
-blocks included, since a block is part of the method that runs it) or at
+`await promise` blocks until the promise is settled and returns its value;
+if it failed, `await` raises the same exception class with the same message
+in the awaiting scope. Awaiting a promise twice returns the same result.
+`await [a, b]` waits for each and returns their results in order, raising
+the first failure once all are settled. A promise nobody settles blocks its
+`await` until the run is stopped.
+
+`await :all` waits for every promise `async` started in the current method
+(its blocks included, since a block is part of the method that runs it) or at
 the top level, that has not been awaited yet, and returns their results as
 a list in start order. If any raised, `await :all` waits for all of them first and
 then raises the first exception in start order. A scope that returns with
-processes still running leaves them running: a process is a value, so a
+calls still running leaves them running: a promise is a value, so a
 caller that receives one may still await it, and one nobody awaits is
 waited for when the run ends, with its failure written to standard error.
-`cameo` exits when the script's top-level scope finishes and every process
-has. A process's result has to be able to travel back, so a method that
-returns a Proc or a class to a process raises a `TypeError` there.
+`cameo` exits when the script's top-level scope finishes and every call
+`async` started has. A call's result has to be able to travel back, so a
+method that returns a Proc or a class to a worker raises a `TypeError` there;
+`resolve` takes the same values.
 
-A process has no handle to its parent, no shared memory, and no way to send
-anything but its return value. Starting processes from inside a process is
-allowed and nests the same way.
+A worker has no handle to its parent and no shared memory; what it sends
+back is its return value and the promises it settles. Starting calls from
+inside a worker is allowed and nests the same way.
 
 ## Protobuf
 
@@ -594,7 +615,7 @@ One Go module, `github.com/cameo-lang/cameo`, with the packages under `src/`:
 | `object` | the value model: a `Value` is a tagged 24-byte struct (kind, integer payload, pointer), so an integer, a float, a boolean and nil never touch the heap and a string shares its bytes; kinds, structural equality, hashing, the class table, dynamic messages, conversion to and from `cameo.Value` and Go values |
 | `eval` | the evaluator: compiles each node to a closure on first use (`compile.go`), with a tree walker for the rare kinds; scopes, method dispatch with a per-class lookup cache, blocks, exceptions, intrinsics (`with`, `async`, `await`, the field helpers) |
 | `stdlib` | Kernel, Integer, Float, String, Symbol, Array, Hash, Set, Range, Time, Math, Regexp, MatchData, Enumerable, Proc, the exception classes |
-| `eval/async.go` | the scheduler: `AsyncProcess`, the per-scope process list, the worker interpreter a process runs in, goroutine lifecycle |
+| `eval/async.go` | the scheduler: promises and the run's table of them, the per-scope list `await :all` reads, the worker interpreter a call runs in, goroutine lifecycle |
 | `protogen` | descriptors from class declarations, `.proto` text, the `cameo.Value` envelope (`proto/cameo.proto`, compiled in) |
 | `cmd/cameo` | the binary: `cameo script.cameo`, `cameo check script.cameo`, `cameo proto script.cameo` |
 
@@ -661,6 +682,16 @@ re-opened by accident:
   `initialize`, which only `new` runs on an instance under construction.
   Leaving it out cost scripts that pick a method from data; the parser
   cannot see the name, so the refusal happens when the call runs.
+- **Concurrency is a module a script includes.** `include Cameo` brings
+  `async`, `await`, `promise`, `resolve` and `fail`; without it they are
+  unknown, so a script states that it runs work concurrently. `async`
+  returns a promise's id, an Integer, rather than a process object, so a
+  promise travels to a worker or to the host like any other value, and
+  whoever has the work settles it: a worker by returning, a script with
+  `resolve` and `fail`, a Go host with `Promise.Resolve` and `Fail`. A
+  host's I/O goes through promises, since cameo does none itself. `fail`
+  with an Integer first settles a promise; with anything else it raises,
+  as Ruby's `fail` does.
 - **No instance variables.** `initialize` sets a field with `self.x = v`,
   and a field is read with its reader, so `@` is free for later use. Ruby
   code that sets `@x` in `initialize` no longer runs unchanged; it never

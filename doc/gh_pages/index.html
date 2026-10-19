@@ -29,7 +29,9 @@ rebinds the local variable it is called on to a changed copy; every other
 reference keeps what it held. Classes declare typed fields, and every
 instance is a protobuf message.</p>
 
-<pre class="cameo"><code>class Point
+<pre class="cameo"><code>include Cameo                  # async, await and promises
+
+class Point
   int :x, :y
 
   def +(other) = Point.new(x: x + other.x, y: y + other.y)
@@ -41,7 +43,7 @@ a.x = 10                       # rebinds a to a copy; b keeps x: 1
 c = a.with { |p| { y: p.y * 5 } }
 
 p a, b, c
-job = async a, :+, c           # a.+(c) on a goroutine of its own
+job = async a, :+, c           # a.+(c) on a goroutine; job is its promise
 p await job</code></pre>
 <pre class="output"><code>Point(x: 10, y: 2)
 Point(x: 1, y: 2)

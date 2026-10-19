@@ -132,11 +132,12 @@ func TestRunContextStopsTheScript(t *testing.T) {
 	// A script that never ends stops when its context does, in a loop, a
 	// block or a method, past any rescue and in its workers.
 	scripts := map[string]string{
-		"while":  "while true\nend\n",
-		"block":  "loop { }\n",
-		"rescue": "begin\n  loop { }\nrescue Exception\n  puts :caught\nend\n",
-		"method": "def spin(n) = n.times { }\nwhile true\n  spin(1)\nend\n",
-		"worker": "class W\n  def go = loop { }\nend\nawait(async(W.new, :go))\n",
+		"while":   "while true\nend\n",
+		"block":   "loop { }\n",
+		"rescue":  "begin\n  loop { }\nrescue Exception\n  puts :caught\nend\n",
+		"method":  "def spin(n) = n.times { }\nwhile true\n  spin(1)\nend\n",
+		"worker":  "include Cameo\nclass W\n  def go = loop { }\nend\nawait(async(W.new, :go))\n",
+		"promise": "include Cameo\nawait promise\n",
 	}
 	for name, src := range scripts {
 		var out bytes.Buffer

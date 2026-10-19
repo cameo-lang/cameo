@@ -193,8 +193,12 @@ These are absent, and a script that uses one fails when it reaches it:
 - Typed fields, with every class a protobuf message: `to_proto`,
   `from_proto`, and `Point.proto` for its `.proto` text.
 - `with`, which returns a copy with some fields changed.
-- `async receiver, :method, args…` runs a method on its own goroutine;
-  `await` collects the result, and `await :all` every one.
+- The Cameo module, which a script includes: `async receiver, :method,
+  args…` runs a method on its own goroutine and returns its promise, an
+  Integer; `await` collects a promise's result, or a list's, and `await
+  :all` every one the scope started; `promise`, `resolve` and `fail` make
+  and settle a promise by hand, and a Go host settles the promises its
+  methods return when their I/O is done.
 - The Go host API: a Go program loads a script, calls into it, and passes
   protobuf messages both ways. A host can give the script a module of its
   own, whose methods are Go functions, and native classes: classes whose

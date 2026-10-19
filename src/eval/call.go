@@ -257,6 +257,10 @@ func (in *Interp) call(fr *Frame, recv object.Value, name string, args []object.
 	m := in.findMethod(recv, name)
 	if m == nil && selfCall {
 		m = in.mainClass.Methods[name]
+		// Cameo, included at the top level, answers in every method.
+		if m == nil && in.cameoTop {
+			m = object.CameoModule.Lookup(name)
+		}
 	}
 	if m == nil {
 		if name == "initialize" {

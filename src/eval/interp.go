@@ -32,10 +32,13 @@ type Interp struct {
 	// lexical scopes and before the builtin classes.
 	consts map[string]object.Value
 	proto  *protogen.Registry
-	// procs is every process the script started, shared with its workers,
-	// so the run can wait for all of them and report the failures nobody
-	// awaited.
-	procs *processList
+	// promises is every promise of the run, shared with its workers, so the
+	// run can wait for the calls async started and report the failures
+	// nobody awaited.
+	promises *promises
+	// cameoTop is set once the script included Cameo at the top level,
+	// which brings async and the rest of Cameo to every method.
+	cameoTop bool
 	// code is the compiled program, shared with the workers.
 	code *code
 	// rng is this interpreter's random number generator and seed the seed
@@ -45,8 +48,8 @@ type Interp struct {
 	// loaded is the libraries require has loaded, which a second require
 	// of answers false.
 	loaded map[string]bool
-	// stop is set to end the run, and shared with the workers; see Stop.
-	stop *atomic.Bool
+	// stop ends the run, and is shared with the workers; see Stop.
+	stop *stopper
 	// last is the value of the last top-level expression Run evaluated.
 	last object.Value
 }
@@ -72,14 +75,29 @@ var ErrStopped = errors.New("the script was stopped")
 
 // Stop ends the run, and the run of every worker it started: each stops
 // at its next loop pass, method call or block call with ErrStopped.
-func (in *Interp) Stop() { in.stop.Store(true) }
+func (in *Interp) Stop() { in.stop.stop() }
 
 // stopped returns ErrStopped once Stop was called.
 func (in *Interp) stopped() error {
-	if in.stop.Load() {
+	if in.stop.flag.Load() {
 		return ErrStopped
 	}
 	return nil
+}
+
+// stopper is a run's stop: a flag the loops read, and a channel that wakes
+// whatever awaits a promise.
+type stopper struct {
+	flag atomic.Bool
+	once sync.Once
+	ch   chan struct{}
+}
+
+func newStopper() *stopper { return &stopper{ch: make(chan struct{})} }
+
+func (s *stopper) stop() {
+	s.flag.Store(true)
+	s.once.Do(func() { close(s.ch) })
 }
 
 // New makes an interpreter writing to stdout and stderr.
@@ -96,9 +114,9 @@ func New(stdout, stderr io.Writer) *Interp {
 		top:       NewEnv(nil),
 		consts:    map[string]object.Value{},
 		proto:     protogen.NewRegistry(),
-		procs:     &processList{},
+		promises:  newPromises(),
 		code:      &code{},
-		stop:      &atomic.Bool{},
+		stop:      newStopper(),
 	}
 	in.Srand(rand.Uint64())
 	return in
@@ -125,6 +143,12 @@ func (in *Interp) Run(file string, prog *syntax.Program) error {
 	v, err := in.code.body(prog, prog.Body)(in, in.top, fr)
 	if err == nil {
 		in.last = v
+	}
+	// A run that ends cleanly ends when every call async started has; a
+	// failure nobody awaited goes to standard error. One that raised
+	// reports its error at once.
+	if err == nil {
+		err = in.waitStarted()
 	}
 	if c, ok := err.(*control); ok {
 		if c.kind == ctrlReturn {

@@ -165,8 +165,8 @@ func TestStringsCompareAcrossEncodings(t *testing.T) {
 
 func TestListKinds(t *testing.T) {
 	// The kinds fit below the two bits Kinds keeps for itself.
-	if KindProcess >= 30 {
-		t.Fatalf("Kind %d does not fit in Kinds", KindProcess)
+	if KindProc >= 30 {
+		t.Fatalf("Kind %d does not fit in Kinds", KindProc)
 	}
 	l := NewList(Int(1), Float(2), StringOf(KindASCII, "a"), Nil).List()
 	if want := Kinds(1<<KindInt | 1<<KindFloat | 1<<KindASCII | 1<<KindNil); l.Kinds() != want || l.Kinds() != want {

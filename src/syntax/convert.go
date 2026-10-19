@@ -474,6 +474,12 @@ func (c *converter) call(n *ast.Call) Node {
 	if c.interpolating > 0 && n.Recv == nil && len(n.Args) == 0 && n.Block == nil && !n.Paren {
 		return &VarOrCall{c.pos(), name}
 	}
+	if cnst, ok := n.Recv.(*ast.ConstRef); ok && cnst.Name == "Cameo" && (name == "async" || name == "await") {
+		if name == "async" {
+			return c.async(n, true)
+		}
+		return c.await(n, true)
+	}
 	if n.Recv == nil {
 		switch name {
 		case "defined?":
@@ -487,9 +493,9 @@ func (c *converter) call(n *ast.Call) Node {
 			}
 			return &Lambda{c.pos(), c.block(n.Block), name == "lambda"}
 		case "async":
-			return c.async(n)
+			return c.async(n, false)
 		case "await":
-			return c.await(n)
+			return c.await(n, false)
 		case "attr_reader", "attr_writer", "attr_accessor", "attr":
 			c.fail("%s is not supported: a field declaration defines its reader, and there are no setters", name)
 			return nil
@@ -501,7 +507,9 @@ func (c *converter) call(n *ast.Call) Node {
 				return c.reserved(n)
 			}
 		case "include", "extend":
-			if c.inClassOrModuleBody() {
+			// At the top level include takes Cameo, which the evaluator
+			// checks; see Include.
+			if c.inClassOrModuleBody() || name == "include" && c.top().kind == ctxTop {
 				return c.include(n)
 			}
 		}
@@ -959,14 +967,16 @@ func isPlainName(name string) bool {
 	return true
 }
 
-func (c *converter) async(n *ast.Call) Node {
+// async converts `async recv, :method, *args`, and Cameo.async when
+// qualified, which needs no include Cameo.
+func (c *converter) async(n *ast.Call, qualified bool) Node {
 	if n.Block != nil {
-		c.fail("async takes no block: a process runs a method of a value")
+		c.fail("async takes no block: a worker runs a method of a value")
 		return nil
 	}
 	args, kwargs, blockArg := c.args(n.Args)
 	if blockArg != nil {
-		c.fail("async takes no &block: a process runs a method of a value")
+		c.fail("async takes no &block: a worker runs a method of a value")
 		return nil
 	}
 	if len(args) < 2 {
@@ -977,10 +987,10 @@ func (c *converter) async(n *ast.Call) Node {
 		c.fail("async: the receiver cannot be a splat")
 		return nil
 	}
-	return &Async{Pos: c.pos(), Recv: args[0], Method: args[1], Args: args[2:], KwArgs: kwargs}
+	return &Async{Pos: c.pos(), Qualified: qualified, Recv: args[0], Method: args[1], Args: args[2:], KwArgs: kwargs}
 }
 
-func (c *converter) await(n *ast.Call) Node {
+func (c *converter) await(n *ast.Call, qualified bool) Node {
 	if n.Block != nil {
 		c.fail("await takes no block")
 		return nil
@@ -992,23 +1002,23 @@ func (c *converter) await(n *ast.Call) Node {
 	}
 	switch {
 	case len(args) == 0:
-		c.fail("await takes a process, or :all, or a receiver with a method name and arguments")
+		c.fail("await takes a promise, a list of promises, :all, or a receiver with a method name and arguments")
 		return nil
 	case len(args) == 1:
 		if s, ok := args[0].(*Sym); ok && s.Name == "all" {
-			return &AwaitAll{c.pos()}
+			return &AwaitAll{c.pos(), qualified}
 		}
 		if len(kwargs) > 0 {
-			c.fail("await process takes no keyword arguments")
+			c.fail("await promise takes no keyword arguments")
 			return nil
 		}
-		return &Await{Pos: c.pos(), Process: args[0]}
+		return &Await{Pos: c.pos(), Qualified: qualified, Promise: args[0]}
 	}
 	if _, isSplat := args[0].(*Splat); isSplat {
 		c.fail("await: the receiver cannot be a splat")
 		return nil
 	}
-	return &Await{Pos: c.pos(), Recv: args[0], Method: args[1], Args: args[2:], KwArgs: kwargs}
+	return &Await{Pos: c.pos(), Qualified: qualified, Recv: args[0], Method: args[1], Args: args[2:], KwArgs: kwargs}
 }
 
 // maxDeclaredNumber is the highest number: a field declaration takes, as

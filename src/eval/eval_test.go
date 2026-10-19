@@ -143,6 +143,7 @@ func TestBigIntegers(t *testing.T) {
 	// A big integer travels to a process and back; a float field takes one,
 	// an int field, a protobuf int64, does not.
 	src := `
+include Cameo
 class Twice
   def go(n) = n * 2
 end
@@ -224,6 +225,79 @@ p send(:helper, 4), %i[upcase reverse].map { |m| "abc".send(m) }
 	}
 }
 
+func TestCameoIsIncluded(t *testing.T) {
+	// async and await come from Cameo: a script includes it at the top
+	// level, for every method, or in a class body, for that class, or
+	// writes Cameo.async.
+	expectError(t, "class W\n  def go = 1\nend\nasync W.new, :go\n", "async comes from the Cameo module: include Cameo, or call Cameo.async (NoMethodError)")
+	expectError(t, "include Comparable\n", "include at the top level takes Cameo")
+	expectOutput(t, `
+class W
+  def go(n) = n + 1
+end
+p Cameo.await(Cameo.async(W.new, :go, 1))
+class Boss
+  include Cameo
+  def run = await(W.new, :go, 2)
+end
+p Boss.new.run
+`, "2\n3\n")
+	expectOutput(t, `
+include Cameo
+class W
+  def go(n) = n * 10
+  def relay(promise) = resolve(promise, await(self, :go, 4))
+end
+pending = promise
+async W.new, :relay, pending
+p await(pending)
+`, "40\n")
+}
+
+func TestPromises(t *testing.T) {
+	// A promise is an Integer that resolve or fail settles once, from the
+	// script or a worker; await takes one or a list.
+	expectOutput(t, `
+include Cameo
+class Courier
+  def deliver(promise, v) = resolve(promise, v)
+  def lose(promise) = fail(promise, KeyError, "lost")
+end
+a = promise
+b = promise
+async Courier.new, :deliver, a, [1, {x: 2}]
+async Courier.new, :deliver, b, "two"
+p a, b, await([a, b])
+c = promise
+async Courier.new, :lose, c
+begin
+  await [a, c]
+rescue KeyError => e
+  p e.message
+end
+d = promise
+fail d, "plain"
+begin
+  await d
+rescue => e
+  p e.class
+end
+begin
+  fail "not a promise"
+rescue => e
+  p e.message
+end
+`, "1\n2\n[[1, {\"x\" => 2}], \"two\"]\n\"lost\"\nRuntimeError\n\"not a promise\"\n")
+	for src, want := range map[string]string{
+		"include Cameo\np = promise\nresolve(p, 1)\nresolve(p, 2)\n": "promise 1 is settled already (ArgumentError)",
+		"include Cameo\nawait 7\n":                                   "no promise 7 (ArgumentError)",
+		"include Cameo\nawait \"x\"\n":                               "a promise is the Integer async or promise returned, not an instance of String (TypeError)",
+		"include Cameo\nresolve(promise, -> { 1 })\n":                "resolve got a Proc, which cannot be passed back (TypeError)",
+	} {
+		expectError(t, src, want)
+	}
+}
+
 func TestFileIsTheScript(t *testing.T) {
 	// __FILE__ is the script's path, as it was given, which File's path
 	// functions take apart.
@@ -233,6 +307,7 @@ func TestFileIsTheScript(t *testing.T) {
 func TestTimeCrossesAsync(t *testing.T) {
 	// A time travels to a process and back with its instant and offset.
 	src := `
+include Cameo
 class Later
   def go(t) = t + 60
 end
@@ -247,6 +322,7 @@ func TestRandomIsSeedable(t *testing.T) {
 	// The same seed gives the same draws, in the script and in its
 	// processes; srand returns the previous seed.
 	src := `
+include Cameo
 class Draw
   def go(n) = (1..n).map { rand(1000) }
 end

@@ -1,8 +1,6 @@
 package eval
 
 import (
-	"unsafe"
-
 	"errors"
 	"fmt"
 	"sync"
@@ -12,129 +10,214 @@ import (
 	"github.com/cameo-lang/cameo/src/syntax"
 )
 
-// Process is an AsyncProcess: one method call running on its own
-// goroutine, in an interpreter of its own, over copies of its arguments.
-type Process struct {
-	id     int
+// Promise is a result a script awaits: the call async started on a worker,
+// or one a script, a worker or the host settles with resolve or fail. The
+// script holds its id, an Integer, which travels to workers and to the host
+// as any other value does.
+type Promise struct {
+	id int64
+	// method is the method async runs; "" for a promise made by promise.
 	method string
 	done   chan struct{}
 	mu     sync.Mutex
-	result object.Value
-	err    *object.Exception
-	// awaited is set once something waited for the process, so await :all
+	// settled is set by the first resolve or fail, or when the worker
+	// returns; done closes then.
+	settled bool
+	result  object.Value
+	err     *object.Exception
+	// later, when set, makes the result on the goroutine that awaits: the
+	// host settles with Go values, which only an interpreter converts.
+	later func(*Interp) (object.Value, error)
+	// awaited is set once something waited for the promise, so await :all
 	// and the end of the run know whose failure nobody saw.
 	awaited bool
 }
 
-// processValue wraps a process as a value; process and asProcess read it
-// back.
-func processValue(p *Process) object.Value {
-	return object.Opaque(object.KindProcess, unsafe.Pointer(p))
+// ID is the promise's id, the Integer a script awaits.
+func (p *Promise) ID() int64 { return p.id }
+
+// settle settles the promise once; it reports false when it was settled
+// already.
+func (p *Promise) settle(result object.Value, exc *object.Exception, later func(*Interp) (object.Value, error)) bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.settled {
+		return false
+	}
+	p.settled, p.result, p.err, p.later = true, result, exc, later
+	close(p.done)
+	return true
 }
 
-func process(v object.Value) *Process {
-	p, ok := asProcess(v)
-	if !ok {
-		panic("eval: " + v.Kind().String() + " read as process")
+// SettleLater settles the promise with a result made on the goroutine that
+// awaits it: an error that is an *object.Exception raises it, any other a
+// RuntimeError. It reports false when the promise was settled already.
+func (p *Promise) SettleLater(f func(*Interp) (object.Value, error)) bool {
+	return p.settle(object.Value{}, nil, f)
+}
+
+// wait blocks until the promise is settled, or the run is stopped, and
+// returns its result or the exception it failed with.
+func (p *Promise) wait(in *Interp) (object.Value, *object.Exception, error) {
+	select {
+	case <-p.done:
+	case <-in.stop.ch:
+		return object.Value{}, nil, ErrStopped
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.later != nil {
+		v, err := p.later(in)
+		p.later = nil
+		p.result, p.err = v, asException(in, err)
+	}
+	p.awaited = true
+	return p.result, p.err, nil
+}
+
+func asException(in *Interp, err error) *object.Exception {
+	if err == nil {
+		return nil
+	}
+	if exc, ok := err.(*object.Exception); ok {
+		return exc
+	}
+	return in.raise(object.RuntimeError, 0, "%s", err.Error()).(*object.Exception)
+}
+
+// promises is every promise of a run, shared with its workers, so a worker
+// settles a promise its parent awaits. started is the ones async started,
+// in start order, which the run waits for before it ends.
+type promises struct {
+	mu      sync.Mutex
+	next    int64
+	byID    map[int64]*Promise
+	started []*Promise
+}
+
+func newPromises() *promises { return &promises{byID: map[int64]*Promise{}} }
+
+func (t *promises) add(method string) *Promise {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.next++
+	p := &Promise{id: t.next, method: method, done: make(chan struct{})}
+	t.byID[p.id] = p
+	if method != "" {
+		t.started = append(t.started, p)
 	}
 	return p
 }
 
-func asProcess(v object.Value) (*Process, bool) {
-	if v.Kind() != object.KindProcess {
-		return nil, false
-	}
-	return (*Process)(v.Opaque()), true
+func (t *promises) get(id int64) *Promise {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.byID[id]
 }
 
-// wait blocks until the process is done and returns its result or the
-// exception it raised.
-func (p *Process) wait() (object.Value, *object.Exception) {
-	<-p.done
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	p.awaited = true
-	return p.result, p.err
-}
+// NewPromise makes a pending promise, which the host settles from any
+// goroutine and hands the script by its ID.
+func (in *Interp) NewPromise() *Promise { return in.promises.add("") }
 
-func (p *Process) isDone() bool {
-	select {
-	case <-p.done:
-		return true
-	default:
-		return false
-	}
-}
-
-// processList is every process a run started, in start order.
-type processList struct {
-	mu   sync.Mutex
-	all  []*Process
-	next int
-}
-
-func (l *processList) add(p *Process) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	l.next++
-	p.id = l.next
-	l.all = append(l.all, p)
-}
-
-// waitAll waits for every process and writes the failures nobody awaited to
-// standard error.
-func (l *processList) waitAll(in *Interp) {
+// waitStarted waits for every promise async started and writes the
+// failures nobody awaited to standard error.
+func (in *Interp) waitStarted() error {
+	t := in.promises
 	for i := 0; ; i++ {
-		l.mu.Lock()
-		if i >= len(l.all) {
-			l.mu.Unlock()
-			return
+		t.mu.Lock()
+		if i >= len(t.started) {
+			t.mu.Unlock()
+			return nil
 		}
-		p := l.all[i]
-		l.mu.Unlock()
-		<-p.done
+		p := t.started[i]
+		t.mu.Unlock()
 		p.mu.Lock()
-		failed := p.err != nil && !p.awaited
-		p.awaited = true
-		exc := p.err
+		seen := p.awaited
 		p.mu.Unlock()
-		if failed {
-			in.Write(true, fmt.Sprintf("cameo: process %d (%s) failed and was never awaited: %s (%s)\n", p.id, p.method, exc.Message, exc.Cls.QualifiedName()))
+		_, exc, err := p.wait(in)
+		if err != nil {
+			return err
+		}
+		if exc != nil && !seen {
+			in.Write(true, fmt.Sprintf("cameo: promise %d (%s) failed and was never awaited: %s (%s)\n", p.id, p.method, exc.Message, exc.Cls.QualifiedName()))
 		}
 	}
 }
 
-// evalAsync starts recv.method(*args) on a process and returns the process.
+// cameoIncluded reports whether async and the rest of Cameo are in scope:
+// the script included Cameo at the top level, or self's class did.
+func (in *Interp) cameoIncluded(fr *Frame) bool {
+	return in.cameoTop || fr.Self.Class().IsA(object.CameoModule)
+}
+
+func (in *Interp) needCameo(qualified bool, name string, fr *Frame, line int) error {
+	if qualified || in.cameoIncluded(fr) {
+		return nil
+	}
+	return in.raise(object.NoMethodError, line, "%s comes from the Cameo module: include Cameo, or call Cameo.%s", name, name)
+}
+
+// evalAsync starts recv.method(*args) on a worker and returns its promise.
 func (in *Interp) evalAsync(n *syntax.Async, env *Env, fr *Frame) (object.Value, error) {
+	if err := in.needCameo(n.Qualified, "async", fr, n.Line()); err != nil {
+		return object.Value{}, err
+	}
 	p, err := in.start(n.Recv, n.Method, n.Args, n.KwArgs, env, fr, n.Line())
 	if err != nil {
 		return object.Value{}, err
 	}
-	return processValue(p), nil
+	return object.Int(p.id), nil
 }
 
-// evalAwait waits for a process, or starts one and waits for it.
+// evalAwait waits for a promise or a list of them, or starts a call and
+// waits for it.
 func (in *Interp) evalAwait(n *syntax.Await, env *Env, fr *Frame) (object.Value, error) {
-	var p *Process
-	if n.Process != nil {
-		v, err := in.eval(n.Process, env, fr)
-		if err != nil {
-			return object.Value{}, err
-		}
-		proc, ok := asProcess(v)
-		if !ok {
-			return object.Value{}, in.raise(object.TypeError, n.Line(), "await takes an AsyncProcess, not %s", typeName(v))
-		}
-		p = proc
-	} else {
-		proc, err := in.start(n.Recv, n.Method, n.Args, n.KwArgs, env, fr, n.Line())
-		if err != nil {
-			return object.Value{}, err
-		}
-		p = proc
+	if err := in.needCameo(n.Qualified, "await", fr, n.Line()); err != nil {
+		return object.Value{}, err
 	}
-	result, exc := p.wait()
-	if err := in.stopped(); err != nil {
+	if n.Promise == nil {
+		p, err := in.start(n.Recv, n.Method, n.Args, n.KwArgs, env, fr, n.Line())
+		if err != nil {
+			return object.Value{}, err
+		}
+		return in.awaitOne(p)
+	}
+	v, err := in.eval(n.Promise, env, fr)
+	if err != nil {
+		return object.Value{}, err
+	}
+	if l, ok := v.AsList(); ok {
+		ps := make([]*Promise, l.Len())
+		for i := range ps {
+			if ps[i], err = in.promise(l.Elems[i], n.Line()); err != nil {
+				return object.Value{}, err
+			}
+		}
+		return in.awaitEach(ps)
+	}
+	p, err := in.promise(v, n.Line())
+	if err != nil {
+		return object.Value{}, err
+	}
+	return in.awaitOne(p)
+}
+
+// promise is the promise an id names.
+func (in *Interp) promise(v object.Value, line int) (*Promise, error) {
+	id, ok := v.AsInt()
+	if !ok {
+		return nil, in.raise(object.TypeError, line, "a promise is the Integer async or promise returned, not %s", typeName(v))
+	}
+	p := in.promises.get(id)
+	if p == nil {
+		return nil, in.raise(object.ArgumentError, line, "no promise %d", id)
+	}
+	return p, nil
+}
+
+func (in *Interp) awaitOne(p *Promise) (object.Value, error) {
+	result, exc, err := p.wait(in)
+	if err != nil {
 		return object.Value{}, err
 	}
 	if exc != nil {
@@ -143,23 +226,14 @@ func (in *Interp) evalAwait(n *syntax.Await, env *Env, fr *Frame) (object.Value,
 	return result, nil
 }
 
-// evalAwaitAll waits for every process this scope started and has not
-// awaited, and returns their results in start order; when one failed it
-// raises that failure after all have finished.
-func (in *Interp) evalAwaitAll(env *Env, line int) (object.Value, error) {
-	var pending []*Process
-	for _, p := range methodScope(env).processes {
-		p.mu.Lock()
-		if !p.awaited {
-			pending = append(pending, p)
-		}
-		p.mu.Unlock()
-	}
-	results := make([]object.Value, 0, len(pending))
+// awaitEach waits for every promise and returns their results in order;
+// when one failed it raises the first failure after all are settled.
+func (in *Interp) awaitEach(ps []*Promise) (object.Value, error) {
+	results := make([]object.Value, 0, len(ps))
 	var first *object.Exception
-	for _, p := range pending {
-		v, exc := p.wait()
-		if err := in.stopped(); err != nil {
+	for _, p := range ps {
+		v, exc, err := p.wait(in)
+		if err != nil {
 			return object.Value{}, err
 		}
 		if exc != nil {
@@ -176,10 +250,27 @@ func (in *Interp) evalAwaitAll(env *Env, line int) (object.Value, error) {
 	return object.NewList(results...), nil
 }
 
-// methodScope is the scope a process belongs to: the method body's, or the
+// evalAwaitAll waits for every promise async started in this scope that is
+// not awaited yet, and returns their results in start order.
+func (in *Interp) evalAwaitAll(n *syntax.AwaitAll, env *Env, fr *Frame) (object.Value, error) {
+	if err := in.needCameo(n.Qualified, "await", fr, n.Line()); err != nil {
+		return object.Value{}, err
+	}
+	var pending []*Promise
+	for _, p := range methodScope(env).promises {
+		p.mu.Lock()
+		if !p.awaited {
+			pending = append(pending, p)
+		}
+		p.mu.Unlock()
+	}
+	return in.awaitEach(pending)
+}
+
+// methodScope is the scope a promise belongs to: the method body's, or the
 // top level's, that the current block scope sits in. A block is part of
 // the method that runs it, so a method that fans out in a loop and then
-// waits sees every process.
+// waits sees every promise.
 func methodScope(env *Env) *Env {
 	for env.parent != nil {
 		env = env.parent
@@ -189,7 +280,7 @@ func methodScope(env *Env) *Env {
 
 // start serialises the receiver, the method name and the arguments, and runs
 // the call in a worker interpreter on a new goroutine.
-func (in *Interp) start(recvNode, methodNode syntax.Node, argNodes []syntax.Node, kwNodes []syntax.MapEntry, env *Env, fr *Frame, line int) (*Process, error) {
+func (in *Interp) start(recvNode, methodNode syntax.Node, argNodes []syntax.Node, kwNodes []syntax.MapEntry, env *Env, fr *Frame, line int) (*Promise, error) {
 	recv, err := in.eval(recvNode, env, fr)
 	if err != nil {
 		return nil, err
@@ -200,12 +291,8 @@ func (in *Interp) start(recvNode, methodNode syntax.Node, argNodes []syntax.Node
 	}
 	var method string
 	switch m.Kind() {
-	case object.KindSymbol:
-		m := m.Str()
-		method = string(m)
-	case object.KindString, object.KindBytes, object.KindASCII:
-		m := m.Str()
-		method = string(m)
+	case object.KindSymbol, object.KindString, object.KindBytes, object.KindASCII:
+		method = m.Str()
 	default:
 		return nil, in.raise(object.TypeError, line, "async names the method by a symbol, not %s", typeName(m))
 	}
@@ -244,24 +331,24 @@ func (in *Interp) start(recvNode, methodNode syntax.Node, argNodes []syntax.Node
 			return nil, err
 		}
 	}
-	p := &Process{method: method, done: make(chan struct{})}
-	in.procs.add(p)
+	p := in.promises.add(method)
 	scope := methodScope(env)
-	scope.processes = append(scope.processes, p)
+	scope.promises = append(scope.promises, p)
 	worker := in.worker()
 	go worker.run(p, recvData, method, argData, kwData)
 	return p, nil
 }
 
-// worker makes the interpreter a process runs in: the same output, the
-// same classes (immutable once bound) through a snapshot of the constants,
-// its own scopes.
+// worker makes the interpreter a call async started runs in: the same
+// output, the same classes (immutable once bound) through a snapshot of
+// the constants, the same promises, its own scopes.
 func (in *Interp) worker() *Interp {
 	mainClass := object.NewClass("Object", object.ObjectClass)
 	mainClass.Digest = "main"
 	for _, m := range in.mainClass.Methods {
 		mainClass.SetMethod(m)
 	}
+	mainClass.Includes = append(mainClass.Includes, in.mainClass.Includes...)
 	w := &Interp{
 		stdout:    in.stdout,
 		stderr:    in.stderr,
@@ -272,7 +359,8 @@ func (in *Interp) worker() *Interp {
 		top:       NewEnv(nil),
 		consts:    make(map[string]object.Value, len(in.consts)),
 		proto:     in.proto,
-		procs:     in.procs,
+		promises:  in.promises,
+		cameoTop:  in.cameoTop,
 		code:      in.code,
 		stop:      in.stop,
 	}
@@ -285,17 +373,10 @@ func (in *Interp) worker() *Interp {
 	return w
 }
 
-// run is the body of a process's goroutine: decode, call, keep the result.
-func (w *Interp) run(p *Process, recvData []byte, method string, argData [][]byte, kwData []byte) {
-	defer close(p.done)
-	result, err := w.runCall(recvData, method, argData, kwData)
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	if err != nil {
-		p.err = err
-		return
-	}
-	p.result = result
+// run is the body of a worker's goroutine: decode, call, settle.
+func (w *Interp) run(p *Promise, recvData []byte, method string, argData [][]byte, kwData []byte) {
+	result, exc := w.runCall(recvData, method, argData, kwData)
+	p.settle(result, exc, nil)
 }
 
 func (w *Interp) runCall(recvData []byte, method string, argData [][]byte, kwData []byte) (object.Value, *object.Exception) {
@@ -335,49 +416,86 @@ func (w *Interp) runCall(recvData []byte, method string, argData [][]byte, kwDat
 			return object.Value{}, exc
 		}
 		if c, ok := callErr.(*control); ok {
-			return object.Value{}, w.raise(object.LocalJumpError, c.line, "%s from a process", c.kind).(*object.Exception)
+			return object.Value{}, w.raise(object.LocalJumpError, c.line, "%s from a worker", c.kind).(*object.Exception)
 		}
 		return object.Value{}, w.raise(object.CameoError, 0, "%s", callErr.Error()).(*object.Exception)
 	}
-	// The result crosses back to the awaiting scope, so it has to be a
-	// value that could travel.
-	if _, err := w.Encoder().Encode(result); err != nil {
-		var ns *protogen.NotSerialisable
-		if errors.As(err, &ns) {
-			return object.Value{}, w.raise(object.TypeError, 0, "a process returned a %s, which cannot be passed back", ns.Kind).(*object.Exception)
-		}
-		return object.Value{}, w.raise(object.TypeError, 0, "%s", err.Error()).(*object.Exception)
+	if exc := w.travels(result, "a worker returned"); exc != nil {
+		return object.Value{}, exc
 	}
-	// Processes the call started and never awaited are waited for at the
-	// end of the run through the shared list.
 	return result, nil
 }
 
-func init() {
-	c := object.ProcessClass
-	c.Define("done?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Bool(process(self).isDone()), nil
+// travels is nil when v can cross to another interpreter, the exception to
+// raise when it cannot: a Proc or a class stays where it was made.
+func (in *Interp) travels(v object.Value, what string) *object.Exception {
+	_, err := in.Encoder().Encode(v)
+	if err == nil {
+		return nil
+	}
+	var ns *protogen.NotSerialisable
+	if errors.As(err, &ns) {
+		return in.raise(object.TypeError, 0, "%s a %s, which cannot be passed back", what, ns.Kind).(*object.Exception)
+	}
+	return in.raise(object.TypeError, 0, "%s", err.Error()).(*object.Exception)
+}
+
+// installCameo defines the methods of Cameo besides async and await:
+// promise, resolve and fail, as module functions and, for a script that
+// includes Cameo, instance methods. fail with an Integer first settles a
+// promise; anything else raises, as Kernel#fail does.
+func installCameo() {
+	c := object.CameoModule
+	define := func(name string, arity int, fn object.NativeFn) {
+		c.Define(name, arity, fn)
+		c.DefineSingleton(name, arity, fn)
+	}
+	define("promise", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return object.Int(ctx.(*Interp).NewPromise().id), nil
 	})
-	c.Define("value", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		v, exc := process(self).wait()
-		// A worker that was stopped ends the run that waits for it too.
-		if in, ok := ctx.(*Interp); ok {
-			if err := in.stopped(); err != nil {
-				return object.Value{}, err
-			}
+	define("resolve", 2, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		in := ctx.(*Interp)
+		p, err := in.promise(args[0], 0)
+		if err != nil {
+			return object.Value{}, err
 		}
-		if exc != nil {
+		if exc := in.travels(args[1], "resolve got"); exc != nil {
 			return object.Value{}, exc
 		}
-		return v, nil
-	})
-	c.Define("inspect", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		p := process(self)
-		state := "running"
-		if p.isDone() {
-			state = "done"
+		if !p.settle(args[1], nil, nil) {
+			return object.Value{}, in.raise(object.ArgumentError, 0, "promise %d is settled already", p.id)
 		}
-		return object.String(fmt.Sprintf("#<AsyncProcess %d %s %s>", p.id, p.method, state)), nil
+		return args[0], nil
 	})
-	c.Define("to_s", 0, c.Methods["inspect"].Native)
+	raise := object.ObjectClass.Methods["fail"].Native
+	fail := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		in := ctx.(*Interp)
+		if len(args) < 2 || args[0].Kind() != object.KindInt {
+			return raise(ctx, self, args, kw, block)
+		}
+		p, err := in.promise(args[0], 0)
+		if err != nil {
+			return object.Value{}, err
+		}
+		// The failure is the exception raise would raise with the rest of
+		// the arguments.
+		_, raised := raise(ctx, self, args[1:], kw, block)
+		exc, ok := raised.(*object.Exception)
+		if !ok {
+			return object.Value{}, raised
+		}
+		if !p.settle(object.Value{}, exc, nil) {
+			return object.Value{}, in.raise(object.ArgumentError, 0, "promise %d is settled already", p.id)
+		}
+		return args[0], nil
+	}
+	define("fail", -1, fail)
+	// A script that includes Cameo at the top level reaches fail from any
+	// method, where Kernel's would answer first.
+	object.ObjectClass.Define("fail", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if in, ok := ctx.(*Interp); ok && (in.cameoTop || self.Class().IsA(object.CameoModule)) {
+			return fail(ctx, self, args, kw, block)
+		}
+		return raise(ctx, self, args, kw, block)
+	})
 }

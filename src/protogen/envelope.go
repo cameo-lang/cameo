@@ -189,8 +189,8 @@ type Encoder struct{ reg *Registry }
 // NewEncoder makes an encoder over the registry's classes.
 func NewEncoder(reg *Registry) *Encoder { return &Encoder{reg: reg} }
 
-// Encode is the wire form of a value in the envelope. A Proc, a class or a
-// process cannot be encoded.
+// Encode is the wire form of a value in the envelope. A Proc or a class
+// cannot be encoded.
 func (e *Encoder) Encode(v object.Value) ([]byte, error) {
 	msg, err := e.Message(v)
 	if err != nil {
@@ -347,7 +347,7 @@ func (e *Encoder) message(fd protoreflect.FileDescriptor, v object.Value) (*dyna
 }
 
 // NotSerialisable is the error for a value the envelope cannot carry: a
-// proc, a class, a process.
+// proc or a class.
 type NotSerialisable struct{ Kind string }
 
 func (e *NotSerialisable) Error() string { return "a " + e.Kind + " cannot be serialised" }

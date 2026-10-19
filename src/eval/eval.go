@@ -126,7 +126,7 @@ func (in *Interp) evalSlow(n syntax.Node, env *Env, fr *Frame) (object.Value, er
 	case *syntax.Await:
 		return in.evalAwait(n, env, fr)
 	case *syntax.AwaitAll:
-		return in.evalAwaitAll(env, n.Line())
+		return in.evalAwaitAll(n, env, fr)
 	case *syntax.Splat:
 		return object.Value{}, in.raise(object.CameoError, n.Line(), "a splat belongs in a list or an argument list")
 	}

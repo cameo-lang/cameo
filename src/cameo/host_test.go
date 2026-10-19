@@ -91,7 +91,8 @@ func TestHostModuleCannotBeRedefined(t *testing.T) {
 }
 
 func TestHostMethodFromWorker(t *testing.T) {
-	prog, out, calls := host(t, `class Job
+	prog, out, calls := host(t, `include Cameo
+class Job
   int :factor
   def run(n) = Spicy.echo(n)["args"].first * factor
 end

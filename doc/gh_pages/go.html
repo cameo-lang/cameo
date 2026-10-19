@@ -358,9 +358,9 @@ boom.cameo:1: divided by 0 (ZeroDivisionError)</code></pre>
 
 <h2 id="concurrency">Concurrency</h2>
 
-<p>Inside a script, <code>async</code> runs a method call on a goroutine of
-its own, over copies of its receiver and arguments; see
-<a href="ruby.html#only">async and await</a>. Every worker reaches the
+<p>Inside a script that includes <code>Cameo</code>, <code>async</code> runs
+a method call on a goroutine of its own, over copies of its receiver and
+arguments; see <a href="ruby.html#async">async, await and promises</a>. Every worker reaches the
 host's modules, so a host method may run on several goroutines at once and
 must be safe for that. <code>RunContext</code> stops the workers with the
 script.</p>
@@ -377,6 +377,8 @@ import (
 )
 
 const script = `
+include Cameo
+
 class Fetcher
   string :base
 
@@ -405,6 +407,108 @@ func main() {
 }</code></pre>
 <pre class="output"><code>[&quot;body of https://example.com/a&quot;, &quot;body of https://example.com/b&quot;, &quot;body of https://example.com/c&quot;]
 3 calls</code></pre>
+
+<h2 id="promises">Promises: I/O in the host</h2>
+
+<p>cameo does no I/O. A host method that does some, such as fetching a web
+page, can return a <em>promise</em> instead of blocking: it makes one with
+<code>prog.Promise()</code>, starts the work on a goroutine, and returns the
+promise at once. The script holds the promise as an Integer and awaits it;
+the goroutine settles it with <code>Resolve</code>, with a Go value that
+converts as a host method's result does, or with <code>Fail</code>, with an
+error that <code>await</code> raises. A script that starts every fetch
+before it awaits any has the requests run at the same time.
+<code>Resolve</code> and <code>Fail</code> may be called from any goroutine,
+once; a second call returns <code>cameo.ErrSettled</code>. This is
+<a href="https://github.com/cameo-lang/cameo/tree/main/examples/webfetch">examples/webfetch</a>:</p>
+
+<pre class="go"><code>// Command webfetch fetches web pages from a cameo script. cameo does no
+// I/O, so the host gives the script a Web module whose fetch starts the
+// request on a goroutine and returns a promise at once. The script starts
+// every fetch before it awaits any, so the requests run at the same time,
+// and await returns each page or raises Web::FetchError.
+//
+//	go run ./examples/webfetch https://example.com https://example.org/missing
+package main
+
+import (
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+
+	"github.com/cameo-lang/cameo/src/cameo"
+)
+
+const script = `
+include Cameo
+
+def fetch_all(urls)
+  promises = urls.map { |url| Web.fetch(url) }   # every request starts now
+  urls.zip(promises).map do |url, promise|
+    "#{url}: #{(await promise).size} bytes"
+  rescue Web::FetchError =&gt; e
+    "#{url}: #{e.message}"
+  end
+end
+`
+
+// fetchAll runs the script's fetch_all over urls with client.
+func fetchAll(client *http.Client, urls []string) ([]any, error) {
+	prog, err := cameo.Load("webfetch.cameo", script, os.Stdout, os.Stderr)
+	if err != nil {
+		return nil, err
+	}
+	web := prog.Module("Web")
+	fetchError := web.Exception("FetchError")
+	web.Def("fetch", func(args []any, kwargs map[string]any) (any, error) {
+		url, ok := args[0].(string)
+		if !ok {
+			return nil, fmt.Errorf("Web.fetch takes a URL, not %v", args[0])
+		}
+		promise := prog.Promise()
+		go func() {
+			resp, err := client.Get(url)
+			if err != nil {
+				promise.Fail(fetchError.New("%v", err))
+				return
+			}
+			defer resp.Body.Close()
+			if resp.StatusCode != http.StatusOK {
+				promise.Fail(fetchError.New("%s", resp.Status))
+				return
+			}
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				promise.Fail(fetchError.New("%v", err))
+				return
+			}
+			promise.Resolve(string(body))
+		}()
+		return promise, nil
+	})
+	lines, err := prog.Call(nil, "fetch_all", urls)
+	if err != nil {
+		return nil, err
+	}
+	return lines.([]any), nil
+}
+
+func main() {
+	lines, err := fetchAll(http.DefaultClient, os.Args[1:])
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	for _, line := range lines {
+		fmt.Println(line)
+	}
+}</code></pre>
+<pre class="sh"><code>$ go run ./examples/webfetch \
+    https://raw.githubusercontent.com/cameo-lang/cameo/main/README.md \
+    https://raw.githubusercontent.com/cameo-lang/cameo/main/MISSING.md
+https://raw.githubusercontent.com/cameo-lang/cameo/main/README.md: 5060 bytes
+https://raw.githubusercontent.com/cameo-lang/cameo/main/MISSING.md: 404 Not Found</code></pre>
 
 <p>The host API does not state that one <code>Program</code> may be used
 from several goroutines at once. Give each goroutine of the host its own

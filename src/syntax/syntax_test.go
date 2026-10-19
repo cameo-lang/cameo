@@ -197,7 +197,7 @@ func TestRejections(t *testing.T) {
 		"class P\n int :x, number: :one\nend\n":             "number: is an integer from 1 to 4096",
 		"class P\n int :x, :y, number: 3\nend\n":            "number: belongs to a declaration of one field",
 		"async foo\n":                                       "async takes a receiver, a method name",
-		"await\n":                                           "await takes a process",
+		"await\n":                                           "await takes a promise",
 		"eval(\"x\")\n":                                     "eval is not supported",
 		"private\ndef x; end\n":                             "private is not supported",
 		"yield 1\n":                                         "yield outside a method",
@@ -282,7 +282,7 @@ func TestCallArguments(t *testing.T) {
 }
 
 func TestAsyncAndAwait(t *testing.T) {
-	prog := parse(t, "j = async w, :run, 1, k: 2\nawait j\nawait w, :run, 1\nawait :all\n")
+	prog := parse(t, "j = async w, :run, 1, k: 2\nawait j\nawait w, :run, 1\nawait :all\nCameo.await Cameo.async(w, :run)\n")
 	a := prog.Body[0].(*Assign).Value.(*Async)
 	if len(a.Args) != 1 || len(a.KwArgs) != 1 {
 		t.Fatalf("async: %#v", a)
@@ -290,14 +290,18 @@ func TestAsyncAndAwait(t *testing.T) {
 	if m, ok := a.Method.(*Sym); !ok || m.Name != "run" {
 		t.Fatalf("method: %#v", a.Method)
 	}
-	if w := prog.Body[1].(*Await); w.Process == nil {
-		t.Fatalf("await process: %#v", w)
+	if w := prog.Body[1].(*Await); w.Promise == nil || w.Qualified {
+		t.Fatalf("await promise: %#v", w)
 	}
-	if w := prog.Body[2].(*Await); w.Process != nil || w.Recv == nil {
+	if w := prog.Body[2].(*Await); w.Promise != nil || w.Recv == nil {
 		t.Fatalf("await call form: %#v", w)
 	}
 	if _, ok := prog.Body[3].(*AwaitAll); !ok {
 		t.Fatalf("await :all: %#v", prog.Body[3])
+	}
+	// Cameo.async and Cameo.await are the same calls, qualified.
+	if w := prog.Body[4].(*Await); !w.Qualified || !w.Promise.(*Async).Qualified {
+		t.Fatalf("Cameo.await: %#v", w)
 	}
 }
 

@@ -1,0 +1,14 @@
+# Fibonacci on every core. async starts each call on a worker of its own, a
+# goroutine that Go spreads over the CPUs, and returns its promise at once;
+# await takes the list of promises and returns the results in order. The
+# four calls run at once, one per core when there are four.
+include Cameo
+
+class Fib
+  def of(n) = n < 2 ? n : of(n - 1) + of(n - 2)
+end
+
+fib = Fib.new
+promises = [29, 29, 29, 29].map { |n| async fib, :of, n }
+p promises
+p await(promises)

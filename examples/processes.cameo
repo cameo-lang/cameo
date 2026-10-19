@@ -1,4 +1,6 @@
-# Processes: scopes, keyword arguments, nesting, failures, and what a process may carry.
+# Workers: scopes, keyword arguments, nesting, failures, and what a call may carry.
+include Cameo
+
 class Fetcher
   string :name
 
@@ -29,10 +31,9 @@ puts await f, :fetch, 7, retries: 3
 puts f.fan_out([1, 2, 3]).inspect
 
 job = async f, :slow, 100000
-puts job.class
-puts job.value
-puts job.done?
-puts (await job) == job.value
+puts job.class                       # a promise is an Integer
+puts await job
+puts (await job) == (await job)      # awaiting again gives the same result
 
 results = (1..5).map { |n| async f, :slow, n * 1000 }.map { |p| await p }
 puts results.inspect
@@ -52,7 +53,7 @@ def inner_scope(f)
 end
 started = inner_scope(f)
 puts (await started[0])
-puts (await :all).inspect  # inner_scope's processes are its own, not this scope's
+puts (await :all).inspect  # inner_scope's promises are its own, not this scope's
 
 puts (await f, :give, {a: [1, 2.5, "x", nil, true]}).inspect
 puts (await f, :give, Fetcher.new("copy")).name
