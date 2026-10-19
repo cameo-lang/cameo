@@ -336,12 +336,12 @@ resolve p, value                                 # settles it with value
 fail p, ArgumentError, "no"                      # settles it with an exception
 ```
 
-`async` runs one method call on one receiver on its own goroutine, with its
-own interpreter state, over copies of the arguments, and returns the call's
+`async` runs one method call on one receiver concurrently, with its own
+interpreter state, over copies of the arguments, and returns the call's
 promise. `async` and `await` are intrinsics, not methods, so `async xxx,
 :yyy, *args` needs no parentheses. The receiver, the method name and the
-arguments are serialised through the protobuf value envelope before the
-goroutine starts, and deserialised on the other side; a Proc, a Class or a
+arguments are serialised through the protobuf value envelope at the `async`
+call, and deserialised on the other side; a Proc, a Class or a
 block among them is an error at the `async` call site, not inside the job.
 The receiver is a value (any serialisable value, including an instance of a
 class), and the method is looked up on its class in the worker. Classes are
@@ -388,6 +388,19 @@ method that returns a Proc or a class to a worker raises a `TypeError` there;
 A worker has no handle to its parent and no shared memory; what it sends
 back is its return value and the promises it settles. Starting calls from
 inside a worker is allowed and nests the same way.
+
+A call `async` started waits in the run's queue until one of up to
+GOMAXPROCS runner goroutines takes it, the oldest of its shard of the
+queue first, or until an
+`await` of its promise finds it still queued and runs it on its own
+goroutine. A goroutine per call would park, with its stack, every call
+whose awaiter runs it, and a recursion that fans out at every level parks
+millions. Two rules keep every call able to run: a goroutine about to block
+in `await` while calls are queued starts another runner, so runners that
+wait on promises only queued calls settle still leave one free; and a
+watchdog starts another runner when queued calls have waited 10 ms with no
+runner taking one, so calls that never end do not hold the queue up for
+good.
 
 ## Protobuf
 
@@ -623,7 +636,8 @@ One Go module, `github.com/cameo-lang/cameo`, with the packages under `src/`:
 | `object` | the value model: a `Value` is a tagged 24-byte struct (kind, integer payload, pointer), so an integer, a float, a boolean and nil never touch the heap and a string shares its bytes; kinds, structural equality, hashing, the class table, dynamic messages, conversion to and from `cameo.Value` and Go values |
 | `eval` | the evaluator: compiles each node to a closure on first use (`compile.go`), with a tree walker for the rare kinds; scopes, method dispatch with a per-class lookup cache, blocks, exceptions, intrinsics (`with`, `async`, `await`, the field helpers) |
 | `stdlib` | Kernel, Integer, Float, String, Symbol, Array, Hash, Set, Range, Time, Math, Regexp, MatchData, Enumerable, Proc, the exception classes |
-| `eval/async.go` | the scheduler: promises and the run's table of them, the per-scope list `await :all` reads, the worker interpreter a call runs in, goroutine lifecycle |
+| `eval/async.go` | promises and the run's table of them, the per-scope list `await :all` reads, the worker interpreter a call runs in |
+| `eval/sched.go` | the queue of calls `async` started and the runner goroutines that take them |
 | `protogen` | descriptors from class declarations, `.proto` text, the `cameo.Value` envelope (`proto/cameo.proto`, compiled in) |
 | `cmd/cameo` | the binary: `cameo script.cameo`, `cameo check script.cameo`, `cameo proto script.cameo` |
 

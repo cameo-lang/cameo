@@ -23,7 +23,14 @@ type Promise struct {
 	// method is the method async runs; "" for a promise made by promise.
 	method string
 	done   chan struct{}
-	mu     sync.Mutex
+	// call is the call async started, until a runner or something that
+	// awaits the promise takes it to run.
+	call atomic.Pointer[asyncCall]
+	// next and prev link the promise into the run's queue while linked;
+	// the queue's shard lock guards them.
+	next, prev *Promise
+	linked     bool
+	mu         sync.Mutex
 	// settled is set by the first resolve or fail, or when the worker
 	// returns; done closes then.
 	settled bool
@@ -66,9 +73,19 @@ func (p *Promise) SettleLater(f func(*Interp) (object.Value, error)) bool {
 // wait blocks until the promise is settled, or the run is stopped, and
 // returns its result or the exception it failed with.
 func (p *Promise) wait(in *Interp) (object.Value, *object.Exception, error) {
+	// A call that has not started runs here rather than on its goroutine,
+	// so the goroutine that awaits it does not park, with its stack, while
+	// another runs it.
+	if c := in.promises.calls.claim(p); c != nil {
+		c.run(p)
+		if err := in.stopped(); err != nil {
+			return object.Value{}, nil, err
+		}
+	}
 	select {
 	case <-p.done:
 	default:
+		in.promises.calls.waiting()
 		// A settled promise does not take the stop channel's lock.
 		select {
 		case <-p.done:
@@ -110,6 +127,8 @@ type promises struct {
 	// The padding keeps the counter off shard 0's cache line.
 	_      [56]byte
 	shards [shards]promiseShard
+	// calls is the queue of the calls async started; see sched.go.
+	calls *scheduler
 }
 
 // shards is how many parts the promise table and the run's stop channels
@@ -126,7 +145,7 @@ type promiseShard struct {
 }
 
 func newPromises() *promises {
-	t := &promises{}
+	t := &promises{calls: newScheduler()}
 	for i := range t.shards {
 		t.shards[i].byID = map[int64]*Promise{}
 	}
@@ -339,8 +358,8 @@ func methodScope(env *Env) *Env {
 	return env
 }
 
-// start serialises the receiver, the method name and the arguments, and runs
-// the call in a worker interpreter on a new goroutine.
+// start serialises the receiver, the method name and the arguments, and
+// queues the call for a worker interpreter; see sched.go.
 func (in *Interp) start(recvNode, methodNode syntax.Node, argNodes []syntax.Node, kwNodes []syntax.MapEntry, env *Env, fr *Frame, line int) (*Promise, error) {
 	recv, err := in.eval(recvNode, env, fr)
 	if err != nil {
@@ -407,9 +426,25 @@ func (in *Interp) start(recvNode, methodNode syntax.Node, argNodes []syntax.Node
 	p := in.promises.add(method)
 	scope := methodScope(env)
 	scope.promises = append(scope.promises, p)
-	worker := in.worker()
-	go worker.run(p, recvC, method, argC, kwData)
+	p.call.Store(&asyncCall{w: in.worker(), recv: recvC, method: method, args: argC, kw: kwData})
+	in.promises.calls.push(p)
 	return p, nil
+}
+
+// asyncCall is a call async started, with the worker interpreter it runs
+// in.
+type asyncCall struct {
+	w      *Interp
+	recv   crossing
+	method string
+	args   []crossing
+	kw     []byte
+}
+
+// run makes the call and settles p with its result.
+func (c *asyncCall) run(p *Promise) {
+	result, exc := c.w.runCall(c.recv, c.method, c.args, c.kw)
+	p.settle(result, exc, nil)
 }
 
 // topLevel is a copy of an interpreter's top level: its constants, its
@@ -482,12 +517,7 @@ func (in *Interp) worker() *Interp {
 	return w
 }
 
-// run is the body of a worker's goroutine: decode, call, settle.
-func (w *Interp) run(p *Promise, recv crossing, method string, args []crossing, kwData []byte) {
-	result, exc := w.runCall(recv, method, args, kwData)
-	p.settle(result, exc, nil)
-}
-
+// runCall decodes the receiver and the arguments, and calls the method.
 func (w *Interp) runCall(recvC crossing, method string, argC []crossing, kwData []byte) (object.Value, *object.Exception) {
 	dec := w.Decoder()
 	recv, err := recvC.value(dec)

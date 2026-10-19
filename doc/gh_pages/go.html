@@ -364,7 +364,7 @@ boom.cameo:1: divided by 0 (ZeroDivisionError)</code></pre>
 <h2 id="concurrency">Concurrency</h2>
 
 <p>Inside a script that includes <code>Cameo</code>, <code>async</code> runs
-a method call on a goroutine of its own, over copies of its receiver and
+a method call on another goroutine, over copies of its receiver and
 arguments; see <a href="ruby.html#async">async, await and promises</a>. Every worker reaches the
 host's modules, so a host method may run on several goroutines at once and
 must be safe for that. <code>RunContext</code> stops the workers with the
