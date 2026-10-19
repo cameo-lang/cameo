@@ -6,6 +6,7 @@
 <title>cameo — native code</title>
 <meta name="description" content="Extend cameo with Go: host modules of Go methods, native classes backed by a protobuf message, and builtin classes in cameo's standard library.">
 <link rel="stylesheet" href="style.css">
+<script type="module" src="site.js"></script>
 </head>
 <body>
 <header class="site"><div class="inner">
@@ -44,7 +45,7 @@ for the script:</p>
   returns a <code>*cameo.Module</code>. A script cannot redefine or reopen
   it.</li>
   <li><code>mod.Def(name, fn)</code> defines the method the script calls
-  as <code>Name.name(args)</code>. <code>fn</code> is an
+  as <code>Name.name(args)</code>. <code>fn</code> is a
   <code>cameo.Func</code>, <code>func(args []any, kwargs map[string]any)
   (any, error)</code>: it gets the positional and keyword arguments as Go
   values, as <code>ToGo</code> converts them, except that a Symbol is a
@@ -107,13 +108,11 @@ of their own, so a host method may run on several at once. One that
 blocks keeps the script from stopping until it returns: watch the context
 the host passed to <code>RunContext</code>.</p>
 
-<h3>A worked example: ark's <code>Spicy.tools</code></h3>
+<h3>A worked example: a module of tools</h3>
 
 <p><a href="https://github.com/radiospiel/ark">ark</a> runs scripts that
-call tools on cameo, in
-<a href="https://github.com/radiospiel/ark/blob/main/parts/golang/agentic/src/coderuby/amber.go"><code>parts/golang/agentic/src/coderuby/amber.go</code></a>.
-Its <code>defineSpicy</code> gives every script the module
-<code>Spicy</code>:</p>
+call tools on cameo. Its host gives every script a module
+<code>Spicy</code>, in the shape a module of this kind takes:</p>
 
 <ul>
   <li><code>Spicy.tools</code> alone returns the list of tools;
@@ -436,11 +435,12 @@ true
 Money can&#39;t be added to Integer</code></pre>
 
 <p>A builtin class's instances are not protobuf messages: they cannot be
-passed to <code>async</code>, which raises "Money is not a class with
-fields", and they reach a host as an <code>*object.Instance</code>. A new
-builtin also comes with an example in <code>examples/</code>, whose
-<code>.expected</code> output <code>go test</code> holds it to, and a line
-in <code>doc/cameo-vs-ruby.md</code> if Ruby has the class too.</p>
+passed to <code>async</code>, which raises <code>TypeError</code>, "Money
+is not a class with fields", and they reach a host as an
+<code>*object.Instance</code>. A new builtin also comes with an example in
+<code>examples/</code>, whose <code>.expected</code> output
+<code>go test</code> holds it to, and a line in
+<code>doc/cameo-vs-ruby.md</code> if Ruby has the class too.</p>
 </main>
 
 <footer class="site"><div class="inner">

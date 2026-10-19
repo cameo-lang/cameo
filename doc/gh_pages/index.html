@@ -6,6 +6,7 @@
 <title>cameo — Ruby, but immutable</title>
 <meta name="description" content="cameo is a language with Ruby's syntax, run by an interpreter written in Go, for embedding in Go programs.">
 <link rel="stylesheet" href="style.css">
+<script type="module" src="site.js"></script>
 </head>
 <body>
 <header class="site"><div class="inner">
@@ -22,7 +23,7 @@
 <main>
 <h1>Ruby, but immutable.</h1>
 <p class="lead">cameo is a language with Ruby's syntax, run by an interpreter
-written in Go. It is made to be embedded in Go programs.</p>
+written in Go. It is made for embedding in Go programs.</p>
 
 <p>Every value is immutable. A call that would change a value in Ruby
 rebinds the local variable it is called on to a changed copy; every other
@@ -60,9 +61,9 @@ instance in the script.</p>
 
 <ul>
   <li><strong>It starts in microseconds.</strong> Loading, checking and
-  running a five-line script with a class takes 60 to 75&nbsp;µs in a Go
-  process (measured with <code>cameo.Run</code> in a loop of 1000, on
-  the four-core Linux machine this site was built on).</li>
+  running a five-line script with a class takes about 20&nbsp;µs in a Go
+  process (<code>cameo.Run</code> in a loop of 1000, on a four-core Linux
+  machine).</li>
   <li><strong>It needs no cgo.</strong> The interpreter and its parser,
   <a href="https://github.com/go-ruby-parser/parser">go-ruby-parser</a>,
   are pure Go: no Ruby installation and no code generation.</li>
@@ -70,10 +71,10 @@ instance in the script.</p>
   package compiles with <code>CGO_ENABLED=0</code> for ios/arm64,
   android/arm64, darwin/arm64, windows/amd64, js/wasm and wasip1/wasm.</li>
   <li><strong>A script reads no file and starts no process.</strong> It
-  has no <code>IO</code>, no <code>ENV</code>, no sockets and no
-  <code>system</code>; <code>File</code> does path arithmetic alone. Standard output and standard error
-  are the whole of its I/O; what else it needs, the host gives it as a
-  module of Go methods.</li>
+  has no <code>IO</code>, <code>ENV</code>, sockets or <code>system</code>,
+  and <code>File</code> only joins and splits paths. Its I/O is standard
+  output and standard error; anything else the host gives it as a module
+  of Go methods.</li>
 </ul>
 
 <p>A script runs in its own interpreter, and <code>RunContext</code> stops
@@ -82,7 +83,7 @@ it, with every worker it started, when the host's context ends.</p>
 <h2>How fast it is</h2>
 
 <p>cameo runs the 824 cases of CRuby's own benchmark suite that use only
-what cameo supports, every one with CRuby 3.4's output. From
+what cameo supports, every one with Ruby's output. From
 <a href="https://github.com/cameo-lang/cameo/blob/main/benchmarks/compare/README.md">benchmarks/compare</a>,
 measured on 2026-10-18 against CRuby 3.3.6 (mri):</p>
 
@@ -111,9 +112,9 @@ to WebAssembly (708% of MRI's time) and go-embedded-ruby (1019%).</p>
     library.</span></a>
 </div>
 
-<p>The status: the interpreter is complete to its
-<a href="https://github.com/cameo-lang/cameo/blob/main/doc/design/cameo.md">design</a>,
-and cameo is MIT-licensed.</p>
+<p>The interpreter is complete to its
+<a href="https://github.com/cameo-lang/cameo/blob/main/doc/design/cameo.md">design</a>.
+The current release is v0.2.2, under the MIT licence.</p>
 </main>
 
 <footer class="site"><div class="inner">
