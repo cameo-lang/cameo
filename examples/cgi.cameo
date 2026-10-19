@@ -1,0 +1,29 @@
+# CGI's functions from Ruby's cgi/escape and cgi/util that need no I/O.
+# Each line prints what Ruby 3.4 prints.
+require "cgi"
+
+# Forms encode a space as +, URI components as %20; both leave _.-~ and
+# percent-encode each byte of a multibyte character.
+p CGI.escape("a b+c~*'()!/é?=&#"), CGI.escapeURIComponent("a b+c~*'()!/é?=&#")
+p CGI.escape_uri_component("x y")
+# An invalid percent sequence stays as it is, and only unescape reads + as
+# a space.
+p CGI.unescape("a+b%20c%zz%4%%41%e9%C3%A9"), CGI.unescapeURIComponent("a+b%20c%zz%4%%41")
+p CGI.unescape_uri_component("+%2B")
+
+p CGI.escapeHTML("<a href='x'>\"&</a>é"), CGI.escape_html("x"), CGI.h("<")
+# The five named entities and numeric ones below U+10FFFF decode; any other
+# stays.
+p CGI.unescapeHTML("&&amp;&amp &AMP; &#39;&#x27;&#X41;&#065;&#0000065;&nbsp;&apos;&lt&lt;")
+p CGI.unescape_html("&#1114111;&#x110000;&#;&#x;&#-1;&#x41&#xe9;&#233;&#x1F600;")
+
+p CGI.escapeElement('<BR><A HREF="url"></A>', "A", "IMG")
+p CGI.escape_element('<br><b>x</b><br/><bx>', ["b", "br"]), CGI.escapeElement("<br>")
+p CGI.unescapeElement('&lt;BR&gt;&lt;A HREF=&quot;url&quot;&gt;&lt;/A&gt;', "A", "IMG")
+p CGI.unescape_element('&lt;a&gt;&amp;', :a)
+
+p CGI.rfc1123_date(Time.at(0)), CGI.rfc1123_date(Time.new(2024, 2, 29, 23, 5, 9, "+09:00"))
+
+p CGI.pretty("<HTML><BODY></BODY></HTML>")
+p CGI.pretty("<p>hello<br>world</p><div><span>x</span></div>", "\t")
+p CGI.pretty("<ul>\n<li>1</li>\n<li>2</li>\n</ul>")

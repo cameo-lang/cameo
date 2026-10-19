@@ -28,4 +28,17 @@ test_unknown_command_fails() {
   assert_neq 0 "$rc" "an unknown command exits 0"
 }
 
+test_cgi_escapes_and_indents_html() {
+  local script out
+  script="$(mktemp -d)/cgi.cameo"
+  cat >"$script" <<'CAMEO'
+require "cgi"
+puts CGI.escapeURIComponent("a b+é"), CGI.unescapeHTML("&lt;&#x41;&#66;&gt;")
+puts CGI.escapeElement("<br><a href='x'>", "a"), CGI.rfc1123_date(Time.at(0))
+print CGI.pretty("<p><b>x</b></p>")
+CAMEO
+  out=$("$CAMEO_BIN" "$script")
+  assert_eq $'a%20b%2B%C3%A9\n<AB>\n<br>&lt;a href=&#39;x&#39;&gt;\nThu, 01 Jan 1970 00:00:00 GMT\n<p>\n  <b>\n    x\n  </b>\n</p>' "$out"
+}
+
 run_tests
