@@ -6,6 +6,7 @@ import (
 	"maps"
 	"strings"
 	"sync"
+	"unicode/utf8"
 
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/protogen"
@@ -319,6 +320,11 @@ func (in *Interp) start(recvNode, methodNode syntax.Node, argNodes []syntax.Node
 	}
 	cross := func(v object.Value) (crossing, error) {
 		if in.readsBackAsIs(v) {
+			if v.Kind() == object.KindInstance {
+				// ToMessage keeps an instance's message in the instance,
+				// so the worker gets an instance of its own to write to.
+				v = object.InstanceValue(&object.Instance{Cls: v.Instance().Cls})
+			}
 			return crossing{v: v}, nil
 		}
 		data, err := encode(v)
@@ -491,15 +497,19 @@ func (c crossing) value(dec *protogen.Decoder) (object.Value, error) {
 // its wire form, so the worker can take v itself: values are immutable,
 // and the round trip costs more than most calls async starts. A symbol
 // reads back as a string and a hash's symbol keys as strings, so neither
-// is one; an instance is one when it has no fields and its class is one
-// the script defined and the worker finds by name and digest.
+// is one, nor is a string that is not valid UTF-8, which the envelope
+// rejects. An instance is one when it has no fields and its class is one
+// the script defined and the worker finds by name and digest; a list is
+// one when it holds no instance.
 func (in *Interp) readsBackAsIs(v object.Value) bool {
 	switch v.Kind() {
-	case object.KindBool, object.KindInt, object.KindBig, object.KindFloat, object.KindString:
+	case object.KindBool, object.KindInt, object.KindBig, object.KindFloat:
 		return true
+	case object.KindString:
+		return utf8.ValidString(v.Str())
 	case object.KindList:
 		for _, e := range v.List().Elems {
-			if !in.readsBackAsIs(e) {
+			if e.Kind() == object.KindInstance || !in.readsBackAsIs(e) {
 				return false
 			}
 		}

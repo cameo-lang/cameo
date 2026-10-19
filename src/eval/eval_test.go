@@ -318,6 +318,32 @@ p await(Echo.new, :go, nil, true, 7, 2**70, 1.5, "s", "\xff".b, :sym, [1, [2, "t
 	expectError(t, "include Cameo\nclass Echo\n  def go(x) = x\nend\nawait Echo.new, :go, Object.new\n", "Object is not a class with fields (TypeError)")
 }
 
+func TestAsyncRejectsWhatTheEnvelopeRejects(t *testing.T) {
+	// A string that is not valid UTF-8 cannot cross, on its own, in a list,
+	// or as a worker's result.
+	echo := "include Cameo\nclass Echo\n  def go(*args) = args\n  def bad = \"\xff\"\nend\n"
+	for _, call := range []string{`await Echo.new, :go, "\xff"`, `await Echo.new, :go, ["\xff"]`, `await Echo.new, :go, ["\xff", :a]`, `await Echo.new, :bad`} {
+		expectError(t, echo+call+"\n", "invalid UTF-8")
+	}
+}
+
+func TestWorkersEncodeASharedFieldlessInstance(t *testing.T) {
+	// The parent and a worker both encode the instance they share, inside
+	// a Hash; go test -race reports it when they write one cached message.
+	expectOutput(t, `
+include Cameo
+class Tag
+end
+class Echo
+  def go(t) = await(Echo.new, :wrap, {k: t})
+  def wrap(h) = h
+end
+t = Tag.new
+jobs = (1..8).map { [async(Echo.new, :go, t), async(Echo.new, :wrap, {k: t})] }
+p await(jobs.flatten).uniq
+`, "[{\"k\" => Tag()}]\n")
+}
+
 func TestPromises(t *testing.T) {
 	// A promise is an Integer that resolve or fail settles once, from the
 	// script or a worker; await takes one or a list.
