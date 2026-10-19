@@ -254,6 +254,29 @@ p await(pending)
 `, "40\n")
 }
 
+func TestWorkerSeesTheTopLevelAtItsStart(t *testing.T) {
+	// A worker sees the constants and top-level methods defined before its
+	// async, not those defined after.
+	expectOutput(t, `
+include Cameo
+def twice(n) = n * 2
+LIMIT = 1
+class W
+  def go(n) = [twice(n), LIMIT, await(self, :nested, n)]
+  def nested(n) = twice(n) + LIMIT
+end
+first = async W.new, :go, 1
+LIMIT = 2
+def twice(n) = n * 3
+second = async W.new, :go, 1
+third = async W.new, :go, 2
+class W
+  def go(n) = :redefined
+end
+p await([first, second, third])
+`, "[[2, 1, 3], [3, 2, 5], [6, 2, 8]]\n")
+}
+
 func TestPromises(t *testing.T) {
 	// A promise is an Integer that resolve or fail settles once, from the
 	// script or a worker; await takes one or a list.
