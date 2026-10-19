@@ -29,8 +29,9 @@ each time is the best of three processes.
 ## Results
 
 On 2026-10-19, on a Hetzner ccx43: 16 dedicated AMD EPYC-Milan vCPUs.
-`main` is 6ffe953; `queue` is the commit that queues async calls for a few
-runners, with the changes below it.
+`main` is 6ffe953; `queue` is 65b0249, the merge of #109, which queues async
+calls for a few runners. Its interpreter is the stack of #111 to #116
+without the fixes code review added to them.
 
 Seconds, with the peak RSS of `async.rb`:
 
@@ -46,12 +47,13 @@ Seconds, with the peak RSS of `async.rb`:
 | CRuby 4.0.7 | 1 | 0.144 | 0.326 | | |
 
 - Fine-grained `async` went from slower on more cores to faster: 17.2 s on
-  one core and 24.4 s on 16, to 1.48 s and 0.42 s, with 77–116 MB of
+  one core and 24.4 s on 16, to 1.48 s and 0.42 s, with 42–116 MB of
   memory instead of 1.0–1.8 GB.
-- Coarse `async` takes a third of the sequential time on 16 cores, and
-  stops gaining past about four: most of the remaining time is allocation,
-  which Go's allocator does not spread over cores.
-- The sequential scripts did not change. cameo runs them nine to eleven
-  times slower than CRuby.
-- The sequential scripts run faster on four cores than on one: the garbage
-  collector works on the other cores.
+- Coarse `async` takes a third of the sequential time on 16 cores. Going
+  from 4 to 16 cores takes a quarter off its time; going from 1 to 4 takes
+  three fifths. `queue` is up to 9% slower than `main` on it, and equal on
+  four cores.
+- The sequential scripts did not change. On one core cameo runs them
+  nine to twelve times slower than CRuby.
+- The sequential scripts run faster on four cores than on one, and slower
+  on 16 than on four; what causes either was not measured.

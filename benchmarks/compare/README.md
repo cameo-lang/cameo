@@ -43,8 +43,8 @@ the versions first, which the results do not record.
 ## Results
 
 On 2026-10-19, eight cases at a time on a Hetzner ccx43 (16 dedicated AMD
-EPYC-Milan vCPUs), mri being CRuby 3.4.11 and cameo the commit that queues
-async calls (see [../hetzner](../hetzner)). The starts the harness keeps out
+EPYC-Milan vCPUs), mri being CRuby 3.4.11 and cameo 65b0249 (see
+[../hetzner](../hetzner)). The starts the harness keeps out
 of every time were mri 0.038 s, cameo 0.006 s, warmruby 0.715 s and rbgo
 0.064 s.
 
@@ -64,7 +64,8 @@ them. That holds across sizes: 276% on the 744 cases MRI runs in under a
 millisecond, 279% on the 31 it takes half a second or more, where warmruby
 takes 474% and rbgo 460%. cameo is faster than MRI in 3 of those 31
 (`vm_dstr_obj` 56%, `time_subsec` 69%, `string_fstring--fstring_random`
-91%). The same suite on main the same day gave cameo 283% and 256.6 s.
+91%). The same suite on main (6ffe953) the same day gave cameo 283% and 256.6 s;
+that run is not committed.
 
 The earlier harness took a whole process per run and subtracted the Ruby's
 start, which put cameo at 104% of MRI: on a case of a few microseconds it
