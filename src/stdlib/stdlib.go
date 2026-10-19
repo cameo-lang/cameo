@@ -33,6 +33,7 @@ func Install() {
 	installTimeParsing()
 	installCGI()
 	installJSON()
+	installBenchmark()
 	installEncodings()
 	installPack()
 	installPaths()
