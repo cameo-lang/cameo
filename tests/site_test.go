@@ -53,3 +53,15 @@ func TestSiteSamplesPrintTheirOutput(t *testing.T) {
 	}
 	assert.True(t, samples >= 14, "found %d samples on the site", samples)
 }
+
+// TestSiteShowsTheWebFetchExample holds the Go program on the site's host
+// page to examples/webfetch, which its own test runs.
+func TestSiteShowsTheWebFetchExample(t *testing.T) {
+	page, err := os.ReadFile("../doc/gh_pages/go.html")
+	assert.NoError(t, err)
+	program, err := os.ReadFile("../examples/webfetch/main.go")
+	assert.NoError(t, err)
+	shown := regexp.MustCompile(`(?s)<h2 id="promises">.*?<pre class="go"><code>(.*?)</code></pre>`).FindStringSubmatch(string(page))
+	assert.NotNil(t, shown, "go.html has no promises section with a Go program")
+	assert.Equals(t, html.UnescapeString(shown[1]), strings.TrimSuffix(string(program), "\n"))
+}

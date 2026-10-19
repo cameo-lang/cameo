@@ -536,27 +536,35 @@ type With struct {
 	Value  Node
 }
 
-// Async is `async recv, :method, *args`: it starts recv.method(*args) on an
-// AsyncProcess and returns the process.
+// Async is `async recv, :method, *args`: it starts recv.method(*args) on
+// a worker and returns the promise of its result, an Integer. It comes
+// from the Cameo module, so the script includes Cameo or, Qualified,
+// writes Cameo.async.
 type Async struct {
 	Pos
-	Recv   Node
-	Method Node
-	Args   []Node
-	KwArgs []MapEntry
+	Qualified bool
+	Recv      Node
+	Method    Node
+	Args      []Node
+	KwArgs    []MapEntry
 }
 
-// Await is `await process`, or `await recv, :method, *args` which starts the
-// process and waits for it. When Process is nil the call form is meant.
+// Await is `await promise`, `await [promises]`, or `await recv, :method,
+// *args` which starts the call and waits for it. When Promise is nil the
+// call form is meant.
 type Await struct {
 	Pos
-	Process Node
-	Recv    Node
-	Method  Node
-	Args    []Node
-	KwArgs  []MapEntry
+	Qualified bool
+	Promise   Node
+	Recv      Node
+	Method    Node
+	Args      []Node
+	KwArgs    []MapEntry
 }
 
-// AwaitAll is `await :all`: it waits for every process started in the current
-// scope and returns their results as a list.
-type AwaitAll struct{ Pos }
+// AwaitAll is `await :all`: it waits for every promise async started in
+// the current scope and returns their results as a list.
+type AwaitAll struct {
+	Pos
+	Qualified bool
+}

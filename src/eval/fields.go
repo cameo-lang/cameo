@@ -455,6 +455,23 @@ func (in *Interp) evalReserved(n *syntax.Reserved, fr *Frame) (object.Value, err
 
 func (in *Interp) evalInclude(n *syntax.Include, env *Env, fr *Frame) (object.Value, error) {
 	cls := fr.DefTarget
+	if cls == in.mainClass && !n.Extend {
+		// At the top level include takes Cameo alone, and brings it to
+		// every method, as Ruby's top-level include brings a module to
+		// Object.
+		v, err := in.eval(n.Module, env, fr)
+		if err != nil {
+			return object.Value{}, err
+		}
+		if mod, ok := v.AsClass(); !ok || mod != object.CameoModule {
+			return object.Value{}, in.raise(object.CameoError, n.Line(), "include at the top level takes Cameo; another module belongs in a class or module body")
+		}
+		if !in.cameoTop {
+			in.mainClass.Include(object.CameoModule)
+			in.cameoTop = true
+		}
+		return object.Nil, nil
+	}
 	if cls == nil || !isClassValue(fr.Self, cls) {
 		return object.Value{}, in.raise(object.CameoError, n.Line(), "include belongs to a class or module body")
 	}

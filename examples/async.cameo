@@ -1,4 +1,7 @@
-# async starts recv.meth(*args) on a goroutine over copies of the arguments.
+# async starts recv.meth(*args) on a goroutine over copies of the arguments,
+# and returns the promise of its result, which await waits for.
+include Cameo
+
 class Worker
   int :factor
 

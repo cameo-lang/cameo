@@ -25,7 +25,8 @@ a = Point.new(1, 2)
 a.x = 10                                  # a is rebound to a copy with x: 10
 b = a.with { |p| { y: p.y * 5 } }         # a copy with y: 10; a is unchanged
 
-job = async a, :+, b                      # a.+(b) on its own goroutine
+include Cameo                             # async, await and promises
+job = async a, :+, b                      # a.+(b) on its own goroutine; job is its promise
 puts await job                            # Point(x: 20, y: 12)
 ```
 
@@ -40,9 +41,13 @@ Ruby, what is the same, what differs, and what cameo does not support.
 
 The interpreter is complete to the plan in the design: the front end, the
 evaluator, the library, classes with typed fields, protobuf and async.
-`async recv, :method, *args` starts the call on a process of its own,
-`await` collects its result or re-raises its exception, and `await :all`
-waits for everything the current scope started. The Ruby adapter
+A script that includes Cameo has `async recv, :method, *args`, which
+starts the call on a worker of its own and returns its promise, an
+Integer; `await` collects a promise's result or re-raises its exception,
+`await :all` waits for everything the current scope started, and
+`promise`, `resolve` and `fail` make and settle a promise by hand. A Go host
+returns a promise from a method (`prog.Promise()`) and settles it when its
+I/O is done; [examples/webfetch](examples/webfetch) fetches web pages so. The Ruby adapter
 (milestone 7) is not built.
 
 ```sh

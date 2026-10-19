@@ -325,6 +325,8 @@ func (c conv) toValue(v any) (object.Value, error) {
 			b.Set(key, val)
 		}
 		return object.MapValue(b.Map()), nil
+	case *Promise:
+		return object.Int(v.ID()), nil
 	case proto.Message:
 		if cls := protogen.NativeClass(v.ProtoReflect().Descriptor().FullName()); cls != nil {
 			inst, err := c.in.Proto().FromMessage(cls, v.ProtoReflect())

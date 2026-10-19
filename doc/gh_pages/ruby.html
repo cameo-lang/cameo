@@ -32,7 +32,7 @@ below, each with the Ruby you would write and the cameo way.</p>
   <li><a href="#fields">Typed fields instead of instance variables</a></li>
   <li><a href="#rejected">What the checker rejects</a></li>
   <li><a href="#missing">Missing builtins</a></li>
-  <li><a href="#only">Only in cameo: with, async and await, protobuf</a></li>
+  <li><a href="#only">Only in cameo: with, async, await and promises, protobuf</a></li>
 </ol>
 </nav>
 
@@ -404,21 +404,30 @@ Point(x: 1, y: 10)
 Point(x: 1, y: 2)
 {a: 1, b: 2}</code></pre>
 
-<h3><code>async</code> and <code>await</code></h3>
+<h3 id="async"><code>async</code>, <code>await</code> and promises</h3>
+
+<p>Concurrency comes from the <code>Cameo</code> module, which a script
+includes: at the top level for every method, or in a class body for that
+class. Without it <code>async</code> and <code>await</code> are unknown;
+<code>Cameo.async</code> and <code>Cameo.await</code> work without it.</p>
 
 <p><code>async receiver, :method, args…</code> runs one method call on a
-goroutine of its own, over copies of the receiver and the arguments.
-<code>await</code> returns its result, or raises the exception it raised.
-<code>await :all</code> waits for every job the current method started and
-has not awaited. A job shares no memory with the script that started it,
-so a Proc, a class or a block cannot be passed to one.</p>
+goroutine of its own, over copies of the receiver and the arguments, and
+returns the call's <em>promise</em> at once: an Integer that names the
+result to come. <code>await</code> returns the result, or raises the
+exception the call raised. It takes a promise, a list of them, or
+<code>:all</code>, every call the current method started and has not
+awaited. A call shares no memory with the script that started it, so a
+Proc, a class or a block cannot be passed to one.</p>
 
-<pre class="cameo"><code>class Worker
+<pre class="cameo"><code>include Cameo
+
+class Worker
   int :factor
 
   def times(n) = n * factor
 
-  def fail(msg)
+  def boom(msg)
     raise ArgumentError, msg
   end
 end
@@ -426,24 +435,101 @@ end
 w = Worker.new(factor: 3)
 
 job = async w, :times, 4       # starts w.times(4) on a goroutine
+p job                          # the promise: an Integer
 p await job
 
 jobs = [1, 2, 3].map { |n| async w, :times, n }
-p jobs.map { |j| await j }
+p await(jobs)                  # every result, in order
 
 async w, :times, 10
 async w, :times, 20
-p await :all                   # every job this scope started and did not await
+p await :all                   # every call this scope started and did not await
 
 begin
-  await w, :fail, "boom"       # async and await in one step
+  await w, :boom, "no"         # async and await in one step
 rescue ArgumentError =&gt; e
-  puts "job raised: #{e.message}"
+  puts "the call raised: #{e.message}"
 end</code></pre>
-<pre class="output"><code>12
+<pre class="output"><code>1
+12
 [3, 6, 9]
 [30, 60]
-job raised: boom</code></pre>
+the call raised: no</code></pre>
+
+<h4>Every core at once</h4>
+
+<p>Go spreads the workers over the CPUs, so calls that compute run in
+parallel. Each of these computes the 29th Fibonacci number the slow way:</p>
+
+<pre class="cameo"><code># Fibonacci on every core. async starts each call on a worker of its own, a
+# goroutine that Go spreads over the CPUs, and returns its promise at once;
+# await takes the list of promises and returns the results in order. The
+# four calls run at once, one per core when there are four.
+include Cameo
+
+class Fib
+  def of(n) = n &lt; 2 ? n : of(n - 1) + of(n - 2)
+end
+
+fib = Fib.new
+promises = [29, 29, 29, 29].map { |n| async fib, :of, n }
+p promises
+p await(promises)</code></pre>
+<pre class="output"><code>[1, 2, 3, 4]
+[514229, 514229, 514229, 514229]</code></pre>
+
+<p>On a machine with four cores the four calls take 1.2 seconds, where
+running them one after another takes 2.3; <code>time</code> shows the cores
+at work, with more CPU time than wall time:</p>
+
+<pre class="sh"><code>$ time cameo examples/fibonacci.cameo
+[1, 2, 3, 4]
+[514229, 514229, 514229, 514229]
+
+real	0m1.192s
+user	0m3.569s
+sys	0m0.612s</code></pre>
+
+<h4>Settling a promise by hand</h4>
+
+<p><code>promise</code> makes a pending promise, which <code>resolve
+promise, value</code> settles with a value and <code>fail promise,
+exception</code> with an exception, from the script or from a worker it was
+passed to: a promise is an Integer, so it travels like any other value.
+<code>fail</code> takes what <code>raise</code> takes after the promise; with
+anything but a promise first it raises, as Ruby's <code>fail</code> does. A
+promise is settled once. A Go host settles promises the same way when it
+does I/O for a script; see <a href="go.html#promises">promises in the
+host</a>.</p>
+
+<pre class="cameo"><code>include Cameo
+
+class Courier
+  def deliver(promise, parcel) = resolve(promise, "#{parcel}, delivered")
+  def lose(promise, parcel) = fail(promise, KeyError, "#{parcel} is lost")
+end
+
+courier = Courier.new
+parcel = promise               # a pending promise, nobody's result yet
+async courier, :deliver, parcel, "books"
+p await(parcel)
+
+missing = promise
+async courier, :lose, missing, "a lamp"
+begin
+  await missing
+rescue KeyError =&gt; e
+  puts e.message
+end
+
+begin
+  resolve parcel, "again"
+rescue ArgumentError =&gt; e
+  puts e.message
+end</code></pre>
+<pre class="output"><code>"books, delivered"
+a lamp is lost
+promise 1 is settled already</code></pre>
 
 <h3>Protobuf</h3>
 

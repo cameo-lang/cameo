@@ -166,7 +166,8 @@ def secs(t) = t.to_f
 }
 
 func TestNativeInstancesCrossToWorkers(t *testing.T) {
-	out := native(t, `class Job
+	out := native(t, `include Cameo
+class Job
   int :factor
   def run(pt) = pt.norm2 * factor
 end

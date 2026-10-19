@@ -20,9 +20,9 @@ type Env struct {
 	n      int
 	more   map[string]object.Value
 	parent *Env
-	// processes are the async processes started in this scope, which
-	// `await :all` collects.
-	processes []*Process
+	// promises are the ones async started in this scope, which `await
+	// :all` collects.
+	promises []*Promise
 }
 
 // envInline is how many variables a scope holds without a map.
