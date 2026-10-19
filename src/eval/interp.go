@@ -39,6 +39,10 @@ type Interp struct {
 	// cameoTop is set once the script included Cameo at the top level,
 	// which brings async and the rest of Cameo to every method.
 	cameoTop bool
+	// snap is the top level as the workers async starts see it, shared by
+	// every worker started since the top level last changed; nil when it
+	// changed. A worker's own top level is its snapshot's.
+	snap *topLevel
 	// code is the compiled program, shared with the workers.
 	code *code
 	// rng is this interpreter's random number generator and seed the seed
@@ -67,7 +71,10 @@ func (in *Interp) Const(name string) (object.Value, bool) {
 
 // SetConst defines a top-level constant before the script runs: a module
 // the host gives it.
-func (in *Interp) SetConst(name string, v object.Value) { in.consts[name] = v }
+func (in *Interp) SetConst(name string, v object.Value) {
+	in.changeTop()
+	in.consts[name] = v
+}
 
 // ErrStopped ends a run that Stop asked to end. It is not an exception, so
 // no rescue catches it.
