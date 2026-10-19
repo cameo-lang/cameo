@@ -6,6 +6,7 @@
 <title>cameo — embedding in Go</title>
 <meta name="description" content="Load and run cameo scripts from a Go program, call into them, convert values, pass protobuf messages, handle errors and run workers.">
 <link rel="stylesheet" href="style.css">
+<script type="module" src="site.js"></script>
 </head>
 <body>
 <header class="site"><div class="inner">
@@ -39,10 +40,11 @@ ways.</p>
 
 <h2 id="install">Adding cameo to a module</h2>
 
-<p>cameo needs Go 1.26.4 or later; <code>go get</code> raises a
-module's <code>go</code> line to 1.26.4. Import the package, then:</p>
+<p>cameo needs Go 1.26.4 or later, and <code>go get</code> raises a
+module's <code>go</code> line to that. In the module that will import the
+package:</p>
 
-<pre class="sh"><code>go get github.com/cameo-lang/cameo@v0.2.1
+<pre class="sh"><code>go get github.com/cameo-lang/cameo@v0.2.2
 go mod tidy</code></pre>
 
 <p><code>go mod tidy</code> adds cameo's own dependencies,
@@ -54,7 +56,7 @@ without it the build fails with "missing go.sum entry". Neither needs cgo.</p>
 
 <p><code>cameo.Load(file, src, stdout, stderr)</code> parses and checks a
 script and returns a <code>*cameo.Program</code>; <code>file</code> names
-it in error messages, and the script's <code>puts</code> and
+the script in error messages, and its <code>puts</code> and
 <code>warn</code> write to <code>stdout</code> and <code>stderr</code>.
 <code>Run</code> evaluates the script once, and its classes and methods
 stay loaded for <code>Call</code>. <code>LastValue</code> returns the
@@ -149,8 +151,8 @@ func main() {
 }</code></pre>
 <pre class="output"><code>context deadline exceeded</code></pre>
 
-<p>A host method that blocks is not interrupted: the script stops once it
-returns, so a method that waits on something should watch the same
+<p>A host method that blocks is not interrupted: the script stops once the
+method returns, so a method that waits on something watches the same
 context.</p>
 
 <h2 id="call">Calling into a script</h2>
@@ -211,8 +213,9 @@ that are not comparable in Go, such as a Range or a binary String.</p>
 <h2 id="proto">Protobuf messages both ways</h2>
 
 <p>Every class a script defines is a protobuf message, with one field per
-declared field, numbered from a hash of its name, or by the field's
-<code>number:</code>. A class inside
+declared field. A field's number comes from a hash of its name, or from
+<code>number:</code> in its declaration; see
+<a href="ruby.html#proto">Protobuf</a> on the Ruby page. A class inside
 <code>module Geo</code> is the message <code>Point</code> in package
 <code>geo</code>.</p>
 
@@ -229,11 +232,13 @@ declared field, numbered from a hash of its name, or by the field's
   <li><code>prog.Encode(v)</code> writes any value, not only an instance,
   in the <code>cameo.Value</code> envelope; <code>prog.Decode</code> reads
   it back.</li>
-  <li><code>protogen.Merge(registered, next)</code> merges two definitions
-  of one message, as two programs that share a store have: the fields
-  both have stay as registered, and the fields only <code>next</code> has
-  are added, numbered from their names. The design document says what
-  it accepts.</li>
+  <li><code>protogen.Merge(registered, next)</code> (package
+  <code>github.com/cameo-lang/cameo/src/protogen</code>) merges two
+  definitions of one message, as two programs that share a store have:
+  the fields both have stay as registered, and the fields only
+  <code>next</code> has are added, numbered from their names. The
+  <a href="https://github.com/cameo-lang/cameo/blob/main/doc/design/cameo.md">design document</a>
+  says what it accepts.</li>
 </ul>
 
 <pre class="go"><code>package main
@@ -308,12 +313,12 @@ func main() {
 <pre class="output"><code>package geo;
 
 message Point {
-  optional int64 x = 1;
-  optional int64 y = 2;
+  optional int64 x = 64843;
+  optional int64 y = 64608;
 }
 [cameo/value.proto geo.proto]
 25
-4 bytes
+8 bytes
 3 elements</code></pre>
 
 <h2 id="errors">Errors</h2>
@@ -510,7 +515,7 @@ func main() {
 https://raw.githubusercontent.com/cameo-lang/cameo/main/README.md: 5060 bytes
 https://raw.githubusercontent.com/cameo-lang/cameo/main/MISSING.md: 404 Not Found</code></pre>
 
-<p>The host API does not state that one <code>Program</code> may be used
+<p>The host API makes no promise that one <code>Program</code> can be used
 from several goroutines at once. Give each goroutine of the host its own
 <code>Program</code>; loading one takes microseconds.</p>
 </main>
