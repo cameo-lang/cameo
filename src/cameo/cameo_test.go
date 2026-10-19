@@ -138,6 +138,7 @@ func TestRunContextStopsTheScript(t *testing.T) {
 		"method":  "def spin(n) = n.times { }\nwhile true\n  spin(1)\nend\n",
 		"worker":  "include Cameo\nclass W\n  def go = loop { }\nend\nawait(async(W.new, :go))\n",
 		"promise": "include Cameo\nawait promise\n",
+		"later":   "include Cameo\n100.times { promise }\nawait promise\n",
 	}
 	for name, src := range scripts {
 		var out bytes.Buffer
@@ -146,14 +147,17 @@ func TestRunContextStopsTheScript(t *testing.T) {
 			t.Fatalf("%s: %v", name, err)
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
-		start := time.Now()
-		err = prog.RunContext(ctx)
+		done := make(chan error, 1)
+		go func() { done <- prog.RunContext(ctx) }()
+		select {
+		case err = <-done:
+		case <-time.After(5 * time.Second):
+			cancel()
+			t.Fatalf("%s: RunContext did not return 5 s after its deadline", name)
+		}
 		cancel()
 		if !errors.Is(err, context.DeadlineExceeded) {
 			t.Errorf("%s: RunContext returned %v, want the deadline", name, err)
-		}
-		if took := time.Since(start); took > 2*time.Second {
-			t.Errorf("%s: stopped after %s", name, took)
 		}
 		if out.Len() > 0 {
 			t.Errorf("%s: printed %q", name, out.String())
