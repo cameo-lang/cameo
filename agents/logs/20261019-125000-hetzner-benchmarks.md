@@ -11,12 +11,12 @@
 ## Objective
 Measure the stack of async changes on a 16-core server: the full
 benchmarks/compare sweep, with a baseline of main first, and fib at 1, 4
-and 16 cores against CRuby 3.4 and 4.0 with and without their JITs.
+and 16 cores against CRuby 3.4 and 4.0.
 Record the procedure as a skill.
 
 ## Progress
 - [x] fib on main and each stack level at 1, 4 and 16 cores
-- [x] provision.sh: Go, Rust, CRuby 3.4.11 and 4.0.7 from source
+- [x] provision.sh: Go, CRuby 3.4.11 and 4.0.7 from source
 - [x] benchmarks/compare baseline on main, all four Rubies
 - [x] benchmarks/compare on the stack, cameo alone
 - [x] fib on the CRubies, server deleted

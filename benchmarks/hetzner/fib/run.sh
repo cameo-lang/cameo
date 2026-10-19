@@ -7,8 +7,7 @@
 #
 # CORES sets the core counts (default "1 4 16"); each cameo run is pinned
 # to that many CPUs with taskset and GOMAXPROCS. RUBIES lists the
-# /opt/ruby-* versions to time (default: all), each without a JIT, with
-# YJIT and, from 4.0, with ZJIT. seq.rb and list.rb are plain Ruby;
+# /opt/ruby-* versions to time (default: all). seq.rb and list.rb are plain Ruby;
 # async.rb and coarse.rb use cameo's async, and run on cameo alone.
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -42,12 +41,7 @@ done
 for dir in ${RUBIES:-/opt/ruby-*}; do
   [[ -x $dir/bin/ruby ]] || continue
   v=$("$dir/bin/ruby" -e 'print RUBY_VERSION')
-  flags=("" "--yjit")
-  [[ ${v%%.*} -ge 4 ]] && flags+=("--zjit")
-  for f in "${flags[@]}"; do
-    for script in seq.rb list.rb; do
-      # shellcheck disable=SC2086
-      printf "ruby-%s%s\t1\t%s\t%s\n" "$v" "${f:+ $f}" "$script" "$(best taskset -c 0 "$dir/bin/ruby" $f "$script")"
-    done
+  for script in seq.rb list.rb; do
+    printf "ruby-%s\t1\t%s\t%s\n" "$v" "$script" "$(best taskset -c 0 "$dir/bin/ruby" "$script")"
   done
 done

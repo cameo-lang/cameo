@@ -1,6 +1,6 @@
 ---
 name: hetzner-benchmarks
-description: Run cameo's benchmarks on a temporary 16-core Hetzner server - the full benchmarks/compare sweep against MRI, warmruby and rbgo, with a baseline of main first, and the fib async scaling run at 1, 4 and 16 cores against CRuby 3.4 and 4.0 with and without their JITs. Use when a change needs before-and-after numbers on many cores, or when asked to rerun the recorded benchmarks.
+description: Run cameo's benchmarks on a temporary 16-core Hetzner server - the full benchmarks/compare sweep against MRI, warmruby and rbgo, with a baseline of main first, and the fib async scaling run at 1, 4 and 16 cores against CRuby 3.4 and 4.0. Use when a change needs before-and-after numbers on many cores, or when asked to rerun the recorded benchmarks.
 ---
 
 # Benchmarks on a Hetzner server
@@ -40,8 +40,8 @@ ssh root@IP 'bash -s' < benchmarks/hetzner/provision.sh
 ```
 
 [provision.sh](../../../benchmarks/hetzner/provision.sh) installs Go at
-go.mod's version, Rust, and CRuby 3.4 and 4.0 built from source into
-`/opt/ruby-<version>`, with YJIT and, for 4.0, ZJIT. Ruby 3.4 becomes the
+go.mod's version, and CRuby 3.4 and 4.0 built from source into
+`/opt/ruby-<version>`. Ruby 3.4 becomes the
 `ruby` on PATH, which benchmarks/compare measures as `mri`. It takes about
 ten minutes.
 
@@ -94,8 +94,8 @@ ssh root@IP 'cd /root/cameo && for ref in main <branch>; do
 
 [fib/run.sh](../../../benchmarks/hetzner/fib/run.sh) times sequential,
 fine-grained and coarse async Fibonacci on each cameo at 1, 4 and 16 cores,
-and the sequential ones on every `/opt/ruby-*`, each without a JIT, with
-YJIT and on 4.0 with ZJIT. Every time is read inside the script, the best
+and the sequential ones on every `/opt/ruby-*`. Every time is read inside
+the script, the best
 of three processes. Run it while nothing else runs on the server.
 
 ## 7. Fetch the results, then delete the server

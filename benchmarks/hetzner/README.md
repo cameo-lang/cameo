@@ -6,11 +6,11 @@ what the last run measured. The skill
 the procedure, from creating the server to deleting it.
 
 - [provision.sh](provision.sh) prepares a fresh Ubuntu 24.04 server: Go at
-  go.mod's version, Rust, and CRuby 3.4 and 4.0 built from source into
+  go.mod's version, and CRuby 3.4 and 4.0 built from source into
   `/opt/ruby-<version>`.
 - [fib/run.sh](fib/run.sh) times Fibonacci on cameo binaries at 1, 4 and
-  16 cores, and on every CRuby in `/opt` without a JIT, with YJIT and, on
-  4.0, with ZJIT. [fib/results.tsv](fib/results.tsv) has the last run.
+  16 cores, and on every CRuby in `/opt`.
+  [fib/results.tsv](fib/results.tsv) has the last run.
 - [../compare](../compare) is the suite of 852 CRuby benchmarks; its
   README has the last run's summary.
 
@@ -43,10 +43,7 @@ Seconds, with the peak RSS of `async.rb`:
 | cameo queue | 4 | 1.14 | 3.13 | 0.60 | 0.62 (42 MB) |
 | cameo queue | 16 | 1.28 | 3.30 | 0.46 | 0.42 (116 MB) |
 | CRuby 3.4.11 | 1 | 0.155 | 0.318 | | |
-| CRuby 3.4.11 YJIT | 1 | 0.021 | 0.129 | | |
 | CRuby 4.0.7 | 1 | 0.144 | 0.326 | | |
-| CRuby 4.0.7 YJIT | 1 | 0.021 | 0.120 | | |
-| CRuby 4.0.7 ZJIT | 1 | 0.139 | 0.242 | | |
 
 - Fine-grained `async` went from slower on more cores to faster: 17.2 s on
   one core and 24.4 s on 16, to 1.48 s and 0.42 s, with 77–116 MB of
@@ -55,7 +52,6 @@ Seconds, with the peak RSS of `async.rb`:
   stops gaining past about four: most of the remaining time is allocation,
   which Go's allocator does not spread over cores.
 - The sequential scripts did not change. cameo runs them nine to eleven
-  times slower than CRuby without a JIT. YJIT runs plain recursion seven
-  times faster than CRuby without a JIT; ZJIT, 10% faster.
+  times slower than CRuby.
 - The sequential scripts run faster on four cores than on one: the garbage
   collector works on the other cores.

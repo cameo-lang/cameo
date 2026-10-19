@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Prepares a fresh Ubuntu 24.04 server to run cameo's benchmarks: Go at the
-# version go.mod names, Rust for the Ruby JITs, and CRuby 3.4 and 4.0
-# built from source into /opt/ruby-<version>. It is a shell script, not
-# Ruby, because it is what installs Ruby. Run it as root:
+# version go.mod names, and CRuby 3.4 and 4.0 built from source into
+# /opt/ruby-<version>. It is a shell script, not Ruby, because it is what
+# installs Ruby. Run it as root:
 #
 #   ssh root@HOST 'bash -s' < benchmarks/hetzner/provision.sh
 #
@@ -24,12 +24,6 @@ arch=$(dpkg --print-architecture)
 curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-${arch}.tar.gz" | tar -C /usr/local -xz
 ln -sf /usr/local/go/bin/go /usr/local/bin/go
 
-# Rust: YJIT and ZJIT are written in it, and Ubuntu's rustc is too old for
-# ZJIT.
-curl -fsSL https://sh.rustup.rs | sh -s -- -y --profile minimal >/dev/null
-# shellcheck disable=SC1091
-. "$HOME/.cargo/env"
-
 build_ruby() {
   local version=$1 series=${1%.*}
   local src=/tmp/ruby-$version
@@ -46,6 +40,5 @@ ln -sf "/opt/ruby-$RUBY34/bin/ruby" /usr/local/bin/ruby
 
 echo "go:   $(go version)"
 for v in "$RUBY34" "$RUBY40"; do
-  echo "ruby: $("/opt/ruby-$v/bin/ruby" --yjit -v)"
+  echo "ruby: $("/opt/ruby-$v/bin/ruby" -v)"
 done
-"/opt/ruby-$RUBY40/bin/ruby" --zjit -e 'puts "zjit: #{RubyVM::ZJIT.enabled?}"'

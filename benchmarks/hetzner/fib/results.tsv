@@ -25,11 +25,5 @@ cameo-queue	4	async.rb	0.624	42	514229
 cameo-queue	16	async.rb	0.424	116	514229
 ruby-3.4.11	1	seq.rb	0.155	13	3524578
 ruby-3.4.11	1	list.rb	0.318	13	3524578
-ruby-3.4.11 --yjit	1	seq.rb	0.021	13	3524578
-ruby-3.4.11 --yjit	1	list.rb	0.129	13	3524578
 ruby-4.0.7	1	seq.rb	0.144	15	3524578
 ruby-4.0.7	1	list.rb	0.326	14	3524578
-ruby-4.0.7 --yjit	1	seq.rb	0.021	15	3524578
-ruby-4.0.7 --yjit	1	list.rb	0.120	15	3524578
-ruby-4.0.7 --zjit	1	seq.rb	0.139	15	3524578
-ruby-4.0.7 --zjit	1	list.rb	0.242	16	3524578
