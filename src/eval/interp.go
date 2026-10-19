@@ -93,20 +93,35 @@ func (in *Interp) stopped() error {
 	return nil
 }
 
-// stopper is a run's stop: a flag the loops read, and a channel that wakes
-// whatever awaits a promise.
+// stopper is a run's stop: a flag the loops read, and channels that wake
+// whatever awaits a promise. Stop closes them all. A waiter selects on the
+// one its promise's id picks: a select locks every channel it waits on, so
+// one channel for the whole run is a lock every waiter takes.
 type stopper struct {
 	flag atomic.Bool
 	once sync.Once
-	ch   chan struct{}
+	chs  [64]chan struct{}
 }
 
-func newStopper() *stopper { return &stopper{ch: make(chan struct{})} }
+func newStopper() *stopper {
+	s := &stopper{}
+	for i := range s.chs {
+		s.chs[i] = make(chan struct{})
+	}
+	return s
+}
 
 func (s *stopper) stop() {
 	s.flag.Store(true)
-	s.once.Do(func() { close(s.ch) })
+	s.once.Do(func() {
+		for _, ch := range s.chs {
+			close(ch)
+		}
+	})
 }
+
+// ch returns the channel that wakes the waiters of promise id.
+func (s *stopper) ch(id int64) <-chan struct{} { return s.chs[uint64(id)%uint64(len(s.chs))] }
 
 // New makes an interpreter writing to stdout and stderr.
 func New(stdout, stderr io.Writer) *Interp {
