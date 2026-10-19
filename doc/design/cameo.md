@@ -359,7 +359,15 @@ table; a promise is settled once, and settling it again raises.
 
 `await promise` blocks until the promise is settled and returns its value;
 if it failed, `await` raises the same exception class with the same message
-in the awaiting scope. Awaiting a promise twice returns the same result.
+in the awaiting scope. Awaiting a promise twice returns the same result,
+as long as the method that started it has not returned.
+
+A promise `async` started lives as long as that method: when it returns,
+the table forgets the promises it awaited, and those it did not await are
+forgotten at their first `await`, wherever the id went. Awaiting a
+forgotten promise raises `ArgumentError` ("no promise 7"). The table
+therefore holds the promises still in use, not every one a run started,
+which a recursion that fans out at every level would fill with millions.
 `await [a, b]` waits for each and returns their results in order, raising
 the first failure once all are settled. A promise nobody settles blocks its
 `await` until the run is stopped.

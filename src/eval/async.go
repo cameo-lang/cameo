@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"maps"
-	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -36,6 +35,9 @@ type Promise struct {
 	// awaited is set once something waited for the promise, so await :all
 	// and the end of the run know whose failure nobody saw.
 	awaited bool
+	// ended is set when the method that started the promise returned
+	// before anything awaited it: the first await then forgets it.
+	ended bool
 }
 
 // ID is the promise's id, the Integer a script awaits.
@@ -75,14 +77,18 @@ func (p *Promise) wait(in *Interp) (object.Value, *object.Exception, error) {
 		}
 	}
 	p.mu.Lock()
-	defer p.mu.Unlock()
 	if p.later != nil {
 		v, err := p.later(in)
 		p.later = nil
 		p.result, p.err = v, asException(in, err)
 	}
 	p.awaited = true
-	return p.result, p.err, nil
+	result, exc, forget := p.result, p.err, p.ended
+	p.mu.Unlock()
+	if forget {
+		in.promises.remove(p.id)
+	}
+	return result, exc, nil
 }
 
 func asException(in *Interp, err error) *object.Exception {
@@ -140,6 +146,28 @@ func (t *promises) add(method string) *Promise {
 	return p
 }
 
+func (t *promises) remove(id int64) {
+	s := t.shard(id)
+	s.mu.Lock()
+	delete(s.byID, id)
+	s.mu.Unlock()
+}
+
+// end forgets the promises a method started, as it returns: those it
+// awaited now, the others when they are awaited. Their ids may have left
+// the method, but a script has no use for a promise once it was awaited.
+func (t *promises) end(ps []*Promise) {
+	for _, p := range ps {
+		p.mu.Lock()
+		awaited := p.awaited
+		p.ended = !awaited
+		p.mu.Unlock()
+		if awaited {
+			t.remove(p.id)
+		}
+	}
+}
+
 func (t *promises) get(id int64) *Promise {
 	s := t.shard(id)
 	s.mu.Lock()
@@ -156,13 +184,11 @@ func (in *Interp) NewPromise() *Promise { return in.promises.add("") }
 func (in *Interp) waitStarted() error {
 	t := in.promises
 	for id := int64(1); id <= t.next.Load(); id++ {
+		// A promise that is gone was awaited. One that add counted and has
+		// not stored yet belongs to a worker whose own promise, with a
+		// lower id, was waited for already, so it cannot be pending.
 		p := t.get(id)
-		for p == nil {
-			// add counted the id and has not stored the promise yet.
-			runtime.Gosched()
-			p = t.get(id)
-		}
-		if p.method == "" {
+		if p == nil || p.method == "" {
 			continue
 		}
 		p.mu.Lock()
