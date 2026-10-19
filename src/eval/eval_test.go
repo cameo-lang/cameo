@@ -2,6 +2,8 @@ package eval
 
 import (
 	"bytes"
+	"fmt"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -377,6 +379,47 @@ p Fib.new.of(12)
 	if started, left := in.promises.next.Load(), in.promises.len(); started < 400 || left != 0 {
 		t.Fatalf("%d promises started, %d left in the table", started, left)
 	}
+}
+
+func TestCallsThatWaitDoNotHoldUpTheQueue(t *testing.T) {
+	// More calls than there are cores wait for a promise that only the
+	// last call started settles; each must still get to run.
+	n := 4*runtime.GOMAXPROCS(0) + 2
+	expectOutput(t, fmt.Sprintf(`
+include Cameo
+class W
+  def wait_for(gate) = await(gate)
+  def open(gate) = resolve(gate, :open)
+end
+gate = promise
+waiting = (1..%d).map { async(W.new, :wait_for, gate) }
+async W.new, :open, gate
+p await(waiting).uniq
+`, n), "[:open]\n")
+}
+
+func TestCallsThatNeverEndDoNotHoldUpTheQueue(t *testing.T) {
+	// More calls than there are cores keep busy for two seconds; a call
+	// started after them must not wait until they end.
+	n := 2*runtime.GOMAXPROCS(0) + 1
+	expectOutput(t, fmt.Sprintf(`
+include Cameo
+def now = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+class W
+  def spin(seconds)
+    t0 = now
+    x = 0
+    x += 1 while now - t0 < seconds
+    x
+  end
+  def finish(gate) = resolve(gate, :done)
+end
+t0 = now
+%d.times { async(W.new, :spin, 2) }
+gate = promise
+async W.new, :finish, gate
+p await(gate), now - t0 < 1
+`, n), ":done\ntrue\n")
 }
 
 func TestPromises(t *testing.T) {

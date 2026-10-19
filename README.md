@@ -26,7 +26,7 @@ a.x = 10                                  # a is rebound to a copy with x: 10
 b = a.with { |p| { y: p.y * 5 } }         # a copy with y: 10; a is unchanged
 
 include Cameo                             # async, await and promises
-job = async a, :+, b                      # a.+(b) on its own goroutine; job is its promise
+job = async a, :+, b                      # a.+(b) on another goroutine; job is its promise
 puts await job                            # Point(x: 20, y: 12)
 ```
 
