@@ -314,10 +314,10 @@ func (in *Interp) invoke(m *object.Method, recv object.Value, args []object.Valu
 	if inst, ok := recv.AsInstance(); ok && def.Name == "initialize" {
 		fr.Building = inst
 	}
-	if err := in.bindParams(&def.Params, args, kw, block, env, fr, true, m.Name, line); err != nil {
-		return object.Value{}, err
+	v, err := object.Value{}, in.bindParams(&def.Params, args, kw, block, env, fr, true, m.Name, line)
+	if err == nil {
+		v, err = cd.body(in, env, fr)
 	}
-	v, err := cd.body(in, env, fr)
 	if len(env.promises) > 0 {
 		in.promises.end(env.promises)
 	}

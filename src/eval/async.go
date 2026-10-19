@@ -153,18 +153,6 @@ func (t *promises) remove(id int64) {
 	s.mu.Unlock()
 }
 
-// len returns the number of promises in the table.
-func (t *promises) len() int {
-	n := 0
-	for i := range t.shards {
-		s := &t.shards[i]
-		s.mu.Lock()
-		n += len(s.byID)
-		s.mu.Unlock()
-	}
-	return n
-}
-
 // end forgets the promises a method started, as it returns: those it
 // awaited now, the others when they are awaited. Their ids may have left
 // the method, but a script has no use for a promise once it was awaited.

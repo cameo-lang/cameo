@@ -426,6 +426,33 @@ p Fib.new.of(12)
 	}
 }
 
+func TestPromisesOfAMethodWhoseArgumentsFailLeaveTheTable(t *testing.T) {
+	// A default argument awaited a call before a missing keyword failed the
+	// method; its promise goes when the method does.
+	prog, err := syntax.Parse("t.cameo", `
+include Cameo
+class W
+  def one = 1
+  def m(a = await(async(self, :one)), b:) = a
+end
+10.times do
+  W.new.m
+rescue ArgumentError
+end
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out bytes.Buffer
+	in := New(&out, &out)
+	if err := in.Run("t.cameo", prog); err != nil {
+		t.Fatal(err)
+	}
+	if started, left := in.promises.next.Load(), in.promises.len(); started != 10 || left != 0 {
+		t.Fatalf("%d promises started, %d left in the table: %s", started, left, out.String())
+	}
+}
+
 func TestPromises(t *testing.T) {
 	// A promise is an Integer that resolve or fail settles once, from the
 	// script or a worker; await takes one or a list.
@@ -628,4 +655,16 @@ puts P.proto
 		"message P {\n  optional int64 y = 64608;\n  optional int64 x = 64843;\n}\n")
 	expectError(t, "class P\n  int :x, number: 2\n  int :y, number: 2\nend\n", "field y: number 2 is field x's")
 	expectError(t, "class P\n  reserved 2\n  int :x, number: 2\nend\n", "field x: number 2 is reserved in P")
+}
+
+// len returns, for tests, the number of promises in the table.
+func (t *promises) len() int {
+	n := 0
+	for i := range t.shards {
+		s := &t.shards[i]
+		s.mu.Lock()
+		n += len(s.byID)
+		s.mu.Unlock()
+	}
+	return n
 }
