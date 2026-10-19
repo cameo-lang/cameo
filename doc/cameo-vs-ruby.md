@@ -17,13 +17,13 @@ says why; its *Decisions taken* records the choices made explicitly.
 ## How compatible, measured
 
 **CRuby's benchmark suite.** [benchmarks/ruby](../benchmarks/ruby) holds the
-1318 cases of CRuby's `benchmark/` that cameo may legally carry. 824 of them
+1318 cases of CRuby's `benchmark/` that cameo may legally carry. 852 of them
 run under cameo with Ruby's output. The others, by the first thing that stops
 each:
 
 | Cases | Reason |
 |---|---|
-| 80 | metaprogramming: `send`, `eval`, `define_method`, `class_eval`, `instance_variable_set` |
+| 52 | metaprogramming: `eval`, `define_method`, `class_eval`, `instance_variable_set` |
 | 61 | instance variables |
 | 59 | `attr_*` accessors |
 | 58 | mutation of something other than a local variable |
@@ -68,7 +68,9 @@ mspec's own `before` blocks.
 - **Classes and modules**: single inheritance, overriding and `super`;
   `module` as a namespace and a mixin through `include` and `extend`;
   `Comparable`, and `Enumerable` for a class that defines `each`;
-  `method_missing` and `respond_to_missing?`; `Class.new(Base) { … }`;
+  `method_missing` and `respond_to_missing?`; `send`, `public_send` and
+  `__send__`, which refuse a mutating method as a call on a temporary
+  does; `Class.new(Base) { … }`;
   `def self.x` in a class body.
 - **Exceptions**: `begin`/`rescue`/`else`/`ensure`, `rescue => e`,
   `raise`, `retry`, and the exception classes of Ruby's core.
@@ -158,7 +160,7 @@ The checker rejects these by name, with the line:
 | class variables, `@@x`; global variables, `$x`, including `$stdout`, `$!` and `$~` | a constant, a field or a local; `rescue => e`; the MatchData of `match` |
 | setters, `def x=(v)`; `attr_reader`, `attr_writer`, `attr_accessor` | field declarations, which define readers, and `with` |
 | `private`, `protected`, `public`, `module_function` | none: every method is public |
-| `send`, `public_send`, `eval`, `instance_eval`, `class_eval`, `define_method`, `instance_variable_get` and `_set`, `undef` | a direct call or a `def` |
+| `eval`, `instance_eval`, `class_eval`, `define_method`, `instance_variable_get` and `_set`, `undef` | a direct call or a `def` |
 | `def obj.x`, `class << self` | `def self.x` in a class body |
 | a mutating or bang method on anything but a local, such as `[3, 1].sort!` or `obj.list << x` | the non-mutating form: `sort`, `+`, `append`, `with` |
 | nested multiple assignment, `a, (b, c) = …` | separate assignments |

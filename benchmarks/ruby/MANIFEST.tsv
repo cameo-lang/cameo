@@ -239,86 +239,58 @@ unsupported/marshal	marshal_dump_load_integer--marshal_load_integer_over_32_bit.
 unsupported/marshal	marshal_dump_load_integer--marshal_load_integer_over_64_bit.rb	benchmark/marshal_dump_load_integer.yml, entry marshal_load_integer_over_64_bit	Marshal
 unsupported/marshal	marshal_dump_load_integer--marshal_load_integer_small.rb	benchmark/marshal_dump_load_integer.yml, entry marshal_load_integer_small	Marshal
 unsupported/marshal	marshal_dump_load_time.rb	benchmark/marshal_dump_load_time.rb	Marshal
-unsupported/metaprogramming	array_large_literal--array_100.rb	benchmark/array_large_literal.yml, entry array_100	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	array_large_literal--array_1000.rb	benchmark/array_large_literal.yml, entry array_1000	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	array_large_literal--array_10000.rb	benchmark/array_large_literal.yml, entry array_10000	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	array_large_literal--array_100000.rb	benchmark/array_large_literal.yml, entry array_100000	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	hash_aref_str_lit--dyn_symbol.rb	benchmark/hash_aref_str_lit.yml, entry dyn_symbol	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	hash_aref_str_lit--frozen_lit.rb	benchmark/hash_aref_str_lit.yml, entry frozen_lit	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	hash_aref_str_lit--iseq_lit.rb	benchmark/hash_aref_str_lit.yml, entry iseq_lit	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	hash_aref_str_lit--small_lit.rb	benchmark/hash_aref_str_lit.yml, entry small_lit	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	hash_aref_str_lit--symbol.rb	benchmark/hash_aref_str_lit.yml, entry symbol	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	hash_aref_sym.rb	benchmark/hash_aref_sym.rb	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	hash_aref_sym_long.rb	benchmark/hash_aref_sym_long.rb	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	hash_new--new.rb	benchmark/hash_new.yml, entry new	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	hash_new--new_with_capa_100k.rb	benchmark/hash_new.yml, entry new_with_capa_100k	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	hash_new--new_with_capa_1k.rb	benchmark/hash_new.yml, entry new_with_capa_1k	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	keyword_arguments_many--kw_128_dense.rb	benchmark/keyword_arguments_many.yml, entry kw_128_dense	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	keyword_arguments_many--kw_128_sparse.rb	benchmark/keyword_arguments_many.yml, entry kw_128_sparse	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	keyword_arguments_many--kw_31_dense.rb	benchmark/keyword_arguments_many.yml, entry kw_31_dense	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	keyword_arguments_many--kw_31_sparse.rb	benchmark/keyword_arguments_many.yml, entry kw_31_sparse	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	keyword_arguments_many--kw_32_dense.rb	benchmark/keyword_arguments_many.yml, entry kw_32_dense	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	keyword_arguments_many--kw_32_sparse.rb	benchmark/keyword_arguments_many.yml, entry kw_32_sparse	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	keyword_arguments_many--kwsplat_128_dense.rb	benchmark/keyword_arguments_many.yml, entry kwsplat_128_dense	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	keyword_arguments_many--kwsplat_128_sparse.rb	benchmark/keyword_arguments_many.yml, entry kwsplat_128_sparse	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	keyword_arguments_many--kwsplat_31_dense.rb	benchmark/keyword_arguments_many.yml, entry kwsplat_31_dense	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	keyword_arguments_many--kwsplat_31_sparse.rb	benchmark/keyword_arguments_many.yml, entry kwsplat_31_sparse	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	keyword_arguments_many--kwsplat_32_dense.rb	benchmark/keyword_arguments_many.yml, entry kwsplat_32_dense	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	keyword_arguments_many--kwsplat_32_sparse.rb	benchmark/keyword_arguments_many.yml, entry kwsplat_32_sparse	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	loop_times_megamorphic--loop_times_megamorphic.rb	benchmark/loop_times_megamorphic.yml, entry loop_times_megamorphic	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	marshal_dump_load_geniv.rb	benchmark/marshal_dump_load_geniv.rb	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	method_bind_call--fastpath.rb	benchmark/method_bind_call.yml, entry fastpath	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	method_bind_call--slowpath.rb	benchmark/method_bind_call.yml, entry slowpath	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_bmethod--bmethod_0_splat.rb	benchmark/vm_call_bmethod.yml, entry bmethod_0_splat	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_bmethod--bmethod_100_splat.rb	benchmark/vm_call_bmethod.yml, entry bmethod_100_splat	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_bmethod--bmethod_10_splat.rb	benchmark/vm_call_bmethod.yml, entry bmethod_10_splat	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_bmethod--bmethod_1_splat.rb	benchmark/vm_call_bmethod.yml, entry bmethod_1_splat	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_bmethod--bmethod_kw.rb	benchmark/vm_call_bmethod.yml, entry bmethod_kw	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_bmethod--bmethod_kw_splat.rb	benchmark/vm_call_bmethod.yml, entry bmethod_kw_splat	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_bmethod--bmethod_no_kw.rb	benchmark/vm_call_bmethod.yml, entry bmethod_no_kw	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_bmethod--bmethod_no_splat.rb	benchmark/vm_call_bmethod.yml, entry bmethod_no_splat	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_bmethod--bmethod_simple_0.rb	benchmark/vm_call_bmethod.yml, entry bmethod_simple_0	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_bmethod--bmethod_simple_0_splat.rb	benchmark/vm_call_bmethod.yml, entry bmethod_simple_0_splat	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_bmethod--bmethod_simple_1.rb	benchmark/vm_call_bmethod.yml, entry bmethod_simple_1	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_bmethod--bmethod_simple_1_splat.rb	benchmark/vm_call_bmethod.yml, entry bmethod_simple_1_splat	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_send_iseq--send_0_splat.rb	benchmark/vm_call_send_iseq.yml, entry send_0_splat	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_send_iseq--send_0_splat_comb.rb	benchmark/vm_call_send_iseq.yml, entry send_0_splat_comb	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_send_iseq--send_0_splat_comb_kw.rb	benchmark/vm_call_send_iseq.yml, entry send_0_splat_comb_kw	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_send_iseq--send_0_splat_kw.rb	benchmark/vm_call_send_iseq.yml, entry send_0_splat_kw	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_send_iseq--send_10_splat.rb	benchmark/vm_call_send_iseq.yml, entry send_10_splat	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_send_iseq--send_10_splat_comb.rb	benchmark/vm_call_send_iseq.yml, entry send_10_splat_comb	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_send_iseq--send_10_splat_comb_kw.rb	benchmark/vm_call_send_iseq.yml, entry send_10_splat_comb_kw	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_send_iseq--send_10_splat_kw.rb	benchmark/vm_call_send_iseq.yml, entry send_10_splat_kw	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_send_iseq--send_1_splat.rb	benchmark/vm_call_send_iseq.yml, entry send_1_splat	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_send_iseq--send_1_splat_comb.rb	benchmark/vm_call_send_iseq.yml, entry send_1_splat_comb	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_send_iseq--send_1_splat_comb_kw.rb	benchmark/vm_call_send_iseq.yml, entry send_1_splat_comb_kw	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_send_iseq--send_1_splat_kw.rb	benchmark/vm_call_send_iseq.yml, entry send_1_splat_kw	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_send_iseq--send_200_splat.rb	benchmark/vm_call_send_iseq.yml, entry send_200_splat	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_send_iseq--send_200_splat_comb.rb	benchmark/vm_call_send_iseq.yml, entry send_200_splat_comb	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_send_iseq--send_200_splat_comb_kw.rb	benchmark/vm_call_send_iseq.yml, entry send_200_splat_comb_kw	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_send_iseq--send_200_splat_kw.rb	benchmark/vm_call_send_iseq.yml, entry send_200_splat_kw	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_send_iseq--send_kw.rb	benchmark/vm_call_send_iseq.yml, entry send_kw	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_send_iseq--send_kw_splat.rb	benchmark/vm_call_send_iseq.yml, entry send_kw_splat	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_send_iseq--send_no_kw.rb	benchmark/vm_call_send_iseq.yml, entry send_no_kw	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_send_iseq--send_no_splat.rb	benchmark/vm_call_send_iseq.yml, entry send_no_splat	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_send_iseq--send_simple_0.rb	benchmark/vm_call_send_iseq.yml, entry send_simple_0	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_send_iseq--send_simple_0_splat.rb	benchmark/vm_call_send_iseq.yml, entry send_simple_0_splat	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_send_iseq--send_simple_0_splat_comb.rb	benchmark/vm_call_send_iseq.yml, entry send_simple_0_splat_comb	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_send_iseq--send_simple_1.rb	benchmark/vm_call_send_iseq.yml, entry send_simple_1	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_send_iseq--send_simple_1_splat.rb	benchmark/vm_call_send_iseq.yml, entry send_simple_1_splat	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_call_send_iseq--send_simple_1_splat_comb.rb	benchmark/vm_call_send_iseq.yml, entry send_simple_1_splat_comb	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_defined_method--vm_defined_method.rb	benchmark/vm_defined_method.yml, entry vm_defined_method	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_eval--vm_eval.rb	benchmark/vm_eval.yml, entry vm_eval	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_iclass_super--vm_iclass_super.rb	benchmark/vm_iclass_super.yml, entry vm_iclass_super	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_ivar_memoize--vm_ivar_divergent_shape.rb	benchmark/vm_ivar_memoize.yml, entry vm_ivar_divergent_shape	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_ivar_memoize--vm_ivar_divergent_shape_imbalanced.rb	benchmark/vm_ivar_memoize.yml, entry vm_ivar_divergent_shape_imbalanced	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_ivar_memoize--vm_ivar_memoize_unstable_shape.rb	benchmark/vm_ivar_memoize.yml, entry vm_ivar_memoize_unstable_shape	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_ivar_memoize--vm_ivar_memoize_unstable_shape_miss.rb	benchmark/vm_ivar_memoize.yml, entry vm_ivar_memoize_unstable_shape_miss	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_ivar_memoize--vm_ivar_stable_shape.rb	benchmark/vm_ivar_memoize.yml, entry vm_ivar_stable_shape	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_ivar_memoize--vm_ivar_unstable_undef.rb	benchmark/vm_ivar_memoize.yml, entry vm_ivar_unstable_undef	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_send--vm_send.rb	benchmark/vm_send.yml, entry vm_send	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_send--vm_send_var.rb	benchmark/vm_send.yml, entry vm_send_var	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
-unsupported/metaprogramming	vm_symbol_block_pass.rb	benchmark/vm_symbol_block_pass.rb	metaprogramming (send, eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	array_large_literal--array_100.rb	benchmark/array_large_literal.yml, entry array_100	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	array_large_literal--array_1000.rb	benchmark/array_large_literal.yml, entry array_1000	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	array_large_literal--array_10000.rb	benchmark/array_large_literal.yml, entry array_10000	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	array_large_literal--array_100000.rb	benchmark/array_large_literal.yml, entry array_100000	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	hash_aref_str_lit--dyn_symbol.rb	benchmark/hash_aref_str_lit.yml, entry dyn_symbol	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	hash_aref_str_lit--frozen_lit.rb	benchmark/hash_aref_str_lit.yml, entry frozen_lit	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	hash_aref_str_lit--iseq_lit.rb	benchmark/hash_aref_str_lit.yml, entry iseq_lit	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	hash_aref_str_lit--small_lit.rb	benchmark/hash_aref_str_lit.yml, entry small_lit	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	hash_aref_str_lit--symbol.rb	benchmark/hash_aref_str_lit.yml, entry symbol	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	hash_aref_sym.rb	benchmark/hash_aref_sym.rb	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	hash_aref_sym_long.rb	benchmark/hash_aref_sym_long.rb	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	hash_new--new.rb	benchmark/hash_new.yml, entry new	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	hash_new--new_with_capa_100k.rb	benchmark/hash_new.yml, entry new_with_capa_100k	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	hash_new--new_with_capa_1k.rb	benchmark/hash_new.yml, entry new_with_capa_1k	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	keyword_arguments_many--kw_128_dense.rb	benchmark/keyword_arguments_many.yml, entry kw_128_dense	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	keyword_arguments_many--kw_128_sparse.rb	benchmark/keyword_arguments_many.yml, entry kw_128_sparse	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	keyword_arguments_many--kw_31_dense.rb	benchmark/keyword_arguments_many.yml, entry kw_31_dense	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	keyword_arguments_many--kw_31_sparse.rb	benchmark/keyword_arguments_many.yml, entry kw_31_sparse	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	keyword_arguments_many--kw_32_dense.rb	benchmark/keyword_arguments_many.yml, entry kw_32_dense	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	keyword_arguments_many--kw_32_sparse.rb	benchmark/keyword_arguments_many.yml, entry kw_32_sparse	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	keyword_arguments_many--kwsplat_128_dense.rb	benchmark/keyword_arguments_many.yml, entry kwsplat_128_dense	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	keyword_arguments_many--kwsplat_128_sparse.rb	benchmark/keyword_arguments_many.yml, entry kwsplat_128_sparse	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	keyword_arguments_many--kwsplat_31_dense.rb	benchmark/keyword_arguments_many.yml, entry kwsplat_31_dense	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	keyword_arguments_many--kwsplat_31_sparse.rb	benchmark/keyword_arguments_many.yml, entry kwsplat_31_sparse	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	keyword_arguments_many--kwsplat_32_dense.rb	benchmark/keyword_arguments_many.yml, entry kwsplat_32_dense	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	keyword_arguments_many--kwsplat_32_sparse.rb	benchmark/keyword_arguments_many.yml, entry kwsplat_32_sparse	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	loop_times_megamorphic--loop_times_megamorphic.rb	benchmark/loop_times_megamorphic.yml, entry loop_times_megamorphic	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	marshal_dump_load_geniv.rb	benchmark/marshal_dump_load_geniv.rb	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	method_bind_call--fastpath.rb	benchmark/method_bind_call.yml, entry fastpath	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	method_bind_call--slowpath.rb	benchmark/method_bind_call.yml, entry slowpath	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_bmethod--bmethod_0_splat.rb	benchmark/vm_call_bmethod.yml, entry bmethod_0_splat	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_bmethod--bmethod_100_splat.rb	benchmark/vm_call_bmethod.yml, entry bmethod_100_splat	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_bmethod--bmethod_10_splat.rb	benchmark/vm_call_bmethod.yml, entry bmethod_10_splat	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_bmethod--bmethod_1_splat.rb	benchmark/vm_call_bmethod.yml, entry bmethod_1_splat	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_bmethod--bmethod_kw.rb	benchmark/vm_call_bmethod.yml, entry bmethod_kw	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_bmethod--bmethod_kw_splat.rb	benchmark/vm_call_bmethod.yml, entry bmethod_kw_splat	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_bmethod--bmethod_no_kw.rb	benchmark/vm_call_bmethod.yml, entry bmethod_no_kw	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_bmethod--bmethod_no_splat.rb	benchmark/vm_call_bmethod.yml, entry bmethod_no_splat	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_bmethod--bmethod_simple_0.rb	benchmark/vm_call_bmethod.yml, entry bmethod_simple_0	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_bmethod--bmethod_simple_0_splat.rb	benchmark/vm_call_bmethod.yml, entry bmethod_simple_0_splat	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_bmethod--bmethod_simple_1.rb	benchmark/vm_call_bmethod.yml, entry bmethod_simple_1	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_call_bmethod--bmethod_simple_1_splat.rb	benchmark/vm_call_bmethod.yml, entry bmethod_simple_1_splat	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_defined_method--vm_defined_method.rb	benchmark/vm_defined_method.yml, entry vm_defined_method	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_eval--vm_eval.rb	benchmark/vm_eval.yml, entry vm_eval	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_iclass_super--vm_iclass_super.rb	benchmark/vm_iclass_super.yml, entry vm_iclass_super	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_ivar_memoize--vm_ivar_divergent_shape.rb	benchmark/vm_ivar_memoize.yml, entry vm_ivar_divergent_shape	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_ivar_memoize--vm_ivar_divergent_shape_imbalanced.rb	benchmark/vm_ivar_memoize.yml, entry vm_ivar_divergent_shape_imbalanced	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_ivar_memoize--vm_ivar_memoize_unstable_shape.rb	benchmark/vm_ivar_memoize.yml, entry vm_ivar_memoize_unstable_shape	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_ivar_memoize--vm_ivar_memoize_unstable_shape_miss.rb	benchmark/vm_ivar_memoize.yml, entry vm_ivar_memoize_unstable_shape_miss	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_ivar_memoize--vm_ivar_stable_shape.rb	benchmark/vm_ivar_memoize.yml, entry vm_ivar_stable_shape	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_ivar_memoize--vm_ivar_unstable_undef.rb	benchmark/vm_ivar_memoize.yml, entry vm_ivar_unstable_undef	metaprogramming (eval, define_method, class_eval, instance_variable_set)
+unsupported/metaprogramming	vm_symbol_block_pass.rb	benchmark/vm_symbol_block_pass.rb	metaprogramming (eval, define_method, class_eval, instance_variable_set)
 unsupported/mutation	array_flatten--large_flat_ary.flatten.rb	benchmark/array_flatten.yml, entry large_flat_ary.flatten	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/mutation	array_flatten--large_flat_ary.flatten_.rb	benchmark/array_flatten.yml, entry large_flat_ary.flatten_	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/mutation	array_flatten--large_nested_ary.flatten.rb	benchmark/array_flatten.yml, entry large_nested_ary.flatten	mutation (<<, push, pop, shift, delete, concat, bang methods)
@@ -1225,6 +1197,32 @@ works	vm_call_method_missing--method_missing_simple_0.rb	benchmark/vm_call_metho
 works	vm_call_method_missing--method_missing_simple_0_splat.rb	benchmark/vm_call_method_missing.yml, entry method_missing_simple_0_splat	
 works	vm_call_method_missing--method_missing_simple_1.rb	benchmark/vm_call_method_missing.yml, entry method_missing_simple_1	
 works	vm_call_method_missing--method_missing_simple_1_splat.rb	benchmark/vm_call_method_missing.yml, entry method_missing_simple_1_splat	
+works	vm_call_send_iseq--send_0_splat.rb	benchmark/vm_call_send_iseq.yml, entry send_0_splat	
+works	vm_call_send_iseq--send_0_splat_comb.rb	benchmark/vm_call_send_iseq.yml, entry send_0_splat_comb	
+works	vm_call_send_iseq--send_0_splat_comb_kw.rb	benchmark/vm_call_send_iseq.yml, entry send_0_splat_comb_kw	
+works	vm_call_send_iseq--send_0_splat_kw.rb	benchmark/vm_call_send_iseq.yml, entry send_0_splat_kw	
+works	vm_call_send_iseq--send_10_splat.rb	benchmark/vm_call_send_iseq.yml, entry send_10_splat	
+works	vm_call_send_iseq--send_10_splat_comb.rb	benchmark/vm_call_send_iseq.yml, entry send_10_splat_comb	
+works	vm_call_send_iseq--send_10_splat_comb_kw.rb	benchmark/vm_call_send_iseq.yml, entry send_10_splat_comb_kw	
+works	vm_call_send_iseq--send_10_splat_kw.rb	benchmark/vm_call_send_iseq.yml, entry send_10_splat_kw	
+works	vm_call_send_iseq--send_1_splat.rb	benchmark/vm_call_send_iseq.yml, entry send_1_splat	
+works	vm_call_send_iseq--send_1_splat_comb.rb	benchmark/vm_call_send_iseq.yml, entry send_1_splat_comb	
+works	vm_call_send_iseq--send_1_splat_comb_kw.rb	benchmark/vm_call_send_iseq.yml, entry send_1_splat_comb_kw	
+works	vm_call_send_iseq--send_1_splat_kw.rb	benchmark/vm_call_send_iseq.yml, entry send_1_splat_kw	
+works	vm_call_send_iseq--send_200_splat.rb	benchmark/vm_call_send_iseq.yml, entry send_200_splat	
+works	vm_call_send_iseq--send_200_splat_comb.rb	benchmark/vm_call_send_iseq.yml, entry send_200_splat_comb	
+works	vm_call_send_iseq--send_200_splat_comb_kw.rb	benchmark/vm_call_send_iseq.yml, entry send_200_splat_comb_kw	
+works	vm_call_send_iseq--send_200_splat_kw.rb	benchmark/vm_call_send_iseq.yml, entry send_200_splat_kw	
+works	vm_call_send_iseq--send_kw.rb	benchmark/vm_call_send_iseq.yml, entry send_kw	
+works	vm_call_send_iseq--send_kw_splat.rb	benchmark/vm_call_send_iseq.yml, entry send_kw_splat	
+works	vm_call_send_iseq--send_no_kw.rb	benchmark/vm_call_send_iseq.yml, entry send_no_kw	
+works	vm_call_send_iseq--send_no_splat.rb	benchmark/vm_call_send_iseq.yml, entry send_no_splat	
+works	vm_call_send_iseq--send_simple_0.rb	benchmark/vm_call_send_iseq.yml, entry send_simple_0	
+works	vm_call_send_iseq--send_simple_0_splat.rb	benchmark/vm_call_send_iseq.yml, entry send_simple_0_splat	
+works	vm_call_send_iseq--send_simple_0_splat_comb.rb	benchmark/vm_call_send_iseq.yml, entry send_simple_0_splat_comb	
+works	vm_call_send_iseq--send_simple_1.rb	benchmark/vm_call_send_iseq.yml, entry send_simple_1	
+works	vm_call_send_iseq--send_simple_1_splat.rb	benchmark/vm_call_send_iseq.yml, entry send_simple_1_splat	
+works	vm_call_send_iseq--send_simple_1_splat_comb.rb	benchmark/vm_call_send_iseq.yml, entry send_simple_1_splat_comb	
 works	vm_call_symproc--symproc_0_splat.rb	benchmark/vm_call_symproc.yml, entry symproc_0_splat	
 works	vm_call_symproc--symproc_0_splat_comb.rb	benchmark/vm_call_symproc.yml, entry symproc_0_splat_comb	
 works	vm_call_symproc--symproc_0_splat_comb_kw.rb	benchmark/vm_call_symproc.yml, entry symproc_0_splat_comb_kw	
@@ -1310,6 +1308,8 @@ works	vm_regexp--vm_regexp_alternating.rb	benchmark/vm_regexp.yml, entry vm_rege
 works	vm_regexp--vm_regexp_invert.rb	benchmark/vm_regexp.yml, entry vm_regexp_invert	
 works	vm_regexp--vm_regexp_invert_alternating.rb	benchmark/vm_regexp.yml, entry vm_regexp_invert_alternating	
 works	vm_rescue--vm_rescue.rb	benchmark/vm_rescue.yml, entry vm_rescue	
+works	vm_send--vm_send.rb	benchmark/vm_send.yml, entry vm_send	
+works	vm_send--vm_send_var.rb	benchmark/vm_send.yml, entry vm_send_var	
 works	vm_simplereturn--vm_simplereturn.rb	benchmark/vm_simplereturn.yml, entry vm_simplereturn	
 works	vm_string_literal--vm_string_literal.rb	benchmark/vm_string_literal.yml, entry vm_string_literal	
 works	vm_super--vm_super.rb	benchmark/vm_super.yml, entry vm_super	

@@ -288,13 +288,13 @@ runs the check alone.</p>
     @balance = 0
   end
 
-  def deposit(n) = send(:add, n)
+  define_method(:deposit) { |n| add(n) }
 end
 
 $total = 0</code></pre>
 <pre class="output error"><code>script.cameo:2: attr_reader is not supported: a field declaration defines its reader, and there are no setters
 script.cameo:5: @balance = …: cameo has no instance variables; initialize sets a field with self.balance = …
-script.cameo:8: send is not supported; use a direct call
+script.cameo:8: define_method is not supported; use def
 script.cameo:11: global variables are not supported</code></pre>
 
 <table>
@@ -305,7 +305,7 @@ script.cameo:11: global variables are not supported</code></pre>
 <tr><td>setters, <code>def x=(v)</code>; <code>attr_reader</code>, <code>attr_writer</code>, <code>attr_accessor</code></td><td>field declarations, which define readers, and <code>with</code></td></tr>
 <tr><td><code>self.x = v</code> outside <code>initialize</code></td><td><code>with(x: v)</code>, which returns the copy</td></tr>
 <tr><td><code>private</code>, <code>protected</code>, <code>public</code>, <code>module_function</code></td><td>none: every method is public</td></tr>
-<tr><td><code>send</code>, <code>public_send</code>, <code>eval</code>, <code>instance_eval</code>, <code>class_eval</code>, <code>define_method</code>, <code>instance_variable_get</code> and <code>_set</code>, <code>undef</code></td><td>a direct call or a <code>def</code></td></tr>
+<tr><td><code>eval</code>, <code>instance_eval</code>, <code>class_eval</code>, <code>define_method</code>, <code>instance_variable_get</code> and <code>_set</code>, <code>undef</code></td><td>a direct call or a <code>def</code></td></tr>
 <tr><td><code>def obj.x</code>, <code>class &lt;&lt; self</code></td><td><code>def self.x</code> in a class body</td></tr>
 <tr><td>a mutating or bang method on anything but a local, such as <code>[3, 1].sort!</code> or <code>obj.list &lt;&lt; x</code></td><td>the non-mutating form: <code>sort</code>, <code>+</code>, <code>append</code>, <code>with</code></td></tr>
 <tr><td>nested multiple assignment, <code>a, (b, c) = …</code></td><td>separate assignments</td></tr>

@@ -50,7 +50,7 @@ What cameo leaves out, and the checker rejects by name:
   variables; global variables
 - reopening a class: a second `class X` never changes the first, see
   *Classes*; `define_method`,
-  `send`, `instance_variable_set`, `eval`, `undef`,
+  `instance_variable_set`, `eval`, `undef`,
   `extend`, singleton classes, `def self.x` on an instance
 - mutating methods (`<<`, `push`, `pop`, `delete`, `merge!`, `map!`, every
   bang method) on anything but a local or a field in `initialize`, which
@@ -653,6 +653,14 @@ re-opened by accident:
   form, and two programs that each appended a field to a shared message
   gave two fields one number. `reserved` keeps a removed field's number
   and name out of use.
+- **`send`** calls a method by name, as Ruby's does, and so do
+  `public_send` and `__send__`, since every method is public. It reaches
+  `method_missing` and the top-level methods a bare call reaches. It never
+  rebinds its receiver, so it refuses what a call on a receiver cameo
+  cannot rebind refuses, `push` and the bang methods among them, and
+  `initialize`, which only `new` runs on an instance under construction.
+  Leaving it out cost scripts that pick a method from data; the parser
+  cannot see the name, so the refusal happens when the call runs.
 - **No instance variables.** `initialize` sets a field with `self.x = v`,
   and a field is read with its reader, so `@` is free for later use. Ruby
   code that sets `@x` in `initialize` no longer runs unchanged; it never

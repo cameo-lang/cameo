@@ -414,6 +414,22 @@ func (c *converter) selfField(n ast.Node) (string, bool) {
 	return call.Name, true
 }
 
+// Refused is why cameo refuses a call of name on a receiver it cannot
+// rebind: a method that changes its receiver, a bang method, or one cameo
+// leaves out. ok is false for a name cameo calls on any receiver.
+func Refused(name string) (msg string, ok bool) {
+	if alt, listed := mutators[name]; listed {
+		if mayMutate(name) {
+			return fmt.Sprintf("%s changes its receiver, which cameo rebinds only for a local variable or a field in initialize; use %s", name, alt), true
+		}
+		return fmt.Sprintf("%s is not supported; use %s", name, alt), true
+	}
+	if strings.HasSuffix(name, "!") && name != "!" && name != "!=" {
+		return fmt.Sprintf("%s: a bang method changes its receiver, which cameo rebinds only for a local variable or a field in initialize", name), true
+	}
+	return "", false
+}
+
 // mutators are methods of Ruby's core that change their receiver. cameo has
 // none; the checker names the alternative where one exists.
 var mutators = map[string]string{
@@ -435,9 +451,6 @@ var mutators = map[string]string{
 	"<<":                    "append, or +",
 	"[]=":                   "assignment, which copies",
 	"define_method":         "def",
-	"send":                  "a direct call",
-	"public_send":           "a direct call",
-	"__send__":              "a direct call",
 	"instance_variable_set": "initialize",
 	"instance_variable_get": "the field's reader",
 	"instance_eval":         "nothing",
@@ -507,16 +520,8 @@ func (c *converter) call(n *ast.Call) Node {
 			return m
 		}
 	}
-	if alt, listed := mutators[name]; listed && name != "[]=" {
-		if mayMutate(name) {
-			c.fail("%s changes its receiver, which cameo rebinds only for a local variable or a field in initialize; use %s", name, alt)
-		} else {
-			c.fail("%s is not supported; use %s", name, alt)
-		}
-		return nil
-	}
-	if strings.HasSuffix(name, "!") && name != "!" && name != "!=" {
-		c.fail("%s: a bang method changes its receiver, which cameo rebinds only for a local variable or a field in initialize", name)
+	if msg, refused := Refused(name); refused && name != "[]=" {
+		c.fail("%s", msg)
 		return nil
 	}
 	if isSetter(name) {
