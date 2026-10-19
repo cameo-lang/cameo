@@ -390,7 +390,8 @@ back is its return value and the promises it settles. Starting calls from
 inside a worker is allowed and nests the same way.
 
 A call `async` started waits in the run's queue until one of up to
-GOMAXPROCS runner goroutines takes it, the oldest first, or until an
+GOMAXPROCS runner goroutines takes it, the oldest of its shard of the
+queue first, or until an
 `await` of its promise finds it still queued and runs it on its own
 goroutine. A goroutine per call would park, with its stack, every call
 whose awaiter runs it, and a recursion that fans out at every level parks

@@ -358,8 +358,8 @@ func methodScope(env *Env) *Env {
 	return env
 }
 
-// start serialises the receiver, the method name and the arguments, and runs
-// the call in a worker interpreter on a new goroutine.
+// start serialises the receiver, the method name and the arguments, and
+// queues the call for a worker interpreter; see sched.go.
 func (in *Interp) start(recvNode, methodNode syntax.Node, argNodes []syntax.Node, kwNodes []syntax.MapEntry, env *Env, fr *Frame, line int) (*Promise, error) {
 	recv, err := in.eval(recvNode, env, fr)
 	if err != nil {
@@ -517,7 +517,7 @@ func (in *Interp) worker() *Interp {
 	return w
 }
 
-// run is the body of a worker's goroutine: decode, call, settle.
+// runCall decodes the receiver and the arguments, and calls the method.
 func (w *Interp) runCall(recvC crossing, method string, argC []crossing, kwData []byte) (object.Value, *object.Exception) {
 	dec := w.Decoder()
 	recv, err := recvC.value(dec)

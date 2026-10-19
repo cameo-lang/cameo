@@ -13,8 +13,9 @@ import (
 // awaiter runs it, and a recursion that fans out at every level starts
 // millions.
 //
-// Runners are goroutines that take the oldest call, the one nearest the
-// root of a recursion, and run it. Up to GOMAXPROCS of them run at once,
+// Runners are goroutines that take a call and run it: the oldest of one
+// of the queue's shards, so calls near the root of a recursion tend to go
+// first. Up to GOMAXPROCS of them run at once,
 // started as calls arrive and ended when the queue is empty. Two rules
 // keep every call able to run:
 //
