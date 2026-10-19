@@ -318,6 +318,9 @@ func (in *Interp) invoke(m *object.Method, recv object.Value, args []object.Valu
 		return object.Value{}, err
 	}
 	v, err := cd.body(in, env, fr)
+	if len(env.promises) > 0 {
+		in.promises.end(env.promises)
+	}
 	if err != nil {
 		if c, ok := err.(*control); ok {
 			switch {

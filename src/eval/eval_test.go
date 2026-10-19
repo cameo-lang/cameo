@@ -319,6 +319,66 @@ async W.new, :boom, "last"
 		"cameo: promise 5 (boom) failed and was never awaited: last (ArgumentError)\n")
 }
 
+func TestAPromiseEndsWithTheMethodThatStartedIt(t *testing.T) {
+	// A promise async started is forgotten once the method that started
+	// it has returned and it was awaited, there or later.
+	src := `
+include Cameo
+class W
+  def go = 7
+  def awaited = await(async(self, :go)) + 0
+  def kept
+    p = async(self, :go)
+    await p
+    p
+  end
+  def started = async(self, :go)
+end
+p W.new.awaited
+later = W.new.started
+p await(later)
+begin
+  await later
+rescue ArgumentError => e
+  p e.message
+end
+begin
+  await W.new.kept
+rescue ArgumentError => e
+  p e.message
+end
+`
+	expectOutput(t, src, "7\n7\n\"no promise 2\"\n\"no promise 3\"\n")
+}
+
+func TestAwaitedPromisesLeaveTheTable(t *testing.T) {
+	prog, err := syntax.Parse("t.cameo", `
+include Cameo
+class Fib
+  def of(n)
+    return 1 if n < 2
+    parts = await([async(self, :of, n - 1), async(self, :of, n - 2)])
+    parts[0] + parts[1]
+  end
+end
+p Fib.new.of(12)
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out bytes.Buffer
+	in := New(&out, &out)
+	if err := in.Run("t.cameo", prog); err != nil {
+		t.Fatal(err)
+	}
+	if out.String() != "233\n" {
+		t.Fatalf("output %q", out.String())
+	}
+	if started, left := in.promises.next.Load(), in.promises.len(); started < 400 || left != 0 {
+		t.Fatalf("%d promises started, %d left in the table", started, left)
+	}
+}
+
 func TestPromises(t *testing.T) {
 	// A promise is an Integer that resolve or fail settles once, from the
 	// script or a worker; await takes one or a list.
