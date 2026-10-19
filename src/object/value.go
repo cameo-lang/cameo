@@ -561,7 +561,7 @@ func FormatFloat(f float64) string {
 		return "NaN"
 	}
 	abs := math.Abs(f)
-	if abs != 0 && (abs >= 1e16 || abs < 1e-4) {
+	if abs != 0 && (abs >= 1e15 || abs < 1e-4) {
 		s := strconv.FormatFloat(f, 'e', -1, 64)
 		mant, exp, _ := strings.Cut(s, "e")
 		if !strings.Contains(mant, ".") {

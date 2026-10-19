@@ -1,0 +1,59 @@
+# JSON as Ruby 3.4's json library has it. The script is plain Ruby, and
+# json.expected is what Ruby 3.4 prints for it.
+p require("json")
+
+doc = JSON.parse('{"name": "cameo", "tags": ["ruby", "go"], "n": 3, "pi": 3.14, "ok": true, "none": null}')
+p doc, doc["tags"].last
+p JSON.parse('{"a": {"b": [1, {"c": 2}]}}', symbolize_names: true)
+p JSON.parse("2"), JSON.parse('"s"'), JSON.parse("null")
+
+# An integer is an Integer of any size; a fraction or an exponent makes a
+# Float, which overflows to Infinity.
+p JSON.parse("[0, -0, -0.0, 1e5, 1E+2, 2.5e-3, 1e400, 123456789012345678901234567890]")
+p JSON.parse('"é😀\n\t\/\"\\\\"'), JSON.parse('"\x"')
+p JSON.parse("[1, /* comment */ 2, // comment\n 3]")
+p JSON.parse("[NaN, Infinity, -Infinity]", allow_nan: true)
+
+# A ParserError quotes the input from where the parser gave up.
+['{"a": 1,}', "[1 2]", "[1,]", "01", "", "nul", "[NaN]", "\"a\tb\"", '"\ud83d"', "[1] x", "[" + "x" * 40 + "]"].each do |src|
+  JSON.parse(src)
+rescue JSON::ParserError => e
+  p e.message
+end
+begin
+  JSON.parse("[[[1]]]", max_nesting: 2)
+rescue JSON::NestingError => e
+  p [e.class, e.message, e.is_a?(JSON::ParserError)]
+end
+
+value = {name: "cameo", list: [1, 2.0, nil, true], nested: {"x" => [], "y" => {}}, 3 => :sym}
+puts JSON.generate(value), JSON.dump(value), value.to_json
+puts JSON.pretty_generate(value)
+puts JSON.pretty_generate([]), JSON.pretty_generate({}), JSON.pretty_generate("x")
+puts JSON.generate({a: [1, 2]}, indent: "\t", space: " ", object_nl: "\n", array_nl: "\n")
+
+# Each type's to_json.
+puts "s".to_json, 1.to_json, (2**100).to_json, 1.5.to_json, nil.to_json, true.to_json, false.to_json
+puts [1, "a"].to_json, {"k" => :v}.to_json, :sym.to_json
+puts [1.0, 1e20, 1e15, 1e-5, 100.0, -0.0, 0.1 + 0.2].to_json
+
+# Escapes: / and non-ASCII stay as they are unless asked.
+puts JSON.generate("\" \\ / \b \f \n \r \t \u0001 \u007f é 😀  ")
+puts JSON.generate("é/😀 ", ascii_only: true), JSON.generate("</script> ", script_safe: true)
+
+[Float::NAN, Float::INFINITY, -Float::INFINITY].each do |f|
+  JSON.generate([f])
+rescue JSON::GeneratorError => e
+  p e.message
+end
+puts JSON.generate(Float::NAN, allow_nan: true), JSON.dump([Float::INFINITY])
+begin
+  JSON.generate("\xff")
+rescue JSON::GeneratorError => e
+  p e.message
+end
+
+# Anything else is the string of its to_s.
+puts JSON.generate([1..3, Time.at(0).utc, StandardError.new("boom")])
+p JSON::ParserError.ancestors.take(4), JSON::GeneratorError.superclass
+p JSON('[1]'), JSON([1]), JSON['{"a":1}']

@@ -32,6 +32,7 @@ func Install() {
 	installEnumerator()
 	installTimeParsing()
 	installCGI()
+	installJSON()
 	installEncodings()
 	installPack()
 	installPaths()

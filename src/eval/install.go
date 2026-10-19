@@ -203,6 +203,7 @@ var builtinLibraries = map[string][]string{
 	"cgi":        {"cgi/escape", "cgi/util"},
 	"cgi/escape": nil,
 	"cgi/util":   {"cgi/escape"},
+	"json":       nil,
 }
 
 // require loads a library cameo builds in, true the first time and false

@@ -791,7 +791,7 @@ re-opened by accident:
     yields. A builtin passes a Go function as the block, which the
     evaluator calls like any other.
   - `require` of a library cameo builds in (`set`, `time`, `cgi`,
-    `cgi/escape`, `pp`) returns true the first time and false after, and
+    `cgi/escape`, `pp`, `json`) returns true the first time and false after, and
     any other is a LoadError: a script is one file. The libraries are
     there whether or not a script requires them. `time` brings
     `Time.parse`, `Time.iso8601` and `Time.strptime`, and `Time.new` reads
@@ -799,7 +799,16 @@ re-opened by accident:
     `unescapeHTML`, `escape`, `unescape`, the URI-component pair,
     `escapeElement`, `unescapeElement`, `rfc1123_date` and `pretty`.
     Ruby writes the last three with regexps that use lookaround, which
-    cameo's regexps lack, so they are scanned by hand in Go.
+    cameo's regexps lack, so they are scanned by hand in Go. `json`
+    follows Ruby's json 2.9.1 to its output and error messages. An
+    instance of a cameo class without a `to_json` of its own is written as
+    an object of its fields: the fields are typed and named, so that is
+    what the value is, while Ruby's fallback, the string of `to_s`, loses
+    it. The values are cameo's, not protojson's, which would quote 64-bit
+    integers, rename fields and drop defaults, so an instance and a Hash
+    of its fields write the same JSON. A class's own `to_json` gets the
+    generator's options as a Hash, which Ruby's `to_json` methods take as
+    well, in place of a `JSON::State`.
   - A call to a method a class lacks goes to the class's own
     `method_missing`, with the name as a symbol, the arguments and the
     block; `super` from it reaches Object's, which raises NoMethodError.

@@ -173,6 +173,12 @@ func TestSugarParses(t *testing.T) {
 	rejects(t, "alias :\"#{x}\" y\n", "computed name")
 }
 
+func TestJSONFunctionsWithMutatingNamesAreCalls(t *testing.T) {
+	parse(t, "JSON.parse!(\"[NaN]\")\nJSON.load(\"[1]\")\n")
+	rejects(t, "load(\"x.rb\")\n", "load is not supported")
+	rejects(t, "A = {}\nA.parse!\n", "parse!: a bang method changes its receiver")
+}
+
 func TestRejections(t *testing.T) {
 	cases := map[string]string{
 		"attr_accessor :x\n":                 "attr_accessor is not supported",
