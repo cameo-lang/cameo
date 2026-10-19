@@ -791,7 +791,7 @@ re-opened by accident:
     yields. A builtin passes a Go function as the block, which the
     evaluator calls like any other.
   - `require` of a library cameo builds in (`set`, `time`, `cgi`,
-    `cgi/escape`, `pp`, `json`) returns true the first time and false after, and
+    `cgi/escape`, `pp`, `json`, `benchmark`) returns true the first time and false after, and
     any other is a LoadError: a script is one file. The libraries are
     there whether or not a script requires them. `time` brings
     `Time.parse`, `Time.iso8601` and `Time.strptime`, and `Time.new` reads
@@ -808,7 +808,10 @@ re-opened by accident:
     integers, rename fields and drop defaults, so an instance and a Hash
     of its fields write the same JSON. A class's own `to_json` gets the
     generator's options as a Hash, which Ruby's `to_json` methods take as
-    well, in place of a `JSON::State`.
+    well, in place of a `JSON::State`. `benchmark` follows Ruby's
+    benchmark 0.4.0 to its output, in Go: it reads getrusage(2) and the
+    monotonic clock itself and collects garbage between bmbm's rehearsal
+    and its run, so a script needs neither `Process.times` nor `GC`.
   - A call to a method a class lacks goes to the class's own
     `method_missing`, with the name as a symbol, the arguments and the
     block; `super` from it reaches Object's, which raises NoMethodError.
