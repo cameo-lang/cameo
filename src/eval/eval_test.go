@@ -297,6 +297,28 @@ p await(Echo.new, :go, nil, true, 7, 2**70, 1.5, "s", "\xff".b, :sym, [1, [2, "t
 	expectError(t, "include Cameo\nclass Echo\n  def go(x) = x\nend\nawait Echo.new, :go, Object.new\n", "Object is not a class with fields (TypeError)")
 }
 
+func TestRunReportsFailuresNobodyAwaited(t *testing.T) {
+	// The run waits for every call async started, a worker's included,
+	// and names each failure nobody awaited, in start order.
+	expectOutput(t, `
+include Cameo
+class W
+  def boom(tag) = raise(ArgumentError, tag)
+  def fan = async(self, :boom, "inner")
+end
+async W.new, :boom, "first"
+seen = async W.new, :boom, "awaited"
+begin
+  await seen
+rescue ArgumentError
+end
+await W.new, :fan
+async W.new, :boom, "last"
+`, "cameo: promise 1 (boom) failed and was never awaited: first (ArgumentError)\n"+
+		"cameo: promise 4 (boom) failed and was never awaited: inner (ArgumentError)\n"+
+		"cameo: promise 5 (boom) failed and was never awaited: last (ArgumentError)\n")
+}
+
 func TestPromises(t *testing.T) {
 	// A promise is an Integer that resolve or fail settles once, from the
 	// script or a worker; await takes one or a list.

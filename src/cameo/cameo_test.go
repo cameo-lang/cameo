@@ -138,6 +138,7 @@ func TestRunContextStopsTheScript(t *testing.T) {
 		"method":  "def spin(n) = n.times { }\nwhile true\n  spin(1)\nend\n",
 		"worker":  "include Cameo\nclass W\n  def go = loop { }\nend\nawait(async(W.new, :go))\n",
 		"promise": "include Cameo\nawait promise\n",
+		"later":   "include Cameo\n100.times { promise }\nawait promise\n",
 	}
 	for name, src := range scripts {
 		var out bytes.Buffer

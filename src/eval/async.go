@@ -4,8 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"runtime"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/protogen"
@@ -63,8 +65,13 @@ func (p *Promise) SettleLater(f func(*Interp) (object.Value, error)) bool {
 func (p *Promise) wait(in *Interp) (object.Value, *object.Exception, error) {
 	select {
 	case <-p.done:
-	case <-in.stop.ch:
-		return object.Value{}, nil, ErrStopped
+	default:
+		// A settled promise does not take the stop channel's lock.
+		select {
+		case <-p.done:
+		case <-in.stop.ch(p.id):
+			return object.Value{}, nil, ErrStopped
+		}
 	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -88,51 +95,67 @@ func asException(in *Interp, err error) *object.Exception {
 }
 
 // promises is every promise of a run, shared with its workers, so a worker
-// settles a promise its parent awaits. started is the ones async started,
-// in start order, which the run waits for before it ends.
+// settles a promise its parent awaits. Ids count up from 1 in start order.
+// The table is split into shards by id, so goroutines that start and await
+// promises at the same time rarely take the same lock.
 type promises struct {
-	mu      sync.Mutex
-	next    int64
-	byID    map[int64]*Promise
-	started []*Promise
+	next   atomic.Int64
+	shards [64]promiseShard
 }
 
-func newPromises() *promises { return &promises{byID: map[int64]*Promise{}} }
+type promiseShard struct {
+	mu   sync.Mutex
+	byID map[int64]*Promise
+	// The padding keeps two shards' locks off one cache line.
+	_ [48]byte
+}
+
+func newPromises() *promises {
+	t := &promises{}
+	for i := range t.shards {
+		t.shards[i].byID = map[int64]*Promise{}
+	}
+	return t
+}
+
+func (t *promises) shard(id int64) *promiseShard {
+	return &t.shards[uint64(id)%uint64(len(t.shards))]
+}
 
 func (t *promises) add(method string) *Promise {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	t.next++
-	p := &Promise{id: t.next, method: method, done: make(chan struct{})}
-	t.byID[p.id] = p
-	if method != "" {
-		t.started = append(t.started, p)
-	}
+	p := &Promise{id: t.next.Add(1), method: method, done: make(chan struct{})}
+	s := t.shard(p.id)
+	s.mu.Lock()
+	s.byID[p.id] = p
+	s.mu.Unlock()
 	return p
 }
 
 func (t *promises) get(id int64) *Promise {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	return t.byID[id]
+	s := t.shard(id)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.byID[id]
 }
 
 // NewPromise makes a pending promise, which the host settles from any
 // goroutine and hands the script by its ID.
 func (in *Interp) NewPromise() *Promise { return in.promises.add("") }
 
-// waitStarted waits for every promise async started and writes the
-// failures nobody awaited to standard error.
+// waitStarted waits for every promise async started, in start order, and
+// writes the failures nobody awaited to standard error.
 func (in *Interp) waitStarted() error {
 	t := in.promises
-	for i := 0; ; i++ {
-		t.mu.Lock()
-		if i >= len(t.started) {
-			t.mu.Unlock()
-			return nil
+	for id := int64(1); id <= t.next.Load(); id++ {
+		p := t.get(id)
+		for p == nil {
+			// add counted the id and has not stored the promise yet.
+			runtime.Gosched()
+			p = t.get(id)
 		}
-		p := t.started[i]
-		t.mu.Unlock()
+		if p.method == "" {
+			continue
+		}
 		p.mu.Lock()
 		seen := p.awaited
 		p.mu.Unlock()
@@ -144,6 +167,7 @@ func (in *Interp) waitStarted() error {
 			in.Write(true, fmt.Sprintf("cameo: promise %d (%s) failed and was never awaited: %s (%s)\n", p.id, p.method, exc.Message, exc.Cls.QualifiedName()))
 		}
 	}
+	return nil
 }
 
 // cameoIncluded reports whether async and the rest of Cameo are in scope:
