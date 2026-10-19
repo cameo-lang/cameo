@@ -365,17 +365,11 @@ func (in *Interp) snapshot() *topLevel {
 	return in.snap
 }
 
-// changeTop is called before the top level changes. The parent's next
-// worker then takes a new snapshot; a worker, whose top level is a
-// snapshot other workers read, first takes a copy of its own.
-func (in *Interp) changeTop() {
-	if in.snap != nil && in.snap.mainClass == in.mainClass {
-		in.consts = maps.Clone(in.consts)
-		in.mainClass = copyMainClass(in.mainClass)
-		in.main = &object.Instance{Cls: in.mainClass}
-	}
-	in.snap = nil
-}
+// changedTop drops the snapshot after the top level changed, so the next
+// worker takes a new one. Only the parent changes its top level: a worker
+// runs a method, and def, class, module and constant assignment are
+// rejected inside a method.
+func (in *Interp) changedTop() { in.snap = nil }
 
 // copyMainClass returns a new class of the top-level self with c's methods
 // and includes.

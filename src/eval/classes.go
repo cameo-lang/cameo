@@ -103,7 +103,7 @@ func (in *Interp) defineConst(name string, v object.Value, fr *Frame, line int) 
 			cls.Lexical = fr.Lexical[len(fr.Lexical)-1]
 		}
 	}
-	in.constTable(fr)[name] = v
+	in.bindConst(fr, name, v)
 	return nil
 }
 
@@ -154,14 +154,20 @@ func (in *Interp) constTable(fr *Frame) map[string]object.Value {
 	if len(fr.Lexical) > 0 {
 		return fr.Lexical[len(fr.Lexical)-1].Consts
 	}
-	in.changeTop()
 	return in.consts
+}
+
+// bindConst binds name to v where a definition in fr binds its name.
+func (in *Interp) bindConst(fr *Frame, name string, v object.Value) {
+	in.constTable(fr)[name] = v
+	if len(fr.Lexical) == 0 {
+		in.changedTop()
+	}
 }
 
 func (in *Interp) evalDef(n *syntax.Def, fr *Frame) (object.Value, error) {
 	target := fr.DefTarget
-	if target == nil || target == in.mainClass {
-		in.changeTop()
+	if target == nil {
 		target = in.mainClass
 	}
 	table := target.Methods
@@ -187,6 +193,9 @@ func (in *Interp) evalDef(n *syntax.Def, fr *Frame) (object.Value, error) {
 		target.SetSingletonMethod(m)
 	} else {
 		target.SetMethod(m)
+	}
+	if target == in.mainClass {
+		in.changedTop()
 	}
 	return object.Symbol(n.Name), nil
 }
@@ -230,7 +239,7 @@ func (in *Interp) evalClassDef(n *syntax.ClassDef, env *Env, fr *Frame) (object.
 	if err := in.evalClassBody(cls, n.Body, env, fr); err != nil {
 		return object.Value{}, err
 	}
-	table[n.Name] = object.ClassValue(cls)
+	in.bindConst(fr, n.Name, object.ClassValue(cls))
 	return object.ClassValue(cls), nil
 }
 
@@ -255,7 +264,7 @@ func (in *Interp) evalModuleDef(n *syntax.ModuleDef, env *Env, fr *Frame) (objec
 	if err := in.evalClassBody(mod, n.Body, env, fr); err != nil {
 		return object.Value{}, err
 	}
-	table[n.Name] = object.ClassValue(mod)
+	in.bindConst(fr, n.Name, object.ClassValue(mod))
 	return object.ClassValue(mod), nil
 }
 
@@ -365,5 +374,8 @@ func (in *Interp) evalAlias(n *syntax.Alias, fr *Frame) (object.Value, error) {
 	alias := *m
 	alias.Name = n.New
 	target.SetMethod(&alias)
+	if target == in.mainClass {
+		in.changedTop()
+	}
 	return object.Nil, nil
 }

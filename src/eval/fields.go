@@ -467,9 +467,9 @@ func (in *Interp) evalInclude(n *syntax.Include, env *Env, fr *Frame) (object.Va
 			return object.Value{}, in.raise(object.CameoError, n.Line(), "include at the top level takes Cameo; another module belongs in a class or module body")
 		}
 		if !in.cameoTop {
-			in.changeTop()
 			in.mainClass.Include(object.CameoModule)
 			in.cameoTop = true
+			in.changedTop()
 		}
 		return object.Nil, nil
 	}

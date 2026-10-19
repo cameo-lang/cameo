@@ -41,7 +41,8 @@ type Interp struct {
 	cameoTop bool
 	// snap is the top level as the workers async starts see it, shared by
 	// every worker started since the top level last changed; nil when it
-	// changed. A worker's own top level is its snapshot's.
+	// changed. A worker's own top level is its snapshot's, which it never
+	// changes.
 	snap *topLevel
 	// code is the compiled program, shared with the workers.
 	code *code
@@ -72,8 +73,8 @@ func (in *Interp) Const(name string) (object.Value, bool) {
 // SetConst defines a top-level constant before the script runs: a module
 // the host gives it.
 func (in *Interp) SetConst(name string, v object.Value) {
-	in.changeTop()
 	in.consts[name] = v
+	in.changedTop()
 }
 
 // ErrStopped ends a run that Stop asked to end. It is not an exception, so

@@ -277,6 +277,27 @@ p await([first, second, third])
 `, "[[2, 1, 3], [3, 2, 5], [6, 2, 8]]\n")
 }
 
+func TestWorkerSeesTopLevelChangesAfterAnAsyncInAClassBody(t *testing.T) {
+	// A class whose body starts an async, and a top-level alias, still
+	// reach the workers started after them.
+	expectOutput(t, `
+include Cameo
+def a = 1
+class H
+  def one = 1
+end
+class U
+  def go = [Foo.x, b]
+end
+class Foo
+  def self.x = 2
+  P = async H.new, :one
+end
+alias b a
+p await(async U.new, :go)
+`, "[2, 1]\n")
+}
+
 func TestPromises(t *testing.T) {
 	// A promise is an Integer that resolve or fail settles once, from the
 	// script or a worker; await takes one or a list.
