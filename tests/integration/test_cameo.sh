@@ -41,4 +41,19 @@ CAMEO
   assert_eq $'a%20b%2B%C3%A9\n<AB>\n<br>&lt;a href=&#39;x&#39;&gt;\nThu, 01 Jan 1970 00:00:00 GMT\n<p>\n  <b>\n    x\n  </b>\n</p>' "$out"
 }
 
+test_json_round_trips_and_reports_parse_errors() {
+  local script out
+  script="$(mktemp -d)/json.cameo"
+  cat >"$script" <<'CAMEO'
+require "json"
+doc = JSON.parse('{"a": [1, 2.5, null], "b": {"c": "é"}}', symbolize_names: true)
+puts JSON.generate(doc), JSON.pretty_generate(doc[:b])
+JSON.parse("[1,]")
+CAMEO
+  local rc=0
+  out=$("$CAMEO_BIN" "$script" 2>&1) || rc=$?
+  assert_eq 1 "$rc" "a ParserError does not fail the run"
+  assert_eq $'{"a":[1,2.5,null],"b":{"c":"é"}}\n{\n  "c": "é"\n}\n'"$script"$':4: unexpected token at \']\' (JSON::ParserError)' "$out"
+}
+
 run_tests

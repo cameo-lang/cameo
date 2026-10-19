@@ -1,0 +1,39 @@
+# An instance of a cameo class is a JSON object of its fields, by name and
+# in declaration order; an unset field is null. A class that defines
+# to_json writes itself, and receives the generator's options as a Hash,
+# so it nests and indents like a builtin value.
+class Point
+  int :x, :y
+  string :label, default: ""
+  list :tags, of: :string
+
+  def initialize(x, y)
+    self.x = x
+    self.y = y
+  end
+end
+
+class Segment
+  ref :from, Point
+  ref :to, Point
+  float :weight
+  map :meta, key: :string, value: :int
+end
+
+class Money
+  int :cents
+
+  def to_json(*args) = format("%.2f", cents / 100.0).to_json(*args)
+end
+
+point = Point.new(1, 2)
+puts point.to_json
+puts JSON.generate(Segment.new(from: point, meta: {"a" => 1}))
+puts JSON.pretty_generate([Segment.new(from: point, to: Point.new(3, 4), weight: 0.5)])
+puts JSON.generate({price: Money.new(cents: 1999)})
+puts JSON.pretty_generate({price: Money.new(cents: 5), parts: [Money.new(cents: 1)]})
+
+# Parsing gives back plain values, which build an instance again.
+fields = JSON.parse(point.to_json, symbolize_names: true)
+p fields
+p Point.new(fields[:x], fields[:y])

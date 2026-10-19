@@ -62,7 +62,8 @@ func TestSetDropsDuplicates(t *testing.T) {
 
 func TestFormatting(t *testing.T) {
 	tenth, fifth := 0.1, 0.2
-	cases := map[float64]string{1: "1.0", 2.5: "2.5", 1e20: "1.0e+20", 1.5e-7: "1.5e-07", tenth + fifth: "0.30000000000000004", -3: "-3.0"}
+	cases := map[float64]string{1: "1.0", 2.5: "2.5", 1e20: "1.0e+20", 1.5e-7: "1.5e-07", tenth + fifth: "0.30000000000000004", -3: "-3.0",
+		1e15: "1.0e+15", 999999999999999: "999999999999999.0", 1e-4: "0.0001"}
 	for f, want := range cases {
 		if got := FormatFloat(f); got != want {
 			t.Errorf("FormatFloat(%v) = %s, want %s", f, got, want)

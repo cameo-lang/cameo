@@ -1,0 +1,76 @@
+true
+{"name" => "cameo", "tags" => ["ruby", "go"], "n" => 3, "pi" => 3.14, "ok" => true, "none" => nil}
+"go"
+{a: {b: [1, {c: 2}]}}
+2
+"s"
+nil
+[0, 0, -0.0, 100000.0, 100.0, 0.0025, Infinity, 123456789012345678901234567890]
+"é😀\n\t/\"\\"
+"x"
+[1, 2, 3]
+[NaN, Infinity, -Infinity]
+"unexpected token at '{\"a\": 1,}'"
+"unexpected token at '2]'"
+"unexpected token at ']'"
+"unexpected token at '01'"
+"unexpected token at ''"
+"unexpected token at 'nul'"
+"unexpected token at 'NaN]'"
+"unexpected token at '\"a\tb\"'"
+"incomplete surrogate pair at '\\ud83d\"'"
+"unexpected token at 'x'"
+"unexpected token at 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'"
+[JSON::NestingError, "nesting of 3 is too deep", true]
+{"name":"cameo","list":[1,2.0,null,true],"nested":{"x":[],"y":{}},"3":"sym"}
+{"name":"cameo","list":[1,2.0,null,true],"nested":{"x":[],"y":{}},"3":"sym"}
+{"name":"cameo","list":[1,2.0,null,true],"nested":{"x":[],"y":{}},"3":"sym"}
+{
+  "name": "cameo",
+  "list": [
+    1,
+    2.0,
+    null,
+    true
+  ],
+  "nested": {
+    "x": [],
+    "y": {}
+  },
+  "3": "sym"
+}
+[]
+{}
+"x"
+{
+	"a": [
+		1,
+		2
+	]
+}
+"s"
+1
+1267650600228229401496703205376
+1.5
+null
+true
+false
+[1,"a"]
+{"k":"v"}
+"sym"
+[1.0,1.0e+20,1.0e+15,1.0e-05,100.0,-0.0,0.30000000000000004]
+"\" \\ / \b \f \n \r \t \u0001  é 😀  "
+"\u00e9/\ud83d\ude00\u2028"
+"<\/script>\u2028"
+"NaN not allowed in JSON"
+"Infinity not allowed in JSON"
+"-Infinity not allowed in JSON"
+NaN
+[Infinity]
+"source sequence is illegal/malformed utf-8"
+["1..3","1970-01-01 00:00:00 UTC","boom"]
+[JSON::ParserError, JSON::JSONError, StandardError, Exception]
+JSON::JSONError
+[1]
+"[1]"
+{"a" => 1}

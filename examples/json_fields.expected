@@ -1,0 +1,29 @@
+{"x":1,"y":2,"label":"","tags":[]}
+{"from":{"x":1,"y":2,"label":"","tags":[]},"to":null,"weight":null,"meta":{"a":1}}
+[
+  {
+    "from": {
+      "x": 1,
+      "y": 2,
+      "label": "",
+      "tags": []
+    },
+    "to": {
+      "x": 3,
+      "y": 4,
+      "label": "",
+      "tags": []
+    },
+    "weight": 0.5,
+    "meta": {}
+  }
+]
+{"price":"19.99"}
+{
+  "price": "0.05",
+  "parts": [
+    "0.01"
+  ]
+}
+{x: 1, y: 2, label: "", tags: []}
+Point(x: 1, y: 2, label: "", tags: [])

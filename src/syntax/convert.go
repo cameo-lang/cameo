@@ -462,6 +462,17 @@ var mutators = map[string]string{
 	"exit!":                 "exit",
 }
 
+// libraryFunctions are module functions of a library cameo builds in whose
+// names read as a mutating or unsupported call: JSON.parse! changes nothing,
+// and JSON.load reads a string, not a file.
+var libraryFunctions = map[string]map[string]bool{"JSON": {"parse!": true, "load": true}}
+
+// isLibraryFunction reports a call of one of libraryFunctions.
+func isLibraryFunction(n *ast.Call) bool {
+	r, isConst := n.Recv.(*ast.ConstRef)
+	return isConst && libraryFunctions[r.Name][n.Name]
+}
+
 // compositeFieldTypes are the typed field helpers a class body takes
 // besides the scalar types of object.Scalar.
 var compositeFieldTypes = map[string]bool{"list": true, "set": true, "map": true, "ref": true, "enum": true}
@@ -523,12 +534,13 @@ func (c *converter) call(n *ast.Call) Node {
 			}
 		}
 	}
-	if n.Recv != nil && mayMutate(name) {
+	lib := isLibraryFunction(n)
+	if n.Recv != nil && mayMutate(name) && !lib {
 		if m := c.mutCall(n); m != nil {
 			return m
 		}
 	}
-	if msg, refused := Refused(name); refused && name != "[]=" {
+	if msg, refused := Refused(name); refused && name != "[]=" && !lib {
 		c.fail("%s", msg)
 		return nil
 	}
