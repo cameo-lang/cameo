@@ -469,6 +469,7 @@ func (in *Interp) evalInclude(n *syntax.Include, env *Env, fr *Frame) (object.Va
 		if !in.cameoTop {
 			in.mainClass.Include(object.CameoModule)
 			in.cameoTop = true
+			in.changedTop()
 		}
 		return object.Nil, nil
 	}

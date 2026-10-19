@@ -3,6 +3,7 @@ package eval
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"sync"
 
 	"github.com/cameo-lang/cameo/src/object"
@@ -339,33 +340,69 @@ func (in *Interp) start(recvNode, methodNode syntax.Node, argNodes []syntax.Node
 	return p, nil
 }
 
-// worker makes the interpreter a call async started runs in: the same
-// output, the same classes (immutable once bound) through a snapshot of
-// the constants, the same promises, its own scopes.
-func (in *Interp) worker() *Interp {
+// topLevel is a copy of an interpreter's top level: its constants, its
+// top-level methods and whether it included Cameo. Workers share one and
+// only read it.
+type topLevel struct {
+	consts    map[string]object.Value
+	mainClass *object.Class
+	main      *object.Instance
+	cameoTop  bool
+}
+
+// snapshot returns the top level for a worker: the one taken for the
+// last worker, or a new copy when the top level changed since.
+func (in *Interp) snapshot() *topLevel {
+	if in.snap == nil {
+		mainClass := copyMainClass(in.mainClass)
+		in.snap = &topLevel{
+			consts:    maps.Clone(in.consts),
+			mainClass: mainClass,
+			main:      &object.Instance{Cls: mainClass},
+			cameoTop:  in.cameoTop,
+		}
+	}
+	return in.snap
+}
+
+// changedTop drops the snapshot after the top level changed, so the next
+// worker takes a new one. Only the parent changes its top level: a worker
+// runs a method, and def, class, module and constant assignment are
+// rejected inside a method.
+func (in *Interp) changedTop() { in.snap = nil }
+
+// copyMainClass returns a new class of the top-level self with c's methods
+// and includes.
+func copyMainClass(c *object.Class) *object.Class {
 	mainClass := object.NewClass("Object", object.ObjectClass)
 	mainClass.Digest = "main"
-	for _, m := range in.mainClass.Methods {
-		mainClass.SetMethod(m)
-	}
-	mainClass.Includes = append(mainClass.Includes, in.mainClass.Includes...)
+	// The new class has no lookups cached yet, so its methods go in
+	// directly: SetMethod would invalidate every class's cache.
+	maps.Copy(mainClass.Methods, c.Methods)
+	mainClass.Includes = append(mainClass.Includes, c.Includes...)
+	return mainClass
+}
+
+// worker makes the interpreter a call async started runs in: the same
+// output, the same classes (immutable once bound), the top level as it is
+// now, the same promises, its own scopes.
+func (in *Interp) worker() *Interp {
+	top := in.snapshot()
 	w := &Interp{
 		stdout:    in.stdout,
 		stderr:    in.stderr,
 		outMu:     in.outMu,
 		file:      in.file,
-		mainClass: mainClass,
-		main:      &object.Instance{Cls: mainClass},
+		mainClass: top.mainClass,
+		main:      top.main,
 		top:       NewEnv(nil),
-		consts:    make(map[string]object.Value, len(in.consts)),
+		consts:    top.consts,
 		proto:     in.proto,
 		promises:  in.promises,
-		cameoTop:  in.cameoTop,
+		cameoTop:  top.cameoTop,
 		code:      in.code,
 		stop:      in.stop,
-	}
-	for name, v := range in.consts {
-		w.consts[name] = v
+		snap:      top,
 	}
 	// The worker's generator is seeded from this one, here on the
 	// parent's goroutine, so a seeded script stays reproducible.
