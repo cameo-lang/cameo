@@ -19,6 +19,6 @@ each time is the best of three processes.
 | Script | What it runs | n |
 |---|---|---|
 | [seq.rb](fib/seq.rb) | plain recursion | 32 |
-| [list.rb](fib/list.rb) | recursion that collects both parts in a list, as fib.rb's sequential version | 32 |
+| [list.rb](fib/list.rb) | recursion that collects both parts in a list, as async.rb does without `async` | 32 |
 | [coarse.rb](fib/coarse.rb) | `async` in the top ten levels, plain recursion below | 32 |
 | [async.rb](fib/async.rb) | `async` at every level | 28 |

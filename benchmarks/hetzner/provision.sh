@@ -6,7 +6,10 @@
 #
 #   ssh root@HOST 'bash -s' < benchmarks/hetzner/provision.sh
 #
-# GO_VERSION, RUBY34 and RUBY40 override the versions.
+# GO_VERSION, RUBY34 and RUBY40 override the versions. The script cannot
+# read go.mod on the server, so pass GO_VERSION from it, as the
+# hetzner-benchmarks skill does; the default is the version go.mod named
+# when the script was written.
 set -euo pipefail
 
 GO_VERSION=${GO_VERSION:-1.26.4}

@@ -6,7 +6,7 @@ description: Run cameo's benchmarks on a temporary 16-core Hetzner server - the 
 # Benchmarks on a Hetzner server
 
 A laptop has too few cores, and cores of two speeds, to show how `async`
-scales, and too much going on to time 824 cases quietly. A dedicated
+scales, and too much going on to time 852 cases quietly. A dedicated
 16-core server does both. It costs about €0.53 an hour and a full run takes
 about an hour and a half.
 
@@ -36,7 +36,7 @@ to ssh and scp, and wait until `ssh root@IP true` succeeds.
 ## 2. Provision it
 
 ```sh
-ssh root@IP 'bash -s' < benchmarks/hetzner/provision.sh
+ssh root@IP "GO_VERSION=$(awk '/^go /{print $2}' go.mod) bash -s" < benchmarks/hetzner/provision.sh
 ```
 
 [provision.sh](../../../benchmarks/hetzner/provision.sh) installs Go at
@@ -47,14 +47,17 @@ ten minutes.
 
 ## 3. Copy the repository
 
-The server has no GitHub credentials. Send a bundle of the branches; the
-clone has them as `origin/<branch>`, and no local branch to check out:
+The server has no GitHub credentials. Send a bundle of the branches, and
+fetch them from it as `origin/<branch>`; there is no local branch to check
+out. `git clone` of the bundle would leave out `origin/main`, which the
+bundle holds as a remote ref:
 
 ```sh
 git fetch origin
 git bundle create <scratch>/cameo.bundle origin/main <branch>...
 scp <scratch>/cameo.bundle root@IP:/root/
-ssh root@IP 'git clone -q /root/cameo.bundle /root/cameo'
+ssh root@IP 'git init -q /root/cameo && git -C /root/cameo fetch -q /root/cameo.bundle \
+  "refs/remotes/origin/*:refs/remotes/origin/*" "refs/heads/*:refs/remotes/origin/*"'
 ```
 
 ## 4. Record the baseline: benchmarks/compare on main
@@ -74,11 +77,14 @@ with `wrote N rows`.
 
 ## 5. Time the change: cameo alone
 
+Start it once step 4's log ends with `wrote N rows`: it copies that run's
+results and checks out another commit in the same tree.
+
 ```sh
 ssh root@IP 'cd /root/cameo && git checkout -q --detach origin/<branch> &&
-  cp benchmarks/compare/results-main.tsv benchmarks/compare/results-<branch>.tsv &&
+  cp benchmarks/compare/results-main.tsv benchmarks/compare/results-branch.tsv &&
   nohup benchmarks/compare/rerun.sh --no-color --only cameo \
-    --out benchmarks/compare/results-<branch>.tsv > /root/compare-branch.log 2>&1 &'
+    --out benchmarks/compare/results-branch.tsv > /root/compare-branch.log 2>&1 &'
 ```
 
 `--only cameo` times cameo again and keeps the other Rubies' times from the
@@ -86,23 +92,26 @@ baseline, which the change did not touch.
 
 ## 6. The fib scaling run
 
+Start it once step 5's log ends with `wrote N rows`.
+
 ```sh
-ssh root@IP 'cd /root/cameo && for ref in main <branch>; do
-  git checkout -q --detach origin/$ref && go build -o /root/cameo-$(echo $ref | tr / -) ./src/cmd/cameo; done &&
-  benchmarks/hetzner/fib/run.sh /root/cameo-main /root/cameo-<branch> > /root/fib.tsv'
+ssh root@IP 'cd /root/cameo &&
+  git checkout -q --detach origin/main && go build -o /root/cameo-main ./src/cmd/cameo &&
+  git checkout -q --detach origin/<branch> && go build -o /root/cameo-branch ./src/cmd/cameo &&
+  benchmarks/hetzner/fib/run.sh /root/cameo-main /root/cameo-branch > /root/fib.tsv'
 ```
 
 [fib/run.sh](../../../benchmarks/hetzner/fib/run.sh) times sequential,
 fine-grained and coarse async Fibonacci on each cameo at 1, 4 and 16 cores,
 and the sequential ones on every `/opt/ruby-*`. Every time is read inside
-the script, the best
-of three processes. Run it while nothing else runs on the server.
+the script, the best of three processes; a run that fails stops run.sh. Run it while nothing else runs on the server.
 
 ## 7. Fetch the results, then delete the server
 
 ```sh
-scp root@IP:'/root/cameo/benchmarks/compare/results-*.tsv' /root/fib.tsv root@IP:/root/compare-*.log <scratch>/
-ruby benchmarks/compare/compare.rb --report <scratch>/results-<branch>.tsv
+scp root@IP:'/root/cameo/benchmarks/compare/results-*.tsv' root@IP:/root/fib.tsv \
+  root@IP:'/root/compare-*.log' <scratch>/
+ruby benchmarks/compare/compare.rb --report <scratch>/results-branch.tsv
 hcloud server describe <id>          # check name and label first
 hcloud server delete <id>
 hcloud server list                   # confirm it is gone
