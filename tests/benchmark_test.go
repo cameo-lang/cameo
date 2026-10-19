@@ -2,6 +2,7 @@ package tests
 
 import (
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/cameo-lang/cameo/src/assert"
@@ -155,4 +156,14 @@ end
 t = Benchmark.measure { await((1..4).map { async(Spin.new, :go, 300_000) }) }
 p t.real > 0, t.utime + t.stime > 0`)
 	assert.Equals(t, out, "true\ntrue\n")
+}
+
+func TestBenchmarkJobListsItsReportsAsRubys(t *testing.T) {
+	out := runScript(t, `require "benchmark"
+Benchmark.bmbm do |x|
+  x.report("a") { 1 }
+  x.item("bb") { 2 }
+  p x.list.map { |l, b| [l, b.call] }
+end`)
+	assert.Equals(t, strings.SplitN(out, "\n", 2)[0], `[["a", 1], ["bb", 2]]`)
 }

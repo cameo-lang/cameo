@@ -48,9 +48,8 @@ var tmsReaders = []string{"utime", "stime", "cutime", "cstime", "real", "label",
 // reportState is a Benchmark::Report's: the label width so far and the
 // times its report calls measured.
 type reportState struct {
-	width  int
-	format object.Value
-	list   []object.Value
+	width int
+	list  []object.Value
 }
 
 // jobState is a Benchmark::Job's: the label width so far and the blocks
@@ -89,7 +88,7 @@ func installBenchmark() {
 		if len(args) == 1 {
 			label = args[0]
 		}
-		return benchmarkMeasure(ctx, label, block, "measure")
+		return benchmarkMeasure(ctx, label, block)
 	})
 	define("realtime", func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) > 0 {
@@ -154,7 +153,7 @@ func installBenchmark() {
 type cpuTimes struct{ utime, stime, cutime, cstime float64 }
 
 // benchmarkMeasure runs block and returns the Tms of its run.
-func benchmarkMeasure(ctx object.Context, label, block object.Value, name string) (object.Value, error) {
+func benchmarkMeasure(ctx object.Context, label, block object.Value) (object.Value, error) {
 	if err := needBlock(ctx, block, "yield"); err != nil {
 		return object.Value{}, err
 	}
@@ -346,7 +345,7 @@ func installTms() {
 		})
 	}
 	def(c, "add", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		t, err := benchmarkMeasure(ctx, object.String(""), block, "add")
+		t, err := benchmarkMeasure(ctx, object.String(""), block)
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -387,7 +386,7 @@ func installReports() {
 			return object.Value{}, err
 		}
 		st.width = max(st.width, utf8.RuneCountInString(s))
-		t, err := benchmarkMeasure(ctx, label, block, "report")
+		t, err := benchmarkMeasure(ctx, label, block)
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -426,6 +425,14 @@ func installReports() {
 	def(jobClass, "width", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Int(int64(self.Instance().Message.(*jobState).width)), nil
 	})
+	def(jobClass, "list", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		st := self.Instance().Message.(*jobState)
+		list := make([]object.Value, len(st.labels))
+		for i, label := range st.labels {
+			list[i] = object.NewList(object.String(label), st.blocks[i])
+		}
+		return object.NewList(list...), nil
+	})
 }
 
 // benchmarkRun is Benchmark.benchmark: it yields a Report, then writes the
@@ -447,7 +454,7 @@ func benchmarkRun(ctx object.Context, caption, widthArg, format object.Value, la
 	if format.IsNil() {
 		format = object.String(benchmarkFormat)
 	}
-	st := &reportState{width: int(labelWidth), format: format}
+	st := &reportState{width: int(labelWidth)}
 	report := object.InstanceValue(&object.Instance{Cls: reportClass, Message: st})
 	results, err := ctx.Yield(block, report)
 	if err != nil {
@@ -462,7 +469,7 @@ func benchmarkRun(ctx object.Context, caption, widthArg, format object.Value, la
 		out.WriteString(strings.Repeat(" ", st.width) + captionStr)
 	}
 	for _, t := range st.list {
-		line, err := tmsFormat(ctx, t, st.format, []object.Value{format})
+		line, err := tmsFormat(ctx, t, format, []object.Value{format})
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -521,7 +528,7 @@ func benchmarkBmbm(ctx object.Context, width int, block object.Value) (object.Va
 		if err := write(padRight(st.labels[i], width, " ")); err != nil {
 			return object.Value{}, err
 		}
-		res, err := benchmarkMeasure(ctx, object.String(""), b, "bmbm")
+		res, err := benchmarkMeasure(ctx, object.String(""), b)
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -549,7 +556,7 @@ func benchmarkBmbm(ctx object.Context, width int, block object.Value) (object.Va
 		if err := write(padRight(st.labels[i], width, " ")); err != nil {
 			return object.Value{}, err
 		}
-		res, err := benchmarkMeasure(ctx, object.String(st.labels[i]), b, "bmbm")
+		res, err := benchmarkMeasure(ctx, object.String(st.labels[i]), b)
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -565,18 +572,11 @@ func benchmarkBmbm(ctx object.Context, width int, block object.Value) (object.Va
 	return object.NewList(results...), nil
 }
 
-// padRight and padLeft are String#ljust and #rjust with a pad string of
-// one character.
+// padRight and padLeft are String#ljust and #rjust.
 func padRight(s string, width int, pad string) string {
-	if n := utf8.RuneCountInString(s); n < width {
-		return s + strings.Repeat(pad, width-n)
-	}
-	return s
+	return s + padding(pad, width-utf8.RuneCountInString(s))
 }
 
 func padLeft(s string, width int, pad string) string {
-	if n := utf8.RuneCountInString(s); n < width {
-		return strings.Repeat(pad, width-n) + s
-	}
-	return s
+	return padding(pad, width-utf8.RuneCountInString(s)) + s
 }
