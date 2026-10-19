@@ -298,6 +298,52 @@ p await(async U.new, :go)
 `, "[2, 1]\n")
 }
 
+func TestArgumentsCrossAsTheEnvelopeCarriesThem(t *testing.T) {
+	// What a worker gets is what the envelope reads back: a symbol is a
+	// string, an instance has its class's fields. What it cannot carry is
+	// a TypeError at the async call.
+	expectOutput(t, `
+include Cameo
+class Echo
+  def go(*args) = args
+end
+class Point
+  int64 :x
+  string :tag
+end
+p await(Echo.new, :go, nil, true, 7, 2**70, 1.5, "s", "\xff".b, :sym, [1, [2, "t"], :u], {a: 1}, Point.new(x: 1), Echo.new)
+`, "[nil, true, 7, 1180591620717411303424, 1.5, \"s\", \"\\xFF\", \"sym\", [1, [2, \"t\"], \"u\"], {\"a\" => 1}, Point(x: 1, tag: nil), Echo()]\n")
+	expectError(t, "include Cameo\nclass Echo\n  def go(x) = x\nend\nawait Echo.new, :go, Echo\n", "a Class cannot be passed to async (TypeError)")
+	expectError(t, "include Cameo\nanon = Class.new { def go = 1 }\nawait anon.new, :go\n", "has an invalid nested name")
+	expectError(t, "include Cameo\nclass Echo\n  def go(x) = x\nend\nawait Echo.new, :go, Object.new\n", "Object is not a class with fields (TypeError)")
+}
+
+func TestAsyncRejectsWhatTheEnvelopeRejects(t *testing.T) {
+	// A string that is not valid UTF-8 cannot cross, on its own, in a list,
+	// or as a worker's result.
+	echo := "include Cameo\nclass Echo\n  def go(*args) = args\n  def bad = \"\xff\"\nend\n"
+	for _, call := range []string{`await Echo.new, :go, "\xff"`, `await Echo.new, :go, ["\xff"]`, `await Echo.new, :go, ["\xff", :a]`, `await Echo.new, :bad`} {
+		expectError(t, echo+call+"\n", "invalid UTF-8")
+	}
+}
+
+func TestWorkersEncodeASharedFieldlessInstance(t *testing.T) {
+	// The parent and a worker both encode the instance they share, inside
+	// a Hash; go test -race reports it when they write one cached message.
+	expectOutput(t, `
+include Cameo
+class Tag
+end
+class Echo
+  def go(t) = await(Echo.new, :wrap, {k: t})
+  def wrap(h) = h
+end
+t = Tag.new
+jobs = (1..8).map { [async(Echo.new, :go, t), async(Echo.new, :wrap, {k: t})] }
+p await(jobs.flatten).uniq
+`, "[{\"k\" => Tag()}]\n")
+}
+
 func TestPromises(t *testing.T) {
 	// A promise is an Integer that resolve or fail settles once, from the
 	// script or a worker; await takes one or a list.

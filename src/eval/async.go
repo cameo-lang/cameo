@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"strings"
 	"sync"
+	"unicode/utf8"
 
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/protogen"
@@ -316,13 +318,25 @@ func (in *Interp) start(recvNode, methodNode syntax.Node, argNodes []syntax.Node
 		}
 		return data, nil
 	}
-	recvData, err := encode(recv)
+	cross := func(v object.Value) (crossing, error) {
+		if in.readsBackAsIs(v) {
+			if v.Kind() == object.KindInstance {
+				// ToMessage keeps an instance's message in the instance,
+				// so the worker gets an instance of its own to write to.
+				v = object.InstanceValue(&object.Instance{Cls: v.Instance().Cls})
+			}
+			return crossing{v: v}, nil
+		}
+		data, err := encode(v)
+		return crossing{data: data, wire: true}, err
+	}
+	recvC, err := cross(recv)
 	if err != nil {
 		return nil, err
 	}
-	argData := make([][]byte, len(args))
+	argC := make([]crossing, len(args))
 	for i, a := range args {
-		if argData[i], err = encode(a); err != nil {
+		if argC[i], err = cross(a); err != nil {
 			return nil, err
 		}
 	}
@@ -336,7 +350,7 @@ func (in *Interp) start(recvNode, methodNode syntax.Node, argNodes []syntax.Node
 	scope := methodScope(env)
 	scope.promises = append(scope.promises, p)
 	worker := in.worker()
-	go worker.run(p, recvData, method, argData, kwData)
+	go worker.run(p, recvC, method, argC, kwData)
 	return p, nil
 }
 
@@ -411,20 +425,20 @@ func (in *Interp) worker() *Interp {
 }
 
 // run is the body of a worker's goroutine: decode, call, settle.
-func (w *Interp) run(p *Promise, recvData []byte, method string, argData [][]byte, kwData []byte) {
-	result, exc := w.runCall(recvData, method, argData, kwData)
+func (w *Interp) run(p *Promise, recv crossing, method string, args []crossing, kwData []byte) {
+	result, exc := w.runCall(recv, method, args, kwData)
 	p.settle(result, exc, nil)
 }
 
-func (w *Interp) runCall(recvData []byte, method string, argData [][]byte, kwData []byte) (object.Value, *object.Exception) {
+func (w *Interp) runCall(recvC crossing, method string, argC []crossing, kwData []byte) (object.Value, *object.Exception) {
 	dec := w.Decoder()
-	recv, err := dec.Decode(recvData)
+	recv, err := recvC.value(dec)
 	if err != nil {
 		return object.Value{}, w.raise(object.TypeError, 0, "%s", err.Error()).(*object.Exception)
 	}
-	args := make([]object.Value, len(argData))
-	for i, d := range argData {
-		if args[i], err = dec.Decode(d); err != nil {
+	args := make([]object.Value, len(argC))
+	for i, c := range argC {
+		if args[i], err = c.value(dec); err != nil {
 			return object.Value{}, w.raise(object.TypeError, 0, "%s", err.Error()).(*object.Exception)
 		}
 	}
@@ -463,9 +477,63 @@ func (w *Interp) runCall(recvData []byte, method string, argData [][]byte, kwDat
 	return result, nil
 }
 
+// crossing is a value on its way to a worker: the value itself when it
+// reads back from the envelope unchanged, its wire form otherwise.
+type crossing struct {
+	v    object.Value
+	data []byte
+	wire bool
+}
+
+// value returns the value the worker gets.
+func (c crossing) value(dec *protogen.Decoder) (object.Value, error) {
+	if !c.wire {
+		return c.v, nil
+	}
+	return dec.Decode(c.data)
+}
+
+// readsBackAsIs reports whether v is equal to what a worker decodes from
+// its wire form, so the worker can take v itself: values are immutable,
+// and the round trip costs more than most calls async starts. A symbol
+// reads back as a string and a hash's symbol keys as strings, so neither
+// is one, nor is a string that is not valid UTF-8, which the envelope
+// rejects. An instance is one when it has no fields and its class is one
+// the script defined and the worker finds by name and digest; a list is
+// one when it holds no instance.
+func (in *Interp) readsBackAsIs(v object.Value) bool {
+	switch v.Kind() {
+	case object.KindBool, object.KindInt, object.KindBig, object.KindFloat:
+		return true
+	case object.KindString:
+		return utf8.ValidString(v.Str())
+	case object.KindList:
+		for _, e := range v.List().Elems {
+			if e.Kind() == object.KindInstance || !in.readsBackAsIs(e) {
+				return false
+			}
+		}
+		return true
+	case object.KindInstance:
+		inst := v.Instance()
+		cls := inst.Cls
+		return len(cls.Fields) == 0 && scriptDefined(cls) && in.FindClass(cls.QualifiedName(), cls.Digest) == cls
+	}
+	return v.IsNil()
+}
+
+// scriptDefined reports whether the script defined cls: a builtin class
+// has no digest, and one the host registered a "host:" one.
+func scriptDefined(cls *object.Class) bool {
+	return cls.Digest != "" && !strings.HasPrefix(cls.Digest, "host:")
+}
+
 // travels is nil when v can cross to another interpreter, the exception to
 // raise when it cannot: a Proc or a class stays where it was made.
 func (in *Interp) travels(v object.Value, what string) *object.Exception {
+	if in.readsBackAsIs(v) {
+		return nil
+	}
 	_, err := in.Encoder().Encode(v)
 	if err == nil {
 		return nil
