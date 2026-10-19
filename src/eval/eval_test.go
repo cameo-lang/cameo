@@ -192,6 +192,38 @@ g.bar
 	expectOutput(t, strings.TrimSuffix(src, "g.bar\n"), "[[1], 2]\ntrue\nfalse\n")
 }
 
+func TestSend(t *testing.T) {
+	// send calls a method by name, a symbol or a string, with the
+	// arguments, keywords and block it is given, and reaches method_missing
+	// and top-level methods as a call written with that name does.
+	expectOutput(t, `
+class Greeter
+  string :name
+  def hi(greeting, punct: "!") = "#{greeting}, #{name}#{punct}"
+  def method_missing(n, *args) = n == :wave ? "#{name} waves" : super
+end
+g = Greeter.new(name: "Ann")
+p g.send(:hi, "Hello"), g.public_send("hi", "Hi", punct: "?"), g.__send__(:wave)
+p 1.send(:+, 2), [1, 2].send(:map) { |x| x * 2 }
+def helper(x) = x * 10
+p send(:helper, 4), %i[upcase reverse].map { |m| "abc".send(m) }
+`, "\"Hello, Ann!\"\n\"Hi, Ann?\"\n\"Ann waves\"\n3\n[2, 4]\n40\n[\"ABC\", \"cba\"]\n")
+	// send rebinds no variable, so it refuses what a call on a temporary
+	// refuses, and initialize, which runs only in new.
+	for src, want := range map[string]string{
+		"a = [1]\na.send(:push, 2)\n":             "send(:push): push changes its receiver",
+		"p [2, 1].send(:sort!)\n":                 "send(:sort!): sort!: a bang method changes its receiver",
+		"h = {a: 1}\nh.send(:[]=, :b, 2)\n":       "send(:[]=): []= is not supported",
+		"p 1.send(:eval, \"1\")\n":                "send(:eval): eval is not supported",
+		"class G\nend\nG.new.send(:initialize)\n": "send(:initialize): initialize runs only in new",
+		"p 1.send(:nope)\n":                       "undefined method 'nope' for an instance of Integer",
+		"p 1.send(1)\n":                           "1 is not a symbol nor a string (TypeError)",
+		"p 1.send\n":                              "no method name given (ArgumentError)",
+	} {
+		expectError(t, src, want)
+	}
+}
+
 func TestFileIsTheScript(t *testing.T) {
 	// __FILE__ is the script's path, as it was given, which File's path
 	// functions take apart.

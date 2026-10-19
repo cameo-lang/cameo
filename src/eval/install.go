@@ -3,6 +3,7 @@ package eval
 import (
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/stdlib"
+	"github.com/cameo-lang/cameo/src/syntax"
 	"path/filepath"
 )
 
@@ -65,6 +66,39 @@ func init() {
 	object.ObjectClass.Define("require", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return ctx.(*Interp).require(args[0])
 	})
+	// send calls the method its first argument names, as a call written
+	// with that name would, method_missing and top-level methods included.
+	// It never rebinds its receiver, so it refuses what a direct call on a
+	// receiver cameo cannot rebind refuses, and initialize, which only new
+	// runs.
+	send := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if len(args) == 0 {
+			return object.Value{}, ctx.Raise(object.ArgumentError, "no method name given")
+		}
+		name, ok := args[0].AsSymbol()
+		if !ok {
+			if name, ok = args[0].AsString(); !ok {
+				shown, err := ctx.(*Interp).Inspect(args[0])
+				if err != nil {
+					return object.Value{}, err
+				}
+				return object.Value{}, ctx.Raise(object.TypeError, "%s is not a symbol nor a string", shown)
+			}
+		}
+		if name == "initialize" {
+			return object.Value{}, ctx.Raise(object.CameoError, "send(:initialize): initialize runs only in new")
+		}
+		if msg, refused := syntax.Refused(name); refused || name == "[]=" {
+			if !refused {
+				msg = "[]= is not supported; use assignment, which copies"
+			}
+			return object.Value{}, ctx.Raise(object.CameoError, "send(:%s): %s", name, msg)
+		}
+		return ctx.(*Interp).call(nil, self, name, args[1:], kw, block, true, 0)
+	}
+	for _, name := range []string{"send", "public_send", "__send__"} {
+		object.ObjectClass.Define(name, -1, send)
+	}
 	// method_missing is what super reaches from a class's own: the
 	// NoMethodError for the name.
 	object.ObjectClass.Define("method_missing", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {

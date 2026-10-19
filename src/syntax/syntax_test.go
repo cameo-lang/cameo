@@ -198,7 +198,7 @@ func TestRejections(t *testing.T) {
 		"class P\n int :x, :y, number: 3\nend\n":            "number: belongs to a declaration of one field",
 		"async foo\n":                                       "async takes a receiver, a method name",
 		"await\n":                                           "await takes a process",
-		"send(:x)\n":                                        "send is not supported",
+		"eval(\"x\")\n":                                     "eval is not supported",
 		"private\ndef x; end\n":                             "private is not supported",
 		"yield 1\n":                                         "yield outside a method",
 		"def m; X = 1; end\n":                               "a constant cannot be assigned inside a method",
