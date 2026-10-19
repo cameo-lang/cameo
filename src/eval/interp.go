@@ -100,7 +100,7 @@ func (in *Interp) stopped() error {
 type stopper struct {
 	flag atomic.Bool
 	once sync.Once
-	chs  [64]chan struct{}
+	chs  [shards]chan struct{}
 }
 
 func newStopper() *stopper {
@@ -121,7 +121,7 @@ func (s *stopper) stop() {
 }
 
 // ch returns the channel that wakes the waiters of promise id.
-func (s *stopper) ch(id int64) <-chan struct{} { return s.chs[uint64(id)%uint64(len(s.chs))] }
+func (s *stopper) ch(id int64) <-chan struct{} { return s.chs[shardOf(id)] }
 
 // New makes an interpreter writing to stdout and stderr.
 func New(stdout, stderr io.Writer) *Interp {

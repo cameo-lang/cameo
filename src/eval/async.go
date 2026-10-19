@@ -100,9 +100,17 @@ func asException(in *Interp, err error) *object.Exception {
 // The table is split into shards by id, so goroutines that start and await
 // promises at the same time rarely take the same lock.
 type promises struct {
-	next   atomic.Int64
-	shards [64]promiseShard
+	next atomic.Int64
+	// The padding keeps the counter off shard 0's cache line.
+	_      [56]byte
+	shards [shards]promiseShard
 }
+
+// shards is how many parts the promise table and the run's stop channels
+// are split into; shardOf picks the part of promise id in both.
+const shards = 64
+
+func shardOf(id int64) int { return int(uint64(id) % shards) }
 
 type promiseShard struct {
 	mu   sync.Mutex
@@ -120,7 +128,7 @@ func newPromises() *promises {
 }
 
 func (t *promises) shard(id int64) *promiseShard {
-	return &t.shards[uint64(id)%uint64(len(t.shards))]
+	return &t.shards[shardOf(id)]
 }
 
 func (t *promises) add(method string) *Promise {
