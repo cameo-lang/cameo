@@ -14,6 +14,7 @@
   <nav>
     <a href="index.html">Overview</a>
     <a href="ruby.html">Coming from Ruby</a>
+    <a href="async.html">Async</a>
     <a href="go.html" aria-current="page">Embedding in Go</a>
     <a href="native.html">Native code</a>
     <a href="https://github.com/cameo-lang/cameo">GitHub</a>
@@ -423,7 +424,8 @@ the goroutine settles it with <code>Resolve</code>, with a Go value that
 converts as a host method's result does, or with <code>Fail</code>, with an
 error that <code>await</code> raises. The script below runs one workflow
 per page, each awaiting its own fetch, so every request is in flight while
-the workflows wait.
+the workflows wait; <a href="async.html#io">the async guide</a> shows the
+timeline.
 <code>Resolve</code> and <code>Fail</code> may be called from any goroutine,
 once; a second call returns <code>cameo.ErrSettled</code>. This is
 <a href="https://github.com/cameo-lang/cameo/tree/main/examples/webfetch">examples/webfetch</a>:</p>

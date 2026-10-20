@@ -125,6 +125,11 @@ pre {
 }
 
 pre code { font-size: 14px; }
+figure { margin: 24px 0; }
+figure img { display: block; width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 6px; background: #fff; }
+figcaption { margin-top: 8px; font-size: 14px; color: var(--muted); }
+dl dt { font-weight: 600; margin-top: 16px; }
+dl dd { margin: 4px 0 0 0; }
 
 /* The output a sample printed, set off from the sample above it. */
 pre.output {

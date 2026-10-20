@@ -53,7 +53,8 @@ I/O is done; [examples/webfetch](examples/webfetch) fetches web pages so.
 [examples/async](examples/async) walks through the model, and
 [ruby/lib/cameo/runner.rb](ruby/lib/cameo/runner.rb) gives CRuby the same
 `Cameo::Runner` module, so a script whose classes include it runs on both:
-`ruby -I ruby/lib examples/async/02_fan_out.rb`. The Ruby adapter
+`ruby -I ruby/lib examples/async/02_fan_out.rb`. The site's
+[async guide](https://cameo-lang.github.io/async.html) explains it all. The Ruby adapter
 (milestone 7) is not built.
 
 ```sh
