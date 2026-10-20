@@ -101,6 +101,17 @@ make install    # puts `cameo` into GOBIN
 The parser is `github.com/go-ruby-parser/parser`, a Ruby parser in pure Go.
 No cgo, no Ruby installation, no code generation.
 
+## Site
+
+[cameo-lang.github.io](https://cameo-lang.github.io) is the static site in
+[doc/gh_pages](doc/gh_pages). The Pages workflow
+([.github/workflows/pages.yml](.github/workflows/pages.yml)) publishes it on
+every change: GitHub serves an organisation's root site from the repository
+named after it, so the workflow pushes the pages to
+`cameo-lang/cameo-lang.github.io`, and keeps the old address under `/cameo/`
+redirecting to the new one. `go test ./tests` runs every sample on the site
+against its output.
+
 ## Releasing
 
 A release is a tag `vMAJOR.MINOR.PATCH` on a commit of main. The Tag
