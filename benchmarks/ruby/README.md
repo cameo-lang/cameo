@@ -12,9 +12,8 @@ overlap.
 | `stdlib/<what>/` | stops on a builtin class or method cameo is to have and does not yet; `<what>` names it |
 | `unsupported/<what>/` | uses a feature or builtin cameo leaves out by design; `<what>` names it |
 
-A builtin decided out, such as `Struct`, `Rational` and `Complex`, or
-`RUBY_VERSION`, sits under `unsupported/`; the design document's "Decisions
-taken" says why.
+A builtin decided out, such as `Struct`, `Rational` and `Complex`, sits
+under `unsupported/`; the design document's "Decisions taken" says why.
 
 [MANIFEST.tsv](MANIFEST.tsv) gives every file its directory, the benchmark it
 came from and the reason it is where it is.
