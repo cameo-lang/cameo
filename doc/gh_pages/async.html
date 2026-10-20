@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cameo — async, await and promises</title>
+<meta name="description" content="How cameo runs work concurrently: async, await, promises, the runners that take the calls, and the same script on Ruby.">
+<link rel="stylesheet" href="style.css">
+<script type="module" src="site.js"></script>
+</head>
+<body>
+<header class="site"><div class="inner">
+  <a class="name" href="index.html">cameo</a>
+  <nav>
+    <a href="index.html">Overview</a>
+    <a href="ruby.html">Coming from Ruby</a>
+    <a href="async.html" aria-current="page">Async</a>
+    <a href="go.html">Embedding in Go</a>
+    <a href="native.html">Native code</a>
+    <a href="https://github.com/cameo-lang/cameo">GitHub</a>
+  </nav>
+</div></header>
+
+<main>
+<h1>async, await and promises</h1>
+<p class="lead">A cameo script hands a method call to a worker with
+<code>async</code> and collects its result with <code>await</code>. What
+<code>async</code> returns is a <em>promise</em>, a plain Integer: a name
+for a result to come, which a worker, the script itself or the Go host
+settles. This page explains the model, shows it on one core, walks through
+the examples in <a href="https://github.com/cameo-lang/cameo/tree/main/examples/async">examples/async</a>,
+and shows the same scripts running on Ruby.</p>
+
+<nav class="toc" aria-label="On this page">
+<ol>
+  <li><a href="#model">How it works</a></li>
+  <li><a href="#one-core">On one core</a></li>
+  <li><a href="#cores">Computing on every core</a></li>
+  <li><a href="#io">Many workflows, I/O in the host</a></li>
+  <li><a href="#examples">The examples</a></li>
+  <li><a href="#ruby">The same script on Ruby</a></li>
+</ol>
+</nav>
+
+<h2 id="model">How it works</h2>
+
+<p>Concurrency comes from the <code>Cameo</code> module, which brings
+<code>async</code>, <code>await</code>, <code>promise</code>,
+<code>resolve</code> and <code>fail</code>. The class that runs the work
+includes <code>Cameo::Runner</code>, the same module under the name a Ruby
+program includes too; see <a href="#ruby">below</a>. A script may instead
+include <code>Cameo</code> at the top level, which brings the module to
+every method, but only cameo has that; <code>Cameo::Runner</code> at the
+top level is refused on both. <code>Cameo.async</code> and
+<code>Cameo.await</code> need no include.</p>
+
+<dl>
+  <dt><code>async receiver, :method, args…</code></dt>
+  <dd>queues one call of a method on a receiver, over copies of the receiver
+  and the arguments, and returns its promise at once. The call runs on a
+  worker: an interpreter of its own, on a goroutine Go schedules over the
+  cores. Nothing the call does reaches the caller's values, and its result
+  comes back as a copy. A Proc, a class or a block cannot be passed, since
+  they cannot be copied.</dd>
+
+  <dt><code>await promise</code></dt>
+  <dd>waits for the promise and returns its result, or raises the exception
+  the call raised, with the same class and message. Awaiting a promise
+  twice gives the same result. <code>await [a, b]</code> waits for each and
+  returns the results in order; when some failed it waits for all, then
+  raises the first failure in the list's order. <code>await :all</code>
+  waits for every call the current method started and has not awaited,
+  blocks included, in start order. <code>await receiver, :method, args…</code>
+  starts a call and waits for it in one step.</dd>
+
+  <dt><code>promise</code>, <code>resolve promise, value</code>, <code>fail promise, exception</code></dt>
+  <dd>make a pending promise, and settle it with a value or an exception,
+  once; settling it again raises. A promise is an Integer, so it travels to
+  a worker, which may settle it, and to the Go host, which settles the
+  promises its methods return when their I/O is done; see
+  <a href="go.html#promises">promises in the host</a>. <code>fail</code>
+  with anything but a promise first raises, as Ruby's <code>fail</code>
+  does.</dd>
+</dl>
+
+<p>The calls <code>async</code> queues are taken by <em>runners</em>, up to
+one per core, started as calls arrive and ended when the queue is empty.
+Two rules keep every call able to run: a script about to wait for a promise
+while calls are queued starts another runner, and <code>await</code> on a
+call nobody has taken runs that call itself, on the goroutine that awaits
+it. A run ends when the script's top level has and every call it started
+has; a call that failed and was never awaited is reported on standard
+error.</p>
+
+<h2 id="one-core">On one core</h2>
+
+<p>With one core, <code>async</code> cannot make calls that compute run
+faster: one of them has the core at a time. What it buys is overlap with
+waiting. The timeline below is a script that asks the host for exchange
+rates with <code>Web.fetch</code>, which returns a promise and starts the
+request on a goroutine, and queues two calls of its own, <code>parse</code>
+and <code>price</code>.</p>
+
+<figure>
+  <img src="img/async-single-core.svg" alt="A timeline with four lanes: the script, a runner, the host and the core. The script starts a fetch and queues two calls, runs parse itself when it awaits it, then waits for the rates while a runner takes price; the host resolves the promise when the response arrives, which wakes the script to finish.">
+  <figcaption>One core: the script waits for the network while a runner
+  computes. The bottom lane shows who has the core: one at a time.
+  (<a href="img/async-single-core.excalidraw">Excalidraw source</a>)</figcaption>
+</figure>
+
+<ol>
+  <li>The script calls <code>Web.fetch</code>, which returns at once, and
+  queues <code>parse</code> and <code>price</code> with <code>async</code>.
+  The request is on its way; no core is needed for that.</li>
+  <li>The script awaits <code>parse</code>. Nobody has taken it, so the
+  script runs it itself rather than waiting for a runner.</li>
+  <li>The script awaits the rates. It has nothing to do, so the core is
+  free, and a runner takes <code>price</code>, the next call in the
+  queue.</li>
+  <li>The response arrives. The host settles the promise with
+  <code>Resolve</code>, which wakes the script.</li>
+  <li>The script awaits <code>price</code>, which is done, and prints the
+  bill.</li>
+</ol>
+
+<h2 id="cores">Computing on every core</h2>
+
+<p>With more cores, calls that compute run at the same time. Each queued
+call is taken by a runner of its own, up to one per core, and Go spreads
+the runners over the cores. <a href="ruby.html#async">The Fibonacci
+fan-out</a> queues four calls of <code>fib(29)</code> and awaits the list
+of their promises:</p>
+
+<figure>
+  <img src="img/async-four-cores.svg" alt="A timeline with a script lane and four core lanes. The script queues four calls and waits; each core runs one call on a runner for the same stretch; the script then prints the results.">
+  <figcaption>Four cores: fib(29) four times, one call per core.
+  (<a href="img/async-four-cores.excalidraw">Excalidraw source</a>)</figcaption>
+</figure>
+
+<p>On a four-core machine the four calls take 1.2 seconds where running
+them one after another takes 2.3: about a 2&times; gain, not 4&times;,
+since the runners share the memory system and the collector. The same
+script on one core takes as long as the sequential one, as the
+<a href="#one-core">timeline above</a> shows: there, <code>async</code>
+buys overlap with waiting, not more computing.</p>
+
+<h2 id="io">Many workflows, I/O in the host</h2>
+
+<p>The other shape of work is many workflows that each wait on the
+outside: fetch a page, then measure it. Waiting costs no core, so one core
+runs as many workflows at once as there are requests in flight. The host
+does the I/O: its <code>Web.fetch</code> starts the request on a goroutine
+of its own and returns a promise, and when the response is in, the host
+settles the promise <em>from outside the script</em> with
+<code>Resolve</code> or <code>Fail</code>, which wakes the workflow that
+awaits it. <a href="https://github.com/cameo-lang/cameo/tree/main/examples/webfetch">examples/webfetch</a>
+is that program; <a href="go.html#promises">promises in the host</a> shows
+its Go side.</p>
+
+<pre class="cameo"><code>include Cameo
+
+class Flow
+  # One workflow: fetch the page, then measure it. await parks this
+  # workflow until the host settles the promise; the others run meanwhile.
+  def run(url)
+    page = await Web.fetch(url)
+    "#{url}: #{page.size} bytes, #{page.lines.size} lines"
+  rescue Web::FetchError =&gt; e
+    "#{url}: #{e.message}"
+  end
+end
+
+def fetch_all(urls)
+  flow = Flow.new
+  promises = urls.map { |url| async flow, :run, url }   # every workflow starts now
+  await promises                                        # their lines, in order
+end</code></pre>
+
+<figure>
+  <img src="img/async-io.svg" alt="A timeline with a script lane, three workflow lanes, a host lane and a core lane. Each workflow fetches, then waits while the host has three requests on the wire; the host resolves all three, each workflow measures its page, and the core is busy only for the short starts and ends.">
+  <figcaption>One core, I/O in the host: every workflow's request is in
+  flight at once. (<a href="img/async-io.excalidraw">Excalidraw source</a>)</figcaption>
+</figure>
+
+<p>Three workflows start, each calls <code>Web.fetch</code> and awaits the
+promise; while all three wait, the core is idle and the three requests are
+on the wire together. The host's goroutines settle the three promises as
+the responses arrive, each workflow measures its page, and
+<code>await promises</code> at the top returns the three lines. The test of
+<code>examples/webfetch</code> holds the program to this: its server
+answers a request only once all of them have arrived, so the run finishes
+only if every workflow's fetch was in flight at once.</p>
+
+<h2 id="examples">The examples</h2>
+
+<p>Each script below is a file in <code>examples/async</code>, with the
+output it prints. The scripts start with <code>require "cameo/runner"</code>,
+which cameo builds in, and the class that runs the work includes
+<code>Cameo::Runner</code>, so that the same file runs on Ruby; see
+<a href="#ruby">the next section</a>.</p>
+
+<h3 id="01_one_call">one call</h3>
+
+<p>async starts one method call on a worker and returns its promise, an Integer, at once; await waits for the call and returns its result. A class includes Cameo::Runner to run its work so.</p>
+
+<pre class="cameo"><code>require "cameo/runner"
+
+class Calculator
+  include Cameo::Runner
+
+  def square(n)
+    n * n
+  end
+
+  def demo
+    job = async self, :square, 12
+    puts "the promise: #{job}"
+    puts "its result: #{await job}"
+
+    # async and await in one step: start the call and wait for it.
+    puts "in one step: #{await self, :square, 7}"
+  end
+end
+
+Calculator.new.demo</code></pre>
+<pre class="output"><code>the promise: 1
+its result: 144
+in one step: 49</code></pre>
+<h3 id="02_fan_out">fan out</h3>
+
+<p>Fan out: start every call before awaiting any, then await the list of promises, which returns the results in the order of the list.</p>
+
+<pre class="cameo"><code>require "cameo/runner"
+
+class Words
+  include Cameo::Runner
+
+  def count(text)
+    text.split.size
+  end
+
+  def count_all(pages)
+    promises = pages.map { |page| async self, :count, page }
+    await promises
+  end
+end
+
+pages = [
+  "the quick brown fox",
+  "jumps over",
+  "the lazy dog and keeps on running"
+]
+counts = Words.new.count_all(pages)
+puts counts.inspect
+puts "#{counts.sum} words on #{pages.size} pages"</code></pre>
+<pre class="output"><code>[4, 2, 7]
+13 words on 3 pages</code></pre>
+<h3 id="03_await_all">await all</h3>
+
+<p>await :all waits for every call the current method started and has not awaited, blocks included, and returns their results in start order.</p>
+
+<pre class="cameo"><code>require "cameo/runner"
+
+class Squares
+  include Cameo::Runner
+
+  def of(n)
+    n * n
+  end
+
+  def table(limit)
+    (1..limit).each { |n| async self, :of, n }
+    await :all
+  end
+
+  # The calls a method started belong to that method: here only the two
+  # started in pair are collected, not table's.
+  def pair
+    async self, :of, 10
+    async self, :of, 20
+    await :all
+  end
+end
+
+squares = Squares.new
+puts squares.table(5).inspect
+puts squares.pair.inspect</code></pre>
+<pre class="output"><code>[1, 4, 9, 16, 25]
+[100, 400]</code></pre>
+<h3 id="04_failures">failures</h3>
+
+<p>A call that raises raises again where it is awaited, with the same class and message. Awaiting a list waits for every call, then raises the first failure in the list's order.</p>
+
+<pre class="cameo"><code>require "cameo/runner"
+
+class Inventory
+  include Cameo::Runner
+
+  def reserve(item, qty)
+    raise ArgumentError, "no #{item} left" if qty &gt; 3
+
+    "#{qty} x #{item}"
+  end
+
+  def demo
+    begin
+      await self, :reserve, "lamps", 5
+    rescue ArgumentError =&gt; e
+      puts "raised: #{e.message}"
+    end
+
+    orders = [["books", 1], ["chairs", 9], ["pens", 2], ["desks", 4]]
+    promises = orders.map { |item, qty| async self, :reserve, item, qty }
+    begin
+      await promises
+    rescue ArgumentError =&gt; e
+      puts "the list raised: #{e.message}"
+    end
+    # The calls that worked still have their results.
+    puts await(promises[0]), await(promises[2])
+  end
+end
+
+Inventory.new.demo</code></pre>
+<pre class="output"><code>raised: no lamps left
+the list raised: no chairs left
+1 x books
+2 x pens</code></pre>
+<h3 id="05_promises">promises</h3>
+
+<p>A promise made by hand: promise makes one, and resolve or fail settles it, once. A promise is an Integer, so it travels to a worker like any other value, and the worker settles it while the caller awaits it.</p>
+
+<pre class="cameo"><code>require "cameo/runner"
+
+class Courier
+  include Cameo::Runner
+
+  def deliver(promise, parcel)
+    resolve(promise, "#{parcel}, delivered")
+  end
+
+  def lose(promise, parcel)
+    fail(promise, KeyError, "#{parcel} is lost")
+  end
+
+  def demo
+    parcel = promise
+    async self, :deliver, parcel, "books"
+    puts await(parcel)
+
+    missing = promise
+    async self, :lose, missing, "a lamp"
+    begin
+      await missing
+    rescue KeyError =&gt; e
+      puts "failed: #{e.message}"
+    end
+
+    begin
+      resolve parcel, "again"
+    rescue ArgumentError =&gt; e
+      puts e.message
+    end
+
+    # fail with anything but a promise first raises, as Ruby's fail does.
+    begin
+      fail "not a promise"
+    rescue RuntimeError =&gt; e
+      puts "raised: #{e.message}"
+    end
+  end
+end
+
+Courier.new.demo</code></pre>
+<pre class="output"><code>books, delivered
+failed: a lamp is lost
+promise 1 is settled already
+raised: not a promise</code></pre>
+<h3 id="06_workflow">workflow</h3>
+
+<p>A workflow of steps that depend on each other. Checking the order and pricing its lines run at once; shipping waits for both, and its label is made while the parcel is weighed.</p>
+
+<pre class="cameo"><code>require "cameo/runner"
+
+class Shop
+  include Cameo::Runner
+
+  def check(order)
+    order["lines"].all? { |line| line["qty"].positive? }
+  end
+
+  def price(line)
+    line["qty"] * line["cents"]
+  end
+
+  def weigh(order)
+    order["lines"].sum { |line| line["qty"] * line["grams"] }
+  end
+
+  def label(order)
+    "#{order["id"]} to #{order["to"]}"
+  end
+
+  def ship(order)
+    checked = async self, :check, order
+    prices = order["lines"].map { |line| async self, :price, line }
+    raise ArgumentError, "order #{order["id"]} has an empty line" unless await checked
+
+    total = await(prices).sum
+    weight = async self, :weigh, order
+    label = async self, :label, order
+    "#{await label}: #{total} cents, #{await weight} g"
+  end
+end
+
+order = {
+  "id" =&gt; "A-17", "to" =&gt; "Berlin",
+  "lines" =&gt; [
+    { "qty" =&gt; 2, "cents" =&gt; 1250, "grams" =&gt; 300 },
+    { "qty" =&gt; 1, "cents" =&gt; 4999, "grams" =&gt; 1200 }
+  ]
+}
+puts Shop.new.ship(order)</code></pre>
+<pre class="output"><code>A-17 to Berlin: 7499 cents, 1800 g</code></pre>
+<h3 id="07_copies">copies</h3>
+
+<p>A call that async starts gets copies of its receiver and its arguments, and its result comes back as a copy: nothing a worker does reaches the caller's values. A Proc or a class cannot be copied, so it cannot be passed.</p>
+
+<pre class="cameo"><code>require "cameo/runner"
+
+class Editor
+  include Cameo::Runner
+
+  def append(list, item)
+    list &lt;&lt; item
+    list
+  end
+
+  def demo
+    list = [1, 2]
+    longer = await self, :append, list, 3
+    puts "the worker's: #{longer.inspect}, the caller's: #{list.inspect}"
+
+    begin
+      async self, :append, list, -&gt; { 4 }
+    rescue TypeError =&gt; e
+      puts e.message
+    end
+  end
+end
+
+Editor.new.demo</code></pre>
+<pre class="output"><code>the worker's: [1, 2, 3], the caller's: [1, 2]
+a Proc cannot be passed to async</code></pre>
+<h3 id="08_top_level">top level</h3>
+
+<p>Cameo::Runner belongs in the class that runs the work. The top level refuses it, on cameo and on Ruby alike; a script that wants async at the top level includes Cameo, which only cameo has.</p>
+
+<pre class="cameo"><code>require "cameo/runner"
+
+begin
+  include Cameo::Runner
+rescue StandardError =&gt; e
+  puts "refused: #{e.message}"
+end</code></pre>
+<pre class="output"><code>refused: include Cameo::Runner belongs in the class that runs the work; at the top level include Cameo</code></pre>
+
+<h2 id="ruby">The same script on Ruby</h2>
+
+<p><a href="https://github.com/cameo-lang/cameo/blob/main/ruby/lib/cameo/runner.rb">ruby/lib/cameo/runner.rb</a>
+gives CRuby the <code>Cameo::Runner</code> module: <code>async</code>,
+<code>await</code>, <code>promise</code>, <code>resolve</code> and
+<code>fail</code> with cameo's results, promise ids and error messages. A
+script whose classes include it runs unchanged on both:</p>
+
+<pre class="sh"><code>$ cameo examples/async/02_fan_out.rb
+[4, 2, 7]
+13 words on 3 pages
+$ ruby -I ruby/lib examples/async/02_fan_out.rb
+[4, 2, 7]
+13 words on 3 pages</code></pre>
+
+<p>On Ruby, <code>async</code> copies the receiver and the arguments with
+<code>Marshal</code>, as cameo copies them, and runs the call on a thread
+of its own; a Proc, a Method, a class or a module cannot be copied, as in
+cameo. The result comes back as a copy, and a failure raises again where
+the call is awaited. <code>await :all</code> collects the calls the current
+method started, which the library tells from the caller's location.</p>
+
+<p>What differs is the cores. CRuby's global VM lock runs one thread's Ruby
+code at a time, so calls that compute take turns on one core, as in the
+timeline above, where cameo spreads them over the cores. A call that waits,
+for the network or a sleep, lets the others run on both. The library is for
+running a cameo script where cameo is not embedded; it does not make Ruby
+parallel.</p>
+</main>
+
+<footer class="site"><div class="inner">
+  cameo · <a href="https://github.com/cameo-lang/cameo">github.com/cameo-lang/cameo</a> ·
+  every sample on this site was run
+</div></footer>
+</body>
+</html>

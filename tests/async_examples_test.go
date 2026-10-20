@@ -2,9 +2,11 @@ package tests
 
 import (
 	"bytes"
+	"html"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -59,5 +61,37 @@ func TestAsyncExamplesOnRuby(t *testing.T) {
 			assert.Equals(t, stderr.String(), "")
 			assert.Equals(t, stdout.String(), expectedOf(t, script))
 		})
+	}
+}
+
+// TestSiteShowsTheAsyncExamples holds the async guide's samples to
+// examples/async: each script's code, after its leading comment, and its
+// expected output, in order.
+func TestSiteShowsTheAsyncExamples(t *testing.T) {
+	page, err := os.ReadFile("../doc/gh_pages/async.html")
+	assert.NoError(t, err)
+	// The examples are the section between the examples heading and the
+	// Ruby one; the workflow sample above it has no output block.
+	section := regexp.MustCompile(`(?s)<h2 id="examples">.*?<h2 id="ruby">`).FindString(string(page))
+	assert.True(t, section != "", "async.html has no examples section")
+	shown := regexp.MustCompile(`(?s)<pre class="cameo"><code>(.*?)</code></pre>\s*<pre class="output"><code>(.*?)</code></pre>`).FindAllStringSubmatch(section, -1)
+	scripts := asyncExamples(t)
+	assert.Equals(t, len(shown), len(scripts))
+	// The webfetch workflow is the script of examples/webfetch/main.go.
+	mainGo, err := os.ReadFile("../examples/webfetch/main.go")
+	assert.NoError(t, err)
+	script := regexp.MustCompile("(?s)const script = `\n(.*?)\n`\n").FindStringSubmatch(string(mainGo))
+	assert.NotNil(t, script, "main.go has no script constant")
+	assert.True(t, strings.Contains(html.UnescapeString(string(page)), script[1]), "async.html does not show the webfetch script")
+	for i, script := range scripts {
+		src, err := os.ReadFile(script)
+		assert.NoError(t, err)
+		lines := strings.Split(strings.TrimRight(string(src), "\n"), "\n")
+		for len(lines) > 0 && strings.HasPrefix(lines[0], "#") {
+			lines = lines[1:]
+		}
+		code := strings.Trim(strings.Join(lines, "\n"), "\n")
+		assert.Equals(t, html.UnescapeString(shown[i][1]), code)
+		assert.Equals(t, html.UnescapeString(shown[i][2]), strings.TrimRight(expectedOf(t, script), "\n"))
 	}
 }
