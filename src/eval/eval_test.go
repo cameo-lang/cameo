@@ -730,3 +730,31 @@ func (t *promises) len() int {
 	}
 	return n
 }
+
+func TestRubyVersionConstants(t *testing.T) {
+	expectOutput(t, `p RUBY_ENGINE
+p RUBY_VERSION
+p RUBY_PATCHLEVEL
+p RUBY_ENGINE_VERSION == RUBY_DESCRIPTION.split(" ")[1]
+p RUBY_DESCRIPTION.start_with?("cameo ")
+p RUBY_DESCRIPTION.end_with?("+ruby #{RUBY_VERSION} [#{RUBY_PLATFORM}]")
+p RUBY_PLATFORM.match?(/\A[a-z0-9_]+-[a-z]+/)
+p RUBY_COPYRIGHT
+p [RUBY_ENGINE, RUBY_VERSION, RUBY_PLATFORM, RUBY_RELEASE_DATE, RUBY_REVISION].all?(&:frozen?)
+`, `"cameo"
+"3.4.0"
+0
+true
+true
+true
+true
+"cameo - Copyright (C) 2026 the cameo authors (MIT License)"
+true
+`)
+}
+
+func TestRubyVersionConstantsCannotBeReassigned(t *testing.T) {
+	expectError(t, "RUBY_VERSION = \"9.9.9\"\n", "cannot reassign the builtin constant RUBY_VERSION")
+	expectError(t, "RUBY_PATCHLEVEL = 1\n", "cannot reassign the builtin constant RUBY_PATCHLEVEL")
+	expectOutput(t, "class A\n  RUBY_VERSION = \"1.8\"\n  def self.v = RUBY_VERSION\nend\nputs A.v\nputs RUBY_VERSION\n", "1.8\n3.4.0\n")
+}

@@ -1,0 +1,17 @@
+# Ruby's version constants describe cameo and the Ruby it follows.
+# RUBY_ENGINE tells cameo from CRuby; RUBY_VERSION is the Ruby language
+# version cameo follows, so a version check written for Ruby keeps working.
+puts RUBY_ENGINE
+puts RUBY_VERSION.start_with?("3.")
+puts RUBY_VERSION >= "3.4"
+puts RUBY_PATCHLEVEL.is_a?(Integer)
+
+# The engine version, the platform and the commit depend on the build.
+puts RUBY_ENGINE_VERSION.match?(/\A\d+\.\d+\.\d+/)
+puts RUBY_PLATFORM.match?(/\A[a-z0-9_]+-[a-z]+/)
+puts RUBY_DESCRIPTION.start_with?("cameo #{RUBY_ENGINE_VERSION}")
+puts RUBY_DESCRIPTION.end_with?("+ruby #{RUBY_VERSION} [#{RUBY_PLATFORM}]")
+puts RUBY_COPYRIGHT.start_with?("cameo - Copyright (C)")
+
+engine = RUBY_ENGINE == "cameo" ? "cameo #{RUBY_VERSION.split(".").first(2).join(".")}" : "CRuby"
+puts "running on #{engine}"

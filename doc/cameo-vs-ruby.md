@@ -27,7 +27,7 @@ each:
 | 61 | instance variables |
 | 59 | `attr_*` accessors |
 | 58 | mutation of something other than a local variable |
-| 32 | GC and VM introspection |
+| 33 | GC and VM introspection |
 | 32 | `Module.new` |
 | 31 | the file system |
 | 24 | threads and fibers |
@@ -41,7 +41,7 @@ each:
 | 6 | `ruby2_keywords` |
 | 5 | object identity |
 | 3 | `ENV` |
-| 1 each | `RUBY_VERSION`, class variables, `String#tr` with a hash |
+| 1 each | class variables, `String#tr` with a hash |
 
 **ruby/spec.** [specs](../specs) sorts all 3841 spec files of
 [ruby/spec](https://github.com/ruby/spec) by what cameo's checker accepts:
@@ -170,6 +170,24 @@ q = p.with(x: 3)            # a copy; p is unchanged
   `t = t.add { ... }`. `p` of a `Benchmark::Tms` shows no address.
 - A Symbol becomes a String where a value leaves cameo, in a protobuf
   message or an `async` call, unless an `enum` field declares it.
+- Ruby's version constants describe cameo. A script tells cameo from CRuby
+  by `RUBY_ENGINE`, and cannot assign any of them at the top level:
+
+  | Constant | In cameo |
+  |---|---|
+  | `RUBY_ENGINE` | `"cameo"` |
+  | `RUBY_ENGINE_VERSION` | cameo's version, as `cameo version` prints it |
+  | `RUBY_VERSION` | `"3.4.0"`: the Ruby cameo follows, 3.4 as released |
+  | `RUBY_PATCHLEVEL` | `0`, Ruby 3.4.0's; cameo takes no CRuby patch release |
+  | `RUBY_PLATFORM` | Ruby's name for the platform, as `x86_64-linux`, `aarch64-linux`, `arm64-darwin` or `x64-mingw-ucrt`, without the OS version CRuby appends on macOS |
+  | `RUBY_RELEASE_DATE` | the date of the commit cameo was built from, or `"unknown"` |
+  | `RUBY_REVISION` | the hash of that commit, or `"unknown"` |
+  | `RUBY_DESCRIPTION` | the build in CRuby's form: `cameo 0.2.3 (2026-10-20 revision 0123456789) +ruby 3.4.0 [x86_64-linux]` |
+  | `RUBY_COPYRIGHT` | `"cameo - Copyright (C) 2026 the cameo authors (MIT License)"` |
+
+  The commit is known when the binary was built with `go build` in a git
+  checkout; a binary from `go install ...@v0.2.3` knows its version but no
+  commit.
 
 ## Rejected before the script runs
 
@@ -196,7 +214,7 @@ These are absent, and a script that uses one fails when it reaches it:
 
 - **Left out by design**: `Struct` and `Data` (classes declare typed
   fields), `Rational` and `Complex`, `Marshal` (instances are protobuf
-  messages), `ObjectSpace`, `GC`, `ENV`, `RUBY_VERSION`, `Module.new`,
+  messages), `ObjectSpace`, `GC`, `ENV`, `Module.new`,
   refinements, `binding`, `method` and `Proc#curry`.
 - **No I/O beyond standard output and error**: `File`, `IO`, `Dir`,
   `gets`, `STDIN`, `STDOUT`, `STDERR`, `$stdout`.

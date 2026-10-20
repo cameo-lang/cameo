@@ -95,6 +95,9 @@ func (in *Interp) evalScopedConst(n *syntax.ScopedConst, env *Env, fr *Frame) (o
 // defineConst binds a constant in the innermost lexical scope. A constant
 // is a value bound to a name: binding it again replaces the binding.
 func (in *Interp) defineConst(name string, v object.Value, fr *Frame, line int) error {
+	if _, builtin := object.ObjectClass.Consts[name]; builtin && len(fr.Lexical) == 0 {
+		return in.raise(object.CameoError, line, "cannot reassign the builtin constant %s", name)
+	}
 	// A class from Class.new takes the name of the first constant it is
 	// bound to, as in Ruby.
 	if cls, ok := v.AsClass(); ok && cls.Name == "" {

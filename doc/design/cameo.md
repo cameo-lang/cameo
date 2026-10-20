@@ -732,6 +732,17 @@ re-opened by accident:
   one thread's code at a time, so the library gives a cameo script's
   semantics on Ruby, not its parallelism; `examples/async` holds both
   interpreters to the same output.
+- **Ruby's version constants** describe cameo rather than being left
+  out, so a version check written for Ruby runs. `RUBY_ENGINE` is
+  `"cameo"`; `RUBY_VERSION` is `"3.4.0"`, the Ruby whose language and
+  libraries (json 2.9.1, benchmark 0.4.0) cameo follows, with
+  `RUBY_PATCHLEVEL` 0 since cameo takes none of CRuby's patch releases. A
+  later CRuby 3.4.x would claim bug fixes cameo has not checked.
+  `RUBY_ENGINE_VERSION`, `RUBY_REVISION` and `RUBY_RELEASE_DATE` come from
+  the build (`src/buildinfo`): the version set with `-ldflags -X` or Go's
+  module version, and the git commit and its date Go records, or
+  `"unknown"`. A script cannot assign them, nor any other builtin constant,
+  at the top level.
 - **No instance variables.** `initialize` sets a field with `self.x = v`,
   and a field is read with its reader, so `@` is free for later use. Ruby
   code that sets `@x` in `initialize` no longer runs unchanged; it never
@@ -783,7 +794,7 @@ re-opened by accident:
     stays out, since cameo starts no processes.
   - Left out: `Struct` (its members are untyped and its point is setters;
     cameo classes declare typed fields), `Rational` and `Complex` (with
-    their literals), and `RUBY_VERSION`.
+    their literals).
 - **The language follows CRuby's benchmarks too**, a second round over
   what they use beyond the standard library:
   - Taken in: a mutating call on a local (`x << y`, `x.push(y)`,
