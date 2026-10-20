@@ -37,6 +37,7 @@ func Install() {
 	installEncodings()
 	installPack()
 	installPaths()
+	installVersion()
 	// After Enumerable and Enumerator: it wraps Enumerable's methods.
 	installUserEnumerable()
 	// Last: it wraps every String method defined before it.

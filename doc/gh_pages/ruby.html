@@ -331,7 +331,7 @@ reaches it, mostly with <code>NameError</code> or
   <code>Data</code> (classes declare typed fields), <code>Rational</code>
   and <code>Complex</code>, <code>Marshal</code> (instances are protobuf
   messages), <code>ObjectSpace</code>, <code>GC</code>, <code>ENV</code>,
-  <code>RUBY_VERSION</code>, <code>Module.new</code>, refinements,
+  <code>Module.new</code>, refinements,
   <code>binding</code>, <code>method</code>, <code>Proc#curry</code>.</li>
   <li><strong>No I/O beyond standard output and error</strong>:
   <code>File</code> beyond its path methods (<code>basename</code>,
@@ -386,6 +386,21 @@ rescue LoadError =&gt; e
   puts e.message
 end</code></pre>
 <pre class="output"><code>cannot load such file -- yaml</code></pre>
+
+<p>Ruby's version constants describe cameo: <code>RUBY_ENGINE</code> is
+<code>"cameo"</code>, <code>RUBY_VERSION</code> is the Ruby cameo follows,
+3.4.0, and <code>RUBY_ENGINE_VERSION</code> is cameo's own version.
+<code>RUBY_PLATFORM</code>, <code>RUBY_DESCRIPTION</code>,
+<code>RUBY_REVISION</code> and <code>RUBY_RELEASE_DATE</code> describe the
+build, and <code>RUBY_PATCHLEVEL</code> is 0. A script cannot assign
+them.</p>
+
+<pre class="cameo"><code>puts RUBY_ENGINE
+puts RUBY_VERSION
+puts RUBY_VERSION &gt;= "3.4"</code></pre>
+<pre class="output"><code>cameo
+3.4.0
+true</code></pre>
 
 <h2 id="only">Only in cameo</h2>
 

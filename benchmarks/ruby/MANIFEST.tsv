@@ -389,7 +389,6 @@ unsupported/require	irb_color--irb_color_incomplete.rb	benchmark/irb_color.yml, 
 unsupported/require	irb_exec--irb_exec.rb	benchmark/irb_exec.yml, entry irb_exec	require of a library cameo does not build in
 unsupported/require	loop_generator.rb	benchmark/loop_generator.rb	require of a library cameo does not build in
 unsupported/require	securerandom.rb	benchmark/securerandom.rb	require of a library cameo does not build in
-unsupported/ruby-version	vm_gc_wb_ary--vm_gc_wb_ary.rb	benchmark/vm_gc_wb_ary.yml, entry vm_gc_wb_ary	RUBY_VERSION (left out)
 unsupported/singleton-methods	object_class--extended.rb	benchmark/object_class.yml, entry extended	singleton methods outside a class (def self.x at top level, def obj.x)
 unsupported/singleton-methods	object_class--immediate.rb	benchmark/object_class.yml, entry immediate	singleton methods outside a class (def self.x at top level, def obj.x)
 unsupported/singleton-methods	object_class--obj.rb	benchmark/object_class.yml, entry obj	singleton methods outside a class (def self.x at top level, def obj.x)
@@ -463,6 +462,7 @@ unsupported/vm-introspection	vm_gc_old_lazy.rb	benchmark/vm_gc_old_lazy.rb	GC an
 unsupported/vm-introspection	vm_gc_short_with_complex_long--vm_gc_short_with_complex_long.rb	benchmark/vm_gc_short_with_complex_long.yml, entry vm_gc_short_with_complex_long	GC and VM introspection
 unsupported/vm-introspection	vm_gc_short_with_long--vm_gc_short_with_long.rb	benchmark/vm_gc_short_with_long.yml, entry vm_gc_short_with_long	GC and VM introspection
 unsupported/vm-introspection	vm_gc_short_with_symbol--vm_gc_short_with_symbol.rb	benchmark/vm_gc_short_with_symbol.yml, entry vm_gc_short_with_symbol	GC and VM introspection
+unsupported/vm-introspection	vm_gc_wb_ary--vm_gc_wb_ary.rb	benchmark/vm_gc_wb_ary.yml, entry vm_gc_wb_ary	GC and VM introspection
 unsupported/vm-introspection	vm_gc_wb_ary_promoted--vm_gc_wb_ary_promoted.rb	benchmark/vm_gc_wb_ary_promoted.yml, entry vm_gc_wb_ary_promoted	GC and VM introspection
 unsupported/vm-introspection	vm_gc_wb_obj_promoted--vm_gc_wb_obj_promoted.rb	benchmark/vm_gc_wb_obj_promoted.yml, entry vm_gc_wb_obj_promoted	GC and VM introspection
 works	app_answer.rb	benchmark/app_answer.rb	
