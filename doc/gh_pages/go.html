@@ -421,17 +421,20 @@ page, can return a <em>promise</em> instead of blocking: it makes one with
 promise at once. The script holds the promise as an Integer and awaits it;
 the goroutine settles it with <code>Resolve</code>, with a Go value that
 converts as a host method's result does, or with <code>Fail</code>, with an
-error that <code>await</code> raises. A script that starts every fetch
-before it awaits any has the requests run at the same time.
+error that <code>await</code> raises. The script below runs one workflow
+per page, each awaiting its own fetch, so every request is in flight while
+the workflows wait.
 <code>Resolve</code> and <code>Fail</code> may be called from any goroutine,
 once; a second call returns <code>cameo.ErrSettled</code>. This is
 <a href="https://github.com/cameo-lang/cameo/tree/main/examples/webfetch">examples/webfetch</a>:</p>
 
-<pre class="go"><code>// Command webfetch fetches web pages from a cameo script. cameo does no
-// I/O, so the host gives the script a Web module whose fetch starts the
-// request on a goroutine and returns a promise at once. The script starts
-// every fetch before it awaits any, so the requests run at the same time,
-// and await returns each page or raises Web::FetchError.
+<pre class="go"><code>// Command webfetch fetches web pages from a cameo script, one workflow per
+// page. cameo does no I/O, so the host gives the script a Web module whose
+// fetch starts the request on a goroutine and returns a promise at once; the
+// host settles the promise from outside the script when the response is
+// in. Each workflow awaits its own fetch, so every request is in flight
+// while the script waits, and await returns each page or raises
+// Web::FetchError.
 //
 //	go run ./examples/webfetch https://example.com https://example.org/missing
 package main
@@ -448,13 +451,21 @@ import (
 const script = `
 include Cameo
 
-def fetch_all(urls)
-  promises = urls.map { |url| Web.fetch(url) }   # every request starts now
-  urls.zip(promises).map do |url, promise|
-    "#{url}: #{(await promise).size} bytes"
+class Flow
+  # One workflow: fetch the page, then measure it. await parks this
+  # workflow until the host settles the promise; the others run meanwhile.
+  def run(url)
+    page = await Web.fetch(url)
+    "#{url}: #{page.size} bytes, #{page.lines.size} lines"
   rescue Web::FetchError =&gt; e
     "#{url}: #{e.message}"
   end
+end
+
+def fetch_all(urls)
+  flow = Flow.new
+  promises = urls.map { |url| async flow, :run, url }   # every workflow starts now
+  await promises                                        # their lines, in order
 end
 `
 
@@ -511,8 +522,10 @@ func main() {
 }</code></pre>
 <pre class="sh"><code>$ go run ./examples/webfetch \
     https://raw.githubusercontent.com/cameo-lang/cameo/main/README.md \
+    https://raw.githubusercontent.com/cameo-lang/cameo/main/LICENSE \
     https://raw.githubusercontent.com/cameo-lang/cameo/main/MISSING.md
-https://raw.githubusercontent.com/cameo-lang/cameo/main/README.md: 5060 bytes
+https://raw.githubusercontent.com/cameo-lang/cameo/main/README.md: 6089 bytes, 139 lines
+https://raw.githubusercontent.com/cameo-lang/cameo/main/LICENSE: 1465 bytes, 28 lines
 https://raw.githubusercontent.com/cameo-lang/cameo/main/MISSING.md: 404 Not Found</code></pre>
 
 <p>The host API makes no promise that one <code>Program</code> can be used

@@ -237,7 +237,12 @@ These are absent, and a script that uses one fails when it reaches it:
   Integer; `await` collects a promise's result, or a list's, and `await
   :all` every one the scope started; `promise`, `resolve` and `fail` make
   and settle a promise by hand, and a Go host settles the promises its
-  methods return when their I/O is done.
+  methods return when their I/O is done. `Cameo::Runner` is the same
+  module under the name that Ruby has too: `ruby/lib/cameo/runner.rb`
+  gives CRuby `async`, `await` and promises on threads, so a script that
+  starts with `require "cameo/runner"` and whose classes include
+  `Cameo::Runner` runs on both. The top level refuses `Cameo::Runner` on
+  both; `include Cameo` at the top level is cameo's alone.
 - The Go host API: a Go program loads a script, calls into it, and passes
   protobuf messages both ways. A host can give the script a module of its
   own, whose methods are Go functions, and native classes: classes whose

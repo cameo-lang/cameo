@@ -205,6 +205,9 @@ var builtinLibraries = map[string][]string{
 	"cgi/util":   {"cgi/escape"},
 	"json":       nil,
 	"benchmark":  nil,
+	// cameo/runner is the Ruby library that gives CRuby Cameo::Runner;
+	// cameo has Cameo::Runner built in.
+	"cameo/runner": nil,
 }
 
 // require loads a library cameo builds in, true the first time and false

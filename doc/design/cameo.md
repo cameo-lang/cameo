@@ -321,8 +321,12 @@ and type violations) are predefined; a script can subclass `StandardError`.
 
 Concurrency is the Cameo module's, which a script includes, at the top level
 for every method or in a class body for that class; `Cameo.async` and
-`Cameo.await` need no include. A promise is a result to come, and the script
-holds it by its id, an Integer:
+`Cameo.await` need no include. `Cameo::Runner` is the same module under a
+second name, the one `ruby/lib/cameo/runner.rb` gives CRuby, so one script
+runs on both; `require "cameo/runner"` is built in. A class includes
+`Cameo::Runner`; the top level refuses it on both interpreters, and takes
+`Cameo` on cameo alone. A promise is a result
+to come, and the script holds it by its id, an Integer:
 
 ```ruby
 include Cameo
@@ -714,6 +718,20 @@ re-opened by accident:
   host's I/O goes through promises, since cameo does none itself. `fail`
   with an Integer first settles a promise; with anything else it raises,
   as Ruby's `fail` does.
+- **`Cameo::Runner` and the Ruby library.** A script written for cameo
+  should run where cameo is not embedded. `ruby/lib/cameo/runner.rb` gives
+  CRuby `Cameo::Runner`, with cameo's `async`, `await`, `promise`,
+  `resolve` and `fail` on threads, copying values with `Marshal` as the
+  envelope copies them, with cameo's promise ids and error messages;
+  cameo has the module and `require "cameo/runner"` built in, so the same
+  file runs on both. The name is a second one for Cameo rather than Cameo
+  itself because a Ruby program's `include Cameo` at the top level would
+  put every constant of a future `Cameo` namespace into Object; for the
+  same reason `Cameo::Runner` goes into the class that runs the work, and
+  the top level refuses it on both interpreters. Ruby runs
+  one thread's code at a time, so the library gives a cameo script's
+  semantics on Ruby, not its parallelism; `examples/async` holds both
+  interpreters to the same output.
 - **Ruby's version constants** describe cameo rather than being left
   out, so a version check written for Ruby runs. `RUBY_ENGINE` is
   `"cameo"`; `RUBY_VERSION` is `"3.4.0"`, the Ruby whose language and
