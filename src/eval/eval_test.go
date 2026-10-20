@@ -496,6 +496,25 @@ p await(gate), now - t0 < 1
 `, n), ":done\ntrue\n")
 }
 
+func TestCameoRunnerIsCameo(t *testing.T) {
+	// Cameo::Runner is Cameo for the class that includes it, the module a
+	// Ruby program includes too; the top level refuses it. require
+	// "cameo/runner" is the library that gives Ruby the module: cameo has
+	// it built in.
+	expectOutput(t, `
+p require("cameo/runner"), require("cameo/runner")
+class W
+  def go(n) = n * 2
+end
+class Boss
+  include Cameo::Runner
+  def run = await(W.new, :go, 5)
+end
+p Boss.new.run, Cameo::Runner.class
+`, "true\nfalse\n10\nModule\n")
+	expectError(t, "include Cameo::Runner\n", "include Cameo::Runner belongs in the class that runs the work; at the top level include Cameo")
+}
+
 func TestPromises(t *testing.T) {
 	// A promise is an Integer that resolve or fail settles once, from the
 	// script or a worker; await takes one or a list.

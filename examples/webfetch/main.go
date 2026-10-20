@@ -1,8 +1,10 @@
-// Command webfetch fetches web pages from a cameo script. cameo does no
-// I/O, so the host gives the script a Web module whose fetch starts the
-// request on a goroutine and returns a promise at once. The script starts
-// every fetch before it awaits any, so the requests run at the same time,
-// and await returns each page or raises Web::FetchError.
+// Command webfetch fetches web pages from a cameo script, one workflow per
+// page. cameo does no I/O, so the host gives the script a Web module whose
+// fetch starts the request on a goroutine and returns a promise at once; the
+// host settles the promise from outside the script when the response is
+// in. Each workflow awaits its own fetch, so every request is in flight
+// while the script waits, and await returns each page or raises
+// Web::FetchError.
 //
 //	go run ./examples/webfetch https://example.com https://example.org/missing
 package main
@@ -19,13 +21,21 @@ import (
 const script = `
 include Cameo
 
-def fetch_all(urls)
-  promises = urls.map { |url| Web.fetch(url) }   # every request starts now
-  urls.zip(promises).map do |url, promise|
-    "#{url}: #{(await promise).size} bytes"
+class Flow
+  # One workflow: fetch the page, then measure it. await parks this
+  # workflow until the host settles the promise; the others run meanwhile.
+  def run(url)
+    page = await Web.fetch(url)
+    "#{url}: #{page.size} bytes, #{page.lines.size} lines"
   rescue Web::FetchError => e
     "#{url}: #{e.message}"
   end
+end
+
+def fetch_all(urls)
+  flow = Flow.new
+  promises = urls.map { |url| async flow, :run, url }   # every workflow starts now
+  await promises                                        # their lines, in order
 end
 `
 

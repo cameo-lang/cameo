@@ -330,6 +330,10 @@ var (
 	// CameoModule is Cameo, which a script includes for async, await and
 	// the promises they settle.
 	CameoModule = NewModule("Cameo")
+	// CameoRunnerModule is Cameo::Runner, which brings Cameo to the class
+	// that includes it: the name a class includes to run its work on cameo
+	// and, through the Ruby library of the same name, on CRuby.
+	CameoRunnerModule = NewModule("Runner")
 
 	StandardError     = NewClass("StandardError", ExceptionClass)
 	RuntimeError      = NewClass("RuntimeError", StandardError)
@@ -375,6 +379,9 @@ func init() {
 		EncodingClass.Consts[c.Name] = ClassValue(c)
 	}
 	EnumeratorClass.Consts["Lazy"] = ClassValue(LazyClass)
+	CameoRunnerModule.Lexical = CameoModule
+	CameoRunnerModule.Include(CameoModule)
+	CameoModule.Consts["Runner"] = ClassValue(CameoRunnerModule)
 	IntegerClass.Include(Comparable)
 	FloatClass.Include(Comparable)
 	StringClass.Include(Comparable)

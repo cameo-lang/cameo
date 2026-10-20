@@ -11,7 +11,7 @@ import (
 
 func TestFetchAllFetchesAtOnce(t *testing.T) {
 	// Each page waits until all three requests have arrived, so the run
-	// finishes only if the script started every fetch before awaiting one.
+	// finishes only if every workflow's fetch is in flight at once.
 	var arrived atomic.Int32
 	all := make(chan struct{})
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -36,7 +36,7 @@ func TestFetchAllFetchesAtOnce(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []string{srv.URL + "/a: 2 bytes", srv.URL + "/bcd: 4 bytes", srv.URL + "/missing: 404 Not Found"}
+	want := []string{srv.URL + "/a: 2 bytes, 1 lines", srv.URL + "/bcd: 4 bytes, 1 lines", srv.URL + "/missing: 404 Not Found"}
 	if len(lines) != len(want) {
 		t.Fatalf("lines %q", lines)
 	}

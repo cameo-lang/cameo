@@ -1,0 +1,2 @@
+the worker's: [1, 2, 3], the caller's: [1, 2]
+a Proc cannot be passed to async

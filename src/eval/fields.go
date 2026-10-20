@@ -458,12 +458,17 @@ func (in *Interp) evalInclude(n *syntax.Include, env *Env, fr *Frame) (object.Va
 	if cls == in.mainClass && !n.Extend {
 		// At the top level include takes Cameo alone, and brings it to
 		// every method, as Ruby's top-level include brings a module to
-		// Object.
+		// Object. Cameo::Runner belongs in the class that runs the work,
+		// where a Ruby program includes it too.
 		v, err := in.eval(n.Module, env, fr)
 		if err != nil {
 			return object.Value{}, err
 		}
-		if mod, ok := v.AsClass(); !ok || mod != object.CameoModule {
+		mod, ok := v.AsClass()
+		if ok && mod == object.CameoRunnerModule {
+			return object.Value{}, in.raise(object.CameoError, n.Line(), "include Cameo::Runner belongs in the class that runs the work; at the top level include Cameo")
+		}
+		if !ok || mod != object.CameoModule {
 			return object.Value{}, in.raise(object.CameoError, n.Line(), "include at the top level takes Cameo; another module belongs in a class or module body")
 		}
 		if !in.cameoTop {
