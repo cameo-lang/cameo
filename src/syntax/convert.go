@@ -47,6 +47,40 @@ type converter struct {
 	// bangs names the bang methods the script defines, which are calls
 	// like any other; any other bang method is one of Ruby's mutators.
 	bangs map[string]bool
+	// assigning holds the locals whose `x = value` is being converted. Ruby
+	// binds x before it evaluates the value, so a lambda in the value may
+	// call itself through x; the parser declares x after the value and
+	// leaves such an x a method call.
+	assigning []pendingLocal
+}
+
+// pendingLocal is a local being assigned, with the scope it belongs to.
+type pendingLocal struct {
+	name  string
+	scope int
+}
+
+// scope returns the index of the innermost frame that starts a scope of
+// locals: a block shares its method's.
+func (c *converter) scope() int {
+	for i := len(c.stack) - 1; i > 0; i-- {
+		if c.stack[i].kind != ctxBlock {
+			return i
+		}
+	}
+	return 0
+}
+
+// assigned returns true when a bare name is a local whose assignment is
+// being converted in the current scope.
+func (c *converter) assigned(name string) bool {
+	scope := c.scope()
+	for _, p := range c.assigning {
+		if p.name == name && p.scope == scope {
+			return true
+		}
+	}
+	return false
 }
 
 func (c *converter) fail(format string, args ...any) {
@@ -176,7 +210,9 @@ func (c *converter) expr(n ast.Node) Node {
 	case *ast.VarRef:
 		return &Var{c.pos(), n.Name}
 	case *ast.Assign:
+		c.assigning = append(c.assigning, pendingLocal{n.Name, c.scope()})
 		value := c.expr(n.Value)
+		c.assigning = c.assigning[:len(c.assigning)-1]
 		markRebinds(value, &Var{Name: n.Name})
 		return &Assign{c.pos(), n.Name, value}
 	case *ast.OpAssign:
@@ -560,8 +596,13 @@ func isFieldType(name string) bool { return compositeFieldTypes[name] || object.
 
 func (c *converter) call(n *ast.Call) Node {
 	name := n.Name
-	if c.interpolating > 0 && n.Recv == nil && len(n.Args) == 0 && n.Block == nil && !n.Paren {
-		return &VarOrCall{c.pos(), name}
+	if n.Recv == nil && len(n.Args) == 0 && n.Block == nil && !n.Paren {
+		if c.assigned(name) {
+			return &Var{c.pos(), name}
+		}
+		if c.interpolating > 0 {
+			return &VarOrCall{c.pos(), name}
+		}
 	}
 	if cnst, ok := n.Recv.(*ast.ConstRef); ok && cnst.Name == "Cameo" && (name == "async" || name == "await") {
 		if name == "async" {

@@ -774,3 +774,10 @@ func TestRubyVersionConstantsCannotBeReassigned(t *testing.T) {
 	expectError(t, "RUBY_PATCHLEVEL = 1\n", "cannot reassign the builtin constant RUBY_PATCHLEVEL")
 	expectOutput(t, "class A\n  RUBY_VERSION = \"1.8\"\n  def self.v = RUBY_VERSION\nend\nputs A.v\nputs RUBY_VERSION\n", "1.8\n3.4.0\n")
 }
+
+func TestAnAssignmentBindsItsLocalBeforeItsValue(t *testing.T) {
+	// The lambda calls itself through fact, and x = x reads the new local.
+	expectOutput(t, "fact = ->(n) { n <= 1 ? 1 : n * fact.(n - 1) }\np fact.(5)\nx = x\np x\n", "120\nnil\n")
+	// A def in the value has its own locals: z there is a method call.
+	expectOutput(t, "def z = 3\nz = Class.new { def m = z }\np z.new.m\n", "3\n")
+}
