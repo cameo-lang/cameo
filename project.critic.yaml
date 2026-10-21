@@ -1,0 +1,109 @@
+# critic project settings for cameo — see apps/critic/doc/project-config.md
+# in ark. One project: the repository is one component.
+#
+# Patterns follow git's glob matching rules:
+#   - "*" matches anything except "/"
+#   - "**" matches anything including "/"
+#   - "?" matches a single character except "/"
+#   - A leading "/" anchors the match to the repository root
+#   - A pattern without "/" matches the basename at any depth
+# See https://git-scm.com/docs/gitignore#_pattern_format
+#
+# Categories are matched in order and the first match wins, and the review
+# lists them in the same order. The categories a review reads first come
+# first, so they exclude with "!" what a narrower category further down
+# takes: the Go that cameo build wrote into examples/aot is Generated, which
+# comes last.
+
+project:
+  name: cameo
+  description: >
+    A small language with Ruby's syntax, run by an interpreter written in Go,
+    with a compiler of its scripts' methods to Go.
+
+diffbase: main
+
+categories:
+  - name: Examples & docs
+    patterns:
+      - "/examples/**/*"
+      - "/doc/**/*"
+      - "/README.md"
+      - "/CLAUDE.md"
+      - "!*_test.go"
+      - "!examples/aot/*/*.go"
+      - "!examples/aot/*.expected"
+      - "!doc/gh_pages/**/*"
+      - "!doc/pages_redirect/**/*"
+  - name: Interpreter
+    patterns:
+      - "/src/eval/**/*"
+      - "/src/object/**/*"
+      - "/src/syntax/**/*"
+      - "!*_test.go"
+  - name: Interpreter tests
+    patterns:
+      - "/src/eval/**/*_test.go"
+      - "/src/object/**/*_test.go"
+      - "/src/syntax/**/*_test.go"
+  - name: Compiler
+    patterns:
+      - "/src/aot/**/*"
+      - "!*_test.go"
+  - name: Compiler tests
+    patterns:
+      - "/src/aot/**/*_test.go"
+      - "/examples/aot/*_test.go"
+      - "/examples/aot/*.expected"
+      - "/tests/conformance/**/*"
+      - "/tests/performance/**/*"
+      - "/tests/performance_test.go"
+  - name: Standard library
+    patterns:
+      - "/src/stdlib/**/*"
+      - "!*_test.go"
+  - name: Host API & command
+    patterns:
+      - "/src/cameo/**/*"
+      - "/src/cmd/**/*"
+      - "/src/protogen/**/*"
+      - "/src/buildinfo/**/*"
+      - "!*_test.go"
+  - name: Tests
+    patterns:
+      - "*_test.go"
+      - "/tests/**/*"
+  - name: Source
+    patterns:
+      - "/src/**/*"
+  - name: Benchmarks
+    patterns:
+      - "/benchmarks/**/*"
+  - name: Spec corpus
+    patterns:
+      - "/specs/**/*"
+      - "/ruby/**/*"
+  - name: Site
+    patterns:
+      - "/doc/gh_pages/**/*"
+      - "/doc/pages_redirect/**/*"
+  - name: Agent guidance & skills
+    patterns:
+      - "/agents/**/*"
+      - "/.claude/**/*"
+  - name: Manifest & build
+    patterns:
+      - "/Makefile"
+      - "/go.mod"
+      - "/go.sum"
+      - "/LICENSE"
+      - "/project.critic.yaml"
+      - "/.github/**/*"
+      - "/.gitignore"
+  - name: Generated
+    patterns:
+      - "examples/aot/*/*.go"
+
+# The editor a file opens in from the local review.
+editor:
+  url: "goland://open?file={file}&line={line}"
