@@ -288,4 +288,46 @@ func installExceptionAttrs() {
 	})
 	reader(object.KeyError, "key", object.Value{})
 	reader(object.KeyError, "receiver", object.Value{})
+
+	// SystemExit.new(status = 0, msg = "SystemExit"): the status may be
+	// true for 0 or false for 1, and may be left out before the message.
+	object.SystemExit.DefineSingleton("new", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if len(args) > 2 {
+			return object.Value{}, argError(ctx, len(args), "0..2")
+		}
+		status := int64(0)
+		if len(args) > 0 {
+			if s, ok := exitStatus(args[0]); ok {
+				status = s
+				args = args[1:]
+			} else if len(args) == 2 {
+				return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into Integer", args[0].Class().QualifiedName())
+			}
+		}
+		msg, err := message(ctx, self.Cls(), args, 0)
+		if err != nil {
+			return object.Value{}, err
+		}
+		return build(self.Cls(), msg, map[string]object.Value{"status": object.Int(status)}), nil
+	})
+	reader(object.SystemExit, "status", object.Int(0))
+	def(object.SystemExit, "success?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		v, ok := exc(self).Attr("status")
+		return object.Bool(!ok || v.Kind() == object.KindInt && v.Int() == 0), nil
+	})
+}
+
+// exitStatus reads the status exit and SystemExit.new take: an Integer, or
+// true for 0 and false for 1.
+func exitStatus(v object.Value) (int64, bool) {
+	switch v.Kind() {
+	case object.KindInt:
+		return int64(v.Int()), true
+	case object.KindBool:
+		if v.Truthy() {
+			return 0, true
+		}
+		return 1, true
+	}
+	return 0, false
 }

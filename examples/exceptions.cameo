@@ -87,3 +87,28 @@ begin
 rescue NameError => e
   p e, e.name
 end
+
+# exit and abort raise SystemExit, which a rescue of it may catch and a
+# bare rescue does not.
+p SystemExit.new, SystemExit.new(1).message, SystemExit.new(true).status, SystemExit.new(false).status
+stopped = SystemExit.new(10, "message")
+p stopped.status, stopped.message, stopped.success?, SystemExit.new.success?
+begin
+  exit 3
+rescue SystemExit => e
+  p e, e.status, e.success?
+end
+begin
+  exit
+rescue SystemExit => e
+  p e.status, e.success?
+end
+begin
+  begin
+    exit(false)
+  rescue => e
+    p :not_here
+  end
+rescue SystemExit => e
+  p e.status
+end

@@ -363,7 +363,9 @@ var (
 	NotImplementedErr  = NewClass("NotImplementedError", ScriptError)
 	SyntaxError        = NewClass("SyntaxError", ScriptError)
 	UncaughtThrowError = NewClass("UncaughtThrowError", ArgumentError)
-	SystemExit         = NewClass("SystemExit", ExceptionClass)
+	// SystemExit is what exit and abort raise; the command ends with its
+	// status when nothing rescues it.
+	SystemExit = NewClass("SystemExit", ExceptionClass)
 	// The classes below are Ruby's for what cameo does not do: I/O,
 	// threads, fibers, signals and system calls. They exist so a script can
 	// name them in a rescue; the interpreter raises none of them.

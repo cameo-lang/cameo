@@ -30,3 +30,17 @@ Comparable
 2
 #<NameError: again>
 :undefined_name
+#<SystemExit: SystemExit>
+"SystemExit"
+0
+1
+10
+"message"
+false
+true
+#<SystemExit: exit>
+3
+false
+0
+true
+1
