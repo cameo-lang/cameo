@@ -224,7 +224,7 @@ func (in *Interp) deconstruct(v object.Value) ([]object.Value, bool) {
 }
 
 // deconstructKeys returns a value as a map for a map pattern: a map itself,
-// an instance's fields by name.
+// an instance's fields by name, a Time's parts.
 func (in *Interp) deconstructKeys(v object.Value) (*object.Map, bool) {
 	switch v.Kind() {
 	case object.KindMap:
@@ -237,6 +237,13 @@ func (in *Interp) deconstructKeys(v object.Value) (*object.Map, bool) {
 			b.Set(object.Symbol(f.Name), object.OrNil(v.Fields[i]))
 		}
 		return b.Map(), true
+	case object.KindTime:
+		// Time#deconstruct_keys(nil) is native and cannot fail.
+		r, err := object.TimeClass.Methods["deconstruct_keys"].Native(in, v, []object.Value{object.Nil}, nil, object.Value{})
+		if err != nil {
+			return nil, false
+		}
+		return r.Map(), true
 	}
 	return nil, false
 }

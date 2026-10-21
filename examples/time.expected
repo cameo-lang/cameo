@@ -62,3 +62,15 @@ TypeError: time + time?
 Time
 32400
 true
+1985-04-12 23:20:50.521245 UTC
+521245
+"1985-04-12T23:20:50.521245Z"
+404240000
+2000-01-02 03:04:05 UTC
+{year: 1985, month: 4, zone: "UTC"}
+"Fri Apr 12 23:20:50 1985"
+"Fri Apr 12 23:20:50 1985"
+[10, 5]
+{year: 2022, month: 10, day: 5, yday: 278, wday: 3, hour: 13, min: 30, sec: 0, subsec: 0, dst: false, zone: "UTC"}
+{a: 1}
+[1, 2]
