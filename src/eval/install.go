@@ -108,12 +108,13 @@ func init() {
 		}
 		return ctx.(*Interp).call(nil, self, name, args[1:], kw, block, true, 0)
 	}
-	for _, name := range []string{"send", "public_send", "__send__"} {
+	object.BasicObjectClass.Define("__send__", -1, send)
+	for _, name := range []string{"send", "public_send"} {
 		object.ObjectClass.Define(name, -1, send)
 	}
 	// method_missing is what super reaches from a class's own: the
 	// NoMethodError for the name.
-	object.ObjectClass.Define("method_missing", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	object.BasicObjectClass.Define("method_missing", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		in := ctx.(*Interp)
 		if len(args) == 0 {
 			return object.Value{}, in.raise(object.ArgumentError, 0, "no method name given")

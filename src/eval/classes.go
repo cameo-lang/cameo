@@ -133,6 +133,9 @@ func (in *Interp) newClass(args []object.Value, block object.Value) (object.Valu
 		}
 		super = s
 	}
+	if msg, refused := subclassRefused(super); refused {
+		return object.Value{}, in.raise(object.CameoError, 0, "Class.new(%s): %s", super.Name, msg)
+	}
 	cls := object.NewClass("", super)
 	cls.Digest = "new:" + super.QualifiedName()
 	if err := in.inheritFields(cls, super); err != nil {
@@ -237,6 +240,9 @@ func (in *Interp) evalClassDef(n *syntax.ClassDef, env *Env, fr *Frame) (object.
 		}
 		super = cls
 	}
+	if msg, refused := subclassRefused(super); refused {
+		return object.Value{}, in.raise(object.CameoError, n.Line(), "class %s < %s: %s", n.Name, super.Name, msg)
+	}
 	if existing, ok := table[n.Name].AsClass(); ok {
 		if existing.Digest == n.Digest && existing.Super == super {
 			return object.ClassValue(existing), nil
@@ -286,6 +292,15 @@ func (in *Interp) evalModuleDef(n *syntax.ModuleDef, env *Env, fr *Frame) (objec
 	}
 	in.bindConst(fr, n.Name, object.ClassValue(mod))
 	return object.ClassValue(mod), nil
+}
+
+// subclassRefused is syntax.SubclassRefused for the builtin class super,
+// which the checker sees only at the top level.
+func subclassRefused(super *object.Class) (string, bool) {
+	if super != object.NumericClass && super != object.BasicObjectClass {
+		return "", false
+	}
+	return syntax.SubclassRefused(super.Name)
 }
 
 // hostDefined reports whether v is a module the host defined: a class

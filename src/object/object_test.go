@@ -116,8 +116,8 @@ func TestLookupCacheFollowsDefinitions(t *testing.T) {
 	if b.Lookup("bye") == nil || !b.IsA(m) {
 		t.Fatal("a module included after a miss is found, and shows in the ancestors")
 	}
-	// B, A, Greets, Object and the Kernel Object includes.
-	if anc := b.Ancestors(); len(anc) != 5 || anc[1] != a || anc[2] != m || anc[4] != Kernel {
+	// B, A, Greets, Object, the Kernel Object includes, and BasicObject.
+	if anc := b.Ancestors(); len(anc) != 6 || anc[1] != a || anc[2] != m || anc[4] != Kernel || anc[5] != BasicObjectClass {
 		t.Fatalf("ancestors after include: %v", anc)
 	}
 }
