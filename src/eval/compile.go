@@ -24,6 +24,10 @@ type thunk func(in *Interp, env *Env, fr *Frame) (object.Value, error)
 type code struct {
 	exprs  sync.Map // syntax.Node -> thunk
 	bodies sync.Map // *syntax.Def or *syntax.Block -> thunk of its body
+	// compiled is the Go implementation `cameo build` made of the
+	// program's top-level methods, nil when it made none; see
+	// RegisterCompiled.
+	compiled Compiled
 }
 
 // expr returns the thunk of n, compiling it on first use.

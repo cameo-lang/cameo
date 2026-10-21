@@ -268,16 +268,19 @@ func (in *Interp) call(fr *Frame, recv object.Value, name string, args []object.
 		}
 		// A class's own method_missing takes a call to a method it lacks,
 		// with the name as a symbol first; Object's raises.
-		if mm := recv.Class().Lookup("method_missing"); mm != nil && mm.Native == nil {
+		if mm := recv.Class().Lookup("method_missing"); mm != nil && mm.Body != nil {
 			return in.invoke(mm, recv, append([]object.Value{object.Symbol(name)}, args...), kw, block, line)
 		}
 		return object.Value{}, in.raise(object.NoMethodError, line, "undefined method '%s' for %s", name, typeName(recv))
 	}
-	if m.Native != nil {
+	if m.Native != nil && (m.Body == nil || in.interpreted == 0) {
 		if m.Arity >= 0 && len(args) != m.Arity {
 			return object.Value{}, in.raise(object.ArgumentError, line, "wrong number of arguments (given %d, expected %d)", len(args), m.Arity)
 		}
 		v, err := m.Native(in, recv, args, kw, block)
+		if err == ErrDeopt && m.Body != nil {
+			return in.reinvoke(m, recv, args, kw, block, line)
+		}
 		if err != nil {
 			if c, ok := err.(*control); ok && c.kind == ctrlBreak && c.target != nil && c.target == blockTarget(block) {
 				return c.value, nil
@@ -286,6 +289,16 @@ func (in *Interp) call(fr *Frame, recv object.Value, name string, args []object.
 		}
 		return v, nil
 	}
+	return in.invoke(m, recv, args, kw, block, line)
+}
+
+// reinvoke runs the body of a compiled method that left the call to the
+// interpreter, and every compiled method it calls on the interpreter too:
+// the call that left once would leave again at every level below, and
+// start that level over each time.
+func (in *Interp) reinvoke(m *object.Method, recv object.Value, args []object.Value, kw *object.Map, block object.Value, line int) (object.Value, error) {
+	in.interpreted++
+	defer func() { in.interpreted-- }()
 	return in.invoke(m, recv, args, kw, block, line)
 }
 
@@ -595,8 +608,12 @@ func (in *Interp) evalSuper(n *syntax.Super, env *Env, fr *Frame) (object.Value,
 		}
 		return object.Value{}, in.raise(object.NoMethodError, n.Line(), "super: no superclass method '%s' for %s", fr.Method.Name, typeName(fr.Self))
 	}
-	if m.Native != nil {
+	if m.Native != nil && (m.Body == nil || in.interpreted == 0) {
 		v, err := m.Native(in, fr.Self, args, kw, block)
+		if err != ErrDeopt || m.Body == nil {
+			return v, withLine(err, n.Line())
+		}
+		v, err = in.reinvoke(m, fr.Self, args, kw, block, n.Line())
 		return v, withLine(err, n.Line())
 	}
 	v, err := in.invoke(m, fr.Self, args, kw, block, n.Line())

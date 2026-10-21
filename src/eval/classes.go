@@ -185,13 +185,18 @@ func (in *Interp) evalDef(n *syntax.Def, fr *Frame) (object.Value, error) {
 			return object.Symbol(n.Name), nil
 		}
 	}
-	if existing, ok := table[n.Name]; ok && existing.Native != nil && existing.Owner == target {
+	if existing, ok := table[n.Name]; ok && existing.Native != nil && existing.Body == nil && existing.Owner == target {
 		if _, isField := target.FieldIndex[n.Name]; isField {
 			return object.Value{}, in.raise(object.CameoError, n.Line(), "def %s: %s is a field of %s, and fields read themselves", n.Name, n.Name, target.QualifiedName())
 		}
 		return object.Value{}, in.raise(object.CameoError, n.Line(), "cannot replace the builtin method %s of %s", n.Name, target.Name)
 	}
 	m := &object.Method{Name: n.Name, Owner: target, Body: &compiledDef{def: n, body: in.code.body(n, n.Body)}, Arity: -1, Lexical: fr.Lexical}
+	// A top-level method `cameo build` compiled runs as Go, and keeps its
+	// body for the calls the Go code leaves to the interpreter.
+	if target == in.mainClass && !n.Singleton {
+		m.Native = in.code.compiled[n.Name]
+	}
 	if n.Singleton {
 		target.SetSingletonMethod(m)
 	} else {

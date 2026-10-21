@@ -57,6 +57,9 @@ type Interp struct {
 	stop *stopper
 	// last is the value of the last top-level expression Run evaluated.
 	last object.Value
+	// interpreted counts the calls of compiled methods running on the
+	// interpreter, which their own calls do too; see reinvoke.
+	interpreted int
 }
 
 // Last returns the value of the script's last top-level expression, once
@@ -162,6 +165,7 @@ var installOnce sync.Once
 // exception, or nil.
 func (in *Interp) Run(file string, prog *syntax.Program) error {
 	in.file = file
+	in.code.compiled = CompiledFor(prog)
 	fr := &Frame{Self: object.InstanceValue(in.main), DefTarget: in.mainClass}
 	v, err := in.code.body(prog, prog.Body)(in, in.top, fr)
 	if err == nil {
