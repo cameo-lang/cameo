@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/cameo-lang/cameo/examples/aot/arith"
+	"github.com/cameo-lang/cameo/examples/aot/blocks"
 	"github.com/cameo-lang/cameo/examples/aot/spin"
 	"github.com/cameo-lang/cameo/src/aot"
 	"github.com/cameo-lang/cameo/src/cameo"
@@ -28,6 +29,7 @@ var examples = []struct {
 	name, file, script string
 }{
 	{"arith", arith.File, arith.Script},
+	{"blocks", blocks.File, blocks.Script},
 	{"spin", spin.File, spin.Script},
 }
 

@@ -117,7 +117,7 @@ func (f *fn) typeOf(n syntax.Node) typ {
 		return f.typeOf(n.Value)
 	case *syntax.Seq:
 		return f.bodyType(n.Body)
-	case *syntax.Return:
+	case *syntax.Return, *syntax.Break, *syntax.Next:
 		return tNever
 	case *syntax.If:
 		if n.Else == nil {
@@ -212,8 +212,14 @@ func (f *fn) expr(n syntax.Node, value bool) string {
 		f.depth--
 		f.line("}")
 		return ""
+	case *syntax.Break:
+		f.line("break")
+		return ""
+	case *syntax.Next:
+		f.line("continue")
+		return ""
 	case *syntax.Call:
-		return f.call(n)
+		return f.call(n, value)
 	}
 	panic(fmt.Sprintf("aot: %T passed the check and has no Go", n))
 }
@@ -264,7 +270,10 @@ var helperOf = map[string]string{"+": "add", "-": "sub", "*": "mul", "/": "div",
 var bigOp = map[string]string{"+": "Add", "-": "Sub", "*": "Mul", "-@": "Neg"}
 var bigHelperOf = map[string]string{"/": "bigDiv", "%": "bigMod"}
 
-func (f *fn) call(n *syntax.Call) string {
+func (f *fn) call(n *syntax.Call, value bool) string {
+	if n.Block != nil {
+		return f.loop(n, value)
+	}
 	if n.Recv == nil {
 		args := make([]string, len(n.Args))
 		for i, a := range n.Args {
@@ -287,6 +296,96 @@ func (f *fn) call(n *syntax.Call) string {
 		return fmt.Sprintf("(%s.Cmp(%s) %s 0)", l, r, n.Name)
 	}
 	return fmt.Sprintf("(%s %s %s)", l, n.Name, r)
+}
+
+// loop writes times, upto, downto or each with a block as a Go loop over
+// the block's body. The bounds are read once, before the loop, as the
+// methods read them; the counter is the loop's own, so that the body may
+// set the parameter without moving the loop; and a local the body first
+// sets is declared in the body, new on every pass, as a block's locals
+// are. On int64 a loop up to the largest Integer, or down to the smallest,
+// is left to the twin on *big.Int, where the counter cannot wrap.
+func (f *fn) loop(n *syntax.Call, value bool) string {
+	var from, to syntax.Node
+	cmp, step, edge := "<=", "Add", "1<<63 - 1"
+	switch n.Name {
+	case "times":
+		from, to, cmp = nil, n.Recv, "<"
+	case "upto":
+		from, to = n.Recv, n.Args[0]
+	case "downto":
+		from, to, cmp, step, edge = n.Recv, n.Args[0], ">=", "Sub", "-1 << 63"
+	case "each":
+		r := n.Recv.(*syntax.Range)
+		from, to = r.Lo, r.Hi
+		if r.Exclusive {
+			cmp = "<"
+		}
+	}
+	lo := "int64(0)"
+	if f.big {
+		lo = "new(big.Int)"
+	}
+	if from != nil {
+		lo = f.temp()
+		f.line("%s := %s", lo, f.typed(f.expr(from, true)))
+	}
+	hi := f.temp()
+	f.line("%s := %s", hi, f.typed(f.expr(to, true)))
+	i := f.temp()
+	if f.big {
+		f.g.constant(1)
+		if from != nil {
+			lo = fmt.Sprintf("new(big.Int).Set(%s)", lo)
+		}
+		f.line("for %s := %s; %s.Cmp(%s) %s 0; %s = new(big.Int).%s(%s, big_1) {", i, lo, i, hi, cmp, i, step, i)
+	} else {
+		if cmp != "<" {
+			f.line("if %s == %s {", hi, edge)
+			f.line("\treturn 0, eval.ErrDeopt")
+			f.line("}")
+		}
+		next := "++"
+		if step == "Sub" {
+			next = "--"
+		}
+		f.line("for %s := %s; %s %s %s; %s%s {", i, lo, i, cmp, hi, i, next)
+	}
+	f.depth++
+	f.line("if s.stopped() {")
+	f.line("\treturn %s, eval.ErrStopped", f.zero())
+	f.line("}")
+	outer := f.vars
+	f.vars = make(map[string]typ, len(outer)+1)
+	for k, v := range outer {
+		f.vars[k] = v
+	}
+	if p := n.Block.Params.Positional; len(p) == 1 {
+		f.vars[p[0].Name] = tInt
+		f.line("v_%s := %s", p[0].Name, i)
+		f.line("_ = v_%s", p[0].Name)
+	}
+	f.body(n.Block.Body, false)
+	f.vars = outer
+	f.depth--
+	f.line("}")
+	if !value {
+		return ""
+	}
+	// times, upto and downto return their receiver.
+	if n.Name == "times" {
+		return hi
+	}
+	return lo
+}
+
+// typed gives an Integer literal the type of the method's Integers, which
+// a Go loop header needs; any other expression has it.
+func (f *fn) typed(v string) string {
+	if !f.big && strings.Trim(v, "-0123456789") == "" {
+		return "int64(" + v + ")"
+	}
+	return v
 }
 
 // arith writes an arithmetic operator: on int64 a checked helper, which
