@@ -607,8 +607,8 @@ const mainFunc = `func main() {
 `
 
 // stateType is what every compiled call carries: the run it belongs to,
-// and a count of calls and loop passes, so that the run's stop is checked
-// every few thousand.
+// and a count of calls, so that the run's stop is checked every few
+// thousand. A loop counts its passes on a local of its own.
 const stateType = `// state is one call from the interpreter into compiled code: the run it
 // belongs to, which may be stopped, and the calls made since.
 type state struct {
@@ -616,8 +616,8 @@ type state struct {
 	calls uint32
 }
 
-// stopped counts a call or a loop pass, and every 4096 of them reports
-// whether the run was stopped, which the interpreter checks at each one.
+// stopped counts a call, and every 4096 of them reports whether the run
+// was stopped, which the interpreter checks at each one.
 func (s *state) stopped() bool {
 	s.calls++
 	return s.calls&4095 == 0 && eval.Stopped(s.ctx)

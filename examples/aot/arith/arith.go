@@ -138,8 +138,8 @@ type state struct {
 	calls uint32
 }
 
-// stopped counts a call or a loop pass, and every 4096 of them reports
-// whether the run was stopped, which the interpreter checks at each one.
+// stopped counts a call, and every 4096 of them reports whether the run
+// was stopped, which the interpreter checks at each one.
 func (s *state) stopped() bool {
 	s.calls++
 	return s.calls&4095 == 0 && eval.Stopped(s.ctx)
@@ -360,19 +360,21 @@ func fn_gcd(s *state, v_a int64, v_b int64) (int64, error) {
 	var v_t int64
 	_ = v_t
 	v_t = 0
+	var t1 uint32
 	for {
-		if s.stopped() {
+		t1++
+		if t1&4095 == 0 && eval.Stopped(s.ctx) {
 			return 0, eval.ErrStopped
 		}
 		if !(v_b != 0) {
 			break
 		}
 		v_t = v_b
-		t1, err := mod(v_a, v_b)
+		t2, err := mod(v_a, v_b)
 		if err != nil {
 			return 0, err
 		}
-		v_b = t1
+		v_b = t2
 		v_a = v_t
 	}
 	return v_a, nil
@@ -385,19 +387,21 @@ func big_gcd(s *state, v_a *big.Int, v_b *big.Int) (*big.Int, error) {
 	var v_t *big.Int
 	_ = v_t
 	v_t = big_0
+	var t1 uint32
 	for {
-		if s.stopped() {
+		t1++
+		if t1&4095 == 0 && eval.Stopped(s.ctx) {
 			return nil, eval.ErrStopped
 		}
 		if !(v_b.Cmp(big_0) != 0) {
 			break
 		}
 		v_t = v_b
-		t1, err := bigMod(v_a, v_b)
+		t2, err := bigMod(v_a, v_b)
 		if err != nil {
 			return nil, err
 		}
-		v_b = t1
+		v_b = t2
 		v_a = v_t
 	}
 	return v_a, nil
@@ -444,23 +448,25 @@ func fn_power(s *state, v_base int64, v_exp int64) (int64, error) {
 	var v_result int64
 	_ = v_result
 	v_result = 1
+	var t1 uint32
 	for {
-		if s.stopped() {
+		t1++
+		if t1&4095 == 0 && eval.Stopped(s.ctx) {
 			return 0, eval.ErrStopped
 		}
 		if !(v_exp > 0) {
 			break
 		}
-		t1, err := mul(v_result, v_base)
+		t2, err := mul(v_result, v_base)
 		if err != nil {
 			return 0, err
 		}
-		v_result = t1
-		t2, err := sub(v_exp, 1)
+		v_result = t2
+		t3, err := sub(v_exp, 1)
 		if err != nil {
 			return 0, err
 		}
-		v_exp = t2
+		v_exp = t3
 	}
 	return v_result, nil
 }
@@ -472,17 +478,19 @@ func big_power(s *state, v_base *big.Int, v_exp *big.Int) (*big.Int, error) {
 	var v_result *big.Int
 	_ = v_result
 	v_result = big_1
+	var t1 uint32
 	for {
-		if s.stopped() {
+		t1++
+		if t1&4095 == 0 && eval.Stopped(s.ctx) {
 			return nil, eval.ErrStopped
 		}
 		if !(v_exp.Cmp(big_0) > 0) {
 			break
 		}
-		t1 := new(big.Int).Mul(v_result, v_base)
-		v_result = t1
-		t2 := new(big.Int).Sub(v_exp, big_1)
-		v_exp = t2
+		t2 := new(big.Int).Mul(v_result, v_base)
+		v_result = t2
+		t3 := new(big.Int).Sub(v_exp, big_1)
+		v_exp = t3
 	}
 	return v_result, nil
 }
@@ -583,39 +591,41 @@ func fn_steps(s *state, v_n int64) (int64, error) {
 	var v_count int64
 	_ = v_count
 	v_count = 0
+	var t1 uint32
 	for {
-		if s.stopped() {
+		t1++
+		if t1&4095 == 0 && eval.Stopped(s.ctx) {
 			return 0, eval.ErrStopped
 		}
 		if v_n == 1 {
 			break
 		}
-		t1, err := mod(v_n, 2)
+		t2, err := mod(v_n, 2)
 		if err != nil {
 			return 0, err
 		}
-		if t1 == 0 {
-			t2, err := div(v_n, 2)
+		if t2 == 0 {
+			t3, err := div(v_n, 2)
 			if err != nil {
 				return 0, err
 			}
-			v_n = t2
+			v_n = t3
 		} else {
-			t3, err := mul(3, v_n)
+			t4, err := mul(3, v_n)
 			if err != nil {
 				return 0, err
 			}
-			t4, err := add(t3, 1)
+			t5, err := add(t4, 1)
 			if err != nil {
 				return 0, err
 			}
-			v_n = t4
+			v_n = t5
 		}
-		t5, err := add(v_count, 1)
+		t6, err := add(v_count, 1)
 		if err != nil {
 			return 0, err
 		}
-		v_count = t5
+		v_count = t6
 	}
 	return v_count, nil
 }
@@ -627,30 +637,32 @@ func big_steps(s *state, v_n *big.Int) (*big.Int, error) {
 	var v_count *big.Int
 	_ = v_count
 	v_count = big_0
+	var t1 uint32
 	for {
-		if s.stopped() {
+		t1++
+		if t1&4095 == 0 && eval.Stopped(s.ctx) {
 			return nil, eval.ErrStopped
 		}
 		if v_n.Cmp(big_1) == 0 {
 			break
 		}
-		t1, err := bigMod(v_n, big_2)
+		t2, err := bigMod(v_n, big_2)
 		if err != nil {
 			return nil, err
 		}
-		if t1.Cmp(big_0) == 0 {
-			t2, err := bigDiv(v_n, big_2)
+		if t2.Cmp(big_0) == 0 {
+			t3, err := bigDiv(v_n, big_2)
 			if err != nil {
 				return nil, err
 			}
-			v_n = t2
+			v_n = t3
 		} else {
-			t3 := new(big.Int).Mul(big_3, v_n)
-			t4 := new(big.Int).Add(t3, big_1)
-			v_n = t4
+			t4 := new(big.Int).Mul(big_3, v_n)
+			t5 := new(big.Int).Add(t4, big_1)
+			v_n = t5
 		}
-		t5 := new(big.Int).Add(v_count, big_1)
-		v_count = t5
+		t6 := new(big.Int).Add(v_count, big_1)
+		v_count = t6
 	}
 	return v_count, nil
 }

@@ -93,7 +93,10 @@ statement only. On `int64`, a loop up to the largest Integer or down to
 the smallest is left to the twin, where the counter cannot wrap.
 
 A compiled method checks the run's stop every 4096 calls and loop passes,
-so `RunContext` stops a run inside compiled code.
+so `RunContext` stops a run inside compiled code. A call counts on the
+state it carries; a loop counts on its own variable, by its low bits, or on
+a local counter where the variable is a `big.Int` or a `while` has none. A
+store to the state on every pass cost 60% of a loop that adds two numbers.
 
 ## Measured
 
