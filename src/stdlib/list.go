@@ -1,6 +1,8 @@
 package stdlib
 
 import (
+	"math/big"
+
 	"github.com/cameo-lang/cameo/src/object"
 )
 
@@ -60,7 +62,7 @@ func installList() {
 	})
 	def(c, "each", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if block.IsZero() {
-			return self, nil
+			return blockless(self, "each", nil, true), nil
 		}
 		for _, e := range elems(self) {
 			if _, err := ctx.Yield(block, e); err != nil {
@@ -70,8 +72,8 @@ func installList() {
 		return self, nil
 	})
 	def(c, "each_index", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if err := needBlock(ctx, block, "each_index"); err != nil {
-			return object.Value{}, err
+		if block.IsZero() {
+			return blockless(self, "each_index", nil, true), nil
 		}
 		for i := range elems(self) {
 			if _, err := ctx.Yield(block, object.Int(i)); err != nil {
@@ -335,6 +337,9 @@ func installList() {
 		return join(ctx, elems(self), sep)
 	})
 	def(c, "index", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if len(args) == 0 && block.IsZero() {
+			return blockless(self, "index", nil, false), nil
+		}
 		for i, e := range elems(self) {
 			hit, err := equalOrBlock(ctx, e, args, block)
 			if err != nil {
@@ -347,6 +352,9 @@ func installList() {
 		return object.Nil, nil
 	})
 	def(c, "rindex", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if len(args) == 0 && block.IsZero() {
+			return blockless(self, "rindex", nil, false), nil
+		}
 		for i := list(self).Len() - 1; i >= 0; i-- {
 			hit, err := equalOrBlock(ctx, elems(self)[i], args, block)
 			if err != nil {
@@ -482,6 +490,12 @@ func installList() {
 		k, err := wantInt(ctx, args[0], "")
 		if err != nil {
 			return object.Value{}, err
+		}
+		if block.IsZero() {
+			n := int64(list(self).Len())
+			return enumFor(self, "combination", args, func(ctx object.Context) (object.Value, error) {
+				return binomial(n, k), nil
+			}), nil
 		}
 		out := []object.Value{}
 		var rec func(start int, cur []object.Value)
@@ -701,4 +715,13 @@ func valuesAtBounds(ctx object.Context, r *object.Range, n int64) (lo, hi int64,
 		}
 	}
 	return lo, hi, nil
+}
+
+// binomial is how many ways there are to choose k of n things, 0 when k
+// is negative or more than n.
+func binomial(n, k int64) object.Value {
+	if k < 0 || k > n {
+		return object.Int(0)
+	}
+	return object.BigInt(new(big.Int).Binomial(n, k))
 }
