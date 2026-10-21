@@ -7,9 +7,9 @@ place of the methods' bodies. Nothing is loaded at run time, and the binary
 stays one static file on every platform Go supports.
 
 This is step one, methods over Integers, the step that took them past 64
-bits, and the one that gave them blocks. The interpreter still runs
-everything else in the script, and the rest of this note keeps the order the
-steps would land in.
+bits, the one that gave them blocks, and the one that gave them Floats. The
+interpreter still runs everything else in the script, and the rest of this
+note keeps the order the steps would land in.
 
 ## What step one compiles
 
@@ -17,10 +17,12 @@ A top-level method compiles when:
 
 - its parameters are required and positional;
 - no other `def` in the program, in a class or anywhere else, has its name;
-- its body types to an Integer from:
-  - Integer literals, `true` and `false`;
-  - locals set at the method's top level before they are read;
-  - `+ - * / %`, unary minus and the six comparisons;
+- its body types to an Integer or a Float from:
+  - Integer and Float literals, `true` and `false`;
+  - locals set at the method's top level before they are read, each of one
+    type;
+  - `+ - * / %`, unary minus and the six comparisons, on Integers, Floats
+    and the two mixed, which gives a Float; `to_f` and `to_i`;
   - `&&`, `||`, `!`;
   - `if` and `unless` with both branches, `while`, `until` and `return`;
   - `times`, `upto` and `downto` on an Integer and `each` on a Range of
@@ -76,6 +78,17 @@ effect, because a compiled method does nothing but compute a value; the
 twin allocates a `big.Int` per operation, so it is for the calls whose
 numbers are big, and `int64` for the rest.
 
+Floats are `float64` in both twins, and a method's result may be one. The
+type of a method's value is settled by checking the candidates in rounds:
+a call of a method not yet typed is unknown, which joins with anything, and
+a method's type, once found, types its calls in the next round, until
+nothing changes. A method that returns through itself alone gets Integer. A
+local holds one type, and the branches of an `if` and a method's returns
+must agree, so `n > 0 ? 1 : 1.5` is left to the interpreter. Integer
+against Float compares exactly, through `object.CompareNumbers`, as the
+interpreter does; `to_i` of NaN or an infinity is left to the interpreter,
+which raises.
+
 An argument that is not an Integer and a division by zero return
 `eval.ErrDeopt`. The interpreter then runs the method's body from the
 start, and the calls below it run on the interpreter too, since each of them
@@ -107,18 +120,24 @@ compiled methods run about sixty times faster than the interpreter, ten
 times faster than CRuby 4.0, and twice as fast as CRuby 4.0 with YJIT. On
 factorial, whose product outgrows 64 bits after 20 steps, the twin on
 `*big.Int` takes half the interpreter's time and a quarter of YJIT's. The
-block loops are in [tests/performance/03-blocks](../../tests/performance/03-blocks).
+block loops are in [tests/performance/03-blocks](../../tests/performance/03-blocks),
+and Float arithmetic in [04-floats](../../tests/performance/04-floats), where
+a Mandelbrot grid and a Leibniz series compiled take a fifteenth of YJIT's
+time.
 
 ## Next steps
 
-1. Floats, Strings, and Arrays of a known element type, which use the
-   runtime's own values where Go has no type of its own for them.
-2. Methods of classes with typed fields: a field read becomes a struct
-   field, and a call on a receiver whose class is known becomes a direct
-   call.
-3. Blocks that compute a value, `map`, `sum` and `select` on a Range, and
+1. Methods of classes with typed fields: a field read becomes a typed load
+   from the instance, and a call on a receiver whose class is known becomes
+   a direct call; then construction in Go for a class whose `initialize`
+   sets fields alone.
+2. Parameters typed from the program's call sites, so that a method may
+   take a Float or an instance.
+3. Strings, and Arrays of a known element type, which use the runtime's
+   own values where Go has no type of its own for them.
+4. Blocks that compute a value, `map`, `sum` and `select` on a Range, and
    `loop` with `break` and its value.
-4. Calls from compiled code into the interpreter for what stays dynamic,
+5. Calls from compiled code into the interpreter for what stays dynamic,
    such as `send` and values read from JSON, so that one construct the
    compiler lacks leaves only itself to the interpreter.
 

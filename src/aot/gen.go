@@ -4,14 +4,18 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/cameo-lang/cameo/src/syntax"
 )
 
-// gen writes the Go of the compiled methods, and records the arithmetic
-// helpers and the big.Int constants they use.
+// gen writes the Go of the compiled methods, from the types the check
+// found, and records the arithmetic helpers and the big.Int constants they
+// use.
 type gen struct {
+	types   map[syntax.Node]typ
+	results map[string]typ
 	helpers map[string]bool
 	consts  map[int64]string
 }
@@ -28,6 +32,8 @@ type fn struct {
 	temps int
 	vars  map[string]typ
 	big   bool
+	// result is the type of the method's value.
+	result typ
 	// counters are the pass counters declared by counter, which pass
 	// increments; a loop variable is not one.
 	counters map[string]bool
@@ -38,6 +44,8 @@ func (f *fn) goType(t typ) string {
 	switch {
 	case t == tBool:
 		return "bool"
+	case t == tFloat:
+		return "float64"
 	case f.big:
 		return "*big.Int"
 	}
@@ -55,13 +63,13 @@ func (f *fn) prefix() string {
 
 // function writes the method on int64, or its twin on *big.Int.
 func (g *gen) function(d *syntax.Def, big bool) string {
-	f := &fn{g: g, depth: 1, vars: map[string]typ{}, big: big, counters: map[string]bool{}}
+	f := &fn{g: g, depth: 1, vars: map[string]typ{}, big: big, result: g.results[d.Name], counters: map[string]bool{}}
 	var params []string
 	for _, p := range d.Params.Positional {
 		f.vars[p.Name] = tInt
 		params = append(params, "v_"+p.Name+" "+f.goType(tInt))
 	}
-	fmt.Fprintf(&f.b, "func %s%s(s *state%s) (%s, error) {\n", f.prefix(), d.Name, prefixed(params), f.goType(tInt))
+	fmt.Fprintf(&f.b, "func %s%s(s *state%s) (%s, error) {\n", f.prefix(), d.Name, prefixed(params), f.goType(f.result))
 	f.line("if s.stopped() {")
 	f.line("\treturn %s, eval.ErrStopped", f.zero())
 	f.line("}")
@@ -72,9 +80,9 @@ func (g *gen) function(d *syntax.Def, big bool) string {
 	return f.b.String()
 }
 
-// zero is the Integer a method returns beside an error.
+// zero is the value a method returns beside an error.
 func (f *fn) zero() string {
-	if f.big {
+	if f.big && f.result == tInt {
 		return "nil"
 	}
 	return "0"
@@ -111,41 +119,7 @@ func (f *fn) body(nodes []syntax.Node, value bool) string {
 
 // typeOf is the type the check gave n.
 func (f *fn) typeOf(n syntax.Node) typ {
-	switch n := n.(type) {
-	case *syntax.Bool, *syntax.Not, *syntax.And, *syntax.Or:
-		return tBool
-	case *syntax.Var:
-		return f.vars[n.Name]
-	case *syntax.Assign:
-		return f.typeOf(n.Value)
-	case *syntax.Seq:
-		return f.bodyType(n.Body)
-	case *syntax.Return, *syntax.Break, *syntax.Next:
-		return tNever
-	case *syntax.If:
-		if n.Else == nil {
-			return tInt
-		}
-		t, _ := join(f.bodyType(n.Then), f.bodyType(n.Else))
-		return t
-	case *syntax.Call:
-		if n.Recv != nil && compare[n.Name] {
-			return tBool
-		}
-	}
-	return tInt
-}
-
-func (f *fn) bodyType(nodes []syntax.Node) typ {
-	for _, n := range nodes {
-		if t := f.typeOf(n); t == tNever {
-			return tNever
-		}
-	}
-	if len(nodes) == 0 {
-		return tInt
-	}
-	return f.typeOf(nodes[len(nodes)-1])
+	return f.g.types[n]
 }
 
 // failOnErr writes the Go that leaves a method when a call it made failed.
@@ -164,6 +138,8 @@ func (f *fn) expr(n syntax.Node, value bool) string {
 			return f.g.constant(n.Value)
 		}
 		return fmt.Sprint(n.Value)
+	case *syntax.Float:
+		return floatLit(n.Value)
 	case *syntax.Bool:
 		return fmt.Sprint(n.Value)
 	case *syntax.Var:
@@ -287,17 +263,83 @@ func (f *fn) call(n *syntax.Call, value bool) string {
 		return t
 	}
 	l := f.expr(n.Recv, true)
-	if n.Name == "-@" {
+	lt := f.typeOf(n.Recv)
+	switch {
+	case n.Name == "-@":
+		if lt == tFloat {
+			return "(-" + l + ")"
+		}
 		return f.arith("-@", l, "")
+	case n.Name == "to_f":
+		return f.toFloat(l, lt)
+	case n.Name == "to_i":
+		if lt == tInt {
+			return l
+		}
+		return f.toInt(l)
 	}
 	r := f.expr(n.Args[0], true)
-	if _, ok := helperOf[n.Name]; ok {
-		return f.arith(n.Name, l, r)
-	}
-	if f.big && f.typeOf(n.Recv) == tInt {
+	rt := f.typeOf(n.Args[0])
+	switch {
+	case compare[n.Name] && lt != rt && numeric(lt) && numeric(rt):
+		// Integer against Float compares exactly, as the interpreter does.
+		t, ok := f.temp(), f.temp()
+		f.line("%s, %s := object.CompareNumbers(%s, %s)", t, ok, f.value(l, lt), f.value(r, rt))
+		if n.Name == "!=" {
+			return fmt.Sprintf("!(%s && %s == 0)", ok, t)
+		}
+		return fmt.Sprintf("(%s && %s %s 0)", ok, t, n.Name)
+	case compare[n.Name] && lt == tInt && f.big:
 		return fmt.Sprintf("(%s.Cmp(%s) %s 0)", l, r, n.Name)
+	case compare[n.Name]:
+		return fmt.Sprintf("(%s %s %s)", l, n.Name, r)
+	case lt == tFloat || rt == tFloat:
+		l, r = f.toFloat(l, lt), f.toFloat(r, rt)
+		if n.Name == "%" {
+			f.g.helpers["fmod"] = true
+			return fmt.Sprintf("fmod(%s, %s)", l, r)
+		}
+		return fmt.Sprintf("(%s %s %s)", l, n.Name, r)
 	}
-	return fmt.Sprintf("(%s %s %s)", l, n.Name, r)
+	return f.arith(n.Name, l, r)
+}
+
+// value is the Value of a Go expression of type t, for a runtime call.
+func (f *fn) value(v string, t typ) string {
+	switch {
+	case t == tFloat:
+		return "object.Float(" + v + ")"
+	case f.big:
+		return "object.BigInt(" + v + ")"
+	}
+	return "object.Int(" + v + ")"
+}
+
+// toFloat converts an Integer to a Float, as Integer#to_f and mixed
+// arithmetic do; a Float is itself.
+func (f *fn) toFloat(v string, t typ) string {
+	switch {
+	case t == tFloat:
+		return v
+	case f.big:
+		return "object.BigToFloat(" + v + ")"
+	}
+	return "float64(" + v + ")"
+}
+
+// toInt converts a Float to an Integer, as Float#to_i does: it leaves NaN
+// and the infinities to the interpreter, which raises, and on int64 a
+// value past 64 bits to the twin.
+func (f *fn) toInt(v string) string {
+	h := "toInt"
+	if f.big {
+		h = "bigToInt"
+	}
+	f.g.helpers[h] = true
+	t := f.temp()
+	f.line("%s, err := %s(%s)", t, h, v)
+	f.failOnErr()
+	return t
 }
 
 // loop writes times, upto, downto or each with a block as a Go loop over
@@ -478,7 +520,17 @@ func (g *gen) constants() string {
 // declaration already uses, or a literal. A temporary or an expression
 // over temporaries has to be used.
 func plain(v string) bool {
-	return strings.HasPrefix(v, "v_") || v == "true" || v == "false" || strings.Trim(v, "-0123456789") == ""
+	return strings.HasPrefix(v, "v_") || v == "true" || v == "false" || strings.Trim(v, "-0123456789.e+") == ""
+}
+
+// floatLit is a Float literal as Go reads it: with a point or an exponent,
+// so that it is a float64 and not an int.
+func floatLit(v float64) string {
+	s := strconv.FormatFloat(v, 'g', -1, 64)
+	if !strings.ContainsAny(s, ".e") {
+		s += ".0"
+	}
+	return s
 }
 
 // paren wraps an expression that is more than a name or a literal.
@@ -567,6 +619,36 @@ var helperSource = map[string]string{
 		q.Sub(q, big_1)
 	}
 	return q, nil
+}
+
+`,
+	// Float#% takes the sign of the divisor, as Integer#% does; x % 0.0
+	// is NaN, as math.Mod gives.
+	"fmod": `func fmod(a, b float64) float64 {
+	m := math.Mod(a, b)
+	if m != 0 && (m < 0) != (b < 0) {
+		m += b
+	}
+	return m
+}
+
+`,
+	// Float#to_i truncates; NaN and the infinities raise FloatDomainError,
+	// which is the interpreter's to do.
+	"toInt": `func toInt(f float64) (int64, error) {
+	if f != f || f >= 9223372036854775808.0 || f < -9223372036854775808.0 {
+		return 0, eval.ErrDeopt
+	}
+	return int64(f), nil
+}
+
+`,
+	"bigToInt": `func bigToInt(f float64) (*big.Int, error) {
+	if f != f || f > math.MaxFloat64 || f < -math.MaxFloat64 {
+		return nil, eval.ErrDeopt
+	}
+	i, _ := new(big.Float).SetFloat64(f).Int(nil)
+	return i, nil
 }
 
 `,

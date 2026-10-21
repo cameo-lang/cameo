@@ -51,8 +51,8 @@ func TestBuildLeavesTheRestToTheInterpreter(t *testing.T) {
 	cases := []struct{ src, name, reason string }{
 		{"def f(n)\n  puts n\n  n\nend", "f", "it calls puts, and it is not a top-level method of the script"},
 		{"def f(n)\n  n.to_s\nend", "f", "it calls to_s on Integer"},
-		{"def f(n)\n  1.5\nend", "f", "a Float is not compiled yet"},
-		{"def f(n)\n  n < 1\nend", "f", "its result is true or false, not an Integer"},
+		{"def f(n)\n  \"x\"\nend", "f", "a String is not compiled yet"},
+		{"def f(n)\n  n < 1\nend", "f", "its result is true or false, not a number"},
 		{"def f(n = 1)\n  n\nend", "f", "it takes optional, splat, keyword or block parameters"},
 		{"def f(n)\n  n\nend\nclass A\n  def f(n)\n    n\n  end\nend", "f", "the program defines it more than once"},
 		{"def f?(n)\n  n\nend", "f?", "its name is not a plain identifier"},
@@ -71,6 +71,11 @@ func TestBuildLeavesTheRestToTheInterpreter(t *testing.T) {
 		{"def f(n)\n  n.times { |i| puts i }\n  1\nend", "f", "it calls puts"},
 		{"def f(n)\n  n.map { |i| i }\nend", "f", "the block of map is not compiled yet"},
 		{"def f(n)\n  break\nend", "f", "break outside a loop or a block"},
+		{"def f(n)\n  x = 1\n  x = 1.5\n  x\nend", "f", "x holds Integer and Float"},
+		{"def f(n)\n  n > 0 ? 1 : 1.5\nend", "f", "the branches give Integer and Float"},
+		{"def f(n)\n  return 1.5 if n > 0\n  1\nend", "f", "its value is Integer and it returns Float"},
+		{"def f(n)\n  g(1.5)\nend\ndef g(x)\n  x\nend", "f", "an argument of g is Float, not Integer"},
+		{"def f(n)\n  n.times { |i| i + 0.5 }\n  (n * 1.5).times { }\n  n\nend", "f", "a bound of times is Float, not Integer"},
 		{"def f(n)\n  n.times { next }\n  n\nend\ndef g(n)\n  n.times { |i| return i }\n  n\nend\ndef h(n)\n  while n > 0\n    break\n    n = 1\n  end\n  n\nend", "h", "code follows a break"},
 	}
 	for _, c := range cases {
@@ -112,6 +117,44 @@ end
 		"for t6 := t4; t6 < t5; t6++ {", "continue", "break",
 		"if t9 == -1<<63 {", "for t10 := t8; t10 >= t9; t10-- {",
 		"var t3 uint32", "for t2 := new(big.Int); t2.Cmp(t1) < 0; t2 = new(big.Int).Add(t2, big_1) {", "t3++", "if t3&4095 == 0 && eval.Stopped(s.ctx) {",
+	} {
+		if !strings.Contains(string(res.Go), want) {
+			t.Errorf("the Go lacks %q:\n%s", want, res.Go)
+		}
+	}
+}
+
+// TestBuildTypesFloats holds that a method's Float result is found through
+// its recursion and through the methods it calls, that mixed arithmetic
+// converts the Integer, and that Integer against Float compares exactly.
+func TestBuildTypesFloats(t *testing.T) {
+	res := build(t, `
+def f(n)
+  return n.to_f if n > 3
+  g(n + 1) * 2
+end
+
+def g(n)
+  f(n)
+end
+
+def h(n)
+  n % 2.5 < n && n == 2.5 ? n.to_i : n
+end
+
+def loops(n)
+  loops(n)
+end
+`)
+	if got := strings.Join(res.Compiled, " "); got != "f g h loops" {
+		t.Fatalf("compiled %q, want f, g, h and loops", got)
+	}
+	for _, want := range []string{
+		"func fn_f(s *state, v_n int64) (float64, error)", "func big_f(s *state, v_n *big.Int) (float64, error)",
+		"func fn_g(s *state, v_n int64) (float64, error)", "func fn_h(s *state, v_n int64) (int64, error)",
+		"func fn_loops(s *state, v_n int64) (int64, error)",
+		"(t2 * float64(2))", "fmod(float64(v_n), 2.5)", "object.CompareNumbers(object.Int(v_n), object.Float(2.5))",
+		"object.CompareNumbers(object.BigInt(v_n), object.Float(2.5))", "return object.Float(r), nil",
 	} {
 		if !strings.Contains(string(res.Go), want) {
 			t.Errorf("the Go lacks %q:\n%s", want, res.Go)

@@ -2,10 +2,10 @@
 // time: `cameo build`. It carries out the first steps of the plan in
 // doc/design/aot.md, and compiles only what it can type without running
 // the script, methods whose parameters are Integers and whose result is
-// one, over Integer arithmetic, comparisons, locals, if, while, return,
-// the block loops times, upto, downto and each, and calls of one another.
-// The rest of the script runs on the interpreter, as it would without a
-// build.
+// an Integer or a Float, over Integer and Float arithmetic, comparisons,
+// locals, if, while, return, the block loops times, upto, downto and each,
+// and calls of one another. The rest of the script runs on the
+// interpreter, as it would without a build.
 //
 // A compiled method runs on int64, and has a twin on *big.Int. An Integer
 // that outgrows 64 bits ends the int64 run, and the twin runs the call from
@@ -56,7 +56,7 @@ func Build(file, src string, opts Options) (*Result, error) {
 	if opts.Package == "" {
 		opts.Package = "main"
 	}
-	b := &builder{prog: prog, defs: map[string]*syntax.Def{}, left: map[string]string{}}
+	b := &builder{prog: prog, defs: map[string]*syntax.Def{}, left: map[string]string{}, results: map[string]typ{}, types: map[syntax.Node]typ{}}
 	b.collect()
 	b.settle()
 	res := &Result{Left: b.left}
@@ -72,11 +72,20 @@ func Build(file, src string, opts Options) (*Result, error) {
 }
 
 // builder holds the candidates: the top-level methods still believed to
-// compile, which every check may call directly.
+// compile, which every check may call directly, and what the check found
+// out about them.
 type builder struct {
 	prog *syntax.Program
 	defs map[string]*syntax.Def
 	left map[string]string
+	// results is the type of each candidate's value, unknown until a
+	// check settled it.
+	results map[string]typ
+	// types is the type of every expression of the methods that compile,
+	// as the last check saw it, for the generator.
+	types map[syntax.Node]typ
+	// ret is the type of the returns of the method being checked.
+	ret typ
 }
 
 // collect picks the candidates: top-level defs whose name no other def in
@@ -106,6 +115,7 @@ func (b *builder) collect() {
 			b.left[d.Name] = "it takes optional, splat, keyword or block parameters"
 		default:
 			b.defs[d.Name] = d
+			b.results[d.Name] = tUnknown
 		}
 	}
 }
@@ -113,17 +123,46 @@ func (b *builder) collect() {
 // reserved are the names the interpreter reaches past dispatch.
 var reserved = map[string]bool{"initialize": true, "method_missing": true, "respond_to_missing": true, "to_s": true, "inspect": true}
 
-// settle drops the candidates that do not check, until the rest do: one
-// that calls a dropped method no longer checks either.
+// settle checks the candidates until nothing changes: one that does not
+// check is dropped, and one that calls a dropped method no longer checks
+// either; a result type found settles the calls of the method, which may
+// settle their callers' types in turn. A method whose result stays unknown
+// returns through itself alone and gets Integer, and a last round checks
+// everything against the settled types, which the generator reads.
 func (b *builder) settle() {
-	for changed := true; changed; {
-		changed = false
-		for name, d := range b.defs {
-			if err := b.check(d); err != nil {
+	for round := 0; ; round++ {
+		changed := false
+		names := make([]string, 0, len(b.defs))
+		for name := range b.defs {
+			names = append(names, name)
+		}
+		sort.Strings(names)
+		for _, name := range names {
+			t, err := b.check(b.defs[name])
+			if err != nil {
 				b.left[name] = err.Error()
 				delete(b.defs, name)
+				delete(b.results, name)
+				changed = true
+				continue
+			}
+			if t != b.results[name] {
+				b.results[name] = t
 				changed = true
 			}
+		}
+		if changed {
+			continue
+		}
+		settled := true
+		for name, t := range b.results {
+			if t == tUnknown {
+				b.results[name] = tInt
+				settled = false
+			}
+		}
+		if settled {
+			return
 		}
 	}
 }
@@ -150,25 +189,33 @@ func plainParams(p syntax.Params) bool {
 }
 
 // typ is the static type of an expression. never is the type of return,
-// which leaves the method and has no value.
+// break and next, which leave and have no value; unknown is the result of
+// a method whose type the check has not settled yet, which joins with
+// anything and is never the type of a value that compiles.
 type typ int
 
 const (
 	tInt typ = iota
+	tFloat
 	tBool
 	tNever
+	tUnknown
 )
 
 func (t typ) String() string {
-	return [...]string{"Integer", "true or false", "nothing"}[t]
+	return [...]string{"Integer", "Float", "true or false", "nothing", "not known yet"}[t]
 }
 
-// join is the type of an if whose branches have types a and b.
+// numeric reports an Integer or a Float.
+func numeric(t typ) bool { return t == tInt || t == tFloat }
+
+// join is the type of an if whose branches have types a and b, or of a
+// method's body and its returns.
 func join(a, b typ) (typ, bool) {
 	switch {
-	case a == tNever:
+	case a == tNever || a == tUnknown:
 		return b, true
-	case b == tNever, a == b:
+	case b == tNever || b == tUnknown, a == b:
 		return a, true
 	}
 	return 0, false
@@ -197,19 +244,26 @@ func (sc *scope) block(param string) *scope {
 	return child
 }
 
-func (b *builder) check(d *syntax.Def) error {
+// check types a method's body, and returns the type of its value: of the
+// body's last expression and of its returns, which must agree.
+func (b *builder) check(d *syntax.Def) (typ, error) {
 	sc := &scope{vars: map[string]typ{}}
 	for _, p := range d.Params.Positional {
 		sc.vars[p.Name] = tInt
 	}
+	b.ret = tNever
 	t, err := b.body(d.Body, sc, true)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	if t != tInt && t != tNever {
-		return fmt.Errorf("its result is %s, not an Integer", t)
+	result, ok := join(t, b.ret)
+	if !ok {
+		return 0, fmt.Errorf("its value is %s and it returns %s", t, b.ret)
 	}
-	return nil
+	if result == tBool {
+		return 0, fmt.Errorf("its result is %s, not a number", result)
+	}
+	return result, nil
 }
 
 // body checks a statement sequence; value says whether its last value is
@@ -240,11 +294,22 @@ func (b *builder) body(nodes []syntax.Node, sc *scope, value bool) (typ, error) 
 	panic("unreachable")
 }
 
-// expr checks one expression; value says whether its value is used.
+// expr checks one expression and records its type for the generator;
+// value says whether its value is used.
 func (b *builder) expr(n syntax.Node, sc *scope, value bool) (typ, error) {
+	t, err := b.typeExpr(n, sc, value)
+	if err == nil {
+		b.types[n] = t
+	}
+	return t, err
+}
+
+func (b *builder) typeExpr(n syntax.Node, sc *scope, value bool) (typ, error) {
 	switch n := n.(type) {
 	case *syntax.Int:
 		return tInt, nil
+	case *syntax.Float:
+		return tFloat, nil
 	case *syntax.Bool:
 		return tBool, nil
 	case *syntax.Var:
@@ -265,10 +330,12 @@ func (b *builder) expr(n syntax.Node, sc *scope, value bool) (typ, error) {
 		switch {
 		case !goName(n.Name):
 			return 0, fmt.Errorf("line %d: the local %s has no Go name", n.Line(), n.Name)
-		case ok && old != t:
+		case ok && old != t && old != tUnknown && t != tUnknown:
 			return 0, fmt.Errorf("line %d: %s holds %s and %s", n.Line(), n.Name, old, t)
 		case !ok && sc.nested > 0:
 			return 0, fmt.Errorf("line %d: %s is first set inside an if or a loop", n.Line(), n.Name)
+		case ok && t == tUnknown:
+			return old, nil
 		}
 		sc.vars[n.Name] = t
 		return t, nil
@@ -284,9 +351,18 @@ func (b *builder) expr(n syntax.Node, sc *scope, value bool) (typ, error) {
 		if n.Value == nil {
 			return 0, fmt.Errorf("line %d: return without a value returns nil", n.Line())
 		}
-		if _, err := b.want(n.Value, sc, tInt, "the value of return"); err != nil {
+		t, err := b.expr(n.Value, sc, true)
+		if err != nil {
 			return 0, err
 		}
+		if !numeric(t) && t != tUnknown {
+			return 0, fmt.Errorf("line %d: the value of return is %s, not a number", n.Line(), t)
+		}
+		ret, ok := join(b.ret, t)
+		if !ok {
+			return 0, fmt.Errorf("line %d: it returns %s and %s", n.Line(), b.ret, t)
+		}
+		b.ret = ret
 		return tNever, nil
 	case *syntax.If:
 		if _, err := b.want(n.Cond, sc, tBool, "the condition"); err != nil {
@@ -352,12 +428,14 @@ func (b *builder) leave(n syntax.Node, value syntax.Node, sc *scope, what string
 	return tNever, nil
 }
 
+// want checks an expression that must have one type; a never and an
+// unknown pass, since they are no value of another type.
 func (b *builder) want(n syntax.Node, sc *scope, want typ, what string) (typ, error) {
 	t, err := b.expr(n, sc, true)
 	if err != nil {
 		return 0, err
 	}
-	if t != want && t != tNever {
+	if t != want && t != tNever && t != tUnknown {
 		return 0, fmt.Errorf("line %d: %s is %s, not %s", n.Line(), what, t, want)
 	}
 	return want, nil
@@ -373,10 +451,17 @@ func (b *builder) logic(l, r syntax.Node, sc *scope) (typ, error) {
 	return b.want(r, sc, tBool, "an operand of && or ||")
 }
 
-// arith and compare are the Integer operators the compiler knows: the
-// methods of Integer, which a script cannot redefine.
+// arith and compare are the operators of Integer and Float the compiler
+// knows, methods a script cannot redefine; conversions are their to_f and
+// to_i.
 var arith = map[string]bool{"+": true, "-": true, "*": true, "/": true, "%": true}
 var compare = map[string]bool{"<": true, "<=": true, ">": true, ">=": true, "==": true, "!=": true}
+var conversions = map[string]typ{"to_f": tFloat, "to_i": tInt}
+
+func isConversion(name string) bool {
+	_, ok := conversions[name]
+	return ok
+}
 
 // loops are the methods that call a block once per Integer, which compile
 // to a Go loop with the block's body inside: times, upto and downto on an
@@ -415,25 +500,32 @@ func (b *builder) call(n *syntax.Call, sc *scope, value bool) (typ, error) {
 				return 0, err
 			}
 		}
-		return tInt, nil
+		return b.results[n.Name], nil
 	}
 	recv, err := b.expr(n.Recv, sc, true)
 	if err != nil {
 		return 0, err
 	}
 	switch {
-	case n.Name == "-@" && len(n.Args) == 0 && recv == tInt:
-		return tInt, nil
+	case n.Name == "-@" && len(n.Args) == 0 && (numeric(recv) || recv == tUnknown):
+		return recv, nil
+	case len(n.Args) == 0 && isConversion(n.Name) && (numeric(recv) || recv == tUnknown):
+		return conversions[n.Name], nil
 	case len(n.Args) == 1 && (arith[n.Name] || compare[n.Name]):
 		arg, err := b.expr(n.Args[0], sc, true)
 		if err != nil {
 			return 0, err
 		}
+		numbers := (numeric(recv) || recv == tUnknown) && (numeric(arg) || arg == tUnknown)
 		switch {
-		case recv == tInt && arg == tInt && arith[n.Name]:
-			return tInt, nil
-		case recv == tInt && arg == tInt:
+		case numbers && compare[n.Name]:
 			return tBool, nil
+		case numbers && (recv == tFloat || arg == tFloat):
+			return tFloat, nil
+		case numbers && (recv == tUnknown || arg == tUnknown):
+			return tUnknown, nil
+		case numbers:
+			return tInt, nil
 		case recv == tBool && arg == tBool && (n.Name == "==" || n.Name == "!="):
 			return tBool, nil
 		}
@@ -511,12 +603,12 @@ var descriptions = map[string]string{
 
 // emit writes the Go source.
 func (b *builder) emit(file, src, pkg string, names []string) ([]byte, error) {
-	g := &gen{helpers: map[string]bool{}, consts: map[int64]string{}}
+	g := &gen{types: b.types, results: b.results, helpers: map[string]bool{}, consts: map[int64]string{}}
 	var fns bytes.Buffer
 	for _, name := range names {
 		fns.WriteString(g.function(b.defs[name], false))
 		fns.WriteString(g.function(b.defs[name], true))
-		fns.WriteString(entry(b.defs[name]))
+		fns.WriteString(entry(b.defs[name], b.results[name]))
 	}
 	var out bytes.Buffer
 	fmt.Fprintf(&out, "// Code generated by cameo build from %s; DO NOT EDIT.\n\n", baseName(file))
@@ -524,6 +616,9 @@ func (b *builder) emit(file, src, pkg string, names []string) ([]byte, error) {
 	out.WriteString("import (\n")
 	if pkg == "main" {
 		out.WriteString("\t\"fmt\"\n")
+	}
+	if g.helpers["fmod"] || g.helpers["bigToInt"] {
+		out.WriteString("\t\"math\"\n")
 	}
 	if len(names) > 0 {
 		out.WriteString("\t\"math/big\"\n")
@@ -628,10 +723,14 @@ func (s *state) stopped() bool {
 // entry is the method the interpreter calls: it takes the arguments as
 // Values, runs on int64 while the Integers fit, on *big.Int once one does
 // not, and leaves any call it cannot run to the interpreter.
-func entry(d *syntax.Def) string {
+func entry(d *syntax.Def, result typ) string {
 	var b strings.Builder
 	name := d.Name
 	n := len(d.Params.Positional)
+	asInt, asBig := "object.Int(r)", "object.BigInt(r)"
+	if result == tFloat {
+		asInt, asBig = "object.Float(r)", "object.Float(r)"
+	}
 	fmt.Fprintf(&b, "// call_%s is %s as a method: it runs with Integer arguments and no\n// block, on int64 while the Integers fit and on *big.Int once one does not,\n// and leaves every other call to the interpreter.\n", name, name)
 	fmt.Fprintf(&b, "func call_%s(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {\n", name)
 	fmt.Fprintf(&b, "\tif len(args) != %d || kw != nil || !(block.IsZero() || block.IsNil()) {\n\t\treturn object.Value{}, eval.ErrDeopt\n\t}\n", n)
@@ -649,12 +748,12 @@ func entry(d *syntax.Def) string {
 	}
 	fmt.Fprintf(&b, "\tif %s {\n", strings.Join(fits, " && "))
 	fmt.Fprintf(&b, "\t\tr, err := fn_%s(s%s)\n", name, prefixed(small))
-	b.WriteString("\t\tif err != eval.ErrDeopt {\n\t\t\tif err != nil {\n\t\t\t\treturn object.Value{}, err\n\t\t\t}\n\t\t\treturn object.Int(r), nil\n\t\t}\n\t}\n")
+	fmt.Fprintf(&b, "\t\tif err != eval.ErrDeopt {\n\t\t\tif err != nil {\n\t\t\t\treturn object.Value{}, err\n\t\t\t}\n\t\t\treturn %s, nil\n\t\t}\n\t}\n", asInt)
 	for i := range d.Params.Positional {
 		fmt.Fprintf(&b, "\tb%d, ok := args[%d].AsBigInt()\n\tif !ok {\n\t\treturn object.Value{}, eval.ErrDeopt\n\t}\n", i, i)
 	}
 	fmt.Fprintf(&b, "\tr, err := big_%s(s%s)\n", name, prefixed(large))
-	b.WriteString("\tif err != nil {\n\t\treturn object.Value{}, err\n\t}\n\treturn object.BigInt(r), nil\n}\n\n")
+	fmt.Fprintf(&b, "\tif err != nil {\n\t\treturn object.Value{}, err\n\t}\n\treturn %s, nil\n}\n\n", asBig)
 	return b.String()
 }
 
