@@ -321,6 +321,10 @@ var (
 	EnumeratorClass = NewClass("Enumerator", ObjectClass)
 	LazyClass       = NewClass("Lazy", EnumeratorClass)
 	ExceptionClass  = NewClass("Exception", ObjectClass)
+	// Kernel is the module Object includes, as in Ruby. The methods every
+	// value has are Object's own, so Kernel is there for `Kernel.format`,
+	// `is_a?(Kernel)` and the ancestors.
+	Kernel = NewModule("Kernel")
 	// Enumerable is the module List, Map, Set and Range include.
 	Enumerable = NewModule("Enumerable")
 	// Comparable is the module Integer, Float, String, Symbol and Time include.
@@ -392,6 +396,7 @@ var (
 )
 
 func init() {
+	ObjectClass.Include(Kernel)
 	ListClass.Include(Enumerable)
 	MapClass.Include(Enumerable)
 	SetClass.Include(Enumerable)
@@ -414,7 +419,7 @@ func init() {
 	BasicClasses = []*Class{
 		ObjectClass, ModuleClass, ClassClass, NilClass, BoolClass, IntegerClass, FloatClass,
 		StringClass, SymbolClass, ListClass, MapClass, SetClass, RangeClass, TimeClass, RegexpClass, MatchDataClass, EnumeratorClass, EncodingClass, PathnameClass, ProcClass,
-		ExceptionClass, Enumerable, Comparable, MathModule, ProcessModule, CameoModule,
+		ExceptionClass, Kernel, Enumerable, Comparable, MathModule, ProcessModule, CameoModule,
 		StandardError, RuntimeError, ArgumentError, TypeError, NameError, NoMethodError, KeyError,
 		IndexError, RangeError, ZeroDivisionError, StopIteration, NoMatchingPattern, FrozenError,
 		NotImplementedErr, LocalJumpError, CameoError, RegexpError, FloatDomainError, ScriptError, LoadError, EncodingError,

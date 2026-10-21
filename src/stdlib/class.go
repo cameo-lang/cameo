@@ -31,16 +31,11 @@ func installClass() {
 		return object.NewList(out...), nil
 	})
 	def(m, "include?", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		mod, ok := args[0].AsClass()
-		if !ok || !mod.IsModule {
-			return object.Value{}, ctx.Raise(object.TypeError, "wrong argument type %s (expected Module)", kindName(args[0]))
+		other, ok := args[0].AsClass()
+		if !ok || !other.IsModule {
+			return object.Value{}, ctx.Raise(object.TypeError, "wrong argument type %s (expected Module)", args[0].Class().QualifiedName())
 		}
-		for _, a := range cls(self).Ancestors() {
-			if a == mod && a != cls(self) {
-				return object.True, nil
-			}
-		}
-		return object.False, nil
+		return object.Bool(cls(self) != other && cls(self).IsA(other)), nil
 	})
 	def(m, "<", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		other, ok := args[0].AsClass()
