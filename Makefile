@@ -5,7 +5,7 @@
 
 BINARY := bin/cameo
 
-.PHONY: default help prerequisites deps build tests integration-tests lint check clean install
+.PHONY: default help prerequisites deps build tests integration-tests lint check conformance clean install
 
 default: build
 	@echo "Build succeeded. Run tests via 'make tests'. Show help via 'make help'."
@@ -44,6 +44,10 @@ lint: prerequisites ## Run static checks
 	go vet ./...
 
 check: lint tests integration-tests ## Everything CI runs
+
+# Not part of check, which needs no tool but Go: this one needs a Ruby.
+conformance: prerequisites ## Run every example and CRuby case compiled and interpreted, and compare
+	ruby tests/conformance/run.rb
 
 install: prerequisites ## Install the cameo binary into GOBIN (or ~/go/bin)
 	go install ./src/cmd/cameo
