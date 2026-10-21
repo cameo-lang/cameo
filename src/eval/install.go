@@ -23,6 +23,11 @@ func installStdlib() {
 	procClass.Define("[]", -1, call)
 	procClass.Define("yield", -1, call)
 	procClass.Define("===", -1, call)
+	// to_s is binary, as Ruby's is.
+	procClass.Define("to_s", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return object.Bytes([]byte(ctx.(*Interp).procInspect(proc(self)))), nil
+	})
+	procClass.Define("inspect", 0, procClass.Methods["to_s"].Native)
 	procClass.Define("to_proc", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return self, nil
 	})

@@ -789,3 +789,8 @@ func TestLineIsTheLineOfItsStatement(t *testing.T) {
 func TestNilMatchesNothingAndNoClassIsASingleton(t *testing.T) {
 	expectOutput(t, "p nil =~ /a/, nil =~ \"a\"\np Class.new.singleton_class?, NilClass.singleton_class?, Comparable.singleton_class?\n", "nil\nnil\nfalse\nfalse\nfalse\n")
 }
+
+func TestProcsShowWhereTheyWereWritten(t *testing.T) {
+	expectOutput(t, "p proc { 1 }\nputs -> { 1 }, :up.to_proc\np proc { 1 }.to_s.encoding\n",
+		"#<Proc:t.cameo:1>\n#<Proc:t.cameo:2 (lambda)>\n#<Proc:(&:up) (lambda)>\n#<Encoding:ASCII-8BIT>\n")
+}

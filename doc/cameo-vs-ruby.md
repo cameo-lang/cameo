@@ -174,7 +174,8 @@ q = p.with(x: 3)            # a copy; p is unchanged
 
 - Hash and array literals, and errors, print as CRuby 3.4 prints them:
   `{x: 1}`, not 3.3's `{:x=>1}`.
-- A bare `Object` prints as `#<Object>`, without an address.
+- A bare `Object` prints as `#<Object>`, without an address, and a Proc
+  as `#<Proc:script.rb:3 (lambda)>`, where it was written.
 - `__LINE__` is the line its statement starts on, which differs from
   Ruby's inside a statement that spans lines.
 - A `throw` ends the `catch` whose tag is equal to its own, where Ruby
