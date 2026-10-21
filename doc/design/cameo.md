@@ -643,7 +643,8 @@ One Go module, `github.com/cameo-lang/cameo`, with the packages under `src/`:
 | `eval/async.go` | promises and the run's table of them, the per-scope list `await :all` reads, the worker interpreter a call runs in |
 | `eval/sched.go` | the queue of calls `async` started and the runner goroutines that take them |
 | `protogen` | descriptors from class declarations, `.proto` text, the `cameo.Value` envelope (`proto/cameo.proto`, compiled in) |
-| `cmd/cameo` | the binary: `cameo script.cameo`, `cameo check script.cameo`, `cameo proto script.cameo` |
+| `aot` | `cameo build`: Go source for the top-level methods it can type, which the interpreter calls in place of their bodies; see [aot.md](aot.md) |
+| `cmd/cameo` | the binary: `cameo script.cameo`, `cameo check script.cameo`, `cameo proto script.cameo`, `cameo build script.cameo dir` |
 
 Tests are the example corpus first: `examples/<name>.cameo` beside
 `examples/<name>.expected`, run by `go test` which executes each script and
