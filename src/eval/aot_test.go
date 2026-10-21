@@ -52,3 +52,13 @@ func TestCompiledMethodsLeaveCallsToTheInterpreter(t *testing.T) {
 		t.Errorf("the compiled method ran %d times, want 2", calls)
 	}
 }
+
+func TestCompiledClassMethodsRunForTheirClass(t *testing.T) {
+	answer := func(object.Context, object.Value, []object.Value, *object.Map, object.Value) (object.Value, error) {
+		return object.Int(42), nil
+	}
+	src := "class A\n  def f(n)\n    n\n  end\nend\nclass B\n  def f(n)\n    n\n  end\nend\nputs A.new.f(1)\nputs B.new.f(2)\n"
+	if got := runCompiled(t, src, Compiled{"A#f": answer}); got != "42\n2\n" {
+		t.Errorf("printed %q, want the compiled answer for A and the interpreter's for B", got)
+	}
+}

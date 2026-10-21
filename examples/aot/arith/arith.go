@@ -212,7 +212,7 @@ func big_fib(s *state, v_n *big.Int) (*big.Int, error) {
 	return t1, nil
 }
 
-// call_fib is fib as a method: it runs with Integer arguments and no
+// call_fib is fib as a method: it runs with the arguments it takes and no
 // block, on int64 while the Integers fit and on *big.Int once one does not,
 // and leaves every other call to the interpreter.
 func call_fib(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -220,6 +220,7 @@ func call_fib(ctx object.Context, self object.Value, args []object.Value, kw *ob
 		return object.Value{}, eval.ErrDeopt
 	}
 	s := &state{ctx: ctx}
+	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
 		r, err := fn_fib(s, a0)
@@ -263,7 +264,7 @@ func big_floor_div(s *state, v_a *big.Int, v_b *big.Int) (*big.Int, error) {
 	return t1, nil
 }
 
-// call_floor_div is floor_div as a method: it runs with Integer arguments and no
+// call_floor_div is floor_div as a method: it runs with the arguments it takes and no
 // block, on int64 while the Integers fit and on *big.Int once one does not,
 // and leaves every other call to the interpreter.
 func call_floor_div(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -271,6 +272,7 @@ func call_floor_div(ctx object.Context, self object.Value, args []object.Value, 
 		return object.Value{}, eval.ErrDeopt
 	}
 	s := &state{ctx: ctx}
+	_ = self
 	a0, ok0 := args[0].AsInt()
 	a1, ok1 := args[1].AsInt()
 	if ok0 && ok1 {
@@ -319,7 +321,7 @@ func big_floor_mod(s *state, v_a *big.Int, v_b *big.Int) (*big.Int, error) {
 	return t1, nil
 }
 
-// call_floor_mod is floor_mod as a method: it runs with Integer arguments and no
+// call_floor_mod is floor_mod as a method: it runs with the arguments it takes and no
 // block, on int64 while the Integers fit and on *big.Int once one does not,
 // and leaves every other call to the interpreter.
 func call_floor_mod(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -327,6 +329,7 @@ func call_floor_mod(ctx object.Context, self object.Value, args []object.Value, 
 		return object.Value{}, eval.ErrDeopt
 	}
 	s := &state{ctx: ctx}
+	_ = self
 	a0, ok0 := args[0].AsInt()
 	a1, ok1 := args[1].AsInt()
 	if ok0 && ok1 {
@@ -407,7 +410,7 @@ func big_gcd(s *state, v_a *big.Int, v_b *big.Int) (*big.Int, error) {
 	return v_a, nil
 }
 
-// call_gcd is gcd as a method: it runs with Integer arguments and no
+// call_gcd is gcd as a method: it runs with the arguments it takes and no
 // block, on int64 while the Integers fit and on *big.Int once one does not,
 // and leaves every other call to the interpreter.
 func call_gcd(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -415,6 +418,7 @@ func call_gcd(ctx object.Context, self object.Value, args []object.Value, kw *ob
 		return object.Value{}, eval.ErrDeopt
 	}
 	s := &state{ctx: ctx}
+	_ = self
 	a0, ok0 := args[0].AsInt()
 	a1, ok1 := args[1].AsInt()
 	if ok0 && ok1 {
@@ -495,7 +499,7 @@ func big_power(s *state, v_base *big.Int, v_exp *big.Int) (*big.Int, error) {
 	return v_result, nil
 }
 
-// call_power is power as a method: it runs with Integer arguments and no
+// call_power is power as a method: it runs with the arguments it takes and no
 // block, on int64 while the Integers fit and on *big.Int once one does not,
 // and leaves every other call to the interpreter.
 func call_power(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -503,6 +507,7 @@ func call_power(ctx object.Context, self object.Value, args []object.Value, kw *
 		return object.Value{}, eval.ErrDeopt
 	}
 	s := &state{ctx: ctx}
+	_ = self
 	a0, ok0 := args[0].AsInt()
 	a1, ok1 := args[1].AsInt()
 	if ok0 && ok1 {
@@ -555,7 +560,7 @@ func big_sign(s *state, v_n *big.Int) (*big.Int, error) {
 	return big_0, nil
 }
 
-// call_sign is sign as a method: it runs with Integer arguments and no
+// call_sign is sign as a method: it runs with the arguments it takes and no
 // block, on int64 while the Integers fit and on *big.Int once one does not,
 // and leaves every other call to the interpreter.
 func call_sign(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -563,6 +568,7 @@ func call_sign(ctx object.Context, self object.Value, args []object.Value, kw *o
 		return object.Value{}, eval.ErrDeopt
 	}
 	s := &state{ctx: ctx}
+	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
 		r, err := fn_sign(s, a0)
@@ -667,7 +673,7 @@ func big_steps(s *state, v_n *big.Int) (*big.Int, error) {
 	return v_count, nil
 }
 
-// call_steps is steps as a method: it runs with Integer arguments and no
+// call_steps is steps as a method: it runs with the arguments it takes and no
 // block, on int64 while the Integers fit and on *big.Int once one does not,
 // and leaves every other call to the interpreter.
 func call_steps(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -675,6 +681,7 @@ func call_steps(ctx object.Context, self object.Value, args []object.Value, kw *
 		return object.Value{}, eval.ErrDeopt
 	}
 	s := &state{ctx: ctx}
+	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
 		r, err := fn_steps(s, a0)
@@ -738,7 +745,7 @@ func big_within(s *state, v_n *big.Int, v_lo *big.Int, v_hi *big.Int) (*big.Int,
 	return t3, nil
 }
 
-// call_within is within as a method: it runs with Integer arguments and no
+// call_within is within as a method: it runs with the arguments it takes and no
 // block, on int64 while the Integers fit and on *big.Int once one does not,
 // and leaves every other call to the interpreter.
 func call_within(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -746,6 +753,7 @@ func call_within(ctx object.Context, self object.Value, args []object.Value, kw 
 		return object.Value{}, eval.ErrDeopt
 	}
 	s := &state{ctx: ctx}
+	_ = self
 	a0, ok0 := args[0].AsInt()
 	a1, ok1 := args[1].AsInt()
 	a2, ok2 := args[2].AsInt()

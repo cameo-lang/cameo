@@ -7,15 +7,18 @@ place of the methods' bodies. Nothing is loaded at run time, and the binary
 stays one static file on every platform Go supports.
 
 This is step one, methods over Integers, the step that took them past 64
-bits, the one that gave them blocks, and the one that gave them Floats. The
-interpreter still runs everything else in the script, and the rest of this
-note keeps the order the steps would land in.
+bits, the one that gave them blocks, the one that gave them Floats, and the
+one that gave them classes. The interpreter still runs everything else in
+the script, and the rest of this note keeps the order the steps would land
+in.
 
-## What step one compiles
+## What compiles
 
-A top-level method compiles when:
+A top-level method, or a method of a top-level class with typed fields,
+compiles when:
 
-- its parameters are required and positional;
+- its parameters are required and positional, and each is an Integer, or
+  an instance of the one class that declares a field the body reads on it;
 - no other `def` in the program, in a class or anywhere else, has its name;
 - its body types to an Integer or a Float from:
   - Integer and Float literals, `true` and `false`;
@@ -28,7 +31,10 @@ A top-level method compiles when:
   - `times`, `upto` and `downto` on an Integer and `each` on a Range of
     Integers, with a block of one parameter at most, whose body is a
     statement over the same, with `break` and `next`;
-  - calls of other compiled methods.
+  - reads of `int`, `float`, `bool` and `ref` fields, of `self` and of
+    instances the method holds, and `self` itself;
+  - calls of other compiled methods, directly, on `self` and on instances
+    whose class is known.
 
 Everything else leaves the method to the interpreter, and `cameo build`
 names the first construct that did:
@@ -89,6 +95,26 @@ against Float compares exactly, through `object.CompareNumbers`, as the
 interpreter does; `to_i` of NaN or an infinity is left to the interpreter,
 which raises.
 
+Float arithmetic is written as `float64(a * b)`: the explicit conversion
+rounds the product, which keeps Go from fusing it with the sum that follows
+into one instruction with one rounding, as it does on arm64. The
+interpreter rounds every operation, and one point of a Mandelbrot count
+moved before the conversion was there.
+
+A class's method is registered as `Class#name` and installed on the class
+by `evalDef`; it runs with the instance as `self`, a `*object.Instance`. A
+field read is a load from `self.Fields` by the index the class fixes, the
+parent's fields first, through a helper that checks the Value holds what
+the field declares and leaves the call to the interpreter when it holds
+nil. A parameter the body reads a field on is an instance of the class that
+declares the field, when one class alone does; the entry checks the
+argument's class by name, through its ancestors, so an instance of a child
+class passes. A call on an instance of a known class, or a bare call in a
+class's method, is a direct Go call when it reaches a compiled method of the
+class or of a class above it. Construction and field assignment stay with
+the interpreter: `initialize` is the interpreter's, and a field is set in
+`initialize` alone.
+
 An argument that is not an Integer and a division by zero return
 `eval.ErrDeopt`. The interpreter then runs the method's body from the
 start, and the calls below it run on the interpreter too, since each of them
@@ -123,16 +149,17 @@ factorial, whose product outgrows 64 bits after 20 steps, the twin on
 block loops are in [tests/performance/03-blocks](../../tests/performance/03-blocks),
 and Float arithmetic in [04-floats](../../tests/performance/04-floats), where
 a Mandelbrot grid and a Leibniz series compiled take a fifteenth of YJIT's
-time.
+time. [05-classes](../../tests/performance/05-classes) has the Mandelbrot
+grid in a class whose fields hold the grid, and a pair of vectors read
+through `ref` fields, both a hundred times faster than the interpreter.
 
 ## Next steps
 
-1. Methods of classes with typed fields: a field read becomes a typed load
-   from the instance, and a call on a receiver whose class is known becomes
-   a direct call; then construction in Go for a class whose `initialize`
-   sets fields alone.
+1. Construction in Go: `Class.new` for a class whose `initialize` sets
+   fields from its parameters alone, so that a method may build the
+   instances it works on, and a whole numeric loop over instances compiles.
 2. Parameters typed from the program's call sites, so that a method may
-   take a Float or an instance.
+   take a Float, or an instance it reads no field on.
 3. Strings, and Arrays of a known element type, which use the runtime's
    own values where Go has no type of its own for them.
 4. Blocks that compute a value, `map`, `sum` and `select` on a Range, and

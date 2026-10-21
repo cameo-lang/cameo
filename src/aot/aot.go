@@ -1,19 +1,22 @@
-// Package aot compiles a cameo script's top-level methods to Go ahead of
-// time: `cameo build`. It carries out the first steps of the plan in
+// Package aot compiles a cameo script's methods to Go ahead of time:
+// `cameo build`. It carries out the first steps of the plan in
 // doc/design/aot.md, and compiles only what it can type without running
-// the script, methods whose parameters are Integers and whose result is
-// an Integer or a Float, over Integer and Float arithmetic, comparisons,
-// locals, if, while, return, the block loops times, upto, downto and each,
-// and calls of one another. The rest of the script runs on the
-// interpreter, as it would without a build.
+// the script: top-level methods, and the methods of top-level classes with
+// typed fields, whose parameters are Integers or instances of those
+// classes and whose result is an Integer or a Float, over Integer and Float
+// arithmetic, comparisons, locals, if, while, return, the block loops
+// times, upto, downto and each, reads of typed fields, and calls of one
+// another. The rest of the script runs on the interpreter, as it would
+// without a build.
 //
 // A compiled method runs on int64, and has a twin on *big.Int. An Integer
 // that outgrows 64 bits ends the int64 run, and the twin runs the call from
-// the start. A division by zero, or an argument that is not an Integer,
-// leaves the whole call to the interpreter, which runs the method's own
-// body from the start and gives the answer the script would have given
-// without a build. Starting over is safe because what the compiler accepts
-// is pure: it computes a value and does nothing else.
+// the start. A division by zero, an argument that is not what the method
+// takes, or a field that holds nil, leaves the whole call to the
+// interpreter, which runs the method's own body from the start and gives
+// the answer the script would have given without a build. Starting over is
+// safe because what the compiler accepts is pure: it computes a value and
+// does nothing else.
 package aot
 
 import (
@@ -40,14 +43,15 @@ type Options struct {
 type Result struct {
 	// Go is the source of the generated package, gofmt-formatted.
 	Go []byte
-	// Compiled names the methods that run as Go, sorted.
+	// Compiled names the methods that run as Go, sorted: a top-level method
+	// by its name, a class's as Class#name.
 	Compiled []string
-	// Left is why each top-level method that does not run as Go was left
-	// to the interpreter, by name.
+	// Left is why each method that does not run as Go was left to the
+	// interpreter, by name.
 	Left map[string]string
 }
 
-// Build compiles the top-level methods of the script that it can.
+// Build compiles the methods of the script that it can.
 func Build(file, src string, opts Options) (*Result, error) {
 	prog, err := syntax.Parse(file, src)
 	if err != nil {
@@ -56,7 +60,7 @@ func Build(file, src string, opts Options) (*Result, error) {
 	if opts.Package == "" {
 		opts.Package = "main"
 	}
-	b := &builder{prog: prog, defs: map[string]*syntax.Def{}, left: map[string]string{}, results: map[string]typ{}, types: map[syntax.Node]typ{}}
+	b := &builder{prog: prog, defs: map[string]*method{}, left: map[string]string{}, results: map[string]typ{}, types: map[syntax.Node]typ{}, classByName: map[string]*class{}}
 	b.collect()
 	b.settle()
 	res := &Result{Left: b.left}
@@ -71,27 +75,71 @@ func Build(file, src string, opts Options) (*Result, error) {
 	return res, nil
 }
 
-// builder holds the candidates: the top-level methods still believed to
-// compile, which every check may call directly, and what the check found
-// out about them.
+// builder holds the candidates: the methods still believed to compile,
+// which every check may call directly, and what the check found out about
+// them.
 type builder struct {
 	prog *syntax.Program
-	defs map[string]*syntax.Def
+	// defs are the candidates by key: a top-level method's name, or
+	// Class#name.
+	defs map[string]*method
 	left map[string]string
+	// classes are the script's top-level classes, in order; classByName
+	// finds one.
+	classes     []*class
+	classByName map[string]*class
 	// results is the type of each candidate's value, unknown until a
 	// check settled it.
 	results map[string]typ
 	// types is the type of every expression of the methods that compile,
 	// as the last check saw it, for the generator.
 	types map[syntax.Node]typ
-	// ret is the type of the returns of the method being checked.
+	// cur is the method being checked, and ret the type of its returns.
+	cur *method
 	ret typ
 }
 
-// collect picks the candidates: top-level defs whose name no other def in
-// the program has, anywhere, with required positional parameters only.
-// Another def of the name, in a class say, could be what a call reaches,
-// and the compiled call would skip it.
+// method is a candidate: its def, the class it belongs to, nil for a
+// top-level method, and the type of each parameter.
+type method struct {
+	key    string
+	def    *syntax.Def
+	owner  *class
+	params []typ
+}
+
+// goName is the Go name of the method's functions: its name, or
+// Class__name for a class's method.
+func (m *method) goName() string {
+	return strings.ReplaceAll(m.key, "#", "__")
+}
+
+// class is a top-level class of the script: its fields in the order an
+// instance holds them, the parent's first, and the methods it defines.
+type class struct {
+	name   string
+	def    *syntax.ClassDef
+	super  *class
+	fields []*field
+	index  map[string]int
+	// t is the type of the class's instances.
+	t typ
+}
+
+// field is one declared field: its name, the type of its value, and the
+// class that declared it.
+type field struct {
+	name     string
+	t        typ
+	ref      string // the class a ref field names, resolved into t
+	declared *class
+	why      string // why a read of the field is not compiled, or ""
+}
+
+// collect picks the candidates: top-level defs, and the defs of top-level
+// classes, whose name no other def in the program has, anywhere, with
+// required positional parameters only. Another def of the name, in a class
+// say, could be what a call reaches, and the compiled call would skip it.
 func (b *builder) collect() {
 	count := map[string]int{}
 	walk(b.prog, func(n syntax.Node) {
@@ -100,24 +148,156 @@ func (b *builder) collect() {
 		}
 	})
 	for _, n := range b.prog.Body {
-		d, ok := n.(*syntax.Def)
+		if c, ok := n.(*syntax.ClassDef); ok && c.Scope == nil {
+			b.collectClass(c)
+		}
+	}
+	for _, n := range b.prog.Body {
+		switch n := n.(type) {
+		case *syntax.Def:
+			b.candidate(n, nil, count)
+		case *syntax.ClassDef:
+			c := b.classByName[n.Name]
+			if c == nil || c.def != n {
+				continue
+			}
+			for _, m := range n.Body {
+				if d, ok := m.(*syntax.Def); ok {
+					b.candidate(d, c, count)
+				}
+			}
+		}
+	}
+	for _, m := range b.defs {
+		m.params = b.paramTypes(m)
+	}
+}
+
+// collectClass records a top-level class: its fields, after its parent's,
+// when the parent is a top-level class of the script too. A class whose
+// parent is anything else, or that is defined twice, has no layout the
+// compiler knows, and its methods stay on the interpreter.
+func (b *builder) collectClass(n *syntax.ClassDef) {
+	if _, dup := b.classByName[n.Name]; dup {
+		b.classByName[n.Name] = &class{name: n.Name}
+		return
+	}
+	c := &class{name: n.Name, def: n, index: map[string]int{}}
+	if n.Super != nil {
+		sup, ok := n.Super.(*syntax.Const)
+		if !ok || b.classByName[sup.Name] == nil || b.classByName[sup.Name].def == nil {
+			b.classByName[n.Name] = &class{name: n.Name}
+			return
+		}
+		c.super = b.classByName[sup.Name]
+		for _, f := range c.super.fields {
+			c.index[f.name] = len(c.fields)
+			c.fields = append(c.fields, f)
+		}
+	}
+	for _, m := range n.Body {
+		d, ok := m.(*syntax.FieldDecl)
 		if !ok {
 			continue
 		}
-		switch {
-		case count[d.Name] > 1:
-			b.left[d.Name] = "the program defines it more than once"
-		case !goName(d.Name):
-			b.left[d.Name] = "its name is not a plain identifier"
-		case reserved[d.Name]:
-			b.left[d.Name] = "the interpreter calls it itself"
-		case !plainParams(d.Params):
-			b.left[d.Name] = "it takes optional, splat, keyword or block parameters"
-		default:
-			b.defs[d.Name] = d
-			b.results[d.Name] = tUnknown
+		for _, name := range d.Names {
+			f := &field{name: name, declared: c}
+			switch d.Type {
+			case "int", "int32", "sint32", "sfixed32", "int64", "sint64", "sfixed64", "uint32", "fixed32", "uint64", "fixed64", "bignum":
+				f.t = tInt
+			case "float", "double", "float32":
+				f.t = tFloat
+			case "bool":
+				f.t = tBool
+			case "ref":
+				if ref, ok := d.Ref.(*syntax.Const); ok {
+					f.ref = ref.Name
+				} else {
+					f.why = "a ref field of a class not named plainly is not compiled yet"
+				}
+			default:
+				f.why = fmt.Sprintf("a %s field is not compiled yet", d.Type)
+			}
+			c.index[name] = len(c.fields)
+			c.fields = append(c.fields, f)
 		}
 	}
+	c.t = tClass + typ(len(b.classes))
+	b.classes = append(b.classes, c)
+	b.classByName[n.Name] = c
+}
+
+// candidate takes a def as a candidate, or says why not.
+func (b *builder) candidate(d *syntax.Def, owner *class, count map[string]int) {
+	key := d.Name
+	if owner != nil {
+		key = owner.name + "#" + d.Name
+	}
+	switch {
+	case d.Singleton:
+		b.left[key] = "it is a singleton method"
+	case reserved[d.Name]:
+		b.left[key] = "the interpreter calls it itself"
+	case count[d.Name] > 1:
+		b.left[key] = "the program defines it more than once"
+	case !goName(d.Name):
+		b.left[key] = "its name is not a plain identifier"
+	case !plainParams(d.Params):
+		b.left[key] = "it takes optional, splat, keyword or block parameters"
+	default:
+		b.defs[key] = &method{key: key, def: d, owner: owner}
+		b.results[key] = tUnknown
+	}
+}
+
+// paramTypes finds the type of each parameter: an Integer, unless the body
+// reads a field on it, which makes it an instance of the class that
+// declares the field, or calls a candidate method of a class on it.
+func (b *builder) paramTypes(m *method) []typ {
+	types := make([]typ, len(m.def.Params.Positional))
+	for i, p := range m.def.Params.Positional {
+		types[i] = tInt
+		var found *class
+		walk(m.def, func(n syntax.Node) {
+			call, ok := n.(*syntax.Call)
+			if !ok || call.Recv == nil {
+				return
+			}
+			v, ok := call.Recv.(*syntax.Var)
+			if !ok || v.Name != p.Name {
+				return
+			}
+			if c := b.declaring(call.Name); c != nil && found == nil {
+				found = c
+			}
+		})
+		if found != nil {
+			types[i] = found.t
+		}
+	}
+	return types
+}
+
+// declaring is the one class that declares a field of the name, or defines
+// a candidate method of it; nil when none or several do.
+func (b *builder) declaring(name string) *class {
+	var found *class
+	for _, c := range b.classes {
+		declares := false
+		if i, ok := c.index[name]; ok && c.fields[i].declared == c {
+			declares = true
+		}
+		if _, ok := b.defs[c.name+"#"+name]; ok {
+			declares = true
+		}
+		if declares {
+			if found != nil {
+				return nil
+			}
+			found = c
+		}
+	}
+	return found
 }
 
 // reserved are the names the interpreter reaches past dispatch.
@@ -191,7 +371,8 @@ func plainParams(p syntax.Params) bool {
 // typ is the static type of an expression. never is the type of return,
 // break and next, which leave and have no value; unknown is the result of
 // a method whose type the check has not settled yet, which joins with
-// anything and is never the type of a value that compiles.
+// anything and is never the type of a value that compiles. From tClass on,
+// a type is an instance of the script's class of that index.
 type typ int
 
 const (
@@ -200,10 +381,30 @@ const (
 	tBool
 	tNever
 	tUnknown
+	tClass typ = 16
 )
 
 func (t typ) String() string {
+	if t >= tClass {
+		return "an instance"
+	}
 	return [...]string{"Integer", "Float", "true or false", "nothing", "not known yet"}[t]
+}
+
+// name names a type in a message, a class by its name.
+func (b *builder) name(t typ) string {
+	if t >= tClass {
+		return "a " + b.classes[t-tClass].name
+	}
+	return t.String()
+}
+
+// classOf is the class of an instance type, nil for any other.
+func (b *builder) classOf(t typ) *class {
+	if t < tClass {
+		return nil
+	}
+	return b.classes[t-tClass]
 }
 
 // numeric reports an Integer or a Float.
@@ -213,12 +414,30 @@ func numeric(t typ) bool { return t == tInt || t == tFloat }
 // method's body and its returns.
 func join(a, b typ) (typ, bool) {
 	switch {
-	case a == tNever || a == tUnknown:
+	case a == tNever:
 		return b, true
-	case b == tNever || b == tUnknown, a == b:
+	case b == tNever, a == b:
+		return a, true
+	case a == tUnknown:
+		return b, true
+	case b == tUnknown:
 		return a, true
 	}
 	return 0, false
+}
+
+// assignable reports whether a value of type from may stand where to is
+// wanted: the same type, or an instance of a class under to's.
+func (b *builder) assignable(from, to typ) bool {
+	if from == to || from == tNever || from == tUnknown {
+		return true
+	}
+	for c := b.classOf(from); c != nil; c = c.super {
+		if c.t == to {
+			return true
+		}
+	}
+	return false
 }
 
 // scope is the locals of one method or block: their types, whether the
@@ -246,22 +465,23 @@ func (sc *scope) block(param string) *scope {
 
 // check types a method's body, and returns the type of its value: of the
 // body's last expression and of its returns, which must agree.
-func (b *builder) check(d *syntax.Def) (typ, error) {
+func (b *builder) check(m *method) (typ, error) {
 	sc := &scope{vars: map[string]typ{}}
-	for _, p := range d.Params.Positional {
-		sc.vars[p.Name] = tInt
+	for i, p := range m.def.Params.Positional {
+		sc.vars[p.Name] = m.params[i]
 	}
+	b.cur = m
 	b.ret = tNever
-	t, err := b.body(d.Body, sc, true)
+	t, err := b.body(m.def.Body, sc, true)
 	if err != nil {
 		return 0, err
 	}
 	result, ok := join(t, b.ret)
 	if !ok {
-		return 0, fmt.Errorf("its value is %s and it returns %s", t, b.ret)
+		return 0, fmt.Errorf("its value is %s and it returns %s", b.name(t), b.name(b.ret))
 	}
-	if result == tBool {
-		return 0, fmt.Errorf("its result is %s, not a number", result)
+	if !numeric(result) && result != tUnknown {
+		return 0, fmt.Errorf("its result is %s, not a number", b.name(result))
 	}
 	return result, nil
 }
@@ -312,6 +532,11 @@ func (b *builder) typeExpr(n syntax.Node, sc *scope, value bool) (typ, error) {
 		return tFloat, nil
 	case *syntax.Bool:
 		return tBool, nil
+	case *syntax.Self:
+		if b.cur.owner == nil {
+			return 0, fmt.Errorf("line %d: self at the top level is not compiled", n.Line())
+		}
+		return b.cur.owner.t, nil
 	case *syntax.Var:
 		t, ok := sc.vars[n.Name]
 		if !ok {
@@ -331,7 +556,7 @@ func (b *builder) typeExpr(n syntax.Node, sc *scope, value bool) (typ, error) {
 		case !goName(n.Name):
 			return 0, fmt.Errorf("line %d: the local %s has no Go name", n.Line(), n.Name)
 		case ok && old != t && old != tUnknown && t != tUnknown:
-			return 0, fmt.Errorf("line %d: %s holds %s and %s", n.Line(), n.Name, old, t)
+			return 0, fmt.Errorf("line %d: %s holds %s and %s", n.Line(), n.Name, b.name(old), b.name(t))
 		case !ok && sc.nested > 0:
 			return 0, fmt.Errorf("line %d: %s is first set inside an if or a loop", n.Line(), n.Name)
 		case ok && t == tUnknown:
@@ -356,11 +581,11 @@ func (b *builder) typeExpr(n syntax.Node, sc *scope, value bool) (typ, error) {
 			return 0, err
 		}
 		if !numeric(t) && t != tUnknown {
-			return 0, fmt.Errorf("line %d: the value of return is %s, not a number", n.Line(), t)
+			return 0, fmt.Errorf("line %d: the value of return is %s, not a number", n.Line(), b.name(t))
 		}
 		ret, ok := join(b.ret, t)
 		if !ok {
-			return 0, fmt.Errorf("line %d: it returns %s and %s", n.Line(), b.ret, t)
+			return 0, fmt.Errorf("line %d: it returns %s and %s", n.Line(), b.name(b.ret), b.name(t))
 		}
 		b.ret = ret
 		return tNever, nil
@@ -389,7 +614,7 @@ func (b *builder) typeExpr(n syntax.Node, sc *scope, value bool) (typ, error) {
 		}
 		t, ok := join(then, other)
 		if !ok {
-			return 0, fmt.Errorf("line %d: the branches give %s and %s", n.Line(), then, other)
+			return 0, fmt.Errorf("line %d: the branches give %s and %s", n.Line(), b.name(then), b.name(other))
 		}
 		return t, nil
 	case *syntax.While:
@@ -435,8 +660,8 @@ func (b *builder) want(n syntax.Node, sc *scope, want typ, what string) (typ, er
 	if err != nil {
 		return 0, err
 	}
-	if t != want && t != tNever && t != tUnknown {
-		return 0, fmt.Errorf("line %d: %s is %s, not %s", n.Line(), what, t, want)
+	if !b.assignable(t, want) {
+		return 0, fmt.Errorf("line %d: %s is %s, not %s", n.Line(), what, b.name(t), b.name(want))
 	}
 	return want, nil
 }
@@ -468,6 +693,44 @@ func isConversion(name string) bool {
 // Integer, each on a Range of Integers.
 var loops = map[string]bool{"times": true, "upto": true, "downto": true, "each": true}
 
+// target is what a call reaches: a field of a class, read from an
+// instance, or a candidate method, called directly.
+type target struct {
+	field  *field
+	index  int
+	method *method
+}
+
+// resolve finds what a call of name on an instance of class c reaches: a
+// field of c, or a candidate method of c or of a class above it. nil when
+// neither.
+func (b *builder) resolve(c *class, name string) *target {
+	if i, ok := c.index[name]; ok {
+		return &target{field: c.fields[i], index: i}
+	}
+	for k := c; k != nil; k = k.super {
+		if m, ok := b.defs[k.name+"#"+name]; ok {
+			return &target{method: m}
+		}
+	}
+	return nil
+}
+
+// bare finds what a call without a receiver reaches from a method of
+// owner, nil for a top-level one: a field or a method of the class first,
+// then a top-level method.
+func (b *builder) bare(owner *class, name string) *target {
+	if owner != nil {
+		if t := b.resolve(owner, name); t != nil {
+			return t
+		}
+	}
+	if m, ok := b.defs[name]; ok && m.owner == nil {
+		return &target{method: m}
+	}
+	return nil
+}
+
 func (b *builder) call(n *syntax.Call, sc *scope, value bool) (typ, error) {
 	if len(n.KwArgs) > 0 || n.BlockArg != nil || n.Safe {
 		return 0, fmt.Errorf("line %d: the call of %s takes keywords or a block argument", n.Line(), n.Name)
@@ -484,27 +747,30 @@ func (b *builder) call(n *syntax.Call, sc *scope, value bool) (typ, error) {
 		return b.loop(n, sc, value)
 	}
 	if n.Recv == nil {
-		d, ok := b.defs[n.Name]
-		if !ok {
-			why := "it is not a top-level method of the script"
+		t := b.bare(b.cur.owner, n.Name)
+		if t == nil {
+			why := "it is not a method of the script"
 			if _, isLeft := b.left[n.Name]; isLeft {
 				why = "it is left to the interpreter"
+			} else if b.cur.owner != nil {
+				if _, isLeft := b.left[b.cur.owner.name+"#"+n.Name]; isLeft {
+					why = "it is left to the interpreter"
+				}
 			}
 			return 0, fmt.Errorf("line %d: it calls %s, and %s", n.Line(), n.Name, why)
 		}
-		if len(n.Args) != len(d.Params.Positional) {
-			return 0, fmt.Errorf("line %d: it calls %s with %d arguments, not %d", n.Line(), n.Name, len(n.Args), len(d.Params.Positional))
-		}
-		for _, a := range n.Args {
-			if _, err := b.want(a, sc, tInt, "an argument of "+n.Name); err != nil {
-				return 0, err
-			}
-		}
-		return b.results[n.Name], nil
+		return b.reach(n, t, sc)
 	}
 	recv, err := b.expr(n.Recv, sc, true)
 	if err != nil {
 		return 0, err
+	}
+	if c := b.classOf(recv); c != nil {
+		t := b.resolve(c, n.Name)
+		if t == nil {
+			return 0, fmt.Errorf("line %d: it calls %s on %s, which is not a field or a compiled method of it", n.Line(), n.Name, b.name(recv))
+		}
+		return b.reach(n, t, sc)
 	}
 	switch {
 	case n.Name == "-@" && len(n.Args) == 0 && (numeric(recv) || recv == tUnknown):
@@ -529,9 +795,41 @@ func (b *builder) call(n *syntax.Call, sc *scope, value bool) (typ, error) {
 		case recv == tBool && arg == tBool && (n.Name == "==" || n.Name == "!="):
 			return tBool, nil
 		}
-		return 0, fmt.Errorf("line %d: %s %s %s is not compiled", n.Line(), recv, n.Name, arg)
+		return 0, fmt.Errorf("line %d: %s %s %s is not compiled", n.Line(), b.name(recv), n.Name, b.name(arg))
 	}
-	return 0, fmt.Errorf("line %d: it calls %s on %s", n.Line(), n.Name, recv)
+	return 0, fmt.Errorf("line %d: it calls %s on %s", n.Line(), n.Name, b.name(recv))
+}
+
+// reach checks a call that reaches a field or a candidate method: a field
+// takes no arguments and has its declared type; a method takes what its
+// parameters are and has its settled result.
+func (b *builder) reach(n *syntax.Call, t *target, sc *scope) (typ, error) {
+	if t.field != nil {
+		if len(n.Args) != 0 {
+			return 0, fmt.Errorf("line %d: the field %s takes no arguments", n.Line(), n.Name)
+		}
+		if t.field.why != "" {
+			return 0, fmt.Errorf("line %d: %s", n.Line(), t.field.why)
+		}
+		if t.field.ref != "" {
+			c := b.classByName[t.field.ref]
+			if c == nil || c.def == nil {
+				return 0, fmt.Errorf("line %d: the field %s refers to %s, which is not a top-level class of the script", n.Line(), n.Name, t.field.ref)
+			}
+			return c.t, nil
+		}
+		return t.field.t, nil
+	}
+	m := t.method
+	if len(n.Args) != len(m.params) {
+		return 0, fmt.Errorf("line %d: it calls %s with %d arguments, not %d", n.Line(), n.Name, len(n.Args), len(m.params))
+	}
+	for i, a := range n.Args {
+		if _, err := b.want(a, sc, m.params[i], "an argument of "+n.Name); err != nil {
+			return 0, err
+		}
+	}
+	return b.results[m.key], nil
 }
 
 // loop checks a call of times, upto, downto or each with a block: Integer
@@ -552,7 +850,7 @@ func (b *builder) loop(n *syntax.Call, sc *scope, value bool) (typ, error) {
 			if err != nil {
 				return 0, err
 			}
-			return 0, fmt.Errorf("line %d: it calls each on %s", n.Line(), t)
+			return 0, fmt.Errorf("line %d: it calls each on %s", n.Line(), b.name(t))
 		}
 		if value {
 			return 0, fmt.Errorf("line %d: the value of each is a Range", n.Line())
@@ -598,17 +896,18 @@ var descriptions = map[string]string{
 	"Lambda": "a lambda", "Yield": "yield", "Super": "super", "Break": "break",
 	"Next": "next", "Return": "return", "Case": "case", "CaseIn": "case/in", "Begin": "begin/rescue",
 	"Def": "a def", "ClassDef": "a class", "MultiAssign": "a multiple assignment",
+	"Field": "a field", "FieldAssign": "a field assignment",
 	"MutCall": "a call that changes its receiver", "Async": "async", "Await": "await",
 }
 
 // emit writes the Go source.
 func (b *builder) emit(file, src, pkg string, names []string) ([]byte, error) {
-	g := &gen{types: b.types, results: b.results, helpers: map[string]bool{}, consts: map[int64]string{}}
+	g := &gen{b: b, types: b.types, results: b.results, helpers: map[string]bool{}, consts: map[int64]string{}}
 	var fns bytes.Buffer
 	for _, name := range names {
 		fns.WriteString(g.function(b.defs[name], false))
 		fns.WriteString(g.function(b.defs[name], true))
-		fns.WriteString(entry(b.defs[name], b.results[name]))
+		fns.WriteString(g.entry(b.defs[name]))
 	}
 	var out bytes.Buffer
 	fmt.Fprintf(&out, "// Code generated by cameo build from %s; DO NOT EDIT.\n\n", baseName(file))
@@ -640,7 +939,7 @@ func (b *builder) emit(file, src, pkg string, names []string) ([]byte, error) {
 	fmt.Fprintf(&out, "// digest identifies the program: syntax.Digest of %s, parsed.\nconst digest = %s\n\n", script, strconv.Quote(syntax.Digest(b.prog)))
 	out.WriteString("func init() {\n\teval.RegisterCompiled(digest, eval.Compiled{\n")
 	for _, name := range names {
-		fmt.Fprintf(&out, "\t\t%s: call_%s,\n", strconv.Quote(name), name)
+		fmt.Fprintf(&out, "\t\t%s: call_%s,\n", strconv.Quote(name), b.defs[name].goName())
 	}
 	out.WriteString("\t})\n}\n\n")
 	if pkg == "main" {
@@ -723,20 +1022,34 @@ func (s *state) stopped() bool {
 // entry is the method the interpreter calls: it takes the arguments as
 // Values, runs on int64 while the Integers fit, on *big.Int once one does
 // not, and leaves any call it cannot run to the interpreter.
-func entry(d *syntax.Def, result typ) string {
+func (g *gen) entry(m *method) string {
 	var b strings.Builder
-	name := d.Name
+	d := m.def
+	name := m.goName()
 	n := len(d.Params.Positional)
 	asInt, asBig := "object.Int(r)", "object.BigInt(r)"
-	if result == tFloat {
+	if g.results[m.key] == tFloat {
 		asInt, asBig = "object.Float(r)", "object.Float(r)"
 	}
-	fmt.Fprintf(&b, "// call_%s is %s as a method: it runs with Integer arguments and no\n// block, on int64 while the Integers fit and on *big.Int once one does not,\n// and leaves every other call to the interpreter.\n", name, name)
+	fmt.Fprintf(&b, "// call_%s is %s as a method: it runs with the arguments it takes and no\n// block, on int64 while the Integers fit and on *big.Int once one does not,\n// and leaves every other call to the interpreter.\n", name, m.key)
 	fmt.Fprintf(&b, "func call_%s(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {\n", name)
 	fmt.Fprintf(&b, "\tif len(args) != %d || kw != nil || !(block.IsZero() || block.IsNil()) {\n\t\treturn object.Value{}, eval.ErrDeopt\n\t}\n", n)
 	b.WriteString("\ts := &state{ctx: ctx}\n")
 	var small, large, fits []string
+	if m.owner != nil {
+		b.WriteString("\tself_, ok := self.AsInstance()\n\tif !ok {\n\t\treturn object.Value{}, eval.ErrDeopt\n\t}\n")
+		small, large = []string{"self_"}, []string{"self_"}
+	} else {
+		b.WriteString("\t_ = self\n")
+	}
 	for i := range d.Params.Positional {
+		if c := g.b.classOf(m.params[i]); c != nil {
+			g.helpers["classNamed"] = true
+			fmt.Fprintf(&b, "\ta%d, ok%d := args[%d].AsInstance()\n\tif !ok%d || !classNamed(a%d.Cls, %s) {\n\t\treturn object.Value{}, eval.ErrDeopt\n\t}\n", i, i, i, i, i, strconv.Quote(c.name))
+			small = append(small, fmt.Sprintf("a%d", i))
+			large = append(large, fmt.Sprintf("a%d", i))
+			continue
+		}
 		fmt.Fprintf(&b, "\ta%d, ok%d := args[%d].AsInt()\n", i, i, i)
 		small = append(small, fmt.Sprintf("a%d", i))
 		large = append(large, fmt.Sprintf("b%d", i))
@@ -744,12 +1057,17 @@ func entry(d *syntax.Def, result typ) string {
 	}
 	if n == 0 {
 		b.WriteString("\t_ = args\n")
+	}
+	if len(fits) == 0 {
 		fits = append(fits, "true")
 	}
 	fmt.Fprintf(&b, "\tif %s {\n", strings.Join(fits, " && "))
 	fmt.Fprintf(&b, "\t\tr, err := fn_%s(s%s)\n", name, prefixed(small))
 	fmt.Fprintf(&b, "\t\tif err != eval.ErrDeopt {\n\t\t\tif err != nil {\n\t\t\t\treturn object.Value{}, err\n\t\t\t}\n\t\t\treturn %s, nil\n\t\t}\n\t}\n", asInt)
 	for i := range d.Params.Positional {
+		if g.b.classOf(m.params[i]) != nil {
+			continue
+		}
 		fmt.Fprintf(&b, "\tb%d, ok := args[%d].AsBigInt()\n\tif !ok {\n\t\treturn object.Value{}, eval.ErrDeopt\n\t}\n", i, i)
 	}
 	fmt.Fprintf(&b, "\tr, err := big_%s(s%s)\n", name, prefixed(large))

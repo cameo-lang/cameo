@@ -156,7 +156,7 @@ func big_exact(s *state, v_n *big.Int) (*big.Int, error) {
 	return t4, nil
 }
 
-// call_exact is exact as a method: it runs with Integer arguments and no
+// call_exact is exact as a method: it runs with the arguments it takes and no
 // block, on int64 while the Integers fit and on *big.Int once one does not,
 // and leaves every other call to the interpreter.
 func call_exact(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -164,6 +164,7 @@ func call_exact(ctx object.Context, self object.Value, args []object.Value, kw *
 		return object.Value{}, eval.ErrDeopt
 	}
 	s := &state{ctx: ctx}
+	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
 		r, err := fn_exact(s, a0)
@@ -200,7 +201,7 @@ func fn_grows(s *state, v_n int64) (float64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return (t2 * float64(2)), nil
+	return float64(t2 * float64(2)), nil
 }
 
 func big_grows(s *state, v_n *big.Int) (float64, error) {
@@ -215,10 +216,10 @@ func big_grows(s *state, v_n *big.Int) (float64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return (t2 * object.BigToFloat(big_2)), nil
+	return float64(t2 * object.BigToFloat(big_2)), nil
 }
 
-// call_grows is grows as a method: it runs with Integer arguments and no
+// call_grows is grows as a method: it runs with the arguments it takes and no
 // block, on int64 while the Integers fit and on *big.Int once one does not,
 // and leaves every other call to the interpreter.
 func call_grows(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -226,6 +227,7 @@ func call_grows(ctx object.Context, self object.Value, args []object.Value, kw *
 		return object.Value{}, eval.ErrDeopt
 	}
 	s := &state{ctx: ctx}
+	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
 		r, err := fn_grows(s, a0)
@@ -251,17 +253,17 @@ func fn_half(s *state, v_n int64) (float64, error) {
 	if s.stopped() {
 		return 0, eval.ErrStopped
 	}
-	return (float64(v_n) / 2.0), nil
+	return float64(float64(v_n) / 2.0), nil
 }
 
 func big_half(s *state, v_n *big.Int) (float64, error) {
 	if s.stopped() {
 		return 0, eval.ErrStopped
 	}
-	return (object.BigToFloat(v_n) / 2.0), nil
+	return float64(object.BigToFloat(v_n) / 2.0), nil
 }
 
-// call_half is half as a method: it runs with Integer arguments and no
+// call_half is half as a method: it runs with the arguments it takes and no
 // block, on int64 while the Integers fit and on *big.Int once one does not,
 // and leaves every other call to the interpreter.
 func call_half(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -269,6 +271,7 @@ func call_half(ctx object.Context, self object.Value, args []object.Value, kw *o
 		return object.Value{}, eval.ErrDeopt
 	}
 	s := &state{ctx: ctx}
+	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
 		r, err := fn_half(s, a0)
@@ -308,9 +311,9 @@ func fn_mean(s *state, v_n int64) (float64, error) {
 		}
 		v_i := t3
 		_ = v_i
-		v_s = (v_s + float64(v_i))
+		v_s = float64(v_s + float64(v_i))
 	}
-	return (v_s / float64(v_n)), nil
+	return float64(v_s / float64(v_n)), nil
 }
 
 func big_mean(s *state, v_n *big.Int) (float64, error) {
@@ -330,12 +333,12 @@ func big_mean(s *state, v_n *big.Int) (float64, error) {
 		}
 		v_i := t3
 		_ = v_i
-		v_s = (v_s + object.BigToFloat(v_i))
+		v_s = float64(v_s + object.BigToFloat(v_i))
 	}
-	return (v_s / object.BigToFloat(v_n)), nil
+	return float64(v_s / object.BigToFloat(v_n)), nil
 }
 
-// call_mean is mean as a method: it runs with Integer arguments and no
+// call_mean is mean as a method: it runs with the arguments it takes and no
 // block, on int64 while the Integers fit and on *big.Int once one does not,
 // and leaves every other call to the interpreter.
 func call_mean(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -343,6 +346,7 @@ func call_mean(ctx object.Context, self object.Value, args []object.Value, kw *o
 		return object.Value{}, eval.ErrDeopt
 	}
 	s := &state{ctx: ctx}
+	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
 		r, err := fn_mean(s, a0)
@@ -406,7 +410,7 @@ func big_mixed(s *state, v_n *big.Int) (float64, error) {
 	return t4, nil
 }
 
-// call_mixed is mixed as a method: it runs with Integer arguments and no
+// call_mixed is mixed as a method: it runs with the arguments it takes and no
 // block, on int64 while the Integers fit and on *big.Int once one does not,
 // and leaves every other call to the interpreter.
 func call_mixed(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -414,6 +418,7 @@ func call_mixed(ctx object.Context, self object.Value, args []object.Value, kw *
 		return object.Value{}, eval.ErrDeopt
 	}
 	s := &state{ctx: ctx}
+	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
 		r, err := fn_mixed(s, a0)
@@ -442,7 +447,7 @@ func fn_ratio(s *state, v_a int64, v_b int64) (float64, error) {
 	if v_b == 0 {
 		return 0.0, nil
 	}
-	return (float64(v_a) / float64(v_b)), nil
+	return float64(float64(v_a) / float64(v_b)), nil
 }
 
 func big_ratio(s *state, v_a *big.Int, v_b *big.Int) (float64, error) {
@@ -452,10 +457,10 @@ func big_ratio(s *state, v_a *big.Int, v_b *big.Int) (float64, error) {
 	if v_b.Cmp(big_0) == 0 {
 		return 0.0, nil
 	}
-	return (object.BigToFloat(v_a) / object.BigToFloat(v_b)), nil
+	return float64(object.BigToFloat(v_a) / object.BigToFloat(v_b)), nil
 }
 
-// call_ratio is ratio as a method: it runs with Integer arguments and no
+// call_ratio is ratio as a method: it runs with the arguments it takes and no
 // block, on int64 while the Integers fit and on *big.Int once one does not,
 // and leaves every other call to the interpreter.
 func call_ratio(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -463,6 +468,7 @@ func call_ratio(ctx object.Context, self object.Value, args []object.Value, kw *
 		return object.Value{}, eval.ErrDeopt
 	}
 	s := &state{ctx: ctx}
+	_ = self
 	a0, ok0 := args[0].AsInt()
 	a1, ok1 := args[1].AsInt()
 	if ok0 && ok1 {
@@ -497,7 +503,7 @@ func fn_remainders(s *state, v_n int64) (float64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return (((fmod(-7.5, float64(v_n)) + fmod(7.5, float64(t1))) + fmod(float64(v_n), 2.5)) + fmod(float64(v_n), -2.5)), nil
+	return float64(float64(float64(fmod(-7.5, float64(v_n))+fmod(7.5, float64(t1)))+fmod(float64(v_n), 2.5)) + fmod(float64(v_n), -2.5)), nil
 }
 
 func big_remainders(s *state, v_n *big.Int) (float64, error) {
@@ -505,10 +511,10 @@ func big_remainders(s *state, v_n *big.Int) (float64, error) {
 		return 0, eval.ErrStopped
 	}
 	t1 := new(big.Int).Neg(v_n)
-	return (((fmod(-7.5, object.BigToFloat(v_n)) + fmod(7.5, object.BigToFloat(t1))) + fmod(object.BigToFloat(v_n), 2.5)) + fmod(object.BigToFloat(v_n), -2.5)), nil
+	return float64(float64(float64(fmod(-7.5, object.BigToFloat(v_n))+fmod(7.5, object.BigToFloat(t1)))+fmod(object.BigToFloat(v_n), 2.5)) + fmod(object.BigToFloat(v_n), -2.5)), nil
 }
 
-// call_remainders is remainders as a method: it runs with Integer arguments and no
+// call_remainders is remainders as a method: it runs with the arguments it takes and no
 // block, on int64 while the Integers fit and on *big.Int once one does not,
 // and leaves every other call to the interpreter.
 func call_remainders(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -516,6 +522,7 @@ func call_remainders(ctx object.Context, self object.Value, args []object.Value,
 		return object.Value{}, eval.ErrDeopt
 	}
 	s := &state{ctx: ctx}
+	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
 		r, err := fn_remainders(s, a0)
@@ -556,7 +563,7 @@ func fn_steps(s *state, v_n int64) (int64, error) {
 		if !(v_x > 1.0) {
 			break
 		}
-		v_x = (v_x / 1.5)
+		v_x = float64(v_x / 1.5)
 		t2, err := add(v_count, 1)
 		if err != nil {
 			return 0, err
@@ -585,14 +592,14 @@ func big_steps(s *state, v_n *big.Int) (*big.Int, error) {
 		if !(v_x > 1.0) {
 			break
 		}
-		v_x = (v_x / 1.5)
+		v_x = float64(v_x / 1.5)
 		t2 := new(big.Int).Add(v_count, big_1)
 		v_count = t2
 	}
 	return v_count, nil
 }
 
-// call_steps is steps as a method: it runs with Integer arguments and no
+// call_steps is steps as a method: it runs with the arguments it takes and no
 // block, on int64 while the Integers fit and on *big.Int once one does not,
 // and leaves every other call to the interpreter.
 func call_steps(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -600,6 +607,7 @@ func call_steps(ctx object.Context, self object.Value, args []object.Value, kw *
 		return object.Value{}, eval.ErrDeopt
 	}
 	s := &state{ctx: ctx}
+	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
 		r, err := fn_steps(s, a0)
@@ -625,7 +633,7 @@ func fn_trunc(s *state, v_n int64) (int64, error) {
 	if s.stopped() {
 		return 0, eval.ErrStopped
 	}
-	t1, err := toInt((float64(v_n) * 0.75))
+	t1, err := toInt(float64(float64(v_n) * 0.75))
 	if err != nil {
 		return 0, err
 	}
@@ -636,14 +644,14 @@ func big_trunc(s *state, v_n *big.Int) (*big.Int, error) {
 	if s.stopped() {
 		return nil, eval.ErrStopped
 	}
-	t1, err := bigToInt((object.BigToFloat(v_n) * 0.75))
+	t1, err := bigToInt(float64(object.BigToFloat(v_n) * 0.75))
 	if err != nil {
 		return nil, err
 	}
 	return t1, nil
 }
 
-// call_trunc is trunc as a method: it runs with Integer arguments and no
+// call_trunc is trunc as a method: it runs with the arguments it takes and no
 // block, on int64 while the Integers fit and on *big.Int once one does not,
 // and leaves every other call to the interpreter.
 func call_trunc(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -651,6 +659,7 @@ func call_trunc(ctx object.Context, self object.Value, args []object.Value, kw *
 		return object.Value{}, eval.ErrDeopt
 	}
 	s := &state{ctx: ctx}
+	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
 		r, err := fn_trunc(s, a0)

@@ -49,7 +49,7 @@ puts twice(3)
 // method the compiler does not take.
 func TestBuildLeavesTheRestToTheInterpreter(t *testing.T) {
 	cases := []struct{ src, name, reason string }{
-		{"def f(n)\n  puts n\n  n\nend", "f", "it calls puts, and it is not a top-level method of the script"},
+		{"def f(n)\n  puts n\n  n\nend", "f", "it calls puts, and it is not a method of the script"},
 		{"def f(n)\n  n.to_s\nend", "f", "it calls to_s on Integer"},
 		{"def f(n)\n  \"x\"\nend", "f", "a String is not compiled yet"},
 		{"def f(n)\n  n < 1\nend", "f", "its result is true or false, not a number"},
@@ -66,7 +66,7 @@ func TestBuildLeavesTheRestToTheInterpreter(t *testing.T) {
 		{"def f(n)\n  n.each { |i| i }\nend", "f", "it calls each on Integer"},
 		{"def f(n)\n  (1..n).each { |i| i }\nend", "f", "the value of each is a Range"},
 		{"def f(n)\n  n.times { break 1 }\n  1\nend", "f", "break with a value is not compiled yet"},
-		{"def f(n)\n  n.times { x = 1 }\n  x\nend", "f", "it calls x, and it is not a top-level method"},
+		{"def f(n)\n  n.times { x = 1 }\n  x\nend", "f", "it calls x, and it is not a method of the script"},
 		{"def f(n)\n  n.times { |i| if i > 1\n t = 1\n end }\n  1\nend", "f", "t is first set inside an if or a loop"},
 		{"def f(n)\n  n.times { |i| puts i }\n  1\nend", "f", "it calls puts"},
 		{"def f(n)\n  n.map { |i| i }\nend", "f", "the block of map is not compiled yet"},
@@ -76,6 +76,12 @@ func TestBuildLeavesTheRestToTheInterpreter(t *testing.T) {
 		{"def f(n)\n  return 1.5 if n > 0\n  1\nend", "f", "its value is Integer and it returns Float"},
 		{"def f(n)\n  g(1.5)\nend\ndef g(x)\n  x\nend", "f", "an argument of g is Float, not Integer"},
 		{"def f(n)\n  n.times { |i| i + 0.5 }\n  (n * 1.5).times { }\n  n\nend", "f", "a bound of times is Float, not Integer"},
+		{"class A\n  int :n\n  def f = n\nend\nclass B\n  int :n\nend\ndef g(a)\n  a.n\nend", "g", "it calls n on Integer"},
+		{"class A\n  string :s\n  def f = s\nend", "A#f", "a string field is not compiled yet"},
+		{"class A\n  ref :b, B\n  def f = b\nend", "A#f", "the field b refers to B, which is not a top-level class of the script"},
+		{"def f(n)\n  self\nend", "f", "self at the top level is not compiled"},
+		{"class A\n  int :n\n  def f = g\n  def g = \"x\"\nend", "A#f", "it calls g, and it is left to the interpreter"},
+		{"class A\n  int :n\n  def f(o) = o.n\nend\nclass B\n  float :n\nend\nclass C\n  def h = 1\nend\ndef k(c) = c.h + 1", "A#f", "it calls n on Integer"},
 		{"def f(n)\n  n.times { next }\n  n\nend\ndef g(n)\n  n.times { |i| return i }\n  n\nend\ndef h(n)\n  while n > 0\n    break\n    n = 1\n  end\n  n\nend", "h", "code follows a break"},
 	}
 	for _, c := range cases {
@@ -155,6 +161,47 @@ end
 		"func fn_loops(s *state, v_n int64) (int64, error)",
 		"(t2 * float64(2))", "fmod(float64(v_n), 2.5)", "object.CompareNumbers(object.Int(v_n), object.Float(2.5))",
 		"object.CompareNumbers(object.BigInt(v_n), object.Float(2.5))", "return object.Float(r), nil",
+	} {
+		if !strings.Contains(string(res.Go), want) {
+			t.Errorf("the Go lacks %q:\n%s", want, res.Go)
+		}
+	}
+}
+
+// TestBuildCompilesClassMethods holds the Go of methods on classes with
+// typed fields: the instance as self, a field read by its index with the
+// parent's fields first, a parameter typed by the field read on it, and a
+// direct call through a ref field.
+func TestBuildCompilesClassMethods(t *testing.T) {
+	res := build(t, `
+class Vec
+  float :x, :y
+  def dot(other) = x * other.x + y * other.y
+end
+
+class Vec3 < Vec
+  float :z
+  def norm3 = dot(self) + z * z
+end
+
+class Pair
+  ref :a, Vec
+  int :weight
+  def spin(n) = a.dot(a) * weight * n
+end
+
+def twice(v) = v.dot(v) * 2
+`)
+	if got := strings.Join(res.Compiled, " "); got != "Pair#spin Vec#dot Vec3#norm3 twice" {
+		t.Fatalf("compiled %q, want Pair#spin, Vec#dot, Vec3#norm3 and twice", got)
+	}
+	for _, want := range []string{
+		"func fn_Vec__dot(s *state, self *object.Instance, v_other *object.Instance) (float64, error)",
+		"fieldFloat(self, 0)", "fieldFloat(v_other, 1)",
+		"func fn_Vec3__norm3(s *state, self *object.Instance) (float64, error)", "fn_Vec__dot(s, self, self)", "fieldFloat(self, 2)",
+		"fieldRef(self, 0)", "fieldInt(self, 1)", "fieldBig(self, 1)",
+		"func fn_twice(s *state, v_v *object.Instance) (float64, error)",
+		`classNamed(a0.Cls, "Vec")`, `"Vec#dot":`, "call_Vec__dot,", "self_, ok := self.AsInstance()",
 	} {
 		if !strings.Contains(string(res.Go), want) {
 			t.Errorf("the Go lacks %q:\n%s", want, res.Go)

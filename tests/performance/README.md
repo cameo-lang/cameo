@@ -11,6 +11,7 @@ exercise and holds the table of the run that landed the step.
 | [02-bignums](02-bignums) | recursion whose product outgrows 64 bits: factorial |
 | [03-blocks](03-blocks) | blocks of `times` and `each` over a Range as loops: a sum, Pythagorean triples |
 | [04-floats](04-floats) | Float arithmetic in Integer loops: a Mandelbrot grid, the Leibniz series |
+| [05-classes](05-classes) | methods of classes with typed fields: the Mandelbrot grid held in fields, vectors read through `ref` fields |
 
 [run.rb](run.rb) builds cameo and each script, runs every case three times
 on four Rubies and prints the best in-script seconds as one Markdown table:
@@ -35,6 +36,9 @@ is REV's interpreter.
 | ruby (100%) | CRuby without YJIT, `ruby --disable-yjit`, which the interpreter's Δ compares with |
 | cameo compiled | the program `cameo build` wrote, built with `go build` |
 | ruby yjit (100%) | CRuby with YJIT, `ruby --yjit`, which the compiled Δ compares with; "-" when the Ruby has no YJIT |
+
+A script Ruby cannot run, one with cameo's typed fields, gets "-" in the
+Ruby columns and the error on stderr.
 
 Δ is cameo's time as a difference from the Ruby to its left: 🟢 under -10%,
 🟡 within ±10%, 🔴 over +10%. The scripts read the clock themselves and

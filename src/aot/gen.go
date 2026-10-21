@@ -14,6 +14,7 @@ import (
 // found, and records the arithmetic helpers and the big.Int constants they
 // use.
 type gen struct {
+	b       *builder
 	types   map[syntax.Node]typ
 	results map[string]typ
 	helpers map[string]bool
@@ -27,6 +28,7 @@ type gen struct {
 // of those.
 type fn struct {
 	g     *gen
+	m     *method
 	b     strings.Builder
 	depth int
 	temps int
@@ -46,6 +48,8 @@ func (f *fn) goType(t typ) string {
 		return "bool"
 	case t == tFloat:
 		return "float64"
+	case t >= tClass:
+		return "*object.Instance"
 	case f.big:
 		return "*big.Int"
 	}
@@ -61,15 +65,23 @@ func (f *fn) prefix() string {
 	return "fn_"
 }
 
-// function writes the method on int64, or its twin on *big.Int.
-func (g *gen) function(d *syntax.Def, big bool) string {
-	f := &fn{g: g, depth: 1, vars: map[string]typ{}, big: big, result: g.results[d.Name], counters: map[string]bool{}}
+// function writes the method on int64, or its twin on *big.Int. A class's
+// method takes the instance it runs on as self, before its parameters.
+func (g *gen) function(m *method, big bool) string {
+	d := m.def
+	f := &fn{g: g, m: m, depth: 1, vars: map[string]typ{}, big: big, result: g.results[m.key], counters: map[string]bool{}}
 	var params []string
-	for _, p := range d.Params.Positional {
-		f.vars[p.Name] = tInt
-		params = append(params, "v_"+p.Name+" "+f.goType(tInt))
+	if m.owner != nil {
+		params = append(params, "self *object.Instance")
 	}
-	fmt.Fprintf(&f.b, "func %s%s(s *state%s) (%s, error) {\n", f.prefix(), d.Name, prefixed(params), f.goType(f.result))
+	for i, p := range d.Params.Positional {
+		f.vars[p.Name] = m.params[i]
+		params = append(params, "v_"+p.Name+" "+f.goType(m.params[i]))
+	}
+	fmt.Fprintf(&f.b, "func %s%s(s *state%s) (%s, error) {\n", f.prefix(), m.goName(), prefixed(params), f.goType(f.result))
+	if m.owner != nil {
+		f.line("_ = self")
+	}
 	f.line("if s.stopped() {")
 	f.line("\treturn %s, eval.ErrStopped", f.zero())
 	f.line("}")
@@ -140,6 +152,8 @@ func (f *fn) expr(n syntax.Node, value bool) string {
 		return fmt.Sprint(n.Value)
 	case *syntax.Float:
 		return floatLit(n.Value)
+	case *syntax.Self:
+		return "self"
 	case *syntax.Bool:
 		return fmt.Sprint(n.Value)
 	case *syntax.Var:
@@ -253,17 +267,13 @@ func (f *fn) call(n *syntax.Call, value bool) string {
 		return f.loop(n, value)
 	}
 	if n.Recv == nil {
-		args := make([]string, len(n.Args))
-		for i, a := range n.Args {
-			args[i] = f.expr(a, true)
-		}
-		t := f.temp()
-		f.line("%s, err := %s%s(s%s)", t, f.prefix(), n.Name, prefixed(args))
-		f.failOnErr()
-		return t
+		return f.reach(n, f.g.b.bare(f.m.owner, n.Name), "self")
 	}
 	l := f.expr(n.Recv, true)
 	lt := f.typeOf(n.Recv)
+	if c := f.g.b.classOf(lt); c != nil {
+		return f.reach(n, f.g.b.resolve(c, n.Name), l)
+	}
 	switch {
 	case n.Name == "-@":
 		if lt == tFloat {
@@ -299,9 +309,47 @@ func (f *fn) call(n *syntax.Call, value bool) string {
 			f.g.helpers["fmod"] = true
 			return fmt.Sprintf("fmod(%s, %s)", l, r)
 		}
-		return fmt.Sprintf("(%s %s %s)", l, n.Name, r)
+		// The conversion rounds the result, which keeps Go from fusing a
+		// product and a sum into one operation with one rounding: the
+		// interpreter rounds each.
+		return fmt.Sprintf("float64(%s %s %s)", l, n.Name, r)
 	}
 	return f.arith(n.Name, l, r)
+}
+
+// reach writes a call that reaches a field or a candidate method: a field
+// is read from the instance by its index, and leaves the call when it
+// holds nil; a method is called directly, a class's with the instance
+// first.
+func (f *fn) reach(n *syntax.Call, t *target, inst string) string {
+	if t.field != nil {
+		h := map[typ]string{tFloat: "fieldFloat", tBool: "fieldBool"}[f.typeOf(n)]
+		switch {
+		case h != "":
+		case f.typeOf(n) >= tClass:
+			h = "fieldRef"
+		case f.big:
+			h = "fieldBig"
+		default:
+			h = "fieldInt"
+		}
+		f.g.helpers[h] = true
+		tmp := f.temp()
+		f.line("%s, err := %s(%s, %d)", tmp, h, inst, t.index)
+		f.failOnErr()
+		return tmp
+	}
+	var args []string
+	if t.method.owner != nil {
+		args = append(args, inst)
+	}
+	for _, a := range n.Args {
+		args = append(args, f.expr(a, true))
+	}
+	tmp := f.temp()
+	f.line("%s, err := %s%s(s%s)", tmp, f.prefix(), t.method.goName(), prefixed(args))
+	f.failOnErr()
+	return tmp
 }
 
 // value is the Value of a Go expression of type t, for a runtime call.
@@ -520,7 +568,7 @@ func (g *gen) constants() string {
 // declaration already uses, or a literal. A temporary or an expression
 // over temporaries has to be used.
 func plain(v string) bool {
-	return strings.HasPrefix(v, "v_") || v == "true" || v == "false" || strings.Trim(v, "-0123456789.e+") == ""
+	return strings.HasPrefix(v, "v_") || v == "self" || v == "true" || v == "false" || strings.Trim(v, "-0123456789.e+") == ""
 }
 
 // floatLit is a Float literal as Go reads it: with a point or an exponent,
@@ -649,6 +697,66 @@ var helperSource = map[string]string{
 	}
 	i, _ := new(big.Float).SetFloat64(f).Int(nil)
 	return i, nil
+}
+
+`,
+	// classNamed reports whether c is the class of that name, or a class
+	// under it, which is what an argument of a class's type must be.
+	"classNamed": `func classNamed(c *object.Class, name string) bool {
+	for _, a := range c.Ancestors() {
+		if a.QualifiedName() == name {
+			return true
+		}
+	}
+	return false
+}
+
+`,
+	// The field readers take the field by its index in the instance, which
+	// its class fixes, the parent's fields first; a field that holds nil,
+	// or an Integer past 64 bits where int64 is wanted, leaves the call.
+	"fieldInt": `func fieldInt(inst *object.Instance, i int) (int64, error) {
+	v, ok := inst.Fields[i].AsInt()
+	if !ok {
+		return 0, eval.ErrDeopt
+	}
+	return v, nil
+}
+
+`,
+	"fieldBig": `func fieldBig(inst *object.Instance, i int) (*big.Int, error) {
+	v, ok := inst.Fields[i].AsBigInt()
+	if !ok {
+		return nil, eval.ErrDeopt
+	}
+	return v, nil
+}
+
+`,
+	"fieldFloat": `func fieldFloat(inst *object.Instance, i int) (float64, error) {
+	v, ok := inst.Fields[i].AsFloat()
+	if !ok {
+		return 0, eval.ErrDeopt
+	}
+	return v, nil
+}
+
+`,
+	"fieldBool": `func fieldBool(inst *object.Instance, i int) (bool, error) {
+	v, ok := inst.Fields[i].AsBool()
+	if !ok {
+		return false, eval.ErrDeopt
+	}
+	return v, nil
+}
+
+`,
+	"fieldRef": `func fieldRef(inst *object.Instance, i int) (*object.Instance, error) {
+	v, ok := inst.Fields[i].AsInstance()
+	if !ok {
+		return nil, eval.ErrDeopt
+	}
+	return v, nil
 }
 
 `,

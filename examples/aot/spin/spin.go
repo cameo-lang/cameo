@@ -101,7 +101,7 @@ func big_spin(s *state, v_n *big.Int) (*big.Int, error) {
 	return v_n, nil
 }
 
-// call_spin is spin as a method: it runs with Integer arguments and no
+// call_spin is spin as a method: it runs with the arguments it takes and no
 // block, on int64 while the Integers fit and on *big.Int once one does not,
 // and leaves every other call to the interpreter.
 func call_spin(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -109,6 +109,7 @@ func call_spin(ctx object.Context, self object.Value, args []object.Value, kw *o
 		return object.Value{}, eval.ErrDeopt
 	}
 	s := &state{ctx: ctx}
+	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
 		r, err := fn_spin(s, a0)

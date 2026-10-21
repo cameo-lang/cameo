@@ -189,7 +189,7 @@ func big_below(s *state, v_lo *big.Int, v_hi *big.Int) (*big.Int, error) {
 	return v_c, nil
 }
 
-// call_below is below as a method: it runs with Integer arguments and no
+// call_below is below as a method: it runs with the arguments it takes and no
 // block, on int64 while the Integers fit and on *big.Int once one does not,
 // and leaves every other call to the interpreter.
 func call_below(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -197,6 +197,7 @@ func call_below(ctx object.Context, self object.Value, args []object.Value, kw *
 		return object.Value{}, eval.ErrDeopt
 	}
 	s := &state{ctx: ctx}
+	_ = self
 	a0, ok0 := args[0].AsInt()
 	a1, ok1 := args[1].AsInt()
 	if ok0 && ok1 {
@@ -278,7 +279,7 @@ func big_countdown(s *state, v_n *big.Int) (*big.Int, error) {
 	return v_c, nil
 }
 
-// call_countdown is countdown as a method: it runs with Integer arguments and no
+// call_countdown is countdown as a method: it runs with the arguments it takes and no
 // block, on int64 while the Integers fit and on *big.Int once one does not,
 // and leaves every other call to the interpreter.
 func call_countdown(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -286,6 +287,7 @@ func call_countdown(ctx object.Context, self object.Value, args []object.Value, 
 		return object.Value{}, eval.ErrDeopt
 	}
 	s := &state{ctx: ctx}
+	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
 		r, err := fn_countdown(s, a0)
@@ -350,7 +352,7 @@ func big_early(s *state, v_n *big.Int) (*big.Int, error) {
 	return big_m1, nil
 }
 
-// call_early is early as a method: it runs with Integer arguments and no
+// call_early is early as a method: it runs with the arguments it takes and no
 // block, on int64 while the Integers fit and on *big.Int once one does not,
 // and leaves every other call to the interpreter.
 func call_early(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -358,6 +360,7 @@ func call_early(ctx object.Context, self object.Value, args []object.Value, kw *
 		return object.Value{}, eval.ErrDeopt
 	}
 	s := &state{ctx: ctx}
+	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
 		r, err := fn_early(s, a0)
@@ -440,7 +443,7 @@ func big_first_multiple(s *state, v_n *big.Int, v_of *big.Int) (*big.Int, error)
 	return v_found, nil
 }
 
-// call_first_multiple is first_multiple as a method: it runs with Integer arguments and no
+// call_first_multiple is first_multiple as a method: it runs with the arguments it takes and no
 // block, on int64 while the Integers fit and on *big.Int once one does not,
 // and leaves every other call to the interpreter.
 func call_first_multiple(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -448,6 +451,7 @@ func call_first_multiple(ctx object.Context, self object.Value, args []object.Va
 		return object.Value{}, eval.ErrDeopt
 	}
 	s := &state{ctx: ctx}
+	_ = self
 	a0, ok0 := args[0].AsInt()
 	a1, ok1 := args[1].AsInt()
 	if ok0 && ok1 {
@@ -526,7 +530,7 @@ func big_moved(s *state, v_n *big.Int) (*big.Int, error) {
 	return v_s, nil
 }
 
-// call_moved is moved as a method: it runs with Integer arguments and no
+// call_moved is moved as a method: it runs with the arguments it takes and no
 // block, on int64 while the Integers fit and on *big.Int once one does not,
 // and leaves every other call to the interpreter.
 func call_moved(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -534,6 +538,7 @@ func call_moved(ctx object.Context, self object.Value, args []object.Value, kw *
 		return object.Value{}, eval.ErrDeopt
 	}
 	s := &state{ctx: ctx}
+	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
 		r, err := fn_moved(s, a0)
@@ -611,7 +616,7 @@ func big_own(s *state, v_n *big.Int) (*big.Int, error) {
 	return v_s, nil
 }
 
-// call_own is own as a method: it runs with Integer arguments and no
+// call_own is own as a method: it runs with the arguments it takes and no
 // block, on int64 while the Integers fit and on *big.Int once one does not,
 // and leaves every other call to the interpreter.
 func call_own(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -619,6 +624,7 @@ func call_own(ctx object.Context, self object.Value, args []object.Value, kw *ob
 		return object.Value{}, eval.ErrDeopt
 	}
 	s := &state{ctx: ctx}
+	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
 		r, err := fn_own(s, a0)
@@ -704,7 +710,7 @@ func big_receiver(s *state, v_n *big.Int) (*big.Int, error) {
 	return t8, nil
 }
 
-// call_receiver is receiver as a method: it runs with Integer arguments and no
+// call_receiver is receiver as a method: it runs with the arguments it takes and no
 // block, on int64 while the Integers fit and on *big.Int once one does not,
 // and leaves every other call to the interpreter.
 func call_receiver(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -712,6 +718,7 @@ func call_receiver(ctx object.Context, self object.Value, args []object.Value, k
 		return object.Value{}, eval.ErrDeopt
 	}
 	s := &state{ctx: ctx}
+	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
 		r, err := fn_receiver(s, a0)
@@ -788,7 +795,7 @@ func big_squares(s *state, v_lo *big.Int, v_hi *big.Int) (*big.Int, error) {
 	return v_s, nil
 }
 
-// call_squares is squares as a method: it runs with Integer arguments and no
+// call_squares is squares as a method: it runs with the arguments it takes and no
 // block, on int64 while the Integers fit and on *big.Int once one does not,
 // and leaves every other call to the interpreter.
 func call_squares(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -796,6 +803,7 @@ func call_squares(ctx object.Context, self object.Value, args []object.Value, kw
 		return object.Value{}, eval.ErrDeopt
 	}
 	s := &state{ctx: ctx}
+	_ = self
 	a0, ok0 := args[0].AsInt()
 	a1, ok1 := args[1].AsInt()
 	if ok0 && ok1 {
@@ -867,7 +875,7 @@ func big_sum(s *state, v_n *big.Int) (*big.Int, error) {
 	return v_s, nil
 }
 
-// call_sum is sum as a method: it runs with Integer arguments and no
+// call_sum is sum as a method: it runs with the arguments it takes and no
 // block, on int64 while the Integers fit and on *big.Int once one does not,
 // and leaves every other call to the interpreter.
 func call_sum(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -875,6 +883,7 @@ func call_sum(ctx object.Context, self object.Value, args []object.Value, kw *ob
 		return object.Value{}, eval.ErrDeopt
 	}
 	s := &state{ctx: ctx}
+	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
 		r, err := fn_sum(s, a0)
@@ -946,7 +955,7 @@ func big_triangle(s *state, v_n *big.Int) (*big.Int, error) {
 	return v_t, nil
 }
 
-// call_triangle is triangle as a method: it runs with Integer arguments and no
+// call_triangle is triangle as a method: it runs with the arguments it takes and no
 // block, on int64 while the Integers fit and on *big.Int once one does not,
 // and leaves every other call to the interpreter.
 func call_triangle(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -954,6 +963,7 @@ func call_triangle(ctx object.Context, self object.Value, args []object.Value, k
 		return object.Value{}, eval.ErrDeopt
 	}
 	s := &state{ctx: ctx}
+	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
 		r, err := fn_triangle(s, a0)
@@ -1039,7 +1049,7 @@ func big_wide(s *state, v_n *big.Int) (*big.Int, error) {
 	return v_c, nil
 }
 
-// call_wide is wide as a method: it runs with Integer arguments and no
+// call_wide is wide as a method: it runs with the arguments it takes and no
 // block, on int64 while the Integers fit and on *big.Int once one does not,
 // and leaves every other call to the interpreter.
 func call_wide(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -1047,6 +1057,7 @@ func call_wide(ctx object.Context, self object.Value, args []object.Value, kw *o
 		return object.Value{}, eval.ErrDeopt
 	}
 	s := &state{ctx: ctx}
+	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
 		r, err := fn_wide(s, a0)
