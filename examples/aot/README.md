@@ -7,7 +7,7 @@ generated package differs from what `cameo build` writes now.
 
 | Script | What it shows |
 |---|---|
-| [arith.rb](arith.rb) | Integer arithmetic, loops and early returns, and the calls the compiled code leaves to the interpreter: a result past 64 bits, a Float argument, a division by zero |
+| [arith.rb](arith.rb) | Integer arithmetic, loops and early returns, a result past 64 bits and an argument beyond them, which the twin on `*big.Int` computes, and the calls the compiled code leaves to the interpreter: a Float argument, a division by zero |
 | [spin.rb](spin.rb) | a compiled loop that never ends, which a host's `RunContext` stops |
 
 To regenerate one:

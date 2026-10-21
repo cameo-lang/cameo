@@ -3,53 +3,78 @@ package aot
 import (
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 
 	"github.com/cameo-lang/cameo/src/syntax"
 )
 
 // gen writes the Go of the compiled methods, and records the arithmetic
-// helpers they use.
+// helpers and the big.Int constants they use.
 type gen struct {
 	helpers map[string]bool
+	consts  map[int64]string
 }
 
-// fn writes one method. Every expression becomes Go statements that leave
-// its value in a Go expression without side effects: a constant, a local,
-// a temporary, or a comparison of those.
+// fn writes one method, on int64 or, when big is set, its twin on
+// *big.Int, which runs a call whose Integers outgrow 64 bits. Every
+// expression becomes Go statements that leave its value in a Go expression
+// without side effects: a constant, a local, a temporary, or a comparison
+// of those.
 type fn struct {
 	g     *gen
 	b     strings.Builder
 	depth int
 	temps int
 	vars  map[string]typ
+	big   bool
 }
 
 // goType is the Go type of a cameo type.
-func goType(t typ) string {
-	if t == tBool {
+func (f *fn) goType(t typ) string {
+	switch {
+	case t == tBool:
 		return "bool"
+	case f.big:
+		return "*big.Int"
 	}
 	return "int64"
 }
 
-// function writes fn_<name>, the method on int64.
-func (g *gen) function(d *syntax.Def) string {
-	f := &fn{g: g, depth: 1, vars: map[string]typ{}}
+// prefix is the prefix of the method's Go name: fn_ on int64, big_ on
+// *big.Int.
+func (f *fn) prefix() string {
+	if f.big {
+		return "big_"
+	}
+	return "fn_"
+}
+
+// function writes the method on int64, or its twin on *big.Int.
+func (g *gen) function(d *syntax.Def, big bool) string {
+	f := &fn{g: g, depth: 1, vars: map[string]typ{}, big: big}
 	var params []string
 	for _, p := range d.Params.Positional {
 		f.vars[p.Name] = tInt
-		params = append(params, "v_"+p.Name+" int64")
+		params = append(params, "v_"+p.Name+" "+f.goType(tInt))
 	}
-	fmt.Fprintf(&f.b, "func fn_%s(s *state%s) (int64, error) {\n", d.Name, prefixed(params))
+	fmt.Fprintf(&f.b, "func %s%s(s *state%s) (%s, error) {\n", f.prefix(), d.Name, prefixed(params), f.goType(tInt))
 	f.line("if s.stopped() {")
-	f.line("\treturn 0, eval.ErrStopped")
+	f.line("\treturn %s, eval.ErrStopped", f.zero())
 	f.line("}")
 	if v := f.body(d.Body, true); v != "" {
 		f.line("return %s, nil", v)
 	}
 	f.b.WriteString("}\n\n")
 	return f.b.String()
+}
+
+// zero is the Integer a method returns beside an error.
+func (f *fn) zero() string {
+	if f.big {
+		return "nil"
+	}
+	return "0"
 }
 
 func (f *fn) line(format string, args ...any) {
@@ -120,13 +145,11 @@ func (f *fn) bodyType(nodes []syntax.Node) typ {
 	return f.typeOf(nodes[len(nodes)-1])
 }
 
-// fail is the Go that leaves a method when a call it made failed.
-const fail = "if err != nil {\n\treturn 0, err\n}"
-
+// failOnErr writes the Go that leaves a method when a call it made failed.
 func (f *fn) failOnErr() {
-	for _, l := range strings.Split(fail, "\n") {
-		f.line("%s", l)
-	}
+	f.line("if err != nil {")
+	f.line("\treturn %s, err", f.zero())
+	f.line("}")
 }
 
 // expr writes n and returns the Go expression of its value, "" for a
@@ -134,6 +157,9 @@ func (f *fn) failOnErr() {
 func (f *fn) expr(n syntax.Node, value bool) string {
 	switch n := n.(type) {
 	case *syntax.Int:
+		if f.big {
+			return f.g.constant(n.Value)
+		}
 		return fmt.Sprint(n.Value)
 	case *syntax.Bool:
 		return fmt.Sprint(n.Value)
@@ -147,7 +173,7 @@ func (f *fn) expr(n syntax.Node, value bool) string {
 		if _, ok := f.vars[n.Name]; !ok {
 			t := f.typeOf(n.Value)
 			f.vars[n.Name] = t
-			f.line("var v_%s %s", n.Name, goType(t))
+			f.line("var v_%s %s", n.Name, f.goType(t))
 			f.line("_ = v_%s", n.Name)
 		}
 		f.line("v_%s = %s", n.Name, v)
@@ -172,7 +198,7 @@ func (f *fn) expr(n syntax.Node, value bool) string {
 		f.line("for {")
 		f.depth++
 		f.line("if s.stopped() {")
-		f.line("\treturn 0, eval.ErrStopped")
+		f.line("\treturn %s, eval.ErrStopped", f.zero())
 		f.line("}")
 		// until x is while !x, which leaves the loop when x holds.
 		if not, ok := n.Cond.(*syntax.Not); ok {
@@ -211,7 +237,7 @@ func (f *fn) ifExpr(n *syntax.If, value bool) string {
 	if value {
 		if ty := f.typeOf(n); ty != tNever {
 			t = f.temp()
-			f.line("var %s %s", t, goType(ty))
+			f.line("var %s %s", t, f.goType(ty))
 		}
 	}
 	branch := func(nodes []syntax.Node) {
@@ -231,8 +257,12 @@ func (f *fn) ifExpr(n *syntax.If, value bool) string {
 	return t
 }
 
-// helperOf is the checked helper of an arithmetic operator.
+// helperOf is the checked helper of an arithmetic operator on int64; on
+// *big.Int, bigOp is the big.Int method of an operator that cannot fail,
+// and bigHelperOf the helper of a division, which can.
 var helperOf = map[string]string{"+": "add", "-": "sub", "*": "mul", "/": "div", "%": "mod", "-@": "neg"}
+var bigOp = map[string]string{"+": "Add", "-": "Sub", "*": "Mul", "-@": "Neg"}
+var bigHelperOf = map[string]string{"/": "bigDiv", "%": "bigMod"}
 
 func (f *fn) call(n *syntax.Call) string {
 	if n.Recv == nil {
@@ -241,27 +271,82 @@ func (f *fn) call(n *syntax.Call) string {
 			args[i] = f.expr(a, true)
 		}
 		t := f.temp()
-		f.line("%s, err := fn_%s(s%s)", t, n.Name, prefixed(args))
+		f.line("%s, err := %s%s(s%s)", t, f.prefix(), n.Name, prefixed(args))
 		f.failOnErr()
 		return t
 	}
 	l := f.expr(n.Recv, true)
 	if n.Name == "-@" {
-		f.g.helpers["neg"] = true
-		t := f.temp()
-		f.line("%s, err := neg(%s)", t, l)
-		f.failOnErr()
-		return t
+		return f.arith("-@", l, "")
 	}
 	r := f.expr(n.Args[0], true)
-	if h, ok := helperOf[n.Name]; ok {
-		f.g.helpers[h] = true
-		t := f.temp()
-		f.line("%s, err := %s(%s, %s)", t, h, l, r)
-		f.failOnErr()
-		return t
+	if _, ok := helperOf[n.Name]; ok {
+		return f.arith(n.Name, l, r)
+	}
+	if f.big && f.typeOf(n.Recv) == tInt {
+		return fmt.Sprintf("(%s.Cmp(%s) %s 0)", l, r, n.Name)
 	}
 	return fmt.Sprintf("(%s %s %s)", l, n.Name, r)
+}
+
+// arith writes an arithmetic operator: on int64 a checked helper, which
+// fails past 64 bits; on *big.Int a method of big.Int, or a helper for a
+// division, which fails on a zero divisor.
+func (f *fn) arith(op, l, r string) string {
+	t := f.temp()
+	switch {
+	case f.big && bigOp[op] != "":
+		if r == "" {
+			f.line("%s := new(big.Int).%s(%s)", t, bigOp[op], l)
+		} else {
+			f.line("%s := new(big.Int).%s(%s, %s)", t, bigOp[op], l, r)
+		}
+		return t
+	case f.big:
+		h := bigHelperOf[op]
+		f.g.helpers[h] = true
+		f.g.constant(1)
+		f.line("%s, err := %s(%s, %s)", t, h, l, r)
+	case r == "":
+		f.g.helpers["neg"] = true
+		f.line("%s, err := neg(%s)", t, l)
+	default:
+		h := helperOf[op]
+		f.g.helpers[h] = true
+		f.line("%s, err := %s(%s, %s)", t, h, l, r)
+	}
+	f.failOnErr()
+	return t
+}
+
+// constant is the package-level big.Int of an Integer literal, which the
+// twins share and never change.
+func (g *gen) constant(v int64) string {
+	if name, ok := g.consts[v]; ok {
+		return name
+	}
+	name := "big_" + strings.ReplaceAll(fmt.Sprint(v), "-", "m")
+	g.consts[v] = name
+	return name
+}
+
+// constants writes the big.Int constants, sorted by value.
+func (g *gen) constants() string {
+	if len(g.consts) == 0 {
+		return ""
+	}
+	values := make([]int64, 0, len(g.consts))
+	for v := range g.consts {
+		values = append(values, v)
+	}
+	sort.Slice(values, func(i, j int) bool { return values[i] < values[j] })
+	var b strings.Builder
+	b.WriteString("// The Integer literals of the methods on *big.Int, which they share and\n// never change.\nvar (\n")
+	for _, v := range values {
+		fmt.Fprintf(&b, "\t%s = big.NewInt(%d)\n", g.consts[v], v)
+	}
+	b.WriteString(")\n\n")
+	return b.String()
 }
 
 // plain is a value Go lets a statement drop: a local, which its
@@ -280,8 +365,8 @@ func paren(s string) string {
 }
 
 // helperSource is the Go of each helper: Integer arithmetic on int64 that
-// leaves a result beyond 64 bits, and a division by zero, to the
-// interpreter, which grows the Integer or raises.
+// leaves a result beyond 64 bits to the twin on *big.Int, and a division
+// by zero, in either form, to the interpreter, which raises.
 var helperSource = map[string]string{
 	"add": `func add(a, b int64) (int64, error) {
 	c := a + b
@@ -345,6 +430,30 @@ var helperSource = map[string]string{
 		return 0, eval.ErrDeopt
 	}
 	return -a, nil
+}
+
+`,
+	"bigDiv": `func bigDiv(a, b *big.Int) (*big.Int, error) {
+	if b.Sign() == 0 {
+		return nil, eval.ErrDeopt
+	}
+	q, m := new(big.Int).QuoRem(a, b, new(big.Int))
+	if m.Sign() != 0 && (m.Sign() < 0) != (b.Sign() < 0) {
+		q.Sub(q, big_1)
+	}
+	return q, nil
+}
+
+`,
+	"bigMod": `func bigMod(a, b *big.Int) (*big.Int, error) {
+	if b.Sign() == 0 {
+		return nil, eval.ErrDeopt
+	}
+	m := new(big.Int).Rem(a, b)
+	if m.Sign() != 0 && (m.Sign() < 0) != (b.Sign() < 0) {
+		m.Add(m, b)
+	}
+	return m, nil
 }
 
 `,
