@@ -85,5 +85,23 @@ func typeName(v object.Value) string {
 	if v.IsNil() {
 		return "nil"
 	}
+	if inst, ok := v.AsInstance(); ok && inst.Cls.Digest == "main" {
+		return "main"
+	}
 	return "an instance of " + v.Class().QualifiedName()
+}
+
+// noMethod makes the error for a call of name that recv has no method
+// for: a NoMethodError, or a NameError for a bare name, which may have
+// been meant as a local. Either carries the name and the receiver, and a
+// NoMethodError the arguments.
+func (in *Interp) noMethod(recv object.Value, name string, args []object.Value, vcall bool, line int) error {
+	attrs := map[string]object.Value{"name": object.Symbol(name), "receiver": recv}
+	if vcall {
+		return &object.Exception{Cls: object.NameError, Line: line, Attrs: attrs,
+			Message: fmt.Sprintf("undefined local variable or method '%s' for %s", name, typeName(recv))}
+	}
+	attrs["args"] = object.NewList(append([]object.Value{}, args...)...)
+	return &object.Exception{Cls: object.NoMethodError, Line: line, Attrs: attrs,
+		Message: fmt.Sprintf("undefined method '%s' for %s", name, typeName(recv))}
 }

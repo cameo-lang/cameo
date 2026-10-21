@@ -106,7 +106,7 @@ func (in *Interp) evalSlow(n syntax.Node, env *Env, fr *Frame) (object.Value, er
 		if v, ok := env.Get(n.Name); ok {
 			return v, nil
 		}
-		return in.evalCall(&syntax.Call{Pos: n.Pos, Name: n.Name}, env, fr)
+		return in.evalCall(&syntax.Call{Pos: n.Pos, Name: n.Name, VCall: true}, env, fr)
 	case *syntax.Seq:
 		return in.evalBody(n.Body, env, fr)
 	case *syntax.Alias:

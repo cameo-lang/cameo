@@ -71,7 +71,7 @@ func TestErrorsNameLineAndClass(t *testing.T) {
 func TestScopes(t *testing.T) {
 	expectOutput(t, "x = 1\n[1].each { |i| x = i + 10; y = 5 }\nputs x\nputs defined?(y).inspect rescue puts \"nil\"\n", "11\nnil\n")
 	expectOutput(t, "def m\n  v = 1\n  l = -> { v += 1 }\n  l.call\n  l.call\n  v\nend\nputs m\n", "3\n")
-	expectOutput(t, "x = 10\ndef m = x\nbegin\n  m\nrescue NameError, NoMethodError => e\n  puts e.class\nend\n", "NoMethodError\n")
+	expectOutput(t, "x = 10\ndef m = x\nbegin\n  m\nrescue NameError, NoMethodError => e\n  puts e.class\nend\n", "NameError\n")
 }
 
 func TestBlocksAndReturns(t *testing.T) {

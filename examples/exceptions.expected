@@ -7,3 +7,26 @@ ok after 3
 [StandardError, StandardError, StandardError, StandardError]
 rescue NotImplementedError: later
 an IndexError: KeyError
+#<NameError: undefined local variable or method 'undefined_name' for main>
+:undefined_name
+main
+#<NoMethodError: undefined method 'undefined_call' for main>
+:undefined_call
+#<NoMethodError: undefined method 'foo' for an instance of Integer>
+:foo
+1
+[2, 3]
+#<NameError: uninitialized constant Comparable::Nope>
+:Nope
+Comparable
+#<KeyError: key not found: :b>
+:b
+{a: 1}
+:name
+5
+"NameError"
+#<ArgumentError: no receiver is available>
+[1]
+2
+#<NameError: again>
+:undefined_name

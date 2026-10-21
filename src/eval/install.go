@@ -114,7 +114,7 @@ func init() {
 			return object.Value{}, in.raise(object.ArgumentError, 0, "no method name given")
 		}
 		name, _ := args[0].AsSymbol()
-		return object.Value{}, in.raise(object.NoMethodError, 0, "undefined method '%s' for %s", name, typeName(self))
+		return object.Value{}, in.noMethod(self, name, args[1:], false, 0)
 	})
 	// __FILE__ is the script's path as it was given, and __dir__ the
 	// absolute directory it is in.

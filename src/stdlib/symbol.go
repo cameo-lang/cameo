@@ -182,7 +182,7 @@ func installException() {
 		if err != nil {
 			return object.Value{}, err
 		}
-		return object.ExceptionValue(&object.Exception{Cls: exc(self).Cls, Message: msg}), nil
+		return object.ExceptionValue(&object.Exception{Cls: exc(self).Cls, Message: msg, Attrs: exc(self).Attrs}), nil
 	})
 	newExc := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		cls := self.Cls()
@@ -201,4 +201,91 @@ func installException() {
 	}
 	c.DefineSingleton("new", -1, newExc)
 	c.DefineSingleton("exception", -1, newExc)
+	installExceptionAttrs()
+}
+
+// installExceptionAttrs gives the exceptions of Ruby's core that carry more
+// than a message their constructors and readers.
+func installExceptionAttrs() {
+	exc := func(self object.Value) *object.Exception { return self.Exception() }
+	// reader reads an attribute, which is def when the exception has none,
+	// or raises an ArgumentError when there is no default either.
+	reader := func(cls *object.Class, name string, def object.Value) {
+		cls.Define(name, 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+			if v, ok := exc(self).Attr(name); ok {
+				return v, nil
+			}
+			if def.IsZero() {
+				return object.Value{}, ctx.Raise(object.ArgumentError, "no %s is available", name)
+			}
+			return def, nil
+		})
+	}
+	// message is a constructor's message argument: its to_s, or the class's
+	// name when it is absent or nil.
+	message := func(ctx object.Context, cls *object.Class, args []object.Value, i int) (string, error) {
+		if i >= len(args) || args[i].IsNil() {
+			return cls.QualifiedName(), nil
+		}
+		return ctx.ToS(args[i])
+	}
+	keyword := func(kw *object.Map, name string, attrs map[string]object.Value) {
+		if kw == nil {
+			return
+		}
+		if v, ok := kw.Get(object.Symbol(name)); ok {
+			attrs[name] = v
+		}
+	}
+	build := func(cls *object.Class, msg string, attrs map[string]object.Value) object.Value {
+		if len(attrs) == 0 {
+			attrs = nil
+		}
+		return object.ExceptionValue(&object.Exception{Cls: cls, Message: msg, Attrs: attrs})
+	}
+
+	// NameError.new(msg = nil, name = nil, receiver: nil), and NoMethodError
+	// with args after the name.
+	object.NameError.DefineSingleton("new", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		cls := self.Cls()
+		switch {
+		case cls.IsA(object.NoMethodError) && len(args) > 3:
+			return object.Value{}, argError(ctx, len(args), "0..3")
+		case !cls.IsA(object.NoMethodError) && len(args) > 2:
+			return object.Value{}, argError(ctx, len(args), "0..2")
+		}
+		msg, err := message(ctx, cls, args, 0)
+		if err != nil {
+			return object.Value{}, err
+		}
+		attrs := map[string]object.Value{}
+		if len(args) > 1 {
+			attrs["name"] = args[1]
+		}
+		if len(args) > 2 {
+			attrs["args"] = args[2]
+		}
+		keyword(kw, "receiver", attrs)
+		return build(cls, msg, attrs), nil
+	})
+	reader(object.NameError, "name", object.Nil)
+	reader(object.NameError, "receiver", object.Value{})
+	reader(object.NoMethodError, "args", object.NewList())
+
+	// KeyError.new(msg = nil, receiver: nil, key: nil)
+	object.KeyError.DefineSingleton("new", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if len(args) > 1 {
+			return object.Value{}, argError(ctx, len(args), "0..1")
+		}
+		msg, err := message(ctx, self.Cls(), args, 0)
+		if err != nil {
+			return object.Value{}, err
+		}
+		attrs := map[string]object.Value{}
+		keyword(kw, "receiver", attrs)
+		keyword(kw, "key", attrs)
+		return build(self.Cls(), msg, attrs), nil
+	})
+	reader(object.KeyError, "key", object.Value{})
+	reader(object.KeyError, "receiver", object.Value{})
 }

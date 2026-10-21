@@ -376,7 +376,7 @@ func compileArgs(nodes []syntax.Node) (argsThunk, bool) {
 // compileCall compiles a method call. A call with a splat, keyword
 // arguments or a &block argument is left to the tree walker.
 func compileCall(n *syntax.Call) thunk {
-	line, name, safe := n.Line(), n.Name, n.Safe
+	line, name, safe, vcall := n.Line(), n.Name, n.Safe, n.VCall
 	selfCall := n.Recv == nil
 	if selfCall && name == "block_given?" && len(n.Args) == 0 {
 		return func(_ *Interp, _ *Env, fr *Frame) (object.Value, error) {
@@ -430,7 +430,7 @@ func compileCall(n *syntax.Call) thunk {
 				}
 			}
 		}
-		v, err := in.call(fr, r, name, values, nil, blk, selfCall, line)
+		v, err := in.dispatch(fr, r, name, values, nil, blk, selfCall, vcall, line)
 		if err != nil {
 			return object.Value{}, withLine(err, line)
 		}

@@ -675,7 +675,7 @@ func (c *converter) call(n *ast.Call) Node {
 			return nil
 		}
 	}
-	call := &Call{Pos: c.pos(), Name: name, Safe: n.Safe}
+	call := &Call{Pos: c.pos(), Name: name, Safe: n.Safe, VCall: n.Recv == nil && len(n.Args) == 0 && n.Block == nil && !n.Paren}
 	if n.Recv != nil {
 		call.Recv = c.expr(n.Recv)
 	}

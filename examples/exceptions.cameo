@@ -42,3 +42,48 @@ begin
 rescue IndexError => e
   puts "an IndexError: #{e.class}"
 end
+
+# A NameError names what was missing and where, a NoMethodError the
+# arguments too, and a KeyError the key and the hash.
+begin
+  undefined_name
+rescue NameError => e
+  p e, e.name, e.receiver
+end
+begin
+  undefined_call()
+rescue NameError => e
+  p e, e.name
+end
+begin
+  1.foo(2, 3)
+rescue NoMethodError => e
+  p e, e.name, e.receiver, e.args
+end
+begin
+  Comparable::Nope
+rescue NameError => e
+  p e, e.name, e.receiver
+end
+begin
+  {a: 1}.fetch(:b)
+rescue KeyError => e
+  p e, e.key, e.receiver
+end
+made = NameError.new("msg", :name, receiver: 5)
+p made.name, made.receiver, NameError.new.message
+begin
+  NameError.new("msg").receiver
+rescue ArgumentError => e
+  p e
+end
+p NoMethodError.new("m", :n, [1]).args, KeyError.new("m", receiver: 1, key: 2).key
+begin
+  begin
+    undefined_name
+  rescue NameError => e
+    raise e, "again"
+  end
+rescue NameError => e
+  p e, e.name
+end

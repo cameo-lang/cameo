@@ -201,7 +201,7 @@ func raise(ctx object.Context, args []object.Value) error {
 		v := args[0].Exception()
 		if len(args) > 1 {
 			if msg, err := wantString(ctx, args[1]); err == nil {
-				return &object.Exception{Cls: v.Cls, Message: msg}
+				return &object.Exception{Cls: v.Cls, Message: msg, Attrs: v.Attrs}
 			}
 		}
 		return v
