@@ -5,7 +5,7 @@
 
 BINARY := bin/cameo
 
-.PHONY: default help prerequisites deps build tests integration-tests lint check conformance clean install
+.PHONY: default help prerequisites deps build tests integration-tests lint check conformance ruby-spec spec-status clean install
 
 default: build
 	@echo "Build succeeded. Run tests via 'make tests'. Show help via 'make help'."
