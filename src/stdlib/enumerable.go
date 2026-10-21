@@ -582,6 +582,14 @@ func installEnumerable() {
 	each("each_entry", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		return yieldEach(ctx, elems, block)
 	})
+	withBlock("chunk", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
+		out := []object.Value{}
+		err := chunker(ctx, block)(ctx, listEach(elems), func(v object.Value) error {
+			out = append(out, v)
+			return nil
+		})
+		return object.NewList(out...), err
+	})
 	// chunk_while, slice_when, slice_before and slice_after return the
 	// slices as a list.
 	for _, name := range []string{"chunk_while", "slice_when", "slice_before", "slice_after"} {
@@ -646,7 +654,15 @@ func installEnumerable() {
 		if err != nil {
 			return object.Value{}, err
 		}
-		return enumerator(true, self, "", nil, each), nil
+		lazy := enumerator(true, self, "", nil, each)
+		// The lazy enumerator of an Array, Hash, Set or Range has its size.
+		switch self.Kind() {
+		case object.KindList, object.KindMap, object.KindSet, object.KindRange:
+			lazy.Enumerator().Size = func(ctx object.Context) (object.Value, error) {
+				return ctx.Call(self, "size")
+			}
+		}
+		return lazy, nil
 	})
 }
 
@@ -1129,4 +1145,60 @@ func slicer(ctx object.Context, name string, args []object.Value, block object.V
 		}
 		return yield(object.NewList(cur...))
 	}, nil
+}
+
+// chunker returns how Enumerable#chunk cuts a stream: runs of elements
+// for which the block returns the same key, as [key, elements]. A nil or
+// :_separator key drops the element and ends the run, :_alone puts it in
+// a run of its own, and other keys that start with "_" are Ruby's.
+func chunker(ctx object.Context, block object.Value) func(ctx object.Context, src each, yield func(object.Value) error) error {
+	return func(ctx object.Context, src each, yield func(object.Value) error) error {
+		var key object.Value
+		var cur []object.Value
+		flush := func() error {
+			if len(cur) == 0 {
+				return nil
+			}
+			run := object.NewList(key, object.NewList(cur...))
+			cur = nil
+			return yield(run)
+		}
+		err := src(ctx, func(v object.Value) error {
+			k, err := ctx.Yield(block, v)
+			if err != nil {
+				return err
+			}
+			name, isSym := k.AsSymbol()
+			switch {
+			case k.IsNil() || isSym && name == "_separator":
+				return flush()
+			case isSym && name == "_alone":
+				if err := flush(); err != nil {
+					return err
+				}
+				key, cur = k, []object.Value{v}
+				return flush()
+			case isSym && strings.HasPrefix(name, "_"):
+				return ctx.Raise(object.RuntimeError, "symbols beginning with an underscore are reserved")
+			}
+			if len(cur) > 0 {
+				same, err := ctx.Equal(key, k)
+				if err != nil {
+					return err
+				}
+				if !same {
+					if err := flush(); err != nil {
+						return err
+					}
+				}
+			}
+			key = k
+			cur = append(cur, v)
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+		return flush()
+	}
 }

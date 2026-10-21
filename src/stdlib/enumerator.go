@@ -152,6 +152,9 @@ func EnumeratorInspect(ctx object.Context, e *object.Enumerator) (string, error)
 	if e.Arith != nil {
 		return arithInspect(ctx, e)
 	}
+	if e.Of != nil {
+		return combinedInspect(ctx, e)
+	}
 	var b strings.Builder
 	b.WriteString("#<")
 	b.WriteString(object.EnumeratorValue(e).Class().QualifiedName())
@@ -301,6 +304,7 @@ func installEnumerator() {
 	def(c, "to_s", 0, inspect)
 	installLazy()
 	installArithSeq()
+	installCombined()
 }
 
 // installLazy defines Enumerator::Lazy's methods, each a new lazy
@@ -600,6 +604,31 @@ func installLazy() {
 			}), nil
 		})
 	}
+	def(c, "chunk", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if err := needBlock(ctx, block, "chunk"); err != nil {
+			return object.Value{}, err
+		}
+		chunk := chunker(ctx, block)
+		parent := self.Enumerator().Each
+		return enumerator(true, self, "chunk", nil, func(ctx object.Context, yield func(object.Value) error) error {
+			return chunk(ctx, parent, yield)
+		}), nil
+	})
+	def(c, "find_all", -1, c.Methods["select"].Native)
+	def(c, "force", 0, object.EnumeratorClass.Methods["to_a"].Native)
+	// to_enum and enum_for of a lazy enumerator are another over its
+	// elements. Ruby's also take a lazy method, which runs eagerly inside
+	// the new one; cameo's lazy methods do not run with a block given.
+	toEnum := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if len(args) > 0 {
+			if m, _ := args[0].AsSymbol(); m != "each" || len(args) > 1 {
+				return object.Value{}, ctx.Raise(object.NotImplementedErr, "to_enum of a lazy enumerator takes no method but each")
+			}
+		}
+		return enumerator(true, self, "each", nil, self.Enumerator().Each), nil
+	}
+	def(c, "to_enum", -1, toEnum)
+	def(c, "enum_for", -1, toEnum)
 	def(c, "lazy", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return self, nil
 	})

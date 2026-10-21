@@ -27,6 +27,10 @@ type Enumerator struct {
 	// Arith, when set, makes it an Enumerator::ArithmeticSequence, from
 	// Numeric#step or Range#step: equal to another with the same Arith.
 	Arith *ArithSeq
+	// Of, when set, is its class, Enumerator::Chain or
+	// Enumerator::Product, and Parts the enumerables it combines.
+	Of    *Class
+	Parts []Value
 }
 
 // ArithSeq is what an Enumerator::ArithmeticSequence counts: from Begin

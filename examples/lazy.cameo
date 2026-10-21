@@ -26,3 +26,11 @@ s = 0..Float::INFINITY
 p s.lazy.chunk_while { |a, b| b == a + 1 && b % 4 != 0 }.first(2), s.lazy.slice_when { |a, b| b % 3 == 0 }.first(2)
 p s.lazy.slice_before { |n| n % 5 == 0 }.first(2), s.lazy.slice_after(&:even?).first(3), (1..6).lazy.slice_before(3..4).to_a
 p [1, 2, 4, 9, 10, 11].slice_when { |i, j| i + 1 != j }.to_a, ["a", "#b", "c"].slice_before(/#/).to_a, [1, 2, 3].slice_after(&:odd?).to_a
+p [1, 2, 3, 4].chunk { |x| x.even? ? :_alone : nil }.to_a, [1, 2, 3].chunk { |x| x == 2 ? :_separator : true }.to_a, [1, 1, 2].chunk { |x| x }.to_a
+p [1, 2, 2, 3].lazy.chunk(&:even?).to_a, (1..).lazy.chunk { |x| x / 3 }.first(2), (1..6).lazy.find_all(&:even?).force, (1..3).lazy.to_enum.map { |x| x + 1 }.to_a
+
+# Chains and products of enumerables.
+c = [1, 2].chain(3..4, [5])
+p c, c.to_a, c.size, ([1].each + [2]).to_a, (1..).chain([1]).first(2), Enumerator::Chain.new(1..2, 3..4)
+e = Enumerator.product([1, 2], [:a, :b])
+p e, e.to_a, e.size, Enumerator.product.to_a, Enumerator.product(1.., [0]).first(2), Enumerator::Product.new([1, 2], [3]).to_a

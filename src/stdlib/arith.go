@@ -280,3 +280,102 @@ func arithInspect(ctx object.Context, e *object.Enumerator) (string, error) {
 	}
 	return out + ")", nil
 }
+
+// combined makes an Enumerator::Chain or Enumerator::Product of parts.
+func combined(of *object.Class, parts []object.Value) object.Value {
+	e := &object.Enumerator{Of: of, Parts: parts}
+	if of == object.ChainClass {
+		e.Each = func(ctx object.Context, yield func(object.Value) error) error {
+			for _, p := range parts {
+				src, err := eachOf(ctx, p)
+				if err != nil {
+					return err
+				}
+				if err := src(ctx, yield); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	} else {
+		// The first part is the outermost loop; each inner part is
+		// enumerated again for every element of the parts before it.
+		var from func(ctx object.Context, i int, row []object.Value, yield func(object.Value) error) error
+		from = func(ctx object.Context, i int, row []object.Value, yield func(object.Value) error) error {
+			if i == len(parts) {
+				return yield(object.NewList(append([]object.Value{}, row...)...))
+			}
+			src, err := eachOf(ctx, parts[i])
+			if err != nil {
+				return err
+			}
+			return src(ctx, func(v object.Value) error {
+				return from(ctx, i+1, append(row, v), yield)
+			})
+		}
+		e.Each = func(ctx object.Context, yield func(object.Value) error) error {
+			return from(ctx, 0, nil, yield)
+		}
+	}
+	e.Size = func(ctx object.Context) (object.Value, error) {
+		return combinedSize(ctx, of == object.ChainClass, parts)
+	}
+	return object.EnumeratorValue(e)
+}
+
+// combinedSize is the sum (chain) or the product of the parts' sizes:
+// nil when one is nil, a Float when one is.
+func combinedSize(ctx object.Context, sum bool, parts []object.Value) (object.Value, error) {
+	acc := object.Int(0)
+	if !sum {
+		acc = object.Int(1)
+	}
+	op := "+"
+	if !sum {
+		op = "*"
+	}
+	for _, p := range parts {
+		n, err := ctx.Call(p, "size")
+		if err != nil || n.IsNil() {
+			return object.Nil, err
+		}
+		if acc, err = ctx.Call(acc, op, n); err != nil {
+			return object.Value{}, err
+		}
+	}
+	return acc, nil
+}
+
+// combinedInspect is "#<Enumerator::Chain: [part, ...]>".
+func combinedInspect(ctx object.Context, e *object.Enumerator) (string, error) {
+	parts, err := ctx.Inspect(object.NewList(e.Parts...))
+	if err != nil {
+		return "", err
+	}
+	return "#<" + e.Of.QualifiedName() + ": " + parts + ">", nil
+}
+
+func installCombined() {
+	object.ChainClass.DefineSingleton("new", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return combined(object.ChainClass, append([]object.Value{}, args...)), nil
+	})
+	newProduct := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		p := combined(object.ProductClass, append([]object.Value{}, args...))
+		if block.IsZero() {
+			return p, nil
+		}
+		err := p.Enumerator().Each(ctx, func(v object.Value) error {
+			_, err := ctx.Yield(block, v)
+			return err
+		})
+		return object.Nil, err
+	}
+	object.ProductClass.DefineSingleton("new", -1, newProduct)
+	object.EnumeratorClass.DefineSingleton("product", -1, newProduct)
+	def(object.Enumerable, "chain", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return combined(object.ChainClass, append([]object.Value{self}, args...)), nil
+	})
+	def(object.EnumeratorClass, "+", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return combined(object.ChainClass, []object.Value{self, args[0]}), nil
+	})
+}

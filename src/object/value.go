@@ -189,6 +189,8 @@ func (v Value) Class() *Class {
 			return LazyClass
 		case e.Arith != nil:
 			return ArithSeqClass
+		case e.Of != nil:
+			return e.Of
 		}
 		return EnumeratorClass
 	case KindProc:
