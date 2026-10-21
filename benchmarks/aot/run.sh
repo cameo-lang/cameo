@@ -9,6 +9,8 @@
 # RUBIES lists the ruby commands to time (default: ruby); one that has
 # YJIT is timed with it too.
 set -euo pipefail
+# printf and awk read "0.031" with a decimal point only in the C locale.
+export LC_ALL=C
 cd "$(dirname "$0")/../.."
 
 go build -o bin/cameo ./src/cmd/cameo
