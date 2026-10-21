@@ -83,6 +83,7 @@ every call goes back to the interpreter.
    such as `send` and values read from JSON, so that one construct the
    compiler lacks leaves only itself to the interpreter.
 
-The examples with their expected output, the site's samples and the 852
-CRuby benchmark cases become the conformance suite. Each case runs on both
-the interpreter and the compiled build.
+[tests/conformance](../../tests/conformance) is the conformance suite: the
+examples, the site's samples and the 852 CRuby benchmark cases, each run on
+the interpreter and compiled, and the two held to the same output. Every
+step runs it before it lands.
