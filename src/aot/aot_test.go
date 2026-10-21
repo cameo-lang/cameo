@@ -38,7 +38,7 @@ puts twice(3)
 	if got := strings.Join(res.Compiled, " "); got != "tak twice" {
 		t.Errorf("compiled %q, want tak and twice", got)
 	}
-	for _, want := range []string{"func fn_tak(s *state, v_x int64, v_y int64, v_z int64) (int64, error)", "call_tak,", "func main()"} {
+	for _, want := range []string{"func fn_tak(s *state, v_x int64, v_y int64, v_z int64) (int64, error)", "func big_tak(s *state, v_x *big.Int, v_y *big.Int, v_z *big.Int) (*big.Int, error)", "big_1 = big.NewInt(1)", "call_tak,", "func main()"} {
 		if !strings.Contains(string(res.Go), want) {
 			t.Errorf("the Go lacks %q:\n%s", want, res.Go)
 		}

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"math/big"
 	"os"
 	"path/filepath"
 	"testing"
@@ -14,6 +15,7 @@ import (
 	"github.com/cameo-lang/cameo/src/aot"
 	"github.com/cameo-lang/cameo/src/cameo"
 	"github.com/cameo-lang/cameo/src/eval"
+	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/syntax"
 )
 
@@ -109,5 +111,44 @@ func TestCompiledLoopsStop(t *testing.T) {
 		}
 	case <-time.After(10 * time.Second):
 		t.Fatal("the compiled loop did not stop")
+	}
+}
+
+// TestCompiledMethodsGrowPast64Bits calls the compiled methods of arith
+// directly, as the interpreter does, with Integers that outgrow 64 bits
+// and with one beyond them, and holds that the Go answers rather than
+// leaving the call to the interpreter.
+func TestCompiledMethodsGrowPast64Bits(t *testing.T) {
+	prog, err := syntax.Parse(arith.File, arith.Script)
+	if err != nil {
+		t.Fatal(err)
+	}
+	methods := eval.CompiledFor(prog)
+	in := eval.New(&bytes.Buffer{}, &bytes.Buffer{})
+	call := func(name string, args ...object.Value) (object.Value, error) {
+		return methods[name](in, object.Nil, args, nil, object.Value{})
+	}
+	two64 := new(big.Int).Lsh(big.NewInt(1), 64)
+	v, err := call("power", object.Int(2), object.Int(64))
+	if err != nil || !object.Equal(v, object.BigInt(two64)) {
+		t.Errorf("power(2, 64) = %v, %v; want 2**64 from the Go", v, err)
+	}
+	v, err = call("floor_div", object.BigInt(two64), object.Int(1<<60))
+	if err != nil || !object.Equal(v, object.Int(16)) {
+		t.Errorf("floor_div(2**64, 2**60) = %v, %v; want 16 from the Go", v, err)
+	}
+	v, err = call("floor_mod", object.Int(-7), object.BigInt(two64))
+	if err != nil || !object.Equal(v, object.BigInt(new(big.Int).Sub(two64, big.NewInt(7)))) {
+		t.Errorf("floor_mod(-7, 2**64) = %v, %v; want 2**64 - 7 from the Go", v, err)
+	}
+	// A zero divisor and an argument that is no Integer stay with the
+	// interpreter, which raises.
+	for _, c := range []struct {
+		name string
+		args []object.Value
+	}{{"floor_div", []object.Value{object.BigInt(two64), object.Int(0)}}, {"floor_div", []object.Value{object.Int(1), object.Int(0)}}, {"power", []object.Value{object.Float(2.5), object.Int(2)}}} {
+		if _, err := call(c.name, c.args...); err != eval.ErrDeopt {
+			t.Errorf("%s(%v) returned %v, want ErrDeopt", c.name, c.args, err)
+		}
 	}
 }

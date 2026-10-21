@@ -6,9 +6,9 @@ methods that it can type without running the script. The host's own
 place of the methods' bodies. Nothing is loaded at run time, and the binary
 stays one static file on every platform Go supports.
 
-This is step one: methods over Integers. The interpreter still runs
-everything else in the script, and the rest of this note keeps the order the
-steps would land in.
+This is step one, methods over Integers, and the step that took them past
+64 bits. The interpreter still runs everything else in the script, and the
+rest of this note keeps the order the steps would land in.
 
 ## What step one compiles
 
@@ -63,12 +63,20 @@ function as its `Native` and keeps its body. A different script, or the
 same one edited, has another digest and runs on the interpreter alone.
 
 Integers are arbitrary precision, and compiled code runs on `int64`. Each
-`+ - *` checks for overflow, and division checks for zero. An argument that
-is not a 64-bit Integer, a result past 64 bits and a division by zero all
-return `eval.ErrDeopt`. The interpreter then runs the method's body from the
+`+ - *` checks for overflow, and division checks for zero. Every method has
+a twin on `*big.Int`, `big_fact` beside `fn_fact`: an overflow ends the
+`int64` run, and the twin runs the call from the start, with every call
+below it on `*big.Int` too, and never returns to the interpreter. An
+argument beyond 64 bits goes to the twin at once. Starting over repeats no
+effect, because a compiled method does nothing but compute a value; the
+twin allocates a `big.Int` per operation, so it is for the calls whose
+numbers are big, and `int64` for the rest.
+
+An argument that is not an Integer and a division by zero return
+`eval.ErrDeopt`. The interpreter then runs the method's body from the
 start, and the calls below it run on the interpreter too, since each of them
-would leave again. Starting over repeats no effect, because a compiled
-method does nothing but compute a value.
+would leave again. Division by zero raises, and the interpreter has the line
+to raise it at.
 
 A compiled method checks the run's stop every 4096 calls and loop passes,
 so `RunContext` stops a run inside compiled code.
@@ -79,9 +87,9 @@ so `RunContext` stops a run inside compiled code.
 the interpreter, compiled and on CRuby, one directory per step, with the
 run that landed the step in its README. On recursion over Integers the
 compiled methods run about sixty times faster than the interpreter, ten
-times faster than CRuby 4.0, and twice as fast as CRuby 4.0 with YJIT.
-Factorial gains nothing: its product outgrows 64 bits after 20 steps, so
-every call goes back to the interpreter.
+times faster than CRuby 4.0, and twice as fast as CRuby 4.0 with YJIT. On
+factorial, whose product outgrows 64 bits after 20 steps, the twin on
+`*big.Int` takes half the interpreter's time and a quarter of YJIT's.
 
 ## Next steps
 
@@ -90,10 +98,8 @@ every call goes back to the interpreter.
 2. Methods of classes with typed fields: a field read becomes a struct
    field, and a call on a receiver whose class is known becomes a direct
    call.
-3. Bignums in compiled code: a checked operation falls back to `big.Int`
-   in place, and stops returning to the interpreter.
-4. Blocks as Go closures, which brings `each`, `map` and `times`.
-5. Calls from compiled code into the interpreter for what stays dynamic,
+3. Blocks as Go closures, which brings `each`, `map` and `times`.
+4. Calls from compiled code into the interpreter for what stays dynamic,
    such as `send` and values read from JSON, so that one construct the
    compiler lacks leaves only itself to the interpreter.
 

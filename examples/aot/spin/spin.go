@@ -5,6 +5,7 @@ package spin
 import (
 	"github.com/cameo-lang/cameo/src/eval"
 	"github.com/cameo-lang/cameo/src/object"
+	"math/big"
 )
 
 // File names the script in its error messages.
@@ -47,6 +48,13 @@ func (s *state) stopped() bool {
 	return s.calls&4095 == 0 && eval.Stopped(s.ctx)
 }
 
+// The Integer literals of the methods on *big.Int, which they share and
+// never change.
+var (
+	big_0 = big.NewInt(0)
+	big_1 = big.NewInt(1)
+)
+
 func fn_spin(s *state, v_n int64) (int64, error) {
 	if s.stopped() {
 		return 0, eval.ErrStopped
@@ -71,21 +79,51 @@ func fn_spin(s *state, v_n int64) (int64, error) {
 	return v_n, nil
 }
 
-// call_spin is spin as a method: it runs with 64-bit Integer arguments and
-// no block, and leaves every other call to the interpreter.
+func big_spin(s *state, v_n *big.Int) (*big.Int, error) {
+	if s.stopped() {
+		return nil, eval.ErrStopped
+	}
+	for {
+		if s.stopped() {
+			return nil, eval.ErrStopped
+		}
+		if !(v_n.Cmp(big_0) > 0) {
+			break
+		}
+		t1 := new(big.Int).Add(v_n, big_1)
+		t2 := new(big.Int).Sub(t1, big_1)
+		v_n = t2
+	}
+	return v_n, nil
+}
+
+// call_spin is spin as a method: it runs with Integer arguments and no
+// block, on int64 while the Integers fit and on *big.Int once one does not,
+// and leaves every other call to the interpreter.
 func call_spin(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	a0, ok := args[0].AsInt()
+	s := &state{ctx: ctx}
+	a0, ok0 := args[0].AsInt()
+	if ok0 {
+		r, err := fn_spin(s, a0)
+		if err != eval.ErrDeopt {
+			if err != nil {
+				return object.Value{}, err
+			}
+			return object.Int(r), nil
+		}
+	}
+	b0, ok := args[0].AsBigInt()
 	if !ok {
 		return object.Value{}, eval.ErrDeopt
 	}
-	r, err := fn_spin(&state{ctx: ctx}, a0)
+	r, err := big_spin(s, b0)
 	if err != nil {
 		return object.Value{}, err
 	}
-	return object.Int(r), nil
+	return object.BigInt(r), nil
 }
 
 func add(a, b int64) (int64, error) {
