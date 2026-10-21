@@ -1,0 +1,88 @@
+# critic project settings for cameo — see apps/critic/doc/project-config.md
+# in ark. One project: the repository is one component.
+#
+# Patterns follow git's glob matching rules:
+#   - "*" matches anything except "/"
+#   - "**" matches anything including "/"
+#   - "?" matches a single character except "/"
+#   - A leading "/" anchors the match to the repository root
+#   - A pattern without "/" matches the basename at any depth
+# See https://git-scm.com/docs/gitignore#_pattern_format
+#
+# Categories are matched in order and the first match wins, so the narrow
+# ones come before the broad ones: a test under src/aot is a test, and the
+# Go that cameo build wrote into examples/aot is generated, not an example.
+
+project:
+  name: cameo
+  description: >
+    A small language with Ruby's syntax, run by an interpreter written in Go,
+    with a compiler of its scripts' methods to Go.
+
+diffbase: main
+
+categories:
+  - name: Tests
+    patterns:
+      - "*_test.go"
+      - "/tests/**/*"
+      - "examples/aot/*.expected"
+  - name: Generated
+    patterns:
+      - "examples/aot/*/*.go"
+  - name: Compiler
+    patterns:
+      - "/src/aot/**/*"
+  - name: Interpreter
+    patterns:
+      - "/src/eval/**/*"
+      - "/src/object/**/*"
+      - "/src/syntax/**/*"
+  - name: Standard library
+    patterns:
+      - "/src/stdlib/**/*"
+  - name: Host API & command
+    patterns:
+      - "/src/cameo/**/*"
+      - "/src/cmd/**/*"
+      - "/src/protogen/**/*"
+      - "/src/buildinfo/**/*"
+  - name: Source
+    patterns:
+      - "/src/**/*"
+  - name: Examples
+    patterns:
+      - "/examples/**/*"
+  - name: Benchmarks
+    patterns:
+      - "/benchmarks/**/*"
+  - name: Spec corpus
+    patterns:
+      - "/specs/**/*"
+      - "/ruby/**/*"
+  - name: Site
+    patterns:
+      - "/doc/gh_pages/**/*"
+      - "/doc/pages_redirect/**/*"
+  - name: Documentation
+    patterns:
+      - "/doc/**/*"
+      - "/README.md"
+      - "/CLAUDE.md"
+  - name: Agent guidance & skills
+    patterns:
+      - "/agents/**/*"
+      - "/.claude/**/*"
+  - name: Manifest & build
+    patterns:
+      - "/Makefile"
+      - "/go.mod"
+      - "/go.sum"
+      - "/LICENSE"
+      - "/project.critic.yaml"
+      - "/.github/**/*"
+      - "/.gitignore"
+
+# The editor a file opens in from the local review.
+editor:
+  url: "goland://open?file={file}&line={line}"
