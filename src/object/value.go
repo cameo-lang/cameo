@@ -54,6 +54,8 @@ const (
 	// KindProc is the evaluator's: a block or lambda. The object is opaque
 	// here; see Opaque.
 	KindProc
+	// KindRandom is a Random: a handle on a generator; see Random.
+	KindRandom
 )
 
 func (k Kind) String() string {
@@ -102,6 +104,8 @@ func (k Kind) String() string {
 		return "ascii"
 	case KindProc:
 		return "proc"
+	case KindRandom:
+		return "random"
 	}
 	return "kind(" + strconv.Itoa(int(k)) + ")"
 }
@@ -195,6 +199,8 @@ func (v Value) Class() *Class {
 		return EnumeratorClass
 	case KindProc:
 		return ProcClass
+	case KindRandom:
+		return RandomClass
 	}
 	return NilClass
 }
