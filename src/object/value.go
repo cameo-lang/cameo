@@ -548,8 +548,8 @@ type Exception struct {
 	// Attrs holds what an exception of Ruby's core carries besides its
 	// message, by the name of the method that reads it: a NameError's name
 	// and receiver, a NoMethodError's args, a KeyError's key and receiver,
-	// a SystemExit's status. It is nil when there is none, and never
-	// changed once the exception is made.
+	// a SystemExit's status, an UncaughtThrowError's tag and value. It is
+	// nil when there is none, and never changed once the exception is made.
 	Attrs map[string]Value
 }
 

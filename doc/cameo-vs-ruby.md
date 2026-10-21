@@ -57,8 +57,8 @@ mspec's own `before` blocks.
   regular expressions, `%w[]` and `%i[]`.
 - **Control flow**: `if`/`unless`/`elsif`, modifiers, `case`/`when`,
   pattern matching with `case`/`in`, `while`/`until` and `begin … end
-  while`, `loop` and `break` with a value, `next`, `redo`, `retry`, safe
-  navigation `&.`, `BEGIN`.
+  while`, `loop` and `break` with a value, `next`, `redo`, `retry`, `catch` and
+  `throw`, safe navigation `&.`, `BEGIN`.
 - **Methods**: positional, optional, `*rest`, keyword, `**kwrest` and
   `&block` parameters; endless `def`; argument forwarding (`...`, `*`, `**`,
   `&`); `yield` and `block_given?`; a second `def` of a name replaces the
@@ -175,6 +175,9 @@ q = p.with(x: 3)            # a copy; p is unchanged
 - Hash and array literals, and errors, print as CRuby 3.4 prints them:
   `{x: 1}`, not 3.3's `{:x=>1}`.
 - A bare `Object` prints as `#<Object>`, without an address.
+- A `throw` ends the `catch` whose tag is equal to its own, where Ruby
+  wants the same object: `catch("a") { throw "a" }` returns nil. The
+  Object a `catch` without a tag makes is still a tag of its own.
 - `rand` and `srand` use Go's generator, so a seeded sequence is not
   Ruby's.
 - `Time` is immutable: `utc` and `localtime` return a new time, and
@@ -243,7 +246,7 @@ These are absent, and a script that uses one fails when it reaches it:
   `gets`, `STDIN`, `STDOUT`, `STDERR`, `$stdout`.
 - **No threads or processes**: `Thread`, `Fiber`, `Mutex`, `sleep`,
   `system`, `exec`, `spawn`; cameo has `async` and `await` instead.
-- **Not there yet**: `at_exit`, `exit!`, `catch` and `throw`,
+- **Not there yet**: `at_exit`, `exit!`,
   `printf` (`format` exists), `__method__`, `__LINE__`, `Enumerator.new`,
   `Integer()` with a base, `Random` as a class (`rand` and `srand` exist),
   and `autoload`.

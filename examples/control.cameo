@@ -115,3 +115,39 @@ while j < 2
   redo if seen.size == 1
 end
 p seen
+
+# catch returns what its block returns, or what a throw of its tag passes;
+# a throw passes rescue clauses by and runs ensure clauses.
+p catch(:x) { throw :x, 5 }
+p catch { |t| throw t }
+p catch(:x) { 10 }
+r = catch(:outer) do
+  catch(:inner) do
+    begin
+      throw :outer, :done
+    rescue Exception
+      p :not_rescued
+    ensure
+      p :ensured
+    end
+  end
+  p :skipped
+end
+p r
+p(catch { |a| catch { |b| throw a, 1 }; 2 })
+def deep(n)
+  throw :found, n if n == 3
+  deep(n + 1)
+end
+p catch(:found) { deep(0) }
+begin
+  throw :abc
+rescue UncaughtThrowError => e
+  p e, e.tag, e.value, e.message
+end
+begin
+  throw :abc, 4
+rescue ArgumentError => e
+  p e.class, e.value
+end
+p [1, 2, 3].each { |v| catch(:skip) { throw :skip if v == 2; p v } }

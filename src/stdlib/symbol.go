@@ -315,6 +315,9 @@ func installExceptionAttrs() {
 		v, ok := exc(self).Attr("status")
 		return object.Bool(!ok || v.Kind() == object.KindInt && v.Int() == 0), nil
 	})
+	// throw makes an UncaughtThrowError with its tag and value.
+	reader(object.UncaughtThrowError, "tag", object.Nil)
+	reader(object.UncaughtThrowError, "value", object.Nil)
 }
 
 // exitStatus reads the status exit and SystemExit.new take: an Integer, or

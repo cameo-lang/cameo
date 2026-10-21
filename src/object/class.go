@@ -360,8 +360,9 @@ var (
 	LoadError   = NewClass("LoadError", ScriptError)
 	// NotImplementedError is a ScriptError, as in Ruby, so a bare rescue
 	// does not catch it either.
-	NotImplementedErr  = NewClass("NotImplementedError", ScriptError)
-	SyntaxError        = NewClass("SyntaxError", ScriptError)
+	NotImplementedErr = NewClass("NotImplementedError", ScriptError)
+	SyntaxError       = NewClass("SyntaxError", ScriptError)
+	// UncaughtThrowError is what throw raises without a catch for its tag.
 	UncaughtThrowError = NewClass("UncaughtThrowError", ArgumentError)
 	// SystemExit is what exit and abort raise; the command ends with its
 	// status when nothing rescues it.
