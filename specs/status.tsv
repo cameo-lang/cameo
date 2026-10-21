@@ -825,10 +825,10 @@ core/exception/hierarchy_spec.rb	Exception has the right class hierarchy	pass
 core/exception/inspect_spec.rb	*	expected	attr-accessor	attr_reader is not supported: a field declaration defines its reader, and there are no setters
 core/exception/interrupt_spec.rb	*	expected	instance-variables	@original_sigint_proc = …: cameo has no instance variables; initialize sets a field with self.original_sigint_proc = …
 core/exception/io_error_spec.rb	IO::EAGAINWaitReadable combines Errno::EAGAIN and IO::WaitReadable	expected	io	uninitialized constant IO (NameError)
-core/exception/io_error_spec.rb	IO::EAGAINWaitReadable is the same as IO::EWOULDBLOCKWaitReadable if Errno::EAGAIN is the same as Errno::EWOULDBLOCK	expected	io	uninitialized constant Errno (NameError)
+core/exception/io_error_spec.rb	IO::EAGAINWaitReadable is the same as IO::EWOULDBLOCKWaitReadable if Errno::EAGAIN is the same as Errno::EWOULDBLOCK	expected	io	uninitialized constant Errno::EAGAIN (NameError)
 core/exception/io_error_spec.rb	IO::EWOULDBLOCKWaitReadable combines Errno::EWOULDBLOCK and IO::WaitReadable	expected	io	uninitialized constant IO (NameError)
 core/exception/io_error_spec.rb	IO::EAGAINWaitWritable combines Errno::EAGAIN and IO::WaitWritable	expected	io	uninitialized constant IO (NameError)
-core/exception/io_error_spec.rb	IO::EAGAINWaitWritable is the same as IO::EWOULDBLOCKWaitWritable if Errno::EAGAIN is the same as Errno::EWOULDBLOCK	expected	io	uninitialized constant Errno (NameError)
+core/exception/io_error_spec.rb	IO::EAGAINWaitWritable is the same as IO::EWOULDBLOCKWaitWritable if Errno::EAGAIN is the same as Errno::EWOULDBLOCK	expected	io	uninitialized constant Errno::EAGAIN (NameError)
 core/exception/io_error_spec.rb	IO::EWOULDBLOCKWaitWritable combines Errno::EWOULDBLOCK and IO::WaitWritable	expected	io	uninitialized constant IO (NameError)
 core/exception/key_error_spec.rb	KeyError accepts :receiver and :key options	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
 core/exception/load_error_spec.rb	*	expected	instance-variables	@le = …: cameo has no instance variables; initialize sets a field with self.le = …
@@ -2468,9 +2468,9 @@ core/proc/syntax_tree_spec.rb	*	expected	mutation	….keep_script_lines = …: t
 core/proc/to_proc_spec.rb	Proc#to_proc returns self	expected	literal-only	undefined method 'new' for class Proc: use a literal (NoMethodError)
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with Proc.new returns a description including file and line number	expected	literal-only	undefined method 'new' for class Proc: use a literal (NoMethodError)
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with Proc.new has a binary encoding	expected	literal-only	undefined method 'new' for class Proc: use a literal (NoMethodError)
-core/proc/to_s_spec.rb	Proc#to_s for a proc created with lambda returns a description including '(lambda)' and including file and line number	bug		Expected "#<Proc:/var/folders/_j/3cwlydtn7ks30gp_gn6xrb2m0000gn/T/cameo-spec20261021-46947-uex9tl/to_s_spec.rb:263 (lambda)>" =~ /^#<Proc:([^ ]*?) \/var\/folders\/_j\/3cwlydtn7ks30gp_gn6xrb2m0000gn\/T\/cameo\-spec20261021\-46947\-uex9tl\/to
+core/proc/to_s_spec.rb	Proc#to_s for a proc created with lambda returns a description including '(lambda)' and including file and line number	bug		Expected "#<Proc:/var/folders/_j/3cwlydtn7ks30gp_gn6xrb2m0000gn/T/cameo-spec20261021-52290-snu4u4/to_s_spec.rb:263 (lambda)>" =~ /^#<Proc:([^ ]*?) \/var\/folders\/_j\/3cwlydtn7ks30gp_gn6xrb2m0000gn\/T\/cameo\-spec20261021\-52290\-snu4u4\/to
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with lambda has a binary encoding	pass		
-core/proc/to_s_spec.rb	Proc#to_s for a proc created with proc returns a description including file and line number	bug		Expected "#<Proc:/var/folders/_j/3cwlydtn7ks30gp_gn6xrb2m0000gn/T/cameo-spec20261021-46947-uex9tl/to_s_spec.rb:273>" =~ /^#<Proc:([^ ]*?) \/var\/folders\/_j\/3cwlydtn7ks30gp_gn6xrb2m0000gn\/T\/cameo\-spec20261021\-46947\-uex9tl\/to_s_spec\.
+core/proc/to_s_spec.rb	Proc#to_s for a proc created with proc returns a description including file and line number	bug		Expected "#<Proc:/var/folders/_j/3cwlydtn7ks30gp_gn6xrb2m0000gn/T/cameo-spec20261021-52290-snu4u4/to_s_spec.rb:273>" =~ /^#<Proc:([^ ]*?) \/var\/folders\/_j\/3cwlydtn7ks30gp_gn6xrb2m0000gn\/T\/cameo\-spec20261021\-52290\-snu4u4\/to_s_spec\.
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with proc has a binary encoding	pass		
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with UnboundMethod#to_proc returns a description including '(lambda)' and optionally including file and line number	expected	metaprogramming	undefined method 'method' for main (NoMethodError)
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with UnboundMethod#to_proc has a binary encoding	expected	metaprogramming	undefined method 'method' for main (NoMethodError)
@@ -2597,41 +2597,41 @@ core/queue/push_spec.rb	Queue#push is an alias of Queue#<<	expected	threads	unin
 core/queue/shift_spec.rb	Queue#shift is an alias of Queue#pop	expected	threads	uninitialized constant Queue (NameError)
 core/queue/size_spec.rb	*	expected	instance-variables	@object: cameo has no instance variables; a field is read with its reader, object or self.object
 core/random/bytes_spec.rb	*	expected	instance-variables	@object: cameo has no instance variables; a field is read with its reader, object or self.object
-core/random/default_spec.rb	Random::DEFAULT is no longer defined	bug		uninitialized constant Random (NameError)
-core/random/equal_value_spec.rb	Random#== returns true if the two objects have the same state	bug		uninitialized constant Random (NameError)
-core/random/equal_value_spec.rb	Random#== returns false if the two objects have different state	bug		uninitialized constant Random (NameError)
-core/random/equal_value_spec.rb	Random#== returns true if the two objects have the same seed	bug		uninitialized constant Random (NameError)
-core/random/equal_value_spec.rb	Random#== returns false if the two objects have a different seed	bug		uninitialized constant Random (NameError)
-core/random/equal_value_spec.rb	Random#== returns false if the other object is not a Random	bug		uninitialized constant Random (NameError)
-core/random/new_seed_spec.rb	Random.new_seed returns an Integer	bug		uninitialized constant Random (NameError)
-core/random/new_seed_spec.rb	Random.new_seed returns an arbitrary seed value each time	bug		uninitialized constant Random (NameError)
-core/random/new_seed_spec.rb	Random.new_seed is not affected by Kernel#srand	bug		uninitialized constant Random (NameError)
-core/random/new_spec.rb	Random.new returns a new instance of Random	bug		uninitialized constant Random (NameError)
-core/random/new_spec.rb	Random.new uses a random seed value if none is supplied	bug		uninitialized constant Random (NameError)
-core/random/new_spec.rb	Random.new returns Random instances initialized with different seeds	bug		uninitialized constant Random (NameError)
-core/random/new_spec.rb	Random.new accepts an Integer seed value as an argument	bug		uninitialized constant Random (NameError)
-core/random/new_spec.rb	Random.new accepts (and truncates) a Float seed value as an argument	bug		uninitialized constant Random (NameError)
-core/random/new_spec.rb	Random.new accepts (and converts to Integer) a Rational seed value as an argument	bug		uninitialized constant Random (NameError)
-core/random/new_spec.rb	Random.new accepts (and converts to Integer) a Complex (without imaginary part) seed value as an argument	bug		uninitialized constant Random (NameError)
-core/random/new_spec.rb	Random.new raises a RangeError if passed a Complex (with imaginary part) seed value as an argument	bug		uninitialized constant Random (NameError)
+core/random/default_spec.rb	Random::DEFAULT is no longer defined	bug		undefined method 'const_defined?' for class Random (NoMethodError)
+core/random/equal_value_spec.rb	Random#== returns true if the two objects have the same state	bug		undefined method 'state' for an instance of Random (NoMethodError)
+core/random/equal_value_spec.rb	Random#== returns false if the two objects have different state	bug		undefined method 'state' for an instance of Random (NoMethodError)
+core/random/equal_value_spec.rb	Random#== returns true if the two objects have the same seed	pass		
+core/random/equal_value_spec.rb	Random#== returns false if the two objects have a different seed	pass		
+core/random/equal_value_spec.rb	Random#== returns false if the other object is not a Random	pass		
+core/random/new_seed_spec.rb	Random.new_seed returns an Integer	pass		
+core/random/new_seed_spec.rb	Random.new_seed returns an arbitrary seed value each time	pass		
+core/random/new_seed_spec.rb	Random.new_seed is not affected by Kernel#srand	pass		
+core/random/new_spec.rb	Random.new returns a new instance of Random	pass		
+core/random/new_spec.rb	Random.new uses a random seed value if none is supplied	pass		
+core/random/new_spec.rb	Random.new returns Random instances initialized with different seeds	pass		
+core/random/new_spec.rb	Random.new accepts an Integer seed value as an argument	pass		
+core/random/new_spec.rb	Random.new accepts (and truncates) a Float seed value as an argument	pass		
+core/random/new_spec.rb	Random.new accepts (and converts to Integer) a Rational seed value as an argument	expected	rational-complex	undefined method 'Rational' for main (NoMethodError)
+core/random/new_spec.rb	Random.new accepts (and converts to Integer) a Complex (without imaginary part) seed value as an argument	expected	rational-complex	undefined method 'Complex' for main (NoMethodError)
+core/random/new_spec.rb	Random.new raises a RangeError if passed a Complex (with imaginary part) seed value as an argument	expected	rational-complex	undefined method 'Complex' for main (NoMethodError)
 core/random/rand_spec.rb	*	expected	instance-variables	@object: cameo has no instance variables; a field is read with its reader, object or self.object
 core/random/random_number_spec.rb	*	expected	instance-variables	@object: cameo has no instance variables; a field is read with its reader, object or self.object
-core/random/seed_spec.rb	Random#seed returns an Integer	bug		uninitialized constant Random (NameError)
-core/random/seed_spec.rb	Random#seed returns an arbitrary seed if the constructor was called without arguments	bug		uninitialized constant Random (NameError)
-core/random/seed_spec.rb	Random#seed returns the same generated seed when repeatedly called on the same object	bug		uninitialized constant Random (NameError)
-core/random/seed_spec.rb	Random#seed returns the seed given in the constructor	bug		uninitialized constant Random (NameError)
+core/random/seed_spec.rb	Random#seed returns an Integer	pass		
+core/random/seed_spec.rb	Random#seed returns an arbitrary seed if the constructor was called without arguments	pass		
+core/random/seed_spec.rb	Random#seed returns the same generated seed when repeatedly called on the same object	pass		
+core/random/seed_spec.rb	Random#seed returns the seed given in the constructor	pass		
 core/random/seed_spec.rb	Random#seed returns the given seed coerced with #to_int	harness	fails under Ruby too	undefined method 'mock_numeric' for main (NoMethodError)
-core/random/srand_spec.rb	Random.srand returns an arbitrary seed if .srand wasn't called previously with an argument and no argument is supplied this time	bug		uninitialized constant Random (NameError)
-core/random/srand_spec.rb	Random.srand returns the previous argument to .srand if one was given and no argument is supplied	bug		uninitialized constant Random (NameError)
-core/random/srand_spec.rb	Random.srand returns an arbitrary seed if .srand wasn't called previously with an argument and 0 is supplied this time	bug		uninitialized constant Random (NameError)
-core/random/srand_spec.rb	Random.srand returns the previous argument to .srand if one was given and 0 is supplied	bug		uninitialized constant Random (NameError)
-core/random/srand_spec.rb	Random.srand seeds Random.rand such that its return value is deterministic	bug		uninitialized constant Random (NameError)
-core/random/srand_spec.rb	Random.srand seeds Kernel.rand such that its return value is deterministic	bug		uninitialized constant Random (NameError)
-core/random/urandom_spec.rb	Random.urandom returns a String	bug		uninitialized constant Random (NameError)
-core/random/urandom_spec.rb	Random.urandom returns a String of the length given as argument	bug		uninitialized constant Random (NameError)
-core/random/urandom_spec.rb	Random.urandom raises an ArgumentError on a negative size	bug		uninitialized constant Random (NameError)
-core/random/urandom_spec.rb	Random.urandom returns a binary String	bug		uninitialized constant Random (NameError)
-core/random/urandom_spec.rb	Random.urandom returns a random binary String	bug		uninitialized constant Random (NameError)
+core/random/srand_spec.rb	Random.srand returns an arbitrary seed if .srand wasn't called previously with an argument and no argument is supplied this time	pass		
+core/random/srand_spec.rb	Random.srand returns the previous argument to .srand if one was given and no argument is supplied	pass		
+core/random/srand_spec.rb	Random.srand returns an arbitrary seed if .srand wasn't called previously with an argument and 0 is supplied this time	pass		
+core/random/srand_spec.rb	Random.srand returns the previous argument to .srand if one was given and 0 is supplied	pass		
+core/random/srand_spec.rb	Random.srand seeds Random.rand such that its return value is deterministic	pass		
+core/random/srand_spec.rb	Random.srand seeds Kernel.rand such that its return value is deterministic	pass		
+core/random/urandom_spec.rb	Random.urandom returns a String	pass		
+core/random/urandom_spec.rb	Random.urandom returns a String of the length given as argument	pass		
+core/random/urandom_spec.rb	Random.urandom raises an ArgumentError on a negative size	pass		
+core/random/urandom_spec.rb	Random.urandom returns a binary String	pass		
+core/random/urandom_spec.rb	Random.urandom returns a random binary String	pass		
 core/range/begin_spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
 core/range/bsearch_spec.rb	*	expected	instance-variables	@object: cameo has no instance variables; a field is read with its reader, object or self.object
 core/range/case_compare_spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
