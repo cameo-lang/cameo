@@ -22,7 +22,8 @@ const usage = `usage: cameo <script.cameo>              run the script
        cameo build <script.cameo> <dir> [package]
                                          compile the script's top-level methods that it can to Go: into
                                          dir/main.go, a program that runs the script, or dir/<package>.go,
-                                         a package a host imports`
+                                         a package a host imports
+       cameo run <script.cameo>          compile the script as cameo build does, build the program with go, and run it`
 
 func main() {
 	tuneGC()
@@ -81,7 +82,9 @@ func run(args []string) int {
 			return 1
 		}
 		return 0
-	case len(args) == 1 && args[0] != "check" && args[0] != "proto" && args[0] != "build":
+	case len(args) == 2 && args[0] == "run":
+		return runCompiled(args[1], os.Stdout, os.Stderr)
+	case len(args) == 1 && args[0] != "check" && args[0] != "proto" && args[0] != "build" && args[0] != "run":
 		if err := cameo.RunFile(args[0], os.Stdout, os.Stderr); err != nil {
 			var errs syntax.ErrorList
 			if errors.As(err, &errs) {

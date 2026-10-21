@@ -63,6 +63,7 @@ cameo check script.cameo      # parse and check only, report every error with it
 cameo proto script.cameo      # the .proto files of the script's classes, one per package
 cameo proto script.cameo out/ # the same, written into out/
 cameo build script.cameo out/ # compile the top-level Integer methods to Go: out/main.go runs the script
+cameo run script.cameo        # the same, built with go and run; needs Go and the cameo source cameo was built from
 ```
 
 `cameo build` is the first step of ahead-of-time compilation; see

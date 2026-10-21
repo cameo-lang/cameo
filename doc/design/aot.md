@@ -40,6 +40,20 @@ The second rule is what makes direct calls safe. A compiled `fib` calls
 definition. The classes are closed, so a script cannot redefine `Integer#+`,
 and the compiler can call Integer's operators directly.
 
+## cameo run
+
+`cameo run script.cameo` writes what `cameo build` writes, without its
+report, into a temporary module, builds it with the go command and runs the
+program, which exits as the script does. The module requires cameo through
+a `replace` to the source the cameo binary was built from, found through
+the path Go recorded for it: a checkout for `go build`, the module cache
+for `go install`. The generated code fits only the version of cameo that
+wrote it, so no other source will do; a binary built with `-trimpath`
+records no such path, and `cameo run` refuses to run. The module takes
+cameo's `go.sum`, so the build downloads nothing that building cameo did
+not, and Go's build cache makes a second run of the same script cost a
+link.
+
 ## How a compiled method runs
 
 The generated package registers its methods under the digest of the program
