@@ -43,3 +43,34 @@ true
 false
 true
 false
+2
+2
+-3
+5.5
+767573.18758
+0.1234567890123457
+42.0
+300000000000000000000
+20
+-20
+invalid rounding mode: sideways
+[1, 1.5]
+[-4, 1.0]
+7602092113
+divided by 0
+NaN
+true
+2.5937424601000023
+true
+15
+53
+1024
+-307
+2
+[2.5, 1.0]
+[2.0, 1.0]
+true
+false
+true
+comparison of Integer with String failed
+can't unfreeze Integer

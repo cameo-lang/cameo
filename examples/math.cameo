@@ -32,3 +32,42 @@ p 1.0.next_float - 1.0 == Float::EPSILON, 1.0.prev_float < 1.0, (-0.0).arg, 2.0.
 
 # Ranges that share a value.
 p (0..2).overlap?(2..4), (0...2).overlap?(2..4), (..0).overlap?(0..), ("a".."c").overlap?("d".."f")
+
+# Float#round to a number of digits, with a half: mode, checked against
+# the float itself so that the error in x * 10**n does not move it.
+p 2.5.round(half: :even), 2.5.round(half: :down), -2.5.round(half: :up), 5.55.round(1, half: :down)
+p 767573.187585.round(5, half: :even), 0.12345678901234567.round(16), 42.0.round(308)
+p 2.5e20.round(-20), 25.round(-1, half: :even), -25.round(-1, half: :down)
+begin
+  2.5.round(half: :sideways)
+rescue ArgumentError => e
+  puts e.message
+end
+
+# Float#divmod returns an Integer quotient; a zero divisor raises.
+p 3.5.divmod(2), -7.0.divmod(2), 0.59.divmod(7.761021455128987e-11).first
+begin
+  1.0 % 0
+rescue ZeroDivisionError => e
+  puts e.message
+end
+begin
+  Float::NAN.divmod(1)
+rescue FloatDomainError => e
+  puts e.message
+end
+
+# Float powers are correctly rounded, and -0.0 is eql? to 0.0.
+p 10.0**308 == (10**308).to_f, 1.1**10, -0.0.eql?(0.0)
+p Float::DIG, Float::MANT_DIG, Float::MAX_EXP, Float::MIN_10_EXP, Float::RADIX
+p 1.0.coerce("2.5"), 1.coerce("2"), 0b1010.allbits?(0b1000), 0b1010.anybits?(0b0101), 0b1010.nobits?(0b0101)
+begin
+  1.upto("A") { |i| p i }
+rescue ArgumentError => e
+  puts e.message
+end
+begin
+  1.clone(freeze: false)
+rescue ArgumentError => e
+  puts e.message
+end

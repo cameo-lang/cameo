@@ -83,7 +83,34 @@ func installObject() {
 	}
 	def(o, "itself", 0, identity)
 	def(o, "dup", 0, identity)
-	def(o, "clone", 0, identity)
+	// clone(freeze: false) of a value Ruby always freezes, a number, a
+	// Symbol, nil or a boolean, fails as in Ruby; of any other value it
+	// returns the value, which stays frozen.
+	def(o, "clone", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if kw == nil || kw.Len() == 0 {
+			return self, nil
+		}
+		for _, k := range kw.Keys() {
+			if k.Kind() != object.KindSymbol || k.Str() != "freeze" {
+				s, err := ctx.Inspect(k)
+				if err != nil {
+					return object.Value{}, err
+				}
+				return object.Value{}, ctx.Raise(object.ArgumentError, "unknown keyword: %s", s)
+			}
+		}
+		v, _ := kw.Get(object.Symbol("freeze"))
+		if v.Kind() != object.KindNil && v.Kind() != object.KindBool {
+			return object.Value{}, ctx.Raise(object.ArgumentError, "unexpected value for freeze: %s", v.Class().Name)
+		}
+		if b, ok := v.AsBool(); ok && !b {
+			switch self.Kind() {
+			case object.KindInt, object.KindBig, object.KindFloat, object.KindSymbol, object.KindNil, object.KindBool:
+				return object.Value{}, ctx.Raise(object.ArgumentError, "can't unfreeze %s", self.Class().Name)
+			}
+		}
+		return self, nil
+	})
 	// then yields self; without a block it is an enumerator of self.
 	then := func(name string) {
 		def(o, name, 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {

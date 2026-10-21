@@ -152,22 +152,7 @@ func installKernel() {
 		return object.Value{}, ctx.Raise(object.TypeError, "can't convert %s into Integer", kindName(args[0]))
 	})
 	def(o, "Float", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		switch args[0].Kind() {
-		case object.KindInt, object.KindBig:
-			f, _ := args[0].AsNumber()
-			return object.Float(f), nil
-		case object.KindFloat:
-			v := args[0].Float()
-			return object.Float(v), nil
-		case object.KindString, object.KindBytes, object.KindASCII:
-			v := args[0].Str()
-			f, ok := parseFloat(strings.TrimSpace(string(v)))
-			if !ok {
-				return object.Value{}, ctx.Raise(object.ArgumentError, "invalid value for Float(): %s", object.QuoteString(string(v)))
-			}
-			return object.Float(f), nil
-		}
-		return object.Value{}, ctx.Raise(object.TypeError, "can't convert %s into Float", kindName(args[0]))
+		return toFloat(ctx, args[0])
 	})
 	def(o, "String", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		s, err := ctx.ToS(args[0])
@@ -323,4 +308,24 @@ func randBelow(r *rand.Rand, n *big.Int) *big.Int {
 			return v
 		}
 	}
+}
+
+// toFloat is Kernel#Float of one value: a number as a float, or a string
+// parsed as one.
+func toFloat(ctx object.Context, v object.Value) (object.Value, error) {
+	switch v.Kind() {
+	case object.KindInt, object.KindBig:
+		f, _ := v.AsNumber()
+		return object.Float(f), nil
+	case object.KindFloat:
+		return v, nil
+	case object.KindString, object.KindBytes, object.KindASCII:
+		s := v.Str()
+		f, ok := parseFloat(strings.TrimSpace(string(s)))
+		if !ok {
+			return object.Value{}, ctx.Raise(object.ArgumentError, "invalid value for Float(): %s", object.QuoteString(string(s)))
+		}
+		return object.Float(f), nil
+	}
+	return object.Value{}, ctx.Raise(object.TypeError, "can't convert %s into Float", kindName(v))
 }
