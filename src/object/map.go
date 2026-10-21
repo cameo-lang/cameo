@@ -340,8 +340,16 @@ func writeKey(b *strings.Builder, v Value) {
 		e := v.Exception()
 		b.WriteString("e")
 		b.WriteString(e.Cls.QualifiedName())
+		b.WriteByte('#')
+		b.WriteString(e.Cls.Digest)
+		b.WriteByte(':')
+		b.WriteString(strconv.Itoa(len(e.Message)))
 		b.WriteByte(':')
 		b.WriteString(e.Message)
+		for _, f := range e.Fields {
+			b.WriteByte(',')
+			writeKey(b, f)
+		}
 	case KindEnumerator:
 		if a := v.Enumerator().Arith; a != nil {
 			// An arithmetic sequence is its numbers, however it was made.
