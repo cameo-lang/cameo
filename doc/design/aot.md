@@ -6,9 +6,10 @@ methods that it can type without running the script. The host's own
 place of the methods' bodies. Nothing is loaded at run time, and the binary
 stays one static file on every platform Go supports.
 
-This is step one, methods over Integers, and the step that took them past
-64 bits. The interpreter still runs everything else in the script, and the
-rest of this note keeps the order the steps would land in.
+This is step one, methods over Integers, the step that took them past 64
+bits, and the one that gave them blocks. The interpreter still runs
+everything else in the script, and the rest of this note keeps the order the
+steps would land in.
 
 ## What step one compiles
 
@@ -22,6 +23,9 @@ A top-level method compiles when:
   - `+ - * / %`, unary minus and the six comparisons;
   - `&&`, `||`, `!`;
   - `if` and `unless` with both branches, `while`, `until` and `return`;
+  - `times`, `upto` and `downto` on an Integer and `each` on a Range of
+    Integers, with a block of one parameter at most, whose body is a
+    statement over the same, with `break` and `next`;
   - calls of other compiled methods.
 
 Everything else leaves the method to the interpreter, and `cameo build`
@@ -64,6 +68,16 @@ start, and the calls below it run on the interpreter too, since each of them
 would leave again. Division by zero raises, and the interpreter has the line
 to raise it at.
 
+A block of `times`, `upto`, `downto` or `each` compiles to a Go loop with
+the body inside it, not to a closure: the bounds are read once, before the
+loop; the counter is the loop's own, so that the body may set the parameter
+without moving the loop; a local the body first sets is declared in the
+body, new on every pass, as a block's locals are; `break` and `next` are
+Go's, and `return` leaves the method. `times`, `upto` and `downto` have
+their receiver as value; `each` returns its Range, so it compiles as a
+statement only. On `int64`, a loop up to the largest Integer or down to
+the smallest is left to the twin, where the counter cannot wrap.
+
 A compiled method checks the run's stop every 4096 calls and loop passes,
 so `RunContext` stops a run inside compiled code.
 
@@ -75,7 +89,8 @@ run that landed the step in its README. On recursion over Integers the
 compiled methods run about sixty times faster than the interpreter, ten
 times faster than CRuby 4.0, and twice as fast as CRuby 4.0 with YJIT. On
 factorial, whose product outgrows 64 bits after 20 steps, the twin on
-`*big.Int` takes half the interpreter's time and a quarter of YJIT's.
+`*big.Int` takes half the interpreter's time and a quarter of YJIT's. The
+block loops are in [tests/performance/03-blocks](../../tests/performance/03-blocks).
 
 ## Next steps
 
@@ -84,7 +99,8 @@ factorial, whose product outgrows 64 bits after 20 steps, the twin on
 2. Methods of classes with typed fields: a field read becomes a struct
    field, and a call on a receiver whose class is known becomes a direct
    call.
-3. Blocks as Go closures, which brings `each`, `map` and `times`.
+3. Blocks that compute a value, `map`, `sum` and `select` on a Range, and
+   `loop` with `break` and its value.
 4. Calls from compiled code into the interpreter for what stays dynamic,
    such as `send` and values read from JSON, so that one construct the
    compiler lacks leaves only itself to the interpreter.

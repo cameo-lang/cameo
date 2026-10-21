@@ -2,9 +2,10 @@
 // time: `cameo build`. It carries out the first steps of the plan in
 // doc/design/aot.md, and compiles only what it can type without running
 // the script, methods whose parameters are Integers and whose result is
-// one, over Integer arithmetic, comparisons, locals, if, while, return and
-// calls of one another. The rest of the script runs on the interpreter, as
-// it would without a build.
+// one, over Integer arithmetic, comparisons, locals, if, while, return,
+// the block loops times, upto, downto and each, and calls of one another.
+// The rest of the script runs on the interpreter, as it would without a
+// build.
 //
 // A compiled method runs on int64, and has a twin on *big.Int. An Integer
 // that outgrows 64 bits ends the int64 run, and the twin runs the call from
@@ -173,12 +174,27 @@ func join(a, b typ) (typ, bool) {
 	return 0, false
 }
 
-// scope is the locals of one method: their types, and whether the check
-// is inside an if or a loop, where a new local would be nil on the paths
-// that skip it.
+// scope is the locals of one method or block: their types, whether the
+// check is inside an if or a loop, where a new local would be nil on the
+// paths that skip it, and how many loops it is inside, which break and
+// next need one of.
 type scope struct {
 	vars   map[string]typ
 	nested int
+	loops  int
+}
+
+// block is the scope of a block's body: it reads and sets the locals
+// around it, and a local first set in it is its own, gone when it ends.
+func (sc *scope) block(param string) *scope {
+	child := &scope{vars: make(map[string]typ, len(sc.vars)+1), loops: sc.loops + 1}
+	for k, v := range sc.vars {
+		child.vars[k] = v
+	}
+	if param != "" {
+		child.vars[param] = tInt
+	}
+	return child
 }
 
 func (b *builder) check(d *syntax.Def) error {
@@ -213,7 +229,7 @@ func (b *builder) body(nodes []syntax.Node, sc *scope, value bool) (typ, error) 
 		}
 		if t == tNever {
 			if !last {
-				return 0, fmt.Errorf("line %d: code follows a return", n.Line())
+				return 0, fmt.Errorf("line %d: code follows a %s", n.Line(), describe(n))
 			}
 			return tNever, nil
 		}
@@ -305,7 +321,8 @@ func (b *builder) expr(n syntax.Node, sc *scope, value bool) (typ, error) {
 			return 0, fmt.Errorf("line %d: the value of a while is nil", n.Line())
 		}
 		sc.nested++
-		defer func() { sc.nested-- }()
+		sc.loops++
+		defer func() { sc.nested--; sc.loops-- }()
 		if _, err := b.want(n.Cond, sc, tBool, "the condition"); err != nil {
 			return 0, err
 		}
@@ -313,10 +330,26 @@ func (b *builder) expr(n syntax.Node, sc *scope, value bool) (typ, error) {
 			return 0, err
 		}
 		return tInt, nil
+	case *syntax.Break:
+		return b.leave(n, n.Value, sc, "break")
+	case *syntax.Next:
+		return b.leave(n, n.Value, sc, "next")
 	case *syntax.Call:
-		return b.call(n, sc)
+		return b.call(n, sc, value)
 	}
 	return 0, fmt.Errorf("line %d: %s is not compiled yet", n.Line(), describe(n))
+}
+
+// leave checks a break or a next, which ends the innermost loop or its
+// pass and has no value of its own.
+func (b *builder) leave(n syntax.Node, value syntax.Node, sc *scope, what string) (typ, error) {
+	if sc.loops == 0 {
+		return 0, fmt.Errorf("line %d: %s outside a loop or a block", n.Line(), what)
+	}
+	if value != nil {
+		return 0, fmt.Errorf("line %d: %s with a value is not compiled yet", n.Line(), what)
+	}
+	return tNever, nil
 }
 
 func (b *builder) want(n syntax.Node, sc *scope, want typ, what string) (typ, error) {
@@ -345,14 +378,25 @@ func (b *builder) logic(l, r syntax.Node, sc *scope) (typ, error) {
 var arith = map[string]bool{"+": true, "-": true, "*": true, "/": true, "%": true}
 var compare = map[string]bool{"<": true, "<=": true, ">": true, ">=": true, "==": true, "!=": true}
 
-func (b *builder) call(n *syntax.Call, sc *scope) (typ, error) {
-	if len(n.KwArgs) > 0 || n.BlockArg != nil || n.Block != nil || n.Safe {
-		return 0, fmt.Errorf("line %d: the call of %s takes keywords or a block", n.Line(), n.Name)
+// loops are the methods that call a block once per Integer, which compile
+// to a Go loop with the block's body inside: times, upto and downto on an
+// Integer, each on a Range of Integers.
+var loops = map[string]bool{"times": true, "upto": true, "downto": true, "each": true}
+
+func (b *builder) call(n *syntax.Call, sc *scope, value bool) (typ, error) {
+	if len(n.KwArgs) > 0 || n.BlockArg != nil || n.Safe {
+		return 0, fmt.Errorf("line %d: the call of %s takes keywords or a block argument", n.Line(), n.Name)
 	}
 	for _, a := range n.Args {
 		if _, ok := a.(*syntax.Splat); ok {
 			return 0, fmt.Errorf("line %d: the call of %s splats its arguments", n.Line(), n.Name)
 		}
+	}
+	if n.Block != nil {
+		if n.Recv == nil || !loops[n.Name] {
+			return 0, fmt.Errorf("line %d: the block of %s is not compiled yet", n.Line(), n.Name)
+		}
+		return b.loop(n, sc, value)
 	}
 	if n.Recv == nil {
 		d, ok := b.defs[n.Name]
@@ -398,6 +442,53 @@ func (b *builder) call(n *syntax.Call, sc *scope) (typ, error) {
 	return 0, fmt.Errorf("line %d: it calls %s on %s", n.Line(), n.Name, recv)
 }
 
+// loop checks a call of times, upto, downto or each with a block: Integer
+// bounds, one Integer parameter at most, and a body that is a statement.
+// The value of times, upto and downto is the receiver; each returns its
+// Range, so it compiles as a statement only.
+func (b *builder) loop(n *syntax.Call, sc *scope, value bool) (typ, error) {
+	p := n.Block.Params
+	if len(p.Keywords) > 0 || p.KwRest != "" || p.BlockParam != "" || len(p.Positional) > 1 || len(p.Positional) == 1 && (p.Positional[0].Splat || p.Positional[0].Default != nil || !goName(p.Positional[0].Name)) {
+		return 0, fmt.Errorf("line %d: the block of %s takes more than one plain parameter", n.Line(), n.Name)
+	}
+	var bounds []syntax.Node
+	switch {
+	case n.Name == "each":
+		r, ok := n.Recv.(*syntax.Range)
+		if !ok {
+			t, err := b.expr(n.Recv, sc, true)
+			if err != nil {
+				return 0, err
+			}
+			return 0, fmt.Errorf("line %d: it calls each on %s", n.Line(), t)
+		}
+		if value {
+			return 0, fmt.Errorf("line %d: the value of each is a Range", n.Line())
+		}
+		if len(n.Args) != 0 {
+			return 0, fmt.Errorf("line %d: each takes no arguments", n.Line())
+		}
+		bounds = []syntax.Node{r.Lo, r.Hi}
+	case n.Name == "times" && len(n.Args) == 0, n.Name != "times" && len(n.Args) == 1:
+		bounds = append([]syntax.Node{n.Recv}, n.Args...)
+	default:
+		return 0, fmt.Errorf("line %d: %s takes %d arguments", n.Line(), n.Name, len(n.Args))
+	}
+	for _, bound := range bounds {
+		if _, err := b.want(bound, sc, tInt, "a bound of "+n.Name); err != nil {
+			return 0, err
+		}
+	}
+	param := ""
+	if len(p.Positional) == 1 {
+		param = p.Positional[0].Name
+	}
+	if _, err := b.body(n.Block.Body, sc.block(param), false); err != nil {
+		return 0, err
+	}
+	return tInt, nil
+}
+
 // describe names a node for a message: "a String" for a Str.
 func describe(n syntax.Node) string {
 	name := strings.TrimPrefix(fmt.Sprintf("%T", n), "*syntax.")
@@ -413,7 +504,7 @@ var descriptions = map[string]string{
 	"Regexp": "a Regexp", "List": "an Array", "Map": "a Hash", "Range": "a Range",
 	"Self": "self", "Const": "a constant", "ScopedConst": "a constant",
 	"Lambda": "a lambda", "Yield": "yield", "Super": "super", "Break": "break",
-	"Next": "next", "Case": "case", "CaseIn": "case/in", "Begin": "begin/rescue",
+	"Next": "next", "Return": "return", "Case": "case", "CaseIn": "case/in", "Begin": "begin/rescue",
 	"Def": "a def", "ClassDef": "a class", "MultiAssign": "a multiple assignment",
 	"MutCall": "a call that changes its receiver", "Async": "async", "Await": "await",
 }
