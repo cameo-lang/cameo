@@ -785,3 +785,7 @@ func TestAnAssignmentBindsItsLocalBeforeItsValue(t *testing.T) {
 func TestLineIsTheLineOfItsStatement(t *testing.T) {
 	expectOutput(t, "p __LINE__\n\ndef f\n  __LINE__\nend\np f\n[1].each do |v|\n  p \"#{__LINE__}\"\nend\n", "1\n4\n\"8\"\n")
 }
+
+func TestNilMatchesNothingAndNoClassIsASingleton(t *testing.T) {
+	expectOutput(t, "p nil =~ /a/, nil =~ \"a\"\np Class.new.singleton_class?, NilClass.singleton_class?, Comparable.singleton_class?\n", "nil\nnil\nfalse\nfalse\nfalse\n")
+}

@@ -124,6 +124,11 @@ func installNilBool() {
 	def(n, "inspect", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.String("nil"), nil
 	})
+	// nil =~ anything is nil, as in Ruby, where every other receiver
+	// without a =~ of its own raises NoMethodError.
+	def(n, "=~", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return object.Nil, nil
+	})
 	def(n, "&", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.False, nil
 	})
