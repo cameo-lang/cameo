@@ -57,6 +57,9 @@ type Interp struct {
 	stop *stopper
 	// catches are the tags of the catch blocks running, innermost last.
 	catches []*catchTag
+	// rescuing is the exception the innermost running rescue clause
+	// rescued, Ruby's $!; nil outside one.
+	rescuing *object.Exception
 	// last is the value of the last top-level expression Run evaluated.
 	last object.Value
 	// interpreted counts the calls of compiled methods running on the

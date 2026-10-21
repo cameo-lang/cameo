@@ -13,6 +13,7 @@ import (
 // package's Proc.
 func installStdlib() {
 	stdlib.Install()
+	installRaise()
 	installCameo()
 	newException := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return ctx.(*Interp).newException(self.Cls(), args, kw, block)

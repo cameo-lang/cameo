@@ -125,6 +125,39 @@ func TestAnExceptionClassKeepsItsOwnPartsFromFields(t *testing.T) {
 	expectError(t, "class E < StandardError\n  reserved 2\nend\n", "reserved 2: numbers 1 to 15 are the exception's own")
 }
 
+func TestARaiseInARescueGetsTheRescuedExceptionAsItsCause(t *testing.T) {
+	expectOutput(t, `
+begin
+  begin
+    raise "inner"
+  rescue => e
+    raise ArgumentError, "outer"
+  end
+rescue => o
+  p o.cause
+end
+begin
+  begin
+    raise "a"
+  rescue
+    raise
+  end
+rescue => r
+  p r, r.cause
+end
+begin
+  raise "b", cause: nil
+rescue => n
+  p n.cause
+end
+begin
+  raise "c", cause: TypeError.new("t")
+rescue => c
+  p c.cause
+end
+`, "#<RuntimeError: inner>\n#<RuntimeError: a>\nnil\nnil\n#<TypeError: t>\n")
+}
+
 func TestToProtoCarriesAnExceptionsParts(t *testing.T) {
 	expectOutput(t, httpError+`
 e = HTTPError.from_proto(HTTPError.new(418, url: "/tea").to_proto)
