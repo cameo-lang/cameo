@@ -597,6 +597,11 @@ func isFieldType(name string) bool { return compositeFieldTypes[name] || object.
 func (c *converter) call(n *ast.Call) Node {
 	name := n.Name
 	if n.Recv == nil && len(n.Args) == 0 && n.Block == nil && !n.Paren {
+		// The line of __LINE__ is the statement's: the parser records no
+		// finer position.
+		if name == "__LINE__" {
+			return &Int{c.pos(), int64(c.line)}
+		}
 		if c.assigned(name) {
 			return &Var{c.pos(), name}
 		}
@@ -615,12 +620,6 @@ func (c *converter) call(n *ast.Call) Node {
 		case "redo":
 			if len(n.Args) == 0 && n.Block == nil && !n.Paren {
 				return &Redo{c.pos()}
-			}
-		case "__LINE__":
-			// The line is the statement's: the parser records no finer
-			// position.
-			if len(n.Args) == 0 && n.Block == nil && !n.Paren {
-				return &Int{c.pos(), int64(c.line)}
 			}
 		case "defined?":
 			if len(n.Args) == 1 {
