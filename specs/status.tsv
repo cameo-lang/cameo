@@ -652,8 +652,8 @@ core/enumerator/feed_spec.rb	*	expected	instance-variables	@enum = …: cameo ha
 core/enumerator/first_spec.rb	Enumerator#first returns arrays correctly when calling #first (2376)	expected	literal-only	undefined method 'new' for class Enumerator: use a literal (NoMethodError)
 core/enumerator/initialize_spec.rb	*	expected	instance-variables	@uninitialized = …: cameo has no instance variables; initialize sets a field with self.uninitialized = …
 core/enumerator/inspect_spec.rb	Enumerator#inspect shows a representation of the Enumerator including receiver and method	pass		
-core/enumerator/inspect_spec.rb	Enumerator#inspect shows a representation of the Enumerator including receiver and method and arguments	bug		Expected "[[1, 2], [3]]" == "#<Enumerator: 1..3:each_slice(2)>" to be truthy but was false
-core/enumerator/inspect_spec.rb	Enumerator#inspect shows a representation of the Enumerator including the nested Enumerator	bug		Expected "[[1, 2], [3]]" == "#<Enumerator: #<Enumerator: 1..3:each>:each_slice(2)>" to be truthy but was false
+core/enumerator/inspect_spec.rb	Enumerator#inspect shows a representation of the Enumerator including receiver and method and arguments	pass		
+core/enumerator/inspect_spec.rb	Enumerator#inspect shows a representation of the Enumerator including the nested Enumerator	pass		
 core/enumerator/inspect_spec.rb	Enumerator#inspect returns a not initialized representation if #initialized is not called yet	expected	metaprogramming	allocate is not supported: use new (NoMethodError)
 core/enumerator/lazy/chunk_spec.rb	*	expected	instance-variables	@yieldsmixed = …: cameo has no instance variables; initialize sets a field with self.yieldsmixed = …
 core/enumerator/lazy/chunk_while_spec.rb	Enumerator::Lazy#chunk_while works with an infinite enumerable	pass		
@@ -2468,9 +2468,9 @@ core/proc/syntax_tree_spec.rb	*	expected	mutation	….keep_script_lines = …: t
 core/proc/to_proc_spec.rb	Proc#to_proc returns self	expected	literal-only	undefined method 'new' for class Proc: use a literal (NoMethodError)
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with Proc.new returns a description including file and line number	expected	literal-only	undefined method 'new' for class Proc: use a literal (NoMethodError)
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with Proc.new has a binary encoding	expected	literal-only	undefined method 'new' for class Proc: use a literal (NoMethodError)
-core/proc/to_s_spec.rb	Proc#to_s for a proc created with lambda returns a description including '(lambda)' and including file and line number	bug		Expected "#<Proc:/var/folders/_j/3cwlydtn7ks30gp_gn6xrb2m0000gn/T/cameo-spec20261021-52290-snu4u4/to_s_spec.rb:263 (lambda)>" =~ /^#<Proc:([^ ]*?) \/var\/folders\/_j\/3cwlydtn7ks30gp_gn6xrb2m0000gn\/T\/cameo\-spec20261021\-52290\-snu4u4\/to
+core/proc/to_s_spec.rb	Proc#to_s for a proc created with lambda returns a description including '(lambda)' and including file and line number	bug		Expected "#<Proc:/var/folders/_j/3cwlydtn7ks30gp_gn6xrb2m0000gn/T/cameo-spec20261021-59945-us55ix/to_s_spec.rb:263 (lambda)>" =~ /^#<Proc:([^ ]*?) \/var\/folders\/_j\/3cwlydtn7ks30gp_gn6xrb2m0000gn\/T\/cameo\-spec20261021\-59945\-us55ix\/to
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with lambda has a binary encoding	pass		
-core/proc/to_s_spec.rb	Proc#to_s for a proc created with proc returns a description including file and line number	bug		Expected "#<Proc:/var/folders/_j/3cwlydtn7ks30gp_gn6xrb2m0000gn/T/cameo-spec20261021-52290-snu4u4/to_s_spec.rb:273>" =~ /^#<Proc:([^ ]*?) \/var\/folders\/_j\/3cwlydtn7ks30gp_gn6xrb2m0000gn\/T\/cameo\-spec20261021\-52290\-snu4u4\/to_s_spec\.
+core/proc/to_s_spec.rb	Proc#to_s for a proc created with proc returns a description including file and line number	bug		Expected "#<Proc:/var/folders/_j/3cwlydtn7ks30gp_gn6xrb2m0000gn/T/cameo-spec20261021-59945-us55ix/to_s_spec.rb:273>" =~ /^#<Proc:([^ ]*?) \/var\/folders\/_j\/3cwlydtn7ks30gp_gn6xrb2m0000gn\/T\/cameo\-spec20261021\-59945\-us55ix\/to_s_spec\.
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with proc has a binary encoding	pass		
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with UnboundMethod#to_proc returns a description including '(lambda)' and optionally including file and line number	expected	metaprogramming	undefined method 'method' for main (NoMethodError)
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with UnboundMethod#to_proc has a binary encoding	expected	metaprogramming	undefined method 'method' for main (NoMethodError)
