@@ -8,6 +8,21 @@ p [65, 0x263a].pack("U*"), [65, 0x263a].pack("U*").encoding, [1.5].pack("e").byt
 p ["ab", "c"].pack("a3A3").bytes, ["hi"].pack("Z*").bytes, ["414243"].pack("H*").bytes, ["hello world"].pack("m").bytes.size, ["hello"].pack("m0").unpack1("m").bytes
 p [1, 2].pack("s<l>").bytes, [2**63].pack("Q").bytes, [-2].pack("q").unpack1("q"), [2**64 - 1].pack("Q").unpack1("Q")
 p "ABC".unpack("C*"), "\x01\x02".b.unpack("n"), "\x01\x02".b.unpack("v"), "☺A".unpack("U*"), "ab".unpack1("H*"), "abc".unpack("a2 a1").map(&:bytes)
+# Bit strings, positions, a buffer to append to, and an offset to unpack
+# from.
+p ["01000001"].pack("B*"), ["10000010"].pack("b*"), "AB".unpack("B12"), "A".unpack1("b*"), ["ab"].pack("a2@5").bytes, ["abc"].pack("a3X2")
+p [65, 66].pack("CC", buffer: "12"), [65].pack("@1C", buffer: "1234"), [1, 2].pack("C # the first\nC").bytes, [].pack("") == ""
+p "ZZABCD".unpack1("x3C", offset: 2), "ZA".unpack1("B*", offset: 1), "a".unpack1("C", offset: 1), "ABC".unpack("C@0C"), "dGVzdA==".unpack1("m0")
+begin
+  "dGV%zdA==".unpack1("m0")
+rescue ArgumentError => e
+  puts e.message
+end
+begin
+  "a".unpack("C", offset: 2)
+rescue ArgumentError => e
+  puts e.message
+end
 s = "h\xC3llo\xFF\xE3\x81".dup
 p s.valid_encoding?, s.scrub, s.scrub("?"), s.scrub { |b| "<#{b.bytes.size}>" }
 t = "caf\xC3\xA9".b
