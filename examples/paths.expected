@@ -61,3 +61,11 @@ true
 #<Pathname:..>
 "q"
 "b"
+"usr//bin"
+"usr/bin"
+"/"
+"/"
+"a/"
+":"
+nil
+string contains null byte
