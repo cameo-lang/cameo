@@ -87,7 +87,9 @@ func TestBuildLeavesTheRestToTheInterpreter(t *testing.T) {
 }
 
 // TestBuildWritesBlockLoops holds the Go of times, each and downto to
-// loops with the counter the loop's own, and break and next to Go's.
+// loops with the counter the loop's own, the stop check on the loop's
+// variable, or on a counter where the variable is a big.Int, and break and
+// next to Go's.
 func TestBuildWritesBlockLoops(t *testing.T) {
 	res := build(t, `
 def f(n)
@@ -106,10 +108,10 @@ end
 		t.Fatalf("compiled %q, want f", got)
 	}
 	for _, want := range []string{
-		"for t2 := int64(0); t2 < t1; t2++ {", "v_i := t2",
+		"for t2 := int64(0); t2 < t1; t2++ {", "if t2&4095 == 0 && eval.Stopped(s.ctx) {", "v_i := t2",
 		"for t6 := t4; t6 < t5; t6++ {", "continue", "break",
 		"if t9 == -1<<63 {", "for t10 := t8; t10 >= t9; t10-- {",
-		"for t2 := new(big.Int); t2.Cmp(t1) < 0; t2 = new(big.Int).Add(t2, big_1) {",
+		"var t3 uint32", "for t2 := new(big.Int); t2.Cmp(t1) < 0; t2 = new(big.Int).Add(t2, big_1) {", "t3++", "if t3&4095 == 0 && eval.Stopped(s.ctx) {",
 	} {
 		if !strings.Contains(string(res.Go), want) {
 			t.Errorf("the Go lacks %q:\n%s", want, res.Go)
