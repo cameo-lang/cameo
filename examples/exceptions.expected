@@ -2,3 +2,8 @@
 caught: 30 is too big
 done
 ok after 3
+[ScriptError, ScriptError, IndexError, IndexError, StopIteration, ArgumentError, IOError, SignalException]
+[Exception, Exception, Exception, Exception, Exception]
+[StandardError, StandardError, StandardError, StandardError]
+rescue NotImplementedError: later
+an IndexError: KeyError

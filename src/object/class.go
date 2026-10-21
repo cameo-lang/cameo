@@ -343,15 +343,14 @@ var (
 	TypeError         = NewClass("TypeError", StandardError)
 	NameError         = NewClass("NameError", StandardError)
 	NoMethodError     = NewClass("NoMethodError", NameError)
-	KeyError          = NewClass("KeyError", StandardError)
 	IndexError        = NewClass("IndexError", StandardError)
+	KeyError          = NewClass("KeyError", IndexError)
 	RangeError        = NewClass("RangeError", StandardError)
 	FloatDomainError  = NewClass("FloatDomainError", RangeError)
 	ZeroDivisionError = NewClass("ZeroDivisionError", StandardError)
-	StopIteration     = NewClass("StopIteration", StandardError)
+	StopIteration     = NewClass("StopIteration", IndexError)
 	NoMatchingPattern = NewClass("NoMatchingPatternError", StandardError)
 	FrozenError       = NewClass("FrozenError", RuntimeError)
-	NotImplementedErr = NewClass("NotImplementedError", StandardError)
 	RegexpError       = NewClass("RegexpError", StandardError)
 	LocalJumpError    = NewClass("LocalJumpError", StandardError)
 	CameoError        = NewClass("CameoError", StandardError)
@@ -359,6 +358,26 @@ var (
 	// rescue does not catch a failed require, as in Ruby.
 	ScriptError = NewClass("ScriptError", ExceptionClass)
 	LoadError   = NewClass("LoadError", ScriptError)
+	// NotImplementedError is a ScriptError, as in Ruby, so a bare rescue
+	// does not catch it either.
+	NotImplementedErr  = NewClass("NotImplementedError", ScriptError)
+	SyntaxError        = NewClass("SyntaxError", ScriptError)
+	UncaughtThrowError = NewClass("UncaughtThrowError", ArgumentError)
+	SystemExit         = NewClass("SystemExit", ExceptionClass)
+	// The classes below are Ruby's for what cameo does not do: I/O,
+	// threads, fibers, signals and system calls. They exist so a script can
+	// name them in a rescue; the interpreter raises none of them.
+	NoMemoryError    = NewClass("NoMemoryError", ExceptionClass)
+	SecurityError    = NewClass("SecurityError", ExceptionClass)
+	SignalException  = NewClass("SignalException", ExceptionClass)
+	Interrupt        = NewClass("Interrupt", SignalException)
+	SystemStackError = NewClass("SystemStackError", ExceptionClass)
+	IOError          = NewClass("IOError", StandardError)
+	EOFError         = NewClass("EOFError", IOError)
+	FiberError       = NewClass("FiberError", StandardError)
+	ThreadError      = NewClass("ThreadError", StandardError)
+	ClosedQueueError = NewClass("ClosedQueueError", StopIteration)
+	SystemCallError  = NewClass("SystemCallError", StandardError)
 	// EncodingError and the three below it, bound in Encoding, are what
 	// combining and converting strings of different encodings raises.
 	EncodingError            = NewClass("EncodingError", StandardError)
@@ -396,6 +415,8 @@ func init() {
 		StandardError, RuntimeError, ArgumentError, TypeError, NameError, NoMethodError, KeyError,
 		IndexError, RangeError, ZeroDivisionError, StopIteration, NoMatchingPattern, FrozenError,
 		NotImplementedErr, LocalJumpError, CameoError, RegexpError, FloatDomainError, ScriptError, LoadError, EncodingError,
+		SyntaxError, UncaughtThrowError, SystemExit, NoMemoryError, SecurityError, SignalException, Interrupt,
+		SystemStackError, IOError, EOFError, FiberError, ThreadError, ClosedQueueError, SystemCallError,
 	}
 	for _, c := range BasicClasses {
 		ObjectClass.Consts[c.Name] = ClassValue(c)
