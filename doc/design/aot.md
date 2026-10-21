@@ -7,10 +7,10 @@ place of the methods' bodies. Nothing is loaded at run time, and the binary
 stays one static file on every platform Go supports.
 
 This is step one, methods over Integers, the step that took them past 64
-bits, the one that gave them blocks, the one that gave them Floats, and the
-one that gave them classes. The interpreter still runs everything else in
-the script, and the rest of this note keeps the order the steps would land
-in.
+bits, the one that gave them blocks, the one that gave them Floats, the one
+that gave them classes, and the one that gave them construction. The
+interpreter still runs everything else in the script, and the rest of this
+note keeps the order the steps would land in.
 
 ## What compiles
 
@@ -34,7 +34,10 @@ compiles when:
   - reads of `int`, `float`, `bool` and `ref` fields, of `self` and of
     instances the method holds, and `self` itself;
   - calls of other compiled methods, directly, on `self` and on instances
-    whose class is known.
+    whose class is known;
+  - `Class.new` of a top-level class whose `initialize` sets fields from
+    its parameters and does nothing else, or, without an `initialize`, by
+    keywords naming the fields.
 
 Everything else leaves the method to the interpreter, and `cameo build`
 names the first construct that did:
@@ -111,9 +114,23 @@ declares the field, when one class alone does; the entry checks the
 argument's class by name, through its ancestors, so an instance of a child
 class passes. A call on an instance of a known class, or a bare call in a
 class's method, is a direct Go call when it reaches a compiled method of the
-class or of a class above it. Construction and field assignment stay with
-the interpreter: `initialize` is the interpreter's, and a field is set in
-`initialize` alone.
+class or of a class above it. `initialize` itself is the interpreter's, and a
+field is set in `initialize` alone.
+
+`Class.new` compiles when the class's `initialize`, its own or the nearest
+above it, has plain parameters and a body of `self.field = value`
+assignments alone, or when the class has none and the call names its
+fields as keywords. The arguments are read, then, in a Go block of their
+own, `initialize`'s parameters become locals and each assignment's value
+goes into a slice by the field's index; `eval.Construct` builds the
+instance as `Class.new` does, every field at its default and each given
+value converted and checked as `initialize`'s assignment checks it, and
+returns `ErrDeopt` when one does not fit, so that the interpreter builds the
+instance and raises. A parameter that `initialize` assigns to fields and
+uses nowhere else has the field's type, so a Float field takes a Float;
+an Integer given for a Float field converts, as the interpreter converts
+it. The class is found by its name once per call into compiled code,
+through `eval.ClassNamed`, and a method may return an instance.
 
 An argument that is not an Integer and a division by zero return
 `eval.ErrDeopt`. The interpreter then runs the method's body from the
@@ -152,14 +169,17 @@ a Mandelbrot grid and a Leibniz series compiled take a fifteenth of YJIT's
 time. [05-classes](../../tests/performance/05-classes) has the Mandelbrot
 grid in a class whose fields hold the grid, and a pair of vectors read
 through `ref` fields, both a hundred times faster than the interpreter.
+[06-construction](../../tests/performance/06-construction) builds millions
+of instances, ten to twenty times faster than the interpreter; the
+construction itself, with its checks, is now what the loops cost.
 
 ## Next steps
 
-1. Construction in Go: `Class.new` for a class whose `initialize` sets
-   fields from its parameters alone, so that a method may build the
-   instances it works on, and a whole numeric loop over instances compiles.
-2. Parameters typed from the program's call sites, so that a method may
+1. Parameters typed from the program's call sites, so that a method may
    take a Float, or an instance it reads no field on.
+2. Construction without the slice of Values in between: the fields set
+   straight into the instance, with the conversion and the check done at
+   build time where the types already agree.
 3. Strings, and Arrays of a known element type, which use the runtime's
    own values where Go has no type of its own for them.
 4. Blocks that compute a value, `map`, `sum` and `select` on a Range, and

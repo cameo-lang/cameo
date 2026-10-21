@@ -62,3 +62,31 @@ func TestCompiledClassMethodsRunForTheirClass(t *testing.T) {
 		t.Errorf("printed %q, want the compiled answer for A and the interpreter's for B", got)
 	}
 }
+
+func TestConstructBuildsAnInstanceAsNewDoes(t *testing.T) {
+	prog, err := syntax.Parse("t.cameo", "class P\n  float :x\n  int :n, default: 7\n  int32 :small\nend\n")
+	if err != nil {
+		t.Fatal(err)
+	}
+	in := New(&bytes.Buffer{}, &bytes.Buffer{})
+	if err := in.Run("t.cameo", prog); err != nil {
+		t.Fatal(in.FormatError(err))
+	}
+	cls := ClassNamed(in, "P")
+	if cls == nil || ClassNamed(in, "Q") != nil {
+		t.Fatalf("ClassNamed found %v for P and %v for Q", cls, ClassNamed(in, "Q"))
+	}
+	inst, err := Construct(in, cls, []object.Value{object.Int(2)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !object.Equal(inst.Fields[0], object.Float(2)) || !object.Equal(inst.Fields[1], object.Int(7)) || !inst.Fields[2].IsNil() {
+		t.Errorf("the fields are %v, %v, %v; want 2.0, the default 7 and nil", inst.Fields[0], inst.Fields[1], inst.Fields[2])
+	}
+	if _, err := Construct(in, cls, []object.Value{{}, {}, object.Int(1 << 40)}); err != ErrDeopt {
+		t.Errorf("a value past int32 gave %v, want ErrDeopt", err)
+	}
+	if _, err := Construct(in, nil, nil); err != ErrDeopt {
+		t.Errorf("no class gave %v, want ErrDeopt", err)
+	}
+}

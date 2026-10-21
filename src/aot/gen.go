@@ -94,7 +94,7 @@ func (g *gen) function(m *method, big bool) string {
 
 // zero is the value a method returns beside an error.
 func (f *fn) zero() string {
-	if f.big && f.result == tInt {
+	if f.big && f.result == tInt || f.result >= tClass {
 		return "nil"
 	}
 	return "0"
@@ -269,6 +269,9 @@ func (f *fn) call(n *syntax.Call, value bool) string {
 	if n.Recv == nil {
 		return f.reach(n, f.g.b.bare(f.m.owner, n.Name), "self")
 	}
+	if k := f.g.b.news[n]; k != nil {
+		return f.construct(n, k)
+	}
 	l := f.expr(n.Recv, true)
 	lt := f.typeOf(n.Recv)
 	if c := f.g.b.classOf(lt); c != nil {
@@ -352,11 +355,77 @@ func (f *fn) reach(n *syntax.Call, t *target, inst string) string {
 	return tmp
 }
 
+// construct writes Class.new: the arguments are read first, then, in a
+// block of its own so that initialize's parameters shadow nothing, the
+// fields' values go into a slice by index, and eval.Construct builds the
+// instance as Class.new does, converting and checking each value.
+func (f *fn) construct(n *syntax.Call, k *construction) string {
+	var args []string
+	for i, a := range n.Args {
+		v := f.expr(a, true)
+		switch {
+		case k.params[i] == tFloat && f.typeOf(a) == tInt:
+			v = f.toFloat(v, tInt)
+		case k.params[i] == tInt:
+			// A literal needs its type, since it becomes a local.
+			v = f.typed(v)
+		}
+		args = append(args, v)
+	}
+	var values []string
+	for _, kw := range n.KwArgs {
+		values = append(values, f.expr(kw.Value, true))
+	}
+	res := f.temp()
+	f.line("var %s *object.Instance", res)
+	f.line("{")
+	f.depth++
+	fields := f.temp()
+	f.line("%s := make([]object.Value, %d)", fields, len(k.cls.fields))
+	outer := f.vars
+	f.vars = map[string]typ{}
+	if k.init != nil {
+		for i, p := range k.init.Params.Positional {
+			f.vars[p.Name] = k.params[i]
+			f.line("v_%s := %s", p.Name, args[i])
+			f.line("_ = v_%s", p.Name)
+		}
+		for _, set := range k.sets {
+			i := k.cls.index[set.Name]
+			f.line("%s[%d] = %s", fields, i, f.fieldValue(f.expr(set.Value, true), f.typeOf(set.Value), k.cls.fields[i]))
+		}
+	}
+	for j, i := range k.keys {
+		f.line("%s[%d] = %s", fields, i, f.fieldValue(values[j], f.typeOf(n.KwArgs[j].Value), k.cls.fields[i]))
+	}
+	f.vars = outer
+	made := f.temp()
+	f.line("%s, err := eval.Construct(s.ctx, s.class(%s), %s)", made, strconv.Quote(k.cls.name), fields)
+	f.failOnErr()
+	f.line("%s = %s", res, made)
+	f.depth--
+	f.line("}")
+	return res
+}
+
+// fieldValue is the Value a construction gives a field: an Integer for a
+// Float field converts, as the interpreter converts it.
+func (f *fn) fieldValue(v string, t typ, fld *field) string {
+	if fld.t == tFloat && fld.ref == "" && t == tInt {
+		return f.value(f.toFloat(v, tInt), tFloat)
+	}
+	return f.value(v, t)
+}
+
 // value is the Value of a Go expression of type t, for a runtime call.
 func (f *fn) value(v string, t typ) string {
 	switch {
 	case t == tFloat:
 		return "object.Float(" + v + ")"
+	case t == tBool:
+		return "object.Bool(" + v + ")"
+	case t >= tClass:
+		return "object.InstanceValue(" + v + ")"
 	case f.big:
 		return "object.BigInt(" + v + ")"
 	}

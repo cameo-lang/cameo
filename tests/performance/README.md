@@ -12,6 +12,7 @@ exercise and holds the table of the run that landed the step.
 | [03-blocks](03-blocks) | blocks of `times` and `each` over a Range as loops: a sum, Pythagorean triples |
 | [04-floats](04-floats) | Float arithmetic in Integer loops: a Mandelbrot grid, the Leibniz series |
 | [05-classes](05-classes) | methods of classes with typed fields: the Mandelbrot grid held in fields, vectors read through `ref` fields |
+| [06-construction](06-construction) | `Class.new` in compiled code: a walk building vectors, two bodies rebuilt every step |
 
 [run.rb](run.rb) builds cameo and each script, runs every case three times
 on four Rubies and prints the best in-script seconds as one Markdown table:

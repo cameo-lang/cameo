@@ -1,0 +1,10 @@
+25.3125
+18.0
+3.0
+9
+10.0
+2.3611832414348226e+21
+7
+Vec(x: 2.0, y: 3.0, tag: 9)
+Tagged(n: 1, f: nil, on: true, v: nil)
+field small of Twice takes an int32, from -2147483648 to 2147483647; 1099511627776 does not fit

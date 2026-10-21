@@ -60,7 +60,7 @@ func Build(file, src string, opts Options) (*Result, error) {
 	if opts.Package == "" {
 		opts.Package = "main"
 	}
-	b := &builder{prog: prog, defs: map[string]*method{}, left: map[string]string{}, results: map[string]typ{}, types: map[syntax.Node]typ{}, classByName: map[string]*class{}}
+	b := &builder{prog: prog, defs: map[string]*method{}, left: map[string]string{}, results: map[string]typ{}, types: map[syntax.Node]typ{}, classByName: map[string]*class{}, news: map[*syntax.Call]*construction{}}
 	b.collect()
 	b.settle()
 	res := &Result{Left: b.left}
@@ -94,9 +94,23 @@ type builder struct {
 	// types is the type of every expression of the methods that compile,
 	// as the last check saw it, for the generator.
 	types map[syntax.Node]typ
+	// news is what each Class.new the compiled methods make reaches.
+	news map[*syntax.Call]*construction
 	// cur is the method being checked, and ret the type of its returns.
 	cur *method
 	ret typ
+}
+
+// construction is a Class.new that compiles: the class, and how its fields
+// are set, by the assignments of an initialize that does nothing else,
+// from its parameters, or by keywords when the class has no initialize.
+type construction struct {
+	cls    *class
+	init   *syntax.Def
+	params []typ
+	sets   []*syntax.FieldAssign
+	// keys are the fields the keywords name, in the call's order.
+	keys []int
 }
 
 // method is a candidate: its def, the class it belongs to, nil for a
@@ -480,8 +494,8 @@ func (b *builder) check(m *method) (typ, error) {
 	if !ok {
 		return 0, fmt.Errorf("its value is %s and it returns %s", b.name(t), b.name(b.ret))
 	}
-	if !numeric(result) && result != tUnknown {
-		return 0, fmt.Errorf("its result is %s, not a number", b.name(result))
+	if !numeric(result) && result != tUnknown && result < tClass {
+		return 0, fmt.Errorf("its result is %s, not a number or an instance", b.name(result))
 	}
 	return result, nil
 }
@@ -580,8 +594,8 @@ func (b *builder) typeExpr(n syntax.Node, sc *scope, value bool) (typ, error) {
 		if err != nil {
 			return 0, err
 		}
-		if !numeric(t) && t != tUnknown {
-			return 0, fmt.Errorf("line %d: the value of return is %s, not a number", n.Line(), b.name(t))
+		if !numeric(t) && t != tUnknown && t < tClass {
+			return 0, fmt.Errorf("line %d: the value of return is %s, not a number or an instance", n.Line(), b.name(t))
 		}
 		ret, ok := join(b.ret, t)
 		if !ok {
@@ -732,6 +746,9 @@ func (b *builder) bare(owner *class, name string) *target {
 }
 
 func (b *builder) call(n *syntax.Call, sc *scope, value bool) (typ, error) {
+	if c, ok := n.Recv.(*syntax.Const); ok && n.Name == "new" && n.BlockArg == nil && !n.Safe {
+		return b.construct(n, c.Name, sc)
+	}
 	if len(n.KwArgs) > 0 || n.BlockArg != nil || n.Safe {
 		return 0, fmt.Errorf("line %d: the call of %s takes keywords or a block argument", n.Line(), n.Name)
 	}
@@ -830,6 +847,169 @@ func (b *builder) reach(n *syntax.Call, t *target, sc *scope) (typ, error) {
 		}
 	}
 	return b.results[m.key], nil
+}
+
+// construct checks Class.new of a top-level class of the script: with an
+// initialize, one whose body sets fields from its parameters and does
+// nothing else, called with its arguments; without one, keywords naming
+// fields. A field takes an Integer where it holds a Float, as the
+// interpreter converts it.
+func (b *builder) construct(n *syntax.Call, name string, sc *scope) (typ, error) {
+	cls := b.classByName[name]
+	if cls == nil || cls.def == nil {
+		return 0, fmt.Errorf("line %d: it constructs %s, which is not a top-level class of the script", n.Line(), name)
+	}
+	if n.Block != nil {
+		return 0, fmt.Errorf("line %d: %s.new with a block is not compiled yet", n.Line(), name)
+	}
+	k := &construction{cls: cls}
+	init := b.initializer(cls)
+	if init == nil {
+		if len(n.Args) > 0 {
+			return 0, fmt.Errorf("line %d: %s.new takes its fields as keywords", n.Line(), name)
+		}
+		for _, kw := range n.KwArgs {
+			sym, ok := kw.Key.(*syntax.Sym)
+			if !ok {
+				return 0, fmt.Errorf("line %d: %s.new names its fields by symbols", n.Line(), name)
+			}
+			i, ok := cls.index[sym.Name]
+			if !ok {
+				return 0, fmt.Errorf("line %d: %s.new: %s has no field %s", n.Line(), name, name, sym.Name)
+			}
+			if err := b.setField(kw.Value, cls.fields[i], sc, n.Line()); err != nil {
+				return 0, err
+			}
+			k.keys = append(k.keys, i)
+		}
+		b.news[n] = k
+		return cls.t, nil
+	}
+	if len(n.KwArgs) > 0 {
+		return 0, fmt.Errorf("line %d: %s.new with keywords runs initialize, which takes positional arguments", n.Line(), name)
+	}
+	if !plainParams(init.Params) {
+		return 0, fmt.Errorf("line %d: %s.new runs an initialize with optional, splat, keyword or block parameters", n.Line(), name)
+	}
+	if len(n.Args) != len(init.Params.Positional) {
+		return 0, fmt.Errorf("line %d: it calls %s.new with %d arguments, not %d", n.Line(), name, len(n.Args), len(init.Params.Positional))
+	}
+	k.init = init
+	for _, m := range init.Body {
+		set, ok := m.(*syntax.FieldAssign)
+		if !ok {
+			return 0, fmt.Errorf("line %d: %s.new runs an initialize that does more than set fields: %s", n.Line(), name, describe(m))
+		}
+		if _, ok := cls.index[set.Name]; !ok {
+			return 0, fmt.Errorf("line %d: %s.new: initialize sets %s, which %s has no field of", n.Line(), name, set.Name, name)
+		}
+		k.sets = append(k.sets, set)
+	}
+	k.params = b.initParams(init, cls)
+	for i, a := range n.Args {
+		if err := b.argument(a, k.params[i], sc, n.Line(), name+".new"); err != nil {
+			return 0, err
+		}
+	}
+	inner := &scope{vars: map[string]typ{}}
+	for i, p := range init.Params.Positional {
+		inner.vars[p.Name] = k.params[i]
+	}
+	for _, set := range k.sets {
+		if err := b.setField(set.Value, cls.fields[cls.index[set.Name]], inner, set.Line()); err != nil {
+			return 0, err
+		}
+	}
+	b.news[n] = k
+	return cls.t, nil
+}
+
+// initializer is the initialize an instance of c runs: its own, or the
+// nearest above it; nil when there is none.
+func (b *builder) initializer(c *class) *syntax.Def {
+	for k := c; k != nil; k = k.super {
+		for _, m := range k.def.Body {
+			if d, ok := m.(*syntax.Def); ok && d.Name == "initialize" && !d.Singleton {
+				return d
+			}
+		}
+	}
+	return nil
+}
+
+// initParams types initialize's parameters: one that the body assigns to
+// fields and uses nowhere else has the type of the field, so that a Float
+// field takes a Float; any other is an Integer.
+func (b *builder) initParams(init *syntax.Def, c *class) []typ {
+	types := make([]typ, len(init.Params.Positional))
+	for i, p := range init.Params.Positional {
+		types[i] = tInt
+		uses, direct := 0, 0
+		var t typ = tInt
+		fits := true
+		walk(init, func(n syntax.Node) {
+			if v, ok := n.(*syntax.Var); ok && v.Name == p.Name {
+				uses++
+			}
+		})
+		for _, m := range init.Body {
+			set, ok := m.(*syntax.FieldAssign)
+			if !ok {
+				continue
+			}
+			if v, ok := set.Value.(*syntax.Var); ok && v.Name == p.Name {
+				ft, err := b.fieldType(c.fields[c.index[set.Name]])
+				if err != nil || direct > 0 && ft != t {
+					fits = false
+				}
+				t = ft
+				direct++
+			}
+		}
+		if fits && direct > 0 && direct == uses {
+			types[i] = t
+		}
+	}
+	return types
+}
+
+// fieldType is the type a field holds: of a ref field, the instances of
+// the class it names.
+func (b *builder) fieldType(f *field) (typ, error) {
+	if f.why != "" {
+		return 0, fmt.Errorf("%s", f.why)
+	}
+	if f.ref != "" {
+		c := b.classByName[f.ref]
+		if c == nil || c.def == nil {
+			return 0, fmt.Errorf("the field %s refers to %s, which is not a top-level class of the script", f.name, f.ref)
+		}
+		return c.t, nil
+	}
+	return f.t, nil
+}
+
+// setField checks the value a construction gives a field: of the field's
+// type, or an Integer for a Float field, which the interpreter converts.
+func (b *builder) setField(value syntax.Node, f *field, sc *scope, line int) error {
+	ft, err := b.fieldType(f)
+	if err != nil {
+		return fmt.Errorf("line %d: %s", line, err)
+	}
+	return b.argument(value, ft, sc, line, "the field "+f.name)
+}
+
+// argument checks a value given where a type is wanted, in a construction:
+// assignable, or an Integer for a Float.
+func (b *builder) argument(value syntax.Node, want typ, sc *scope, line int, what string) error {
+	t, err := b.expr(value, sc, true)
+	if err != nil {
+		return err
+	}
+	if !b.assignable(t, want) && !(t == tInt && want == tFloat) {
+		return fmt.Errorf("line %d: %s takes %s, not %s", line, what, b.name(want), b.name(t))
+	}
+	return nil
 }
 
 // loop checks a call of times, upto, downto or each with a block: Integer
@@ -1001,13 +1181,16 @@ const mainFunc = `func main() {
 `
 
 // stateType is what every compiled call carries: the run it belongs to,
-// and a count of calls, so that the run's stop is checked every few
-// thousand. A loop counts its passes on a local of its own.
+// a count of calls, so that the run's stop is checked every few thousand,
+// and the classes it constructs, found once. A loop counts its passes on a
+// local of its own.
 const stateType = `// state is one call from the interpreter into compiled code: the run it
-// belongs to, which may be stopped, and the calls made since.
+// belongs to, which may be stopped, the calls made since, and the classes
+// the call constructed instances of.
 type state struct {
-	ctx   object.Context
-	calls uint32
+	ctx     object.Context
+	calls   uint32
+	classes map[string]*object.Class
 }
 
 // stopped counts a call, and every 4096 of them reports whether the run
@@ -1015,6 +1198,21 @@ type state struct {
 func (s *state) stopped() bool {
 	s.calls++
 	return s.calls&4095 == 0 && eval.Stopped(s.ctx)
+}
+
+// class is the class the script's top-level constant of that name holds,
+// found once per call into compiled code; nil when there is none, which
+// eval.Construct leaves to the interpreter.
+func (s *state) class(name string) *object.Class {
+	c, ok := s.classes[name]
+	if !ok {
+		if s.classes == nil {
+			s.classes = map[string]*object.Class{}
+		}
+		c = eval.ClassNamed(s.ctx, name)
+		s.classes[name] = c
+	}
+	return c
 }
 
 `
@@ -1028,8 +1226,11 @@ func (g *gen) entry(m *method) string {
 	name := m.goName()
 	n := len(d.Params.Positional)
 	asInt, asBig := "object.Int(r)", "object.BigInt(r)"
-	if g.results[m.key] == tFloat {
+	switch result := g.results[m.key]; {
+	case result == tFloat:
 		asInt, asBig = "object.Float(r)", "object.Float(r)"
+	case result >= tClass:
+		asInt, asBig = "object.InstanceValue(r)", "object.InstanceValue(r)"
 	}
 	fmt.Fprintf(&b, "// call_%s is %s as a method: it runs with the arguments it takes and no\n// block, on int64 while the Integers fit and on *big.Int once one does not,\n// and leaves every other call to the interpreter.\n", name, m.key)
 	fmt.Fprintf(&b, "func call_%s(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {\n", name)

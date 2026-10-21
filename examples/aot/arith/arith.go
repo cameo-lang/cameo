@@ -132,10 +132,12 @@ func init() {
 }
 
 // state is one call from the interpreter into compiled code: the run it
-// belongs to, which may be stopped, and the calls made since.
+// belongs to, which may be stopped, the calls made since, and the classes
+// the call constructed instances of.
 type state struct {
-	ctx   object.Context
-	calls uint32
+	ctx     object.Context
+	calls   uint32
+	classes map[string]*object.Class
 }
 
 // stopped counts a call, and every 4096 of them reports whether the run
@@ -143,6 +145,21 @@ type state struct {
 func (s *state) stopped() bool {
 	s.calls++
 	return s.calls&4095 == 0 && eval.Stopped(s.ctx)
+}
+
+// class is the class the script's top-level constant of that name holds,
+// found once per call into compiled code; nil when there is none, which
+// eval.Construct leaves to the interpreter.
+func (s *state) class(name string) *object.Class {
+	c, ok := s.classes[name]
+	if !ok {
+		if s.classes == nil {
+			s.classes = map[string]*object.Class{}
+		}
+		c = eval.ClassNamed(s.ctx, name)
+		s.classes[name] = c
+	}
+	return c
 }
 
 // The Integer literals of the methods on *big.Int, which they share and
