@@ -55,6 +55,12 @@ func Parse(file, src string) (*Program, error) {
 	}
 	c := &converter{file: file, lines: tree.Lines, stack: []frame{{kind: ctxTop}}, bangs: bangMethods(tree.Lines)}
 	prog := &Program{Body: c.body(tree.Body)}
+	// Nothing reads the value of a script's last statement either.
+	if n := len(prog.Body); n > 0 {
+		if call, ok := prog.Body[n-1].(*Call); ok {
+			call.Dropped = true
+		}
+	}
 	if len(c.errs) > 0 {
 		return nil, c.errs
 	}

@@ -9,7 +9,7 @@ func installSet() {
 		if s, ok := v.AsSet(); ok {
 			return s, nil
 		}
-		elems, err := toList(ctx, v)
+		elems, err := setElems(ctx, v)
 		if err != nil {
 			return nil, err
 		}

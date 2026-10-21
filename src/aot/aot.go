@@ -1076,8 +1076,7 @@ var descriptions = map[string]string{
 	"Lambda": "a lambda", "Yield": "yield", "Super": "super", "Break": "break",
 	"Next": "next", "Return": "return", "Case": "case", "CaseIn": "case/in", "Begin": "begin/rescue",
 	"Def": "a def", "ClassDef": "a class", "MultiAssign": "a multiple assignment",
-	"Field": "a field", "FieldAssign": "a field assignment",
-	"MutCall": "a call that changes its receiver", "Async": "async", "Await": "await",
+	"FieldAssign": "a field assignment", "Async": "async", "Await": "await",
 }
 
 // emit writes the Go source.

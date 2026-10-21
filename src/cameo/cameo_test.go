@@ -120,7 +120,7 @@ func TestErrorsAreReported(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "undefined method 'nope'") {
 		t.Fatalf("error: %v", err)
 	}
-	if _, err := Load("t.cameo", "a << 1\n", nil, nil); err == nil {
+	if _, err := Load("t.cameo", "a = [2, 1]\na.sort!\n", nil, nil); err == nil {
 		t.Fatal("a rejected script does not load")
 	}
 	if _, err := prog.ToValue(struct{}{}); err == nil {

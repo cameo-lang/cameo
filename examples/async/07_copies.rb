@@ -8,8 +8,7 @@ class Editor
   include Cameo::Runner
 
   def append(list, item)
-    list << item
-    list
+    list + [item]
   end
 
   def demo

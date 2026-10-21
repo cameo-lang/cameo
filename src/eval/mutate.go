@@ -8,92 +8,62 @@ import (
 	"github.com/cameo-lang/cameo/src/syntax"
 )
 
-// A mutating call on a local, `x << y` or `x.map! { }`, computes the
-// changed copy and rebinds the local to it, as `h[k] = v` does: cameo values
-// never change, so another variable holding the old value keeps it. The
-// call's own value is Ruby's: the receiver for most, the removed element
-// for pop, shift and delete, nil from a bang method that changed nothing.
+// cameo values never change and no call rebinds its receiver. A call of
+// one of Ruby's mutators on a value of the kind it changes, `a.push(1)` on
+// a list or `s << "x"` on a string, raises a CameoError that names the
+// non-mutating form. With IgnoreMutationErrors the call returns what Ruby's
+// returns, computed on a copy, and the receiver stays as it was: the list
+// for push, the removed element for pop, shift and delete. A bang method of
+// Ruby's core raises whatever the setting, and the checker refuses one it
+// can see.
 
 // mutation computes what a mutating call leaves and returns: next is the
 // changed receiver, result the call's value.
 type mutation func(in *Interp, fr *Frame, cur object.Value, args []object.Value, kw *object.Map, block object.Value, line int) (next, result object.Value, err error)
 
-// evalMutCall runs a MutCall's steps and rebinds its target to what the
-// mutating ones leave.
-func (in *Interp) evalMutCall(n *syntax.MutCall, env *Env, fr *Frame) (object.Value, error) {
-	cur, err := in.eval(n.Target, env, fr)
-	if err != nil {
-		return object.Value{}, err
+// mutating runs a call of name on recv when name is one of Ruby's
+// mutators for recv's kind, and returns handled false otherwise.
+func (in *Interp) mutating(fr *Frame, recv object.Value, name string, args []object.Value, kw *object.Map, block object.Value, line int) (v object.Value, handled bool, err error) {
+	m := mutationFor(recv, name)
+	if m == nil {
+		return object.Value{}, false, nil
 	}
-	var result object.Value
-	owned, changed := true, false
-	for _, step := range n.Steps {
-		args, kw, block, err := in.stepArgs(step, env, fr)
-		if err != nil {
-			return object.Value{}, err
-		}
-		if m := mutationFor(cur, step.Name); m != nil {
-			next, res, err := m(in, fr, cur, args, kw, block, step.Line())
-			if err != nil {
-				return object.Value{}, withLine(err, step.Line())
-			}
-			cur, result = next, res
-			changed = changed || owned
-			continue
-		}
-		// A step that does not change its receiver is an ordinary call; a
-		// mutation after it changes only the call's fresh result.
-		v, err := in.call(fr, cur, step.Name, args, kw, block, false, step.Line())
-		if err != nil {
-			return object.Value{}, withLine(err, step.Line())
-		}
-		if owned && changed {
-			if err := in.rebind(n.Target, cur, env, fr); err != nil {
-				return object.Value{}, err
-			}
-		}
-		owned = false
-		cur, result = v, v
+	if syntax.IsBang(name) {
+		return object.Value{}, true, in.raise(object.CameoError, line, "%s", syntax.BangMessage("x", name))
 	}
-	if owned && changed {
-		if err := in.rebind(n.Target, cur, env, fr); err != nil {
-			return object.Value{}, err
-		}
+	if !in.IgnoreMutationErrors {
+		return object.Value{}, true, in.raise(object.CameoError, line, "%s", syntax.MutationMessage(name))
 	}
-	return result, nil
+	_, result, err := m(in, fr, recv, args, kw, block, line)
+	return result, true, withLine(err, line)
 }
 
-func (in *Interp) rebind(target syntax.Node, v object.Value, env *Env, fr *Frame) error {
-	switch t := target.(type) {
-	case *syntax.Var:
-		env.Set(t.Name, v)
+// dropped raises for a call of force_encoding on a string whose value the
+// script drops: Ruby's changes the string, cameo's returns a copy, so the
+// call does nothing. With IgnoreMutationErrors it does nothing silently.
+func (in *Interp) dropped(recv object.Value, name string, line int) error {
+	if in.IgnoreMutationErrors || !syntax.ReturnsCopy(name) {
 		return nil
-	case *syntax.Field:
-		return in.writeField(t.Name, v, fr, t.Line())
 	}
-	return in.raise(object.CameoError, 0, "cannot rebind %T", target)
+	switch recv.Kind() {
+	case object.KindString, object.KindBytes, object.KindASCII:
+		return in.raise(object.CameoError, line, "%s", syntax.DroppedMessage(name))
+	}
+	return nil
 }
 
-// stepArgs evaluates a step's arguments and block, as evalCall does.
-func (in *Interp) stepArgs(n *syntax.Call, env *Env, fr *Frame) ([]object.Value, *object.Map, object.Value, error) {
-	args, kw, err := in.evalCallArgs(n.Args, n.KwArgs, env, fr, n.Line())
-	if err != nil {
-		return nil, nil, object.Value{}, err
+// mayMutate reports whether a call of name can be one of Ruby's mutators,
+// so that a compiled call site of any other name skips the check.
+func mayMutate(name string) bool {
+	if syntax.IsBang(name) || syntax.ReturnsCopy(name) {
+		return true
 	}
-	var block object.Value
-	switch {
-	case n.Block != nil:
-		block = procValue(&Proc{Block: n.Block, Env: env, Frame: fr})
-	case n.BlockArg != nil:
-		v, err := in.eval(n.BlockArg, env, fr)
-		if err != nil {
-			return nil, nil, object.Value{}, err
-		}
-		if block, err = in.toProc(v, n.Line()); err != nil {
-			return nil, nil, object.Value{}, err
+	for _, table := range mutations {
+		if table[name] != nil {
+			return true
 		}
 	}
-	return args, kw, block, nil
+	return false
 }
 
 // mutationFor is what name does to a value of cur's kind when it changes
@@ -458,10 +428,10 @@ func init() {
 			return cur, nil
 		}),
 	}
-	// force_encoding changes what a string is, text or bytes, and returns
-	// it changed; so do bytesplice and append_as_bytes. setbyte returns
-	// the byte it set.
-	str["force_encoding"] = via("force_encoding")
+	// bytesplice and append_as_bytes return the string changed; setbyte
+	// returns the byte it set. force_encoding is not a mutator in cameo: it
+	// returns the copy relabelled, and a call whose value is dropped raises
+	// (see dropped).
 	str["bytesplice"] = via("bytesplice")
 	str["append_as_bytes"] = via("append_as_bytes")
 	str["setbyte"] = func(in *Interp, fr *Frame, cur object.Value, args []object.Value, kw *object.Map, block object.Value, line int) (object.Value, object.Value, error) {
