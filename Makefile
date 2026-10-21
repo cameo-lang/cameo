@@ -49,6 +49,10 @@ check: lint tests integration-tests ## Everything CI runs
 conformance: prerequisites ## Run every example and CRuby case compiled and interpreted, and compare
 	ruby tests/conformance/run.rb
 
+# Not part of check either: it clones github.com/ruby/spec, unless a copy is there.
+ruby-spec: ## Clone ruby/spec into ruby-spec/ of the main repository, unless it is there
+	ruby specs/checkout.rb
+
 install: prerequisites ## Install the cameo binary into GOBIN (or ~/go/bin)
 	go install ./src/cmd/cameo
 
