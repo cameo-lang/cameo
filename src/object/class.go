@@ -323,7 +323,7 @@ var (
 	ExceptionClass  = NewClass("Exception", ObjectClass)
 	// Enumerable is the module List, Map, Set and Range include.
 	Enumerable = NewModule("Enumerable")
-	// Comparable is the module Integer, Float, String and Time include.
+	// Comparable is the module Integer, Float, String, Symbol and Time include.
 	Comparable = NewModule("Comparable")
 	// MathModule is Math: module functions and constants.
 	MathModule = NewModule("Math")
@@ -387,6 +387,7 @@ func init() {
 	IntegerClass.Include(Comparable)
 	FloatClass.Include(Comparable)
 	StringClass.Include(Comparable)
+	SymbolClass.Include(Comparable)
 	TimeClass.Include(Comparable)
 	BasicClasses = []*Class{
 		ObjectClass, ModuleClass, ClassClass, NilClass, BoolClass, IntegerClass, FloatClass,

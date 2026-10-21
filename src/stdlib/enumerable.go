@@ -505,6 +505,17 @@ func installEnumerable() {
 	each("to_a", toA)
 	each("entries", toA)
 	each("to_set", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
+		if !block.IsZero() {
+			mapped := make([]object.Value, len(elems))
+			for i, el := range elems {
+				v, err := ctx.Yield(block, el)
+				if err != nil {
+					return object.Value{}, err
+				}
+				mapped[i] = v
+			}
+			elems = mapped
+		}
 		return object.SetValue(object.NewSet(elems...)), nil
 	})
 	each("to_h", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {

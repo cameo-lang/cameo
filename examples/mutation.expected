@@ -56,3 +56,9 @@ nil
 1
 8
 ["c", "b", "a"]
+105
+"hit"
+"cit"
+"cit"
+"abcd\xFF"
+#<Encoding:BINARY (ASCII-8BIT)>

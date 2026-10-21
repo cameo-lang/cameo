@@ -161,6 +161,13 @@ func installString() {
 		return b.String()
 	})
 	def(c, "to_sym", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if !validIn(self.Kind(), str(self)) {
+			quoted := object.QuoteString(str(self))
+			if self.Kind() == object.KindASCII {
+				quoted = object.QuoteBytes([]byte(str(self)))
+			}
+			return object.Value{}, ctx.Raise(object.EncodingError, "invalid symbol in encoding %s :%s", encodingName(self.Kind()), quoted)
+		}
 		return object.Symbol(str(self)), nil
 	})
 	def(c, "intern", 0, c.Methods["to_sym"].Native)
@@ -194,10 +201,23 @@ func installString() {
 		return object.Int(0), nil
 	})
 	def(c, "ord", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if str(self) == "" {
+		s := str(self)
+		if s == "" {
 			return object.Value{}, ctx.Raise(object.ArgumentError, "empty string")
 		}
-		r, _ := utf8.DecodeRuneInString(str(self))
+		switch self.Kind() {
+		case object.KindBytes:
+			return object.Int(int64(s[0])), nil
+		case object.KindASCII:
+			if s[0] >= 0x80 {
+				return object.Value{}, ctx.Raise(object.ArgumentError, "invalid byte sequence in US-ASCII")
+			}
+			return object.Int(int64(s[0])), nil
+		}
+		r, size := utf8.DecodeRuneInString(s)
+		if r == utf8.RuneError && size < 2 {
+			return object.Value{}, ctx.Raise(object.ArgumentError, "invalid byte sequence in UTF-8")
+		}
 		return object.Int(r), nil
 	})
 	def(c, "chr", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -316,9 +336,11 @@ func installString() {
 		}
 		return object.Int(n)
 	})
-	strArg("casecmp?", func(s, a string) object.Value { return object.Bool(strings.EqualFold(s, a)) })
-	strArg("casecmp", func(s, a string) object.Value {
-		return object.Int(strings.Compare(strings.ToLower(s), strings.ToLower(a)))
+	def(c, "casecmp", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return casecmp(self, args[0]), nil
+	})
+	def(c, "casecmp?", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return casecmpP(self, args[0]), nil
 	})
 	def(c, "tr", 2, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		from, err := wantString(ctx, args[0])
@@ -569,4 +591,48 @@ func parseIntBase(s string, base int) (object.Value, bool) {
 		return object.Value{}, false
 	}
 	return object.BigInt(b), true
+}
+
+// casecmp is String#casecmp: the order of two strings with ASCII letters
+// folded to lower case, nil when other is not a String or the encodings
+// are incompatible.
+func casecmp(self, other object.Value) object.Value {
+	if !other.IsString() {
+		return object.Nil
+	}
+	if _, ok := compatible(self, other); !ok {
+		return object.Nil
+	}
+	a, b := self.Str(), other.Str()
+	for i := 0; i < len(a) && i < len(b); i++ {
+		if x, y := asciiLower(a[i]), asciiLower(b[i]); x != y {
+			if x < y {
+				return object.Int(-1)
+			}
+			return object.Int(1)
+		}
+	}
+	switch {
+	case len(a) == len(b):
+		return object.Int(0)
+	case len(a) > len(b):
+		return object.Int(1)
+	}
+	return object.Int(-1)
+}
+
+// casecmpP is String#casecmp?: whether two strings are equal after case
+// folding, Unicode's for UTF-8 strings and ASCII's for the others, nil
+// when other is not a String or the encodings are incompatible.
+func casecmpP(self, other object.Value) object.Value {
+	if !other.IsString() {
+		return object.Nil
+	}
+	if _, ok := compatible(self, other); !ok {
+		return object.Nil
+	}
+	if self.Kind() == object.KindString && other.Kind() == object.KindString {
+		return object.Bool(strings.EqualFold(self.Str(), other.Str()))
+	}
+	return object.Bool(asciiCase(self.Str(), asciiLower) == asciiCase(other.Str(), asciiLower))
 }

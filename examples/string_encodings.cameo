@@ -26,3 +26,21 @@ c = "x".b
 c << "y"
 p c.encoding, [1, 2].pack("C*").encoding, [0x263a].pack("U").encoding, "é".b.bytes, "é".bytes.pack("C*").force_encoding("UTF-8")
 p "\xff\xfe".b.unpack("C*"), "abc".b.sub("b", "X"), "a\xFFc".b.gsub(/\xFF/n, "!"), "ab".b.tr("a", "z"), "aab".b.squeeze, "hello".b.count("l")
+# Bytes read one at a time, and a symbol's encoding from its name.
+p "hé".getbyte(1), "abc".getbyte(-1), "abc".getbyte(3)
+p "hello".bytesplice(1, 2, "EY"), "こんにちは".bytesplice(3..5, "x"), "ab".setbyte(0, 0x41)
+p :foo.encoding, :"é".encoding, :foo.to_s.encoding, "\xC3".b.to_sym.encoding
+p "\xC3".b.ord, "é".ord
+begin
+  "こんにちは".bytesplice(1, 0, "x")
+rescue IndexError => e
+  p e.message
+end
+begin
+  "\xC3".to_sym
+rescue EncodingError => e
+  p e.message
+end
+p :aBc.swapcase, :"äöü".capitalize, :"ÄÖÜ".downcase
+p :abc.casecmp(:ABD), :abc.casecmp("abc"), :"Ä".casecmp?(:"ä"), "Ä".casecmp("ä"), "a".casecmp(1)
+p :a < :b, [:c, :a, :b].max, :b.between?(:a, :c), Symbol.include?(Comparable), String.include?(Comparable)

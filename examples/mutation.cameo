@@ -75,3 +75,10 @@ p n, (n << 3)
 words = %w[b a c]
 words.sort!.reverse!
 p words
+# The byte mutators rebind a local; setbyte returns the byte it set.
+b = "hat"
+p b.setbyte(1, 105), b
+p b.bytesplice(0, 1, "c"), b
+raw = "ab".b
+raw.append_as_bytes("c", 0x164, -1)
+p raw, raw.encoding

@@ -188,6 +188,10 @@ func (in *Interp) inspectBuiltin(v object.Value) (string, error) {
 			// A bare Object has no fields to show, and cameo no address.
 			return "#<Object>", nil
 		case object.EncodingClass:
+			// Ruby 3.4 shows binary by both its names.
+			if v.Fields[0].Str() == "ASCII-8BIT" {
+				return "#<Encoding:BINARY (ASCII-8BIT)>", nil
+			}
 			return "#<Encoding:" + v.Fields[0].Str() + ">", nil
 		case object.PathnameClass:
 			return "#<Pathname:" + v.Fields[0].Str() + ">", nil

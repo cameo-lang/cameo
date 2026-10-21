@@ -424,19 +424,7 @@ func init() {
 			next := object.SetValue(cur.Set().Without(args[0]))
 			return next, next, nil
 		},
-		"merge": returnsSelf(func(in *Interp, fr *Frame, cur object.Value, args []object.Value, block object.Value, line int) (object.Value, error) {
-			s := cur.Set()
-			for _, a := range args {
-				elems, err := in.elemsOf(a, line)
-				if err != nil {
-					return object.Value{}, err
-				}
-				for _, e := range elems {
-					s = s.With(e)
-				}
-			}
-			return object.SetValue(s), nil
-		}),
+		"merge": via("merge"),
 		"subtract": returnsSelf(func(in *Interp, fr *Frame, cur object.Value, args []object.Value, block object.Value, line int) (object.Value, error) {
 			if err := wantArgs(in, args, 1, line); err != nil {
 				return object.Value{}, err
@@ -471,8 +459,18 @@ func init() {
 		}),
 	}
 	// force_encoding changes what a string is, text or bytes, and returns
-	// it changed.
+	// it changed; so do bytesplice and append_as_bytes. setbyte returns
+	// the byte it set.
 	str["force_encoding"] = via("force_encoding")
+	str["bytesplice"] = via("bytesplice")
+	str["append_as_bytes"] = via("append_as_bytes")
+	str["setbyte"] = func(in *Interp, fr *Frame, cur object.Value, args []object.Value, kw *object.Map, block object.Value, line int) (object.Value, object.Value, error) {
+		next, err := stdlib.SetByte(in, cur, args)
+		if err != nil {
+			return object.Value{}, object.Value{}, err
+		}
+		return next, args[1], nil
+	}
 	mutations = map[object.Kind]map[string]mutation{
 		object.KindList: list, object.KindString: str, object.KindMap: hash, object.KindSet: set,
 		object.KindBytes: str, object.KindASCII: str,
@@ -535,7 +533,7 @@ func appendStrings(in *Interp, cur object.Value, args []object.Value, line int) 
 	return object.StringOf(kind, b.String()), nil
 }
 
-// elemsOf is the elements of a list, set, range or map, as Set#merge
+// elemsOf is the elements of a list, set, range or map, as Set#subtract
 // takes them.
 func (in *Interp) elemsOf(v object.Value, line int) ([]object.Value, error) {
 	switch v.Kind() {
