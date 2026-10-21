@@ -550,7 +550,17 @@ func (in *Interp) callBlock(block object.Value, args []object.Value, kw *object.
 	if err := in.bindParams(&p.Block.Params, args, kw, inner, env, fr, p.Strict, "block", p.Block.Line()); err != nil {
 		return object.Value{}, err
 	}
-	v, err := in.code.body(p.Block, p.Block.Body)(in, env, fr)
+	body := in.code.body(p.Block, p.Block.Body)
+	v, err := body(in, env, fr)
+	for err != nil {
+		c, ok := err.(*control)
+		if !ok || c.kind != ctrlRedo || c.target != nil {
+			break
+		}
+		if err = in.stopped(); err == nil {
+			v, err = body(in, env, fr)
+		}
+	}
 	if err != nil {
 		if c, ok := err.(*control); ok {
 			switch {

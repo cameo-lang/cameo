@@ -7,7 +7,7 @@ import (
 )
 
 // control is a non-local exit travelling up the evaluator as an error:
-// break, next, return and retry. A raised exception travels as an
+// break, next, redo, return and retry. A raised exception travels as an
 // *object.Exception instead.
 type control struct {
 	kind   ctrlKind
@@ -23,6 +23,7 @@ const (
 	ctrlNext
 	ctrlReturn
 	ctrlRetry
+	ctrlRedo
 )
 
 func (k ctrlKind) String() string {
@@ -35,6 +36,8 @@ func (k ctrlKind) String() string {
 		return "return"
 	case ctrlRetry:
 		return "retry"
+	case ctrlRedo:
+		return "redo"
 	}
 	return "control"
 }

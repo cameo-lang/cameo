@@ -189,6 +189,9 @@ func (f *fn) expr(n syntax.Node, value bool) string {
 		f.line("for {")
 		f.depth++
 		f.pass(stop)
+		if n.DoWhile {
+			f.body(n.Body, false)
+		}
 		// until x is while !x, which leaves the loop when x holds.
 		if not, ok := n.Cond.(*syntax.Not); ok {
 			f.line("if %s {", f.expr(not.Value, true))
@@ -197,7 +200,9 @@ func (f *fn) expr(n syntax.Node, value bool) string {
 		}
 		f.line("\tbreak")
 		f.line("}")
-		f.body(n.Body, false)
+		if !n.DoWhile {
+			f.body(n.Body, false)
+		}
 		f.depth--
 		f.line("}")
 		return ""

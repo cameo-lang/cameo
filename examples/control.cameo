@@ -70,3 +70,48 @@ puts result
 
 puts [1, 2, 3].each { |v| break v * 100 if v == 2 }
 puts (1..3).each { |v| v }.inspect
+
+# begin ... end while runs its body before the first test; a while with a
+# begin inside tests first.
+runs = 0
+begin
+  runs += 1
+end while false
+puts runs
+runs = 0
+begin runs += 1 end until true
+puts runs
+runs = 0
+while false
+  begin
+    runs += 1
+  end
+end
+puts runs
+
+# redo restarts the pass without testing the condition or taking the next
+# element.
+seen = []
+loop do
+  seen << 1
+  redo if seen.size == 1
+  seen << 2
+  next if seen.size == 3
+  seen << 3
+  break if seen.size > 6
+end
+p seen
+seen = []
+[1, 2].each do |v|
+  seen << v
+  redo if seen.size == 1
+end
+p seen
+seen = []
+j = 0
+while j < 2
+  j += 1
+  seen << j
+  redo if seen.size == 1
+end
+p seen

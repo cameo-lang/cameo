@@ -247,6 +247,11 @@ func compile(n syntax.Node) thunk {
 			}
 			return object.Value{}, &control{kind: ctrlNext, value: v, line: line}
 		}
+	case *syntax.Redo:
+		line := n.Line()
+		return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
+			return object.Value{}, &control{kind: ctrlRedo, line: line}
+		}
 	case *syntax.If:
 		cond, then, els := compile(n.Cond), compileBody(n.Then), compileBody(n.Else)
 		return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
@@ -260,19 +265,22 @@ func compile(n syntax.Node) thunk {
 			return els(in, env, fr)
 		}
 	case *syntax.While:
-		cond, body := compile(n.Cond), compileBody(n.Body)
+		cond, body, test := compile(n.Cond), compileBody(n.Body), !n.DoWhile
 		return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
-			for {
+			for first := true; ; first = false {
 				if err := in.stopped(); err != nil {
 					return object.Value{}, err
 				}
-				c, err := cond(in, env, fr)
-				if err != nil {
-					return object.Value{}, err
+				if test || !first {
+					c, err := cond(in, env, fr)
+					if err != nil {
+						return object.Value{}, err
+					}
+					if !c.Truthy() {
+						return object.Nil, nil
+					}
 				}
-				if !c.Truthy() {
-					return object.Nil, nil
-				}
+			pass:
 				if _, err := body(in, env, fr); err != nil {
 					if c, ok := err.(*control); ok && c.target == nil {
 						switch c.kind {
@@ -280,6 +288,11 @@ func compile(n syntax.Node) thunk {
 							return c.value, nil
 						case ctrlNext:
 							continue
+						case ctrlRedo:
+							if err := in.stopped(); err != nil {
+								return object.Value{}, err
+							}
+							goto pass
 						}
 					}
 					return object.Value{}, err

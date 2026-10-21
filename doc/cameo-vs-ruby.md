@@ -57,7 +57,7 @@ mspec's own `before` blocks.
   regular expressions, `%w[]` and `%i[]`.
 - **Control flow**: `if`/`unless`/`elsif`, modifiers, `case`/`when`,
   pattern matching with `case`/`in`, `while`/`until` and `begin … end
-  while`, `loop` and `break` with a value, `next`, `retry`, safe
+  while`, `loop` and `break` with a value, `next`, `redo`, `retry`, safe
   navigation `&.`, `BEGIN`.
 - **Methods**: positional, optional, `*rest`, keyword, `**kwrest` and
   `&block` parameters; endless `def`; argument forwarding (`...`, `*`, `**`,
@@ -242,7 +242,7 @@ These are absent, and a script that uses one fails when it reaches it:
   `gets`, `STDIN`, `STDOUT`, `STDERR`, `$stdout`.
 - **No threads or processes**: `Thread`, `Fiber`, `Mutex`, `sleep`,
   `system`, `exec`, `spawn`; cameo has `async` and `await` instead.
-- **Not there yet**: `exit`, `at_exit`, `catch` and `throw`, `redo`,
+- **Not there yet**: `exit`, `at_exit`, `catch` and `throw`,
   `printf` (`format` exists), `__method__`, `__LINE__`, `Enumerator.new`,
   `Integer()` with a base, `Random` as a class (`rand` and `srand` exist),
   and `autoload`.

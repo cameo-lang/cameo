@@ -204,7 +204,7 @@ func (c *converter) expr(n ast.Node) Node {
 	case *ast.If:
 		return c.ifExpr(n)
 	case *ast.While:
-		return &While{c.pos(), c.expr(n.Cond), c.body(n.Body)}
+		return &While{c.pos(), c.expr(n.Cond), c.body(n.Body), c.isBeginBlock(n.Body)}
 	case *ast.For:
 		return c.forLoop(n)
 	case *ast.MethodDef:
@@ -571,6 +571,10 @@ func (c *converter) call(n *ast.Call) Node {
 	}
 	if n.Recv == nil {
 		switch name {
+		case "redo":
+			if len(n.Args) == 0 && n.Block == nil && !n.Paren {
+				return &Redo{c.pos()}
+			}
 		case "defined?":
 			if len(n.Args) == 1 {
 				return &Defined{c.pos(), c.expr(n.Args[0])}
@@ -778,6 +782,28 @@ func (c *converter) anonymous(name string) Node { return &Var{c.pos(), name} }
 
 // forLoop rewrites `for x in xs ... end` into `xs.each { |v| x = v ... }`,
 // declaring x first, since a for loop's variables outlive it in Ruby.
+// isBeginBlock returns true when a while modifier's body is a `begin … end`,
+// which makes the loop test its condition after each pass. The body of a
+// `while … end` is a statement with a line of its own, and a modifier's
+// operand has none. The parser gives `x rescue y` and a parenthesised
+// `(a; b)` the node of a begin as well: the first is told apart by its
+// shape, the second is taken for a begin.
+func (c *converter) isBeginBlock(body []ast.Node) bool {
+	if len(body) != 1 {
+		return false
+	}
+	b, ok := body[0].(*ast.Begin)
+	if !ok {
+		return false
+	}
+	if _, statement := c.lines[b]; statement {
+		return false
+	}
+	modifierRescue := len(b.Body) == 1 && len(b.Rescues) == 1 && b.ElseBody == nil && b.EnsureBody == nil &&
+		len(b.Rescues[0].Classes) == 0 && b.Rescues[0].Var == "" && b.Rescues[0].VarTarget == nil && len(b.Rescues[0].Body) == 1
+	return !modifierRescue
+}
+
 func (c *converter) forLoop(n *ast.For) Node {
 	if n.Target != nil {
 		c.fail("for with a nested or non-local target is not supported")
