@@ -1,0 +1,247 @@
+# The part of mspec that cameo can run, put in front of every spec by run.rb.
+#
+# cameo cannot reopen Object, so run.rb rewrites mspec's expectations into
+# calls to the functions here before the spec runs:
+#
+#   a.should == b             __should_op(false, a, :==, b)
+#   a.should.raise(E, "m")    __should_raise(false, a, E, "m")
+#   a.should.include?(x)      __should_pred(false, a, :include?, x)
+#   a.should be_close(x, t)   __should(false, a, be_close(x, t))
+#   quarantine! do … end      __quarantine do … end
+#
+# and the same with true for should_not. A matcher is a lambda that takes
+# the actual value and returns [matched, expectation]. Values are immutable
+# and there are no globals, so nothing is counted here: each example prints
+# one line that starts with "\u0001S ", and run.rb counts them.
+#
+# Instance variables, before and after blocks, shared examples, mocks and
+# ScratchPad need state an example cannot keep in cameo; before, after and
+# it_behaves_like print a line that says so and do not run.
+
+class SpecExpectationNotMetError < StandardError
+end
+
+TOLERANCE = 0.00003
+TIME_TOLERANCE = 20.0
+
+def __spec_line(kind, text)
+  puts "\u0001S #{kind} #{text.to_s.gsub("\n", "\\n")}"
+end
+
+def __spec_fail(expected, actual)
+  raise SpecExpectationNotMetError, "#{expected}\n#{actual}"
+end
+
+def describe(name = nil, *rest, shared: false, &block)
+  if shared
+    __spec_line("U", "shared #{name.inspect}")
+    return nil
+  end
+  __spec_line("D+", name.inspect)
+  begin
+    block.call if block
+  rescue SpecExpectationNotMetError => e
+    __spec_line("F", "(describe body)\t#{e.message}")
+  rescue Exception => e
+    __spec_line("E", "(describe body)\t#{e.message} (#{e.class})")
+  end
+  __spec_line("D-", "")
+  nil
+end
+
+def context(name = nil, *rest, &block) = describe(name, *rest, &block)
+
+def it(name = "", &block)
+  return nil unless block
+  begin
+    block.call
+    __spec_line("P", name)
+  rescue SpecExpectationNotMetError => e
+    __spec_line("F", "#{name}\t#{e.message}")
+  rescue Exception => e
+    __spec_line("E", "#{name}\t#{e.message} (#{e.class})")
+  end
+  nil
+end
+
+def specify(name = "", &block) = it(name, &block)
+
+def before(*args, &block)
+  __spec_line("U", "before")
+  nil
+end
+
+def after(*args, &block)
+  __spec_line("U", "after")
+  nil
+end
+
+def it_behaves_like(name, *args)
+  __spec_line("U", "it_behaves_like #{name.inspect}")
+  nil
+end
+
+def it_should_behave_like(name, *args) = it_behaves_like(name, *args)
+
+# Expectations.
+
+def __should_check(negated, matched, expected, actual)
+  if negated ? matched : !matched
+    __spec_fail("Expected #{expected}", actual)
+  end
+  nil
+end
+
+def __should_op(negated, actual, op, expected)
+  result = actual.send(op, expected)
+  truth = negated ? "to be falsy" : "to be truthy"
+  __should_check(negated, result, "#{actual.inspect} #{op} #{expected.inspect}", "#{truth} but was #{result.inspect}")
+end
+
+def __should_pred(negated, actual, name, *args, &block)
+  result = actual.send(name, *args, &block)
+  shown = args.map(&:inspect).join(", ")
+  truth = negated ? "to be falsy" : "to be truthy"
+  __should_check(negated, result, "#{actual.inspect}.#{name}(#{shown})", "#{truth} but was #{result.inspect}")
+end
+
+def __should(negated, actual, matcher)
+  matched, expectation = matcher.call(actual)
+  __should_check(negated, matched, "#{actual.inspect} #{negated ? "not " : ""}#{expectation}", "")
+end
+
+def __exception_text(cls, message)
+  message.nil? ? cls.to_s : "#{cls}(#{message.inspect})"
+end
+
+# __should_raise follows mspec's RaiseErrorMatcher: an exception of another
+# class or message is raised again, so the example reports it as an error.
+def __should_raise(negated, actual, exception = Exception, message = nil, options = nil, &block)
+  message = nil if message.is_a?(Hash)
+  begin
+    result = actual.call
+  rescue Exception => e
+    matched = exception === e && (message.nil? || (message.is_a?(Regexp) ? message.match?(e.message) : message == e.message))
+    raise e unless matched || negated
+    if matched && negated
+      __spec_fail("Expected to not get #{__exception_text(exception, message)}", "")
+    end
+    block.call(e) if block && matched
+    return nil
+  end
+  unless negated
+    __spec_fail("Expected #{__exception_text(exception, message)}", "but no exception was raised (#{result.inspect} was returned)")
+  end
+  nil
+end
+
+def raise_error(exception = Exception, message = nil, options = nil, &block)
+  lambda do |actual|
+    __should_raise(false, actual, exception, message, options, &block)
+    [true, ""]
+  end
+end
+
+def be_close(expected, tolerance) = ->(actual) { [(actual - expected).abs <= tolerance, "to be within #{expected} +/- #{tolerance}"] }
+def be_nil = ->(actual) { [actual.nil?, "to be nil"] }
+def be_true = ->(actual) { [actual == true, "to be true"] }
+def be_false = ->(actual) { [actual == false, "to be false"] }
+def be_true_or_false = ->(actual) { [actual == true || actual == false, "to be true or false"] }
+def be_empty = ->(actual) { [actual.empty?, "to be empty"] }
+def be_nan = ->(actual) { [actual.is_a?(Float) && actual.nan?, "to be NaN"] }
+def be_positive_infinity = ->(actual) { [actual == Float::INFINITY, "to be Infinity"] }
+def be_negative_infinity = ->(actual) { [actual == -Float::INFINITY, "to be -Infinity"] }
+def be_positive_zero = ->(actual) { [actual == 0 && (1.0 / actual) == Float::INFINITY, "to be 0.0"] }
+def be_negative_zero = ->(actual) { [actual == 0 && (1.0 / actual) == -Float::INFINITY, "to be -0.0"] }
+def be_kind_of(cls) = ->(actual) { [actual.is_a?(cls), "to be a kind of #{cls}"] }
+def be_an_instance_of(cls) = ->(actual) { [actual.instance_of?(cls), "to be an instance of #{cls}"] }
+def be_ancestor_of(cls) = ->(actual) { [cls.ancestors.include?(actual), "to be an ancestor of #{cls}"] }
+def eql(expected) = ->(actual) { [actual.eql?(expected), "to be eql to #{expected.inspect}"] }
+def include(*expected) = ->(actual) { [expected.all? { |x| actual.include?(x) }, "to include #{expected.map(&:inspect).join(", ")}"] }
+def respond_to(name) = ->(actual) { [actual.respond_to?(name), "to respond to #{name}"] }
+
+# be_computed_by(:m, *args) matches a list of [receiver, *args, result]
+# rows: receiver.m(*args) is result on each.
+def be_computed_by(name, *args)
+  lambda do |rows|
+    bad = rows.reject { |row| row[0].send(name, *row[1...-1], *args) == row[-1] }
+    [bad.empty?, "to be computed by #{name}, failing on #{bad.inspect}"]
+  end
+end
+
+# Guards. cameo is not CRuby, so a guard for an implementation other than
+# cameo, or for an optional feature, does not run its block.
+
+def __spec_version(v)
+  parts = v.to_s.split(".").map(&:to_i)
+  (parts[0] || 0) * 10000 + (parts[1] || 0) * 100 + (parts[2] || 0)
+end
+
+def __spec_guard(run, &block)
+  return run unless block
+  block.call if run
+  nil
+end
+
+def ruby_version_is(requirement, &block)
+  current = __spec_version(RUBY_VERSION)
+  run = if requirement.is_a?(Range)
+    low = __spec_version(requirement.begin)
+    high = __spec_version(requirement.end)
+    current >= low && (requirement.exclude_end? ? current < high : current <= high)
+  else
+    current >= __spec_version(requirement)
+  end
+  __spec_guard(run, &block)
+end
+
+def __spec_os?(names)
+  names.any? do |os|
+    os == :windows ? RUBY_PLATFORM.match?(/mswin|mingw/) : RUBY_PLATFORM.include?(os.to_s)
+  end
+end
+
+def __spec_platform?(args)
+  options = args.last.is_a?(Hash) ? args.last : {}
+  oses = args.last.is_a?(Hash) ? args[0...-1] : args
+  match = oses.empty? || __spec_os?(oses)
+  options.each do |key, value|
+    case key
+    when :os then match &&= __spec_os?(Array(value))
+    when :pointer_size, :c_long_size, :wordsize then match &&= value == 64
+    end
+  end
+  match
+end
+
+def platform_is(*args, &block) = __spec_guard(__spec_platform?(args), &block)
+def platform_is_not(*args, &block) = __spec_guard(!__spec_platform?(args), &block)
+def guard(condition, &block) = __spec_guard(condition.call, &block)
+def guard_not(condition, &block) = __spec_guard(!condition.call, &block)
+def ruby_bug(*args, &block) = __spec_guard(true, &block)
+def not_supported_on(*impls, &block) = __spec_guard(!impls.include?(:cameo), &block)
+def conflicts_with(*names, &block) = __spec_guard(true, &block)
+def with_feature(*features, &block) = __spec_guard(false, &block)
+def without_feature(*features, &block) = __spec_guard(true, &block)
+def little_endian(&block) = __spec_guard(true, &block)
+def big_endian(&block) = __spec_guard(false, &block)
+def as_user(&block) = __spec_guard(true, &block)
+def as_superuser(&block) = __spec_guard(false, &block)
+def __quarantine(&block) = __spec_guard(false, &block)
+def slow_test(&block) = __spec_guard(true, &block)
+def deviates_on(*impls, &block) = __spec_guard(false, &block)
+def extended_on(*impls, &block) = __spec_guard(false, &block)
+def kernel_version_is(*args, &block) = __spec_guard(false, &block)
+
+def suppress_warning(&block) = block.call
+
+# Numeric helpers, as mspec defines them on a 64-bit platform.
+
+def nan_value = 0 / 0.0
+def infinity_value = 1 / 0.0
+def bignum_value(plus = 0) = (2**64) + plus
+def fixnum_max = (2**62) - 1
+def fixnum_min = -(2**62)
+def max_long = 2**63 - 1
+def min_long = -(2**63)
+def max_ulong = 2**64 - 1
