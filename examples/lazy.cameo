@@ -20,3 +20,9 @@ p c
 x = [1, 2, 3].lazy.map { |v| v * 10 }
 p x.to_a, x.to_a, x.class, x.eager.class
 p (1..3).lazy.zip("a".."c") { |x, y| p [x, y] }
+
+# Slicing a lazy enumerator works on an endless one.
+s = 0..Float::INFINITY
+p s.lazy.chunk_while { |a, b| b == a + 1 && b % 4 != 0 }.first(2), s.lazy.slice_when { |a, b| b % 3 == 0 }.first(2)
+p s.lazy.slice_before { |n| n % 5 == 0 }.first(2), s.lazy.slice_after(&:even?).first(3), (1..6).lazy.slice_before(3..4).to_a
+p [1, 2, 4, 9, 10, 11].slice_when { |i, j| i + 1 != j }.to_a, ["a", "#b", "c"].slice_before(/#/).to_a, [1, 2, 3].slice_after(&:odd?).to_a

@@ -582,12 +582,22 @@ func installEnumerable() {
 	each("each_entry", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		return yieldEach(ctx, elems, block)
 	})
-	withBlock("chunk_while", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
-		return chunks(ctx, elems, block, true)
-	})
-	withBlock("slice_when", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
-		return chunks(ctx, elems, block, false)
-	})
+	// chunk_while, slice_when, slice_before and slice_after return the
+	// slices as a list.
+	for _, name := range []string{"chunk_while", "slice_when", "slice_before", "slice_after"} {
+		each(name, func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
+			slice, err := slicer(ctx, name, args, block)
+			if err != nil {
+				return object.Value{}, err
+			}
+			out := []object.Value{}
+			err = slice(ctx, listEach(elems), func(v object.Value) error {
+				out = append(out, v)
+				return nil
+			})
+			return object.NewList(out...), err
+		})
+	}
 	// cycle repeats the elements n times, or forever; without a block it
 	// is an enumerator of them.
 	def(e, "cycle", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -850,30 +860,6 @@ func sortBy(ctx object.Context, elems []object.Value, block object.Value) ([]obj
 	return out, nil
 }
 
-// chunks splits elems where the block, given two neighbours, returns
-// false (chunk_while) or true (slice_when).
-func chunks(ctx object.Context, elems []object.Value, block object.Value, together bool) (object.Value, error) {
-	if len(elems) == 0 {
-		return object.NewList(), nil
-	}
-	out := []object.Value{}
-	cur := []object.Value{elems[0]}
-	for i := 1; i < len(elems); i++ {
-		r, err := ctx.Yield(block, elems[i-1], elems[i])
-		if err != nil {
-			return object.Value{}, err
-		}
-		if r.Truthy() == together {
-			cur = append(cur, elems[i])
-		} else {
-			out = append(out, object.NewList(cur...))
-			cur = []object.Value{elems[i]}
-		}
-	}
-	out = append(out, object.NewList(cur...))
-	return object.NewList(out...), nil
-}
-
 func grepElems(ctx object.Context, elems []object.Value, args []object.Value, block object.Value, keep bool) (object.Value, error) {
 	if len(args) != 1 {
 		return object.Value{}, argError(ctx, len(args), "1")
@@ -1040,4 +1026,107 @@ func extremumBy(ctx object.Context, elems []object.Value, block object.Value, si
 		}
 	}
 	return best, nil
+}
+
+// listEach produces the elements of a list.
+func listEach(elems []object.Value) each {
+	return func(ctx object.Context, yield func(object.Value) error) error {
+		for _, el := range elems {
+			if err := yield(el); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+}
+
+// slicer reads the arguments of slice_before, slice_after, slice_when
+// and chunk_while and returns how to cut a stream of elements: given the
+// elements' source and where each finished slice goes.
+func slicer(ctx object.Context, name string, args []object.Value, block object.Value) (func(ctx object.Context, src each, yield func(object.Value) error) error, error) {
+	var cut func(prev, v object.Value) (bool, error)
+	switch name {
+	case "slice_before", "slice_after":
+		switch {
+		case len(args) == 0 && block.IsZero():
+			return nil, argError(ctx, 0, "1")
+		case len(args) > 0 && !block.IsZero():
+			return nil, argError(ctx, len(args), "0")
+		case len(args) > 1:
+			return nil, argError(ctx, len(args), "1")
+		}
+		match := func(v object.Value) (bool, error) {
+			var r object.Value
+			var err error
+			if block.IsZero() {
+				r, err = ctx.Call(args[0], "===", v)
+			} else {
+				r, err = ctx.Yield(block, v)
+			}
+			return r.Truthy(), err
+		}
+		if name == "slice_after" {
+			// A slice ends at a match, before the next element is read.
+			return func(ctx object.Context, src each, yield func(object.Value) error) error {
+				var cur []object.Value
+				err := src(ctx, func(v object.Value) error {
+					cur = append(cur, v)
+					end, err := match(v)
+					if err != nil || !end {
+						return err
+					}
+					done := object.NewList(cur...)
+					cur = nil
+					return yield(done)
+				})
+				if err != nil || len(cur) == 0 {
+					return err
+				}
+				return yield(object.NewList(cur...))
+			}, nil
+		}
+		cut = func(prev, v object.Value) (bool, error) { return match(v) }
+	default:
+		if block.IsZero() {
+			return nil, ctx.Raise(object.ArgumentError, "tried to create Proc object without a block")
+		}
+		if len(args) > 0 {
+			return nil, argError(ctx, len(args), "0")
+		}
+		together := name == "chunk_while"
+		cut = func(prev, v object.Value) (bool, error) {
+			r, err := ctx.Yield(block, prev, v)
+			return r.Truthy() != together, err
+		}
+	}
+	return func(ctx object.Context, src each, yield func(object.Value) error) error {
+		var cur []object.Value
+		err := src(ctx, func(v object.Value) error {
+			if len(cur) > 0 {
+				c, err := cut(cur[len(cur)-1], v)
+				if err != nil {
+					return err
+				}
+				if c {
+					done := object.NewList(cur...)
+					cur = nil
+					if err := yield(done); err != nil {
+						return err
+					}
+				}
+			} else if name == "slice_before" {
+				// The first element starts a slice whatever it is, but
+				// the block still sees it.
+				if _, err := cut(object.Nil, v); err != nil {
+					return err
+				}
+			}
+			cur = append(cur, v)
+			return nil
+		})
+		if err != nil || len(cur) == 0 {
+			return err
+		}
+		return yield(object.NewList(cur...))
+	}, nil
 }

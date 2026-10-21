@@ -116,6 +116,12 @@ func enumerator(lazy bool, recv object.Value, meth string, args []object.Value, 
 	return object.EnumeratorValue(&object.Enumerator{Lazy: lazy, Each: e, Recv: recv, Meth: meth, Args: args})
 }
 
+// sizedEnumerator makes an eager enumerator value whose size is known
+// without enumerating it.
+func sizedEnumerator(recv object.Value, meth string, args []object.Value, e each, size func(ctx object.Context) (object.Value, error)) object.Value {
+	return object.EnumeratorValue(&object.Enumerator{Each: e, Recv: recv, Meth: meth, Args: args, Size: size})
+}
+
 // enumElems lists an enumerator's elements; an endless one never returns.
 func enumElems(ctx object.Context, e *object.Enumerator) ([]object.Value, error) {
 	out := []object.Value{}
@@ -143,6 +149,9 @@ func firstOf(ctx object.Context, e each, n int64) ([]object.Value, error) {
 // and for a lazy one #<Enumerator::Lazy: ...>, the receiver being the
 // enumerator a lazy method was called on.
 func EnumeratorInspect(ctx object.Context, e *object.Enumerator) (string, error) {
+	if e.Arith != nil {
+		return arithInspect(ctx, e)
+	}
 	var b strings.Builder
 	b.WriteString("#<")
 	b.WriteString(object.EnumeratorValue(e).Class().QualifiedName())
@@ -279,6 +288,9 @@ func installEnumerator() {
 		return enumerator(true, self, "", nil, en(self).Each), nil
 	})
 	def(c, "size", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if size := en(self).Size; size != nil {
+			return size(ctx)
+		}
 		return object.Nil, nil
 	})
 	inspect := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -288,6 +300,7 @@ func installEnumerator() {
 	def(c, "inspect", 0, inspect)
 	def(c, "to_s", 0, inspect)
 	installLazy()
+	installArithSeq()
 }
 
 // installLazy defines Enumerator::Lazy's methods, each a new lazy
@@ -575,6 +588,18 @@ func installLazy() {
 		})
 		return object.Nil, err
 	})
+	for _, name := range []string{"chunk_while", "slice_when", "slice_before", "slice_after"} {
+		def(c, name, -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+			slice, err := slicer(ctx, name, args, block)
+			if err != nil {
+				return object.Value{}, err
+			}
+			parent := self.Enumerator().Each
+			return enumerator(true, self, name, args, func(ctx object.Context, yield func(object.Value) error) error {
+				return slice(ctx, parent, yield)
+			}), nil
+		})
+	}
 	def(c, "lazy", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return self, nil
 	})

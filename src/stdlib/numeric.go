@@ -446,10 +446,8 @@ func roundFloatExactly(x float64, ndigits int64, mode string) float64 {
 }
 
 // numericStep is Numeric#step(limit = nil, step = 1), or with the to: and
-// by: keywords: integers when all three are integers, otherwise floats as
-// Ruby's ruby_float_step makes them, each one beg + i * step so that no
-// error accumulates, and never past the limit. Without a block it returns
-// the numbers.
+// by: keywords: it yields the numbers of an arithmetic sequence, and
+// without a block returns the sequence.
 func numericStep(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 	if len(args) > 2 {
 		return object.Value{}, argError(ctx, len(args), "0..2")
@@ -469,92 +467,35 @@ func numericStep(ctx object.Context, self object.Value, args []object.Value, kw 
 			by = v
 		}
 	}
-	var out []object.Value
-	emit := func(v object.Value) error {
-		if block.IsZero() {
-			out = append(out, v)
-			return nil
-		}
-		_, err := ctx.Yield(block, v)
-		return err
-	}
-	done := func() (object.Value, error) {
-		if block.IsZero() {
-			return object.NewList(out...), nil
-		}
-		return self, nil
-	}
 	for _, v := range []object.Value{by, limit} {
 		if _, ok := v.AsNumber(); !ok && !v.IsNil() {
 			return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into Integer", kindName(v))
 		}
 	}
+	if by.IsNil() {
+		by = object.Int(1)
+	}
 	if f, _ := by.AsNumber(); f == 0 {
 		return object.Value{}, ctx.Raise(object.ArgumentError, "step can't be 0")
 	}
-	if limit.IsNil() && block.IsZero() {
-		return object.Value{}, ctx.Raise(object.RangeError, "cannot convert endless range to a list")
+	s := &object.ArithSeq{Begin: self, End: limit, Step: by}
+	if block.IsZero() {
+		return arithSeq(self, "step", args, kw, s), nil
 	}
-	from, fromInt := self.AsInt()
-	to, toInt := limit.AsInt()
-	step, stepInt := by.AsInt()
-	// In 64 bits while no step can pass the end of them.
-	if fromInt && stepInt && toInt && (step > 0 && to <= math.MaxInt64-step || step < 0 && to >= math.MinInt64-step) {
-		for i := from; step > 0 && i <= to || step < 0 && i >= to; i += step {
-			if err := emit(object.Int(i)); err != nil {
-				return object.Value{}, err
-			}
-		}
-		return done()
+	err := arithEach(ctx, s, func(v object.Value) error {
+		_, err := ctx.Yield(block, v)
+		return err
+	})
+	if err != nil {
+		return object.Value{}, err
 	}
-	if self.IsInteger() && by.IsInteger() && (limit.IsInteger() || limit.IsNil()) {
-		up := bigOf(by).Sign() > 0
-		for i := self; ; i = addIntegers(i, by) {
-			if !limit.IsNil() {
-				if c, _ := object.CompareNumbers(i, limit); up && c > 0 || !up && c < 0 {
-					return done()
-				}
-			}
-			if err := emit(i); err != nil {
-				return object.Value{}, err
-			}
-		}
-	}
-	beg, _ := self.AsNumber()
-	unit, _ := by.AsNumber()
-	end := math.Inf(1)
-	if unit < 0 {
-		end = math.Inf(-1)
-	}
-	if !limit.IsNil() {
-		end, _ = limit.AsNumber()
-	}
-	n := floatStepSize(beg, end, unit)
-	if math.IsInf(unit, 0) {
-		// i * unit is NaN for i = 0, so Ruby yields beg alone.
-		if n > 0 {
-			if err := emit(object.Float(beg)); err != nil {
-				return object.Value{}, err
-			}
-		}
-		return done()
-	}
-	for i := float64(0); i < n; i++ {
-		d := i*unit + beg
-		if unit >= 0 && end < d || unit < 0 && d < end {
-			d = end
-		}
-		if err := emit(object.Float(d)); err != nil {
-			return object.Value{}, err
-		}
-	}
-	return done()
+	return self, nil
 }
 
 // floatStepSize is how many floats a step from beg to end by unit makes,
-// allowing for the rounding error in (end - beg) / unit, after Ruby's
-// ruby_float_step_size.
-func floatStepSize(beg, end, unit float64) float64 {
+// end excluded when excl is set, allowing for the rounding error in
+// (end - beg) / unit, after Ruby's ruby_float_step_size.
+func floatStepSize(beg, end, unit float64, excl bool) float64 {
 	if math.IsInf(unit, 0) {
 		if unit > 0 && beg <= end || unit < 0 && beg >= end {
 			return 1
@@ -565,6 +506,21 @@ func floatStepSize(beg, end, unit float64) float64 {
 	err := (math.Abs(beg) + math.Abs(end) + math.Abs(end-beg)) / math.Abs(unit) * epsilon
 	if err > 0.5 {
 		err = 0.5
+	}
+	if excl {
+		if n <= 0 {
+			return 0
+		}
+		if n < 1 {
+			n = 0
+		} else {
+			n = math.Floor(n - err)
+		}
+		d := (n+1)*unit + beg
+		if beg < end && d < end || beg > end && d > end {
+			n++
+		}
+		return n + 1
 	}
 	if n < 0 {
 		return 0

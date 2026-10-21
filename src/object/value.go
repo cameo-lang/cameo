@@ -184,8 +184,11 @@ func (v Value) Class() *Class {
 	case KindMatch:
 		return MatchDataClass
 	case KindEnumerator:
-		if (*Enumerator)(v.p).Lazy {
+		switch e := (*Enumerator)(v.p); {
+		case e.Lazy:
 			return LazyClass
+		case e.Arith != nil:
+			return ArithSeqClass
 		}
 		return EnumeratorClass
 	case KindProc:

@@ -342,6 +342,22 @@ func writeKey(b *strings.Builder, v Value) {
 		b.WriteString(e.Cls.QualifiedName())
 		b.WriteByte(':')
 		b.WriteString(e.Message)
+	case KindEnumerator:
+		if a := v.Enumerator().Arith; a != nil {
+			// An arithmetic sequence is its numbers, however it was made.
+			b.WriteString("A")
+			writeKey(b, a.Begin)
+			b.WriteByte(',')
+			writeKey(b, a.End)
+			b.WriteByte(',')
+			writeKey(b, a.Step)
+			if a.Excl {
+				b.WriteString("...")
+			}
+			return
+		}
+		b.WriteString("p")
+		b.WriteString(strconv.FormatUint(uint64(identity(v)), 16))
 	default:
 		// Procs and processes have identity, not structure.
 		b.WriteString("p")
