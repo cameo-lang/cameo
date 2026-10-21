@@ -45,6 +45,40 @@ func installMath() {
 	unary("exp", math.Exp, nil)
 	unary("log2", math.Log2, nonNegative)
 	unary("log10", math.Log10, nonNegative)
+	// gamma is exact for the integers 1 to 23, whose factorials a float
+	// holds, as in Ruby; a negative integer and -Infinity are outside its
+	// domain.
+	m.DefineSingleton("gamma", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		x, err := wantFloat(ctx, args[0])
+		if err != nil {
+			return object.Value{}, err
+		}
+		if math.IsInf(x, -1) || x < 0 && x == math.Floor(x) {
+			return object.Value{}, ctx.Raise(domainError, "Numerical argument is out of domain - gamma")
+		}
+		if x >= 1 && x <= 23 && x == math.Floor(x) {
+			f := 1.0
+			for i := 2.0; i < x; i++ {
+				f *= i
+			}
+			return object.Float(f), nil
+		}
+		return object.Float(math.Gamma(x)), nil
+	})
+	m.DefineSingleton("lgamma", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		x, err := wantFloat(ctx, args[0])
+		if err != nil {
+			return object.Value{}, err
+		}
+		if math.IsInf(x, -1) {
+			return object.Value{}, ctx.Raise(domainError, "Numerical argument is out of domain - lgamma")
+		}
+		if x == 0 && math.Signbit(x) {
+			return object.NewList(object.Float(math.Inf(1)), object.Int(-1)), nil
+		}
+		v, sign := math.Lgamma(x)
+		return object.NewList(object.Float(v), object.Int(int64(sign))), nil
+	})
 	binary := func(name string, f func(a, b float64) float64) {
 		m.DefineSingleton(name, 2, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			a, err := wantFloat(ctx, args[0])
