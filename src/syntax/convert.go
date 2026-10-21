@@ -627,6 +627,11 @@ func (c *converter) call(n *ast.Call) Node {
 				return &Defined{c.pos(), c.expr(n.Args[0])}
 			}
 		case "lambda", "proc":
+			// proc(&p) is p as a Proc, as in Ruby; lambda wants a literal
+			// block, which Ruby 3.3 made an ArgumentError.
+			if bp, ok := soleBlockPass(n); ok && name == "proc" {
+				return &Call{Pos: c.pos(), Recv: c.expr(bp.Value), Name: "to_proc"}
+			}
 			if n.Block == nil || len(n.Args) > 0 {
 				c.fail("%s takes a block and nothing else", name)
 				return nil
@@ -829,6 +834,15 @@ func (c *converter) anonymous(name string) Node { return &Var{c.pos(), name} }
 
 // forLoop rewrites `for x in xs ... end` into `xs.each { |v| x = v ... }`,
 // declaring x first, since a for loop's variables outlive it in Ruby.
+// soleBlockPass returns the &arg of a call whose one argument it is.
+func soleBlockPass(n *ast.Call) (*ast.BlockPass, bool) {
+	if n.Block != nil || len(n.Args) != 1 {
+		return nil, false
+	}
+	bp, ok := n.Args[0].(*ast.BlockPass)
+	return bp, ok
+}
+
 // isBeginBlock returns true when a while modifier's body is a `begin … end`,
 // which makes the loop test its condition after each pass. The body of a
 // `while … end` is a statement with a line of its own, and a modifier's
