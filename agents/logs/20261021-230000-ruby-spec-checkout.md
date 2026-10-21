@@ -10,10 +10,10 @@
 
 ## Objective
 Add a script that clones https://github.com/ruby/spec into `ruby-spec/` at
-the root of the main repository when it is not there yet.
+the root of the main repository when it is not there yet, and pulls it when it is.
 
 ## Progress
-- [x] `specs/checkout.rb`: clone unless present, print the path, `--dir`, `--commit`
+- [x] `specs/checkout.rb`: clone, or pull an existing copy (`--ff-only`), print the path, `--dir`, `--commit`
 - [x] `make ruby-spec`
 - [x] `specs/README.md` re-sorts through `checkout.rb`
 - [x] Ran it against the existing copy, a fresh directory (pinned commit), a rerun and a non-git directory

@@ -48,7 +48,7 @@ file is copied into every directory that needs it.
 
 ruby/spec at the commit named in [COUNTS.md](COUNTS.md). [checkout.rb](checkout.rb)
 clones it into `ruby-spec/` at the root of the main repository, which every
-worktree shares, unless a copy is there already, and prints the path. Re-sort
+worktree shares, or pulls into the copy that is there, and prints the path. Re-sort
 that copy with:
 
 ```sh
