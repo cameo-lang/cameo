@@ -49,6 +49,10 @@ check: lint tests integration-tests ## Everything CI runs
 conformance: prerequisites ## Run every example and CRuby case compiled and interpreted, and compare
 	ruby tests/conformance/run.rb
 
+# Not part of check: it needs a Ruby and a ruby/spec copy.
+spec-status: build ## Run ruby/spec's language and core, and rewrite specs/status.tsv
+	ruby specs/run.rb --cameo $(BINARY) --ruby ruby --status specs/status.tsv
+
 # Not part of check either: it clones or pulls github.com/ruby/spec.
 ruby-spec: ## Clone ruby/spec into ruby-spec/ of the main repository, or pull it
 	ruby specs/checkout.rb
