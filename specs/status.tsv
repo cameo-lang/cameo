@@ -57,7 +57,7 @@ core/array/concat_spec.rb	*	expected	instance-variables	instance_variable_get is
 core/array/constructor_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/array/count_spec.rb	*	expected	instance-variables	@value_to_return = …: cameo has no instance variables; initialize sets a field with self.value_to_return = …
 core/array/cycle_spec.rb	*	expected	instance-variables	@object: cameo has no instance variables; a field is read with its reader, object or self.object
-core/array/deconstruct_spec.rb	Array#deconstruct returns self	bug		undefined method 'deconstruct' for an instance of Array (NoMethodError)
+core/array/deconstruct_spec.rb	Array#deconstruct returns self	expected	identity-and-freezing	undefined method 'equal?' for an instance of Array (NoMethodError)
 core/array/delete_at_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/array/delete_if_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/array/delete_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
@@ -115,19 +115,19 @@ core/array/pack/a_spec.rb	*	expected	instance-variables	instance_variable_get is
 core/array/pack/at_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/array/pack/b_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/array/pack/buffer_spec.rb	Array#pack with :buffer option returns specified buffer	expected	identity-and-freezing	undefined method 'equal?' for an instance of String (NoMethodError)
-core/array/pack/buffer_spec.rb	Array#pack with :buffer option adds result at the end of buffer content	bug		Expected "ABC" == "123ABC" to be truthy but was false
-core/array/pack/buffer_spec.rb	Array#pack with :buffer option raises TypeError exception if buffer is not String	bug		too few arguments (ArgumentError)
-core/array/pack/buffer_spec.rb	Array#pack with :buffer option raise FrozenError if buffer is frozen	expected	identity-and-freezing	Expected FrozenError but no exception was raised ("A" was returned)
+core/array/pack/buffer_spec.rb	Array#pack with :buffer option adds result at the end of buffer content	pass		
+core/array/pack/buffer_spec.rb	Array#pack with :buffer option raises TypeError exception if buffer is not String	pass		
+core/array/pack/buffer_spec.rb	Array#pack with :buffer option raise FrozenError if buffer is frozen	expected	identity-and-freezing	Expected FrozenError but no exception was raised ("frozen-stringA" was returned)
 core/array/pack/buffer_spec.rb	Array#pack with :buffer option preserves the encoding of the given buffer	expected	encodings	uninitialized constant Encoding::ISO_8859_1 (NameError)
-core/array/pack/buffer_spec.rb	Array#pack with :buffer option offset (@) is specified keeps buffer content if it is longer than offset	bug		unknown pack directive '@' in '@3ccc' (ArgumentError)
-core/array/pack/buffer_spec.rb	Array#pack with :buffer option offset (@) is specified fills the gap with \0 if buffer content is shorter than offset	bug		unknown pack directive '@' in '@6ccc' (ArgumentError)
-core/array/pack/buffer_spec.rb	Array#pack with :buffer option offset (@) is specified does not keep buffer content if it is longer than offset + result	bug		unknown pack directive '@' in '@3ccc' (ArgumentError)
+core/array/pack/buffer_spec.rb	Array#pack with :buffer option offset (@) is specified keeps buffer content if it is longer than offset	pass		
+core/array/pack/buffer_spec.rb	Array#pack with :buffer option offset (@) is specified fills the gap with \0 if buffer content is shorter than offset	pass		
+core/array/pack/buffer_spec.rb	Array#pack with :buffer option offset (@) is specified does not keep buffer content if it is longer than offset + result	pass		
 core/array/pack/c_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/array/pack/comment_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/array/pack/d_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/array/pack/e_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/array/pack/empty_spec.rb	Array#pack with empty format returns an empty String	pass		
-core/array/pack/empty_spec.rb	Array#pack with empty format returns a String with US-ASCII encoding	bug		Expected #<Encoding:BINARY (ASCII-8BIT)> == #<Encoding:US-ASCII> to be truthy but was false
+core/array/pack/empty_spec.rb	Array#pack with empty format returns a String with US-ASCII encoding	pass		
 core/array/pack/f_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/array/pack/g_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/array/pack/h_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
@@ -619,29 +619,29 @@ core/enumerable/to_h_spec.rb	*	expected	instance-variables	@list = …: cameo ha
 core/enumerable/to_set_spec.rb	*	expected	instance-variables	@list = …: cameo has no instance variables; initialize sets a field with self.list = …
 core/enumerable/uniq_spec.rb	*	expected	instance-variables	@list = …: cameo has no instance variables; initialize sets a field with self.list = …
 core/enumerable/zip_spec.rb	*	expected	instance-variables	@list = …: cameo has no instance variables; initialize sets a field with self.list = …
-core/enumerator/arithmetic_sequence/begin_spec.rb	Enumerator::ArithmeticSequence#begin returns the begin of the sequence	bug		undefined method 'begin' for an instance of Array (NoMethodError)
-core/enumerator/arithmetic_sequence/begin_spec.rb	Enumerator::ArithmeticSequence#begin with beginless returns nil as begin of the sequence	bug		can't iterate from nil (TypeError)
+core/enumerator/arithmetic_sequence/begin_spec.rb	Enumerator::ArithmeticSequence#begin returns the begin of the sequence	pass		
+core/enumerator/arithmetic_sequence/begin_spec.rb	Enumerator::ArithmeticSequence#begin with beginless returns nil as begin of the sequence	pass		
 core/enumerator/arithmetic_sequence/each_spec.rb	*	expected	instance-variables	@seq = …: cameo has no instance variables; initialize sets a field with self.seq = …
-core/enumerator/arithmetic_sequence/end_spec.rb	Enumerator::ArithmeticSequence#end returns the end of the sequence	bug		undefined method 'end' for an instance of Array (NoMethodError)
-core/enumerator/arithmetic_sequence/end_spec.rb	Enumerator::ArithmeticSequence#end with endless returns nil as end of the sequence	bug		cannot convert endless range to a list (RangeError)
-core/enumerator/arithmetic_sequence/eq_spec.rb	Enumerator::ArithmeticSequence#== returns true if begin, end, step and exclude_end? are equal	bug		wrong number of arguments (given 0, expected 1) (ArgumentError)
-core/enumerator/arithmetic_sequence/exclude_end_spec.rb	Enumerator::ArithmeticSequence#exclude_end? when created using Numeric#step always returns false	bug		undefined method 'exclude_end?' for an instance of Array (NoMethodError)
-core/enumerator/arithmetic_sequence/exclude_end_spec.rb	Enumerator::ArithmeticSequence#exclude_end? when created using Range#step mirrors range.exclude_end?	bug		wrong number of arguments (given 0, expected 1) (ArgumentError)
-core/enumerator/arithmetic_sequence/first_spec.rb	Enumerator::ArithmeticSequence#first returns the first element of the sequence	bug		wrong number of arguments (given 0, expected 1) (ArgumentError)
-core/enumerator/arithmetic_sequence/hash_spec.rb	Enumerator::ArithmeticSequence#hash is based on begin, end, step and exclude_end?	bug		wrong number of arguments (given 0, expected 1) (ArgumentError)
-core/enumerator/arithmetic_sequence/inspect_spec.rb	Enumerator::ArithmeticSequence#inspect when Numeric#step is used returns '(begin.step(end{, step}))'	bug		Expected "[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]" == "(1.step(10))" to be truthy but was false
-core/enumerator/arithmetic_sequence/inspect_spec.rb	Enumerator::ArithmeticSequence#inspect when Range#step is used returns '((range).step{(step)})'	bug		wrong number of arguments (given 0, expected 1) (ArgumentError)
-core/enumerator/arithmetic_sequence/last_spec.rb	Enumerator::ArithmeticSequence#last returns the last element of the sequence	bug		wrong number of arguments (given 0, expected 1) (ArgumentError)
-core/enumerator/arithmetic_sequence/new_spec.rb	Enumerator::ArithmeticSequence.new is not defined	bug		uninitialized constant Enumerator::ArithmeticSequence (NameError)
-core/enumerator/arithmetic_sequence/new_spec.rb	Enumerator::ArithmeticSequence.allocate is not defined	bug		uninitialized constant Enumerator::ArithmeticSequence (NameError)
-core/enumerator/arithmetic_sequence/size_spec.rb	Enumerator::ArithmeticSequence#size for finite sequence returns the number of elements in this arithmetic sequence	bug		wrong number of arguments (given 0, expected 1) (ArgumentError)
-core/enumerator/arithmetic_sequence/size_spec.rb	*	bug	timeout	timeout after 20s
-core/enumerator/arithmetic_sequence/step_spec.rb	Enumerator::ArithmeticSequence#step returns the original value given to step method	bug		wrong number of arguments (given 0, expected 1) (ArgumentError)
+core/enumerator/arithmetic_sequence/end_spec.rb	Enumerator::ArithmeticSequence#end returns the end of the sequence	pass		
+core/enumerator/arithmetic_sequence/end_spec.rb	Enumerator::ArithmeticSequence#end with endless returns nil as end of the sequence	pass		
+core/enumerator/arithmetic_sequence/eq_spec.rb	Enumerator::ArithmeticSequence#== returns true if begin, end, step and exclude_end? are equal	pass		
+core/enumerator/arithmetic_sequence/exclude_end_spec.rb	Enumerator::ArithmeticSequence#exclude_end? when created using Numeric#step always returns false	pass		
+core/enumerator/arithmetic_sequence/exclude_end_spec.rb	Enumerator::ArithmeticSequence#exclude_end? when created using Range#step mirrors range.exclude_end?	pass		
+core/enumerator/arithmetic_sequence/first_spec.rb	Enumerator::ArithmeticSequence#first returns the first element of the sequence	pass		
+core/enumerator/arithmetic_sequence/hash_spec.rb	Enumerator::ArithmeticSequence#hash is based on begin, end, step and exclude_end?	pass		
+core/enumerator/arithmetic_sequence/inspect_spec.rb	Enumerator::ArithmeticSequence#inspect when Numeric#step is used returns '(begin.step(end{, step}))'	pass		
+core/enumerator/arithmetic_sequence/inspect_spec.rb	Enumerator::ArithmeticSequence#inspect when Range#step is used returns '((range).step{(step)})'	pass		
+core/enumerator/arithmetic_sequence/last_spec.rb	Enumerator::ArithmeticSequence#last returns the last element of the sequence	pass		
+core/enumerator/arithmetic_sequence/new_spec.rb	Enumerator::ArithmeticSequence.new is not defined	pass		
+core/enumerator/arithmetic_sequence/new_spec.rb	Enumerator::ArithmeticSequence.allocate is not defined	expected	metaprogramming	allocate is not supported: use new (NoMethodError)
+core/enumerator/arithmetic_sequence/size_spec.rb	Enumerator::ArithmeticSequence#size for finite sequence returns the number of elements in this arithmetic sequence	pass		
+core/enumerator/arithmetic_sequence/size_spec.rb	Enumerator::ArithmeticSequence#size for infinite sequence returns Infinity	pass		
+core/enumerator/arithmetic_sequence/step_spec.rb	Enumerator::ArithmeticSequence#step returns the original value given to step method	pass		
 core/enumerator/chain/each_spec.rb	*	expected	instance-variables	@list = …: cameo has no instance variables; initialize sets a field with self.list = …
 core/enumerator/chain/initialize_spec.rb	*	expected	instance-variables	@uninitialized = …: cameo has no instance variables; initialize sets a field with self.uninitialized = …
-core/enumerator/chain/inspect_spec.rb	Enumerator::Chain#inspect shows a representation of the Enumerator	bug		uninitialized constant Enumerator::Chain (NameError)
+core/enumerator/chain/inspect_spec.rb	Enumerator::Chain#inspect shows a representation of the Enumerator	pass		
 core/enumerator/chain/inspect_spec.rb	Enumerator::Chain#inspect calls inspect on its chain elements	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
-core/enumerator/chain/inspect_spec.rb	Enumerator::Chain#inspect returns a not initialized representation if #initialized is not called yet	bug		uninitialized constant Enumerator::Chain (NameError)
+core/enumerator/chain/inspect_spec.rb	Enumerator::Chain#inspect returns a not initialized representation if #initialized is not called yet	expected	metaprogramming	allocate is not supported: use new (NoMethodError)
 core/enumerator/chain/rewind_spec.rb	*	expected	instance-variables	@obj = …: cameo has no instance variables; initialize sets a field with self.obj = …
 core/enumerator/chain/size_spec.rb	*	expected	instance-variables	@list = …: cameo has no instance variables; initialize sets a field with self.list = …
 core/enumerator/each_spec.rb	*	expected	instance-variables	@enum = …: cameo has no instance variables; initialize sets a field with self.enum = …
@@ -651,12 +651,13 @@ core/enumerator/enumerator_spec.rb	Enumerator includes Enumerable	pass
 core/enumerator/feed_spec.rb	*	expected	instance-variables	@enum = …: cameo has no instance variables; initialize sets a field with self.enum = …
 core/enumerator/first_spec.rb	Enumerator#first returns arrays correctly when calling #first (2376)	expected	literal-only	undefined method 'new' for class Enumerator: use a literal (NoMethodError)
 core/enumerator/initialize_spec.rb	*	expected	instance-variables	@uninitialized = …: cameo has no instance variables; initialize sets a field with self.uninitialized = …
-core/enumerator/inspect_spec.rb	Enumerator#inspect shows a representation of the Enumerator including receiver and method	bug		Expected "1..3" == "#<Enumerator: 1..3:each>" to be truthy but was false
+core/enumerator/inspect_spec.rb	Enumerator#inspect shows a representation of the Enumerator including receiver and method	pass		
 core/enumerator/inspect_spec.rb	Enumerator#inspect shows a representation of the Enumerator including receiver and method and arguments	bug		Expected "[[1, 2], [3]]" == "#<Enumerator: 1..3:each_slice(2)>" to be truthy but was false
 core/enumerator/inspect_spec.rb	Enumerator#inspect shows a representation of the Enumerator including the nested Enumerator	bug		Expected "[[1, 2], [3]]" == "#<Enumerator: #<Enumerator: 1..3:each>:each_slice(2)>" to be truthy but was false
 core/enumerator/inspect_spec.rb	Enumerator#inspect returns a not initialized representation if #initialized is not called yet	expected	metaprogramming	allocate is not supported: use new (NoMethodError)
 core/enumerator/lazy/chunk_spec.rb	*	expected	instance-variables	@yieldsmixed = …: cameo has no instance variables; initialize sets a field with self.yieldsmixed = …
-core/enumerator/lazy/chunk_while_spec.rb	*	bug	timeout	timeout after 20s
+core/enumerator/lazy/chunk_while_spec.rb	Enumerator::Lazy#chunk_while works with an infinite enumerable	pass		
+core/enumerator/lazy/chunk_while_spec.rb	Enumerator::Lazy#chunk_while should return a lazy enumerator	pass		
 core/enumerator/lazy/collect_concat_spec.rb	Enumerator::Lazy#collect_concat is an alias of Enumerator::Lazy#flat_map	expected	metaprogramming	undefined method 'instance_method' for class Enumerator::Lazy (NoMethodError)
 core/enumerator/lazy/collect_spec.rb	Enumerator::Lazy#collect is an alias of Enumerator::Lazy#map	expected	metaprogramming	undefined method 'instance_method' for class Enumerator::Lazy (NoMethodError)
 core/enumerator/lazy/compact_spec.rb	Enumerator::Lazy#compact value packing of source yields packs a multi-argument source yield into an Array	expected	literal-only	undefined method 'new' for class Enumerator: use a literal (NoMethodError)
@@ -678,16 +679,17 @@ core/enumerator/lazy/grep_spec.rb	*	expected	instance-variables	@yieldsmixed = �
 core/enumerator/lazy/grep_v_spec.rb	*	expected	instance-variables	@yieldsmixed = …: cameo has no instance variables; initialize sets a field with self.yieldsmixed = …
 core/enumerator/lazy/initialize_spec.rb	*	expected	instance-variables	@receiver = …: cameo has no instance variables; initialize sets a field with self.receiver = …
 core/enumerator/lazy/lazy_spec.rb	Enumerator::Lazy is a subclass of Enumerator	expected	identity-and-freezing	undefined method 'equal?' for class Enumerator (NoMethodError)
-core/enumerator/lazy/lazy_spec.rb	Enumerator::Lazy defines lazy versions of a whitelist of Enumerator methods	bug		Expected #<Set: {:collect, :collect_concat, :compact, :drop, :drop_while, :each_with_index, :eager, :filter, :filter_map, :flat_map, :grep, :grep_v, :lazy, :map, :reject, :select, :take, :take_while, :uniq, :with_index, :zip}> >= #<Set: {:c
+core/enumerator/lazy/lazy_spec.rb	Enumerator::Lazy defines lazy versions of a whitelist of Enumerator methods	pass		
 core/enumerator/lazy/lazy_spec.rb	Enumerator::Lazy#lazy returns self	expected	identity-and-freezing	undefined method 'equal?' for an instance of Enumerator::Lazy (NoMethodError)
 core/enumerator/lazy/map_spec.rb	*	expected	instance-variables	@yieldsmixed = …: cameo has no instance variables; initialize sets a field with self.yieldsmixed = …
 core/enumerator/lazy/reject_spec.rb	*	expected	instance-variables	@take: cameo has no instance variables; a field is read with its reader, take or self.take
 core/enumerator/lazy/select_spec.rb	*	expected	instance-variables	@take: cameo has no instance variables; a field is read with its reader, take or self.take
-core/enumerator/lazy/slice_after_spec.rb	Enumerator::Lazy#slice_after works with an infinite enumerable	bug		undefined method 'slice_after' for an instance of Enumerator::Lazy (NoMethodError)
-core/enumerator/lazy/slice_after_spec.rb	Enumerator::Lazy#slice_after should return a lazy enumerator	bug		undefined method 'slice_after' for an instance of Enumerator::Lazy (NoMethodError)
-core/enumerator/lazy/slice_before_spec.rb	Enumerator::Lazy#slice_before works with an infinite enumerable	bug		undefined method 'slice_before' for an instance of Enumerator::Lazy (NoMethodError)
-core/enumerator/lazy/slice_before_spec.rb	Enumerator::Lazy#slice_before should return a lazy enumerator	bug		undefined method 'slice_before' for an instance of Enumerator::Lazy (NoMethodError)
-core/enumerator/lazy/slice_when_spec.rb	*	bug	timeout	timeout after 20s
+core/enumerator/lazy/slice_after_spec.rb	Enumerator::Lazy#slice_after works with an infinite enumerable	pass		
+core/enumerator/lazy/slice_after_spec.rb	Enumerator::Lazy#slice_after should return a lazy enumerator	pass		
+core/enumerator/lazy/slice_before_spec.rb	Enumerator::Lazy#slice_before works with an infinite enumerable	pass		
+core/enumerator/lazy/slice_before_spec.rb	Enumerator::Lazy#slice_before should return a lazy enumerator	pass		
+core/enumerator/lazy/slice_when_spec.rb	Enumerator::Lazy#slice_when works with an infinite enumerable	pass		
+core/enumerator/lazy/slice_when_spec.rb	Enumerator::Lazy#slice_when should return a lazy enumerator	pass		
 core/enumerator/lazy/take_spec.rb	*	expected	instance-variables	@take: cameo has no instance variables; a field is read with its reader, take or self.take
 core/enumerator/lazy/take_while_spec.rb	*	expected	instance-variables	@take: cameo has no instance variables; a field is read with its reader, take or self.take
 core/enumerator/lazy/to_enum_spec.rb	*	expected	instance-variables	@infinite = …: cameo has no instance variables; initialize sets a field with self.infinite = …
@@ -699,8 +701,8 @@ core/enumerator/lazy/with_index_spec.rb	Enumerator::Lazy#with_index enumerates w
 core/enumerator/lazy/with_index_spec.rb	Enumerator::Lazy#with_index enumerates with an index starting at a given offset	pass		
 core/enumerator/lazy/with_index_spec.rb	Enumerator::Lazy#with_index enumerates with an index starting at 0 when offset is nil	pass		
 core/enumerator/lazy/with_index_spec.rb	Enumerator::Lazy#with_index raises TypeError when offset does not convert to Integer	bug		Expected TypeError but no exception was raised ([0, 1, 2] was returned)
-core/enumerator/lazy/with_index_spec.rb	Enumerator::Lazy#with_index enumerates with a given block	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
-core/enumerator/lazy/with_index_spec.rb	Enumerator::Lazy#with_index resets after a new call to each	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+core/enumerator/lazy/with_index_spec.rb	Enumerator::Lazy#with_index enumerates with a given block	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+core/enumerator/lazy/with_index_spec.rb	Enumerator::Lazy#with_index resets after a new call to each	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
 core/enumerator/lazy/zip_spec.rb	*	expected	instance-variables	@yieldsmixed = …: cameo has no instance variables; initialize sets a field with self.yieldsmixed = …
 core/enumerator/new_spec.rb	Enumerator.new no block given raises	expected	literal-only	undefined method 'new' for class Enumerator: use a literal (NoMethodError)
 core/enumerator/new_spec.rb	Enumerator.new when passed a block defines iteration with block, yielder argument and calling << method	expected	literal-only	undefined method 'new' for class Enumerator: use a literal (NoMethodError)
@@ -730,17 +732,17 @@ core/enumerator/produce_spec.rb	Enumerator.produce when initial value skipped st
 core/enumerator/produce_spec.rb	Enumerator.produce raises ArgumentError when no block is given	bug		undefined method 'produce' for class Enumerator (NoMethodError)
 core/enumerator/produce_spec.rb	Enumerator.produce accepts keyword arguments as the initial value	bug		undefined method 'produce' for class Enumerator (NoMethodError)
 core/enumerator/product/each_spec.rb	*	expected	instance-variables	@object: cameo has no instance variables; a field is read with its reader, object or self.object
-core/enumerator/product/initialize_copy_spec.rb	Enumerator::Product#initialize_copy replaces content of the receiver with content of the other object	bug		uninitialized constant Enumerator::Product (NameError)
-core/enumerator/product/initialize_copy_spec.rb	Enumerator::Product#initialize_copy returns self	bug		uninitialized constant Enumerator::Product (NameError)
-core/enumerator/product/initialize_copy_spec.rb	Enumerator::Product#initialize_copy is a private method	bug		uninitialized constant Enumerator::Product (NameError)
-core/enumerator/product/initialize_copy_spec.rb	Enumerator::Product#initialize_copy does nothing if the argument is the same as the receiver	bug		uninitialized constant Enumerator::Product (NameError)
-core/enumerator/product/initialize_copy_spec.rb	Enumerator::Product#initialize_copy raises FrozenError if the receiver is frozen	bug		uninitialized constant Enumerator::Product (NameError)
-core/enumerator/product/initialize_copy_spec.rb	Enumerator::Product#initialize_copy raises TypeError if the objects are of different class	bug		uninitialized constant Enumerator::Product (NameError)
-core/enumerator/product/initialize_copy_spec.rb	Enumerator::Product#initialize_copy raises ArgumentError if the argument is not initialized yet	bug		uninitialized constant Enumerator::Product (NameError)
+core/enumerator/product/initialize_copy_spec.rb	Enumerator::Product#initialize_copy replaces content of the receiver with content of the other object	expected	metaprogramming	undefined method 'initialize_copy' for an instance of Enumerator::Product (NoMethodError)
+core/enumerator/product/initialize_copy_spec.rb	Enumerator::Product#initialize_copy returns self	expected	metaprogramming	undefined method 'initialize_copy' for an instance of Enumerator::Product (NoMethodError)
+core/enumerator/product/initialize_copy_spec.rb	Enumerator::Product#initialize_copy is a private method	bug		undefined method 'private_instance_methods' for class Enumerator::Product (NoMethodError)
+core/enumerator/product/initialize_copy_spec.rb	Enumerator::Product#initialize_copy does nothing if the argument is the same as the receiver	expected	metaprogramming	undefined method 'initialize_copy' for an instance of Enumerator::Product (NoMethodError)
+core/enumerator/product/initialize_copy_spec.rb	Enumerator::Product#initialize_copy raises FrozenError if the receiver is frozen	expected	metaprogramming	undefined method 'initialize_copy' for an instance of Enumerator::Product (NoMethodError)
+core/enumerator/product/initialize_copy_spec.rb	Enumerator::Product#initialize_copy raises TypeError if the objects are of different class	expected	metaprogramming	undefined method 'initialize_copy' for an instance of Enumerator::Product (NoMethodError)
+core/enumerator/product/initialize_copy_spec.rb	Enumerator::Product#initialize_copy raises ArgumentError if the argument is not initialized yet	expected	metaprogramming	allocate is not supported: use new (NoMethodError)
 core/enumerator/product/initialize_spec.rb	*	expected	instance-variables	@uninitialized = …: cameo has no instance variables; initialize sets a field with self.uninitialized = …
-core/enumerator/product/inspect_spec.rb	Enumerator::Product#inspect returns a String including enumerators	bug		uninitialized constant Enumerator::Product (NameError)
-core/enumerator/product/inspect_spec.rb	Enumerator::Product#inspect represents a recursive element with '[...]'	bug		uninitialized constant Enumerator::Product (NameError)
-core/enumerator/product/inspect_spec.rb	Enumerator::Product#inspect returns a not initialized representation if #initialized is not called yet	bug		uninitialized constant Enumerator::Product (NameError)
+core/enumerator/product/inspect_spec.rb	Enumerator::Product#inspect returns a String including enumerators	pass		
+core/enumerator/product/inspect_spec.rb	Enumerator::Product#inspect represents a recursive element with '[...]'	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+core/enumerator/product/inspect_spec.rb	Enumerator::Product#inspect returns a not initialized representation if #initialized is not called yet	expected	metaprogramming	allocate is not supported: use new (NoMethodError)
 core/enumerator/product/rewind_spec.rb	*	expected	instance-variables	@enum = …: cameo has no instance variables; initialize sets a field with self.enum = …
 core/enumerator/product/size_spec.rb	*	expected	metaprogramming	def size on an object: methods belong to classes
 core/enumerator/product_spec.rb	*	expected	metaprogramming	def each_entry on an object: methods belong to classes
@@ -944,27 +946,27 @@ core/file/constants/constants_spec.rb	File::Constants::WRONLY is defined	expecte
 core/file/constants/constants_spec.rb	File::Constants::SHARE_DELETE is defined	expected	io	uninitialized constant File::Constants (NameError)
 core/file/constants/constants_spec.rb	File::Constants::NOCTTY is defined	expected	io	uninitialized constant File::Constants (NameError)
 core/file/constants/constants_spec.rb	File::Constants::SYNC is defined	expected	io	uninitialized constant File::Constants (NameError)
-core/file/constants_spec.rb	File::Constants matches mode constants	expected	io	uninitialized constant File::FNM_NOESCAPE (NameError)
-core/file/constants_spec.rb	File::Constants the separator constant	expected	io	uninitialized constant File::PATH_SEPARATOR (NameError)
-core/file/constants_spec.rb	File::Constants the open mode constants	expected	io	uninitialized constant File::APPEND (NameError)
-core/file/constants_spec.rb	File::Constants lock mode constants	expected	io	uninitialized constant File::LOCK_EX (NameError)
-core/file/constants_spec.rb	File::Constants File::RDONLY	bug		Expected nil == "constant" to be truthy but was false
-core/file/constants_spec.rb	File::Constants File::WRONLY	bug		Expected nil == "constant" to be truthy but was false
-core/file/constants_spec.rb	File::Constants File::CREAT	bug		Expected nil == "constant" to be truthy but was false
-core/file/constants_spec.rb	File::Constants File::RDWR	bug		Expected nil == "constant" to be truthy but was false
-core/file/constants_spec.rb	File::Constants File::APPEND	bug		Expected nil == "constant" to be truthy but was false
-core/file/constants_spec.rb	File::Constants File::TRUNC	bug		Expected nil == "constant" to be truthy but was false
-core/file/constants_spec.rb	File::Constants File::NOCTTY	bug		Expected nil == "constant" to be truthy but was false
-core/file/constants_spec.rb	File::Constants File::NONBLOCK	bug		Expected nil == "constant" to be truthy but was false
-core/file/constants_spec.rb	File::Constants File::LOCK_EX	bug		Expected nil == "constant" to be truthy but was false
-core/file/constants_spec.rb	File::Constants File::LOCK_NB	bug		Expected nil == "constant" to be truthy but was false
-core/file/constants_spec.rb	File::Constants File::LOCK_SH	bug		Expected nil == "constant" to be truthy but was false
-core/file/constants_spec.rb	File::Constants File::LOCK_UN	bug		Expected nil == "constant" to be truthy but was false
+core/file/constants_spec.rb	File::Constants matches mode constants	pass		
+core/file/constants_spec.rb	File::Constants the separator constant	pass		
+core/file/constants_spec.rb	File::Constants the open mode constants	pass		
+core/file/constants_spec.rb	File::Constants lock mode constants	pass		
+core/file/constants_spec.rb	File::Constants File::RDONLY	pass		
+core/file/constants_spec.rb	File::Constants File::WRONLY	pass		
+core/file/constants_spec.rb	File::Constants File::CREAT	pass		
+core/file/constants_spec.rb	File::Constants File::RDWR	pass		
+core/file/constants_spec.rb	File::Constants File::APPEND	pass		
+core/file/constants_spec.rb	File::Constants File::TRUNC	pass		
+core/file/constants_spec.rb	File::Constants File::NOCTTY	pass		
+core/file/constants_spec.rb	File::Constants File::NONBLOCK	pass		
+core/file/constants_spec.rb	File::Constants File::LOCK_EX	pass		
+core/file/constants_spec.rb	File::Constants File::LOCK_NB	pass		
+core/file/constants_spec.rb	File::Constants File::LOCK_SH	pass		
+core/file/constants_spec.rb	File::Constants File::LOCK_UN	pass		
 core/file/constants_spec.rb	File::Constants File::SEPARATOR	pass		
 core/file/constants_spec.rb	File::Constants File::Separator	pass		
-core/file/constants_spec.rb	File::Constants File::PATH_SEPARATOR	bug		Expected nil == "constant" to be truthy but was false
+core/file/constants_spec.rb	File::Constants File::PATH_SEPARATOR	pass		
 core/file/constants_spec.rb	File::Constants File::SEPARATOR	pass		
-core/file/constants_spec.rb	File::Constants File::PATH_SEPARATOR	bug		Expected nil == "constant" to be truthy but was false
+core/file/constants_spec.rb	File::Constants File::PATH_SEPARATOR	pass		
 core/file/ctime_spec.rb	*	expected	instance-variables	@file = …: cameo has no instance variables; initialize sets a field with self.file = …
 core/file/delete_spec.rb	*	expected	instance-variables	@file1 = …: cameo has no instance variables; initialize sets a field with self.file1 = …
 core/file/directory_spec.rb	*	expected	instance-variables	@dir = …: cameo has no instance variables; initialize sets a field with self.dir = …
@@ -989,10 +991,10 @@ core/file/flock_spec.rb	*	expected	instance-variables	@name = …: cameo has no 
 core/file/fnmatch_spec.rb	File.fnmatch matches entire strings	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
 core/file/fnmatch_spec.rb	File.fnmatch does not match partial strings	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
 core/file/fnmatch_spec.rb	File.fnmatch does not support { } patterns by default	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
-core/file/fnmatch_spec.rb	File.fnmatch supports some { } patterns when File::FNM_EXTGLOB is passed	expected	io	uninitialized constant File::FNM_EXTGLOB (NameError)
-core/file/fnmatch_spec.rb	File.fnmatch doesn't support some { } patterns even when File::FNM_EXTGLOB is passed	expected	io	uninitialized constant File::FNM_EXTGLOB (NameError)
-core/file/fnmatch_spec.rb	File.fnmatch doesn't match an extra } when File::FNM_EXTGLOB is passed	expected	io	uninitialized constant File::FNM_EXTGLOB (NameError)
-core/file/fnmatch_spec.rb	File.fnmatch matches when both FNM_EXTGLOB and FNM_PATHNAME are passed	expected	io	uninitialized constant File::FNM_EXTGLOB (NameError)
+core/file/fnmatch_spec.rb	File.fnmatch supports some { } patterns when File::FNM_EXTGLOB is passed	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
+core/file/fnmatch_spec.rb	File.fnmatch doesn't support some { } patterns even when File::FNM_EXTGLOB is passed	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
+core/file/fnmatch_spec.rb	File.fnmatch doesn't match an extra } when File::FNM_EXTGLOB is passed	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
+core/file/fnmatch_spec.rb	File.fnmatch matches when both FNM_EXTGLOB and FNM_PATHNAME are passed	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
 core/file/fnmatch_spec.rb	File.fnmatch matches a single character for each ? character	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
 core/file/fnmatch_spec.rb	File.fnmatch matches zero or more characters for each * character	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
 core/file/fnmatch_spec.rb	File.fnmatch does not match unterminated range of characters	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
@@ -1002,26 +1004,26 @@ core/file/fnmatch_spec.rb	File.fnmatch matches ranges of characters using bracke
 core/file/fnmatch_spec.rb	File.fnmatch does not match characters outside of the range of the bracket expression	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
 core/file/fnmatch_spec.rb	File.fnmatch matches ranges of characters using exclusive bracket expression (e.g. [^t] or [!t])	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
 core/file/fnmatch_spec.rb	File.fnmatch matches characters with a case sensitive comparison	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
-core/file/fnmatch_spec.rb	File.fnmatch matches characters with case insensitive comparison when flags includes FNM_CASEFOLD	expected	io	uninitialized constant File::FNM_CASEFOLD (NameError)
-core/file/fnmatch_spec.rb	File.fnmatch doesn't match case sensitive characters on platforms with case sensitive paths, when flags include FNM_SYSCASE	expected	io	uninitialized constant File::FNM_SYSCASE (NameError)
-core/file/fnmatch_spec.rb	File.fnmatch matches wildcard with characters when flags includes FNM_PATHNAME	expected	io	uninitialized constant File::FNM_PATHNAME (NameError)
-core/file/fnmatch_spec.rb	File.fnmatch does not match '/' characters with ? or * when flags includes FNM_PATHNAME	expected	io	uninitialized constant File::FNM_PATHNAME (NameError)
-core/file/fnmatch_spec.rb	File.fnmatch does not match '/' characters inside bracket expressions when flags includes FNM_PATHNAME	expected	io	uninitialized constant File::FNM_PATHNAME (NameError)
+core/file/fnmatch_spec.rb	File.fnmatch matches characters with case insensitive comparison when flags includes FNM_CASEFOLD	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
+core/file/fnmatch_spec.rb	File.fnmatch doesn't match case sensitive characters on platforms with case sensitive paths, when flags include FNM_SYSCASE	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
+core/file/fnmatch_spec.rb	File.fnmatch matches wildcard with characters when flags includes FNM_PATHNAME	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
+core/file/fnmatch_spec.rb	File.fnmatch does not match '/' characters with ? or * when flags includes FNM_PATHNAME	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
+core/file/fnmatch_spec.rb	File.fnmatch does not match '/' characters inside bracket expressions when flags includes FNM_PATHNAME	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
 core/file/fnmatch_spec.rb	File.fnmatch matches literal ? or * in path when pattern includes \? or \*	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
 core/file/fnmatch_spec.rb	File.fnmatch matches literal character (e.g. 'a') in path when pattern includes escaped character (e.g. \a)	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
-core/file/fnmatch_spec.rb	File.fnmatch matches '\' characters in path when flags includes FNM_NOESCAPE	expected	io	uninitialized constant File::FNM_NOESCAPE (NameError)
+core/file/fnmatch_spec.rb	File.fnmatch matches '\' characters in path when flags includes FNM_NOESCAPE	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
 core/file/fnmatch_spec.rb	File.fnmatch escapes special characters inside bracket expression	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
 core/file/fnmatch_spec.rb	File.fnmatch does not match leading periods in filenames with wildcards by default	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
 core/file/fnmatch_spec.rb	File.fnmatch matches patterns with leading periods to dotfiles	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
-core/file/fnmatch_spec.rb	File.fnmatch does not match directories with leading periods by default with FNM_PATHNAME	expected	io	uninitialized constant File::FNM_PATHNAME (NameError)
-core/file/fnmatch_spec.rb	File.fnmatch matches leading periods in filenames when flags includes FNM_DOTMATCH	expected	io	uninitialized constant File::FNM_DOTMATCH (NameError)
+core/file/fnmatch_spec.rb	File.fnmatch does not match directories with leading periods by default with FNM_PATHNAME	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
+core/file/fnmatch_spec.rb	File.fnmatch matches leading periods in filenames when flags includes FNM_DOTMATCH	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
 core/file/fnmatch_spec.rb	File.fnmatch matches multiple directories with ** and *	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
-core/file/fnmatch_spec.rb	File.fnmatch matches multiple directories with ** when flags includes File::FNM_PATHNAME	expected	io	uninitialized constant File::FNM_PATHNAME (NameError)
-core/file/fnmatch_spec.rb	File.fnmatch returns false if '/' in pattern do not match '/' in path when flags includes FNM_PATHNAME	expected	io	uninitialized constant File::FNM_PATHNAME (NameError)
-core/file/fnmatch_spec.rb	File.fnmatch returns true if '/' in pattern match '/' in path when flags includes FNM_PATHNAME	expected	io	uninitialized constant File::FNM_PATHNAME (NameError)
-core/file/fnmatch_spec.rb	File.fnmatch has special handling for ./ when using * and FNM_PATHNAME	expected	io	uninitialized constant File::FNM_PATHNAME (NameError)
-core/file/fnmatch_spec.rb	File.fnmatch matches **/* with FNM_PATHNAME to recurse directories	expected	io	uninitialized constant File::FNM_PATHNAME (NameError)
-core/file/fnmatch_spec.rb	File.fnmatch matches ** with FNM_PATHNAME only in current directory	expected	io	uninitialized constant File::FNM_PATHNAME (NameError)
+core/file/fnmatch_spec.rb	File.fnmatch matches multiple directories with ** when flags includes File::FNM_PATHNAME	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
+core/file/fnmatch_spec.rb	File.fnmatch returns false if '/' in pattern do not match '/' in path when flags includes FNM_PATHNAME	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
+core/file/fnmatch_spec.rb	File.fnmatch returns true if '/' in pattern match '/' in path when flags includes FNM_PATHNAME	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
+core/file/fnmatch_spec.rb	File.fnmatch has special handling for ./ when using * and FNM_PATHNAME	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
+core/file/fnmatch_spec.rb	File.fnmatch matches **/* with FNM_PATHNAME to recurse directories	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
+core/file/fnmatch_spec.rb	File.fnmatch matches ** with FNM_PATHNAME only in current directory	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
 core/file/fnmatch_spec.rb	File.fnmatch accepts an object that has a #to_path method	harness	fails under Ruby too	undefined method 'mock_to_path' for main (NoMethodError)
 core/file/fnmatch_spec.rb	File.fnmatch raises a TypeError if the first and second arguments are not string-like	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
 core/file/fnmatch_spec.rb	File.fnmatch raises a TypeError if the third argument is not an Integer	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
@@ -1035,22 +1037,22 @@ core/file/initialize_spec.rb	*	expected	instance-variables	@io: cameo has no ins
 core/file/join_spec.rb	File.join changes only boundaries separators	pass		
 core/file/join_spec.rb	File.join respects the given separator if only one part has a boundary separator	pass		
 core/file/join_spec.rb	File.join joins parts using File::SEPARATOR if there are no boundary separators	pass		
-core/file/join_spec.rb	File.join prefers the separator of the right part if both parts have separators	bug		Expected "usr/bin" == "usr//bin" to be truthy but was false
+core/file/join_spec.rb	File.join prefers the separator of the right part if both parts have separators	pass		
 core/file/join_spec.rb	File.join does not treat \ as a separator on non-Windows	pass		
 core/file/join_spec.rb	File.join returns an empty string when given no arguments	pass		
 core/file/join_spec.rb	File.join returns a duplicate string when given a single argument	expected	identity-and-freezing	undefined method 'equal?' for an instance of String (NoMethodError)
 core/file/join_spec.rb	File.join supports any number of arguments	pass		
 core/file/join_spec.rb	File.join flattens nested arrays	pass		
-core/file/join_spec.rb	File.join inserts the separator in between empty strings and arrays	bug		Expected "" == "/" to be truthy but was false
+core/file/join_spec.rb	File.join inserts the separator in between empty strings and arrays	pass		
 core/file/join_spec.rb	File.join handles leading parts edge cases	pass		
 core/file/join_spec.rb	File.join handles trailing parts edge cases	pass		
 core/file/join_spec.rb	File.join handles middle parts edge cases	pass		
-core/file/join_spec.rb	File.join raises an ArgumentError if passed a recursive array	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+core/file/join_spec.rb	File.join raises an ArgumentError if passed a recursive array	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
 core/file/join_spec.rb	File.join raises a TypeError exception when args are nil	pass		
 core/file/join_spec.rb	File.join calls #to_str	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
 core/file/join_spec.rb	File.join doesn't mutate the object when calling #to_str	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
 core/file/join_spec.rb	File.join calls #to_path	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
-core/file/join_spec.rb	File.join raises errors for null bytes	bug		Expected ArgumentError but no exception was raised ("\u0000x/metadata.gz" was returned)
+core/file/join_spec.rb	File.join raises errors for null bytes	pass		
 core/file/join_spec.rb	File.join preserves the encoding of the path	expected	encodings	uninitialized constant Encoding::EUC_JP (NameError)
 core/file/lchmod_spec.rb	*	expected	instance-variables	@fname = …: cameo has no instance variables; initialize sets a field with self.fname = …
 core/file/lchown_spec.rb	*	expected	instance-variables	@fname = …: cameo has no instance variables; initialize sets a field with self.fname = …
@@ -1170,28 +1172,28 @@ core/float/arg_spec.rb	Float#arg returns Pi if -0.0	pass
 core/float/arg_spec.rb	Float#arg returns Pi if -Infinity	pass		
 core/float/case_compare_spec.rb	Float#=== is an alias of Float#==	expected	metaprogramming	undefined method 'instance_method' for class Float (NoMethodError)
 core/float/ceil_spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
-core/float/coerce_spec.rb	Float#coerce returns [other, self] both as Floats	bug		undefined method 'coerce' for an instance of Float (NoMethodError)
+core/float/coerce_spec.rb	Float#coerce returns [other, self] both as Floats	pass		
 core/float/comparison_spec.rb	*	expected	attr-accessor	attr_reader is not supported: a field declaration defines its reader, and there are no setters
-core/float/constants_spec.rb	Float constant DIG is 15	bug		uninitialized constant Float::DIG (NameError)
+core/float/constants_spec.rb	Float constant DIG is 15	pass		
 core/float/constants_spec.rb	Float constant EPSILON is 2.220446049250313e-16	pass		
-core/float/constants_spec.rb	Float constant MANT_DIG is 53	bug		uninitialized constant Float::MANT_DIG (NameError)
-core/float/constants_spec.rb	Float constant MAX_10_EXP is 308	bug		uninitialized constant Float::MAX_10_EXP (NameError)
-core/float/constants_spec.rb	Float constant MIN_10_EXP is -308	bug		uninitialized constant Float::MIN_10_EXP (NameError)
-core/float/constants_spec.rb	Float constant MAX_EXP is 1024	bug		uninitialized constant Float::MAX_EXP (NameError)
-core/float/constants_spec.rb	Float constant MIN_EXP is -1021	bug		uninitialized constant Float::MIN_EXP (NameError)
+core/float/constants_spec.rb	Float constant MANT_DIG is 53	pass		
+core/float/constants_spec.rb	Float constant MAX_10_EXP is 308	pass		
+core/float/constants_spec.rb	Float constant MIN_10_EXP is -308	pass		
+core/float/constants_spec.rb	Float constant MAX_EXP is 1024	pass		
+core/float/constants_spec.rb	Float constant MIN_EXP is -1021	pass		
 core/float/constants_spec.rb	Float constant MAX is 1.7976931348623157e+308	pass		
 core/float/constants_spec.rb	Float constant MIN is 2.2250738585072014e-308	pass		
-core/float/constants_spec.rb	Float constant RADIX is 2	bug		uninitialized constant Float::RADIX (NameError)
+core/float/constants_spec.rb	Float constant RADIX is 2	pass		
 core/float/constants_spec.rb	Float constant INFINITY is the positive infinity	pass		
 core/float/constants_spec.rb	Float constant NAN is 'not a number'	pass		
 core/float/denominator_spec.rb	*	expected	instance-variables	@numbers = …: cameo has no instance variables; initialize sets a field with self.numbers = …
 core/float/divide_spec.rb	*	expected	instance-variables	@a = …: cameo has no instance variables; initialize sets a field with self.a = …
-core/float/divmod_spec.rb	Float#divmod returns an [quotient, modulus] from dividing self by other	bug		Expected 1.0.eql?(1) to be truthy but was false
-core/float/divmod_spec.rb	Float#divmod raises a FloatDomainError if self is NaN	bug		Expected FloatDomainError but no exception was raised ([NaN, NaN] was returned)
-core/float/divmod_spec.rb	Float#divmod raises a FloatDomainError if other is NaN	bug		Expected FloatDomainError but no exception was raised ([NaN, NaN] was returned)
-core/float/divmod_spec.rb	Float#divmod raises a FloatDomainError if self is Infinity	bug		Expected FloatDomainError but no exception was raised ([Infinity, NaN] was returned)
+core/float/divmod_spec.rb	Float#divmod returns an [quotient, modulus] from dividing self by other	pass		
+core/float/divmod_spec.rb	Float#divmod raises a FloatDomainError if self is NaN	pass		
+core/float/divmod_spec.rb	Float#divmod raises a FloatDomainError if other is NaN	pass		
+core/float/divmod_spec.rb	Float#divmod raises a FloatDomainError if self is Infinity	pass		
 core/float/divmod_spec.rb	Float#divmod raises a ZeroDivisionError if other is zero	pass		
-core/float/divmod_spec.rb	Float#divmod returns the correct [quotient, modulus] even for large quotient	bug		Expected 7602092113.0.eql?(7602092113) to be truthy but was false
+core/float/divmod_spec.rb	Float#divmod returns the correct [quotient, modulus] even for large quotient	pass		
 core/float/dup_spec.rb	Float#dup returns self	expected	identity-and-freezing	undefined method 'equal?' for an instance of Float (NoMethodError)
 core/float/eql_spec.rb	Float#eql? returns true if other is a Float equal to self	pass		
 core/float/eql_spec.rb	Float#eql? returns false if other is a Float not equal to self	pass		
@@ -1241,7 +1243,7 @@ core/float/modulo_spec.rb	Float#% returns NaN when called on NaN or Infinities	p
 core/float/modulo_spec.rb	Float#% returns NaN when modulus is NaN	pass		
 core/float/modulo_spec.rb	Float#% returns -0.0 when called on -0.0 with a non zero modulus	pass		
 core/float/modulo_spec.rb	Float#% tries to coerce the modulus	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
-core/float/modulo_spec.rb	Float#% raises a ZeroDivisionError if other is zero	bug		Expected ZeroDivisionError but no exception was raised (NaN was returned)
+core/float/modulo_spec.rb	Float#% raises a ZeroDivisionError if other is zero	pass		
 core/float/modulo_spec.rb	Float#modulo is an alias of Float#%	expected	metaprogramming	undefined method 'instance_method' for class Float (NoMethodError)
 core/float/multiply_spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
 core/float/nan_spec.rb	Float#nan? returns true if self is not a valid IEEE floating-point number	pass		
@@ -1285,7 +1287,7 @@ core/float/rationalize_spec.rb	Float#rationalize raises a FloatDomainError for N
 core/float/rationalize_spec.rb	Float#rationalize raises ArgumentError when passed more than one argument	expected	rational-complex	undefined method 'rationalize' for an instance of Float (NoMethodError)
 core/float/round_spec.rb	Float#round returns the nearest Integer	pass		
 core/float/round_spec.rb	Float#round returns the nearest Integer for Float near the limit	pass		
-core/float/round_spec.rb	Float#round raises FloatDomainError for exceptional values	bug		Infinity (RangeError)
+core/float/round_spec.rb	Float#round raises FloatDomainError for exceptional values	pass		
 core/float/round_spec.rb	Float#round rounds self to an optionally given precision	pass		
 core/float/round_spec.rb	Float#round correctly rounds exact floats with a numerous digits in a fraction part	pass		
 core/float/round_spec.rb	Float#round returns zero when passed a negative argument with magnitude greater than magnitude of the whole number portion of the Float	pass		
@@ -1293,17 +1295,17 @@ core/float/round_spec.rb	Float#round raises a TypeError when its argument can no
 core/float/round_spec.rb	Float#round raises FloatDomainError for exceptional values when passed a non-positive precision	pass		
 core/float/round_spec.rb	Float#round raises RangeError for NAN when passed a non-positive precision	pass		
 core/float/round_spec.rb	Float#round returns self for exceptional values when passed a non-negative precision	pass		
-core/float/round_spec.rb	Float#round works for corner cases	bug		Expected Infinity.eql?(42.0) to be truthy but was false
-core/float/round_spec.rb	Float#round returns rounded values for big argument	bug		Expected NaN == 0.42 to be truthy but was false
-core/float/round_spec.rb	Float#round returns rounded values for not so big argument	bug		Expected NaN == 0.42 to be truthy but was false
+core/float/round_spec.rb	Float#round works for corner cases	pass		
+core/float/round_spec.rb	Float#round returns rounded values for big argument	pass		
+core/float/round_spec.rb	Float#round returns rounded values for not so big argument	pass		
 core/float/round_spec.rb	Float#round returns big values rounded to nearest	pass		
-core/float/round_spec.rb	Float#round returns rounded values for big values	bug		Expected 200000000000000095925119063321355280295836313164981172578362105490822951164382685545876170093043109655255459755970613243115532828064751915822002911414269722369883105318351536837967627007832311801577472.eql?(300000000000000000000000
-core/float/round_spec.rb	Float#round returns different rounded values depending on the half option	bug		Expected 3.eql?(2) to be truthy but was false
-core/float/round_spec.rb	Float#round rounds self to an optionally given precision with a half option	bug		Expected 5.6.eql?(5.5) to be truthy but was false
+core/float/round_spec.rb	Float#round returns rounded values for big values	pass		
+core/float/round_spec.rb	Float#round returns different rounded values depending on the half option	pass		
+core/float/round_spec.rb	Float#round rounds self to an optionally given precision with a half option	pass		
 core/float/round_spec.rb	Float#round preserves cases where neighbouring floating pointer number increase the decimal places	pass		
-core/float/round_spec.rb	Float#round does not lose precision during the rounding process	bug		Expected 767573.18759.eql?(767573.18758) to be truthy but was false
-core/float/round_spec.rb	Float#round raises FloatDomainError for exceptional values with a half option	bug		Infinity (RangeError)
-core/float/round_spec.rb	Float#round raise for a non-existent round mode	bug		Expected ArgumentError("invalid rounding mode: nonsense") but no exception was raised (14 was returned)
+core/float/round_spec.rb	Float#round does not lose precision during the rounding process	pass		
+core/float/round_spec.rb	Float#round raises FloatDomainError for exceptional values with a half option	pass		
+core/float/round_spec.rb	Float#round raise for a non-existent round mode	pass		
 core/float/round_spec.rb	Float#round when 0.0 is given returns self for positive ndigits	pass		
 core/float/round_spec.rb	Float#round when 0.0 is given returns 0 for 0 or undefined ndigits	pass		
 core/float/round_spec.rb	Float#round when 0.0 is given returns 0 for negative ndigits	pass		
@@ -1361,9 +1363,9 @@ core/hash/clone_spec.rb	Hash#clone copies instance variable but not the objects 
 core/hash/compact_spec.rb	*	expected	mutation	self[…] = …: cameo has no setters; initialize sets a field by name, self.name = …
 core/hash/compare_by_identity_spec.rb	*	expected	mutation	self[…] = …: cameo has no setters; initialize sets a field by name, self.name = …
 core/hash/constructor_spec.rb	*	expected	mutation	self[…] = …: cameo has no setters; initialize sets a field by name, self.name = …
-core/hash/deconstruct_keys_spec.rb	Hash#deconstruct_keys returns self	bug		undefined method 'deconstruct_keys' for an instance of Hash (NoMethodError)
-core/hash/deconstruct_keys_spec.rb	Hash#deconstruct_keys requires one argument	bug		undefined method 'deconstruct_keys' for an instance of Hash (NoMethodError)
-core/hash/deconstruct_keys_spec.rb	Hash#deconstruct_keys ignores argument	bug		undefined method 'deconstruct_keys' for an instance of Hash (NoMethodError)
+core/hash/deconstruct_keys_spec.rb	Hash#deconstruct_keys returns self	expected	identity-and-freezing	undefined method 'equal?' for an instance of Hash (NoMethodError)
+core/hash/deconstruct_keys_spec.rb	Hash#deconstruct_keys requires one argument	pass		
+core/hash/deconstruct_keys_spec.rb	Hash#deconstruct_keys ignores argument	pass		
 core/hash/default_proc_spec.rb	*	expected	mutation	self[…] = …: cameo has no setters; initialize sets a field by name, self.name = …
 core/hash/default_spec.rb	*	expected	mutation	self[…] = …: cameo has no setters; initialize sets a field by name, self.name = …
 core/hash/delete_if_spec.rb	*	expected	mutation	self[…] = …: cameo has no setters; initialize sets a field by name, self.name = …
@@ -1439,12 +1441,12 @@ core/hash/values_at_spec.rb	Hash#values_at returns an array of values for the gi
 core/hash/values_spec.rb	*	expected	mutation	self[…] = …: cameo has no setters; initialize sets a field by name, self.name = …
 core/integer/abs_spec.rb	Integer#abs fixnum returns self's absolute fixnum value	pass		
 core/integer/abs_spec.rb	Integer#abs bignum returns the absolute bignum value	pass		
-core/integer/allbits_spec.rb	Integer#allbits? returns true if and only if all the bits of the argument are set in the receiver	bug		undefined method 'allbits?' for an instance of Integer (NoMethodError)
-core/integer/allbits_spec.rb	Integer#allbits? handles negative values using two's complement notation	bug		undefined method 'allbits?' for an instance of Integer (NoMethodError)
+core/integer/allbits_spec.rb	Integer#allbits? returns true if and only if all the bits of the argument are set in the receiver	pass		
+core/integer/allbits_spec.rb	Integer#allbits? handles negative values using two's complement notation	pass		
 core/integer/allbits_spec.rb	Integer#allbits? coerces the rhs using to_int	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
 core/integer/allbits_spec.rb	Integer#allbits? raises a TypeError when given a non-Integer	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
-core/integer/anybits_spec.rb	Integer#anybits? returns true if and only if all the bits of the argument are set in the receiver	bug		undefined method 'anybits?' for an instance of Integer (NoMethodError)
-core/integer/anybits_spec.rb	Integer#anybits? handles negative values using two's complement notation	bug		undefined method 'anybits?' for an instance of Integer (NoMethodError)
+core/integer/anybits_spec.rb	Integer#anybits? returns true if and only if all the bits of the argument are set in the receiver	pass		
+core/integer/anybits_spec.rb	Integer#anybits? handles negative values using two's complement notation	pass		
 core/integer/anybits_spec.rb	Integer#anybits? coerces the rhs using to_int	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
 core/integer/anybits_spec.rb	Integer#anybits? raises a TypeError when given a non-Integer	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
 core/integer/bit_and_spec.rb	*	expected	instance-variables	@bignum = …: cameo has no instance variables; initialize sets a field with self.bignum = …
@@ -1459,8 +1461,8 @@ core/integer/ceil_spec.rb	*	expected	instance-variables	@method: cameo has no in
 core/integer/ceildiv_spec.rb	*	bug		rational literals are not supported
 core/integer/chr_spec.rb	*	expected	instance-variables	@default_internal = …: cameo has no instance variables; initialize sets a field with self.default_internal = …
 core/integer/coerce_spec.rb	Integer#coerce fixnum when given a Fixnum returns an array containing two Fixnums	pass		
-core/integer/coerce_spec.rb	Integer#coerce fixnum when given a String raises an ArgumentError when trying to coerce with a non-number String	bug		String can't be coerced into Integer (TypeError)
-core/integer/coerce_spec.rb	Integer#coerce fixnum when given a String returns  an array containing two Floats	bug		String can't be coerced into Integer (TypeError)
+core/integer/coerce_spec.rb	Integer#coerce fixnum when given a String raises an ArgumentError when trying to coerce with a non-number String	pass		
+core/integer/coerce_spec.rb	Integer#coerce fixnum when given a String returns  an array containing two Floats	pass		
 core/integer/coerce_spec.rb	Integer#coerce fixnum raises a TypeError when trying to coerce with nil	pass		
 core/integer/coerce_spec.rb	Integer#coerce fixnum tries to convert the given Object into a Float by using #to_f	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
 core/integer/coerce_spec.rb	Integer#coerce fixnum raises a TypeError when given an Object that does not respond to #to_f	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
@@ -1468,7 +1470,7 @@ core/integer/coerce_spec.rb	Integer#coerce bignum coerces other to a Bignum and 
 core/integer/coerce_spec.rb	Integer#coerce bignum returns [other, self] when passed a Bignum	pass		
 core/integer/coerce_spec.rb	Integer#coerce bignum raises a TypeError when not passed a Fixnum or Bignum	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
 core/integer/coerce_spec.rb	Integer#coerce bignum coerces both values to Floats and returns [other, self] when passed a Float	pass		
-core/integer/coerce_spec.rb	Integer#coerce bignum coerces both values to Floats and returns [other, self] when passed a String	bug		String can't be coerced into Integer (TypeError)
+core/integer/coerce_spec.rb	Integer#coerce bignum coerces both values to Floats and returns [other, self] when passed a String	pass		
 core/integer/coerce_spec.rb	Integer#coerce bignum calls #to_f to coerce other to a Float	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
 core/integer/comparison_spec.rb	*	expected	instance-variables	@big = …: cameo has no instance variables; initialize sets a field with self.big = …
 core/integer/complement_spec.rb	Integer#~ fixnum returns self with each bit flipped	pass		
@@ -1489,12 +1491,12 @@ core/integer/div_spec.rb	*	expected	instance-variables	@bignum = …: cameo has 
 core/integer/divide_spec.rb	*	expected	instance-variables	@v = …: cameo has no instance variables; initialize sets a field with self.v = …
 core/integer/divmod_spec.rb	*	expected	instance-variables	@bignum = …: cameo has no instance variables; initialize sets a field with self.bignum = …
 core/integer/downto_spec.rb	Integer#downto [stop] when self and stop are Integers does not yield when stop is greater than self	pass		
-core/integer/downto_spec.rb	Integer#downto [stop] when self and stop are Integers yields once when stop equals self	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
-core/integer/downto_spec.rb	Integer#downto [stop] when self and stop are Integers yields while decreasing self until it is less than stop	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
-core/integer/downto_spec.rb	Integer#downto [stop] when self and stop are Integers yields while decreasing self until it less than ceil for a Float endpoint	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
-core/integer/downto_spec.rb	Integer#downto [stop] when self and stop are Integers raises an ArgumentError for invalid endpoints	bug		no implicit conversion of String into Integer (TypeError)
-core/integer/downto_spec.rb	Integer#downto [stop] when self and stop are Integers when no block is given returns an Enumerator	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
-core/integer/downto_spec.rb	Integer#downto [stop] when self and stop are Integers when no block is given returned Enumerator size raises an ArgumentError for invalid endpoints	bug		no implicit conversion of String into Integer (TypeError)
+core/integer/downto_spec.rb	Integer#downto [stop] when self and stop are Integers yields once when stop equals self	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+core/integer/downto_spec.rb	Integer#downto [stop] when self and stop are Integers yields while decreasing self until it is less than stop	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+core/integer/downto_spec.rb	Integer#downto [stop] when self and stop are Integers yields while decreasing self until it less than ceil for a Float endpoint	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+core/integer/downto_spec.rb	Integer#downto [stop] when self and stop are Integers raises an ArgumentError for invalid endpoints	pass		
+core/integer/downto_spec.rb	Integer#downto [stop] when self and stop are Integers when no block is given returns an Enumerator	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+core/integer/downto_spec.rb	Integer#downto [stop] when self and stop are Integers when no block is given returned Enumerator size raises an ArgumentError for invalid endpoints	bug		comparison of Integer with String failed (ArgumentError)
 core/integer/downto_spec.rb	Integer#downto [stop] when self and stop are Integers when no block is given returned Enumerator size returns self - stop + 1	pass		
 core/integer/downto_spec.rb	Integer#downto [stop] when self and stop are Integers when no block is given returned Enumerator size returns 0 when stop > self	pass		
 core/integer/dup_spec.rb	Integer#dup returns self for small integers	expected	identity-and-freezing	undefined method 'equal?' for an instance of Integer (NoMethodError)
@@ -1575,8 +1577,8 @@ core/integer/minus_spec.rb	*	expected	instance-variables	@v = …: cameo has no 
 core/integer/modulo_spec.rb	*	expected	instance-variables	@bignum = …: cameo has no instance variables; initialize sets a field with self.bignum = …
 core/integer/multiply_spec.rb	*	expected	instance-variables	@v = …: cameo has no instance variables; initialize sets a field with self.v = …
 core/integer/next_spec.rb	Integer#next is an alias of Integer#succ	expected	metaprogramming	undefined method 'instance_method' for class Integer (NoMethodError)
-core/integer/nobits_spec.rb	Integer#nobits? returns true if and only if all no bits of the argument are set in the receiver	bug		undefined method 'nobits?' for an instance of Integer (NoMethodError)
-core/integer/nobits_spec.rb	Integer#nobits? handles negative values using two's complement notation	bug		undefined method 'nobits?' for an instance of Integer (NoMethodError)
+core/integer/nobits_spec.rb	Integer#nobits? returns true if and only if all no bits of the argument are set in the receiver	pass		
+core/integer/nobits_spec.rb	Integer#nobits? handles negative values using two's complement notation	pass		
 core/integer/nobits_spec.rb	Integer#nobits? coerces the rhs using to_int	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
 core/integer/nobits_spec.rb	Integer#nobits? raises a TypeError when given a non-Integer	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
 core/integer/numerator_spec.rb	*	expected	instance-variables	@numbers = …: cameo has no instance variables; initialize sets a field with self.numbers = …
@@ -1614,17 +1616,17 @@ core/integer/succ_spec.rb	Integer#succ returns the next larger negative Bignum	p
 core/integer/succ_spec.rb	Integer#succ overflows a Fixnum to a Bignum	pass		
 core/integer/succ_spec.rb	Integer#succ underflows a Bignum to a Fixnum	pass		
 core/integer/times_spec.rb	Integer#times returns self	pass		
-core/integer/times_spec.rb	Integer#times yields each value from 0 to self - 1	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
-core/integer/times_spec.rb	Integer#times skips the current iteration when encountering 'next'	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
-core/integer/times_spec.rb	Integer#times skips all iterations when encountering 'break'	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+core/integer/times_spec.rb	Integer#times yields each value from 0 to self - 1	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+core/integer/times_spec.rb	Integer#times skips the current iteration when encountering 'next'	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+core/integer/times_spec.rb	Integer#times skips all iterations when encountering 'break'	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
 core/integer/times_spec.rb	Integer#times skips all iterations when encountering break with an argument and returns that argument	pass		
-core/integer/times_spec.rb	Integer#times executes a nested while loop containing a break expression	expected	mutation	cameo does not support mutating calls without rebinding; use first and drop (CameoError)
+core/integer/times_spec.rb	Integer#times executes a nested while loop containing a break expression	expected	mutation	shift changes its receiver, which cameo does not do; use first and drop (CameoError)
 core/integer/times_spec.rb	Integer#times executes a nested #times	pass		
-core/integer/times_spec.rb	Integer#times returns an Enumerator	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+core/integer/times_spec.rb	Integer#times returns an Enumerator	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
 core/integer/times_spec.rb	Integer#times when no block is given returned Enumerator size returns self	pass		
 core/integer/to_f_spec.rb	Integer#to_f fixnum returns self converted to a Float	pass		
 core/integer/to_f_spec.rb	Integer#to_f bignum returns self converted to a Float	pass		
-core/integer/to_f_spec.rb	Integer#to_f bignum converts number close to Float::MAX without exceeding MAX or producing NaN	bug		Expected 1.0e+308 == 1.0000000000000006e+308 to be truthy but was false
+core/integer/to_f_spec.rb	Integer#to_f bignum converts number close to Float::MAX without exceeding MAX or producing NaN	pass		
 core/integer/to_i_spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
 core/integer/to_int_spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
 core/integer/to_r_spec.rb	Integer#to_r returns a Rational object	expected	rational-complex	undefined method 'to_r' for an instance of Integer (NoMethodError)
@@ -1639,12 +1641,12 @@ core/integer/uminus_spec.rb	Integer#-@ fixnum returns self as a negative value	p
 core/integer/uminus_spec.rb	Integer#-@ fixnum negates self at Fixnum/Bignum boundaries	pass		
 core/integer/uminus_spec.rb	Integer#-@ bignum returns self as a negative value	pass		
 core/integer/upto_spec.rb	Integer#upto [stop] when self and stop are Integers does not yield when stop is less than self	pass		
-core/integer/upto_spec.rb	Integer#upto [stop] when self and stop are Integers yields once when stop equals self	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
-core/integer/upto_spec.rb	Integer#upto [stop] when self and stop are Integers yields while increasing self until it is less than stop	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
-core/integer/upto_spec.rb	Integer#upto [stop] when self and stop are Integers yields while increasing self until it is greater than floor of a Float endpoint	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
-core/integer/upto_spec.rb	Integer#upto [stop] when self and stop are Integers raises an ArgumentError for non-numeric endpoints	bug		no implicit conversion of String into Integer (TypeError)
-core/integer/upto_spec.rb	Integer#upto [stop] when self and stop are Integers when no block is given returns an Enumerator	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
-core/integer/upto_spec.rb	Integer#upto [stop] when self and stop are Integers when no block is given returned Enumerator size raises an ArgumentError for non-numeric endpoints	bug		no implicit conversion of String into Integer (TypeError)
+core/integer/upto_spec.rb	Integer#upto [stop] when self and stop are Integers yields once when stop equals self	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+core/integer/upto_spec.rb	Integer#upto [stop] when self and stop are Integers yields while increasing self until it is less than stop	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+core/integer/upto_spec.rb	Integer#upto [stop] when self and stop are Integers yields while increasing self until it is greater than floor of a Float endpoint	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+core/integer/upto_spec.rb	Integer#upto [stop] when self and stop are Integers raises an ArgumentError for non-numeric endpoints	pass		
+core/integer/upto_spec.rb	Integer#upto [stop] when self and stop are Integers when no block is given returns an Enumerator	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+core/integer/upto_spec.rb	Integer#upto [stop] when self and stop are Integers when no block is given returned Enumerator size raises an ArgumentError for non-numeric endpoints	bug		comparison of Integer with String failed (ArgumentError)
 core/integer/upto_spec.rb	Integer#upto [stop] when self and stop are Integers when no block is given returned Enumerator size returns stop - self + 1	pass		
 core/integer/upto_spec.rb	Integer#upto [stop] when self and stop are Integers when no block is given returned Enumerator size returns 0 when stop < self	pass		
 core/integer/zero_spec.rb	Integer#zero? returns true if self is 0	pass		
@@ -2263,7 +2265,7 @@ core/mutex/sleep_spec.rb	Mutex#sleep relocks the mutex when woken	expected	threa
 core/mutex/sleep_spec.rb	Mutex#sleep relocks the mutex when woken by an exception being raised	expected	threads	uninitialized constant Mutex (NameError)
 core/mutex/sleep_spec.rb	Mutex#sleep returns the rounded number of seconds asleep	expected	threads	uninitialized constant Mutex (NameError)
 core/mutex/sleep_spec.rb	Mutex#sleep accepts nil as a sleep duration	harness	fails under Ruby too	uninitialized constant Mutex (NameError)
-core/mutex/sleep_spec.rb	Mutex#sleep wakes up when requesting sleep times near or equal to zero	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+core/mutex/sleep_spec.rb	Mutex#sleep wakes up when requesting sleep times near or equal to zero	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
 core/mutex/synchronize_spec.rb	Mutex#synchronize wraps the lock/unlock pair in an ensure	expected	threads	uninitialized constant Mutex (NameError)
 core/mutex/synchronize_spec.rb	Mutex#synchronize blocks the caller if already locked	harness	fails under Ruby too	uninitialized constant Mutex (NameError)
 core/mutex/synchronize_spec.rb	Mutex#synchronize does not block the caller if not locked	harness	fails under Ruby too	uninitialized constant Mutex (NameError)
@@ -2311,7 +2313,7 @@ core/numeric/ceil_spec.rb	*	bug		uninitialized constant Numeric (NameError)
 core/numeric/clone_spec.rb	Numeric#clone returns self	expected	identity-and-freezing	undefined method 'equal?' for an instance of Integer (NoMethodError)
 core/numeric/clone_spec.rb	Numeric#clone does not change frozen status	pass		
 core/numeric/clone_spec.rb	Numeric#clone accepts optional keyword argument :freeze	expected	identity-and-freezing	undefined method 'equal?' for an instance of Integer (NoMethodError)
-core/numeric/clone_spec.rb	Numeric#clone raises ArgumentError if passed freeze: false	bug		Expected ArgumentError(/can't unfreeze/) but no exception was raised (1 was returned)
+core/numeric/clone_spec.rb	Numeric#clone raises ArgumentError if passed freeze: false	pass		
 core/numeric/clone_spec.rb	Numeric#clone does not change frozen status if passed freeze: nil	expected	identity-and-freezing	undefined method 'equal?' for an instance of Integer (NoMethodError)
 core/numeric/coerce_spec.rb	*	expected	instance-variables	@obj = …: cameo has no instance variables; initialize sets a field with self.obj = …
 core/numeric/comparison_spec.rb	*	expected	instance-variables	@obj = …: cameo has no instance variables; initialize sets a field with self.obj = …
@@ -2466,9 +2468,9 @@ core/proc/syntax_tree_spec.rb	*	expected	mutation	….keep_script_lines = …: t
 core/proc/to_proc_spec.rb	Proc#to_proc returns self	expected	literal-only	undefined method 'new' for class Proc: use a literal (NoMethodError)
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with Proc.new returns a description including file and line number	expected	literal-only	undefined method 'new' for class Proc: use a literal (NoMethodError)
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with Proc.new has a binary encoding	expected	literal-only	undefined method 'new' for class Proc: use a literal (NoMethodError)
-core/proc/to_s_spec.rb	Proc#to_s for a proc created with lambda returns a description including '(lambda)' and including file and line number	bug		Expected "#<Proc:/var/folders/_j/3cwlydtn7ks30gp_gn6xrb2m0000gn/T/cameo-spec20261021-27802-woevbl/to_s_spec.rb:263 (lambda)>" =~ /^#<Proc:([^ ]*?) \/var\/folders\/_j\/3cwlydtn7ks30gp_gn6xrb2m0000gn\/T\/cameo\-spec20261021\-27802\-woevbl\/to
+core/proc/to_s_spec.rb	Proc#to_s for a proc created with lambda returns a description including '(lambda)' and including file and line number	bug		Expected "#<Proc:/var/folders/_j/3cwlydtn7ks30gp_gn6xrb2m0000gn/T/cameo-spec20261021-35508-8cmomw/to_s_spec.rb:263 (lambda)>" =~ /^#<Proc:([^ ]*?) \/var\/folders\/_j\/3cwlydtn7ks30gp_gn6xrb2m0000gn\/T\/cameo\-spec20261021\-35508\-8cmomw\/to
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with lambda has a binary encoding	pass		
-core/proc/to_s_spec.rb	Proc#to_s for a proc created with proc returns a description including file and line number	bug		Expected "#<Proc:/var/folders/_j/3cwlydtn7ks30gp_gn6xrb2m0000gn/T/cameo-spec20261021-27802-woevbl/to_s_spec.rb:273>" =~ /^#<Proc:([^ ]*?) \/var\/folders\/_j\/3cwlydtn7ks30gp_gn6xrb2m0000gn\/T\/cameo\-spec20261021\-27802\-woevbl\/to_s_spec\.
+core/proc/to_s_spec.rb	Proc#to_s for a proc created with proc returns a description including file and line number	bug		Expected "#<Proc:/var/folders/_j/3cwlydtn7ks30gp_gn6xrb2m0000gn/T/cameo-spec20261021-35508-8cmomw/to_s_spec.rb:273>" =~ /^#<Proc:([^ ]*?) \/var\/folders\/_j\/3cwlydtn7ks30gp_gn6xrb2m0000gn\/T\/cameo\-spec20261021\-35508\-8cmomw\/to_s_spec\.
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with proc has a binary encoding	pass		
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with UnboundMethod#to_proc returns a description including '(lambda)' and optionally including file and line number	expected	metaprogramming	undefined method 'method' for main (NoMethodError)
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with UnboundMethod#to_proc has a binary encoding	expected	metaprogramming	undefined method 'method' for main (NoMethodError)
@@ -2491,7 +2493,7 @@ core/process/clock_gettime_spec.rb	Process.clock_gettime can be called with Proc
 core/process/clock_gettime_spec.rb	Process.clock_gettime time units handles a fixed set of time units	pass		
 core/process/clock_gettime_spec.rb	Process.clock_gettime time units raises an ArgumentError for an invalid time unit	pass		
 core/process/clock_gettime_spec.rb	Process.clock_gettime time units defaults to :float_second	pass		
-core/process/clock_gettime_spec.rb	Process.clock_gettime time units uses the default time unit (:float_second) when passed nil	bug		unexpected unit: nil (ArgumentError)
+core/process/clock_gettime_spec.rb	Process.clock_gettime time units uses the default time unit (:float_second) when passed nil	pass		
 core/process/clock_gettime_spec.rb	Process.clock_gettime supports the platform clocks mentioned in the documentation CLOCK_REALTIME	pass		
 core/process/clock_gettime_spec.rb	Process.clock_gettime supports the platform clocks mentioned in the documentation CLOCK_MONOTONIC	pass		
 core/process/constants_spec.rb	Process::Constants on BSD-like systems defines WNOHANG	expected	process	undefined method 'const_defined?' for module Process (NoMethodError)
@@ -2673,52 +2675,52 @@ core/range/overlap_spec.rb	Range#overlap? returns false when Ranges are not comp
 core/range/overlap_spec.rb	Range#overlap? return false when self is empty	pass		
 core/range/overlap_spec.rb	Range#overlap? return false when other Range is empty	pass		
 core/range/overlap_spec.rb	Range#overlap? takes into account exclusive end	pass		
-core/range/percent_spec.rb	Range#% works as a Range#step	bug		uninitialized constant Enumerator::ArithmeticSequence (NameError)
-core/range/percent_spec.rb	Range#% produces an arithmetic sequence with a percent sign in #inspect	bug		Expected "[1, 3, 5, 7, 9]" == "((1..10).%(2))" to be truthy but was false
+core/range/percent_spec.rb	Range#% works as a Range#step	pass		
+core/range/percent_spec.rb	Range#% produces an arithmetic sequence with a percent sign in #inspect	pass		
 core/range/range_spec.rb	Range includes Enumerable	pass		
-core/range/reverse_each_spec.rb	Range#reverse_each traverses the Range in reverse order and passes each element to block	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+core/range/reverse_each_spec.rb	Range#reverse_each traverses the Range in reverse order and passes each element to block	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
 core/range/reverse_each_spec.rb	Range#reverse_each returns self	expected	identity-and-freezing	undefined method 'equal?' for an instance of Range (NoMethodError)
-core/range/reverse_each_spec.rb	Range#reverse_each returns an Enumerator if no block given	bug		Expected [3, 2, 1].instance_of?(Enumerator) to be truthy but was false
-core/range/reverse_each_spec.rb	Range#reverse_each raises a TypeError for endless Ranges of Integers	bug		cannot convert endless range to a list (RangeError)
-core/range/reverse_each_spec.rb	Range#reverse_each raises a TypeError for endless Ranges of non-Integers	bug		cannot convert endless range to a list (RangeError)
-core/range/reverse_each_spec.rb	Range#reverse_each Integer boundaries supports beginningless Ranges	bug		can't iterate from nil (TypeError)
+core/range/reverse_each_spec.rb	Range#reverse_each returns an Enumerator if no block given	pass		
+core/range/reverse_each_spec.rb	Range#reverse_each raises a TypeError for endless Ranges of Integers	pass		
+core/range/reverse_each_spec.rb	Range#reverse_each raises a TypeError for endless Ranges of non-Integers	pass		
+core/range/reverse_each_spec.rb	Range#reverse_each Integer boundaries supports beginningless Ranges	pass		
 core/range/reverse_each_spec.rb	Range#reverse_each non-Integer boundaries uses #succ to iterate a Range of non-Integer elements	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
-core/range/reverse_each_spec.rb	Range#reverse_each non-Integer boundaries uses #succ to iterate a Range of Strings	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
-core/range/reverse_each_spec.rb	Range#reverse_each non-Integer boundaries uses #succ to iterate a Range of Symbols	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+core/range/reverse_each_spec.rb	Range#reverse_each non-Integer boundaries uses #succ to iterate a Range of Strings	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+core/range/reverse_each_spec.rb	Range#reverse_each non-Integer boundaries uses #succ to iterate a Range of Symbols	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
 core/range/reverse_each_spec.rb	Range#reverse_each non-Integer boundaries raises a TypeError when `begin` value does not respond to #succ	pass		
-core/range/reverse_each_spec.rb	Range#reverse_each non-Integer boundaries does not support beginningless Ranges	bug		can't iterate from nil (TypeError)
-core/range/reverse_each_spec.rb	Range#reverse_each when no block is given returned Enumerator size returns the Range size when Range size is finite	bug		can't iterate from Integer (TypeError)
-core/range/reverse_each_spec.rb	Range#reverse_each when no block is given returned Enumerator size raises TypeError when the range is not iterable	bug		can't iterate from Float (TypeError)
-core/range/reverse_each_spec.rb	Range#reverse_each when no block is given returned Enumerator size returns Infinity when Range size is infinite	bug		can't iterate from nil (TypeError)
-core/range/reverse_each_spec.rb	Range#reverse_each when no block is given returned Enumerator size returns nil when Range size is unknown	bug		Expected 26 == nil to be truthy but was false
+core/range/reverse_each_spec.rb	Range#reverse_each non-Integer boundaries does not support beginningless Ranges	pass		
+core/range/reverse_each_spec.rb	Range#reverse_each when no block is given returned Enumerator size returns the Range size when Range size is finite	pass		
+core/range/reverse_each_spec.rb	Range#reverse_each when no block is given returned Enumerator size raises TypeError when the range is not iterable	pass		
+core/range/reverse_each_spec.rb	Range#reverse_each when no block is given returned Enumerator size returns Infinity when Range size is infinite	pass		
+core/range/reverse_each_spec.rb	Range#reverse_each when no block is given returned Enumerator size returns nil when Range size is unknown	pass		
 core/range/size_spec.rb	*	expected	metaprogramming	eval is not supported; use nothing
 core/range/step_spec.rb	Range#step before	harness	Range#step before	
-core/range/step_spec.rb	Range#step returns self	bug		wrong number of arguments (given 0, expected 1) (ArgumentError)
+core/range/step_spec.rb	Range#step returns self	expected	identity-and-freezing	undefined method 'equal?' for an instance of Range (NoMethodError)
 core/range/step_spec.rb	Range#step calls #coerce to coerce step to an Integer	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
 core/range/step_spec.rb	Range#step raises a TypeError if step does not respond to #coerce	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
 core/range/step_spec.rb	Range#step raises an ArgumentError if step is 0	pass		
 core/range/step_spec.rb	Range#step raises an ArgumentError if step is 0.0	pass		
 core/range/step_spec.rb	Range#step does not iterate if step is 0 for bounded non-numeric ranges	harness	fails under Ruby too	step can't be negative or 0 (ArgumentError)
-core/range/step_spec.rb	Range#step raises an ArgumentError when iterating a beginless range	bug		can't iterate from nil (TypeError)
-core/range/step_spec.rb	Range#step with inclusive end and Integer values yields Integer values incremented by 1 and less than or equal to end when not passed a step	harness	fails under Ruby too	wrong number of arguments (given 0, expected 1) (ArgumentError)
+core/range/step_spec.rb	Range#step raises an ArgumentError when iterating a beginless range	pass		
+core/range/step_spec.rb	Range#step with inclusive end and Integer values yields Integer values incremented by 1 and less than or equal to end when not passed a step	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
 core/range/step_spec.rb	Range#step with inclusive end and Integer values yields Integer values incremented by an Integer step	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
 core/range/step_spec.rb	Range#step with inclusive end and Integer values yields Float values incremented by a Float step	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
-core/range/step_spec.rb	Range#step with inclusive end and Integer values does not iterate if step is negative for forward range	harness	fails under Ruby too	step can't be negative or 0 (ArgumentError)
-core/range/step_spec.rb	Range#step with inclusive end and Integer values iterates backward if step is negative for backward range	harness	fails under Ruby too	step can't be negative or 0 (ArgumentError)
-core/range/step_spec.rb	Range#step with inclusive end and Float values yields Float values incremented by 1 and less than or equal to end when not passed a step	harness	fails under Ruby too	wrong number of arguments (given 0, expected 1) (ArgumentError)
-core/range/step_spec.rb	Range#step with inclusive end and Float values yields Float values incremented by an Integer step	harness	fails under Ruby too	can't iterate from Float (TypeError)
-core/range/step_spec.rb	Range#step with inclusive end and Float values yields Float values incremented by a Float step	harness	fails under Ruby too	step can't be negative or 0 (ArgumentError)
-core/range/step_spec.rb	Range#step with inclusive end and Float values returns Float values of 'step * n + begin <= end'	harness	fails under Ruby too	can't iterate from Float (TypeError)
-core/range/step_spec.rb	Range#step with inclusive end and Float values handles infinite values at either end	harness	fails under Ruby too	can't iterate from Float (TypeError)
-core/range/step_spec.rb	Range#step with inclusive end and Float values does not iterate if step is negative for forward range	harness	fails under Ruby too	step can't be negative or 0 (ArgumentError)
-core/range/step_spec.rb	Range#step with inclusive end and Float values iterates backward if step is negative for backward range	harness	fails under Ruby too	step can't be negative or 0 (ArgumentError)
-core/range/step_spec.rb	Range#step with inclusive end and Integer, Float values yields Float values incremented by 1 and less than or equal to end when not passed a step	harness	fails under Ruby too	wrong number of arguments (given 0, expected 1) (ArgumentError)
-core/range/step_spec.rb	Range#step with inclusive end and Integer, Float values yields Float values incremented by an Integer step	harness	fails under Ruby too	can't iterate from Integer (TypeError)
-core/range/step_spec.rb	Range#step with inclusive end and Integer, Float values yields Float values incremented by a Float step	harness	fails under Ruby too	step can't be negative or 0 (ArgumentError)
-core/range/step_spec.rb	Range#step with inclusive end and Float, Integer values yields Float values incremented by 1 and less than or equal to end when not passed a step	harness	fails under Ruby too	wrong number of arguments (given 0, expected 1) (ArgumentError)
-core/range/step_spec.rb	Range#step with inclusive end and Float, Integer values yields Float values incremented by an Integer step	harness	fails under Ruby too	can't iterate from Float (TypeError)
-core/range/step_spec.rb	Range#step with inclusive end and Float, Integer values yields Float values incremented by a Float step	harness	fails under Ruby too	step can't be negative or 0 (ArgumentError)
-core/range/step_spec.rb	Range#step with inclusive end and String values yields String values incremented by #succ and less than or equal to end when not passed a step	harness	fails under Ruby too	wrong number of arguments (given 0, expected 1) (ArgumentError)
+core/range/step_spec.rb	Range#step with inclusive end and Integer values does not iterate if step is negative for forward range	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/range/step_spec.rb	Range#step with inclusive end and Integer values iterates backward if step is negative for backward range	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/range/step_spec.rb	Range#step with inclusive end and Float values yields Float values incremented by 1 and less than or equal to end when not passed a step	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/range/step_spec.rb	Range#step with inclusive end and Float values yields Float values incremented by an Integer step	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/range/step_spec.rb	Range#step with inclusive end and Float values yields Float values incremented by a Float step	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/range/step_spec.rb	Range#step with inclusive end and Float values returns Float values of 'step * n + begin <= end'	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/range/step_spec.rb	Range#step with inclusive end and Float values handles infinite values at either end	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/range/step_spec.rb	Range#step with inclusive end and Float values does not iterate if step is negative for forward range	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/range/step_spec.rb	Range#step with inclusive end and Float values iterates backward if step is negative for backward range	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/range/step_spec.rb	Range#step with inclusive end and Integer, Float values yields Float values incremented by 1 and less than or equal to end when not passed a step	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/range/step_spec.rb	Range#step with inclusive end and Integer, Float values yields Float values incremented by an Integer step	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/range/step_spec.rb	Range#step with inclusive end and Integer, Float values yields Float values incremented by a Float step	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/range/step_spec.rb	Range#step with inclusive end and Float, Integer values yields Float values incremented by 1 and less than or equal to end when not passed a step	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/range/step_spec.rb	Range#step with inclusive end and Float, Integer values yields Float values incremented by an Integer step	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/range/step_spec.rb	Range#step with inclusive end and Float, Integer values yields Float values incremented by a Float step	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/range/step_spec.rb	Range#step with inclusive end and String values yields String values incremented by #succ and less than or equal to end when not passed a step	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
 core/range/step_spec.rb	Range#step with inclusive end and String values yields String values incremented by #succ called Integer step times	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
 core/range/step_spec.rb	Range#step with inclusive end and String values raises a TypeError when passed a Float step	bug		Expected TypeError but no exception was raised (nil was returned)
 core/range/step_spec.rb	Range#step with inclusive end and String values yields String values adjusted by step and less than or equal to end	harness	fails under Ruby too	no implicit conversion of String into Integer (TypeError)
@@ -2726,33 +2728,33 @@ core/range/step_spec.rb	Range#step with inclusive end and String values raises a
 core/range/step_spec.rb	Range#step with inclusive end and String values calls #+ on begin and each element returned by #+	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
 core/range/step_spec.rb	Range#step with inclusive end and String values iterates backward if the step is decreasing values, and the range is backward	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
 core/range/step_spec.rb	Range#step with inclusive end and String values does no iteration of the direction of the range and of the step don't match	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
-core/range/step_spec.rb	Range#step with exclusive end and Integer values yields Integer values incremented by 1 and less than end when not passed a step	harness	fails under Ruby too	wrong number of arguments (given 0, expected 1) (ArgumentError)
+core/range/step_spec.rb	Range#step with exclusive end and Integer values yields Integer values incremented by 1 and less than end when not passed a step	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
 core/range/step_spec.rb	Range#step with exclusive end and Integer values yields Integer values incremented by an Integer step	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
 core/range/step_spec.rb	Range#step with exclusive end and Integer values yields Float values incremented by a Float step	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
-core/range/step_spec.rb	Range#step with exclusive end and Float values yields Float values incremented by 1 and less than end when not passed a step	harness	fails under Ruby too	wrong number of arguments (given 0, expected 1) (ArgumentError)
-core/range/step_spec.rb	Range#step with exclusive end and Float values yields Float values incremented by an Integer step	harness	fails under Ruby too	can't iterate from Float (TypeError)
-core/range/step_spec.rb	Range#step with exclusive end and Float values yields Float values incremented by a Float step	harness	fails under Ruby too	step can't be negative or 0 (ArgumentError)
-core/range/step_spec.rb	Range#step with exclusive end and Float values returns Float values of 'step * n + begin < end'	harness	fails under Ruby too	can't iterate from Float (TypeError)
-core/range/step_spec.rb	Range#step with exclusive end and Float values correctly handles values near the upper limit	harness	fails under Ruby too	can't iterate from Float (TypeError)
-core/range/step_spec.rb	Range#step with exclusive end and Float values handles infinite values at either end	harness	fails under Ruby too	can't iterate from Float (TypeError)
-core/range/step_spec.rb	Range#step with exclusive end and Float values iterates backward with exclusive end if step is negative	harness	fails under Ruby too	step can't be negative or 0 (ArgumentError)
-core/range/step_spec.rb	Range#step with exclusive end and Integer, Float values yields Float values incremented by 1 and less than end when not passed a step	harness	fails under Ruby too	wrong number of arguments (given 0, expected 1) (ArgumentError)
-core/range/step_spec.rb	Range#step with exclusive end and Integer, Float values yields Float values incremented by an Integer step	harness	fails under Ruby too	can't iterate from Integer (TypeError)
-core/range/step_spec.rb	Range#step with exclusive end and Integer, Float values yields an Float and then Float values incremented by a Float step	harness	fails under Ruby too	step can't be negative or 0 (ArgumentError)
-core/range/step_spec.rb	Range#step with exclusive end and Float, Integer values yields Float values incremented by 1 and less than end when not passed a step	harness	fails under Ruby too	wrong number of arguments (given 0, expected 1) (ArgumentError)
-core/range/step_spec.rb	Range#step with exclusive end and Float, Integer values yields Float values incremented by an Integer step	harness	fails under Ruby too	can't iterate from Float (TypeError)
-core/range/step_spec.rb	Range#step with exclusive end and Float, Integer values yields Float values incremented by a Float step	harness	fails under Ruby too	step can't be negative or 0 (ArgumentError)
+core/range/step_spec.rb	Range#step with exclusive end and Float values yields Float values incremented by 1 and less than end when not passed a step	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/range/step_spec.rb	Range#step with exclusive end and Float values yields Float values incremented by an Integer step	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/range/step_spec.rb	Range#step with exclusive end and Float values yields Float values incremented by a Float step	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/range/step_spec.rb	Range#step with exclusive end and Float values returns Float values of 'step * n + begin < end'	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/range/step_spec.rb	Range#step with exclusive end and Float values correctly handles values near the upper limit	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/range/step_spec.rb	Range#step with exclusive end and Float values handles infinite values at either end	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/range/step_spec.rb	Range#step with exclusive end and Float values iterates backward with exclusive end if step is negative	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/range/step_spec.rb	Range#step with exclusive end and Integer, Float values yields Float values incremented by 1 and less than end when not passed a step	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/range/step_spec.rb	Range#step with exclusive end and Integer, Float values yields Float values incremented by an Integer step	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/range/step_spec.rb	Range#step with exclusive end and Integer, Float values yields an Float and then Float values incremented by a Float step	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/range/step_spec.rb	Range#step with exclusive end and Float, Integer values yields Float values incremented by 1 and less than end when not passed a step	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/range/step_spec.rb	Range#step with exclusive end and Float, Integer values yields Float values incremented by an Integer step	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/range/step_spec.rb	Range#step with exclusive end and Float, Integer values yields Float values incremented by a Float step	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
 core/range/step_spec.rb	Range#step with exclusive end and String values yields String values adjusted by step and less than or equal to end	harness	fails under Ruby too	no implicit conversion of String into Integer (TypeError)
 core/range/step_spec.rb	Range#step with exclusive end and String values raises a TypeError when passed an incompatible type step	pass		
-core/range/step_spec.rb	Range#step with an endless range and Integer values yield Integer values incremented by 1 when not passed a step	harness	fails under Ruby too	wrong number of arguments (given 0, expected 1) (ArgumentError)
-core/range/step_spec.rb	Range#step with an endless range and Integer values yields Integer values incremented by an Integer step	harness	fails under Ruby too	cannot convert endless range to a list (RangeError)
-core/range/step_spec.rb	Range#step with an endless range and Integer values yields Float values incremented by a Float step	harness	fails under Ruby too	cannot convert endless range to a list (RangeError)
-core/range/step_spec.rb	Range#step with an endless range and Float values yields Float values incremented by 1 and less than end when not passed a step	harness	fails under Ruby too	wrong number of arguments (given 0, expected 1) (ArgumentError)
-core/range/step_spec.rb	Range#step with an endless range and Float values yields Float values incremented by an Integer step	harness	fails under Ruby too	can't iterate from Float (TypeError)
-core/range/step_spec.rb	Range#step with an endless range and Float values yields Float values incremented by a Float step	harness	fails under Ruby too	step can't be negative or 0 (ArgumentError)
-core/range/step_spec.rb	Range#step with an endless range and Float values computes each value independently to avoid accumulating floating-point errors	bug		step can't be negative or 0 (ArgumentError)
-core/range/step_spec.rb	Range#step with an endless range and Float values handles infinite values at the start	harness	fails under Ruby too	can't iterate from Float (TypeError)
-core/range/step_spec.rb	Range#step with an endless range and String values yields String values incremented by #succ and less than or equal to end when not passed a step	harness	fails under Ruby too	wrong number of arguments (given 0, expected 1) (ArgumentError)
+core/range/step_spec.rb	Range#step with an endless range and Integer values yield Integer values incremented by 1 when not passed a step	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/range/step_spec.rb	Range#step with an endless range and Integer values yields Integer values incremented by an Integer step	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/range/step_spec.rb	Range#step with an endless range and Integer values yields Float values incremented by a Float step	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/range/step_spec.rb	Range#step with an endless range and Float values yields Float values incremented by 1 and less than end when not passed a step	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/range/step_spec.rb	Range#step with an endless range and Float values yields Float values incremented by an Integer step	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/range/step_spec.rb	Range#step with an endless range and Float values yields Float values incremented by a Float step	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/range/step_spec.rb	Range#step with an endless range and Float values computes each value independently to avoid accumulating floating-point errors	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+core/range/step_spec.rb	Range#step with an endless range and Float values handles infinite values at the start	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/range/step_spec.rb	Range#step with an endless range and String values yields String values incremented by #succ and less than or equal to end when not passed a step	harness	fails under Ruby too	cannot convert endless range to a list (RangeError)
 core/range/step_spec.rb	Range#step with an endless range and String values yields String values incremented by #succ called Integer step times	harness	fails under Ruby too	cannot convert endless range to a list (RangeError)
 core/range/step_spec.rb	Range#step with an endless range and String values raises a TypeError when passed a Float step	bug		cannot convert endless range to a list (RangeError)
 core/range/step_spec.rb	Range#step with an endless range and String values yields String values adjusted by step	harness	fails under Ruby too	no implicit conversion of String into Integer (TypeError)
@@ -2760,14 +2762,14 @@ core/range/step_spec.rb	Range#step with an endless range and String values raise
 core/range/step_spec.rb	Range#step when no block is given raises an ArgumentError if step is 0	pass		
 core/range/step_spec.rb	Range#step when no block is given returned Enumerator size does not raise if step is incompatible	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
 core/range/step_spec.rb	Range#step when no block is given returned Enumerator size returns the ceil of range size divided by the number of steps	pass		
-core/range/step_spec.rb	Range#step when no block is given returned Enumerator size returns the ceil of range size divided by the number of steps even if step is negative	bug		step can't be negative or 0 (ArgumentError)
-core/range/step_spec.rb	Range#step when no block is given returned Enumerator size returns the correct number of steps when one of the arguments is a float	bug		step can't be negative or 0 (ArgumentError)
-core/range/step_spec.rb	Range#step when no block is given returned Enumerator size returns the range size when there's no step_size	bug		wrong number of arguments (given 0, expected 1) (ArgumentError)
+core/range/step_spec.rb	Range#step when no block is given returned Enumerator size returns the ceil of range size divided by the number of steps even if step is negative	pass		
+core/range/step_spec.rb	Range#step when no block is given returned Enumerator size returns the correct number of steps when one of the arguments is a float	pass		
+core/range/step_spec.rb	Range#step when no block is given returned Enumerator size returns the range size when there's no step_size	pass		
 core/range/step_spec.rb	Range#step when no block is given returned Enumerator size returns nil with begin and end are String	bug		no implicit conversion of String into Integer (TypeError)
 core/range/step_spec.rb	Range#step when no block is given returned Enumerator size return nil and not raises a TypeError if the first element is not of compatible type	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
-core/range/step_spec.rb	Range#step when no block is given returned Enumerator type when both begin and end are numerics returns an instance of Enumerator::ArithmeticSequence	bug		wrong number of arguments (given 0, expected 1) (ArgumentError)
-core/range/step_spec.rb	Range#step when no block is given returned Enumerator type when begin is not defined and end is numeric returns an instance of Enumerator::ArithmeticSequence	bug		wrong number of arguments (given 0, expected 1) (ArgumentError)
-core/range/step_spec.rb	Range#step when no block is given returned Enumerator type when range is endless returns an instance of Enumerator::ArithmeticSequence when begin is numeric	bug		wrong number of arguments (given 0, expected 1) (ArgumentError)
+core/range/step_spec.rb	Range#step when no block is given returned Enumerator type when both begin and end are numerics returns an instance of Enumerator::ArithmeticSequence	pass		
+core/range/step_spec.rb	Range#step when no block is given returned Enumerator type when begin is not defined and end is numeric returns an instance of Enumerator::ArithmeticSequence	pass		
+core/range/step_spec.rb	Range#step when no block is given returned Enumerator type when range is endless returns an instance of Enumerator::ArithmeticSequence when begin is numeric	pass		
 core/range/step_spec.rb	Range#step when no block is given returned Enumerator type when range is endless returns an instance of Enumerator when begin is not numeric	bug		no implicit conversion of String into Integer (TypeError)
 core/range/step_spec.rb	Range#step when no block is given returned Enumerator type when range is beginless and endless raises an ArgumentError	expected	literal-only	undefined method 'new' for class Range: use a literal (NoMethodError)
 core/range/step_spec.rb	Range#step when no block is given returned Enumerator type when range is beginless and finite raises an ArgumentError if step is non-numeric	bug		no implicit conversion of String into Integer (TypeError)
@@ -2980,11 +2982,11 @@ core/set/delete_spec.rb	*	expected	instance-variables	@set = …: cameo has no i
 core/set/difference_spec.rb	Set#difference is an alias of Set#-	expected	metaprogramming	undefined method 'instance_method' for class Set (NoMethodError)
 core/set/disjoint_spec.rb	*	expected	instance-variables	@entries = …: cameo has no instance variables; initialize sets a field with self.entries = …
 core/set/divide_spec.rb	Set#divide divides self into a set of subsets based on the blocks return values	pass		
-core/set/divide_spec.rb	Set#divide yields each Object to the block	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+core/set/divide_spec.rb	Set#divide yields each Object to the block	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
 core/set/divide_spec.rb	Set#divide returns an enumerator when not passed a block	pass		
 core/set/divide_spec.rb	Set#divide does not retain compare_by_identity flag	bug		undefined method 'compare_by_identity?' for an instance of Set (NoMethodError)
 core/set/divide_spec.rb	Set#divide when passed a block with an arity of 2 divides self into a set of subsets based on the blocks return values	pass		
-core/set/divide_spec.rb	Set#divide when passed a block with an arity of 2 yields each two Object to the block	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+core/set/divide_spec.rb	Set#divide when passed a block with an arity of 2 yields each two Object to the block	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
 core/set/divide_spec.rb	Set#divide when passed a block with an arity of 2 returns an enumerator when not passed a block	pass		
 core/set/divide_spec.rb	Set#divide when passed a block with an arity of > 2 only uses the first element if the arity > 2	pass		
 core/set/divide_spec.rb	Set#divide when passed a block with an arity of > 2 only uses the first element if the arity = -1	pass		
@@ -2998,7 +3000,7 @@ core/set/exclusion_spec.rb	*	expected	instance-variables	@set = …: cameo has n
 core/set/filter_spec.rb	Set#filter! is an alias of Set#select!	expected	metaprogramming	undefined method 'instance_method' for class Set (NoMethodError)
 core/set/flatten_merge_spec.rb	Set#flatten_merge is protected	bug		undefined method 'protected_instance_methods' for class Set (NoMethodError)
 core/set/flatten_merge_spec.rb	Set#flatten_merge flattens the passed Set and merges it into self	pass		
-core/set/flatten_merge_spec.rb	Set#flatten_merge raises an ArgumentError when trying to flatten a recursive Set	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+core/set/flatten_merge_spec.rb	Set#flatten_merge raises an ArgumentError when trying to flatten a recursive Set	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
 core/set/flatten_spec.rb	*	expected	instance-variables	@entries = …: cameo has no instance variables; initialize sets a field with self.entries = …
 core/set/gt_spec.rb	Set#> is an alias of Set#proper_superset?	expected	metaprogramming	undefined method 'instance_method' for class Set (NoMethodError)
 core/set/gte_spec.rb	Set#>= is an alias of Set#superset?	expected	metaprogramming	undefined method 'instance_method' for class Set (NoMethodError)
@@ -3032,12 +3034,12 @@ core/set/lt_spec.rb	Set#< is an alias of Set#proper_subset?	expected	metaprogram
 core/set/lte_spec.rb	Set#<= is an alias of Set#subset?	expected	metaprogramming	undefined method 'instance_method' for class Set (NoMethodError)
 core/set/map_spec.rb	*	expected	instance-variables	@set = …: cameo has no instance variables; initialize sets a field with self.set = …
 core/set/member_spec.rb	Set#member? is an alias of Set#include?	expected	metaprogramming	undefined method 'instance_method' for class Set (NoMethodError)
-core/set/merge_spec.rb	Set#merge adds the elements of the passed Enumerable to self	expected	mutation	cameo does not support mutating calls without rebinding; use a = a.merge(x), | (CameoError)
-core/set/merge_spec.rb	Set#merge returns self	expected	mutation	cameo does not support mutating calls without rebinding; use a = a.merge(x), | (CameoError)
-core/set/merge_spec.rb	Set#merge raises an ArgumentError when passed a non-Enumerable	expected	mutation	cameo does not support mutating calls without rebinding; use a = a.merge(x), | (CameoError)
-core/set/merge_spec.rb	Set#merge raises RuntimeError when called during iteration	expected	mutation	cameo does not support mutating calls without rebinding; use a = a.merge(x), | (CameoError)
-core/set/merge_spec.rb	Set#merge accepts multiple arguments	expected	mutation	cameo does not support mutating calls without rebinding; use a = a.merge(x), | (CameoError)
-core/set/merge_spec.rb	Set#merge retains compare_by_identity flag	expected	mutation	cameo does not support mutating calls without rebinding; use a = a.merge(x), | (CameoError)
+core/set/merge_spec.rb	Set#merge adds the elements of the passed Enumerable to self	expected	mutation	merge changes its receiver, which cameo does not do; use | (CameoError)
+core/set/merge_spec.rb	Set#merge returns self	expected	mutation	merge changes its receiver, which cameo does not do; use | (CameoError)
+core/set/merge_spec.rb	Set#merge raises an ArgumentError when passed a non-Enumerable	expected	mutation	merge changes its receiver, which cameo does not do; use | (CameoError)
+core/set/merge_spec.rb	Set#merge raises RuntimeError when called during iteration	expected	mutation	merge changes its receiver, which cameo does not do; use | (CameoError)
+core/set/merge_spec.rb	Set#merge accepts multiple arguments	expected	mutation	merge changes its receiver, which cameo does not do; use | (CameoError)
+core/set/merge_spec.rb	Set#merge retains compare_by_identity flag	expected	mutation	merge changes its receiver, which cameo does not do; use | (CameoError)
 core/set/minus_spec.rb	*	expected	instance-variables	@set = …: cameo has no instance variables; initialize sets a field with self.set = …
 core/set/plus_spec.rb	Set#+ is an alias of Set#|	expected	metaprogramming	undefined method 'instance_method' for class Set (NoMethodError)
 core/set/pretty_print_cycle_spec.rb	Set#pretty_print_cycle passes the 'pretty print' representation of a self-referencing Set to the pretty print writer	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
@@ -3056,7 +3058,7 @@ core/set/to_a_spec.rb	Set#to_a returns an array containing elements of self	pass
 core/set/to_s_spec.rb	Set#to_s returns a String representation of self	pass		
 core/set/to_s_spec.rb	Set#to_s does include the elements of the set	pass		
 core/set/to_s_spec.rb	Set#to_s puts spaces between the elements	pass		
-core/set/to_s_spec.rb	Set#to_s correctly handles cyclic-references	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+core/set/to_s_spec.rb	Set#to_s correctly handles cyclic-references	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
 core/set/union_spec.rb	*	expected	instance-variables	@set = …: cameo has no instance variables; initialize sets a field with self.set = …
 core/signal/list_spec.rb	Signal.list doesn't contain other signals than the known list	expected	process	uninitialized constant Signal (NameError)
 core/signal/list_spec.rb	Signal.list (describe body)	harness	fails under Ruby too	uninitialized constant Signal (NameError)
@@ -3086,13 +3088,13 @@ core/sizedqueue/size_spec.rb	*	expected	instance-variables	@object: cameo has no
 core/string/allocate_spec.rb	String.allocate returns an instance of String	expected	metaprogramming	allocate is not supported: use new (NoMethodError)
 core/string/allocate_spec.rb	String.allocate returns a fully-formed String	expected	metaprogramming	allocate is not supported: use new (NoMethodError)
 core/string/allocate_spec.rb	String.allocate returns a binary String	expected	metaprogramming	allocate is not supported: use new (NoMethodError)
-core/string/append_as_bytes_spec.rb	String#append_bytes doesn't allow to mutate frozen strings	expected	mutation	cameo does not support mutating calls without rebinding; use + (CameoError)
-core/string/append_as_bytes_spec.rb	String#append_bytes allows creating broken strings in UTF8	expected	mutation	cameo does not support mutating calls without rebinding; use + (CameoError)
+core/string/append_as_bytes_spec.rb	String#append_bytes doesn't allow to mutate frozen strings	expected	mutation	append_as_bytes changes its receiver, which cameo does not do; use + (CameoError)
+core/string/append_as_bytes_spec.rb	String#append_bytes allows creating broken strings in UTF8	expected	mutation	append_as_bytes changes its receiver, which cameo does not do; use + (CameoError)
 core/string/append_as_bytes_spec.rb	String#append_bytes allows creating broken strings in UTF_32	expected	encodings	uninitialized constant Encoding::UTF_32LE (NameError)
-core/string/append_as_bytes_spec.rb	String#append_bytes never changes the receiver encoding	expected	mutation	cameo does not support mutating calls without rebinding; use + (CameoError)
-core/string/append_as_bytes_spec.rb	String#append_bytes accepts variadic String or Integer arguments	expected	mutation	cameo does not support mutating calls without rebinding; use + (CameoError)
-core/string/append_as_bytes_spec.rb	String#append_bytes truncates integers to the least significant byte	expected	mutation	cameo does not support mutating calls without rebinding; use + (CameoError)
-core/string/append_as_bytes_spec.rb	String#append_bytes wraps negative integers	expected	mutation	cameo does not support mutating calls without rebinding; use + (CameoError)
+core/string/append_as_bytes_spec.rb	String#append_bytes never changes the receiver encoding	expected	mutation	append_as_bytes changes its receiver, which cameo does not do; use + (CameoError)
+core/string/append_as_bytes_spec.rb	String#append_bytes accepts variadic String or Integer arguments	expected	mutation	append_as_bytes changes its receiver, which cameo does not do; use + (CameoError)
+core/string/append_as_bytes_spec.rb	String#append_bytes truncates integers to the least significant byte	expected	mutation	append_as_bytes changes its receiver, which cameo does not do; use + (CameoError)
+core/string/append_as_bytes_spec.rb	String#append_bytes wraps negative integers	expected	mutation	append_as_bytes changes its receiver, which cameo does not do; use + (CameoError)
 core/string/append_as_bytes_spec.rb	String#append_bytes only accepts strings or integers, and doesn't attempt to cast with #to_str or #to_int	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
 core/string/append_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/ascii_only_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
@@ -3107,44 +3109,44 @@ core/string/byterindex_spec.rb	*	expected	instance-variables	instance_variable_g
 core/string/bytes_spec.rb	*	expected	instance-variables	@utf8 = …: cameo has no instance variables; initialize sets a field with self.utf8 = …
 core/string/bytesize_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/byteslice_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
-core/string/bytesplice_spec.rb	String#bytesplice raises IndexError when index is less than -bytesize	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice raises IndexError when index is greater than bytesize	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice raises IndexError for negative length	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice replaces with integer indices	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice raises RangeError when range left boundary is less than -bytesize	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice replaces with ranges	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice raises TypeError when integer index is provided without length argument	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice replaces on an empty string	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice mutates self	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice raises when string is frozen	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice raises IndexError when str_index is less than -bytesize	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice raises IndexError when str_index is greater than bytesize	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice raises IndexError for negative str length	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice replaces with integer str indices	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice raises RangeError when str range left boundary is less than -bytesize	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice replaces with str ranges	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice raises ArgumentError when integer str index is provided without str length argument	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice replaces on an empty string with str index/length	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice mutates self with substring and str index/length	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice raises when string is frozen and str index/length	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice replaces on an empty string with str range	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice mutates self with substring and str range	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice raises when string is frozen and str range	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when index is out of byte size boundary	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when index is not on a codepoint boundary	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when length is not matching the codepoint boundary	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters replaces with integer indices	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters replaces with range	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters treats negative length for range as 0	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises when ranges not match codepoint boundaries	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice raises IndexError when index is less than -bytesize	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice raises IndexError when index is greater than bytesize	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice raises IndexError for negative length	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice replaces with integer indices	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice raises RangeError when range left boundary is less than -bytesize	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice replaces with ranges	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice raises TypeError when integer index is provided without length argument	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice replaces on an empty string	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice mutates self	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice raises when string is frozen	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice raises IndexError when str_index is less than -bytesize	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice raises IndexError when str_index is greater than bytesize	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice raises IndexError for negative str length	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice replaces with integer str indices	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice raises RangeError when str range left boundary is less than -bytesize	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice replaces with str ranges	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice raises ArgumentError when integer str index is provided without str length argument	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice replaces on an empty string with str index/length	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice mutates self with substring and str index/length	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice raises when string is frozen and str index/length	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice replaces on an empty string with str range	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice mutates self with substring and str range	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice raises when string is frozen and str range	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when index is out of byte size boundary	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when index is not on a codepoint boundary	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when length is not matching the codepoint boundary	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters replaces with integer indices	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters replaces with range	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters treats negative length for range as 0	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises when ranges not match codepoint boundaries	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
 core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters deals with a different encoded argument	expected	mutation	force_encoding returns a copy in cameo and changes nothing, and this call drops it; use x = x.force_encoding(...) (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when str_index is out of byte size boundary	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when str_index is not on a codepoint boundary	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when str_length is not matching the codepoint boundary	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters replaces with integer str indices	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters replaces with str range	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters treats negative length for str range as 0	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises when ranges not match codepoint boundaries in str	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when str_index is out of byte size boundary	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when str_index is not on a codepoint boundary	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when str_length is not matching the codepoint boundary	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters replaces with integer str indices	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters replaces with str range	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters treats negative length for str range as 0	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises when ranges not match codepoint boundaries in str	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
 core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters deals with a different encoded argument with str index/length	expected	mutation	force_encoding returns a copy in cameo and changes nothing, and this call drops it; use x = x.force_encoding(...) (CameoError)
 core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters deals with a different encoded argument with str range	expected	mutation	force_encoding returns a copy in cameo and changes nothing, and this call drops it; use x = x.force_encoding(...) (CameoError)
 core/string/capitalize_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
@@ -3244,18 +3246,18 @@ core/string/rpartition_spec.rb	*	expected	instance-variables	instance_variable_g
 core/string/rstrip_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/scan_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/scrub_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
-core/string/setbyte_spec.rb	String#setbyte returns an Integer	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/setbyte_spec.rb	String#setbyte returns an Integer	expected	mutation	setbyte changes its receiver, which cameo does not do; use byteslice and + (CameoError)
 core/string/setbyte_spec.rb	String#setbyte modifies the receiver	expected	identity-and-freezing	undefined method 'object_id' for an instance of String (NoMethodError)
-core/string/setbyte_spec.rb	String#setbyte changes the byte at the given index to the new byte	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/setbyte_spec.rb	String#setbyte allows changing bytes in multi-byte characters	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/setbyte_spec.rb	String#setbyte can invalidate a String's encoding	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/setbyte_spec.rb	String#setbyte regards a negative index as counting from the end of the String	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/setbyte_spec.rb	String#setbyte raises an IndexError if the index is greater than the String bytesize	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/setbyte_spec.rb	String#setbyte raises an IndexError if the negative index is greater magnitude than the String bytesize	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/setbyte_spec.rb	String#setbyte sets a byte at an index greater than String size	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/setbyte_spec.rb	String#setbyte changes the byte at the given index to the new byte	expected	mutation	setbyte changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/setbyte_spec.rb	String#setbyte allows changing bytes in multi-byte characters	expected	mutation	setbyte changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/setbyte_spec.rb	String#setbyte can invalidate a String's encoding	expected	mutation	setbyte changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/setbyte_spec.rb	String#setbyte regards a negative index as counting from the end of the String	expected	mutation	setbyte changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/setbyte_spec.rb	String#setbyte raises an IndexError if the index is greater than the String bytesize	expected	mutation	setbyte changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/setbyte_spec.rb	String#setbyte raises an IndexError if the negative index is greater magnitude than the String bytesize	expected	mutation	setbyte changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/setbyte_spec.rb	String#setbyte sets a byte at an index greater than String size	expected	mutation	setbyte changes its receiver, which cameo does not do; use byteslice and + (CameoError)
 core/string/setbyte_spec.rb	String#setbyte does not modify the original string when using String.new	expected	literal-only	undefined method 'new' for class String: use a literal (NoMethodError)
-core/string/setbyte_spec.rb	String#setbyte raises a FrozenError if self is frozen	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
-core/string/setbyte_spec.rb	String#setbyte raises a TypeError unless the second argument is an Integer	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/setbyte_spec.rb	String#setbyte raises a FrozenError if self is frozen	expected	mutation	setbyte changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/setbyte_spec.rb	String#setbyte raises a TypeError unless the second argument is an Integer	expected	mutation	setbyte changes its receiver, which cameo does not do; use byteslice and + (CameoError)
 core/string/setbyte_spec.rb	String#setbyte calls #to_int to convert the index	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
 core/string/setbyte_spec.rb	String#setbyte calls to_int to convert the value	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
 core/string/size_spec.rb	String#size is an alias of String#length	expected	metaprogramming	undefined method 'instance_method' for class String (NoMethodError)
@@ -3330,21 +3332,21 @@ core/string/unpack/v_spec.rb	*	expected	instance-variables	instance_variable_get
 core/string/unpack/w_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/unpack/x_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/unpack/z_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
-core/string/unpack1_spec.rb	String#unpack1 returns the first value of #unpack	bug		unknown pack directive 'B' in 'B*' (ArgumentError)
-core/string/unpack1_spec.rb	String#unpack1 starts unpacking from the given offset	bug		Expected 66 == 68 to be truthy but was false
-core/string/unpack1_spec.rb	String#unpack1 traits offset as a bytes offset	bug		Expected 216 == 136 to be truthy but was false
-core/string/unpack1_spec.rb	String#unpack1 when the offset is negative raises an ArgumentError	bug		Expected ArgumentError("offset can't be negative") but no exception was raised (97 was returned)
-core/string/unpack1_spec.rb	String#unpack1 returns nil if the offset is at the end of the string	bug		Expected 97 == nil to be truthy but was false
-core/string/unpack1_spec.rb	String#unpack1 raises an ArgumentError when the offset is larger than the string bytesize	bug		Expected ArgumentError("offset outside of string") but no exception was raised (97 was returned)
+core/string/unpack1_spec.rb	String#unpack1 returns the first value of #unpack	pass		
+core/string/unpack1_spec.rb	String#unpack1 starts unpacking from the given offset	pass		
+core/string/unpack1_spec.rb	String#unpack1 traits offset as a bytes offset	pass		
+core/string/unpack1_spec.rb	String#unpack1 when the offset is negative raises an ArgumentError	pass		
+core/string/unpack1_spec.rb	String#unpack1 returns nil if the offset is at the end of the string	pass		
+core/string/unpack1_spec.rb	String#unpack1 raises an ArgumentError when the offset is larger than the string bytesize	pass		
 core/string/unpack1_spec.rb	String#unpack1 with format 'm0' decodes base64	pass		
-core/string/unpack1_spec.rb	String#unpack1 with format 'm0' raises an ArgumentError for an invalid base64 character	bug		Expected ArgumentError but no exception was raised ("" was returned)
+core/string/unpack1_spec.rb	String#unpack1 with format 'm0' raises an ArgumentError for an invalid base64 character	pass		
 core/string/unpack_spec.rb	String#unpack raises a TypeError when passed nil	pass		
 core/string/unpack_spec.rb	String#unpack raises a TypeError when passed an Integer	pass		
-core/string/unpack_spec.rb	String#unpack starts unpacking from the given offset	bug		Expected [97, 98] == [98, 99] to be truthy but was false
-core/string/unpack_spec.rb	String#unpack traits offset as a bytes offset	bug		Expected [216, 136] == [136, nil] to be truthy but was false
-core/string/unpack_spec.rb	String#unpack when the offset is negative raises an ArgumentError	bug		Expected ArgumentError("offset can't be negative") but no exception was raised ([97] was returned)
-core/string/unpack_spec.rb	String#unpack returns nil if the offset is at the end of the string	bug		Expected [97] == [nil] to be truthy but was false
-core/string/unpack_spec.rb	String#unpack raises an ArgumentError when the offset is larger than the string	bug		Expected ArgumentError("offset outside of string") but no exception was raised ([97] was returned)
+core/string/unpack_spec.rb	String#unpack starts unpacking from the given offset	pass		
+core/string/unpack_spec.rb	String#unpack traits offset as a bytes offset	pass		
+core/string/unpack_spec.rb	String#unpack when the offset is negative raises an ArgumentError	pass		
+core/string/unpack_spec.rb	String#unpack returns nil if the offset is at the end of the string	pass		
+core/string/unpack_spec.rb	String#unpack raises an ArgumentError when the offset is larger than the string	pass		
 core/string/upcase_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/uplus_spec.rb	*	expected	metaprogramming	eval is not supported; use nothing
 core/string/upto_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
@@ -3382,8 +3384,8 @@ core/string/valid_encoding_spec.rb	String#valid_encoding? returns true for all e
 core/string/valid_encoding_spec.rb	String#valid_encoding? returns true for IBM720 encoding self is valid in	expected	encodings	unknown encoding name - IBM720 (ArgumentError)
 core/string/valid_encoding_spec.rb	String#valid_encoding? returns false if self is valid in one encoding, but invalid in the one it's tagged with	expected	mutation	force_encoding returns a copy in cameo and changes nothing, and this call drops it; use x = x.force_encoding(...) (CameoError)
 core/string/valid_encoding_spec.rb	String#valid_encoding? returns false if self contains a character invalid in the associated encoding	pass		
-core/string/valid_encoding_spec.rb	String#valid_encoding? returns false if a valid String had an invalid character appended to it	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
-core/string/valid_encoding_spec.rb	String#valid_encoding? returns true if an invalid string is appended another invalid one but both make a valid string	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+core/string/valid_encoding_spec.rb	String#valid_encoding? returns false if a valid String had an invalid character appended to it	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+core/string/valid_encoding_spec.rb	String#valid_encoding? returns true if an invalid string is appended another invalid one but both make a valid string	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
 core/struct/clone_spec.rb	*	expected	attr-accessor	attr_reader is not supported: a field declaration defines its reader, and there are no setters
 core/struct/constants_spec.rb	Struct::Group is no longer defined	expected	struct	uninitialized constant Struct (NameError)
 core/struct/constants_spec.rb	Struct::Passwd is no longer defined	expected	struct	uninitialized constant Struct (NameError)
@@ -3617,7 +3619,7 @@ core/threadgroup/enclosed_spec.rb	ThreadGroup#enclosed? returns true when a Thre
 core/threadgroup/list_spec.rb	ThreadGroup#list returns the list of threads in the group	expected	threads	uninitialized constant Queue (NameError)
 core/time/_dump_spec.rb	*	expected	instance-variables	@local = …: cameo has no instance variables; initialize sets a field with self.local = …
 core/time/_load_spec.rb	*	expected	require	load is not supported; use nothing: a script is one file
-core/time/asctime_spec.rb	Time#asctime returns a canonical string representation of time	bug		undefined method 'asctime' for an instance of Time (NoMethodError)
+core/time/asctime_spec.rb	Time#asctime returns a canonical string representation of time	pass		
 core/time/at_spec.rb	*	expected	metaprogramming	class << self is not supported: define class methods with def self.name
 core/time/ceil_spec.rb	*	expected	instance-variables	@time = …: cameo has no instance variables; initialize sets a field with self.time = …
 core/time/comparison_spec.rb	*	expected	metaprogramming	def <=> on an object: methods belong to classes
@@ -3625,13 +3627,13 @@ core/time/ctime_spec.rb	Time#ctime is an alias of Time#asctime	expected	metaprog
 core/time/day_spec.rb	Time#day returns the day of the month (1..n) for a local Time	harness	fails under Ruby too	undefined method 'with_timezone' for main (NoMethodError)
 core/time/day_spec.rb	Time#day returns the day of the month for a UTC Time	pass		
 core/time/day_spec.rb	Time#day returns the day of the month for a Time with a fixed offset	pass		
-core/time/deconstruct_keys_spec.rb	Time#deconstruct_keys returns whole hash for nil as an argument	bug		undefined method 'deconstruct_keys' for an instance of Time (NoMethodError)
-core/time/deconstruct_keys_spec.rb	Time#deconstruct_keys returns only specified keys	bug		undefined method 'deconstruct_keys' for an instance of Time (NoMethodError)
-core/time/deconstruct_keys_spec.rb	Time#deconstruct_keys requires one argument	bug		undefined method 'deconstruct_keys' for an instance of Time (NoMethodError)
-core/time/deconstruct_keys_spec.rb	Time#deconstruct_keys it raises error when argument is neither nil nor array	bug		undefined method 'deconstruct_keys' for an instance of Time (NoMethodError)
-core/time/deconstruct_keys_spec.rb	Time#deconstruct_keys returns {} when passed []	bug		undefined method 'deconstruct_keys' for an instance of Time (NoMethodError)
-core/time/deconstruct_keys_spec.rb	Time#deconstruct_keys ignores non-Symbol keys	bug		undefined method 'deconstruct_keys' for an instance of Time (NoMethodError)
-core/time/deconstruct_keys_spec.rb	Time#deconstruct_keys ignores not existing Symbol keys and processes keys after the first non-existing one	bug		undefined method 'deconstruct_keys' for an instance of Time (NoMethodError)
+core/time/deconstruct_keys_spec.rb	Time#deconstruct_keys returns whole hash for nil as an argument	pass		
+core/time/deconstruct_keys_spec.rb	Time#deconstruct_keys returns only specified keys	pass		
+core/time/deconstruct_keys_spec.rb	Time#deconstruct_keys requires one argument	pass		
+core/time/deconstruct_keys_spec.rb	Time#deconstruct_keys it raises error when argument is neither nil nor array	pass		
+core/time/deconstruct_keys_spec.rb	Time#deconstruct_keys returns {} when passed []	pass		
+core/time/deconstruct_keys_spec.rb	Time#deconstruct_keys ignores non-Symbol keys	pass		
+core/time/deconstruct_keys_spec.rb	Time#deconstruct_keys ignores not existing Symbol keys and processes keys after the first non-existing one	pass		
 core/time/dst_spec.rb	Time#dst? returns whether time is during daylight saving time	harness	fails under Ruby too	undefined method 'with_timezone' for main (NoMethodError)
 core/time/dup_spec.rb	Time#dup returns a Time object that represents the same time	pass		
 core/time/dup_spec.rb	Time#dup copies the gmt state flag	pass		
@@ -3663,7 +3665,7 @@ core/time/hour_spec.rb	Time#hour returns the hour of the day for a UTC Time	pass
 core/time/hour_spec.rb	Time#hour returns the hour of the day for a Time with a fixed offset	pass		
 core/time/inspect_spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
 core/time/isdst_spec.rb	Time#isdst is an alias of Time#dst?	expected	metaprogramming	undefined method 'instance_method' for class Time (NoMethodError)
-core/time/iso8601_spec.rb	Time#iso8601 generates ISO-8601 strings in Z for UTC times	bug		utc_offset out of range (ArgumentError)
+core/time/iso8601_spec.rb	Time#iso8601 generates ISO-8601 strings in Z for UTC times	pass		
 core/time/iso8601_spec.rb	Time#iso8601 generates ISO-8601 string with timezone offset for non-UTC times	pass		
 core/time/iso8601_spec.rb	Time#iso8601 year is always at least 4 digits	pass		
 core/time/iso8601_spec.rb	Time#iso8601 year can be more than 4 digits	pass		
@@ -3714,7 +3716,7 @@ core/time/nsec_spec.rb	Time#nsec returns the nanoseconds part of a Time construc
 core/time/nsec_spec.rb	Time#nsec returns the nanoseconds part of a Time constructed with an Float number of microseconds	pass		
 core/time/nsec_spec.rb	Time#nsec returns the nanoseconds part of a Time constructed with a Rational number of seconds	expected	rational-complex	undefined method 'Rational' for main (NoMethodError)
 core/time/nsec_spec.rb	Time#nsec returns the nanoseconds part of a Time constructed with an Rational number of microseconds	expected	rational-complex	undefined method 'Rational' for main (NoMethodError)
-core/time/nsec_spec.rb	Time#nsec returns a positive value for dates before the epoch	bug		utc_offset out of range (ArgumentError)
+core/time/nsec_spec.rb	Time#nsec returns a positive value for dates before the epoch	pass		
 core/time/plus_spec.rb	*	expected	metaprogramming	class << self is not supported: define class methods with def self.name
 core/time/round_spec.rb	*	expected	instance-variables	@time = …: cameo has no instance variables; initialize sets a field with self.time = …
 core/time/saturday_spec.rb	Time#saturday? returns true if time represents Saturday	pass		
@@ -3736,7 +3738,7 @@ core/time/to_a_spec.rb	Time#to_a returns a 10 element array representing the dec
 core/time/to_f_spec.rb	Time#to_f returns the float number of seconds + usecs since the epoch	pass		
 core/time/to_i_spec.rb	Time#to_i returns the value of time as an integer number of seconds since epoch	pass		
 core/time/to_i_spec.rb	Time#to_i doesn't return an actual number of seconds in time	pass		
-core/time/to_i_spec.rb	Time#to_i rounds fractional seconds toward zero	bug		utc_offset out of range (ArgumentError)
+core/time/to_i_spec.rb	Time#to_i rounds fractional seconds toward zero	pass		
 core/time/to_r_spec.rb	Time#to_r returns the a Rational representing seconds and subseconds since the epoch	expected	rational-complex	undefined method 'Rational' for main (NoMethodError)
 core/time/to_r_spec.rb	Time#to_r returns a Rational even for a whole number of seconds	expected	rational-complex	undefined method 'to_r' for an instance of Time (NoMethodError)
 core/time/to_s_spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
@@ -3754,7 +3756,7 @@ core/time/usec_spec.rb	Time#usec returns the microseconds part of a Time constru
 core/time/usec_spec.rb	Time#usec returns the microseconds part of a Time constructed with an Rational number of microseconds > 1	expected	rational-complex	undefined method 'Rational' for main (NoMethodError)
 core/time/usec_spec.rb	Time#usec returns 0 for a Time constructed with an Rational number of microseconds < 1	expected	rational-complex	undefined method 'Rational' for main (NoMethodError)
 core/time/usec_spec.rb	Time#usec returns the microseconds for time created by Time#local	expected	rational-complex	undefined method 'Rational' for main (NoMethodError)
-core/time/usec_spec.rb	Time#usec returns a positive value for dates before the epoch	bug		utc_offset out of range (ArgumentError)
+core/time/usec_spec.rb	Time#usec returns a positive value for dates before the epoch	pass		
 core/time/utc_offset_spec.rb	Time#utc_offset returns the offset in seconds between the timezone of time and UTC	harness	fails under Ruby too	undefined method 'with_timezone' for main (NoMethodError)
 core/time/utc_offset_spec.rb	Time#utc_offset returns 0 when the date is UTC	harness	fails under Ruby too	undefined method 'with_timezone' for main (NoMethodError)
 core/time/utc_offset_spec.rb	Time#utc_offset returns the correct offset for US Eastern time zone around daylight savings time change	harness	fails under Ruby too	undefined method 'with_timezone' for main (NoMethodError)
@@ -3874,9 +3876,9 @@ language/loop_spec.rb	The loop expression repeats the given block until a break 
 language/loop_spec.rb	The loop expression executes code in its own scope	pass		
 language/loop_spec.rb	The loop expression returns the value passed to break if interrupted by break	pass		
 language/loop_spec.rb	The loop expression returns nil if interrupted by break with no arguments	pass		
-language/loop_spec.rb	The loop expression skips to end of body with next	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
-language/loop_spec.rb	The loop expression restarts the current iteration with redo	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
-language/loop_spec.rb	The loop expression uses a spaghetti nightmare of redo, next and break	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+language/loop_spec.rb	The loop expression skips to end of body with next	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+language/loop_spec.rb	The loop expression restarts the current iteration with redo	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+language/loop_spec.rb	The loop expression uses a spaghetti nightmare of redo, next and break	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
 language/magic_comment_spec.rb	*	expected	instance-variables	@default = …: cameo has no instance variables; initialize sets a field with self.default = …
 language/match_spec.rb	*	expected	instance-variables	@obj = …: cameo has no instance variables; initialize sets a field with self.obj = …
 language/metaclass_spec.rb	*	expected	metaprogramming	eval is not supported; use nothing
@@ -3919,7 +3921,7 @@ language/private_spec.rb	*	expected	visibility	private is not supported: every m
 language/proc_spec.rb	*	expected	instance-variables	@l = …: cameo has no instance variables; initialize sets a field with self.l = …
 language/range_spec.rb	Literal Ranges creates range object	expected	literal-only	undefined method 'new' for class Range: use a literal (NoMethodError)
 language/range_spec.rb	Literal Ranges creates range with excluded right boundary	expected	literal-only	undefined method 'new' for class Range: use a literal (NoMethodError)
-language/range_spec.rb	Literal Ranges creates a simple range as an object literal	expected	mutation	cameo does not support mutating calls without rebinding; use a = a.push(x), +, or append (CameoError)
+language/range_spec.rb	Literal Ranges creates a simple range as an object literal	expected	mutation	push changes its receiver, which cameo does not do; use +, or append (CameoError)
 language/range_spec.rb	Literal Ranges creates endless ranges	expected	literal-only	undefined method 'new' for class Range: use a literal (NoMethodError)
 language/range_spec.rb	Literal Ranges creates beginless ranges	expected	literal-only	undefined method 'new' for class Range: use a literal (NoMethodError)
 language/redo_spec.rb	*	expected	metaprogramming	eval is not supported; use nothing
@@ -3965,14 +3967,14 @@ language/until_spec.rb	The until expression allows body begin on the same line i
 language/until_spec.rb	The until expression executes code in containing variable scope	pass		
 language/until_spec.rb	The until expression executes code in containing variable scope with 'do'	pass		
 language/until_spec.rb	The until expression returns nil if ended when condition became true	pass		
-language/until_spec.rb	The until expression evaluates the body if expression is empty	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+language/until_spec.rb	The until expression evaluates the body if expression is empty	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
 language/until_spec.rb	The until expression stops running body if interrupted by break	pass		
 language/until_spec.rb	The until expression returns value passed to break if interrupted by break	pass		
 language/until_spec.rb	The until expression returns nil if interrupted by break with no arguments	pass		
-language/until_spec.rb	The until expression skips to end of body with next	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
-language/until_spec.rb	The until expression restarts the current iteration without reevaluating condition with redo	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+language/until_spec.rb	The until expression skips to end of body with next	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+language/until_spec.rb	The until expression restarts the current iteration without reevaluating condition with redo	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
 language/until_spec.rb	The until modifier runs preceding statement while the condition is false	pass		
-language/until_spec.rb	The until modifier evaluates condition before statement execution	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+language/until_spec.rb	The until modifier evaluates condition before statement execution	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
 language/until_spec.rb	The until modifier does not run preceding statement if the condition is true	pass		
 language/until_spec.rb	The until modifier returns nil if ended when condition became true	pass		
 language/until_spec.rb	The until modifier returns value passed to break if interrupted by break	pass		
@@ -3984,9 +3986,9 @@ language/until_spec.rb	The until modifier with begin .. end block stops running 
 language/until_spec.rb	The until modifier with begin .. end block returns value passed to break if interrupted by break	pass		
 language/until_spec.rb	The until modifier with begin .. end block returns nil if interrupted by break with no arguments	pass		
 language/until_spec.rb	The until modifier with begin .. end block runs block at least once (even if the expression is true)	pass		
-language/until_spec.rb	The until modifier with begin .. end block evaluates condition after block execution	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
-language/until_spec.rb	The until modifier with begin .. end block skips to end of body with next	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
-language/until_spec.rb	The until modifier with begin .. end block restart the current iteration without reevaluating condition with redo	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+language/until_spec.rb	The until modifier with begin .. end block evaluates condition after block execution	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+language/until_spec.rb	The until modifier with begin .. end block skips to end of body with next	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+language/until_spec.rb	The until modifier with begin .. end block restart the current iteration without reevaluating condition with redo	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
 language/variables_spec.rb	*	expected	attr-accessor	attr_accessor is not supported: a field declaration defines its reader, and there are no setters
 language/while_spec.rb	The while expression runs while the expression is true	pass		
 language/while_spec.rb	The while expression optionally takes a 'do' after the expression	pass		
@@ -4006,10 +4008,10 @@ language/while_spec.rb	The while expression stops running body if interrupted by
 language/while_spec.rb	The while expression stops running body if interrupted by break in a begin ... end attribute op-assign-or value	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
 language/while_spec.rb	The while expression returns value passed to break if interrupted by break	pass		
 language/while_spec.rb	The while expression returns nil if interrupted by break with no arguments	pass		
-language/while_spec.rb	The while expression skips to end of body with next	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
-language/while_spec.rb	The while expression restarts the current iteration without reevaluating condition with redo	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+language/while_spec.rb	The while expression skips to end of body with next	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+language/while_spec.rb	The while expression restarts the current iteration without reevaluating condition with redo	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
 language/while_spec.rb	The while modifier runs preceding statement while the condition is true	pass		
-language/while_spec.rb	The while modifier evaluates condition before statement execution	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+language/while_spec.rb	The while modifier evaluates condition before statement execution	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
 language/while_spec.rb	The while modifier does not run preceding statement if the condition is false	pass		
 language/while_spec.rb	The while modifier does not run preceding statement if the condition is empty	pass		
 language/while_spec.rb	The while modifier returns nil if ended when condition became false	pass		
@@ -4022,7 +4024,7 @@ language/while_spec.rb	The while modifier with begin .. end block stops running 
 language/while_spec.rb	The while modifier with begin .. end block returns value passed to break if interrupted by break	pass		
 language/while_spec.rb	The while modifier with begin .. end block returns nil if interrupted by break with no arguments	pass		
 language/while_spec.rb	The while modifier with begin .. end block runs block at least once (even if the expression is false)	pass		
-language/while_spec.rb	The while modifier with begin .. end block evaluates condition after block execution	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
-language/while_spec.rb	The while modifier with begin .. end block skips to end of body with next	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
-language/while_spec.rb	The while modifier with begin .. end block restarts the current iteration without reevaluating condition with redo	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+language/while_spec.rb	The while modifier with begin .. end block evaluates condition after block execution	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+language/while_spec.rb	The while modifier with begin .. end block skips to end of body with next	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+language/while_spec.rb	The while modifier with begin .. end block restarts the current iteration without reevaluating condition with redo	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
 language/yield_spec.rb	*	expected	metaprogramming	define_method is not supported; use def
