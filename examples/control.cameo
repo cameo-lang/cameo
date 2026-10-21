@@ -93,17 +93,17 @@ puts runs
 # element.
 seen = []
 loop do
-  seen << 1
+  seen += [1]
   redo if seen.size == 1
-  seen << 2
+  seen += [2]
   next if seen.size == 3
-  seen << 3
+  seen += [3]
   break if seen.size > 6
 end
 p seen
 seen = []
 [1, 2].each do |v|
-  seen << v
+  seen += [v]
   redo if seen.size == 1
 end
 p seen
@@ -111,7 +111,7 @@ seen = []
 j = 0
 while j < 2
   j += 1
-  seen << j
+  seen += [j]
   redo if seen.size == 1
 end
 p seen

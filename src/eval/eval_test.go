@@ -793,5 +793,5 @@ func TestNilMatchesNothingAndNoClassIsASingleton(t *testing.T) {
 
 func TestProcsShowWhereTheyWereWritten(t *testing.T) {
 	expectOutput(t, "p proc { 1 }\nputs -> { 1 }, :up.to_proc\np proc { 1 }.to_s.encoding\n",
-		"#<Proc:t.cameo:1>\n#<Proc:t.cameo:2 (lambda)>\n#<Proc:(&:up) (lambda)>\n#<Encoding:ASCII-8BIT>\n")
+		"#<Proc:t.cameo:1>\n#<Proc:t.cameo:2 (lambda)>\n#<Proc:(&:up) (lambda)>\n#<Encoding:BINARY (ASCII-8BIT)>\n")
 }
