@@ -21,10 +21,20 @@ RUBIES="ruby /opt/ruby-3.4/bin/ruby" benchmarks/aot/run.sh
 ## Results
 
 On 2026-10-21, in a cloud container with 4 cores of an Intel Xeon at
-2.8 GHz, Go 1.26.4, cameo 7636c80 with this branch. Seconds:
+2.8 GHz, with Go 1.26.4 and this branch at 73abd87. Both CRubies were built
+from their git tags with `--enable-yjit`. Each YJIT time includes the JIT's
+warm-up inside the run. Seconds:
 
 | | fib | tak | tarai | fact |
 |---|---|---|---|---|
-| interpreted | 3.794 | 7.013 | 5.316 | 1.471 |
-| compiled | 0.037 | 0.040 | 0.033 | 1.413 |
-| CRuby 3.3.6, no YJIT | 0.346 | 0.499 | 0.374 | 0.853 |
+| cameo, interpreted | 3.611 | 6.009 | 4.996 | 1.453 |
+| cameo, compiled | **0.031** | **0.041** | **0.032** | 1.390 |
+| CRuby 3.4.11 | 0.338 | 0.499 | 0.400 | 0.893 |
+| CRuby 3.4.11, YJIT | 0.052 | 0.073 | 0.059 | **0.739** |
+| CRuby 4.0.7 | 0.322 | 0.473 | 0.376 | 0.903 |
+| CRuby 4.0.7, YJIT | 0.052 | 0.075 | 0.059 | 0.918 |
+
+On the three recursion benchmarks, compiled code takes 0.55 to 0.6 of
+YJIT's time. On fact, YJIT on 3.4 is twice as fast as cameo either way. The
+product outgrows 64 bits, so the work is bignum multiplication, which CRuby
+does faster than Go's `math/big` as cameo uses it.
