@@ -17,7 +17,15 @@ on four Rubies and prints the best in-script seconds as one Markdown table:
 ruby tests/performance/run.rb                      # every directory
 ruby tests/performance/run.rb tests/performance/01-ints
 ruby tests/performance/run.rb --ruby /opt/homebrew/opt/ruby/bin/ruby --runs 5
+ruby tests/performance/run.rb --baseline origin/main   # also before and after a change
 ```
+
+`--baseline REV` adds the time of each script compiled by cameo at REV,
+the base of a pull request, and the compiled time's difference from it, and
+prints each directory's speed-up over REV, the geometric mean of the
+scripts' before / after, to stderr. A pull request that makes compiled code
+faster shows its gain this way; at a REV without `cameo build`, the before
+is REV's interpreter.
 
 | Column | What ran |
 |---|---|
