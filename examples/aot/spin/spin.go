@@ -3,9 +3,11 @@
 package spin
 
 import (
+	"math/big"
+	"sync/atomic"
+
 	"github.com/cameo-lang/cameo/src/eval"
 	"github.com/cameo-lang/cameo/src/object"
-	"math/big"
 )
 
 // File names the script in its error messages.
@@ -35,19 +37,12 @@ func init() {
 }
 
 // state is one call from the interpreter into compiled code: the run it
-// belongs to, which may be stopped, the calls made since, and the classes
-// the call constructed instances of.
+// belongs to, the flag set when the run is stopped, and the classes the
+// call constructed instances of.
 type state struct {
 	ctx     object.Context
-	calls   uint32
+	stop    *atomic.Bool
 	classes map[string]*object.Class
-}
-
-// stopped counts a call, and every 4096 of them reports whether the run
-// was stopped, which the interpreter checks at each one.
-func (s *state) stopped() bool {
-	s.calls++
-	return s.calls&4095 == 0 && eval.Stopped(s.ctx)
 }
 
 // class is the class the script's top-level constant of that name holds,
@@ -73,13 +68,12 @@ var (
 )
 
 func fn_spin(s *state, v_n int64) (int64, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
-	var t1 uint32
+	t1 := s.stop
 	for {
-		t1++
-		if t1&4095 == 0 && eval.Stopped(s.ctx) {
+		if t1.Load() {
 			return 0, eval.ErrStopped
 		}
 		if !(v_n > 0) {
@@ -99,13 +93,12 @@ func fn_spin(s *state, v_n int64) (int64, error) {
 }
 
 func big_spin(s *state, v_n *big.Int) (*big.Int, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return nil, eval.ErrStopped
 	}
-	var t1 uint32
+	t1 := s.stop
 	for {
-		t1++
-		if t1&4095 == 0 && eval.Stopped(s.ctx) {
+		if t1.Load() {
 			return nil, eval.ErrStopped
 		}
 		if !(v_n.Cmp(big_0) > 0) {
@@ -125,7 +118,7 @@ func call_spin(ctx object.Context, self object.Value, args []object.Value, kw *o
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx}
+	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {

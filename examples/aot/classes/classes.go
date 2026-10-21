@@ -3,9 +3,11 @@
 package classes
 
 import (
+	"math/big"
+	"sync/atomic"
+
 	"github.com/cameo-lang/cameo/src/eval"
 	"github.com/cameo-lang/cameo/src/object"
-	"math/big"
 )
 
 // File names the script in its error messages.
@@ -121,19 +123,12 @@ func init() {
 }
 
 // state is one call from the interpreter into compiled code: the run it
-// belongs to, which may be stopped, the calls made since, and the classes
-// the call constructed instances of.
+// belongs to, the flag set when the run is stopped, and the classes the
+// call constructed instances of.
 type state struct {
 	ctx     object.Context
-	calls   uint32
+	stop    *atomic.Bool
 	classes map[string]*object.Class
-}
-
-// stopped counts a call, and every 4096 of them reports whether the run
-// was stopped, which the interpreter checks at each one.
-func (s *state) stopped() bool {
-	s.calls++
-	return s.calls&4095 == 0 && eval.Stopped(s.ctx)
 }
 
 // class is the class the script's top-level constant of that name holds,
@@ -161,7 +156,7 @@ var (
 
 func fn_Counter__beyond(s *state, self *object.Instance) (int64, error) {
 	_ = self
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	t1, err := fieldInt(self, 1)
@@ -181,7 +176,7 @@ func fn_Counter__beyond(s *state, self *object.Instance) (int64, error) {
 
 func big_Counter__beyond(s *state, self *object.Instance) (*big.Int, error) {
 	_ = self
-	if s.stopped() {
+	if s.stop.Load() {
 		return nil, eval.ErrStopped
 	}
 	t1, err := fieldBig(self, 1)
@@ -203,7 +198,7 @@ func call_Counter__beyond(ctx object.Context, self object.Value, args []object.V
 	if len(args) != 0 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx}
+	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
 	self_, ok := self.AsInstance()
 	if !ok {
 		return object.Value{}, eval.ErrDeopt
@@ -227,7 +222,7 @@ func call_Counter__beyond(ctx object.Context, self object.Value, args []object.V
 
 func fn_Counter__sum(s *state, self *object.Instance, v_n int64) (int64, error) {
 	_ = self
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	t1, err := fieldInt(self, 0)
@@ -238,24 +233,25 @@ func fn_Counter__sum(s *state, self *object.Instance, v_n int64) (int64, error) 
 	_ = v_s
 	v_s = t1
 	t2 := v_n
+	t4 := s.stop
 	for t3 := int64(0); t3 < t2; t3++ {
-		if t3&4095 == 0 && eval.Stopped(s.ctx) {
+		if t4.Load() {
 			return 0, eval.ErrStopped
 		}
 		v_i := t3
 		_ = v_i
-		t4, err := add(v_s, v_i)
+		t5, err := add(v_s, v_i)
 		if err != nil {
 			return 0, err
 		}
-		v_s = t4
+		v_s = t5
 	}
 	return v_s, nil
 }
 
 func big_Counter__sum(s *state, self *object.Instance, v_n *big.Int) (*big.Int, error) {
 	_ = self
-	if s.stopped() {
+	if s.stop.Load() {
 		return nil, eval.ErrStopped
 	}
 	t1, err := fieldBig(self, 0)
@@ -266,10 +262,9 @@ func big_Counter__sum(s *state, self *object.Instance, v_n *big.Int) (*big.Int, 
 	_ = v_s
 	v_s = t1
 	t2 := v_n
-	var t4 uint32
+	t4 := s.stop
 	for t3 := new(big.Int); t3.Cmp(t2) < 0; t3 = new(big.Int).Add(t3, big_1) {
-		t4++
-		if t4&4095 == 0 && eval.Stopped(s.ctx) {
+		if t4.Load() {
 			return nil, eval.ErrStopped
 		}
 		v_i := t3
@@ -287,7 +282,7 @@ func call_Counter__sum(ctx object.Context, self object.Value, args []object.Valu
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx}
+	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
 	self_, ok := self.AsInstance()
 	if !ok {
 		return object.Value{}, eval.ErrDeopt
@@ -315,57 +310,57 @@ func call_Counter__sum(ctx object.Context, self object.Value, args []object.Valu
 
 func fn_Pair__energy(s *state, self *object.Instance, v_n int64) (float64, error) {
 	_ = self
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	var v_s float64
 	_ = v_s
 	v_s = 0.0
 	t1 := v_n
+	t3 := s.stop
 	for t2 := int64(0); t2 < t1; t2++ {
-		if t2&4095 == 0 && eval.Stopped(s.ctx) {
+		if t3.Load() {
 			return 0, eval.ErrStopped
 		}
 		v_i := t2
 		_ = v_i
-		t3, err := fieldRef(self, 0)
+		t4, err := fieldRef(self, 0)
 		if err != nil {
 			return 0, err
 		}
-		t4, err := fieldRef(self, 1)
+		t5, err := fieldRef(self, 1)
 		if err != nil {
 			return 0, err
 		}
-		t5, err := fn_Vec__dot(s, t3, t4)
+		t6, err := fn_Vec__dot(s, t4, t5)
 		if err != nil {
 			return 0, err
 		}
-		t6, err := fieldInt(self, 2)
+		t7, err := fieldInt(self, 2)
 		if err != nil {
 			return 0, err
 		}
-		t7, err := add(v_i, 1)
+		t8, err := add(v_i, 1)
 		if err != nil {
 			return 0, err
 		}
-		v_s = float64(v_s + float64(float64(t5*float64(t6))/float64(t7)))
+		v_s = float64(v_s + float64(float64(t6*float64(t7))/float64(t8)))
 	}
 	return v_s, nil
 }
 
 func big_Pair__energy(s *state, self *object.Instance, v_n *big.Int) (float64, error) {
 	_ = self
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	var v_s float64
 	_ = v_s
 	v_s = 0.0
 	t1 := v_n
-	var t3 uint32
+	t3 := s.stop
 	for t2 := new(big.Int); t2.Cmp(t1) < 0; t2 = new(big.Int).Add(t2, big_1) {
-		t3++
-		if t3&4095 == 0 && eval.Stopped(s.ctx) {
+		if t3.Load() {
 			return 0, eval.ErrStopped
 		}
 		v_i := t2
@@ -399,7 +394,7 @@ func call_Pair__energy(ctx object.Context, self object.Value, args []object.Valu
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx}
+	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
 	self_, ok := self.AsInstance()
 	if !ok {
 		return object.Value{}, eval.ErrDeopt
@@ -427,7 +422,7 @@ func call_Pair__energy(ctx object.Context, self object.Value, args []object.Valu
 
 func fn_Pair__far(s *state, self *object.Instance, v_limit int64) (int64, error) {
 	_ = self
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	t2, err := fieldRef(self, 0)
@@ -462,7 +457,7 @@ func fn_Pair__far(s *state, self *object.Instance, v_limit int64) (int64, error)
 
 func big_Pair__far(s *state, self *object.Instance, v_limit *big.Int) (*big.Int, error) {
 	_ = self
-	if s.stopped() {
+	if s.stop.Load() {
 		return nil, eval.ErrStopped
 	}
 	t2, err := fieldRef(self, 0)
@@ -502,7 +497,7 @@ func call_Pair__far(ctx object.Context, self object.Value, args []object.Value, 
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx}
+	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
 	self_, ok := self.AsInstance()
 	if !ok {
 		return object.Value{}, eval.ErrDeopt
@@ -530,7 +525,7 @@ func call_Pair__far(ctx object.Context, self object.Value, args []object.Value, 
 
 func fn_Pair__sign(s *state, self *object.Instance) (int64, error) {
 	_ = self
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	t1, err := fieldBool(self, 3)
@@ -560,7 +555,7 @@ func fn_Pair__sign(s *state, self *object.Instance) (int64, error) {
 
 func big_Pair__sign(s *state, self *object.Instance) (*big.Int, error) {
 	_ = self
-	if s.stopped() {
+	if s.stop.Load() {
 		return nil, eval.ErrStopped
 	}
 	t1, err := fieldBool(self, 3)
@@ -592,7 +587,7 @@ func call_Pair__sign(ctx object.Context, self object.Value, args []object.Value,
 	if len(args) != 0 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx}
+	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
 	self_, ok := self.AsInstance()
 	if !ok {
 		return object.Value{}, eval.ErrDeopt
@@ -616,7 +611,7 @@ func call_Pair__sign(ctx object.Context, self object.Value, args []object.Value,
 
 func fn_Vec__dist2(s *state, self *object.Instance, v_other *object.Instance) (float64, error) {
 	_ = self
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	t1, err := fieldFloat(self, 0)
@@ -656,7 +651,7 @@ func fn_Vec__dist2(s *state, self *object.Instance, v_other *object.Instance) (f
 
 func big_Vec__dist2(s *state, self *object.Instance, v_other *object.Instance) (float64, error) {
 	_ = self
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	t1, err := fieldFloat(self, 0)
@@ -701,7 +696,7 @@ func call_Vec__dist2(ctx object.Context, self object.Value, args []object.Value,
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx}
+	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
 	self_, ok := self.AsInstance()
 	if !ok {
 		return object.Value{}, eval.ErrDeopt
@@ -728,7 +723,7 @@ func call_Vec__dist2(ctx object.Context, self object.Value, args []object.Value,
 
 func fn_Vec__dot(s *state, self *object.Instance, v_other *object.Instance) (float64, error) {
 	_ = self
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	t1, err := fieldFloat(self, 0)
@@ -752,7 +747,7 @@ func fn_Vec__dot(s *state, self *object.Instance, v_other *object.Instance) (flo
 
 func big_Vec__dot(s *state, self *object.Instance, v_other *object.Instance) (float64, error) {
 	_ = self
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	t1, err := fieldFloat(self, 0)
@@ -781,7 +776,7 @@ func call_Vec__dot(ctx object.Context, self object.Value, args []object.Value, k
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx}
+	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
 	self_, ok := self.AsInstance()
 	if !ok {
 		return object.Value{}, eval.ErrDeopt
@@ -808,7 +803,7 @@ func call_Vec__dot(ctx object.Context, self object.Value, args []object.Value, k
 
 func fn_Vec__norm2(s *state, self *object.Instance) (float64, error) {
 	_ = self
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	t1, err := fn_Vec__dot(s, self, self)
@@ -820,7 +815,7 @@ func fn_Vec__norm2(s *state, self *object.Instance) (float64, error) {
 
 func big_Vec__norm2(s *state, self *object.Instance) (float64, error) {
 	_ = self
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	t1, err := big_Vec__dot(s, self, self)
@@ -837,7 +832,7 @@ func call_Vec__norm2(ctx object.Context, self object.Value, args []object.Value,
 	if len(args) != 0 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx}
+	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
 	self_, ok := self.AsInstance()
 	if !ok {
 		return object.Value{}, eval.ErrDeopt
@@ -861,7 +856,7 @@ func call_Vec__norm2(ctx object.Context, self object.Value, args []object.Value,
 
 func fn_Vec__scaled(s *state, self *object.Instance, v_k int64) (float64, error) {
 	_ = self
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	t1, err := fn_Vec__norm2(s, self)
@@ -873,7 +868,7 @@ func fn_Vec__scaled(s *state, self *object.Instance, v_k int64) (float64, error)
 
 func big_Vec__scaled(s *state, self *object.Instance, v_k *big.Int) (float64, error) {
 	_ = self
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	t1, err := big_Vec__norm2(s, self)
@@ -890,7 +885,7 @@ func call_Vec__scaled(ctx object.Context, self object.Value, args []object.Value
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx}
+	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
 	self_, ok := self.AsInstance()
 	if !ok {
 		return object.Value{}, eval.ErrDeopt
@@ -918,7 +913,7 @@ func call_Vec__scaled(ctx object.Context, self object.Value, args []object.Value
 
 func fn_Vec3__norm3(s *state, self *object.Instance) (float64, error) {
 	_ = self
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	t1, err := fn_Vec__norm2(s, self)
@@ -938,7 +933,7 @@ func fn_Vec3__norm3(s *state, self *object.Instance) (float64, error) {
 
 func big_Vec3__norm3(s *state, self *object.Instance) (float64, error) {
 	_ = self
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	t1, err := big_Vec__norm2(s, self)
@@ -963,7 +958,7 @@ func call_Vec3__norm3(ctx object.Context, self object.Value, args []object.Value
 	if len(args) != 0 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx}
+	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
 	self_, ok := self.AsInstance()
 	if !ok {
 		return object.Value{}, eval.ErrDeopt
@@ -986,7 +981,7 @@ func call_Vec3__norm3(ctx object.Context, self object.Value, args []object.Value
 }
 
 func fn_twice(s *state, v_v *object.Instance) (float64, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	t1, err := fn_Vec__norm2(s, v_v)
@@ -997,7 +992,7 @@ func fn_twice(s *state, v_v *object.Instance) (float64, error) {
 }
 
 func big_twice(s *state, v_v *object.Instance) (float64, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	t1, err := big_Vec__norm2(s, v_v)
@@ -1014,7 +1009,7 @@ func call_twice(ctx object.Context, self object.Value, args []object.Value, kw *
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx}
+	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInstance()
 	if !ok0 || !classNamed(a0.Cls, "Vec") {

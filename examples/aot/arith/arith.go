@@ -3,9 +3,11 @@
 package arith
 
 import (
+	"math/big"
+	"sync/atomic"
+
 	"github.com/cameo-lang/cameo/src/eval"
 	"github.com/cameo-lang/cameo/src/object"
-	"math/big"
 )
 
 // File names the script in its error messages.
@@ -132,19 +134,12 @@ func init() {
 }
 
 // state is one call from the interpreter into compiled code: the run it
-// belongs to, which may be stopped, the calls made since, and the classes
-// the call constructed instances of.
+// belongs to, the flag set when the run is stopped, and the classes the
+// call constructed instances of.
 type state struct {
 	ctx     object.Context
-	calls   uint32
+	stop    *atomic.Bool
 	classes map[string]*object.Class
-}
-
-// stopped counts a call, and every 4096 of them reports whether the run
-// was stopped, which the interpreter checks at each one.
-func (s *state) stopped() bool {
-	s.calls++
-	return s.calls&4095 == 0 && eval.Stopped(s.ctx)
 }
 
 // class is the class the script's top-level constant of that name holds,
@@ -173,7 +168,7 @@ var (
 )
 
 func fn_fib(s *state, v_n int64) (int64, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	var t1 int64
@@ -206,7 +201,7 @@ func fn_fib(s *state, v_n int64) (int64, error) {
 }
 
 func big_fib(s *state, v_n *big.Int) (*big.Int, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return nil, eval.ErrStopped
 	}
 	var t1 *big.Int
@@ -236,7 +231,7 @@ func call_fib(ctx object.Context, self object.Value, args []object.Value, kw *ob
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx}
+	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
@@ -260,7 +255,7 @@ func call_fib(ctx object.Context, self object.Value, args []object.Value, kw *ob
 }
 
 func fn_floor_div(s *state, v_a int64, v_b int64) (int64, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	t1, err := div(v_a, v_b)
@@ -271,7 +266,7 @@ func fn_floor_div(s *state, v_a int64, v_b int64) (int64, error) {
 }
 
 func big_floor_div(s *state, v_a *big.Int, v_b *big.Int) (*big.Int, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return nil, eval.ErrStopped
 	}
 	t1, err := bigDiv(v_a, v_b)
@@ -288,7 +283,7 @@ func call_floor_div(ctx object.Context, self object.Value, args []object.Value, 
 	if len(args) != 2 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx}
+	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInt()
 	a1, ok1 := args[1].AsInt()
@@ -317,7 +312,7 @@ func call_floor_div(ctx object.Context, self object.Value, args []object.Value, 
 }
 
 func fn_floor_mod(s *state, v_a int64, v_b int64) (int64, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	t1, err := mod(v_a, v_b)
@@ -328,7 +323,7 @@ func fn_floor_mod(s *state, v_a int64, v_b int64) (int64, error) {
 }
 
 func big_floor_mod(s *state, v_a *big.Int, v_b *big.Int) (*big.Int, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return nil, eval.ErrStopped
 	}
 	t1, err := bigMod(v_a, v_b)
@@ -345,7 +340,7 @@ func call_floor_mod(ctx object.Context, self object.Value, args []object.Value, 
 	if len(args) != 2 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx}
+	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInt()
 	a1, ok1 := args[1].AsInt()
@@ -374,16 +369,15 @@ func call_floor_mod(ctx object.Context, self object.Value, args []object.Value, 
 }
 
 func fn_gcd(s *state, v_a int64, v_b int64) (int64, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	var v_t int64
 	_ = v_t
 	v_t = 0
-	var t1 uint32
+	t1 := s.stop
 	for {
-		t1++
-		if t1&4095 == 0 && eval.Stopped(s.ctx) {
+		if t1.Load() {
 			return 0, eval.ErrStopped
 		}
 		if !(v_b != 0) {
@@ -401,16 +395,15 @@ func fn_gcd(s *state, v_a int64, v_b int64) (int64, error) {
 }
 
 func big_gcd(s *state, v_a *big.Int, v_b *big.Int) (*big.Int, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return nil, eval.ErrStopped
 	}
 	var v_t *big.Int
 	_ = v_t
 	v_t = big_0
-	var t1 uint32
+	t1 := s.stop
 	for {
-		t1++
-		if t1&4095 == 0 && eval.Stopped(s.ctx) {
+		if t1.Load() {
 			return nil, eval.ErrStopped
 		}
 		if !(v_b.Cmp(big_0) != 0) {
@@ -434,7 +427,7 @@ func call_gcd(ctx object.Context, self object.Value, args []object.Value, kw *ob
 	if len(args) != 2 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx}
+	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInt()
 	a1, ok1 := args[1].AsInt()
@@ -463,16 +456,15 @@ func call_gcd(ctx object.Context, self object.Value, args []object.Value, kw *ob
 }
 
 func fn_power(s *state, v_base int64, v_exp int64) (int64, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	var v_result int64
 	_ = v_result
 	v_result = 1
-	var t1 uint32
+	t1 := s.stop
 	for {
-		t1++
-		if t1&4095 == 0 && eval.Stopped(s.ctx) {
+		if t1.Load() {
 			return 0, eval.ErrStopped
 		}
 		if !(v_exp > 0) {
@@ -493,16 +485,15 @@ func fn_power(s *state, v_base int64, v_exp int64) (int64, error) {
 }
 
 func big_power(s *state, v_base *big.Int, v_exp *big.Int) (*big.Int, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return nil, eval.ErrStopped
 	}
 	var v_result *big.Int
 	_ = v_result
 	v_result = big_1
-	var t1 uint32
+	t1 := s.stop
 	for {
-		t1++
-		if t1&4095 == 0 && eval.Stopped(s.ctx) {
+		if t1.Load() {
 			return nil, eval.ErrStopped
 		}
 		if !(v_exp.Cmp(big_0) > 0) {
@@ -523,7 +514,7 @@ func call_power(ctx object.Context, self object.Value, args []object.Value, kw *
 	if len(args) != 2 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx}
+	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInt()
 	a1, ok1 := args[1].AsInt()
@@ -552,7 +543,7 @@ func call_power(ctx object.Context, self object.Value, args []object.Value, kw *
 }
 
 func fn_sign(s *state, v_n int64) (int64, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	if v_n < 0 {
@@ -565,7 +556,7 @@ func fn_sign(s *state, v_n int64) (int64, error) {
 }
 
 func big_sign(s *state, v_n *big.Int) (*big.Int, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return nil, eval.ErrStopped
 	}
 	if v_n.Cmp(big_0) < 0 {
@@ -584,7 +575,7 @@ func call_sign(ctx object.Context, self object.Value, args []object.Value, kw *o
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx}
+	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
@@ -608,16 +599,15 @@ func call_sign(ctx object.Context, self object.Value, args []object.Value, kw *o
 }
 
 func fn_steps(s *state, v_n int64) (int64, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	var v_count int64
 	_ = v_count
 	v_count = 0
-	var t1 uint32
+	t1 := s.stop
 	for {
-		t1++
-		if t1&4095 == 0 && eval.Stopped(s.ctx) {
+		if t1.Load() {
 			return 0, eval.ErrStopped
 		}
 		if v_n == 1 {
@@ -654,16 +644,15 @@ func fn_steps(s *state, v_n int64) (int64, error) {
 }
 
 func big_steps(s *state, v_n *big.Int) (*big.Int, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return nil, eval.ErrStopped
 	}
 	var v_count *big.Int
 	_ = v_count
 	v_count = big_0
-	var t1 uint32
+	t1 := s.stop
 	for {
-		t1++
-		if t1&4095 == 0 && eval.Stopped(s.ctx) {
+		if t1.Load() {
 			return nil, eval.ErrStopped
 		}
 		if v_n.Cmp(big_1) == 0 {
@@ -697,7 +686,7 @@ func call_steps(ctx object.Context, self object.Value, args []object.Value, kw *
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx}
+	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
@@ -721,7 +710,7 @@ func call_steps(ctx object.Context, self object.Value, args []object.Value, kw *
 }
 
 func fn_within(s *state, v_n int64, v_lo int64, v_hi int64) (int64, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	t2 := (v_lo <= v_n)
@@ -742,7 +731,7 @@ func fn_within(s *state, v_n int64, v_lo int64, v_hi int64) (int64, error) {
 }
 
 func big_within(s *state, v_n *big.Int, v_lo *big.Int, v_hi *big.Int) (*big.Int, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return nil, eval.ErrStopped
 	}
 	t2 := (v_lo.Cmp(v_n) <= 0)
@@ -769,7 +758,7 @@ func call_within(ctx object.Context, self object.Value, args []object.Value, kw 
 	if len(args) != 3 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx}
+	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInt()
 	a1, ok1 := args[1].AsInt()
