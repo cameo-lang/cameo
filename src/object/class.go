@@ -3,6 +3,7 @@ package object
 import (
 	"maps"
 	"math/rand/v2"
+	"slices"
 	"sort"
 	"sync/atomic"
 )
@@ -81,6 +82,24 @@ type FieldType struct {
 	Scalar *ScalarType
 }
 
+// retarget returns t with every reference to class from changed to to,
+// t itself when it has none.
+func (t *FieldType) retarget(from, to *Class) *FieldType {
+	if t == nil {
+		return nil
+	}
+	elem := t.Elem.retarget(from, to)
+	if t.Ref != from && elem == t.Elem {
+		return t
+	}
+	cp := *t
+	cp.Elem = elem
+	if cp.Ref == from {
+		cp.Ref = to
+	}
+	return &cp
+}
+
 // Field is one declared field of a class.
 type Field struct {
 	Name    string
@@ -128,6 +147,59 @@ func NewModule(name string) *Class {
 	m := NewClass(name, nil)
 	m.IsModule = true
 	return m
+}
+
+// Copy returns a class with c's name, digest, parent, methods, constants,
+// modules and fields, which a reopening body changes in place of c. The
+// methods and fields c declared belong to the copy, so super continues
+// from it and constant lookup from a method of c reaches what the copy
+// defines.
+func (c *Class) Copy() *Class {
+	out := &Class{
+		Name:             c.Name,
+		IsModule:         c.IsModule,
+		Super:            c.Super,
+		Digest:           c.Digest,
+		Methods:          make(map[string]*Method, len(c.Methods)),
+		SingletonMethods: make(map[string]*Method, len(c.SingletonMethods)),
+		Consts:           maps.Clone(c.Consts),
+		Includes:         slices.Clone(c.Includes),
+		Extends:          slices.Clone(c.Extends),
+		Lexical:          c.Lexical,
+		Fields:           make([]*Field, len(c.Fields)),
+		FieldIndex:       maps.Clone(c.FieldIndex),
+		ReservedNumbers:  slices.Clone(c.ReservedNumbers),
+		ReservedNames:    slices.Clone(c.ReservedNames),
+	}
+	moved := func(m *Method) *Method {
+		if m.Owner != c {
+			return m
+		}
+		cp := *m
+		cp.Owner = out
+		if i := slices.Index(m.Lexical, c); i >= 0 {
+			cp.Lexical = slices.Clone(m.Lexical)
+			cp.Lexical[i] = out
+		}
+		return &cp
+	}
+	for name, m := range c.Methods {
+		out.Methods[name] = moved(m)
+	}
+	for name, m := range c.SingletonMethods {
+		out.SingletonMethods[name] = moved(m)
+	}
+	for i, f := range c.Fields {
+		if f.Owner == c {
+			cp := *f
+			cp.Owner = out
+			cp.Type = f.Type.retarget(c, out)
+			f = &cp
+		}
+		out.Fields[i] = f
+	}
+	generation.Add(1)
+	return out
 }
 
 func (c *Class) Class() *Class {

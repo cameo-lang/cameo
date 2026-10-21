@@ -143,9 +143,10 @@ q = p.with(x: 3)            # a copy; p is unchanged
 - A class without `initialize` takes its fields as keywords:
   `Point.new(x: 1, y: 2)`.
 - A class is a value bound to its name. Evaluating the same `class X … end`
-  again gives the same class; a different body makes a new class and
-  rebinds `X`, leaving the old one to its instances. Nothing reopens a
-  class once its body has run, and a builtin class cannot be reopened.
+  again gives the same class; a different body reopens a copy of the
+  class and rebinds `X` to it. Instances made before, and classes that
+  inherit from it, keep the class as it was and do not see what the
+  reopening adds, as they do in Ruby. A builtin class cannot be reopened.
 
 **Smaller differences:**
 

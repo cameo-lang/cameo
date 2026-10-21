@@ -106,6 +106,86 @@ puts first.class.name
 	expectError(t, "class Integer\n def x; end\nend\n", "cannot redefine the builtin class Integer")
 }
 
+// TestReopeningAClassAddsToACopy proves a second class body with a
+// different digest runs on a copy of the class bound to the name, which
+// keeps the methods and fields the first body defined, and that the copy
+// replaces the class once the body is done: instances made before keep
+// the class they were made with.
+func TestReopeningAClassAddsToACopy(t *testing.T) {
+	expectOutput(t, `
+class A
+  int :n
+  def self.hello = "hello"
+  def n2 = n * 2
+end
+old = A.new(n: 1)
+class A
+  def self.hello2 = "hello2"
+  def n3 = n * 3
+  K = 5
+  def k = K
+end
+puts A.hello, A.hello2
+a = A.new(n: 2)
+p a.n2, a.n3, a.k
+p old.respond_to?(:n3), old.class == A
+`, "hello\nhello2\n4\n6\n5\nfalse\nfalse\n")
+	// super from a method of the first body, and of the second.
+	expectOutput(t, `
+class P
+  def hi = "p"
+end
+class C < P
+  def hi = "c" + super
+end
+class C
+  def bye = "bye " + hi
+end
+puts C.new.bye
+class C
+  def hi = "C" + super
+end
+puts C.new.hi
+`, "bye cp\nCp\n")
+	// A field declared again with its type changes nothing; with another
+	// type it fails.
+	expectOutput(t, "class A\n  int :n\nend\nclass A\n  int :n\n  def m = n + 1\nend\np A.new(n: 1).m\n", "2\n")
+	expectError(t, "class A\n  int :n\nend\nclass A\n  string :n\nend\n", "field n is already declared in A")
+	expectError(t, "class P\nend\nclass A\nend\nclass A < P\nend\n", "superclass mismatch for class A")
+	expectError(t, "module M\nend\nclass M\nend\n", "M is not a class")
+	expectError(t, "class M\nend\nmodule M\nend\n", "M is not a module")
+	// A module reopens the same way.
+	expectOutput(t, "module M\n  def self.a = 1\nend\nmodule M\n  def self.b = 2\nend\np M.a + M.b\n", "3\n")
+}
+
+// TestAClassBodySeesItsOwnName proves the name is bound to the class
+// while its body runs, as in Ruby, and that a body that raises leaves the
+// name as it was.
+func TestAClassBodySeesItsOwnName(t *testing.T) {
+	expectOutput(t, "class A\n  def self.hello = \"hello\"\n  puts A.hello\nend\n", "hello\n")
+	expectOutput(t, `
+class A
+  def self.v = 1
+end
+begin
+  class A
+    def self.v = 2
+    raise "stop"
+  end
+rescue => e
+  puts e.message
+end
+p A.v
+begin
+  class B
+    raise "stop"
+  end
+rescue
+end
+p defined?(B)
+`, "stop\n1\nnil\n")
+}
+
 func TestExceptions(t *testing.T) {
 	expectOutput(t, "begin\n  raise ArgumentError\nrescue => e\n  puts e.message\n  puts e.class\nend\n", "ArgumentError\nArgumentError\n")
 	expectOutput(t, "class E < StandardError; end\nbegin\n  raise E, \"m\"\nrescue RuntimeError\n  puts 1\nrescue E => e\n  puts e.message\nensure\n  puts :done\nend\n", "m\ndone\n")

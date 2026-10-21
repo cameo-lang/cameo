@@ -48,8 +48,7 @@ What cameo leaves out, and the checker rejects by name:
 - instance variables, so `@` is free for later use: `initialize` sets a
   field with `self.x = v`, and a field is read with its reader; class
   variables; global variables
-- reopening a class: a second `class X` never changes the first, see
-  *Classes*; `define_method`,
+- `define_method`,
   `instance_variable_set`, `eval`, `undef`,
   `extend`, singleton classes, `def self.x` on an instance
 - mutating methods (`<<`, `push`, `pop`, `delete`, `merge!`, `map!`, every
@@ -185,8 +184,8 @@ key.
 
 ## Classes
 
-A class declares typed fields, an optional `initialize`, and methods. It
-cannot be reopened with a different body, has no setters, and its instances
+A class declares typed fields, an optional `initialize`, and methods. A
+second `class X` reopens it as a copy, it has no setters, and its instances
 are protobuf messages.
 
 ```ruby
@@ -273,16 +272,25 @@ body cannot set a field; the checker rejects `self.x = v` outside
 `initialize` at load time, and `with` makes the changed copy instead.
 
 **A class is a value, and `class X … end` binds the name `X` to it**, the
-way `x = …` binds a variable. A class is identified by its normalised body:
-evaluating the same `class X … end` a second time produces the same class, so
-the same file can be loaded twice and every async worker can load the same
-class source. Evaluating `class X … end` with a different body produces a
-different class and rebinds `X` to it: the first class is not changed, and its
-instances keep it as their class and keep its methods. Nothing can reopen a
-class, or replace or add a method once its body has run. Within one class
-body, or at the top level, a second `def` of a name replaces the first, as
-in Ruby; the same `def` evaluated again, as a loop around it does, changes
-nothing. There is no `remove_method` or `undef`.
+way `x = …` binds a variable. The name is bound before the body runs, so
+the body can call the class's methods by its name, as in Ruby.
+
+**`class X … end` for an `X` already bound reopens it as a copy.** The
+body runs on a copy of the class, with its methods, constants, included
+modules and fields, and the copy replaces the class under the name. The
+first class is not changed, so instances made before keep it as their
+class, and keep its methods only; so do classes that inherit from it,
+where in Ruby both see what the reopening adds. A reopening body may
+declare a field the class has again, with the same type and default, which
+changes nothing. `class X < Y` for an `X` whose parent is not `Y` raises
+`TypeError`, as does `class X` for a module `X` and `module X` for a class.
+A body that raises leaves the name bound to what it was. The definition
+that last ran on a class, evaluated again, changes nothing, so the same
+file can be loaded twice and every async worker can load the same class
+source. Within one class body, or at the top level, a second `def` of a
+name replaces the first, as in Ruby; the same `def` evaluated again, as a
+loop around it does, changes nothing. There is no `remove_method` or
+`undef`. Modules reopen the same way.
 
 **Inheritance** is single, by `class Child < Parent`. A child inherits fields
 and methods, may add fields, and may define a method of a name its parent
@@ -756,8 +764,9 @@ re-opened by accident:
   was rejected, since 24 of the benchmark cases use them and the overflow
   checks would stay to raise instead.
 - **Classes are values** bound to their name: a second definition with the
-  same body is the same class, one with a different body rebinds the name,
-  and nothing reopens a class. `Class.new(Base) { ... }` builds one at run
+  same body is the same class, and one with a different body reopens a
+  copy of the class and rebinds the name to it, which leaves instances
+  made before with the class they were made with. `Class.new(Base) { ... }` builds one at run
   time: its block is the class body, it is identified by the block's
   digest, and it takes the name of the first constant it is bound to.
   `Module.new` stays out, since its use is to include or extend at run

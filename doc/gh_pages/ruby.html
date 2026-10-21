@@ -275,8 +275,10 @@ Point(x: 3, y: 4)</code></pre>
 
 <p>A class is a value bound to its name. Evaluating the same
 <code>class X … end</code> again gives the same class; a different body
-makes a new class and rebinds <code>X</code>. Nothing reopens a class once
-its body has run, and a builtin class cannot be reopened.</p>
+reopens a copy of the class and rebinds <code>X</code> to it. Instances
+made before, and classes that inherit from it, keep the class as it was
+and do not see what the reopening adds. A builtin class cannot be
+reopened.</p>
 
 <h2 id="rejected">What the checker rejects</h2>
 

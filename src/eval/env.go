@@ -116,6 +116,9 @@ type Frame struct {
 	// DefTarget is the class or module a def inside this frame defines on:
 	// the class whose body is being evaluated, or Object at the top level.
 	DefTarget *object.Class
+	// Reopened is the class DefTarget is a copy of while a body reopens
+	// it, whose fields the body may declare again with the same type.
+	Reopened *object.Class
 	// Building is the instance initialize is filling, while it runs.
 	Building *object.Instance
 	// Lambda marks the frame of a lambda call, where return stops.
