@@ -285,9 +285,10 @@ end
 
 # status_rows returns the rows of --status for one file's result.
 def status_rows(r)
-  # A time in a message is masked, so that a rerun does not change the row.
+  # A time or a temporary path in a message is masked, so that a rerun
+  # does not change the row.
   clean = lambda do |s|
-    s.to_s.gsub(/[\t\n]/, " ").gsub("\\n", " ").gsub(/\d{4}-\d\d-\d\d \d\d:\d\d:\d\d(\.\d+)? ?([+-]\d{4}|UTC)/, "<time>")[0, 240]
+    s.to_s.gsub(/[\t\n]/, " ").gsub("\\n", " ").gsub(/\d{4}-\d\d-\d\d \d\d:\d\d:\d\d(\.\d+)? ?([+-]\d{4}|UTC)/, "<time>").gsub(%r{\S*/cameo-spec[^/\s]*}, "<tmp>")[0, 240]
   end
   rows = []
   on_ruby = (r[:on_ruby] || {}).dup
