@@ -175,6 +175,8 @@ q = p.with(x: 3)            # a copy; p is unchanged
 - Hash and array literals, and errors, print as CRuby 3.4 prints them:
   `{x: 1}`, not 3.3's `{:x=>1}`.
 - A bare `Object` prints as `#<Object>`, without an address.
+- `__LINE__` is the line its statement starts on, which differs from
+  Ruby's inside a statement that spans lines.
 - A `throw` ends the `catch` whose tag is equal to its own, where Ruby
   wants the same object: `catch("a") { throw "a" }` returns nil. The
   Object a `catch` without a tag makes is still a tag of its own.
@@ -247,7 +249,7 @@ These are absent, and a script that uses one fails when it reaches it:
 - **No threads or processes**: `Thread`, `Fiber`, `Mutex`, `sleep`,
   `system`, `exec`, `spawn`; cameo has `async` and `await` instead.
 - **Not there yet**: `at_exit`, `exit!`,
-  `printf` (`format` exists), `__method__`, `__LINE__`, `Enumerator.new`,
+  `printf` (`format` exists), `__method__`, `Enumerator.new`,
   `Integer()` with a base, `Random` as a class (`rand` and `srand` exist),
   and `autoload`.
 - **Libraries**: `require` of any library but the seven above, such as

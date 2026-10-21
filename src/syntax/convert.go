@@ -616,6 +616,12 @@ func (c *converter) call(n *ast.Call) Node {
 			if len(n.Args) == 0 && n.Block == nil && !n.Paren {
 				return &Redo{c.pos()}
 			}
+		case "__LINE__":
+			// The line is the statement's: the parser records no finer
+			// position.
+			if len(n.Args) == 0 && n.Block == nil && !n.Paren {
+				return &Int{c.pos(), int64(c.line)}
+			}
 		case "defined?":
 			if len(n.Args) == 1 {
 				return &Defined{c.pos(), c.expr(n.Args[0])}
