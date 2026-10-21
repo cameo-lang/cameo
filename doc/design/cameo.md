@@ -79,6 +79,7 @@ Every value is immutable. The kinds of value are:
 | Regexp | in `cameo.Value`, a `Regexp` message: source and options; a MatchData does not travel |
 | Time | in `cameo.Value`, a `Time` message: seconds, nanoseconds, UTC offset and zone; there is no field type for it yet |
 | an instance of a user class | the message that class declares |
+| an exception | the message its class is: its message, line and cause, what Ruby's exception of that class carries, and the fields the class declares; see [exceptions.md](exceptions.md) |
 | Class, Proc, Enumerator, Encoding, Pathname | not serialisable; see *Async* |
 
 Equality is structural everywhere: two lists with equal elements are `==`,
@@ -313,10 +314,32 @@ inside a block returns from the enclosing method; `break` and `next` behave as
 in Ruby. Procs are values but not serialisable, so they cannot cross `async`.
 
 Exceptions are Ruby's: `raise "msg"`, `raise ErrorClass, "msg"`,
-`rescue Class => e`, `ensure`, `retry`. `StandardError`, `ArgumentError`,
+`rescue Class => e`, `ensure`, `retry`, `cause`. `StandardError`, `ArgumentError`,
 `TypeError`, `KeyError`, `IndexError`, `NoMethodError`, `ZeroDivisionError`,
 `RuntimeError`, `StopIteration` and `CameoError` (cameo's own, for checker
 and type violations) are predefined; a script can subclass `StandardError`.
+An exception class is a class: it declares typed fields, its `initialize`
+runs on `new` and on `raise` and sets them with `self.x = v`, and `super(msg)`
+sets the message. Every exception is a protobuf message, see
+[exceptions.md](exceptions.md):
+
+```ruby
+class HTTPError < StandardError
+  int :status
+
+  def initialize(status)
+    super("HTTP #{status}")
+    self.status = status
+  end
+end
+
+begin
+  raise HTTPError.new(503)
+rescue HTTPError => e
+  e.status                                        # 503
+  e = e.with(status: 502, message: "bad gateway") # a copy, message included
+end
+```
 
 ## Async
 
@@ -363,8 +386,8 @@ the same time. Every promise of a run, the workers' included, is in one
 table; a promise is settled once, and settling it again raises.
 
 `await promise` blocks until the promise is settled and returns its value;
-if it failed, `await` raises the same exception class with the same message
-in the awaiting scope. Awaiting a promise twice returns the same result,
+if it failed, `await` raises the exception in the awaiting scope, read back
+from its message: the same class, message, line, cause and fields. Awaiting a promise twice returns the same result,
 as long as the method that started it has not returned.
 
 A promise `async` started lives as long as that method: when it returns,
@@ -481,10 +504,15 @@ with `protoc` gets generated Go types whose wire form matches what the
 interpreter produces, so a message can be marshalled on one side and
 unmarshalled on the other without any cameo code in between.
 
+**Exceptions** are messages too: an exception class's message holds the
+exception's message, line and cause, what Ruby's exception of that class
+carries (a KeyError's key and receiver), and the fields the class declares;
+[exceptions.md](exceptions.md) has the parts and their numbers.
+
 **The value envelope.** Values that are not instances — scalars, lists, maps,
 sets, ranges — travel in `cameo.Value`, a message with a `oneof` over the
 scalar kinds plus `List`, `Map`, `Set`, `Range`, `Time`, `Regexp` and `Object` (a
-class name and the packed message). A symbol travels as a string, see *Symbols*.
+class name and the packed message of an instance or an exception). A symbol travels as a string, see *Symbols*.
 A hash's default value travels with it; a hash with a default block cannot
 travel. It is what `async` serialises, what the
 Go host API takes and returns, and what `cameo proto` emits alongside the
@@ -498,6 +526,7 @@ err        = prog.Run()                            // run once; the classes stay
 err        = prog.RunContext(ctx)                  // the same, stopped when ctx ends
 value, err := prog.LastValue()                     // the last expression, as p shows it
 out, err  := prog.Call(recv, "method", args...)    // recv: a Go value, a class name, a proto.Message
+msg       := runErr.Exception()                    // the exception that ended a run, as its message
 text, err := prog.Proto("Geo::Point")              // the .proto text of a class
 files     := prog.ProtoFiles()                     // every package's .proto, and cameo/value.proto
 data, err := prog.Encode(v); v, err = prog.Decode(data)   // the envelope
@@ -508,7 +537,7 @@ Go values convert to cameo values by the table under *Values*: nil, bool,
 the integer and float kinds and `*big.Int`, string, `[]byte`, `[]any`, `map[string]any`,
 and a `proto.Message` whose full name is a loaded class's message. Results
 come back as nil, bool, int64 (a `*big.Int` beyond 64 bits), float64, string, `[]byte`, `[]any`,
-`map[any]any`, and a `proto.Message` for an instance; a symbol, range or
+`map[any]any`, and a `proto.Message` for an instance or an exception; a symbol, range or
 class stays an `object.Value`. A Hash's Symbol keys become strings, as
 symbols do wherever a value leaves cameo; a Hash whose keys have no Go map
 form (a key not comparable in Go, or `:a` beside `"a"`) is an error.
@@ -759,6 +788,13 @@ re-opened by accident:
   module version, and the git commit and its date Go records, or
   `"unknown"`. A script cannot assign them, nor any other builtin constant,
   at the top level.
+- **Every exception is a protobuf message**, and a script's exception
+  classes declare fields and run their `initialize`, on `new` and on
+  `raise`, as any class does. Errors that carry data matter most where
+  they cross, to an awaiting interpreter and to the Go host, and one model
+  for instances and exceptions serves both. The exception stays a Go
+  struct, which builds its message when it crosses, so a raise costs about
+  what it did; see [exceptions.md](exceptions.md).
 - **No instance variables.** `initialize` sets a field with `self.x = v`,
   and a field is read with its reader, so `@` is free for later use. Ruby
   code that sets `@x` in `initialize` no longer runs unchanged; it never
