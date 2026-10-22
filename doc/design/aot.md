@@ -75,10 +75,11 @@ so `RunContext` stops a run inside compiled code.
 
 ## Measured
 
-[benchmarks/aot](../../benchmarks/aot) times four of CRuby's benchmarks on
-the interpreter, compiled and on CRuby. On recursion over Integers the
-compiled methods run about 100 times faster than the interpreter, ten times
-faster than CRuby 3.4 and 4.0, and 1.7 times faster than either with YJIT.
+[tests/performance](../../tests/performance) times CRuby's benchmarks on
+the interpreter, compiled and on CRuby, one directory per step, with the
+run that landed the step in its README. On recursion over Integers the
+compiled methods run about sixty times faster than the interpreter, ten
+times faster than CRuby 4.0, and twice as fast as CRuby 4.0 with YJIT.
 Factorial gains nothing: its product outgrows 64 bits after 20 steps, so
 every call goes back to the interpreter.
 
