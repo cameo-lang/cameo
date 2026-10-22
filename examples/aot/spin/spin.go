@@ -41,8 +41,8 @@ type state struct {
 	calls uint32
 }
 
-// stopped counts a call or a loop pass, and every 4096 of them reports
-// whether the run was stopped, which the interpreter checks at each one.
+// stopped counts a call, and every 4096 of them reports whether the run
+// was stopped, which the interpreter checks at each one.
 func (s *state) stopped() bool {
 	s.calls++
 	return s.calls&4095 == 0 && eval.Stopped(s.ctx)
@@ -59,22 +59,24 @@ func fn_spin(s *state, v_n int64) (int64, error) {
 	if s.stopped() {
 		return 0, eval.ErrStopped
 	}
+	var t1 uint32
 	for {
-		if s.stopped() {
+		t1++
+		if t1&4095 == 0 && eval.Stopped(s.ctx) {
 			return 0, eval.ErrStopped
 		}
 		if !(v_n > 0) {
 			break
 		}
-		t1, err := add(v_n, 1)
+		t2, err := add(v_n, 1)
 		if err != nil {
 			return 0, err
 		}
-		t2, err := sub(t1, 1)
+		t3, err := sub(t2, 1)
 		if err != nil {
 			return 0, err
 		}
-		v_n = t2
+		v_n = t3
 	}
 	return v_n, nil
 }
@@ -83,16 +85,18 @@ func big_spin(s *state, v_n *big.Int) (*big.Int, error) {
 	if s.stopped() {
 		return nil, eval.ErrStopped
 	}
+	var t1 uint32
 	for {
-		if s.stopped() {
+		t1++
+		if t1&4095 == 0 && eval.Stopped(s.ctx) {
 			return nil, eval.ErrStopped
 		}
 		if !(v_n.Cmp(big_0) > 0) {
 			break
 		}
-		t1 := new(big.Int).Add(v_n, big_1)
-		t2 := new(big.Int).Sub(t1, big_1)
-		v_n = t2
+		t2 := new(big.Int).Add(v_n, big_1)
+		t3 := new(big.Int).Sub(t2, big_1)
+		v_n = t3
 	}
 	return v_n, nil
 }
