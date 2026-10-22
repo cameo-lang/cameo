@@ -68,6 +68,8 @@ mspec's own `before` blocks.
 - **Classes and modules**: single inheritance, overriding and `super`;
   `module` as a namespace and a mixin through `include` and `extend`;
   `Comparable`, and `Enumerable` for a class that defines `each`;
+  bang methods a class defines, `def save!`, which return their result
+  and rebind nothing;
   `method_missing` and `respond_to_missing?`; `send`, `public_send` and
   `__send__`, which refuse a mutating method as a call on a temporary
   does; `Class.new(Base) { … }`;
@@ -201,7 +203,7 @@ The checker rejects these by name, with the line:
 | `private`, `protected`, `public`, `module_function` | none: every method is public |
 | `eval`, `instance_eval`, `class_eval`, `define_method`, `instance_variable_get` and `_set`, `undef` | a direct call or a `def` |
 | `def obj.x`, `class << self` | `def self.x` in a class body |
-| a mutating or bang method on anything but a local, such as `[3, 1].sort!` or `obj.list << x` | the non-mutating form: `sort`, `+`, `append`, `with` |
+| a mutating or bang method of Ruby's core on anything but a local, such as `[3, 1].sort!` or `obj.list << x` | the non-mutating form: `sort`, `+`, `append`, `with` |
 | nested multiple assignment, `a, (b, c) = …` | separate assignments |
 | `require_relative`, `load` | one file per script |
 | backticks, `fork` | none; `fork`'s message names `async` |

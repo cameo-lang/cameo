@@ -85,7 +85,7 @@ class Rewriter
   # target? is true for a node this rewriter replaces.
   def target?(node)
     return false unless node.is_a?(Prism::CallNode)
-    return true if %i[require_relative quarantine!].include?(node.name) && node.receiver.nil?
+    return true if node.name == :require_relative && node.receiver.nil?
     return true if should?(node)
     return false unless should?(node.receiver) && node.receiver.arguments.nil? && node.receiver.block.nil?
     true
@@ -131,8 +131,6 @@ class Rewriter
   end
 
   def replace(src, path, node)
-    # cameo has no bang methods, and the prelude cannot define this one.
-    return "__quarantine #{emit(src, path, node.block)}" if node.name == :quarantine!
     if node.name == :require_relative
       arg = node.arguments&.arguments&.first
       return copy(src, path, node) unless arg.is_a?(Prism::StringNode)

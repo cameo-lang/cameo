@@ -195,6 +195,22 @@ g.bar
 	expectOutput(t, strings.TrimSuffix(src, "g.bar\n"), "[[1], 2]\ntrue\nfalse\n")
 }
 
+// TestBangMethodsOfAClass holds a bang method a script defines to a plain
+// call: it returns its result and rebinds nothing.
+func TestBangMethodsOfAClass(t *testing.T) {
+	expectOutput(t, `
+class Counter
+  int :n
+  def bump! = with(n: n + 1)
+  def self.zero! = new(n: 0)
+end
+def twice!(x) = x * 2
+c = Counter.new(n: 1)
+d = c.bump!
+p c.n, d.n, Counter.zero!.bump!.n, c.send(:bump!).n, twice!(4)
+`, "1\n2\n1\n2\n8\n")
+}
+
 func TestSend(t *testing.T) {
 	// send calls a method by name, a symbol or a string, with the
 	// arguments, keywords and block it is given, and reaches method_missing
