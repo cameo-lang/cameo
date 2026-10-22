@@ -36,9 +36,6 @@ type fn struct {
 	big   bool
 	// result is the type of the method's value.
 	result typ
-	// counters are the pass counters declared by counter, which pass
-	// increments; a loop variable is not one.
-	counters map[string]bool
 }
 
 // goType is the Go type of a cameo type.
@@ -69,7 +66,7 @@ func (f *fn) prefix() string {
 // method takes the instance it runs on as self, before its parameters.
 func (g *gen) function(m *method, big bool) string {
 	d := m.def
-	f := &fn{g: g, m: m, depth: 1, vars: map[string]typ{}, big: big, result: g.results[m.key], counters: map[string]bool{}}
+	f := &fn{g: g, m: m, depth: 1, vars: map[string]typ{}, big: big, result: g.results[m.key]}
 	var params []string
 	if m.owner != nil {
 		params = append(params, "self *object.Instance")
@@ -82,7 +79,7 @@ func (g *gen) function(m *method, big bool) string {
 	if m.owner != nil {
 		f.line("_ = self")
 	}
-	f.line("if s.stopped() {")
+	f.line("if s.stop.Load() {")
 	f.line("\treturn %s, eval.ErrStopped", f.zero())
 	f.line("}")
 	if v := f.body(d.Body, true); v != "" {
@@ -188,10 +185,10 @@ func (f *fn) expr(n syntax.Node, value bool) string {
 	case *syntax.If:
 		return f.ifExpr(n, value)
 	case *syntax.While:
-		c := f.counter()
+		stop := f.stopFlag()
 		f.line("for {")
 		f.depth++
-		f.pass(c)
+		f.pass(stop)
 		// until x is while !x, which leaves the loop when x holds.
 		if not, ok := n.Cond.(*syntax.Not); ok {
 			f.line("if %s {", f.expr(not.Value, true))
@@ -494,11 +491,8 @@ func (f *fn) loop(n *syntax.Call, value bool) string {
 	hi := f.temp()
 	f.line("%s := %s", hi, f.typed(f.expr(to, true)))
 	i := f.temp()
-	// A loop on int64 counts its passes on its own variable; one on
-	// *big.Int, and a while, on a counter of its own.
-	c := i
+	stop := f.stopFlag()
 	if f.big {
-		c = f.counter()
 		f.g.constant(1)
 		if from != nil {
 			lo = fmt.Sprintf("new(big.Int).Set(%s)", lo)
@@ -517,7 +511,7 @@ func (f *fn) loop(n *syntax.Call, value bool) string {
 		f.line("for %s := %s; %s %s %s; %s%s {", i, lo, i, cmp, hi, i, next)
 	}
 	f.depth++
-	f.pass(c)
+	f.pass(stop)
 	outer := f.vars
 	f.vars = make(map[string]typ, len(outer)+1)
 	for k, v := range outer {
@@ -542,24 +536,19 @@ func (f *fn) loop(n *syntax.Call, value bool) string {
 	return lo
 }
 
-// counter declares the pass counter of a loop that has no variable of its
-// own to count on: a local, which stays in a register, where the state's
-// call counter is a store on every pass.
-func (f *fn) counter() string {
-	c := f.temp()
-	f.counters[c] = true
-	f.line("var %s uint32", c)
-	return c
+// stopFlag declares a local that holds the run's stop flag for a loop, so
+// that a pass reads the flag alone and not the state first: the body may
+// pass the state to a call, after which Go would read it again.
+func (f *fn) stopFlag() string {
+	stop := f.temp()
+	f.line("%s := s.stop", stop)
+	return stop
 }
 
-// pass writes the stop check of one loop pass: every 4096 passes, by the
-// low bits of the loop's variable or of its counter, a read of the run's
-// stop. A counter is incremented first; a loop variable moves on its own.
-func (f *fn) pass(c string) {
-	if f.counters[c] {
-		f.line("%s++", c)
-	}
-	f.line("if %s&4095 == 0 && eval.Stopped(s.ctx) {", c)
+// pass writes the stop check of one loop pass: a read of the run's stop
+// flag, which costs a load where reading the clock costs a call.
+func (f *fn) pass(stop string) {
+	f.line("if %s.Load() {", stop)
 	f.line("\treturn %s, eval.ErrStopped", f.zero())
 	f.line("}")
 }

@@ -126,10 +126,10 @@ end
 		t.Fatalf("compiled %q, want f", got)
 	}
 	for _, want := range []string{
-		"for t2 := int64(0); t2 < t1; t2++ {", "if t2&4095 == 0 && eval.Stopped(s.ctx) {", "v_i := t2",
-		"for t6 := t4; t6 < t5; t6++ {", "continue", "break",
-		"if t9 == -1<<63 {", "for t10 := t8; t10 >= t9; t10-- {",
-		"var t3 uint32", "for t2 := new(big.Int); t2.Cmp(t1) < 0; t2 = new(big.Int).Add(t2, big_1) {", "t3++", "if t3&4095 == 0 && eval.Stopped(s.ctx) {",
+		"if s.stop.Load() {", "t3 := s.stop", "for t2 := int64(0); t2 < t1; t2++ {", "if t3.Load() {", "v_i := t2",
+		"for t7 := t5; t7 < t6; t7++ {", "continue", "break",
+		"if t11 == -1<<63 {", "for t12 := t10; t12 >= t11; t12-- {",
+		"for t2 := new(big.Int); t2.Cmp(t1) < 0; t2 = new(big.Int).Add(t2, big_1) {",
 	} {
 		if !strings.Contains(string(res.Go), want) {
 			t.Errorf("the Go lacks %q:\n%s", want, res.Go)

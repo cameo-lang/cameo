@@ -1103,7 +1103,11 @@ func (b *builder) emit(file, src, pkg string, names []string) ([]byte, error) {
 		out.WriteString("\t\"math/big\"\n")
 	}
 	if pkg == "main" {
-		out.WriteString("\t\"os\"\n\t\"runtime/debug\"\n\n\t\"github.com/cameo-lang/cameo/src/cameo\"\n")
+		out.WriteString("\t\"os\"\n\t\"runtime/debug\"\n")
+	}
+	out.WriteString("\t\"sync/atomic\"\n\n")
+	if pkg == "main" {
+		out.WriteString("\t\"github.com/cameo-lang/cameo/src/cameo\"\n")
 	}
 	out.WriteString("\t\"github.com/cameo-lang/cameo/src/eval\"\n\t\"github.com/cameo-lang/cameo/src/object\"\n)\n\n")
 	if pkg == "main" {
@@ -1181,23 +1185,15 @@ const mainFunc = `func main() {
 `
 
 // stateType is what every compiled call carries: the run it belongs to,
-// a count of calls, so that the run's stop is checked every few thousand,
-// and the classes it constructs, found once. A loop counts its passes on a
-// local of its own.
+// its stop flag, which every call and loop pass reads, and the classes it
+// constructs, found once.
 const stateType = `// state is one call from the interpreter into compiled code: the run it
-// belongs to, which may be stopped, the calls made since, and the classes
-// the call constructed instances of.
+// belongs to, the flag set when the run is stopped, and the classes the
+// call constructed instances of.
 type state struct {
 	ctx     object.Context
-	calls   uint32
+	stop    *atomic.Bool
 	classes map[string]*object.Class
-}
-
-// stopped counts a call, and every 4096 of them reports whether the run
-// was stopped, which the interpreter checks at each one.
-func (s *state) stopped() bool {
-	s.calls++
-	return s.calls&4095 == 0 && eval.Stopped(s.ctx)
 }
 
 // class is the class the script's top-level constant of that name holds,
@@ -1235,7 +1231,7 @@ func (g *gen) entry(m *method) string {
 	fmt.Fprintf(&b, "// call_%s is %s as a method: it runs with the arguments it takes and no\n// block, on int64 while the Integers fit and on *big.Int once one does not,\n// and leaves every other call to the interpreter.\n", name, m.key)
 	fmt.Fprintf(&b, "func call_%s(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {\n", name)
 	fmt.Fprintf(&b, "\tif len(args) != %d || kw != nil || !(block.IsZero() || block.IsNil()) {\n\t\treturn object.Value{}, eval.ErrDeopt\n\t}\n", n)
-	b.WriteString("\ts := &state{ctx: ctx}\n")
+	b.WriteString("\ts := &state{ctx: ctx, stop: eval.StopFlag(ctx)}\n")
 	var small, large, fits []string
 	if m.owner != nil {
 		b.WriteString("\tself_, ok := self.AsInstance()\n\tif !ok {\n\t\treturn object.Value{}, eval.ErrDeopt\n\t}\n")

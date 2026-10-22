@@ -49,12 +49,15 @@ func CompiledFor(prog *syntax.Program) Compiled {
 	return nil
 }
 
-// Stopped reports whether the run that ctx belongs to was stopped. A
-// compiled method checks it now and then, as the interpreter does at
-// every call, and returns ErrStopped.
-func Stopped(ctx object.Context) bool {
-	in, ok := ctx.(*Interp)
-	return ok && in.stop.flag.Load()
+// StopFlag returns the flag that is set when the run ctx belongs to is
+// stopped. A compiled method reads it at every call and loop pass, as the
+// interpreter does, and returns ErrStopped once it is set. A ctx that is
+// not a run gets a flag that is never set.
+func StopFlag(ctx object.Context) *atomic.Bool {
+	if in, ok := ctx.(*Interp); ok {
+		return &in.stop.flag
+	}
+	return new(atomic.Bool)
 }
 
 // ClassNamed returns the class a top-level constant of the script names,

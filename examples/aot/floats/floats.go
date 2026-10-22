@@ -3,10 +3,12 @@
 package floats
 
 import (
-	"github.com/cameo-lang/cameo/src/eval"
-	"github.com/cameo-lang/cameo/src/object"
 	"math"
 	"math/big"
+	"sync/atomic"
+
+	"github.com/cameo-lang/cameo/src/eval"
+	"github.com/cameo-lang/cameo/src/object"
 )
 
 // File names the script in its error messages.
@@ -98,19 +100,12 @@ func init() {
 }
 
 // state is one call from the interpreter into compiled code: the run it
-// belongs to, which may be stopped, the calls made since, and the classes
-// the call constructed instances of.
+// belongs to, the flag set when the run is stopped, and the classes the
+// call constructed instances of.
 type state struct {
 	ctx     object.Context
-	calls   uint32
+	stop    *atomic.Bool
 	classes map[string]*object.Class
-}
-
-// stopped counts a call, and every 4096 of them reports whether the run
-// was stopped, which the interpreter checks at each one.
-func (s *state) stopped() bool {
-	s.calls++
-	return s.calls&4095 == 0 && eval.Stopped(s.ctx)
 }
 
 // class is the class the script's top-level constant of that name holds,
@@ -138,7 +133,7 @@ var (
 )
 
 func fn_exact(s *state, v_n int64) (int64, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	t2, t3 := object.CompareNumbers(object.Int(v_n), object.Float(9.007199254740992e+15))
@@ -156,7 +151,7 @@ func fn_exact(s *state, v_n int64) (int64, error) {
 }
 
 func big_exact(s *state, v_n *big.Int) (*big.Int, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return nil, eval.ErrStopped
 	}
 	t2, t3 := object.CompareNumbers(object.BigInt(v_n), object.Float(9.007199254740992e+15))
@@ -180,7 +175,7 @@ func call_exact(ctx object.Context, self object.Value, args []object.Value, kw *
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx}
+	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
@@ -204,7 +199,7 @@ func call_exact(ctx object.Context, self object.Value, args []object.Value, kw *
 }
 
 func fn_grows(s *state, v_n int64) (float64, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	if v_n > 3 {
@@ -222,7 +217,7 @@ func fn_grows(s *state, v_n int64) (float64, error) {
 }
 
 func big_grows(s *state, v_n *big.Int) (float64, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	if v_n.Cmp(big_3) > 0 {
@@ -243,7 +238,7 @@ func call_grows(ctx object.Context, self object.Value, args []object.Value, kw *
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx}
+	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
@@ -267,14 +262,14 @@ func call_grows(ctx object.Context, self object.Value, args []object.Value, kw *
 }
 
 func fn_half(s *state, v_n int64) (float64, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	return float64(float64(v_n) / 2.0), nil
 }
 
 func big_half(s *state, v_n *big.Int) (float64, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	return float64(object.BigToFloat(v_n) / 2.0), nil
@@ -287,7 +282,7 @@ func call_half(ctx object.Context, self object.Value, args []object.Value, kw *o
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx}
+	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
@@ -311,7 +306,7 @@ func call_half(ctx object.Context, self object.Value, args []object.Value, kw *o
 }
 
 func fn_mean(s *state, v_n int64) (float64, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	var v_s float64
@@ -319,11 +314,12 @@ func fn_mean(s *state, v_n int64) (float64, error) {
 	v_s = 0.0
 	t1 := int64(1)
 	t2 := v_n
+	t4 := s.stop
 	if t2 == 1<<63-1 {
 		return 0, eval.ErrDeopt
 	}
 	for t3 := t1; t3 <= t2; t3++ {
-		if t3&4095 == 0 && eval.Stopped(s.ctx) {
+		if t4.Load() {
 			return 0, eval.ErrStopped
 		}
 		v_i := t3
@@ -334,7 +330,7 @@ func fn_mean(s *state, v_n int64) (float64, error) {
 }
 
 func big_mean(s *state, v_n *big.Int) (float64, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	var v_s float64
@@ -342,10 +338,9 @@ func big_mean(s *state, v_n *big.Int) (float64, error) {
 	v_s = 0.0
 	t1 := big_1
 	t2 := v_n
-	var t4 uint32
+	t4 := s.stop
 	for t3 := new(big.Int).Set(t1); t3.Cmp(t2) <= 0; t3 = new(big.Int).Add(t3, big_1) {
-		t4++
-		if t4&4095 == 0 && eval.Stopped(s.ctx) {
+		if t4.Load() {
 			return 0, eval.ErrStopped
 		}
 		v_i := t3
@@ -362,7 +357,7 @@ func call_mean(ctx object.Context, self object.Value, args []object.Value, kw *o
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx}
+	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
@@ -386,7 +381,7 @@ func call_mean(ctx object.Context, self object.Value, args []object.Value, kw *o
 }
 
 func fn_mixed(s *state, v_n int64) (float64, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	var v_x float64
@@ -407,7 +402,7 @@ func fn_mixed(s *state, v_n int64) (float64, error) {
 }
 
 func big_mixed(s *state, v_n *big.Int) (float64, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	var v_x float64
@@ -434,7 +429,7 @@ func call_mixed(ctx object.Context, self object.Value, args []object.Value, kw *
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx}
+	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
@@ -458,7 +453,7 @@ func call_mixed(ctx object.Context, self object.Value, args []object.Value, kw *
 }
 
 func fn_ratio(s *state, v_a int64, v_b int64) (float64, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	if v_b == 0 {
@@ -468,7 +463,7 @@ func fn_ratio(s *state, v_a int64, v_b int64) (float64, error) {
 }
 
 func big_ratio(s *state, v_a *big.Int, v_b *big.Int) (float64, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	if v_b.Cmp(big_0) == 0 {
@@ -484,7 +479,7 @@ func call_ratio(ctx object.Context, self object.Value, args []object.Value, kw *
 	if len(args) != 2 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx}
+	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInt()
 	a1, ok1 := args[1].AsInt()
@@ -513,7 +508,7 @@ func call_ratio(ctx object.Context, self object.Value, args []object.Value, kw *
 }
 
 func fn_remainders(s *state, v_n int64) (float64, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	t1, err := neg(v_n)
@@ -524,7 +519,7 @@ func fn_remainders(s *state, v_n int64) (float64, error) {
 }
 
 func big_remainders(s *state, v_n *big.Int) (float64, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	t1 := new(big.Int).Neg(v_n)
@@ -538,7 +533,7 @@ func call_remainders(ctx object.Context, self object.Value, args []object.Value,
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx}
+	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
@@ -562,7 +557,7 @@ func call_remainders(ctx object.Context, self object.Value, args []object.Value,
 }
 
 func fn_steps(s *state, v_n int64) (int64, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	var v_count int64
@@ -571,10 +566,9 @@ func fn_steps(s *state, v_n int64) (int64, error) {
 	var v_x float64
 	_ = v_x
 	v_x = float64(v_n)
-	var t1 uint32
+	t1 := s.stop
 	for {
-		t1++
-		if t1&4095 == 0 && eval.Stopped(s.ctx) {
+		if t1.Load() {
 			return 0, eval.ErrStopped
 		}
 		if !(v_x > 1.0) {
@@ -591,7 +585,7 @@ func fn_steps(s *state, v_n int64) (int64, error) {
 }
 
 func big_steps(s *state, v_n *big.Int) (*big.Int, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return nil, eval.ErrStopped
 	}
 	var v_count *big.Int
@@ -600,10 +594,9 @@ func big_steps(s *state, v_n *big.Int) (*big.Int, error) {
 	var v_x float64
 	_ = v_x
 	v_x = object.BigToFloat(v_n)
-	var t1 uint32
+	t1 := s.stop
 	for {
-		t1++
-		if t1&4095 == 0 && eval.Stopped(s.ctx) {
+		if t1.Load() {
 			return nil, eval.ErrStopped
 		}
 		if !(v_x > 1.0) {
@@ -623,7 +616,7 @@ func call_steps(ctx object.Context, self object.Value, args []object.Value, kw *
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx}
+	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
@@ -647,7 +640,7 @@ func call_steps(ctx object.Context, self object.Value, args []object.Value, kw *
 }
 
 func fn_trunc(s *state, v_n int64) (int64, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
 	t1, err := toInt(float64(float64(v_n) * 0.75))
@@ -658,7 +651,7 @@ func fn_trunc(s *state, v_n int64) (int64, error) {
 }
 
 func big_trunc(s *state, v_n *big.Int) (*big.Int, error) {
-	if s.stopped() {
+	if s.stop.Load() {
 		return nil, eval.ErrStopped
 	}
 	t1, err := bigToInt(float64(object.BigToFloat(v_n) * 0.75))
@@ -675,7 +668,7 @@ func call_trunc(ctx object.Context, self object.Value, args []object.Value, kw *
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx}
+	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
