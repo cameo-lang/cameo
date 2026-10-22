@@ -1,17 +1,18 @@
 // Package aot compiles a cameo script's top-level methods to Go ahead of
-// time: `cameo build`. It is the first step of the plan in
+// time: `cameo build`. It carries out the first steps of the plan in
 // doc/design/aot.md, and compiles only what it can type without running
 // the script, methods whose parameters are Integers and whose result is
 // one, over Integer arithmetic, comparisons, locals, if, while, return and
 // calls of one another. The rest of the script runs on the interpreter, as
 // it would without a build.
 //
-// A compiled method runs on int64. An Integer that outgrows 64 bits, a
-// division by zero, or an argument that is not a 64-bit Integer leaves the
-// whole call to the interpreter, which runs the method's own body from the
-// start and gives the answer the script would have given without a build.
-// Starting over is safe because what the compiler accepts is pure: it
-// computes a value and does nothing else.
+// A compiled method runs on int64, and has a twin on *big.Int. An Integer
+// that outgrows 64 bits ends the int64 run, and the twin runs the call from
+// the start. A division by zero, or an argument that is not an Integer,
+// leaves the whole call to the interpreter, which runs the method's own
+// body from the start and gives the answer the script would have given
+// without a build. Starting over is safe because what the compiler accepts
+// is pure: it computes a value and does nothing else.
 package aot
 
 import (
@@ -419,10 +420,11 @@ var descriptions = map[string]string{
 
 // emit writes the Go source.
 func (b *builder) emit(file, src, pkg string, names []string) ([]byte, error) {
-	g := &gen{helpers: map[string]bool{}}
+	g := &gen{helpers: map[string]bool{}, consts: map[int64]string{}}
 	var fns bytes.Buffer
 	for _, name := range names {
-		fns.WriteString(g.function(b.defs[name]))
+		fns.WriteString(g.function(b.defs[name], false))
+		fns.WriteString(g.function(b.defs[name], true))
 		fns.WriteString(entry(b.defs[name]))
 	}
 	var out bytes.Buffer
@@ -430,7 +432,13 @@ func (b *builder) emit(file, src, pkg string, names []string) ([]byte, error) {
 	fmt.Fprintf(&out, "package %s\n\n", pkg)
 	out.WriteString("import (\n")
 	if pkg == "main" {
-		out.WriteString("\t\"fmt\"\n\t\"os\"\n\t\"runtime/debug\"\n\n\t\"github.com/cameo-lang/cameo/src/cameo\"\n")
+		out.WriteString("\t\"fmt\"\n")
+	}
+	if len(names) > 0 {
+		out.WriteString("\t\"math/big\"\n")
+	}
+	if pkg == "main" {
+		out.WriteString("\t\"os\"\n\t\"runtime/debug\"\n\n\t\"github.com/cameo-lang/cameo/src/cameo\"\n")
 	}
 	out.WriteString("\t\"github.com/cameo-lang/cameo/src/eval\"\n\t\"github.com/cameo-lang/cameo/src/object\"\n)\n\n")
 	if pkg == "main" {
@@ -453,6 +461,7 @@ func (b *builder) emit(file, src, pkg string, names []string) ([]byte, error) {
 		out.WriteString(mainFunc)
 	}
 	out.WriteString(stateType)
+	out.WriteString(g.constants())
 	out.Write(fns.Bytes())
 	for _, h := range sortedKeys(g.helpers) {
 		out.WriteString(helperSource[h])
@@ -526,24 +535,35 @@ func (s *state) stopped() bool {
 `
 
 // entry is the method the interpreter calls: it takes the arguments as
-// Values, and leaves any call it cannot run to the interpreter.
+// Values, runs on int64 while the Integers fit, on *big.Int once one does
+// not, and leaves any call it cannot run to the interpreter.
 func entry(d *syntax.Def) string {
 	var b strings.Builder
 	name := d.Name
 	n := len(d.Params.Positional)
-	fmt.Fprintf(&b, "// call_%s is %s as a method: it runs with 64-bit Integer arguments and\n// no block, and leaves every other call to the interpreter.\n", name, name)
+	fmt.Fprintf(&b, "// call_%s is %s as a method: it runs with Integer arguments and no\n// block, on int64 while the Integers fit and on *big.Int once one does not,\n// and leaves every other call to the interpreter.\n", name, name)
 	fmt.Fprintf(&b, "func call_%s(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {\n", name)
 	fmt.Fprintf(&b, "\tif len(args) != %d || kw != nil || !(block.IsZero() || block.IsNil()) {\n\t\treturn object.Value{}, eval.ErrDeopt\n\t}\n", n)
-	var params []string
+	b.WriteString("\ts := &state{ctx: ctx}\n")
+	var small, large, fits []string
 	for i := range d.Params.Positional {
-		fmt.Fprintf(&b, "\ta%d, ok := args[%d].AsInt()\n\tif !ok {\n\t\treturn object.Value{}, eval.ErrDeopt\n\t}\n", i, i)
-		params = append(params, fmt.Sprintf("a%d", i))
+		fmt.Fprintf(&b, "\ta%d, ok%d := args[%d].AsInt()\n", i, i, i)
+		small = append(small, fmt.Sprintf("a%d", i))
+		large = append(large, fmt.Sprintf("b%d", i))
+		fits = append(fits, fmt.Sprintf("ok%d", i))
 	}
 	if n == 0 {
 		b.WriteString("\t_ = args\n")
+		fits = append(fits, "true")
 	}
-	fmt.Fprintf(&b, "\tr, err := fn_%s(&state{ctx: ctx}%s)\n", name, prefixed(params))
-	b.WriteString("\tif err != nil {\n\t\treturn object.Value{}, err\n\t}\n\treturn object.Int(r), nil\n}\n\n")
+	fmt.Fprintf(&b, "\tif %s {\n", strings.Join(fits, " && "))
+	fmt.Fprintf(&b, "\t\tr, err := fn_%s(s%s)\n", name, prefixed(small))
+	b.WriteString("\t\tif err != eval.ErrDeopt {\n\t\t\tif err != nil {\n\t\t\t\treturn object.Value{}, err\n\t\t\t}\n\t\t\treturn object.Int(r), nil\n\t\t}\n\t}\n")
+	for i := range d.Params.Positional {
+		fmt.Fprintf(&b, "\tb%d, ok := args[%d].AsBigInt()\n\tif !ok {\n\t\treturn object.Value{}, eval.ErrDeopt\n\t}\n", i, i)
+	}
+	fmt.Fprintf(&b, "\tr, err := big_%s(s%s)\n", name, prefixed(large))
+	b.WriteString("\tif err != nil {\n\t\treturn object.Value{}, err\n\t}\n\treturn object.BigInt(r), nil\n}\n\n")
 	return b.String()
 }
 

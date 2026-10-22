@@ -5,6 +5,7 @@ package arith
 import (
 	"github.com/cameo-lang/cameo/src/eval"
 	"github.com/cameo-lang/cameo/src/object"
+	"math/big"
 )
 
 // File names the script in its error messages.
@@ -144,6 +145,16 @@ func (s *state) stopped() bool {
 	return s.calls&4095 == 0 && eval.Stopped(s.ctx)
 }
 
+// The Integer literals of the methods on *big.Int, which they share and
+// never change.
+var (
+	big_m1 = big.NewInt(-1)
+	big_0  = big.NewInt(0)
+	big_1  = big.NewInt(1)
+	big_2  = big.NewInt(2)
+	big_3  = big.NewInt(3)
+)
+
 func fn_fib(s *state, v_n int64) (int64, error) {
 	if s.stopped() {
 		return 0, eval.ErrStopped
@@ -177,21 +188,57 @@ func fn_fib(s *state, v_n int64) (int64, error) {
 	return t1, nil
 }
 
-// call_fib is fib as a method: it runs with 64-bit Integer arguments and
-// no block, and leaves every other call to the interpreter.
+func big_fib(s *state, v_n *big.Int) (*big.Int, error) {
+	if s.stopped() {
+		return nil, eval.ErrStopped
+	}
+	var t1 *big.Int
+	if v_n.Cmp(big_2) < 0 {
+		t1 = v_n
+	} else {
+		t2 := new(big.Int).Sub(v_n, big_1)
+		t3, err := big_fib(s, t2)
+		if err != nil {
+			return nil, err
+		}
+		t4 := new(big.Int).Sub(v_n, big_2)
+		t5, err := big_fib(s, t4)
+		if err != nil {
+			return nil, err
+		}
+		t6 := new(big.Int).Add(t3, t5)
+		t1 = t6
+	}
+	return t1, nil
+}
+
+// call_fib is fib as a method: it runs with Integer arguments and no
+// block, on int64 while the Integers fit and on *big.Int once one does not,
+// and leaves every other call to the interpreter.
 func call_fib(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	a0, ok := args[0].AsInt()
+	s := &state{ctx: ctx}
+	a0, ok0 := args[0].AsInt()
+	if ok0 {
+		r, err := fn_fib(s, a0)
+		if err != eval.ErrDeopt {
+			if err != nil {
+				return object.Value{}, err
+			}
+			return object.Int(r), nil
+		}
+	}
+	b0, ok := args[0].AsBigInt()
 	if !ok {
 		return object.Value{}, eval.ErrDeopt
 	}
-	r, err := fn_fib(&state{ctx: ctx}, a0)
+	r, err := big_fib(s, b0)
 	if err != nil {
 		return object.Value{}, err
 	}
-	return object.Int(r), nil
+	return object.BigInt(r), nil
 }
 
 func fn_floor_div(s *state, v_a int64, v_b int64) (int64, error) {
@@ -205,25 +252,49 @@ func fn_floor_div(s *state, v_a int64, v_b int64) (int64, error) {
 	return t1, nil
 }
 
-// call_floor_div is floor_div as a method: it runs with 64-bit Integer arguments and
-// no block, and leaves every other call to the interpreter.
+func big_floor_div(s *state, v_a *big.Int, v_b *big.Int) (*big.Int, error) {
+	if s.stopped() {
+		return nil, eval.ErrStopped
+	}
+	t1, err := bigDiv(v_a, v_b)
+	if err != nil {
+		return nil, err
+	}
+	return t1, nil
+}
+
+// call_floor_div is floor_div as a method: it runs with Integer arguments and no
+// block, on int64 while the Integers fit and on *big.Int once one does not,
+// and leaves every other call to the interpreter.
 func call_floor_div(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 	if len(args) != 2 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	a0, ok := args[0].AsInt()
+	s := &state{ctx: ctx}
+	a0, ok0 := args[0].AsInt()
+	a1, ok1 := args[1].AsInt()
+	if ok0 && ok1 {
+		r, err := fn_floor_div(s, a0, a1)
+		if err != eval.ErrDeopt {
+			if err != nil {
+				return object.Value{}, err
+			}
+			return object.Int(r), nil
+		}
+	}
+	b0, ok := args[0].AsBigInt()
 	if !ok {
 		return object.Value{}, eval.ErrDeopt
 	}
-	a1, ok := args[1].AsInt()
+	b1, ok := args[1].AsBigInt()
 	if !ok {
 		return object.Value{}, eval.ErrDeopt
 	}
-	r, err := fn_floor_div(&state{ctx: ctx}, a0, a1)
+	r, err := big_floor_div(s, b0, b1)
 	if err != nil {
 		return object.Value{}, err
 	}
-	return object.Int(r), nil
+	return object.BigInt(r), nil
 }
 
 func fn_floor_mod(s *state, v_a int64, v_b int64) (int64, error) {
@@ -237,25 +308,49 @@ func fn_floor_mod(s *state, v_a int64, v_b int64) (int64, error) {
 	return t1, nil
 }
 
-// call_floor_mod is floor_mod as a method: it runs with 64-bit Integer arguments and
-// no block, and leaves every other call to the interpreter.
+func big_floor_mod(s *state, v_a *big.Int, v_b *big.Int) (*big.Int, error) {
+	if s.stopped() {
+		return nil, eval.ErrStopped
+	}
+	t1, err := bigMod(v_a, v_b)
+	if err != nil {
+		return nil, err
+	}
+	return t1, nil
+}
+
+// call_floor_mod is floor_mod as a method: it runs with Integer arguments and no
+// block, on int64 while the Integers fit and on *big.Int once one does not,
+// and leaves every other call to the interpreter.
 func call_floor_mod(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 	if len(args) != 2 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	a0, ok := args[0].AsInt()
+	s := &state{ctx: ctx}
+	a0, ok0 := args[0].AsInt()
+	a1, ok1 := args[1].AsInt()
+	if ok0 && ok1 {
+		r, err := fn_floor_mod(s, a0, a1)
+		if err != eval.ErrDeopt {
+			if err != nil {
+				return object.Value{}, err
+			}
+			return object.Int(r), nil
+		}
+	}
+	b0, ok := args[0].AsBigInt()
 	if !ok {
 		return object.Value{}, eval.ErrDeopt
 	}
-	a1, ok := args[1].AsInt()
+	b1, ok := args[1].AsBigInt()
 	if !ok {
 		return object.Value{}, eval.ErrDeopt
 	}
-	r, err := fn_floor_mod(&state{ctx: ctx}, a0, a1)
+	r, err := big_floor_mod(s, b0, b1)
 	if err != nil {
 		return object.Value{}, err
 	}
-	return object.Int(r), nil
+	return object.BigInt(r), nil
 }
 
 func fn_gcd(s *state, v_a int64, v_b int64) (int64, error) {
@@ -283,25 +378,63 @@ func fn_gcd(s *state, v_a int64, v_b int64) (int64, error) {
 	return v_a, nil
 }
 
-// call_gcd is gcd as a method: it runs with 64-bit Integer arguments and
-// no block, and leaves every other call to the interpreter.
+func big_gcd(s *state, v_a *big.Int, v_b *big.Int) (*big.Int, error) {
+	if s.stopped() {
+		return nil, eval.ErrStopped
+	}
+	var v_t *big.Int
+	_ = v_t
+	v_t = big_0
+	for {
+		if s.stopped() {
+			return nil, eval.ErrStopped
+		}
+		if !(v_b.Cmp(big_0) != 0) {
+			break
+		}
+		v_t = v_b
+		t1, err := bigMod(v_a, v_b)
+		if err != nil {
+			return nil, err
+		}
+		v_b = t1
+		v_a = v_t
+	}
+	return v_a, nil
+}
+
+// call_gcd is gcd as a method: it runs with Integer arguments and no
+// block, on int64 while the Integers fit and on *big.Int once one does not,
+// and leaves every other call to the interpreter.
 func call_gcd(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 	if len(args) != 2 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	a0, ok := args[0].AsInt()
+	s := &state{ctx: ctx}
+	a0, ok0 := args[0].AsInt()
+	a1, ok1 := args[1].AsInt()
+	if ok0 && ok1 {
+		r, err := fn_gcd(s, a0, a1)
+		if err != eval.ErrDeopt {
+			if err != nil {
+				return object.Value{}, err
+			}
+			return object.Int(r), nil
+		}
+	}
+	b0, ok := args[0].AsBigInt()
 	if !ok {
 		return object.Value{}, eval.ErrDeopt
 	}
-	a1, ok := args[1].AsInt()
+	b1, ok := args[1].AsBigInt()
 	if !ok {
 		return object.Value{}, eval.ErrDeopt
 	}
-	r, err := fn_gcd(&state{ctx: ctx}, a0, a1)
+	r, err := big_gcd(s, b0, b1)
 	if err != nil {
 		return object.Value{}, err
 	}
-	return object.Int(r), nil
+	return object.BigInt(r), nil
 }
 
 func fn_power(s *state, v_base int64, v_exp int64) (int64, error) {
@@ -332,25 +465,60 @@ func fn_power(s *state, v_base int64, v_exp int64) (int64, error) {
 	return v_result, nil
 }
 
-// call_power is power as a method: it runs with 64-bit Integer arguments and
-// no block, and leaves every other call to the interpreter.
+func big_power(s *state, v_base *big.Int, v_exp *big.Int) (*big.Int, error) {
+	if s.stopped() {
+		return nil, eval.ErrStopped
+	}
+	var v_result *big.Int
+	_ = v_result
+	v_result = big_1
+	for {
+		if s.stopped() {
+			return nil, eval.ErrStopped
+		}
+		if !(v_exp.Cmp(big_0) > 0) {
+			break
+		}
+		t1 := new(big.Int).Mul(v_result, v_base)
+		v_result = t1
+		t2 := new(big.Int).Sub(v_exp, big_1)
+		v_exp = t2
+	}
+	return v_result, nil
+}
+
+// call_power is power as a method: it runs with Integer arguments and no
+// block, on int64 while the Integers fit and on *big.Int once one does not,
+// and leaves every other call to the interpreter.
 func call_power(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 	if len(args) != 2 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	a0, ok := args[0].AsInt()
+	s := &state{ctx: ctx}
+	a0, ok0 := args[0].AsInt()
+	a1, ok1 := args[1].AsInt()
+	if ok0 && ok1 {
+		r, err := fn_power(s, a0, a1)
+		if err != eval.ErrDeopt {
+			if err != nil {
+				return object.Value{}, err
+			}
+			return object.Int(r), nil
+		}
+	}
+	b0, ok := args[0].AsBigInt()
 	if !ok {
 		return object.Value{}, eval.ErrDeopt
 	}
-	a1, ok := args[1].AsInt()
+	b1, ok := args[1].AsBigInt()
 	if !ok {
 		return object.Value{}, eval.ErrDeopt
 	}
-	r, err := fn_power(&state{ctx: ctx}, a0, a1)
+	r, err := big_power(s, b0, b1)
 	if err != nil {
 		return object.Value{}, err
 	}
-	return object.Int(r), nil
+	return object.BigInt(r), nil
 }
 
 func fn_sign(s *state, v_n int64) (int64, error) {
@@ -366,21 +534,46 @@ func fn_sign(s *state, v_n int64) (int64, error) {
 	return 0, nil
 }
 
-// call_sign is sign as a method: it runs with 64-bit Integer arguments and
-// no block, and leaves every other call to the interpreter.
+func big_sign(s *state, v_n *big.Int) (*big.Int, error) {
+	if s.stopped() {
+		return nil, eval.ErrStopped
+	}
+	if v_n.Cmp(big_0) < 0 {
+		return big_m1, nil
+	}
+	if v_n.Cmp(big_0) > 0 {
+		return big_1, nil
+	}
+	return big_0, nil
+}
+
+// call_sign is sign as a method: it runs with Integer arguments and no
+// block, on int64 while the Integers fit and on *big.Int once one does not,
+// and leaves every other call to the interpreter.
 func call_sign(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	a0, ok := args[0].AsInt()
+	s := &state{ctx: ctx}
+	a0, ok0 := args[0].AsInt()
+	if ok0 {
+		r, err := fn_sign(s, a0)
+		if err != eval.ErrDeopt {
+			if err != nil {
+				return object.Value{}, err
+			}
+			return object.Int(r), nil
+		}
+	}
+	b0, ok := args[0].AsBigInt()
 	if !ok {
 		return object.Value{}, eval.ErrDeopt
 	}
-	r, err := fn_sign(&state{ctx: ctx}, a0)
+	r, err := big_sign(s, b0)
 	if err != nil {
 		return object.Value{}, err
 	}
-	return object.Int(r), nil
+	return object.BigInt(r), nil
 }
 
 func fn_steps(s *state, v_n int64) (int64, error) {
@@ -427,21 +620,68 @@ func fn_steps(s *state, v_n int64) (int64, error) {
 	return v_count, nil
 }
 
-// call_steps is steps as a method: it runs with 64-bit Integer arguments and
-// no block, and leaves every other call to the interpreter.
+func big_steps(s *state, v_n *big.Int) (*big.Int, error) {
+	if s.stopped() {
+		return nil, eval.ErrStopped
+	}
+	var v_count *big.Int
+	_ = v_count
+	v_count = big_0
+	for {
+		if s.stopped() {
+			return nil, eval.ErrStopped
+		}
+		if v_n.Cmp(big_1) == 0 {
+			break
+		}
+		t1, err := bigMod(v_n, big_2)
+		if err != nil {
+			return nil, err
+		}
+		if t1.Cmp(big_0) == 0 {
+			t2, err := bigDiv(v_n, big_2)
+			if err != nil {
+				return nil, err
+			}
+			v_n = t2
+		} else {
+			t3 := new(big.Int).Mul(big_3, v_n)
+			t4 := new(big.Int).Add(t3, big_1)
+			v_n = t4
+		}
+		t5 := new(big.Int).Add(v_count, big_1)
+		v_count = t5
+	}
+	return v_count, nil
+}
+
+// call_steps is steps as a method: it runs with Integer arguments and no
+// block, on int64 while the Integers fit and on *big.Int once one does not,
+// and leaves every other call to the interpreter.
 func call_steps(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	a0, ok := args[0].AsInt()
+	s := &state{ctx: ctx}
+	a0, ok0 := args[0].AsInt()
+	if ok0 {
+		r, err := fn_steps(s, a0)
+		if err != eval.ErrDeopt {
+			if err != nil {
+				return object.Value{}, err
+			}
+			return object.Int(r), nil
+		}
+	}
+	b0, ok := args[0].AsBigInt()
 	if !ok {
 		return object.Value{}, eval.ErrDeopt
 	}
-	r, err := fn_steps(&state{ctx: ctx}, a0)
+	r, err := big_steps(s, b0)
 	if err != nil {
 		return object.Value{}, err
 	}
-	return object.Int(r), nil
+	return object.BigInt(r), nil
 }
 
 func fn_within(s *state, v_n int64, v_lo int64, v_hi int64) (int64, error) {
@@ -465,29 +705,64 @@ func fn_within(s *state, v_n int64, v_lo int64, v_hi int64) (int64, error) {
 	return t3, nil
 }
 
-// call_within is within as a method: it runs with 64-bit Integer arguments and
-// no block, and leaves every other call to the interpreter.
+func big_within(s *state, v_n *big.Int, v_lo *big.Int, v_hi *big.Int) (*big.Int, error) {
+	if s.stopped() {
+		return nil, eval.ErrStopped
+	}
+	t2 := (v_lo.Cmp(v_n) <= 0)
+	if t2 {
+		t2 = (v_n.Cmp(v_hi) <= 0)
+	}
+	t1 := t2
+	if !t1 {
+		t1 = (v_n.Cmp(big_0) == 0)
+	}
+	var t3 *big.Int
+	if t1 {
+		t3 = big_1
+	} else {
+		t3 = big_0
+	}
+	return t3, nil
+}
+
+// call_within is within as a method: it runs with Integer arguments and no
+// block, on int64 while the Integers fit and on *big.Int once one does not,
+// and leaves every other call to the interpreter.
 func call_within(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 	if len(args) != 3 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	a0, ok := args[0].AsInt()
+	s := &state{ctx: ctx}
+	a0, ok0 := args[0].AsInt()
+	a1, ok1 := args[1].AsInt()
+	a2, ok2 := args[2].AsInt()
+	if ok0 && ok1 && ok2 {
+		r, err := fn_within(s, a0, a1, a2)
+		if err != eval.ErrDeopt {
+			if err != nil {
+				return object.Value{}, err
+			}
+			return object.Int(r), nil
+		}
+	}
+	b0, ok := args[0].AsBigInt()
 	if !ok {
 		return object.Value{}, eval.ErrDeopt
 	}
-	a1, ok := args[1].AsInt()
+	b1, ok := args[1].AsBigInt()
 	if !ok {
 		return object.Value{}, eval.ErrDeopt
 	}
-	a2, ok := args[2].AsInt()
+	b2, ok := args[2].AsBigInt()
 	if !ok {
 		return object.Value{}, eval.ErrDeopt
 	}
-	r, err := fn_within(&state{ctx: ctx}, a0, a1, a2)
+	r, err := big_within(s, b0, b1, b2)
 	if err != nil {
 		return object.Value{}, err
 	}
-	return object.Int(r), nil
+	return object.BigInt(r), nil
 }
 
 func add(a, b int64) (int64, error) {
@@ -496,6 +771,28 @@ func add(a, b int64) (int64, error) {
 		return 0, eval.ErrDeopt
 	}
 	return c, nil
+}
+
+func bigDiv(a, b *big.Int) (*big.Int, error) {
+	if b.Sign() == 0 {
+		return nil, eval.ErrDeopt
+	}
+	q, m := new(big.Int).QuoRem(a, b, new(big.Int))
+	if m.Sign() != 0 && (m.Sign() < 0) != (b.Sign() < 0) {
+		q.Sub(q, big_1)
+	}
+	return q, nil
+}
+
+func bigMod(a, b *big.Int) (*big.Int, error) {
+	if b.Sign() == 0 {
+		return nil, eval.ErrDeopt
+	}
+	m := new(big.Int).Rem(a, b)
+	if m.Sign() != 0 && (m.Sign() < 0) != (b.Sign() < 0) {
+		m.Add(m, b)
+	}
+	return m, nil
 }
 
 func div(a, b int64) (int64, error) {
