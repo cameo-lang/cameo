@@ -137,11 +137,6 @@ func compile(n syntax.Node) thunk {
 			env.Set(name, v)
 			return v, nil
 		}
-	case *syntax.Field:
-		name, line := n.Name, n.Line()
-		return func(in *Interp, _ *Env, fr *Frame) (object.Value, error) {
-			return in.readField(name, fr, line)
-		}
 	case *syntax.FieldAssign:
 		name, line, value := n.Name, n.Line(), compile(n.Value)
 		return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
@@ -389,6 +384,8 @@ func compileCall(n *syntax.Call) thunk {
 	if t := compileBinary(n); t != nil {
 		return t
 	}
+	checkMutation := !selfCall && mayMutate(name)
+	dropped := !selfCall && n.Dropped
 	return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 		r := fr.Self
 		if recv != nil {
@@ -408,6 +405,16 @@ func compileCall(n *syntax.Call) thunk {
 		var blk object.Value
 		if block != nil {
 			blk = procValue(&Proc{Block: block, Env: env, Frame: fr})
+		}
+		if checkMutation {
+			if v, handled, err := in.mutating(fr, r, name, values, nil, blk, line); handled {
+				return v, err
+			}
+			if dropped {
+				if err := in.dropped(r, name, line); err != nil {
+					return object.Value{}, err
+				}
+			}
 		}
 		v, err := in.call(fr, r, name, values, nil, blk, selfCall, line)
 		if err != nil {

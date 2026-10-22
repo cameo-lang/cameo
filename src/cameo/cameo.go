@@ -73,6 +73,11 @@ func Load(file, src string, stdout, stderr io.Writer) (*Program, error) {
 	return &Program{file: file, prog: prog, in: eval.New(stdout, stderr)}, nil
 }
 
+// IgnoreMutationErrors sets whether a call of one of Ruby's mutators,
+// such as a.push(1), returns its result on a copy instead of raising. The
+// receiver never changes either way.
+func (p *Program) IgnoreMutationErrors(ignore bool) { p.in.IgnoreMutationErrors = ignore }
+
 // Run evaluates the script once; its classes stay loaded for Call.
 func (p *Program) Run() error {
 	p.ran = true

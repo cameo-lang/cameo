@@ -42,6 +42,16 @@ func (in *Interp) evalCall(n *syntax.Call, env *Env, fr *Frame) (object.Value, e
 			return object.Value{}, err
 		}
 	}
+	if !selfCall {
+		if v, handled, err := in.mutating(fr, recv, n.Name, args, kw, block, n.Line()); handled {
+			return v, err
+		}
+		if n.Dropped {
+			if err := in.dropped(recv, n.Name, n.Line()); err != nil {
+				return object.Value{}, err
+			}
+		}
+	}
 	v, err := in.call(fr, recv, n.Name, args, kw, block, selfCall, n.Line())
 	return v, withLine(err, n.Line())
 }

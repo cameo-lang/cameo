@@ -17,6 +17,9 @@ import (
 )
 
 const usage = `usage: cameo <script.cameo>              run the script
+       cameo --ignore-mutation-errors <script.cameo>
+                                         run it, a call of Ruby's mutators such as push returning its
+                                         result on a copy instead of raising
        cameo check <script.cameo>        parse and check the script, report every error
        cameo proto <script.cameo> [dir]  print the .proto files of the script's classes, or write them into dir
        cameo build <script.cameo> <dir> [package]
@@ -49,6 +52,10 @@ func tuneGC() {
 // the script ran or checked, 1 when it failed, 2 when the command line is
 // wrong.
 func run(args []string) int {
+	ignoreMutations := false
+	if len(args) == 2 && args[0] == "--ignore-mutation-errors" {
+		ignoreMutations, args = true, args[1:]
+	}
 	switch {
 	case len(args) == 1 && args[0] == "version":
 		fmt.Println(cameo.Version())
@@ -85,7 +92,7 @@ func run(args []string) int {
 	case len(args) == 2 && args[0] == "run":
 		return runCompiled(args[1], os.Stdout, os.Stderr)
 	case len(args) == 1 && args[0] != "check" && args[0] != "proto" && args[0] != "build" && args[0] != "run":
-		if err := cameo.RunFile(args[0], os.Stdout, os.Stderr); err != nil {
+		if err := runScript(args[0], ignoreMutations); err != nil {
 			var errs syntax.ErrorList
 			if errors.As(err, &errs) {
 				fmt.Fprintln(os.Stderr, errs)
@@ -99,6 +106,21 @@ func run(args []string) int {
 		fmt.Fprintln(os.Stderr, usage)
 		return 2
 	}
+}
+
+// runScript runs the script at path, with mutation errors ignored when
+// ignoreMutations is set.
+func runScript(path string, ignoreMutations bool) error {
+	src, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	prog, err := cameo.Load(path, string(src), os.Stdout, os.Stderr)
+	if err != nil {
+		return err
+	}
+	prog.IgnoreMutationErrors(ignoreMutations)
+	return prog.Run()
 }
 
 // check parses and checks the script at path and returns every error found,

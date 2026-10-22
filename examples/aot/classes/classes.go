@@ -104,7 +104,7 @@ puts c.sum(5), c.beyond, Counter.new(2**62, 1).sum(3)
 `
 
 // digest identifies the program: syntax.Digest of Script, parsed.
-const digest = "12333fe1b7cc1a3d"
+const digest = "323089b1149d23fa"
 
 func init() {
 	eval.RegisterCompiled(digest, eval.Compiled{

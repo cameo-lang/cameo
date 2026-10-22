@@ -71,7 +71,7 @@ mspec's own `before` blocks.
   bang methods a class defines, `def save!`, which return their result
   and rebind nothing;
   `method_missing` and `respond_to_missing?`; `send`, `public_send` and
-  `__send__`, which refuse a mutating method as a call on a temporary
+  `__send__`, which refuse a mutating method as a call
   does; `Class.new(Base) { … }`;
   `def self.x` in a class body.
 - **Exceptions**: `begin`/`rescue`/`else`/`ensure`, `rescue => e`,
@@ -102,15 +102,31 @@ mspec's own `before` blocks.
 
 ## Different in cameo
 
-**Values are immutable.** Nothing changes in place, so what would change a
-value in Ruby makes a changed copy:
+**Values are immutable.** Nothing changes in place, and no call changes or
+rebinds its receiver:
 
-- A mutating call on a local variable rebinds it: `s << "x"`, `a.push(1)`,
-  `a.map! { … }` and `h.merge!(other)` leave the local holding the changed
-  copy, and any other reference holds what it held before.
-- `a.x = 1`, `a.x.y = 1` and `h[k] = v` rebind the local `a` or `h` to a
-  copy with the change. The chain must start at a local variable, or at
-  `self` inside `initialize`.
+- A call of one of Ruby's mutators on a value of the kind it changes
+  raises a `CameoError` that names the non-mutating form: `a << 1` and
+  `a.push(1)` on an array ("use +, or append"), `s << "x"` and
+  `s.setbyte(0, 65)` on a string, `h.store(k, v)`, `h.delete(k)` and
+  `h.update(o)` on a hash, `st.add(x)` and `st.merge(o)` on a set. The
+  test `src/eval/mutation_test.go` lists every one. With `cameo
+  --ignore-mutation-errors` (or `Program.IgnoreMutationErrors` from Go)
+  the call instead returns what Ruby's returns, computed on a copy, and
+  the receiver keeps its value: `a.pop` is the last element, and `a` is
+  as it was.
+- A bang method of Ruby's core (`compact!`, `sort!`, `gsub!`, `merge!`)
+  is refused before the script runs: "This is not supported, use x =
+  x.compact instead". A bang method a class defines is an ordinary call.
+- `force_encoding` returns the string relabelled and leaves the receiver,
+  since nothing else reinterprets bytes. A call whose value the script
+  drops, a statement on its own, raises, since it would do nothing.
+- The same names on a value they do not change are ordinary calls:
+  `Integer#<<` shifts, and a class's own `push` is its own method.
+- Assignment makes the copy and rebinds the local: `a += [1]`, `a.x = 1`,
+  `a.x.y = 1` and `h[k] = v` rebind `a` or `h` to a copy with the change.
+  The chain must start at a local variable, or at `self` inside
+  `initialize`.
 - `frozen?` is true for everything; `freeze` and `dup` change nothing.
 - Equality is structural: two arrays, hashes or instances with equal
   contents are `==` and hash alike. There is no object identity, so
@@ -203,7 +219,7 @@ The checker rejects these by name, with the line:
 | `private`, `protected`, `public`, `module_function` | none: every method is public |
 | `eval`, `instance_eval`, `class_eval`, `define_method`, `instance_variable_get` and `_set`, `undef` | a direct call or a `def` |
 | `def obj.x`, `class << self` | `def self.x` in a class body |
-| a mutating or bang method of Ruby's core on anything but a local, such as `[3, 1].sort!` or `obj.list << x` | the non-mutating form: `sort`, `+`, `append`, `with` |
+| a bang method of Ruby's core, such as `a.sort!` | the copying form, assigned: `a = a.sort` |
 | nested multiple assignment, `a, (b, c) = …` | separate assignments |
 | `require_relative`, `load` | one file per script |
 | backticks, `fork` | none; `fork`'s message names `async` |

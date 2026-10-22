@@ -70,16 +70,12 @@ false
 195
 99
 nil
-"hEYlo"
-"こxにちは"
-65
 #<Encoding:US-ASCII>
 #<Encoding:UTF-8>
 #<Encoding:US-ASCII>
 #<Encoding:BINARY (ASCII-8BIT)>
 195
 233
-"offset 1 does not land on character boundary"
 "invalid symbol in encoding UTF-8 :\"\\xC3\""
 :AbC
 :Äöü
