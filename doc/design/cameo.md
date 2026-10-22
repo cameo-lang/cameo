@@ -644,7 +644,7 @@ One Go module, `github.com/cameo-lang/cameo`, with the packages under `src/`:
 | `eval/sched.go` | the queue of calls `async` started and the runner goroutines that take them |
 | `protogen` | descriptors from class declarations, `.proto` text, the `cameo.Value` envelope (`proto/cameo.proto`, compiled in) |
 | `aot` | `cameo build`: Go source for the top-level methods it can type, which the interpreter calls in place of their bodies; see [aot.md](aot.md) |
-| `cmd/cameo` | the binary: `cameo script.cameo`, `cameo check script.cameo`, `cameo proto script.cameo`, `cameo build script.cameo dir` |
+| `cmd/cameo` | the binary: `cameo script.cameo`, `cameo check script.cameo`, `cameo proto script.cameo`, `cameo build script.cameo dir`, `cameo run script.cameo` |
 
 Tests are the example corpus first: `examples/<name>.cameo` beside
 `examples/<name>.expected`, run by `go test` which executes each script and
