@@ -192,10 +192,15 @@ func (in *Interp) evalDef(n *syntax.Def, fr *Frame) (object.Value, error) {
 		return object.Value{}, in.raise(object.CameoError, n.Line(), "cannot replace the builtin method %s of %s", n.Name, target.Name)
 	}
 	m := &object.Method{Name: n.Name, Owner: target, Body: &compiledDef{def: n, body: in.code.body(n, n.Body)}, Arity: -1, Lexical: fr.Lexical}
-	// A top-level method `cameo build` compiled runs as Go, and keeps its
-	// body for the calls the Go code leaves to the interpreter.
-	if target == in.mainClass && !n.Singleton {
-		m.Native = in.code.compiled[n.Name]
+	// A method `cameo build` compiled runs as Go, and keeps its body for
+	// the calls the Go code leaves to the interpreter: a top-level method
+	// by its name, a class's as Class#name.
+	if !n.Singleton {
+		key := n.Name
+		if target != in.mainClass {
+			key = target.QualifiedName() + "#" + n.Name
+		}
+		m.Native = in.code.compiled[key]
 	}
 	if n.Singleton {
 		target.SetSingletonMethod(m)

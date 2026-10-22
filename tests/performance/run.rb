@@ -17,7 +17,9 @@
 # Go tool ignores.
 #
 # A difference is green when cameo takes less than 90% of Ruby's time, red
-# when more than 110%, and yellow in between.
+# when more than 110%, and yellow in between. A Ruby that cannot run a
+# script, one with cameo's typed fields say, gets "-" in its cells, and the
+# first line of its error goes to stderr.
 #
 # --baseline REV adds two columns: the script compiled by cameo at REV, the
 # base of a pull request say, and the compiled time's difference from it,
@@ -51,7 +53,8 @@ def sh(*cmd, chdir: ROOT)
 end
 
 # best runs a command runs times and returns the best seconds and the
-# result, from the "result seconds" line each run prints last.
+# result, from the "result seconds" line each run prints last; nil for
+# both, with the first line of the error on stderr, when the command fails.
 def best(cmd, runs)
   secs = nil
   result = nil
@@ -61,7 +64,13 @@ def best(cmd, runs)
     secs = t if secs.nil? || t < secs
   end
   [secs, result]
+rescue RuntimeError => e
+  message = "#{cmd.first}: #{e.message.lines[1].to_s.strip}"
+  warn message unless (WARNED[message] ||= false)
+  WARNED[message] = true
+  [nil, nil]
 end
+WARNED = {}
 
 # delta is a time as a difference from the Ruby it is compared with, with
 # its colour, or "-" when either is missing.
@@ -138,7 +147,9 @@ scripts.each do |script|
   label = File.join(File.basename(File.dirname(script)), name)
   dir = File.join(OUT, label)
   built = sh(cameo, "build", script, dir)
-  built.lines.grep(/^interpreted (?!now:)/).each { warn "#{label}: #{_1}" }
+  # The clock reads a constant, and initialize is the interpreter's: neither
+  # is news.
+  built.lines.grep(/^interpreted (?!now:)/).grep_v(/the interpreter calls it itself/).each { warn "#{label}: #{_1}" }
   binary = File.join(dir, name)
   sh("go", "build", "-o", binary, "./" + dir.delete_prefix("#{ROOT}/"))
 
@@ -155,8 +166,8 @@ scripts.each do |script|
       times[who] = [times[who], secs].compact.min
     end
   end
-  if results.values.uniq.size > 1
-    differs << "#{label}: #{results.map { |who, r| "#{who} printed #{r}" }.join(', ')}"
+  if results.values.compact.uniq.size > 1
+    differs << "#{label}: #{results.compact.map { |who, r| "#{who} printed #{r}" }.join(', ')}"
   end
   row = "| #{label} | #{cell(times['interp'])} | #{cell(times['ruby'])} | #{delta(times['interp'], times['ruby'])} " \
         "| #{cell(times['compiled'])} | #{cell(times['yjit'])} | #{delta(times['compiled'], times['yjit'])} |"
