@@ -9,6 +9,7 @@ exercise and holds the table of the run that landed the step.
 |---|---|
 | [01-ints](01-ints) | recursion over Integers that fit 64 bits: fib, tak, tarai |
 | [02-bignums](02-bignums) | recursion whose product outgrows 64 bits: factorial |
+| [03-blocks](03-blocks) | blocks of `times` and `each` over a Range as loops: a sum, Pythagorean triples |
 
 [run.rb](run.rb) builds cameo and each script, runs every case three times
 on four Rubies and prints the best in-script seconds as one Markdown table:
