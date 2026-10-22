@@ -169,6 +169,12 @@ func installRange() {
 	def(c, "member?", 1, include)
 	def(c, "cover?", 1, cover)
 	def(c, "===", 1, cover)
+	def(c, "overlap?", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if args[0].Kind() != object.KindRange {
+			return object.Value{}, ctx.Raise(object.TypeError, "wrong argument type %s (expected Range)", args[0].Class().Name)
+		}
+		return object.Bool(rangesOverlap(ctx, r(self), args[0].Range())), nil
+	})
 	def(c, "each", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if block.IsZero() {
 			return self, nil
@@ -605,4 +611,39 @@ func orderFloat(i int64) float64 {
 		return -math.Float64frombits(uint64(-i))
 	}
 	return math.Float64frombits(uint64(i))
+}
+
+// rangesOverlap follows Ruby's Range#overlap?: no value lies in both when
+// either range ends before the other begins, or either is empty. Values
+// that do not compare do not overlap.
+func rangesOverlap(ctx object.Context, a, b *object.Range) bool {
+	aLo, aHi, bLo, bHi := object.OrNil(a.Lo), object.OrNil(a.Hi), object.OrNil(b.Lo), object.OrNil(b.Hi)
+	// empty is whether nothing lies from lo to hi.
+	empty := func(lo, hi object.Value, exclusive bool) bool {
+		if lo.IsNil() || hi.IsNil() {
+			return false
+		}
+		c, err := ctx.Compare(lo, hi)
+		return err != nil || c > 0 || c == 0 && exclusive
+	}
+	if empty(aLo, bHi, b.Exclusive) || empty(bLo, aHi, a.Exclusive) {
+		return false
+	}
+	switch {
+	case !aLo.IsNil() && !bLo.IsNil():
+		c, err := ctx.Compare(aLo, bLo)
+		if err != nil {
+			return false
+		}
+		if c == 0 {
+			return true
+		}
+	case aLo.IsNil() && bLo.IsNil():
+		if aHi.IsNil() || bHi.IsNil() {
+			return true
+		}
+		_, err := ctx.Compare(aHi, bHi)
+		return err == nil
+	}
+	return !empty(aLo, aHi, a.Exclusive) && !empty(bLo, bHi, b.Exclusive)
 }
