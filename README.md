@@ -62,7 +62,11 @@ cameo script.cameo            # run; an uncaught exception prints script:line: m
 cameo check script.cameo      # parse and check only, report every error with its line
 cameo proto script.cameo      # the .proto files of the script's classes, one per package
 cameo proto script.cameo out/ # the same, written into out/
+cameo build script.cameo out/ # compile the top-level Integer methods to Go: out/main.go runs the script
 ```
+
+`cameo build` is the first step of ahead-of-time compilation; see
+[doc/design/aot.md](doc/design/aot.md).
 
 From Go:
 

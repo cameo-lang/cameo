@@ -11,13 +11,18 @@ import (
 	"runtime/debug"
 	"sort"
 
+	"github.com/cameo-lang/cameo/src/aot"
 	"github.com/cameo-lang/cameo/src/cameo"
 	"github.com/cameo-lang/cameo/src/syntax"
 )
 
 const usage = `usage: cameo <script.cameo>              run the script
        cameo check <script.cameo>        parse and check the script, report every error
-       cameo proto <script.cameo> [dir]  print the .proto files of the script's classes, or write them into dir`
+       cameo proto <script.cameo> [dir]  print the .proto files of the script's classes, or write them into dir
+       cameo build <script.cameo> <dir> [package]
+                                         compile the script's top-level methods that it can to Go: into
+                                         dir/main.go, a program that runs the script, or dir/<package>.go,
+                                         a package a host imports`
 
 func main() {
 	tuneGC()
@@ -66,7 +71,17 @@ func run(args []string) int {
 			return 1
 		}
 		return 0
-	case len(args) == 1 && args[0] != "check" && args[0] != "proto":
+	case (len(args) == 3 || len(args) == 4) && args[0] == "build":
+		pkg := "main"
+		if len(args) == 4 {
+			pkg = args[3]
+		}
+		if err := build(args[1], args[2], pkg, os.Stderr); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 1
+		}
+		return 0
+	case len(args) == 1 && args[0] != "check" && args[0] != "proto" && args[0] != "build":
 		if err := cameo.RunFile(args[0], os.Stdout, os.Stderr); err != nil {
 			var errs syntax.ErrorList
 			if errors.As(err, &errs) {
@@ -132,5 +147,42 @@ func protoFiles(path, dir string, out io.Writer) error {
 		}
 		fmt.Fprintln(out, target)
 	}
+	return nil
+}
+
+// build compiles the script at path into dir/main.go, or dir/<pkg>.go for
+// a package other than main, and reports to out
+// which methods run as Go, and why the others do not.
+func build(path, dir, pkg string, out io.Writer) error {
+	src, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("cameo: %w", err)
+	}
+	res, err := aot.Build(path, string(src), aot.Options{Package: pkg})
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return err
+	}
+	target := filepath.Join(dir, "main.go")
+	if pkg != "main" {
+		target = filepath.Join(dir, pkg+".go")
+	}
+	if err := os.WriteFile(target, res.Go, 0o644); err != nil {
+		return err
+	}
+	for _, name := range res.Compiled {
+		fmt.Fprintf(out, "compiled %s\n", name)
+	}
+	left := make([]string, 0, len(res.Left))
+	for name := range res.Left {
+		left = append(left, name)
+	}
+	sort.Strings(left)
+	for _, name := range left {
+		fmt.Fprintf(out, "interpreted %s: %s\n", name, res.Left[name])
+	}
+	fmt.Fprintln(out, target)
 	return nil
 }
