@@ -1286,6 +1286,8 @@ func (c *converter) regexp(n *ast.RegexpLit) Node {
 			options |= 4
 		case 'n':
 			options |= 32
+		case 'u':
+			options |= 16
 		}
 	}
 	var parts []Node

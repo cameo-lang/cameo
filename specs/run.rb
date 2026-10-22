@@ -285,7 +285,10 @@ end
 
 # status_rows returns the rows of --status for one file's result.
 def status_rows(r)
-  clean = ->(s) { s.to_s.gsub(/[\t\n]/, " ").gsub("\\n", " ")[0, 240] }
+  # A time in a message is masked, so that a rerun does not change the row.
+  clean = lambda do |s|
+    s.to_s.gsub(/[\t\n]/, " ").gsub("\\n", " ").gsub(/\d{4}-\d\d-\d\d \d\d:\d\d:\d\d(\.\d+)? ?([+-]\d{4}|UTC)/, "<time>")[0, 240]
+  end
   rows = []
   on_ruby = (r[:on_ruby] || {}).dup
   (r[:lines] || []).each do |kind, name, message|
@@ -297,7 +300,7 @@ def status_rows(r)
         if r[:on_ruby] && on_ruby.fetch(name, 0).zero?
           ["harness", "fails under Ruby too"]
         else
-          Classify.status(message)
+          Classify.status(message, name)
         end
       end
     on_ruby[name] -= 1 if kind != "U" && on_ruby.fetch(name, 0).positive?

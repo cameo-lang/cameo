@@ -14,6 +14,9 @@ const (
 	RegexpIgnoreCase = 1
 	RegexpExtended   = 2
 	RegexpMultiline  = 4
+	// RegexpFixedEncoding marks a pattern that matches UTF-8 text only:
+	// one with the u flag, a character past ASCII or a \u escape of one.
+	RegexpFixedEncoding = 16
 	// RegexpNoEncoding is the n flag: the pattern matches bytes.
 	RegexpNoEncoding = 32
 )
@@ -25,7 +28,8 @@ const (
 type Regexp struct {
 	Source  string
 	Options int
-	// Names are the named groups, in the order they appear.
+	// Names are the names of the named groups, one per group in the order
+	// they appear; groups may share a name.
 	Names    []string
 	re       *regexp.Regexp
 	anchored *regexp.Regexp
@@ -43,6 +47,9 @@ func NewRegexp(source string, options int) (*Regexp, error) {
 		return nil, err
 	}
 	anchored := regexp.MustCompile(`\A(?:` + pattern + `)`)
+	if options&RegexpNoEncoding == 0 && fixedEncoding(source) {
+		options |= RegexpFixedEncoding
+	}
 	return &Regexp{Source: source, Options: options, Names: names, re: re, anchored: anchored}, nil
 }
 
@@ -79,6 +86,42 @@ func (r *Regexp) view(s string) (v string, at, back func(int) int) {
 		return lo
 	}
 	return v, at, back
+}
+
+// fixedEncoding reports a pattern Ruby gives the UTF-8 encoding for
+// good: one with a character past ASCII, or a \u escape of one.
+func fixedEncoding(source string) bool {
+	for i := 0; i < len(source); i++ {
+		switch {
+		case source[i] >= 0x80:
+			return true
+		case source[i] != '\\' || i+1 == len(source):
+			continue
+		}
+		i++
+		if source[i] != 'u' {
+			continue
+		}
+		rest := source[i+1:]
+		if strings.HasPrefix(rest, "{") {
+			end := strings.IndexByte(rest, '}')
+			if end < 0 {
+				continue
+			}
+			for _, h := range strings.Fields(rest[1:end]) {
+				if n, err := strconv.ParseUint(h, 16, 32); err == nil && n >= 0x80 {
+					return true
+				}
+			}
+			continue
+		}
+		if len(rest) >= 4 {
+			if n, err := strconv.ParseUint(rest[:4], 16, 32); err == nil && n >= 0x80 {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func allASCII(s string) bool {
@@ -144,16 +187,32 @@ func (r *Regexp) FindAll(s string, limit int) []*Match {
 	return out
 }
 
-// GroupIndex is the number of a named group, or -1. In a pattern with
-// named groups only those capture, numbered in the order they appear, as
-// in Ruby.
-func (r *Regexp) GroupIndex(name string) int {
-	for i, n := range r.Names {
-		if n == name {
-			return i + 1
+// UniqueNames are the group names, each once, in the order they first
+// appear, as Regexp#names lists them.
+func (r *Regexp) UniqueNames() []string {
+	var out []string
+	seen := map[string]bool{}
+	for _, n := range r.Names {
+		if !seen[n] {
+			seen[n] = true
+			out = append(out, n)
 		}
 	}
-	return -1
+	return out
+}
+
+// GroupIndexes are the numbers of the groups named name, in order, and
+// none for a name the pattern does not have. In a pattern with named
+// groups only those capture, numbered in the order they appear, as in
+// Ruby.
+func (r *Regexp) GroupIndexes(name string) []int {
+	var out []int
+	for i, n := range r.Names {
+		if n == name {
+			out = append(out, i+1)
+		}
+	}
+	return out
 }
 
 // Inspect is /source/flags, as Regexp#inspect prints it.
@@ -228,6 +287,23 @@ func (m *Match) Group(i int) (string, bool) {
 		return "", false
 	}
 	return m.Input[m.Caps[2*i]:m.Caps[2*i+1]], true
+}
+
+// NameIndex is the number of the group named name that a reference to
+// the name reads: of the groups sharing it, the last that took part, or
+// the last of them when none did, as in Ruby; -1 for a name the pattern
+// does not have.
+func (m *Match) NameIndex(name string) int {
+	idx := m.Re.GroupIndexes(name)
+	if len(idx) == 0 {
+		return -1
+	}
+	for k := len(idx) - 1; k >= 0; k-- {
+		if m.Caps[2*idx[k]] >= 0 {
+			return idx[k]
+		}
+	}
+	return idx[len(idx)-1]
 }
 
 // CharOffset is a byte offset of the input as a character offset, as
