@@ -82,6 +82,13 @@ func TestBuildLeavesTheRestToTheInterpreter(t *testing.T) {
 		{"def f(n)\n  self\nend", "f", "self at the top level is not compiled"},
 		{"class A\n  int :n\n  def f = g\n  def g = \"x\"\nend", "A#f", "it calls g, and it is left to the interpreter"},
 		{"class A\n  int :n\n  def f(o) = o.n\nend\nclass B\n  float :n\nend\nclass C\n  def h = 1\nend\ndef k(c) = c.h + 1", "A#f", "it calls n on Integer"},
+		{"class A\n  int :n\n  def initialize(n)\n    self.n = n\n    puts n\n  end\nend\ndef f(n) = A.new(n).n", "f", "A.new runs an initialize that does more than set fields"},
+		{"class A\n  int :n\n  def initialize(n)\n    self.n = n\n  end\nend\ndef f(n) = A.new(n: n).n", "f", "A.new with keywords runs initialize, which takes positional arguments"},
+		{"class A\n  int :n\nend\ndef f(n) = A.new(n).n", "f", "A.new takes its fields as keywords"},
+		{"class A\n  int :n\nend\ndef f(n) = A.new(m: n).n", "f", "A.new: A has no field m"},
+		{"class A\n  int :n\n  def initialize(n)\n    self.n = n\n  end\nend\ndef f(n) = A.new(n * 1.5).n", "f", "A.new takes Integer, not Float"},
+		{"class A\n  float :x\n  def initialize(x)\n    self.x = x / 2\n  end\nend\ndef f(n) = A.new(1.5).x", "f", "A.new takes Integer, not Float"},
+		{"def f(n) = B.new(n).n", "f", "it constructs B, which is not a top-level class of the script"},
 		{"def f(n)\n  n.times { next }\n  n\nend\ndef g(n)\n  n.times { |i| return i }\n  n\nend\ndef h(n)\n  while n > 0\n    break\n    n = 1\n  end\n  n\nend", "h", "code follows a break"},
 	}
 	for _, c := range cases {
@@ -202,6 +209,46 @@ def twice(v) = v.dot(v) * 2
 		"fieldRef(self, 0)", "fieldInt(self, 1)", "fieldBig(self, 1)",
 		"func fn_twice(s *state, v_v *object.Instance) (float64, error)",
 		`classNamed(a0.Cls, "Vec")`, `"Vec#dot":`, "call_Vec__dot,", "self_, ok := self.AsInstance()",
+	} {
+		if !strings.Contains(string(res.Go), want) {
+			t.Errorf("the Go lacks %q:\n%s", want, res.Go)
+		}
+	}
+}
+
+// TestBuildCompilesConstruction holds the Go of Class.new: the arguments
+// read first, initialize's parameters as locals of a block, the fields by
+// index with an Integer converted for a Float field, and eval.Construct
+// with the class found through the state.
+func TestBuildCompilesConstruction(t *testing.T) {
+	res := build(t, `
+class Vec
+  float :x, :y
+  def initialize(x, y)
+    self.x = x
+    self.y = y
+  end
+  def plus(other) = Vec.new(x + other.x, y + other.y)
+end
+
+class Tag
+  int :n
+  ref :v, Vec
+end
+
+def build(n) = Vec.new(n, 2)
+def tag(n) = Tag.new(n: n, v: build(n)).n
+`)
+	if got := strings.Join(res.Compiled, " "); got != "Vec#plus build tag" {
+		t.Fatalf("compiled %q, want Vec#plus, build and tag", got)
+	}
+	for _, want := range []string{
+		"func fn_Vec__plus(s *state, self *object.Instance, v_other *object.Instance) (*object.Instance, error)",
+		"func fn_build(s *state, v_n int64) (*object.Instance, error)",
+		"v_x := float64(v_n)", "v_y := float64(2)", "[0] = object.Float(v_x)",
+		`eval.Construct(s.ctx, s.class("Vec"), t`, `eval.Construct(s.ctx, s.class("Tag"), t`,
+		"[0] = object.Int(v_n)", "[1] = object.InstanceValue(t", "return object.InstanceValue(r), nil",
+		"classes map[string]*object.Class",
 	} {
 		if !strings.Contains(string(res.Go), want) {
 			t.Errorf("the Go lacks %q:\n%s", want, res.Go)

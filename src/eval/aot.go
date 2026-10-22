@@ -56,3 +56,48 @@ func Stopped(ctx object.Context) bool {
 	in, ok := ctx.(*Interp)
 	return ok && in.stop.flag.Load()
 }
+
+// ClassNamed returns the class a top-level constant of the script names,
+// nil when there is no such constant or it is not a class. Compiled code
+// finds the class it constructs this way, once per call into it.
+func ClassNamed(ctx object.Context, name string) *object.Class {
+	in, ok := ctx.(*Interp)
+	if !ok {
+		return nil
+	}
+	v, ok := in.consts[name]
+	if !ok {
+		return nil
+	}
+	c, _ := v.AsClass()
+	return c
+}
+
+// Construct makes an instance of cls as Class.new does: every field at its
+// default, then each field that values gives, one entry per field of the
+// class with the zero Value for one left at its default, checked and
+// converted as `self.name = value` in initialize checks it. It returns
+// ErrDeopt when cls is nil or a value does not fit its field, so that the
+// interpreter builds the instance and raises what it raises.
+func Construct(ctx object.Context, cls *object.Class, values []object.Value) (*object.Instance, error) {
+	in, ok := ctx.(*Interp)
+	if !ok || cls == nil {
+		return nil, ErrDeopt
+	}
+	inst := &object.Instance{Cls: cls, Fields: make([]object.Value, len(cls.Fields))}
+	for i, f := range cls.Fields {
+		inst.Fields[i] = f.Default
+		if f.Default.IsZero() {
+			inst.Fields[i] = emptyFor(f.Type)
+		}
+		if i >= len(values) || values[i].IsZero() {
+			continue
+		}
+		v, ok := in.coerce(f.Type, values[i])
+		if !ok {
+			return nil, ErrDeopt
+		}
+		inst.Fields[i] = v
+	}
+	return inst, nil
+}
