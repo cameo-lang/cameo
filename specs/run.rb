@@ -12,7 +12,7 @@
 # and then cameo; each example prints one line, which this script counts.
 #
 #   ruby run.rb [--spec DIR] [--cameo BIN] [--jobs N] [--timeout SECONDS]
-#               [--ruby RUBY] [--out DIR] [DIR_OR_FILE ...]
+#               [--ruby RUBY] [--out DIR] [--status FILE] [DIR_OR_FILE ...]
 #
 # The default --spec is the copy checkout.rb returns, and the default
 # targets are its language/ and core/. --ruby runs each program that cameo
@@ -21,6 +21,13 @@
 # many of them pass under cameo. --out keeps each rewritten program and its
 # output, and writes results.tsv, one row per spec file, and failures.tsv,
 # one row per example that failed or raised under cameo.
+#
+# --status writes the status of every example, one row each, and of every
+# file that did not run, one row with the example "*": pass, or what
+# runner/classify.rb makes of the message that stopped it. An example that
+# does not pass under --ruby either is the harness's. specs/status.tsv is
+# that file for language/ and core/, kept in the repository so a change
+# shows which examples it fixes and which it breaks.
 
 require "etc"
 require "fileutils"
@@ -28,6 +35,7 @@ require "open3"
 require "optparse"
 require "prism"
 require "tmpdir"
+require_relative "runner/classify"
 
 HERE = __dir__
 PRELUDE = File.read(File.join(HERE, "runner", "prelude.cameo"))
@@ -40,6 +48,7 @@ OptionParser.new do |o|
   o.on("--jobs N", Integer, "spec files run at once (default: the number of CPUs)") { options[:jobs] = _1 }
   o.on("--timeout SECONDS", Integer, "the time one spec file may take (default: 20)") { options[:timeout] = _1 }
   o.on("--ruby RUBY", "also run each program under this Ruby, as a baseline") { options[:ruby] = _1 }
+  o.on("--status FILE", "write the status of every example here") { options[:status] = File.expand_path(_1) }
   o.on("--out DIR", "keep the rewritten programs, their output and results.tsv here") { options[:out] = File.expand_path(_1) }
 end.parse!
 
@@ -155,16 +164,26 @@ class Rewriter
   end
 end
 
-# examples returns the [kind, text] of each line an example printed.
+# examples returns [kind, name, message] for each line an example printed;
+# the name is the example's, after those of the describe blocks around it.
 def examples(stdout)
+  stack = []
   stdout.each_line.filter_map do |line|
-    line.chomp.delete_prefix("\u0001S ").split(" ", 2) if line.start_with?("\u0001S ")
+    next unless line.start_with?("\u0001S ")
+    kind, text = line.chomp.delete_prefix("\u0001S ").split(" ", 2)
+    case kind
+    when "D+" then stack.push(text.to_s.delete_prefix('"').delete_suffix('"')); nil
+    when "D-" then stack.pop; nil
+    else
+      name, message = text.to_s.split("\t", 2)
+      [kind, (stack + [name]).join(" "), message.to_s]
+    end
   end
 end
 
 # passed returns the names of the examples that passed, each as often as it
 # passed.
-def passed(lines) = lines.filter_map { |kind, text| text if kind == "P" }.tally
+def passed(lines) = lines.filter_map { |kind, name, _| name if kind == "P" }.tally
 
 # run_file returns the result of one spec file as a Hash.
 def run_file(cameo, ruby, spec, path, timeout, out)
@@ -196,17 +215,19 @@ def run_file(cameo, ruby, spec, path, timeout, out)
     on_ruby = passed(examples(ruby_out))
     row[:ruby_passed] = on_ruby.values.sum
     row[:both_passed] = passed(lines).sum { |name, n| [n, on_ruby.fetch(name, 0)].min }
+    row[:on_ruby] = on_ruby
   end
-  lines.each do |kind, text|
+  lines.each do |kind, name, message|
     case kind
     when "P" then row[:passed] += 1
-    when "F" then row[:failed] += 1; failures << ["F", text]
-    when "E" then row[:errors] += 1; failures << ["E", text]
+    when "F" then row[:failed] += 1; failures << ["F", "#{name}\t#{message}"]
+    when "E" then row[:errors] += 1; failures << ["E", "#{name}\t#{message}"]
     when "U" then row[:unsupported] += 1
     end
   end
   row[:examples] = row[:passed] + row[:failed] + row[:errors]
   row[:failures] = failures
+  row[:lines] = lines
   if timed_out
     row.merge(status: "timeout", message: "after #{timeout}s")
   elsif !status.success?
@@ -260,6 +281,44 @@ if options[:out]
   File.open(File.join(options[:out], "failures.tsv"), "w") do |f|
     results.each { |r| (r[:failures] || []).each { |kind, text| f.puts [r[:file], kind, text].join("\t") } }
   end
+end
+
+# status_rows returns the rows of --status for one file's result.
+def status_rows(r)
+  clean = ->(s) { s.to_s.gsub(/[\t\n]/, " ").gsub("\\n", " ")[0, 240] }
+  rows = []
+  on_ruby = (r[:on_ruby] || {}).dup
+  (r[:lines] || []).each do |kind, name, message|
+    status, reason =
+      case kind
+      when "P" then ["pass", ""]
+      when "U" then ["harness", name.split.last(2).join(" ")]
+      else
+        if r[:on_ruby] && on_ruby.fetch(name, 0).zero?
+          ["harness", "fails under Ruby too"]
+        else
+          Classify.status(message)
+        end
+      end
+    on_ruby[name] -= 1 if kind != "U" && on_ruby.fetch(name, 0).positive?
+    rows << [r[:file], clean.(name), status, reason, clean.(message)]
+  end
+  unless r[:status] == "ran"
+    message = r[:status] == "timeout" ? "timeout #{r[:message]}" : r[:message]
+    status, reason = r[:status] == "timeout" ? ["bug", "timeout"] : Classify.status(message.to_s)
+    rows << [r[:file], "*", status, reason, clean.(message)]
+  end
+  rows
+end
+
+if options[:status]
+  rows = results.flat_map { status_rows(_1) }
+  File.open(options[:status], "w") do |f|
+    f.puts %w[file example status reason message].join("\t")
+    rows.each { f.puts _1.join("\t") }
+  end
+  counts = rows.group_by { _1[2] }.transform_values(&:size)
+  puts "status: #{%w[pass expected harness bug].map { "#{counts.fetch(_1, 0)} #{_1}" }.join(", ")} (rows of #{options[:status]})"
 end
 
 # The summary: per top-level directory, files by status and examples.
