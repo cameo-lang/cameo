@@ -16,6 +16,9 @@ type Enumerator struct {
 	Recv Value
 	Meth string
 	Args []Value
+	// Call, when set, calls that method again with a block, for each with
+	// a block to return what the method returns, as Ruby's enum_for does.
+	Call func(ctx Context, block Value) (Value, error)
 }
 
 // EnumeratorValue wraps an enumerator as a value.
