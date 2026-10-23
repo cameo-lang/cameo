@@ -65,7 +65,11 @@ mspec's own `before` blocks.
   first.
 - **Blocks and procs**: `{ }` and `do … end`, numbered parameters (`_1`),
   `->` lambdas, `proc`, `&:sym`, `then` and `tap`.
-- **Classes and modules**: single inheritance, overriding and `super`;
+- **Classes and modules**: single inheritance, overriding and `super`,
+  under Ruby's hierarchy: BasicObject above Object, and Numeric above
+  Integer and Float, so `Integer.ancestors` is `[Integer, Numeric,
+  Comparable, Object, Kernel, BasicObject]` and `case x when Numeric`
+  matches both;
   `module` as a namespace and a mixin through `include` and `extend`;
   `Comparable`, and `Enumerable` for a class that defines `each`;
   bang methods a class defines, `def save!`, which return their result
@@ -77,7 +81,7 @@ mspec's own `before` blocks.
 - **Exceptions**: `begin`/`rescue`/`else`/`ensure`, `rescue => e`,
   `raise`, `retry`, `exit` and `abort`, which raise SystemExit and end the
   command with its status, and the exception classes of Ruby's core.
-- **Core classes**: Integer, Float, String, Symbol, Array, Hash, Set (as in
+- **Core classes**: BasicObject, Numeric, Integer, Float, String, Symbol, Array, Hash, Set (as in
   3.4, without `require`), Range, Regexp and MatchData, Time, Math,
   Enumerator and `lazy`, Comparable and Enumerable, with most of their
   methods. `format` and `String#%`, `pack` and `unpack`, `rand` and `srand`,
@@ -135,7 +139,7 @@ rebinds its receiver:
 - `frozen?` is true for everything; `freeze` and `dup` change nothing.
 - Equality is structural: two arrays, hashes or instances with equal
   contents are `==` and hash alike. There is no object identity, so
-  `equal?` and `object_id` do not exist, and `compare_by_identity` changes
+  `equal?`, `object_id` and `__id__` do not exist, and `compare_by_identity` changes
   nothing.
 
 **Classes declare typed fields**, and every instance is a protobuf message:
@@ -169,6 +173,35 @@ q = p.with(x: 3)            # a copy; p is unchanged
   again gives the same class; a different body makes a new class and
   rebinds `X`, leaving the old one to its instances. Nothing reopens a
   class once its body has run, and a builtin class cannot be reopened.
+- Numeric and BasicObject cannot be subclassed. A Numeric of a script's
+  own would need Integer's and Float's arithmetic to `coerce` it, which it
+  does not; a BasicObject subclass is a blank-slate object without
+  Object's methods, which cameo does not make. `method_missing` in an
+  ordinary class does what a BasicObject proxy does in Ruby.
+
+`Data` is left out: a class with typed fields is cameo's Data, and `with`
+is Data's `with`. Ruby's
+
+```ruby
+Point = Data.define(:x, :y)
+a = Point.new(x: 1, y: 2)
+b = a.with(y: 3)
+```
+
+is, in cameo,
+
+```ruby
+class Point
+  int :x, :y
+end
+
+a = Point.new(x: 1, y: 2)
+b = a.with(y: 3)
+```
+
+`Point.new(1, 2)` with positional arguments needs an `initialize` that
+sets the fields, and `p a` prints `Point(x: 1, y: 2)` where Ruby prints
+`#<data Point x=1, y=2>`.
 
 **Smaller differences:**
 
@@ -230,6 +263,7 @@ The checker rejects these by name, with the line:
 | `private`, `protected`, `public`, `module_function` | none: every method is public |
 | `eval`, `instance_eval`, `class_eval`, `define_method`, `instance_variable_get` and `_set`, `undef` | a direct call or a `def` |
 | `def obj.x`, `class << self` | `def self.x` in a class body |
+| a subclass of Numeric or BasicObject, `class X < Numeric` | none for Numeric; `method_missing` in an ordinary class for BasicObject. Inside a module, and with `Class.new(Numeric)`, the refusal is a `CameoError` when the definition runs |
 | a bang method of Ruby's core, such as `a.sort!` | the copying form, assigned: `a = a.sort` |
 | nested multiple assignment, `a, (b, c) = …` | separate assignments |
 | `require_relative`, `load` | one file per script |
@@ -242,7 +276,7 @@ The checker rejects these by name, with the line:
 These are absent, and a script that uses one fails when it reaches it:
 
 - **Left out by design**: `Struct` and `Data` (classes declare typed
-  fields), `Rational` and `Complex`, `Marshal` (instances are protobuf
+  fields; see above for Data), `Rational` and `Complex`, `Marshal` (instances are protobuf
   messages), `ObjectSpace`, `GC`, `ENV`, `Module.new`,
   refinements, `binding`, `method` and `Proc#curry`.
 - **No I/O beyond standard output and error**: `File`, `IO`, `Dir`,

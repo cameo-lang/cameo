@@ -12,7 +12,7 @@ import (
 type Class struct {
 	Name     string
 	IsModule bool
-	Super    *Class // nil for a module, and for Object itself
+	Super    *Class // nil for a module, and for BasicObject
 	// Digest identifies a user definition by its body; "" for a builtin class.
 	Digest string
 	// Methods are instance methods; SingletonMethods the class methods
@@ -292,13 +292,19 @@ func (c *Class) MethodNames() []string {
 var (
 	BasicClasses []*Class
 
-	ObjectClass  = NewClass("Object", nil)
-	ModuleClass  = NewClass("Module", ObjectClass)
-	ClassClass   = NewClass("Class", ModuleClass)
-	NilClass     = NewClass("NilClass", ObjectClass)
-	BoolClass    = NewClass("Boolean", ObjectClass)
-	IntegerClass = NewClass("Integer", ObjectClass)
-	FloatClass   = NewClass("Float", ObjectClass)
+	// BasicObject is the root of the hierarchy, above Object, as in Ruby.
+	// A script cannot subclass it.
+	BasicObjectClass = NewClass("BasicObject", nil)
+	ObjectClass      = NewClass("Object", BasicObjectClass)
+	ModuleClass      = NewClass("Module", ObjectClass)
+	ClassClass       = NewClass("Class", ModuleClass)
+	NilClass         = NewClass("NilClass", ObjectClass)
+	BoolClass        = NewClass("Boolean", ObjectClass)
+	// NumericClass is Numeric, the superclass of Integer and Float, which
+	// includes Comparable for both. A script cannot subclass it.
+	NumericClass = NewClass("Numeric", ObjectClass)
+	IntegerClass = NewClass("Integer", NumericClass)
+	FloatClass   = NewClass("Float", NumericClass)
 	StringClass  = NewClass("String", ObjectClass)
 	SymbolClass  = NewClass("Symbol", ObjectClass)
 	// A list and a map are Ruby's Array and Hash: those are the names a
@@ -333,7 +339,7 @@ var (
 	Kernel = NewModule("Kernel")
 	// Enumerable is the module List, Map, Set and Range include.
 	Enumerable = NewModule("Enumerable")
-	// Comparable is the module Integer, Float, String, Symbol and Time include.
+	// Comparable is the module Numeric, String, Symbol and Time include.
 	Comparable = NewModule("Comparable")
 	// MathModule is Math: module functions and constants.
 	MathModule = NewModule("Math")
@@ -421,13 +427,12 @@ func init() {
 	CameoRunnerModule.Lexical = CameoModule
 	CameoRunnerModule.Include(CameoModule)
 	CameoModule.Consts["Runner"] = ClassValue(CameoRunnerModule)
-	IntegerClass.Include(Comparable)
-	FloatClass.Include(Comparable)
+	NumericClass.Include(Comparable)
 	StringClass.Include(Comparable)
 	SymbolClass.Include(Comparable)
 	TimeClass.Include(Comparable)
 	BasicClasses = []*Class{
-		ObjectClass, ModuleClass, ClassClass, NilClass, BoolClass, IntegerClass, FloatClass,
+		BasicObjectClass, ObjectClass, ModuleClass, ClassClass, NilClass, BoolClass, NumericClass, IntegerClass, FloatClass,
 		StringClass, SymbolClass, ListClass, MapClass, SetClass, RangeClass, TimeClass, RegexpClass, MatchDataClass, EnumeratorClass, EncodingClass, PathnameClass, ProcClass,
 		ExceptionClass, Kernel, Enumerable, Comparable, MathModule, ProcessModule, CameoModule,
 		StandardError, RuntimeError, ArgumentError, TypeError, NameError, NoMethodError, KeyError,
