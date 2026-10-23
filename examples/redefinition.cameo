@@ -1,5 +1,6 @@
 # A class is a value bound to its name. The same body binds the same class;
-# a different body binds a new class, and instances of the old one keep it.
+# a different body reopens a copy of it, and instances of the old one keep
+# the old one.
 class Greeter
   string :name
 

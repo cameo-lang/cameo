@@ -34,7 +34,13 @@ func (in *Interp) evalFieldDecl(n *syntax.FieldDecl, env *Env, fr *Frame) (objec
 		def = v
 	}
 	for _, name := range n.Names {
-		if _, exists := cls.FieldIndex[name]; exists {
+		if i, exists := cls.FieldIndex[name]; exists {
+			if same, err := in.declaredBefore(cls, i, typ, def, n, fr); err != nil || same {
+				if err != nil {
+					return object.Value{}, err
+				}
+				continue
+			}
 			return object.Value{}, in.raise(object.CameoError, n.Line(), "field %s is already declared in %s", name, cls.QualifiedName())
 		}
 		for _, r := range cls.ReservedNames {
@@ -62,6 +68,28 @@ func (in *Interp) evalFieldDecl(n *syntax.FieldDecl, env *Env, fr *Frame) (objec
 		cls.Define(name, 0, reader(name))
 	}
 	return object.Nil, nil
+}
+
+// declaredBefore reports whether the field at index i of cls, which a
+// body reopening the class declares again, came from the class reopened
+// and the declaration gives it again: the same type, the same default,
+// and the same number when it names one.
+func (in *Interp) declaredBefore(cls *object.Class, i int, typ *object.FieldType, def object.Value, n *syntax.FieldDecl, fr *Frame) (bool, error) {
+	f := cls.Fields[i]
+	if fr.Reopened == nil || f.Owner != cls || describeType(f.Type) != describeType(typ) || (n.Number != 0 && n.Number != f.Number) {
+		return false, nil
+	}
+	if j, ok := fr.Reopened.FieldIndex[f.Name]; !ok || j != i {
+		return false, nil
+	}
+	if def.IsZero() || f.Default.IsZero() {
+		return def.IsZero() == f.Default.IsZero(), nil
+	}
+	checked, err := in.checkField(f, def, n.Line())
+	if err != nil {
+		return false, err
+	}
+	return object.Equal(f.Default, checked), nil
 }
 
 // reader makes the native method that reads a field.

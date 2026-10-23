@@ -1,0 +1,25 @@
+# A second class body reopens the class: what the first defined stays. The
+# name is bound while the body runs, so the body can call the class.
+
+class A
+  def self.hello
+    puts "Hello from A"
+  end
+end
+
+A.hello
+
+class A
+  def self.hello2
+    puts "Hello from A v2"
+  end
+end
+
+A.hello2
+A.hello
+
+class B
+  def self.hello = "hello from B"
+
+  puts B.hello
+end

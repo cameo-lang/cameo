@@ -213,12 +213,15 @@ func (in *Interp) evalDef(n *syntax.Def, fr *Frame) (object.Value, error) {
 	return object.Symbol(n.Name), nil
 }
 
-// evalClassDef binds a class to its name. The same definition (by digest)
-// evaluated again returns the class already bound; a different one makes a
-// new class and rebinds the name, leaving the old class to its instances.
+// evalClassDef binds a class to its name and runs its body. A class
+// already bound to the name is reopened: the body runs on a copy, which
+// replaces it, so instances made before keep the class they were made
+// with. The definition that last ran on the class, evaluated again,
+// returns the class as it is. The name is bound to the class while its
+// body runs, as in Ruby, and back to what it was when the body raises.
 func (in *Interp) evalClassDef(n *syntax.ClassDef, env *Env, fr *Frame) (object.Value, error) {
 	table := in.constTable(fr)
-	super := object.ObjectClass
+	var super *object.Class
 	if n.Super != nil {
 		v, err := in.eval(n.Super, env, fr)
 		if err != nil {
@@ -230,55 +233,105 @@ func (in *Interp) evalClassDef(n *syntax.ClassDef, env *Env, fr *Frame) (object.
 		}
 		super = cls
 	}
-	if existing, ok := table[n.Name].AsClass(); ok {
-		if existing.Digest == n.Digest && existing.Super == super {
-			return object.ClassValue(existing), nil
-		}
+	previous, bound := table[n.Name]
+	existing, _ := previous.AsClass()
+	if existing != nil && !existing.IsModule && ranLast(existing, n.Digest) && (super == nil || existing.Super == super) {
+		return object.ClassValue(existing), nil
 	}
 	if _, builtin := object.ObjectClass.Consts[n.Name]; builtin && len(fr.Lexical) == 0 {
 		return object.Value{}, in.raise(object.CameoError, n.Line(), "cannot redefine the builtin class %s", n.Name)
 	}
-	if hostDefined(table[n.Name]) {
+	if hostDefined(previous) {
 		return object.Value{}, in.raise(object.CameoError, n.Line(), "cannot redefine the module %s, which the host defines", n.Name)
 	}
-	cls := object.NewClass(n.Name, super)
-	cls.Digest = n.Digest
-	if len(fr.Lexical) > 0 {
-		cls.Lexical = fr.Lexical[len(fr.Lexical)-1]
+	var cls *object.Class
+	switch {
+	case existing != nil && existing.IsModule:
+		return object.Value{}, in.raise(object.TypeError, n.Line(), "%s is not a class", n.Name)
+	case existing != nil:
+		if super != nil && super != existing.Super {
+			return object.Value{}, in.raise(object.TypeError, n.Line(), "superclass mismatch for class %s", n.Name)
+		}
+		cls = existing.Copy()
+		cls.Digest = existing.Digest + "+" + n.Digest
+	default:
+		if super == nil {
+			super = object.ObjectClass
+		}
+		cls = object.NewClass(n.Name, super)
+		cls.Digest = n.Digest
+		if len(fr.Lexical) > 0 {
+			cls.Lexical = fr.Lexical[len(fr.Lexical)-1]
+		}
+		if err := in.inheritFields(cls, super); err != nil {
+			return object.Value{}, withLine(err, n.Line())
+		}
 	}
-	if err := in.inheritFields(cls, super); err != nil {
-		return object.Value{}, withLine(err, n.Line())
-	}
-	if err := in.evalClassBody(cls, n.Body, env, fr); err != nil {
+	if err := in.evalBound(cls, existing, n.Body, env, fr, previous, bound); err != nil {
 		return object.Value{}, err
 	}
-	in.bindConst(fr, n.Name, object.ClassValue(cls))
 	return object.ClassValue(cls), nil
 }
 
+// evalModuleDef binds a module to its name and runs its body, reopening
+// a module already bound to the name as evalClassDef reopens a class.
 func (in *Interp) evalModuleDef(n *syntax.ModuleDef, env *Env, fr *Frame) (object.Value, error) {
 	table := in.constTable(fr)
-	if existing, ok := table[n.Name].AsClass(); ok && existing.IsModule {
-		if existing.Digest == n.Digest {
-			return object.ClassValue(existing), nil
-		}
+	previous, bound := table[n.Name]
+	existing, _ := previous.AsClass()
+	if existing != nil && existing.IsModule && ranLast(existing, n.Digest) {
+		return object.ClassValue(existing), nil
 	}
 	if _, builtin := object.ObjectClass.Consts[n.Name]; builtin && len(fr.Lexical) == 0 {
 		return object.Value{}, in.raise(object.CameoError, n.Line(), "cannot redefine the builtin module %s", n.Name)
 	}
-	if hostDefined(table[n.Name]) {
+	if hostDefined(previous) {
 		return object.Value{}, in.raise(object.CameoError, n.Line(), "cannot redefine the module %s, which the host defines", n.Name)
 	}
-	mod := object.NewModule(n.Name)
-	mod.Digest = n.Digest
-	if len(fr.Lexical) > 0 {
-		mod.Lexical = fr.Lexical[len(fr.Lexical)-1]
+	var mod *object.Class
+	switch {
+	case existing != nil && !existing.IsModule:
+		return object.Value{}, in.raise(object.TypeError, n.Line(), "%s is not a module", n.Name)
+	case existing != nil:
+		mod = existing.Copy()
+		mod.Digest = existing.Digest + "+" + n.Digest
+	default:
+		mod = object.NewModule(n.Name)
+		mod.Digest = n.Digest
+		if len(fr.Lexical) > 0 {
+			mod.Lexical = fr.Lexical[len(fr.Lexical)-1]
+		}
 	}
-	if err := in.evalClassBody(mod, n.Body, env, fr); err != nil {
+	if err := in.evalBound(mod, existing, n.Body, env, fr, previous, bound); err != nil {
 		return object.Value{}, err
 	}
-	in.bindConst(fr, n.Name, object.ClassValue(mod))
 	return object.ClassValue(mod), nil
+}
+
+// ranLast reports whether the definition whose digest is given is the
+// last one that ran on cls: its first, or the last that reopened it.
+func ranLast(cls *object.Class, digest string) bool {
+	return cls.Digest == digest || strings.HasSuffix(cls.Digest, "+"+digest)
+}
+
+// evalBound binds cls to its name and runs its body, with the fields cls
+// had from reopened as fields the body may declare again. When the body
+// raises, the name is bound to previous again, or to nothing when it
+// was not bound.
+func (in *Interp) evalBound(cls, reopened *object.Class, body []syntax.Node, env *Env, fr *Frame, previous object.Value, bound bool) error {
+	in.bindConst(fr, cls.Name, object.ClassValue(cls))
+	if err := in.evalClassBody(cls, reopened, body, env, fr); err != nil {
+		if bound {
+			in.bindConst(fr, cls.Name, previous)
+		} else {
+			delete(in.constTable(fr), cls.Name)
+			if len(fr.Lexical) == 0 {
+				in.changedTop()
+			}
+		}
+		return err
+	}
+	return nil
 }
 
 // hostDefined reports whether v is a module the host defined: a class
@@ -290,9 +343,10 @@ func hostDefined(v object.Value) bool {
 
 // evalClassBody runs a class or module body with the class as self and as
 // the target of def, and with the class added to the lexical scopes.
-func (in *Interp) evalClassBody(cls *object.Class, body []syntax.Node, env *Env, fr *Frame) error {
+// reopened is the class cls is a copy of, or nil.
+func (in *Interp) evalClassBody(cls, reopened *object.Class, body []syntax.Node, env *Env, fr *Frame) error {
 	lexical := append(append([]*object.Class{}, fr.Lexical...), cls)
-	bodyFrame := &Frame{Self: object.ClassValue(cls), Lexical: lexical, DefTarget: cls}
+	bodyFrame := &Frame{Self: object.ClassValue(cls), Lexical: lexical, DefTarget: cls, Reopened: reopened}
 	_, err := in.evalBody(body, NewEnv(nil), bodyFrame)
 	return err
 }
