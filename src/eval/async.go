@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"math/big"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -514,7 +515,8 @@ func (in *Interp) worker() *Interp {
 	}
 	// The worker's generator is seeded from this one, here on the
 	// parent's goroutine, so a seeded script stays reproducible.
-	w.Srand(in.rng.Uint64())
+	seed := uint64(in.rng.Uint32())<<32 | uint64(in.rng.Uint32())
+	w.rng = object.NewRandom(object.BigInt(new(big.Int).SetUint64(seed)))
 	return w
 }
 
