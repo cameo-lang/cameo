@@ -28,7 +28,7 @@ puts spin(1)
 `
 
 // digest identifies the program: syntax.Digest of Script, parsed.
-const digest = "56bbb323322e3e38"
+const digest = "595e80d39e92b4e4"
 
 func init() {
 	eval.RegisterCompiled(digest, eval.Compiled{

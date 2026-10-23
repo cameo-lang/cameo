@@ -98,7 +98,7 @@ func init() {
 			}
 			return object.Value{}, ctx.Raise(object.CameoError, "send(:%s): %s", name, msg)
 		}
-		if v, handled, err := ctx.(*Interp).mutating(nil, self, name, args[1:], kw, block, 0); handled {
+		if v, handled, err := ctx.(*Interp).mutating(nil, self, name, args[1:], kw, block, false, 0); handled {
 			return v, err
 		}
 		return ctx.(*Interp).call(nil, self, name, args[1:], kw, block, true, 0)

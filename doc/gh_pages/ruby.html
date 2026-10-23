@@ -125,8 +125,8 @@ one of Ruby's mutators (<code>&lt;&lt;</code>, <code>push</code>,
 would change raises a <code>CameoError</code> that names the non-mutating
 form; <code>cameo --ignore-mutation-errors</code> makes it return Ruby's
 result instead and leaves the receiver as it was. Assignment makes the copy
-and rebinds the local: <code>a += [3]</code>, <code>h[k] = v</code>,
-<code>a.x = 1</code>. Another variable that held the old value keeps
+and rebinds the local: <code>a = a &lt;&lt; 3</code>, <code>a += [3]</code>,
+<code>h[k] = v</code>, <code>a.x = 1</code>. Another variable that held the old value keeps
 it.</p>
 
 <div class="pair">
@@ -150,7 +150,7 @@ rescue CameoError =&gt; e
 end
 a += [3]
 p a, b</code></pre>
-<pre class="output"><code>&lt;&lt; changes its receiver, which cameo does not do; use +, or append
+<pre class="output"><code>cameo does not support mutating calls without rebinding; use a = a &lt;&lt; 1, +, or append
 [1, 2, 3]
 [1, 2]</code></pre>
 </div>

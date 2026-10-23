@@ -43,7 +43,7 @@ func (in *Interp) evalCall(n *syntax.Call, env *Env, fr *Frame) (object.Value, e
 		}
 	}
 	if !selfCall {
-		if v, handled, err := in.mutating(fr, recv, n.Name, args, kw, block, n.Line()); handled {
+		if v, handled, err := in.mutating(fr, recv, n.Name, args, kw, block, n.Rebinds, n.Line()); handled {
 			return v, err
 		}
 		if n.Dropped {
