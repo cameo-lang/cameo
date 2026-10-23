@@ -133,16 +133,13 @@ func installString() {
 			return object.Value{}, err
 		}
 		exclusive := len(args) == 2 && args[1].Truthy()
-		out := []object.Value{}
+		if block.IsZero() {
+			return enumFor(self, "upto", args, nil), nil
+		}
 		for s := range stringsUpto(self.Str(), hi, exclusive, false) {
-			if block.IsZero() {
-				out = append(out, object.String(s))
-			} else if _, err := ctx.Yield(block, object.String(s)); err != nil {
+			if _, err := ctx.Yield(block, object.String(s)); err != nil {
 				return object.Value{}, err
 			}
-		}
-		if block.IsZero() {
-			return object.NewList(out...), nil
 		}
 		return self, nil
 	})
@@ -238,8 +235,10 @@ func installString() {
 		return object.NewList(elems...), nil
 	})
 	def(c, "each_char", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if err := needBlock(ctx, block, "each_char"); err != nil {
-			return object.Value{}, err
+		if block.IsZero() {
+			return enumFor(self, "each_char", nil, func(ctx object.Context) (object.Value, error) {
+				return ctx.Call(self, "size")
+			}), nil
 		}
 		for _, r := range str(self) {
 			if _, err := ctx.Yield(block, object.String(string(r))); err != nil {
@@ -304,8 +303,8 @@ func installString() {
 		return object.NewList(lines(str(self))...), nil
 	})
 	def(c, "each_line", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if err := needBlock(ctx, block, "each_line"); err != nil {
-			return object.Value{}, err
+		if block.IsZero() {
+			return enumFor(self, "each_line", args, nil), nil
 		}
 		for _, l := range lines(str(self)) {
 			if _, err := ctx.Yield(block, l); err != nil {

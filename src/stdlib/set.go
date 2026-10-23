@@ -34,7 +34,7 @@ func installSet() {
 	def(c, "contain?", 1, has)
 	def(c, "each", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if block.IsZero() {
-			return self, nil
+			return blockless(self, "each", nil, true), nil
 		}
 		for _, e := range set(self).Elems() {
 			if _, err := ctx.Yield(block, e); err != nil {
@@ -125,8 +125,8 @@ func installSet() {
 	})
 	// classify groups the members by the block's value, as a hash of sets.
 	def(c, "classify", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if err := needBlock(ctx, block, "classify"); err != nil {
-			return object.Value{}, err
+		if block.IsZero() {
+			return blockless(self, "classify", nil, true), nil
 		}
 		groups := object.NewMap()
 		for _, e := range set(self).Elems() {
@@ -160,6 +160,7 @@ func installSet() {
 			e.Enumerator().Call = func(ctx object.Context, block object.Value) (object.Value, error) {
 				return divide(ctx, self, nil, nil, block)
 			}
+			e.Enumerator().Size = sizeOf(self)
 			return e, nil
 		}
 		arity, err := ctx.Call(block, "arity")
@@ -220,8 +221,8 @@ func installSet() {
 	predicate([]string{"=="}, func(a, b *object.Set) bool { return a.Len() == b.Len() && subset(a, b) })
 	filter := func(name string, keep bool) {
 		def(c, name, 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-			if err := needBlock(ctx, block, name); err != nil {
-				return object.Value{}, err
+			if block.IsZero() {
+				return blockless(self, name, nil, true), nil
 			}
 			out := []object.Value{}
 			for _, e := range set(self).Elems() {

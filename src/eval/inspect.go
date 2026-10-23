@@ -332,6 +332,10 @@ func (in *Interp) Compare(a, b object.Value) (int, error) {
 			return cmp(int64(len(a.Elems)), int64(len(bl.Elems))), nil
 		}
 	}
+	// Object#<=> is 0 for the same object, so nil <=> nil is 0.
+	if object.Same(a, b) {
+		return 0, nil
+	}
 	return 0, in.incomparable(a, b)
 }
 

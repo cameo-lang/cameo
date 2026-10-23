@@ -312,11 +312,9 @@ func installInteger() {
 			return object.Value{}, err
 		}
 		if block.IsZero() {
-			elems := []object.Value{}
-			for i := int64(0); i < n; i++ {
-				elems = append(elems, object.Int(i))
-			}
-			return object.NewList(elems...), nil
+			return enumFor(self, "times", nil, func(ctx object.Context) (object.Value, error) {
+				return object.Int(max(n, 0)), nil
+			}), nil
 		}
 		for i := int64(0); i < n; i++ {
 			if _, err := ctx.Yield(block, object.Int(i)); err != nil {
@@ -356,20 +354,33 @@ func installInteger() {
 					to = object.FloatToInteger(math.Ceil(args[0].Float()))
 				}
 			}
-			var elems []object.Value
+			if block.IsZero() {
+				return enumFor(self, name, args, func(ctx object.Context) (object.Value, error) {
+					// The size is (to - self) * dir + 1, and 0 below 1.
+					d, err := ctx.Call(to, "-", self)
+					if err != nil {
+						return object.Value{}, err
+					}
+					if dir < 0 {
+						if d, err = ctx.Call(d, "-@"); err != nil {
+							return object.Value{}, err
+						}
+					}
+					if d, err = ctx.Call(d, "+", object.Int(1)); err != nil {
+						return object.Value{}, err
+					}
+					if r, err := ctx.Call(d, "<", object.Int(0)); err != nil || r.Truthy() {
+						return object.Int(0), err
+					}
+					return d, nil
+				}), nil
+			}
 			err := eachInteger(self, to, dir, func(i object.Value) error {
-				if block.IsZero() {
-					elems = append(elems, i)
-					return nil
-				}
 				_, err := ctx.Yield(block, i)
 				return err
 			})
 			if err != nil {
 				return object.Value{}, err
-			}
-			if block.IsZero() {
-				return object.NewList(elems...), nil
 			}
 			return self, nil
 		})

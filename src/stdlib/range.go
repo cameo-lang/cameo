@@ -333,8 +333,8 @@ func installRange() {
 	def(c, "step", -1, rangeStep("step"))
 	def(c, "%", -1, rangeStep("%"))
 	def(c, "bsearch", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if err := needBlock(ctx, block, "bsearch"); err != nil {
-			return object.Value{}, err
+		if block.IsZero() {
+			return blockless(self, "bsearch", nil, false), nil
 		}
 		return bsearch(ctx, r(self), block)
 	})

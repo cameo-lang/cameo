@@ -2,6 +2,7 @@ package stdlib
 
 import (
 	"cmp"
+	"math"
 	"slices"
 	"sort"
 	"strings"
@@ -23,9 +24,16 @@ func installEnumerable() {
 			return f(ctx, elems, args, block)
 		})
 	}
-	withBlock := func(name string, f func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error)) {
-		each(name, func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
-			if err := needBlock(ctx, block, name); err != nil {
+	// withBlock defines a method that takes a block, and without one
+	// returns an enumerator, whose size is the receiver's when sized is set
+	// and nil otherwise, as Ruby's does.
+	withBlock := func(name string, sized bool, f func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error)) {
+		def(e, name, -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+			if block.IsZero() {
+				return blockless(self, name, args, sized), nil
+			}
+			elems, err := toList(ctx, self)
+			if err != nil {
 				return object.Value{}, err
 			}
 			return f(ctx, elems, args, block)
@@ -42,18 +50,7 @@ func installEnumerable() {
 			return f(ctx, elems, itemKinds(self, elems), args, block)
 		})
 	}
-	each("each_with_index", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
-		if block.IsZero() {
-			// Without a block, an enumerator of [element, index] pairs.
-			return enumerator(false, object.NewList(elems...), "each_with_index", nil, func(ctx object.Context, yield func(object.Value) error) error {
-				for i, el := range elems {
-					if err := yield(object.NewList(el, object.Int(i))); err != nil {
-						return err
-					}
-				}
-				return nil
-			}), nil
-		}
+	withBlock("each_with_index", true, func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		for i, el := range elems {
 			if _, err := ctx.Yield(block, el, object.Int(i)); err != nil {
 				return object.Value{}, err
@@ -61,9 +58,16 @@ func installEnumerable() {
 		}
 		return object.NewList(elems...), nil
 	})
-	withBlock("each_with_object", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
+	def(e, "each_with_object", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) != 1 {
 			return object.Value{}, argError(ctx, len(args), "1")
+		}
+		if block.IsZero() {
+			return withMemo(blockless(self, "each_with_object", args, true), self, args[0]), nil
+		}
+		elems, err := toList(ctx, self)
+		if err != nil {
+			return object.Value{}, err
 		}
 		memo := args[0]
 		for _, el := range elems {
@@ -76,11 +80,32 @@ func installEnumerable() {
 		}
 		return memo, nil
 	})
-	each("each_slice", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
-		n, err := sizeArg(ctx, args)
-		if err != nil {
-			return object.Value{}, err
-		}
+	// each_slice and each_cons check their size before they return an
+	// enumerator, as Ruby's do.
+	sliced := func(name string, count func(size, n int64) int64, f func(ctx object.Context, elems []object.Value, n int, block object.Value) (object.Value, error)) {
+		def(e, name, -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+			n, err := sizeArg(ctx, args)
+			if err != nil {
+				return object.Value{}, err
+			}
+			if block.IsZero() {
+				size := sizeOf(self)
+				return enumFor(self, name, args, func(ctx object.Context) (object.Value, error) {
+					s, err := size(ctx)
+					if i, ok := s.AsInt(); ok && err == nil {
+						return object.Int(count(i, int64(n))), nil
+					}
+					return s, err
+				}), nil
+			}
+			elems, err := toList(ctx, self)
+			if err != nil {
+				return object.Value{}, err
+			}
+			return f(ctx, elems, n, block)
+		})
+	}
+	sliced("each_slice", func(size, n int64) int64 { return (size + n - 1) / n }, func(ctx object.Context, elems []object.Value, n int, block object.Value) (object.Value, error) {
 		var slices []object.Value
 		for i := 0; i < len(elems); i += n {
 			end := i + n
@@ -91,11 +116,7 @@ func installEnumerable() {
 		}
 		return yieldEach(ctx, slices, block)
 	})
-	each("each_cons", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
-		n, err := sizeArg(ctx, args)
-		if err != nil {
-			return object.Value{}, err
-		}
+	sliced("each_cons", func(size, n int64) int64 { return max(size-n+1, 0) }, func(ctx object.Context, elems []object.Value, n int, block object.Value) (object.Value, error) {
 		var windows []object.Value
 		for i := 0; i+n <= len(elems); i++ {
 			windows = append(windows, object.NewList(append([]object.Value{}, elems[i:i+n]...)...))
@@ -120,8 +141,8 @@ func installEnumerable() {
 		}
 		return object.NewList(out...), nil
 	}
-	withBlock("map", mapFn)
-	withBlock("collect", mapFn)
+	withBlock("map", true, mapFn)
+	withBlock("collect", true, mapFn)
 	flatMap := func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		out := []object.Value{}
 		for _, el := range elems {
@@ -137,9 +158,9 @@ func installEnumerable() {
 		}
 		return object.NewList(out...), nil
 	}
-	withBlock("flat_map", flatMap)
-	withBlock("collect_concat", flatMap)
-	withBlock("filter_map", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
+	withBlock("flat_map", true, flatMap)
+	withBlock("collect_concat", true, flatMap)
+	withBlock("filter_map", true, func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		out := []object.Value{}
 		for _, el := range elems {
 			v, err := ctx.Yield(block, el)
@@ -172,17 +193,17 @@ func installEnumerable() {
 		}
 		return object.NewList(out...), nil
 	}
-	withBlock("select", selectFn)
-	withBlock("filter", selectFn)
-	withBlock("find_all", selectFn)
-	withBlock("reject", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
+	withBlock("select", true, selectFn)
+	withBlock("filter", true, selectFn)
+	withBlock("find_all", true, selectFn)
+	withBlock("reject", true, func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		out, err := selected(ctx, elems, block, false)
 		if err != nil {
 			return object.Value{}, err
 		}
 		return object.NewList(out...), nil
 	})
-	withBlock("partition", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
+	withBlock("partition", true, func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		yes, no := []object.Value{}, []object.Value{}
 		for _, el := range elems {
 			v, err := ctx.Yield(block, el)
@@ -209,9 +230,16 @@ func installEnumerable() {
 		}
 		return object.Nil, nil
 	}
-	withBlock("find", find)
-	withBlock("detect", find)
-	each("find_index", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
+	withBlock("find", false, find)
+	withBlock("detect", false, find)
+	def(e, "find_index", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if len(args) == 0 && block.IsZero() {
+			return blockless(self, "find_index", nil, false), nil
+		}
+		elems, err := toList(ctx, self)
+		if err != nil {
+			return object.Value{}, err
+		}
 		for i, el := range elems {
 			hit, err := matches(ctx, el, args, block)
 			if err != nil {
@@ -291,7 +319,7 @@ func installEnumerable() {
 	extreme("min", -1)
 	extreme("max", 1)
 	extremeBy := func(name string, sign int) {
-		withBlock(name, func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
+		withBlock(name, true, func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 			if len(args) == 0 {
 				return extremumBy(ctx, elems, block, sign)
 			}
@@ -320,6 +348,36 @@ func installEnumerable() {
 	}
 	extremeBy("min_by", -1)
 	extremeBy("max_by", 1)
+	// minmax_by calls the block once for each element, and keeps the first
+	// of equal minimums and of equal maximums, as Ruby's does.
+	withBlock("minmax_by", true, func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
+		if len(elems) == 0 {
+			return object.NewList(object.Nil, object.Nil), nil
+		}
+		lo, hi := elems[0], elems[0]
+		loKey, err := ctx.Yield(block, lo)
+		if err != nil {
+			return object.Value{}, err
+		}
+		hiKey := loKey
+		for _, el := range elems[1:] {
+			k, err := ctx.Yield(block, el)
+			if err != nil {
+				return object.Value{}, err
+			}
+			if c, err := compareWith(ctx, object.Value{}, k, loKey); err != nil {
+				return object.Value{}, err
+			} else if c < 0 {
+				lo, loKey = el, k
+			}
+			if c, err := compareWith(ctx, object.Value{}, k, hiKey); err != nil {
+				return object.Value{}, err
+			} else if c > 0 {
+				hi, hiKey = el, k
+			}
+		}
+		return object.NewList(lo, hi), nil
+	})
 	compared("minmax", func(ctx object.Context, elems []object.Value, kinds object.Kinds, args []object.Value, block object.Value) (object.Value, error) {
 		lo, err := extremum(ctx, elems, kinds, block, -1)
 		if err != nil {
@@ -338,14 +396,14 @@ func installEnumerable() {
 		}
 		return object.NewList(sorted...), nil
 	})
-	withBlock("sort_by", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
+	withBlock("sort_by", true, func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		sorted, err := sortBy(ctx, elems, block)
 		if err != nil {
 			return object.Value{}, err
 		}
 		return object.NewList(sorted...), nil
 	})
-	withBlock("group_by", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
+	withBlock("group_by", true, func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		groups := object.NewMapBuilder()
 		var order []object.Value
 		members := map[string][]object.Value{}
@@ -423,7 +481,7 @@ func installEnumerable() {
 		}
 		return object.NewList(append([]object.Value{}, elems[n:]...)...), nil
 	})
-	withBlock("take_while", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
+	withBlock("take_while", false, func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		out := []object.Value{}
 		for _, el := range elems {
 			v, err := ctx.Yield(block, el)
@@ -437,7 +495,7 @@ func installEnumerable() {
 		}
 		return object.NewList(out...), nil
 	})
-	withBlock("drop_while", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
+	withBlock("drop_while", false, func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		i := 0
 		for ; i < len(elems); i++ {
 			v, err := ctx.Yield(block, elems[i])
@@ -558,19 +616,14 @@ func installEnumerable() {
 		}
 		return object.NewList(out...), nil
 	})
-	// reverse_each returns its receiver, as each does; without a block it
-	// returns the elements reversed.
+	// reverse_each returns its receiver, as each does.
 	def(e, "reverse_each", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if block.IsZero() {
+			return blockless(self, "reverse_each", nil, true), nil
+		}
 		elems, err := toList(ctx, self)
 		if err != nil {
 			return object.Value{}, err
-		}
-		if block.IsZero() {
-			out := make([]object.Value, len(elems))
-			for i, el := range elems {
-				out[len(elems)-1-i] = el
-			}
-			return object.NewList(out...), nil
 		}
 		for i := len(elems) - 1; i >= 0; i-- {
 			if _, err := ctx.Yield(block, elems[i]); err != nil {
@@ -579,10 +632,10 @@ func installEnumerable() {
 		}
 		return self, nil
 	})
-	each("each_entry", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
+	withBlock("each_entry", true, func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		return yieldEach(ctx, elems, block)
 	})
-	withBlock("chunk", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
+	withBlock("chunk", true, func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		out := []object.Value{}
 		err := chunker(ctx, block)(ctx, listEach(elems), func(v object.Value) error {
 			out = append(out, v)
@@ -607,11 +660,27 @@ func installEnumerable() {
 		})
 	}
 	// cycle repeats the elements n times, or forever; without a block it
-	// is an enumerator of them.
+	// is an enumerator of them, of infinite size unless it is empty.
 	def(e, "cycle", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		n, err := countArg(ctx, args, -1)
 		if err != nil {
 			return object.Value{}, err
+		}
+		if block.IsZero() {
+			size := sizeOf(self)
+			return enumFor(self, "cycle", args, func(ctx object.Context) (object.Value, error) {
+				s, err := size(ctx)
+				k, ok := s.AsInt()
+				switch {
+				case err != nil || !ok:
+					return s, err
+				case k == 0 || n == 0:
+					return object.Int(0), nil
+				case n < 0:
+					return object.Float(math.Inf(1)), nil
+				}
+				return object.Int(k * int64(n)), nil
+			}), nil
 		}
 		elems, err := toList(ctx, self)
 		if err != nil {
@@ -629,9 +698,6 @@ func installEnumerable() {
 				}
 			}
 			return nil
-		}
-		if block.IsZero() {
-			return enumerator(false, self, "cycle", args, cycle), nil
 		}
 		err = cycle(ctx, func(v object.Value) error {
 			_, err := ctx.Yield(block, v)
@@ -924,7 +990,14 @@ func installUserEnumerable() {
 				}))
 				return err
 			})
-			return ctx.CallWith(over, name, args, kw, block)
+			over.Enumerator().Size = sizeOf(self)
+			r, err := ctx.CallWith(over, name, args, kw, block)
+			// A blockless call returns an enumerator of over; it inspects
+			// as one of the object, as in Ruby.
+			if e, ok := r.AsEnumerator(); ok && err == nil && object.Same(e.Recv, over) {
+				e.Recv = self
+			}
+			return r, err
 		})
 	}
 }
