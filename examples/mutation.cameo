@@ -10,7 +10,9 @@
 # - force_encoding returns the string relabelled and leaves the receiver;
 #   a call whose value is dropped raises, since it would do nothing.
 #
-# Assignment to an element or a field makes a copy and rebinds the local.
+# Assignment to an element or a field makes a copy and rebinds the local,
+# and so does assigning a mutator's value back to its receiver:
+# `a = a << 3`.
 def try
   yield
 rescue CameoError => e
@@ -24,7 +26,7 @@ try { a.push(3) }
 try { a.pop }
 try { a.delete(1) }
 p a, b
-a = a + [3]
+a = a << 3
 p a, b, a.last, a.take(2), a.without(1)
 a[0] = 0
 p a, b
