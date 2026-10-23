@@ -83,7 +83,7 @@ puts half(2**64), trunc(2**62), trunc(2**70), ratio(2**64, 3)
 `
 
 // digest identifies the program: syntax.Digest of Script, parsed.
-const digest = "2d999b7cd3574e00"
+const digest = "407f3292afa9504e"
 
 func init() {
 	eval.RegisterCompiled(digest, eval.Compiled{

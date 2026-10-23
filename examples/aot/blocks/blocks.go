@@ -105,7 +105,7 @@ puts receiver(4), wide(2**64)
 `
 
 // digest identifies the program: syntax.Digest of Script, parsed.
-const digest = "a750ba9bbe026f70"
+const digest = "a63a7454ab94fecd"
 
 func init() {
 	eval.RegisterCompiled(digest, eval.Compiled{
