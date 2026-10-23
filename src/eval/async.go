@@ -165,6 +165,21 @@ func (t *promises) add(method string) *Promise {
 	return p
 }
 
+// restore puts a promise a dump held back, keeping the ids counting on
+// past it.
+func (t *promises) restore(p *Promise) {
+	s := t.shard(p.id)
+	s.mu.Lock()
+	s.byID[p.id] = p
+	s.mu.Unlock()
+	for {
+		n := t.next.Load()
+		if n >= p.id || t.next.CompareAndSwap(n, p.id) {
+			return
+		}
+	}
+}
+
 func (t *promises) remove(id int64) {
 	s := t.shard(id)
 	s.mu.Lock()

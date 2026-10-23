@@ -57,6 +57,7 @@ func (e *RunError) Unwrap() error { return e.Err }
 // runs it and keeps its classes afterwards.
 type Program struct {
 	file string
+	src  string
 	prog *syntax.Program
 	in   *eval.Interp
 	ran  bool
@@ -70,16 +71,21 @@ func Load(file, src string, stdout, stderr io.Writer) (*Program, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Program{file: file, prog: prog, in: eval.New(stdout, stderr)}, nil
+	return &Program{file: file, src: src, prog: prog, in: eval.New(stdout, stderr)}, nil
 }
 
-// Run evaluates the script once; its classes stay loaded for Call.
+// File is the script's path, as Load was given it.
+func (p *Program) File() string { return p.file }
+
+// Run evaluates the script once; its classes stay loaded for Call. It
+// returns ErrPaused when Pause asked it to pause.
 func (p *Program) Run() error {
 	p.ran = true
-	if err := p.in.Run(p.file, p.prog); err != nil {
-		return &RunError{Err: err, Message: p.in.FormatError(err)}
+	err := p.in.Run(p.file, p.prog)
+	if err == nil || errors.Is(err, ErrPaused) {
+		return err
 	}
-	return nil
+	return &RunError{Err: err, Message: p.in.FormatError(err)}
 }
 
 // LastValue returns the script's last top-level expression as p shows it,

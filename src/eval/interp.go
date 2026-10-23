@@ -46,9 +46,10 @@ type Interp struct {
 	snap *topLevel
 	// code is the compiled program, shared with the workers.
 	code *code
-	// rng is this interpreter's random number generator and seed the seed
-	// it started from; see Rand and Srand.
+	// rng is this interpreter's random number generator, pcg its source,
+	// and seed the seed it started from; see Rand and Srand.
 	rng  *rand.Rand
+	pcg  *rand.PCG
 	seed uint64
 	// loaded is the libraries require has loaded, which a second require
 	// of answers false.
@@ -60,6 +61,15 @@ type Interp struct {
 	// interpreted counts the calls of compiled methods running on the
 	// interpreter, which their own calls do too; see reinvoke.
 	interpreted int
+	// pause is set by Pause; paused once Run returned ErrPaused, with
+	// next the index of the top-level statement the run continues with
+	// and nextLine its line. from is where Run starts: the pause point
+	// of a resumed run, 0 otherwise. See pause.go.
+	pause    atomic.Bool
+	paused   bool
+	next     int
+	nextLine int
+	from     int
 }
 
 // Last returns the value of the script's last top-level expression, once
@@ -155,7 +165,8 @@ func (in *Interp) Rand() *rand.Rand { return in.rng }
 func (in *Interp) Srand(seed uint64) uint64 {
 	old := in.seed
 	in.seed = seed
-	in.rng = rand.New(rand.NewPCG(seed, seed^0x9e3779b97f4a7c15))
+	in.pcg = rand.NewPCG(seed, seed^0x9e3779b97f4a7c15)
+	in.rng = rand.New(in.pcg)
 	return old
 }
 
@@ -166,8 +177,18 @@ var installOnce sync.Once
 func (in *Interp) Run(file string, prog *syntax.Program) error {
 	in.file = file
 	in.code.compiled = CompiledFor(prog)
-	fr := &Frame{Self: object.InstanceValue(in.main), DefTarget: in.mainClass}
-	v, err := in.code.body(prog, prog.Body)(in, in.top, fr)
+	fr := in.topFrame()
+	var v object.Value = object.Nil
+	var err error
+	for i := in.from; i < len(prog.Body); i++ {
+		if in.pause.Load() {
+			in.paused, in.next, in.nextLine = true, i, prog.Body[i].Line()
+			return ErrPaused
+		}
+		if v, err = in.code.expr(prog.Body[i])(in, in.top, fr); err != nil {
+			break
+		}
+	}
 	if err == nil {
 		in.last = v
 	}
@@ -184,6 +205,11 @@ func (in *Interp) Run(file string, prog *syntax.Program) error {
 		return in.raise(object.LocalJumpError, c.line, "%s from the top level", c.kind)
 	}
 	return err
+}
+
+// topFrame is the frame the top-level statements run in.
+func (in *Interp) topFrame() *Frame {
+	return &Frame{Self: object.InstanceValue(in.main), DefTarget: in.mainClass}
 }
 
 // Write writes to standard output, or to standard error when stderr is set.

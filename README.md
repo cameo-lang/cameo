@@ -64,7 +64,16 @@ cameo proto script.cameo      # the .proto files of the script's classes, one pe
 cameo proto script.cameo out/ # the same, written into out/
 cameo build script.cameo out/ # compile the top-level Integer methods to Go: out/main.go runs the script
 cameo run script.cameo        # the same, built with go and run; needs Go and the cameo source cameo was built from
+cameo resume path/to/dump     # continue a script that ^C paused
+cameo inspect path/to/dump    # show where it paused and what its top level held
 ```
+
+`^C` pauses a running script before its next top-level statement and writes
+its state, a protobuf message, to a temporary file; `cameo resume` continues
+it, `cameo inspect` shows it, and `cameo --no-pause script.cameo` lets `^C`
+end the script instead. A statement that never ends is never paused: a
+second `^C` ends the script. What the dump holds, and what it leaves out,
+is in [doc/design/pause.md](doc/design/pause.md).
 
 `cameo build` is the first step of ahead-of-time compilation; see
 [doc/design/aot.md](doc/design/aot.md).
