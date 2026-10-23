@@ -154,6 +154,14 @@ func (in *Interp) evalArgs(nodes []syntax.Node, env *Env, fr *Frame) ([]object.V
 					return nil, err
 				}
 				out = append(out, list.Elems...)
+			case object.KindEnumerator:
+				err := v.Enumerator().Each(in, func(el object.Value) error {
+					out = append(out, el)
+					return nil
+				})
+				if err != nil {
+					return nil, err
+				}
 			default:
 				if v.IsNil() {
 					continue

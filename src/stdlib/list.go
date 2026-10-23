@@ -52,6 +52,9 @@ func installList() {
 		return object.Int(list(self).Len()), nil
 	})
 	def(c, "size", 0, c.Methods["length"].Native)
+	def(c, "deconstruct", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return self, nil
+	})
 	def(c, "empty?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Bool(list(self).Len() == 0), nil
 	})

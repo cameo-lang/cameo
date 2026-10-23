@@ -37,3 +37,16 @@ p Time.new(99, 1, 1, 0, 0, 0, "UTC").strftime("%Y %C %y"), Time.at(f).to_s, Time
 end
 
 p Time.now.class, Time.now(in: "+09:00").utc_offset, (Time.now - Time.now).abs < 1
+
+# Time.utc and Time.local take microseconds as the seventh argument, and
+# the ten values of to_a. deconstruct_keys returns the parts by name.
+t = Time.utc(1985, 4, 12, 23, 20, 50, 521245)
+p t, t.usec, t.iso8601(6), Time.utc(1969, 11, 12, 13, 18, 57, 404240).nsec
+p Time.utc(5, 4, 3, 2, 1, 2000, nil, nil, false, nil)
+p t.deconstruct_keys([:year, :a, :month, :zone]), t.asctime, t.ctime
+case Time.utc(2022, 10, 5, 13, 30)
+in {year: 2022, month:, day:}
+  p [month, day]
+end
+p Time.utc(2022, 10, 5, 13, 30).deconstruct_keys(nil)
+p({a: 1}.deconstruct_keys([:a]), [1, 2].deconstruct)
