@@ -474,11 +474,17 @@ func compileBegin(n *syntax.Begin) thunk {
 			if v := n.Rescues[i].Var; v != "" {
 				env.Set(v, object.ExceptionValue(exc))
 			}
+			outer := in.rescuing
+			in.rescuing = exc
 			result, err = clauses[i](in, env, fr)
+			in.rescuing = outer
+			if err == nil {
+				return result, nil
+			}
 			if c, ok := err.(*control); ok && c.kind == ctrlRetry {
 				continue
 			}
-			return result, err
+			return result, caused(err, exc)
 		}
 	}
 	if ensure == nil {

@@ -87,7 +87,7 @@ func init() {
 	cls := object.ClassClass
 	cls.Define("proto", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		c := self.Cls()
-		if c.Digest == "" || c.IsModule {
+		if c.Digest == "" && !c.IsA(object.ExceptionClass) || c.IsModule {
 			return object.Value{}, ctx.Raise(object.TypeError, "%s is not a class with fields", c.QualifiedName())
 		}
 		if _, err := ctx.(*Interp).proto.Message(c); err != nil {
@@ -108,6 +108,13 @@ func init() {
 		default:
 			return object.Value{}, ctx.Raise(object.TypeError, "from_proto takes bytes, not %s", typeName(args[0]))
 		}
+		if c.IsA(object.ExceptionClass) {
+			exc, err := ctx.(*Interp).Decoder().UnmarshalException(c, data)
+			if err != nil {
+				return object.Value{}, ctx.Raise(object.ArgumentError, "%s", err.Error())
+			}
+			return object.ExceptionValue(exc), nil
+		}
 		inst, err := ctx.(*Interp).proto.Unmarshal(c, data)
 		if err != nil {
 			return object.Value{}, ctx.Raise(object.ArgumentError, "%s", err.Error())
@@ -115,6 +122,13 @@ func init() {
 		return object.InstanceValue(inst), nil
 	})
 	object.ObjectClass.Define("to_proto", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if exc, ok := self.AsException(); ok {
+			data, err := ctx.(*Interp).proto.MarshalException(exc)
+			if err != nil {
+				return object.Value{}, ctx.Raise(object.CameoError, "%s", err.Error())
+			}
+			return object.Bytes(data), nil
+		}
 		inst, ok := self.AsInstance()
 		if !ok || inst.Cls.Digest == "" || inst.Cls == ctx.(*Interp).mainClass {
 			return object.Value{}, ctx.Raise(object.TypeError, "%s is not an instance of a class with fields", typeName(self))

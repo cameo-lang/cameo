@@ -1,0 +1,74 @@
+# An exception class declares typed fields like any class, and every
+# exception is a protobuf message: its message, line and cause, and the
+# fields its class declares.
+include Cameo
+
+class HTTPError < StandardError
+  int :status
+  string :url, default: ""
+
+  # initialize runs on new and on raise; super sets the message.
+  def initialize(status, url: "")
+    super("HTTP #{status} for #{url}")
+    self.status = status
+    self.url = url
+  end
+
+  def retryable? = status >= 500
+end
+
+def fetch(url)
+  raise HTTPError.new(503, url: url) if url.end_with?("/busy")
+  raise HTTPError.new(404, url: url) if url.end_with?("/gone")
+  "body of #{url}"
+end
+
+["/a", "/busy", "/gone"].each do |url|
+  puts fetch(url)
+rescue HTTPError => e
+  puts "#{e.message}: status #{e.status}, retryable: #{e.retryable?}"
+end
+
+# with copies an exception with changes, its message included.
+e = HTTPError.new(500, url: "/x")
+f = e.with(status: 502, message: "bad gateway")
+p f, f.status, e.status
+
+# Without an initialize of its own, a class takes its fields as keywords
+# and the message as the one positional argument.
+class QuotaError < StandardError
+  int :limit
+end
+p QuotaError.new("over quota", limit: 10).limit
+p QuotaError.new(limit: 10).message
+begin
+  raise QuotaError, "slow down"
+rescue QuotaError => q
+  p q.message, q.limit
+end
+
+# A raise inside a rescue clause has the rescued exception as its cause.
+begin
+  begin
+    fetch("/gone")
+  rescue HTTPError => inner
+    raise ArgumentError, "could not load the page"
+  end
+rescue ArgumentError => outer
+  p outer.cause, outer.cause.status
+end
+
+# An exception raised in a worker reaches await with its fields.
+class Crawler
+  def crawl(url) = fetch(url)
+end
+begin
+  await Crawler.new, :crawl, "/busy"
+rescue HTTPError => e
+  p e.status, e.url
+end
+
+# The message an exception is, and back.
+back = HTTPError.from_proto(HTTPError.new(418, url: "/tea").to_proto)
+p back, back.status
+puts HTTPError.proto

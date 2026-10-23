@@ -445,7 +445,29 @@ type asyncCall struct {
 // run makes the call and settles p with its result.
 func (c *asyncCall) run(p *Promise) {
 	result, exc := c.w.runCall(c.recv, c.method, c.args, c.kw)
-	p.settle(result, exc, nil)
+	if exc != nil {
+		p.settle(object.Value{}, nil, c.w.sendException(exc))
+		return
+	}
+	p.settle(result, nil, nil)
+}
+
+// sendException returns what makes exc again in the interpreter that
+// awaits it: exc crosses as its message, as a value does, so it arrives
+// with its fields. An exception the envelope cannot carry, of a class no
+// constant names, arrives as it is.
+func (in *Interp) sendException(exc *object.Exception) func(*Interp) (object.Value, error) {
+	data, err := in.Encoder().Encode(object.ExceptionValue(exc))
+	return func(to *Interp) (object.Value, error) {
+		if err == nil {
+			if v, err := to.Decoder().Decode(data); err == nil {
+				if out, ok := v.AsException(); ok {
+					return object.Value{}, out
+				}
+			}
+		}
+		return object.Value{}, exc
+	}
 }
 
 // topLevel is a copy of an interpreter's top level: its constants, its
@@ -680,7 +702,7 @@ func installCameo() {
 		if !ok {
 			return object.Value{}, raised
 		}
-		if !p.settle(object.Value{}, exc, nil) {
+		if !p.settle(object.Value{}, nil, in.sendException(exc)) {
 			return object.Value{}, in.raise(object.ArgumentError, 0, "promise %d is settled already", p.id)
 		}
 		return args[0], nil

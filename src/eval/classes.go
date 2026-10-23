@@ -26,19 +26,25 @@ func (in *Interp) readField(name string, fr *Frame, line int) (object.Value, err
 // writeField sets a field of the instance initialize is building, as
 // `self.name = v` does.
 func (in *Interp) writeField(name string, v object.Value, fr *Frame, line int) error {
-	inst := fr.Building
-	if inst == nil {
+	var cls *object.Class
+	var fields []object.Value
+	switch {
+	case fr.Building != nil:
+		cls, fields = fr.Building.Cls, fr.Building.Fields
+	case fr.BuildingExc != nil:
+		cls, fields = fr.BuildingExc.Cls, fr.BuildingExc.Fields
+	default:
 		return in.raise(object.CameoError, line, "self.%s = …: a field is set in initialize only", name)
 	}
-	idx, ok := inst.Cls.FieldIndex[name]
+	idx, ok := cls.FieldIndex[name]
 	if !ok {
-		return in.raise(object.NameError, line, "self.%s = …: %s has no field %s", name, inst.Cls.QualifiedName(), name)
+		return in.raise(object.NameError, line, "self.%s = …: %s has no field %s", name, cls.QualifiedName(), name)
 	}
-	checked, err := in.checkField(inst.Cls.Fields[idx], v, line)
+	checked, err := in.checkField(cls.Fields[idx], v, line)
 	if err != nil {
 		return err
 	}
-	inst.Fields[idx] = checked
+	fields[idx] = checked
 	return nil
 }
 

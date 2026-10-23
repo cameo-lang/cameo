@@ -550,7 +550,9 @@ func (i *Instance) Field(name string) (Value, bool) {
 
 // Exception is a raised error: an instance of an exception class with a
 // message. It travels up the evaluator as a Go error, and is a Value when
-// a script holds it (`rescue => e`).
+// a script holds it (`rescue => e`). Like an Instance it is a protobuf
+// message, whose parts protogen names: the message, the line, the cause,
+// the Attrs, and the Fields the class declares.
 type Exception struct {
 	Cls     *Class
 	Message string
@@ -562,6 +564,16 @@ type Exception struct {
 	// a SystemExit's status, an UncaughtThrowError's tag and value. It is
 	// nil when there is none, and never changed once the exception is made.
 	Attrs map[string]Value
+	// Cause is the exception that was being rescued when this one was
+	// raised: zero when there was none, nil when the raise said
+	// `cause: nil`.
+	Cause Value
+	// Fields are the fields the class declares, in its declaration order,
+	// as an Instance holds them; nil for a class that declares none.
+	Fields []Value
+	// Building is set while new runs initialize on the exception, the one
+	// time its message and fields may be set.
+	Building bool
 }
 
 // Attr returns the attribute name of the exception, and false when it has
@@ -569,6 +581,24 @@ type Exception struct {
 func (e *Exception) Attr(name string) (Value, bool) {
 	v, ok := e.Attrs[name]
 	return v, ok
+}
+
+// Copy returns a copy of the exception to change before anyone else sees
+// it: the copy shares the attributes and the fields, which are never
+// changed in place.
+func (e *Exception) Copy() *Exception {
+	c := *e
+	c.Building = false
+	return &c
+}
+
+// Field returns the field named name, and false when the class has none.
+func (e *Exception) Field(name string) (Value, bool) {
+	idx, ok := e.Cls.FieldIndex[name]
+	if !ok || idx >= len(e.Fields) {
+		return Value{}, false
+	}
+	return e.Fields[idx], true
 }
 
 func (e *Exception) Error() string { return e.Cls.Name + ": " + e.Message }
