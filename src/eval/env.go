@@ -1,6 +1,7 @@
 package eval
 
 import (
+	"sort"
 	"unsafe"
 
 	"github.com/cameo-lang/cameo/src/object"
@@ -65,6 +66,22 @@ func (e *Env) bind(name string, v object.Value) {
 		e.more = map[string]object.Value{}
 	}
 	e.more[name] = v
+}
+
+// each calls f with every variable of this scope alone, in binding order
+// for the inline ones and by name for the rest.
+func (e *Env) each(f func(name string, v object.Value)) {
+	for i := 0; i < e.n; i++ {
+		f(e.names[i], e.values[i])
+	}
+	names := make([]string, 0, len(e.more))
+	for name := range e.more {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		f(name, e.more[name])
+	}
 }
 
 // Get reads a variable, searching outwards, and false when it is unbound.

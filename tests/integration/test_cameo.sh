@@ -67,6 +67,69 @@ CAMEO
   assert_match $'^ +user +system +total +real\nsum   +[0-9]+\\.[0-9]{6} +[0-9]+\\.[0-9]{6} +[0-9]+\\.[0-9]{6} \\( +[0-9]+\\.[0-9]{6}\\)$' "$out"
 }
 
+# pausing_script writes a script that busies itself for a while in one
+# top-level statement, so an interrupt sent meanwhile pauses it before the
+# statement after. Job control is on in the subshell that starts it: a
+# background job without it ignores SIGINT.
+pausing_script() {
+  local script
+  script="$(mktemp -d)/wait.cameo"
+  cat >"$script" <<'CAMEO'
+class Point
+  int :x, :y
+end
+p = Point.new(x: 1, y: 2)
+puts "before"
+t = Time.now
+n = 0
+n += 1 while Time.now - t < 2
+puts "after #{p.x + p.y}"
+CAMEO
+  echo "$script"
+}
+
+# interrupt_after runs the command in the background, sends SIGINT after
+# the given seconds, prints its output and returns its exit status.
+interrupt_after() {
+  local seconds="$1"; shift
+  set -m
+  "$@" 2>&1 &
+  local pid=$!
+  set +m
+  sleep "$seconds"
+  kill -INT "$pid"
+  wait "$pid"
+}
+
+test_interrupt_pauses_the_script_and_resume_continues_it() {
+  local script out rc=0 dump
+  script="$(pausing_script)"
+  out=$(interrupt_after 0.5 "$CAMEO_BIN" "$script") || rc=$?
+  assert_eq 3 "$rc" "a paused script exits 3; output: $out"
+  assert_contains "$out" $'before
+cameo: pausing before the next top-level statement'
+  assert_contains "$out" "cameo: paused before line 9 of $script"
+  dump=$(sed -n 's/^cameo: resume with: cameo resume //p' <<<"$out")
+  assert_match '^/.*/cameo-wait-[^/]*\.dump$' "$dump"
+  out=$("$CAMEO_BIN" inspect "$dump")
+  assert_contains "$out" $'paused: before line 9
+variables:
+  p = Point(x: 1, y: 2)
+'
+  assert_contains "$out" $'constants: none
+promises: none'
+  out=$("$CAMEO_BIN" resume "$dump" 2>&1)
+  assert_eq "after 3" "$out"
+}
+
+test_no_pause_lets_the_interrupt_end_the_script() {
+  local script out rc=0
+  script="$(pausing_script)"
+  out=$(interrupt_after 0.5 "$CAMEO_BIN" --no-pause "$script") || rc=$?
+  assert_eq 130 "$rc" "a script ended by SIGINT exits 130; output: $out"
+  assert_eq "before" "$out"
+}
+
 test_run_builds_and_runs_the_compiled_script() {
   local script out rc=0
   script="$(mktemp -d)/fact.rb"

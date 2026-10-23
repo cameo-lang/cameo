@@ -3,7 +3,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -16,7 +15,11 @@ import (
 	"github.com/cameo-lang/cameo/src/syntax"
 )
 
-const usage = `usage: cameo <script.cameo>              run the script
+const usage = `usage: cameo [--no-pause] <script.cameo>  run the script; ^C pauses it before its next top-level statement
+                                         and writes its state to a temporary file, or ends it with --no-pause
+       cameo [--no-pause] resume <dump>  continue the script a dump holds
+       cameo inspect <dump>              show what a dump holds: where the script paused, its variables,
+                                         constants and promises
        cameo check <script.cameo>        parse and check the script, report every error
        cameo proto <script.cameo> [dir]  print the .proto files of the script's classes, or write them into dir
        cameo build <script.cameo> <dir> [package]
@@ -49,6 +52,10 @@ func tuneGC() {
 // the script ran or checked, 1 when it failed, 2 when the command line is
 // wrong.
 func run(args []string) int {
+	pause := true
+	if len(args) > 0 && args[0] == "--no-pause" {
+		pause, args = false, args[1:]
+	}
 	switch {
 	case len(args) == 1 && args[0] == "version":
 		fmt.Println(cameo.Version())
@@ -84,17 +91,16 @@ func run(args []string) int {
 		return 0
 	case len(args) == 2 && args[0] == "run":
 		return runCompiled(args[1], os.Stdout, os.Stderr)
-	case len(args) == 1 && args[0] != "check" && args[0] != "proto" && args[0] != "build" && args[0] != "run":
-		if err := cameo.RunFile(args[0], os.Stdout, os.Stderr); err != nil {
-			var errs syntax.ErrorList
-			if errors.As(err, &errs) {
-				fmt.Fprintln(os.Stderr, errs)
-				return 1
-			}
+	case len(args) == 2 && args[0] == "resume":
+		return resume(args[1], pause, os.Stdout, os.Stderr)
+	case len(args) == 2 && args[0] == "inspect":
+		if err := inspect(args[1], os.Stdout); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return 1
 		}
 		return 0
+	case len(args) == 1 && args[0] != "check" && args[0] != "proto" && args[0] != "build" && args[0] != "run" && args[0] != "resume" && args[0] != "inspect":
+		return runScript(args[0], pause, os.Stdout, os.Stderr)
 	default:
 		fmt.Fprintln(os.Stderr, usage)
 		return 2
