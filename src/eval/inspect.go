@@ -208,11 +208,7 @@ func (in *Interp) inspectBuiltin(v object.Value) (string, error) {
 		}
 		return v.Cls.QualifiedName() + "(" + strings.Join(parts, ", ") + ")", nil
 	case object.KindProc:
-		v := proc(v)
-		if v.Strict {
-			return "#<Proc (lambda)>", nil
-		}
-		return "#<Proc>", nil
+		return in.procInspect(proc(v)), nil
 	}
 	if v.IsNil() {
 		return "nil", nil
@@ -397,4 +393,20 @@ func (in *Interp) rangeToList(r *object.Range, line int) (*object.List, error) {
 		return nil, withLine(err, line)
 	}
 	return object.NewList(elems...).List(), nil
+}
+
+// procInspect shows a proc as Ruby does, without the address: where its
+// block was written, or the symbol it calls, and whether it is a lambda.
+func (in *Interp) procInspect(p *Proc) string {
+	switch {
+	case p.Sym != "" && p.Recv.IsZero():
+		return "#<Proc:(&" + object.SymbolInspect(p.Sym) + ") (lambda)>"
+	case p.Block != nil && p.Strict:
+		return "#<Proc:" + in.file + ":" + strconv.Itoa(p.Block.Line()) + " (lambda)>"
+	case p.Block != nil:
+		return "#<Proc:" + in.file + ":" + strconv.Itoa(p.Block.Line()) + ">"
+	case p.Strict:
+		return "#<Proc (lambda)>"
+	}
+	return "#<Proc>"
 }

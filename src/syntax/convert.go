@@ -47,6 +47,40 @@ type converter struct {
 	// bangs names the bang methods the script defines, which are calls
 	// like any other; any other bang method is one of Ruby's mutators.
 	bangs map[string]bool
+	// assigning holds the locals whose `x = value` is being converted. Ruby
+	// binds x before it evaluates the value, so a lambda in the value may
+	// call itself through x; the parser declares x after the value and
+	// leaves such an x a method call.
+	assigning []pendingLocal
+}
+
+// pendingLocal is a local being assigned, with the scope it belongs to.
+type pendingLocal struct {
+	name  string
+	scope int
+}
+
+// scope returns the index of the innermost frame that starts a scope of
+// locals: a block shares its method's.
+func (c *converter) scope() int {
+	for i := len(c.stack) - 1; i > 0; i-- {
+		if c.stack[i].kind != ctxBlock {
+			return i
+		}
+	}
+	return 0
+}
+
+// assigned returns true when a bare name is a local whose assignment is
+// being converted in the current scope.
+func (c *converter) assigned(name string) bool {
+	scope := c.scope()
+	for _, p := range c.assigning {
+		if p.name == name && p.scope == scope {
+			return true
+		}
+	}
+	return false
 }
 
 func (c *converter) fail(format string, args ...any) {
@@ -176,7 +210,9 @@ func (c *converter) expr(n ast.Node) Node {
 	case *ast.VarRef:
 		return &Var{c.pos(), n.Name}
 	case *ast.Assign:
+		c.assigning = append(c.assigning, pendingLocal{n.Name, c.scope()})
 		value := c.expr(n.Value)
+		c.assigning = c.assigning[:len(c.assigning)-1]
 		markRebinds(value, &Var{Name: n.Name})
 		return &Assign{c.pos(), n.Name, value}
 	case *ast.OpAssign:
@@ -204,7 +240,7 @@ func (c *converter) expr(n ast.Node) Node {
 	case *ast.If:
 		return c.ifExpr(n)
 	case *ast.While:
-		return &While{c.pos(), c.expr(n.Cond), c.body(n.Body)}
+		return &While{c.pos(), c.expr(n.Cond), c.body(n.Body), c.isBeginBlock(n.Body)}
 	case *ast.For:
 		return c.forLoop(n)
 	case *ast.MethodDef:
@@ -560,8 +596,18 @@ func isFieldType(name string) bool { return compositeFieldTypes[name] || object.
 
 func (c *converter) call(n *ast.Call) Node {
 	name := n.Name
-	if c.interpolating > 0 && n.Recv == nil && len(n.Args) == 0 && n.Block == nil && !n.Paren {
-		return &VarOrCall{c.pos(), name}
+	if n.Recv == nil && len(n.Args) == 0 && n.Block == nil && !n.Paren {
+		// The line of __LINE__ is the statement's: the parser records no
+		// finer position.
+		if name == "__LINE__" {
+			return &Int{c.pos(), int64(c.line)}
+		}
+		if c.assigned(name) {
+			return &Var{c.pos(), name}
+		}
+		if c.interpolating > 0 {
+			return &VarOrCall{c.pos(), name}
+		}
 	}
 	if cnst, ok := n.Recv.(*ast.ConstRef); ok && cnst.Name == "Cameo" && (name == "async" || name == "await") {
 		if name == "async" {
@@ -571,11 +617,20 @@ func (c *converter) call(n *ast.Call) Node {
 	}
 	if n.Recv == nil {
 		switch name {
+		case "redo":
+			if len(n.Args) == 0 && n.Block == nil && !n.Paren {
+				return &Redo{c.pos()}
+			}
 		case "defined?":
 			if len(n.Args) == 1 {
 				return &Defined{c.pos(), c.expr(n.Args[0])}
 			}
 		case "lambda", "proc":
+			// proc(&p) is p as a Proc, as in Ruby; lambda wants a literal
+			// block, which Ruby 3.3 made an ArgumentError.
+			if bp, ok := soleBlockPass(n); ok && name == "proc" {
+				return &Call{Pos: c.pos(), Recv: c.expr(bp.Value), Name: "to_proc"}
+			}
 			if n.Block == nil || len(n.Args) > 0 {
 				c.fail("%s takes a block and nothing else", name)
 				return nil
@@ -630,7 +685,7 @@ func (c *converter) call(n *ast.Call) Node {
 			return nil
 		}
 	}
-	call := &Call{Pos: c.pos(), Name: name, Safe: n.Safe}
+	call := &Call{Pos: c.pos(), Name: name, Safe: n.Safe, VCall: n.Recv == nil && len(n.Args) == 0 && n.Block == nil && !n.Paren}
 	if n.Recv != nil {
 		call.Recv = c.expr(n.Recv)
 	}
@@ -778,6 +833,37 @@ func (c *converter) anonymous(name string) Node { return &Var{c.pos(), name} }
 
 // forLoop rewrites `for x in xs ... end` into `xs.each { |v| x = v ... }`,
 // declaring x first, since a for loop's variables outlive it in Ruby.
+// soleBlockPass returns the &arg of a call whose one argument it is.
+func soleBlockPass(n *ast.Call) (*ast.BlockPass, bool) {
+	if n.Block != nil || len(n.Args) != 1 {
+		return nil, false
+	}
+	bp, ok := n.Args[0].(*ast.BlockPass)
+	return bp, ok
+}
+
+// isBeginBlock returns true when a while modifier's body is a `begin … end`,
+// which makes the loop test its condition after each pass. The body of a
+// `while … end` is a statement with a line of its own, and a modifier's
+// operand has none. The parser gives `x rescue y` and a parenthesised
+// `(a; b)` the node of a begin as well: the first is told apart by its
+// shape, the second is taken for a begin.
+func (c *converter) isBeginBlock(body []ast.Node) bool {
+	if len(body) != 1 {
+		return false
+	}
+	b, ok := body[0].(*ast.Begin)
+	if !ok {
+		return false
+	}
+	if _, statement := c.lines[b]; statement {
+		return false
+	}
+	modifierRescue := len(b.Body) == 1 && len(b.Rescues) == 1 && b.ElseBody == nil && b.EnsureBody == nil &&
+		len(b.Rescues[0].Classes) == 0 && b.Rescues[0].Var == "" && b.Rescues[0].VarTarget == nil && len(b.Rescues[0].Body) == 1
+	return !modifierRescue
+}
+
 func (c *converter) forLoop(n *ast.For) Node {
 	if n.Target != nil {
 		c.fail("for with a nested or non-local target is not supported")

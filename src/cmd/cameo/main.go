@@ -93,6 +93,9 @@ func run(args []string) int {
 		return runCompiled(args[1], os.Stdout, os.Stderr)
 	case len(args) == 1 && args[0] != "check" && args[0] != "proto" && args[0] != "build" && args[0] != "run":
 		if err := runScript(args[0], ignoreMutations); err != nil {
+			if status, ok := cameo.ExitStatus(err); ok {
+				return status
+			}
 			var errs syntax.ErrorList
 			if errors.As(err, &errs) {
 				fmt.Fprintln(os.Stderr, errs)

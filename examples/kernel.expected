@@ -1,0 +1,8 @@
+00003
+[Object, Kernel]
+true
+Module
+true
+true
+false
+#<TypeError: wrong argument type Class (expected Module)>

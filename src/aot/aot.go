@@ -1176,6 +1176,9 @@ const mainFunc = `func main() {
 		debug.SetMemoryLimit(1 << 30)
 	}
 	if err := cameo.Run(file, script, os.Stdout, os.Stderr); err != nil {
+		if status, ok := cameo.ExitStatus(err); ok {
+			os.Exit(status)
+		}
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}

@@ -52,7 +52,7 @@ func (in *Interp) evalCall(n *syntax.Call, env *Env, fr *Frame) (object.Value, e
 			}
 		}
 	}
-	v, err := in.call(fr, recv, n.Name, args, kw, block, selfCall, n.Line())
+	v, err := in.dispatch(fr, recv, n.Name, args, kw, block, selfCall, n.VCall, n.Line())
 	return v, withLine(err, n.Line())
 }
 
@@ -264,6 +264,11 @@ func (in *Interp) findMethod(recv object.Value, name string) *object.Method {
 // call dispatches name on recv. selfCall marks a call written without a
 // receiver, which may reach a top-level method from anywhere.
 func (in *Interp) call(fr *Frame, recv object.Value, name string, args []object.Value, kw *object.Map, block object.Value, selfCall bool, line int) (object.Value, error) {
+	return in.dispatch(fr, recv, name, args, kw, block, selfCall, false, line)
+}
+
+// dispatch is call, with vcall marking a bare name (see syntax.Call).
+func (in *Interp) dispatch(fr *Frame, recv object.Value, name string, args []object.Value, kw *object.Map, block object.Value, selfCall, vcall bool, line int) (object.Value, error) {
 	m := in.findMethod(recv, name)
 	if m == nil && selfCall {
 		m = in.mainClass.Methods[name]
@@ -281,7 +286,7 @@ func (in *Interp) call(fr *Frame, recv object.Value, name string, args []object.
 		if mm := recv.Class().Lookup("method_missing"); mm != nil && mm.Body != nil {
 			return in.invoke(mm, recv, append([]object.Value{object.Symbol(name)}, args...), kw, block, line)
 		}
-		return object.Value{}, in.raise(object.NoMethodError, line, "undefined method '%s' for %s", name, typeName(recv))
+		return object.Value{}, in.noMethod(recv, name, args, vcall, line)
 	}
 	if m.Native != nil && (m.Body == nil || in.interpreted == 0) {
 		if m.Arity >= 0 && len(args) != m.Arity {
@@ -550,7 +555,17 @@ func (in *Interp) callBlock(block object.Value, args []object.Value, kw *object.
 	if err := in.bindParams(&p.Block.Params, args, kw, inner, env, fr, p.Strict, "block", p.Block.Line()); err != nil {
 		return object.Value{}, err
 	}
-	v, err := in.code.body(p.Block, p.Block.Body)(in, env, fr)
+	body := in.code.body(p.Block, p.Block.Body)
+	v, err := body(in, env, fr)
+	for err != nil {
+		c, ok := err.(*control)
+		if !ok || c.kind != ctrlRedo || c.target != nil {
+			break
+		}
+		if err = in.stopped(); err == nil {
+			v, err = body(in, env, fr)
+		}
+	}
 	if err != nil {
 		if c, ok := err.(*control); ok {
 			switch {

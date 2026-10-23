@@ -71,6 +71,40 @@ func installKernel() {
 		return object.Value{}, raise(ctx, args)
 	})
 	def(o, "fail", -1, o.Methods["raise"].Native)
+	// exit raises SystemExit, which ensure clauses see and a rescue may
+	// catch; the command ends with its status when nothing does.
+	def(o, "exit", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if len(args) > 1 {
+			return object.Value{}, argError(ctx, len(args), "0..1")
+		}
+		status := int64(0)
+		if len(args) == 1 {
+			s, ok := exitStatus(args[0])
+			if !ok {
+				return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into Integer", args[0].Class().QualifiedName())
+			}
+			status = s
+		}
+		return object.Value{}, systemExit(status, "exit")
+	})
+	// abort writes its message to standard error and raises SystemExit
+	// with status 1.
+	def(o, "abort", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if len(args) > 1 {
+			return object.Value{}, argError(ctx, len(args), "0..1")
+		}
+		if len(args) == 0 {
+			return object.Value{}, systemExit(1, "exit")
+		}
+		msg, err := wantString(ctx, args[0])
+		if err != nil {
+			return object.Value{}, err
+		}
+		if err := ctx.Write(true, msg+"\n"); err != nil {
+			return object.Value{}, err
+		}
+		return object.Value{}, systemExit(1, msg)
+	})
 	def(o, "format", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) == 0 {
 			return object.Value{}, argError(ctx, 0, "1+")
@@ -201,7 +235,7 @@ func raise(ctx object.Context, args []object.Value) error {
 		v := args[0].Exception()
 		if len(args) > 1 {
 			if msg, err := wantString(ctx, args[1]); err == nil {
-				return &object.Exception{Cls: v.Cls, Message: msg}
+				return &object.Exception{Cls: v.Cls, Message: msg, Attrs: v.Attrs}
 			}
 		}
 		return v
@@ -221,6 +255,11 @@ func raise(ctx object.Context, args []object.Value) error {
 		return &object.Exception{Cls: v, Message: msg}
 	}
 	return ctx.Raise(object.TypeError, "exception class/object expected")
+}
+
+// systemExit makes the SystemExit for exit and abort.
+func systemExit(status int64, msg string) error {
+	return &object.Exception{Cls: object.SystemExit, Message: msg, Attrs: map[string]object.Value{"status": object.Int(status)}}
 }
 
 // kernelRand is Kernel#rand: a float in [0, 1) without an argument (or

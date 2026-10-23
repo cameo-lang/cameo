@@ -76,3 +76,11 @@ compose = ->(f, g) { ->(x) { f.(g.(x)) } }
 inc = ->(x) { x + 1 }
 dbl = ->(x) { x * 2 }
 puts compose.(inc, dbl).(5)
+
+# proc(&p) is p itself, and proc(&:sym) the symbol's proc.
+body = proc { :foo }
+p proc(&body).call, proc(&body).hash == proc(&body).hash, proc(&body) == body
+l = -> { 1 }
+p proc(&l).lambda?, proc(&:upcase).call("a")
+def m(&b) = proc(&b)
+p m { 2 }.call

@@ -70,3 +70,84 @@ puts result
 
 puts [1, 2, 3].each { |v| break v * 100 if v == 2 }
 puts (1..3).each { |v| v }.inspect
+
+# begin ... end while runs its body before the first test; a while with a
+# begin inside tests first.
+runs = 0
+begin
+  runs += 1
+end while false
+puts runs
+runs = 0
+begin runs += 1 end until true
+puts runs
+runs = 0
+while false
+  begin
+    runs += 1
+  end
+end
+puts runs
+
+# redo restarts the pass without testing the condition or taking the next
+# element.
+seen = []
+loop do
+  seen += [1]
+  redo if seen.size == 1
+  seen += [2]
+  next if seen.size == 3
+  seen += [3]
+  break if seen.size > 6
+end
+p seen
+seen = []
+[1, 2].each do |v|
+  seen += [v]
+  redo if seen.size == 1
+end
+p seen
+seen = []
+j = 0
+while j < 2
+  j += 1
+  seen += [j]
+  redo if seen.size == 1
+end
+p seen
+
+# catch returns what its block returns, or what a throw of its tag passes;
+# a throw passes rescue clauses by and runs ensure clauses.
+p catch(:x) { throw :x, 5 }
+p catch { |t| throw t }
+p catch(:x) { 10 }
+r = catch(:outer) do
+  catch(:inner) do
+    begin
+      throw :outer, :done
+    rescue Exception
+      p :not_rescued
+    ensure
+      p :ensured
+    end
+  end
+  p :skipped
+end
+p r
+p(catch { |a| catch { |b| throw a, 1 }; 2 })
+def deep(n)
+  throw :found, n if n == 3
+  deep(n + 1)
+end
+p catch(:found) { deep(0) }
+begin
+  throw :abc
+rescue UncaughtThrowError => e
+  p e, e.tag, e.value, e.message
+end
+begin
+  throw :abc, 4
+rescue ArgumentError => e
+  p e.class, e.value
+end
+p [1, 2, 3].each { |v| catch(:skip) { throw :skip if v == 2; p v } }

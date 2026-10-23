@@ -63,7 +63,8 @@ func installMap() {
 			return args[1], nil
 		}
 		s, _ := ctx.Inspect(args[0])
-		return object.Value{}, ctx.Raise(object.KeyError, "key not found: %s", s)
+		return object.Value{}, &object.Exception{Cls: object.KeyError, Message: "key not found: " + s,
+			Attrs: map[string]object.Value{"key": args[0], "receiver": self}}
 	})
 	def(c, "dig", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return dig(ctx, self, args)
