@@ -46,13 +46,16 @@ file is copied into every directory that needs it.
 
 ## Where the files come from
 
-ruby/spec at the commit named in [COUNTS.md](COUNTS.md). Re-sort a checkout
-with:
+ruby/spec at the commit named in [COUNTS.md](COUNTS.md). [checkout.rb](checkout.rb)
+clones it into `ruby-spec/` at the root of the main repository, which every
+worktree shares, or pulls into the copy that is there, and prints the path. Re-sort
+that copy with:
 
 ```sh
-git clone --depth 1 https://github.com/ruby/spec.git /tmp/ruby-spec
-ruby sort.rb --spec /tmp/ruby-spec
+ruby sort.rb --spec "$(ruby checkout.rb)"
 ```
+
+`make ruby-spec` runs `checkout.rb` alone.
 
 ruby/spec is under the MIT license; a copy of it, `LICENSE`, is at the root
 of each directory.
