@@ -11,8 +11,10 @@ import (
 // cameo values never change and no call rebinds its receiver. A call of
 // one of Ruby's mutators on a value of the kind it changes, `a.push(1)` on
 // a list or `s << "x"` on a string, raises a CameoError that names the
-// non-mutating form. With IgnoreMutationErrors the call returns what Ruby's
-// returns, computed on a copy, and the receiver stays as it was: the list
+// non-mutating form. A call whose value is assigned back to its receiver,
+// `a = a << 1`, returns Ruby's value computed on a copy, which the
+// assignment binds as Ruby's would. With IgnoreMutationErrors any call
+// returns what Ruby's returns, computed on a copy, and the receiver stays as it was: the list
 // for push, the removed element for pop, shift and delete. A bang method of
 // Ruby's core raises whatever the setting, and the checker refuses one it
 // can see.
@@ -23,8 +25,10 @@ type mutation func(in *Interp, fr *Frame, cur object.Value, args []object.Value,
 
 // mutating runs a call of name on recv when name is one of Ruby's
 // mutators for recv's kind, and returns handled false otherwise. recvName
-// names the receiver in the error.
-func (in *Interp) mutating(fr *Frame, recv object.Value, recvName, name string, args []object.Value, kw *object.Map, block object.Value, line int) (v object.Value, handled bool, err error) {
+// names the receiver in the error. rebinds is set for a call whose value
+// is assigned back to its receiver, which returns Ruby's value as
+// IgnoreMutationErrors does.
+func (in *Interp) mutating(fr *Frame, recv object.Value, recvName, name string, args []object.Value, kw *object.Map, block object.Value, rebinds bool, line int) (v object.Value, handled bool, err error) {
 	m := mutationFor(recv, name)
 	if m == nil {
 		return object.Value{}, false, nil
@@ -32,7 +36,7 @@ func (in *Interp) mutating(fr *Frame, recv object.Value, recvName, name string, 
 	if syntax.IsBang(name) {
 		return object.Value{}, true, in.raise(object.CameoError, line, "%s", syntax.BangMessage(recvName, name))
 	}
-	if !in.IgnoreMutationErrors {
+	if !in.IgnoreMutationErrors && !rebinds {
 		return object.Value{}, true, in.raise(object.CameoError, line, "%s", syntax.MutationMessage(name))
 	}
 	_, result, err := m(in, fr, recv, args, kw, block, line)

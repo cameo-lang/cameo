@@ -80,7 +80,7 @@ func runIgnoring(t *testing.T, src string) (string, error) {
 
 func TestRubyMutatorsRaise(t *testing.T) {
 	for _, c := range mutatorCases {
-		expectError(t, "x = "+c.recv+"\n"+c.call+"\n", c.name+" changes its receiver, which cameo does not do")
+		expectError(t, "x = "+c.recv+"\n"+c.call+"\n", "cameo does not support mutating calls without rebinding")
 	}
 }
 
@@ -120,8 +120,8 @@ class C
   end
 end
 C.new
-`, "<< changes its receiver, which cameo does not do; use +, or append")
-	expectError(t, "a = [1]\na.send(:push, 2)\n", "push changes its receiver")
+`, "cameo does not support mutating calls without rebinding; use a = a << 1, +, or append")
+	expectError(t, "a = [1]\na.send(:push, 2)\n", "cameo does not support mutating calls without rebinding; use a = a.push(x), +, or append")
 	expectError(t, "p [2, 1].send(:sort!)\n", "This is not supported, use x = x.sort instead")
 	// A bang the checker lets through, since the script defines one of that
 	// name, names its receiver at run time as the checker does.
@@ -130,6 +130,43 @@ C.new
 	if err == nil || !strings.Contains(err.Error(), "This is not supported") {
 		t.Fatalf("a bang method ran with mutation errors ignored: %q, %v", got, err)
 	}
+}
+
+// TestAssigningAMutatorToItsReceiverRebinds: a mutator whose value is
+// assigned back to its receiver returns Ruby's value, computed on a copy,
+// so that the local or field ends up as Ruby's would; other locals bound
+// to the old value keep it.
+func TestAssigningAMutatorToItsReceiverRebinds(t *testing.T) {
+	expectOutput(t, `
+a = [2]
+b = a
+a = a << 1
+p a, b
+a <<= 5
+p a
+n = 2
+n <<= 1
+p n
+s = "x"
+s = s << "y"
+p s
+x = [1, 2]
+x = x.pop
+p x
+class C
+  list :xs, of: :int
+  def initialize
+    self.xs = []
+    self.xs = self.xs << 1
+  end
+end
+p C.new.xs
+c = []
+c = c << 1 << 2
+c = c.push(3).push(4)
+p c
+`, "[2, 1]\n[2]\n[2, 1, 5]\n4\n\"xy\"\n2\n[1]\n[1, 2, 3, 4]\n")
+	expectError(t, "a = [1]\nb = a << 2\n", "cameo does not support mutating calls without rebinding")
 }
 
 // TestAssignmentRebinds is the one rebinding cameo keeps: assignment to a
