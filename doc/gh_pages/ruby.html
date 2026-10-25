@@ -310,7 +310,7 @@ script.cameo:11: global variables are not supported</code></pre>
 <thead><tr><th>Rejected</th><th>Write instead</th></tr></thead>
 <tbody>
 <tr><td>instance variables, <code>@x</code></td><td><code>self.x = v</code> in <code>initialize</code>; read <code>x</code> or <code>self.x</code></td></tr>
-<tr><td>class variables <code>@@x</code>; global variables <code>$x</code>, including <code>$stdout</code>, <code>$!</code> and <code>$~</code></td><td>a constant, a field or a local; <code>rescue =&gt; e</code>; the MatchData that <code>match</code> returns</td></tr>
+<tr><td>class variables <code>@@x</code>; global variables <code>$x</code>, including <code>$!</code> and <code>$~</code></td><td>a constant, a field or a local; <code>rescue =&gt; e</code>; the MatchData that <code>match</code> returns. <code>$stdout</code> and <code>$stderr</code> exist: they are <code>STDOUT</code> and <code>STDERR</code>, with <code>puts</code>, <code>print</code>, <code>write</code>, <code>flush</code> and <code>sync</code></td></tr>
 <tr><td>setters, <code>def x=(v)</code>; <code>attr_reader</code>, <code>attr_writer</code>, <code>attr_accessor</code></td><td>field declarations, which define readers, and <code>with</code></td></tr>
 <tr><td><code>self.x = v</code> outside <code>initialize</code></td><td><code>with(x: v)</code>, which returns the copy</td></tr>
 <tr><td><code>private</code>, <code>protected</code>, <code>public</code>, <code>module_function</code></td><td>none: every method is public</td></tr>

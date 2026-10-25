@@ -47,7 +47,8 @@ What cameo leaves out, and the checker rejects by name:
 - any setter: `def x=(v)`, `attr_writer`, `attr_accessor`
 - instance variables, so `@` is free for later use: `initialize` sets a
   field with `self.x = v`, and a field is read with its reader; class
-  variables; global variables
+  variables; global variables, but for `$stdout` and `$stderr`, which name
+  `STDOUT` and `STDERR`
 - `define_method`,
   `instance_variable_set`, `eval`, `undef`,
   `extend`, singleton classes, `def self.x` on an instance
