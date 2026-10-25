@@ -493,6 +493,18 @@ func Refused(name string) (msg string, ok bool) {
 	return "", false
 }
 
+// SubclassRefused is why cameo refuses a subclass of the builtin class
+// named super, and false for a class a script may subclass.
+func SubclassRefused(super string) (msg string, ok bool) {
+	switch super {
+	case "Numeric":
+		return "a subclass of Numeric is not supported; Integer and Float do not coerce other numbers in their arithmetic", true
+	case "BasicObject":
+		return "a subclass of BasicObject is not supported; use method_missing in an ordinary class", true
+	}
+	return "", false
+}
+
 // IsBang reports whether name is a bang method, such as compact! or
 // merge!; the operators ! and != and exit! are not.
 func IsBang(name string) bool {
@@ -1006,6 +1018,14 @@ func (c *converter) classDef(d *ast.ClassDef) Node {
 		out.Super = c.expr(d.SuperExpr)
 	case d.Super != "":
 		out.Super = &Const{c.pos(), d.Super}
+	}
+	// At the top level a bare name is the builtin class, which no script
+	// rebinds; inside a module the evaluator decides, once it knows.
+	if super, ok := out.Super.(*Const); ok && !c.insideClass() {
+		if msg, refused := SubclassRefused(super.Name); refused {
+			c.fail("class %s < %s: %s", d.Name, super.Name, msg)
+			return nil
+		}
 	}
 	c.push(ctxClass, d.Name)
 	out.Body = c.body(d.Body)

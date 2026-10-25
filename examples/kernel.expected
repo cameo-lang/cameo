@@ -6,3 +6,14 @@ true
 true
 false
 #<TypeError: wrong argument type Class (expected Module)>
+[Integer, Numeric, Comparable, Object, Kernel, BasicObject]
+Numeric
+BasicObject
+nil
+true
+true
+false
+true
+3 is a number
+0.5 is a number
+"3" is not

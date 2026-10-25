@@ -2,8 +2,10 @@ package stdlib
 
 import "github.com/cameo-lang/cameo/src/object"
 
-// installObject defines the methods every value has.
+// installObject defines the methods every value has: BasicObject's, which
+// are Ruby's BasicObject's, and Object's.
 func installObject() {
+	b := object.BasicObjectClass
 	o := object.ObjectClass
 	def(o, "to_s", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		s, err := ctx.ToS(self)
@@ -13,11 +15,11 @@ func installObject() {
 		s, err := ctx.Inspect(self)
 		return object.String(s), err
 	})
-	def(o, "==", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	def(b, "==", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		eq, err := ctx.Equal(self, args[0])
 		return object.Bool(eq), err
 	})
-	def(o, "!=", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	def(b, "!=", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		eq, err := ctx.Equal(self, args[0])
 		return object.Bool(!eq), err
 	})
@@ -28,7 +30,7 @@ func installObject() {
 		eq, err := ctx.Equal(self, args[0])
 		return object.Bool(eq), err
 	})
-	def(o, "!", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	def(b, "!", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Bool(!self.Truthy()), nil
 	})
 	def(o, "class", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {

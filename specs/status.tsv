@@ -188,23 +188,23 @@ core/array/zip_spec.rb	*	expected	instance-variables	instance_variable_get is no
 core/basicobject/__id__spec.rb	*	expected	instance-variables	@object: cameo has no instance variables; a field is read with its reader, object or self.object
 core/basicobject/__send___spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
 core/basicobject/basicobject_spec.rb	*	expected	instance-variables	@meta = …: cameo has no instance variables; initialize sets a field with self.meta = …
-core/basicobject/equal_spec.rb	BasicObject#equal? is an alias of BasicObject#==	bug		uninitialized constant BasicObject (NameError)
+core/basicobject/equal_spec.rb	BasicObject#equal? is an alias of BasicObject#==	expected	metaprogramming	undefined method 'instance_method' for class BasicObject (NoMethodError)
 core/basicobject/equal_value_spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
-core/basicobject/initialize_spec.rb	BasicObject#initialize is a private instance method	bug		uninitialized constant BasicObject (NameError)
-core/basicobject/initialize_spec.rb	BasicObject#initialize does not accept arguments	bug		uninitialized constant BasicObject (NameError)
+core/basicobject/initialize_spec.rb	BasicObject#initialize is a private instance method	bug		undefined method 'private_instance_methods' for class BasicObject (NoMethodError)
+core/basicobject/initialize_spec.rb	BasicObject#initialize does not accept arguments	expected	literal-only	undefined method 'new' for class BasicObject: use a literal (NoMethodError)
 core/basicobject/instance_eval_spec.rb	*	expected	instance-variables	@secret = …: cameo has no instance variables; initialize sets a field with self.secret = …
 core/basicobject/instance_exec_spec.rb	*	expected	instance-variables	@secret = …: cameo has no instance variables; initialize sets a field with self.secret = …
 core/basicobject/method_missing_spec.rb	*	expected	metaprogramming	class << self is not supported: define class methods with def self.name
-core/basicobject/not_equal_spec.rb	BasicObject#!= is a public instance method	bug		uninitialized constant BasicObject (NameError)
-core/basicobject/not_equal_spec.rb	BasicObject#!= returns true if other is not identical to self	bug		uninitialized constant BasicObject (NameError)
-core/basicobject/not_equal_spec.rb	BasicObject#!= returns true if other is an Object	bug		uninitialized constant BasicObject (NameError)
-core/basicobject/not_equal_spec.rb	BasicObject#!= returns false if other is identical to self	bug		uninitialized constant BasicObject (NameError)
+core/basicobject/not_equal_spec.rb	BasicObject#!= is a public instance method	bug		undefined method 'public_instance_methods' for class BasicObject (NoMethodError)
+core/basicobject/not_equal_spec.rb	BasicObject#!= returns true if other is not identical to self	expected	literal-only	undefined method 'new' for class BasicObject: use a literal (NoMethodError)
+core/basicobject/not_equal_spec.rb	BasicObject#!= returns true if other is an Object	expected	literal-only	undefined method 'new' for class BasicObject: use a literal (NoMethodError)
+core/basicobject/not_equal_spec.rb	BasicObject#!= returns false if other is identical to self	expected	literal-only	undefined method 'new' for class BasicObject: use a literal (NoMethodError)
 core/basicobject/not_equal_spec.rb	BasicObject#!= dispatches to #==	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
 core/basicobject/not_equal_spec.rb	BasicObject#!= when invoked using Kernel#send returns true if other is not identical to self	bug		Expected false == true to be truthy but was false
 core/basicobject/not_equal_spec.rb	BasicObject#!= when invoked using Kernel#send returns false if other is identical to self	pass		
 core/basicobject/not_equal_spec.rb	BasicObject#!= when invoked using Kernel#send dispatches to #==	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
-core/basicobject/not_spec.rb	BasicObject#! is a public instance method	bug		uninitialized constant BasicObject (NameError)
-core/basicobject/not_spec.rb	BasicObject#! returns false	bug		uninitialized constant BasicObject (NameError)
+core/basicobject/not_spec.rb	BasicObject#! is a public instance method	bug		undefined method 'public_instance_methods' for class BasicObject (NoMethodError)
+core/basicobject/not_spec.rb	BasicObject#! returns false	expected	literal-only	undefined method 'new' for class BasicObject: use a literal (NoMethodError)
 core/basicobject/singleton_method_added_spec.rb	*	expected	metaprogramming	def singleton_method_added on an object: methods belong to classes
 core/basicobject/singleton_method_removed_spec.rb	*	expected	metaprogramming	def singleton_method_removed on an object: methods belong to classes
 core/basicobject/singleton_method_undefined_spec.rb	*	expected	metaprogramming	def singleton_method_undefined on an object: methods belong to classes
@@ -294,7 +294,7 @@ core/complex/hash_spec.rb	Complex#hash is different for different instances	expe
 core/complex/imag_spec.rb	Complex#imag is an alias of Complex#imaginary	expected	rational-complex	uninitialized constant Complex (NameError)
 core/complex/imaginary_spec.rb	Complex#imaginary returns the imaginary part of self	expected	rational-complex	undefined method 'Complex' for main (NoMethodError)
 core/complex/infinite_spec.rb	*	bug		imaginary literals are not supported
-core/complex/inspect_spec.rb	*	bug		uninitialized constant Numeric (NameError)
+core/complex/inspect_spec.rb	*	expected	numeric-subclass	class Comparison < Numeric: a subclass of Numeric is not supported; Integer and Float do not coerce other numbers in their arithmetic (CameoError)
 core/complex/integer_spec.rb	Complex#integer? returns false for a Complex with no imaginary part	expected	rational-complex	undefined method 'Complex' for main (NoMethodError)
 core/complex/integer_spec.rb	Complex#integer? returns false for a Complex with an imaginary part	expected	rational-complex	undefined method 'Complex' for main (NoMethodError)
 core/complex/magnitude_spec.rb	Complex#magnitude is an alias of Complex#abs	expected	rational-complex	uninitialized constant Complex (NameError)
@@ -348,24 +348,24 @@ core/complex/to_i_spec.rb	Complex#to_i when the imaginary part responds to #== 0
 core/complex/to_i_spec.rb	Complex#to_i when the imaginary part is non-zero raises RangeError	expected	rational-complex	undefined method 'Complex' for main (NoMethodError)
 core/complex/to_i_spec.rb	Complex#to_i when the imaginary part is Float 0.0 raises RangeError	expected	rational-complex	undefined method 'Complex' for main (NoMethodError)
 core/complex/to_r_spec.rb	*	bug		rational literals are not supported
-core/complex/to_s_spec.rb	*	bug		uninitialized constant Numeric (NameError)
+core/complex/to_s_spec.rb	*	expected	numeric-subclass	class Comparison < Numeric: a subclass of Numeric is not supported; Integer and Float do not coerce other numbers in their arithmetic (CameoError)
 core/complex/uminus_spec.rb	Complex#-@ sends #-@ to the real and imaginary parts and returns a Complex with the resulting respective parts	harness	fails under Ruby too	undefined method 'mock_numeric' for main (NoMethodError)
 core/conditionvariable/broadcast_spec.rb	ConditionVariable#broadcast releases all threads waiting in line for this resource	expected	threads	uninitialized constant Mutex (NameError)
 core/conditionvariable/marshal_dump_spec.rb	ConditionVariable#marshal_dump raises a TypeError	expected	threads	uninitialized constant ConditionVariable (NameError)
 core/conditionvariable/signal_spec.rb	ConditionVariable#signal releases the first thread waiting in line for this resource	expected	threads	uninitialized constant Mutex (NameError)
 core/conditionvariable/signal_spec.rb	ConditionVariable#signal allows control to be passed between a pair of threads	expected	threads	uninitialized constant Mutex (NameError)
 core/conditionvariable/wait_spec.rb	*	expected	globals	global variables are not supported
-core/data/constants_spec.rb	Data is a new constant	bug		uninitialized constant Data (NameError)
+core/data/constants_spec.rb	Data is a new constant	expected	data	uninitialized constant Data (NameError)
 core/data/constants_spec.rb	Data is not deprecated	harness	fails under Ruby too	undefined local variable or method 'complain' for main (NameError)
-core/data/deconstruct_keys_spec.rb	*	bug		uninitialized constant Data (NameError)
-core/data/deconstruct_spec.rb	*	bug		uninitialized constant Data (NameError)
-core/data/define_spec.rb	*	bug		uninitialized constant Data (NameError)
-core/data/eql_spec.rb	*	bug		uninitialized constant Data (NameError)
-core/data/equal_value_spec.rb	*	bug		uninitialized constant Data (NameError)
-core/data/hash_spec.rb	*	bug		uninitialized constant Data (NameError)
-core/data/initialize_spec.rb	*	bug		uninitialized constant Data (NameError)
-core/data/inspect_spec.rb	*	bug		uninitialized constant Data (NameError)
-core/data/members_spec.rb	*	bug		uninitialized constant Data (NameError)
+core/data/deconstruct_keys_spec.rb	*	expected	data	uninitialized constant Data (NameError)
+core/data/deconstruct_spec.rb	*	expected	data	uninitialized constant Data (NameError)
+core/data/define_spec.rb	*	expected	data	uninitialized constant Data (NameError)
+core/data/eql_spec.rb	*	expected	data	uninitialized constant Data (NameError)
+core/data/equal_value_spec.rb	*	expected	data	uninitialized constant Data (NameError)
+core/data/hash_spec.rb	*	expected	data	uninitialized constant Data (NameError)
+core/data/initialize_spec.rb	*	expected	data	uninitialized constant Data (NameError)
+core/data/inspect_spec.rb	*	expected	data	uninitialized constant Data (NameError)
+core/data/members_spec.rb	*	expected	data	uninitialized constant Data (NameError)
 core/data/to_h_spec.rb	*	expected	mutation	This is not supported, use x = x.stub instead
 core/data/to_s_spec.rb	*	expected	metaprogramming	class_eval is not supported; use nothing
 core/data/with_spec.rb	*	expected	metaprogramming	def new on an object: methods belong to classes
@@ -2307,9 +2307,9 @@ core/nil/to_s_spec.rb	NilClass#to_s always returns the same string	expected	iden
 core/nil/xor_spec.rb	NilClass#^ is an alias of NilClass#|	expected	metaprogramming	undefined method 'method' for nil (NoMethodError)
 core/numeric/abs2_spec.rb	*	expected	instance-variables	@numbers = …: cameo has no instance variables; initialize sets a field with self.numbers = …
 core/numeric/abs_spec.rb	*	expected	instance-variables	@obj = …: cameo has no instance variables; initialize sets a field with self.obj = …
-core/numeric/angle_spec.rb	Numeric#angle is an alias of Numeric#arg	bug		uninitialized constant Numeric (NameError)
+core/numeric/angle_spec.rb	Numeric#angle is an alias of Numeric#arg	expected	metaprogramming	undefined method 'instance_method' for class Numeric (NoMethodError)
 core/numeric/arg_spec.rb	*	expected	instance-variables	@numbers = …: cameo has no instance variables; initialize sets a field with self.numbers = …
-core/numeric/ceil_spec.rb	*	bug		uninitialized constant Numeric (NameError)
+core/numeric/ceil_spec.rb	*	expected	numeric-subclass	class Comparison < Numeric: a subclass of Numeric is not supported; Integer and Float do not coerce other numbers in their arithmetic (CameoError)
 core/numeric/clone_spec.rb	Numeric#clone returns self	expected	identity-and-freezing	undefined method 'equal?' for an instance of Integer (NoMethodError)
 core/numeric/clone_spec.rb	Numeric#clone does not change frozen status	pass		
 core/numeric/clone_spec.rb	Numeric#clone accepts optional keyword argument :freeze	expected	identity-and-freezing	undefined method 'equal?' for an instance of Integer (NoMethodError)
@@ -2317,7 +2317,7 @@ core/numeric/clone_spec.rb	Numeric#clone raises ArgumentError if passed freeze: 
 core/numeric/clone_spec.rb	Numeric#clone does not change frozen status if passed freeze: nil	expected	identity-and-freezing	undefined method 'equal?' for an instance of Integer (NoMethodError)
 core/numeric/coerce_spec.rb	*	expected	instance-variables	@obj = …: cameo has no instance variables; initialize sets a field with self.obj = …
 core/numeric/comparison_spec.rb	*	expected	instance-variables	@obj = …: cameo has no instance variables; initialize sets a field with self.obj = …
-core/numeric/conj_spec.rb	Numeric#conj is an alias of Numeric#conjugate	bug		uninitialized constant Numeric (NameError)
+core/numeric/conj_spec.rb	Numeric#conj is an alias of Numeric#conjugate	expected	metaprogramming	undefined method 'instance_method' for class Numeric (NoMethodError)
 core/numeric/conjugate_spec.rb	*	expected	instance-variables	@numbers = …: cameo has no instance variables; initialize sets a field with self.numbers = …
 core/numeric/denominator_spec.rb	*	expected	instance-variables	@numbers = …: cameo has no instance variables; initialize sets a field with self.numbers = …
 core/numeric/div_spec.rb	*	expected	instance-variables	@obj = …: cameo has no instance variables; initialize sets a field with self.obj = …
@@ -2336,36 +2336,36 @@ core/numeric/floor_spec.rb	*	expected	instance-variables	@obj = …: cameo has n
 core/numeric/i_spec.rb	Numeric#i returns a Complex object	bug		undefined method 'i' for an instance of Integer (NoMethodError)
 core/numeric/i_spec.rb	Numeric#i sets the real part to 0	bug		undefined method 'i' for an instance of Integer (NoMethodError)
 core/numeric/i_spec.rb	Numeric#i sets the imaginary part to self	bug		undefined method 'i' for an instance of Float (NoMethodError)
-core/numeric/imag_spec.rb	Numeric#imag is an alias of Numeric#imaginary	bug		uninitialized constant Numeric (NameError)
+core/numeric/imag_spec.rb	Numeric#imag is an alias of Numeric#imaginary	expected	metaprogramming	undefined method 'instance_method' for class Numeric (NoMethodError)
 core/numeric/imaginary_spec.rb	*	expected	instance-variables	@numbers = …: cameo has no instance variables; initialize sets a field with self.numbers = …
 core/numeric/infinite_spec.rb	Numeric#infinite? returns nil by default	harness	fails under Ruby too	undefined method 'mock_numeric' for main (NoMethodError)
-core/numeric/integer_spec.rb	*	bug		uninitialized constant Numeric (NameError)
-core/numeric/magnitude_spec.rb	Numeric#magnitude is an alias of Numeric#abs	bug		uninitialized constant Numeric (NameError)
-core/numeric/modulo_spec.rb	Numeric#modulo is an alias of Numeric#%	bug		uninitialized constant Numeric (NameError)
+core/numeric/integer_spec.rb	*	expected	numeric-subclass	class Comparison < Numeric: a subclass of Numeric is not supported; Integer and Float do not coerce other numbers in their arithmetic (CameoError)
+core/numeric/magnitude_spec.rb	Numeric#magnitude is an alias of Numeric#abs	expected	metaprogramming	undefined method 'instance_method' for class Numeric (NoMethodError)
+core/numeric/modulo_spec.rb	Numeric#modulo is an alias of Numeric#%	expected	metaprogramming	undefined method 'instance_method' for class Numeric (NoMethodError)
 core/numeric/modulo_spec.rb	Numeric#% returns self - other * self.div(other)	harness	fails under Ruby too	undefined method 'mock_numeric' for main (NoMethodError)
 core/numeric/negative_spec.rb	*	expected	instance-variables	@obj = …: cameo has no instance variables; initialize sets a field with self.obj = …
 core/numeric/nonzero_spec.rb	*	expected	instance-variables	@obj = …: cameo has no instance variables; initialize sets a field with self.obj = …
 core/numeric/numerator_spec.rb	*	expected	instance-variables	@numbers = …: cameo has no instance variables; initialize sets a field with self.numbers = …
-core/numeric/numeric_spec.rb	Numeric includes Comparable	bug		uninitialized constant Numeric (NameError)
-core/numeric/phase_spec.rb	Numeric#phase is an alias of Numeric#arg	bug		uninitialized constant Numeric (NameError)
+core/numeric/numeric_spec.rb	Numeric includes Comparable	pass		
+core/numeric/phase_spec.rb	Numeric#phase is an alias of Numeric#arg	expected	metaprogramming	undefined method 'instance_method' for class Numeric (NoMethodError)
 core/numeric/polar_spec.rb	*	expected	instance-variables	@pos_numbers = …: cameo has no instance variables; initialize sets a field with self.pos_numbers = …
 core/numeric/positive_spec.rb	*	expected	instance-variables	@obj = …: cameo has no instance variables; initialize sets a field with self.obj = …
-core/numeric/quo_spec.rb	*	bug		uninitialized constant Numeric (NameError)
+core/numeric/quo_spec.rb	*	expected	numeric-subclass	class Comparison < Numeric: a subclass of Numeric is not supported; Integer and Float do not coerce other numbers in their arithmetic (CameoError)
 core/numeric/real_spec.rb	*	expected	instance-variables	@numbers = …: cameo has no instance variables; initialize sets a field with self.numbers = …
-core/numeric/rect_spec.rb	Numeric#rect is an alias of Numeric#rectangular	bug		uninitialized constant Numeric (NameError)
+core/numeric/rect_spec.rb	Numeric#rect is an alias of Numeric#rectangular	expected	metaprogramming	undefined method 'instance_method' for class Numeric (NoMethodError)
 core/numeric/rectangular_spec.rb	*	expected	instance-variables	@numbers = …: cameo has no instance variables; initialize sets a field with self.numbers = …
 core/numeric/remainder_spec.rb	*	expected	instance-variables	@obj = …: cameo has no instance variables; initialize sets a field with self.obj = …
 core/numeric/round_spec.rb	*	expected	instance-variables	@obj = …: cameo has no instance variables; initialize sets a field with self.obj = …
 core/numeric/singleton_method_added_spec.rb	*	expected	metaprogramming	def test on an object: methods belong to classes
 core/numeric/step_spec.rb	*	expected	instance-variables	@prc = …: cameo has no instance variables; initialize sets a field with self.prc = …
 core/numeric/to_c_spec.rb	*	expected	instance-variables	@numbers = …: cameo has no instance variables; initialize sets a field with self.numbers = …
-core/numeric/to_int_spec.rb	*	bug		uninitialized constant Numeric (NameError)
+core/numeric/to_int_spec.rb	*	expected	numeric-subclass	class Comparison < Numeric: a subclass of Numeric is not supported; Integer and Float do not coerce other numbers in their arithmetic (CameoError)
 core/numeric/truncate_spec.rb	*	expected	instance-variables	@obj = …: cameo has no instance variables; initialize sets a field with self.obj = …
 core/numeric/uminus_spec.rb	Numeric#-@ returns the same value with opposite sign (integers)	pass		
 core/numeric/uminus_spec.rb	Numeric#-@ returns the same value with opposite sign (floats)	pass		
 core/numeric/uminus_spec.rb	Numeric#-@ returns the same value with opposite sign (two complement)	pass		
 core/numeric/uminus_spec.rb	Numeric#-@ with a Numeric subclass calls #coerce(0) on self, then subtracts the second element of the result from the first	harness	fails under Ruby too	undefined method 'mock_numeric' for main (NoMethodError)
-core/numeric/uplus_spec.rb	*	bug		uninitialized constant Numeric (NameError)
+core/numeric/uplus_spec.rb	*	expected	numeric-subclass	class Comparison < Numeric: a subclass of Numeric is not supported; Integer and Float do not coerce other numbers in their arithmetic (CameoError)
 core/numeric/zero_spec.rb	*	expected	instance-variables	@obj = …: cameo has no instance variables; initialize sets a field with self.obj = …
 core/objectspace/_id2ref_spec.rb	ObjectSpace._id2ref converts an object id to a reference to the object	expected	process	uninitialized constant ObjectSpace (NameError)
 core/objectspace/_id2ref_spec.rb	ObjectSpace._id2ref retrieves true by object_id	expected	process	uninitialized constant ObjectSpace (NameError)
@@ -2468,9 +2468,9 @@ core/proc/syntax_tree_spec.rb	*	expected	mutation	….keep_script_lines = …: t
 core/proc/to_proc_spec.rb	Proc#to_proc returns self	expected	literal-only	undefined method 'new' for class Proc: use a literal (NoMethodError)
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with Proc.new returns a description including file and line number	expected	literal-only	undefined method 'new' for class Proc: use a literal (NoMethodError)
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with Proc.new has a binary encoding	expected	literal-only	undefined method 'new' for class Proc: use a literal (NoMethodError)
-core/proc/to_s_spec.rb	Proc#to_s for a proc created with lambda returns a description including '(lambda)' and including file and line number	bug		Expected "#<Proc:/var/folders/_j/3cwlydtn7ks30gp_gn6xrb2m0000gn/T/cameo-spec20261021-35508-8cmomw/to_s_spec.rb:263 (lambda)>" =~ /^#<Proc:([^ ]*?) \/var\/folders\/_j\/3cwlydtn7ks30gp_gn6xrb2m0000gn\/T\/cameo\-spec20261021\-35508\-8cmomw\/to
+core/proc/to_s_spec.rb	Proc#to_s for a proc created with lambda returns a description including '(lambda)' and including file and line number	bug		Expected "#<Proc:/var/folders/_j/3cwlydtn7ks30gp_gn6xrb2m0000gn/T/cameo-spec20261021-46947-uex9tl/to_s_spec.rb:263 (lambda)>" =~ /^#<Proc:([^ ]*?) \/var\/folders\/_j\/3cwlydtn7ks30gp_gn6xrb2m0000gn\/T\/cameo\-spec20261021\-46947\-uex9tl\/to
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with lambda has a binary encoding	pass		
-core/proc/to_s_spec.rb	Proc#to_s for a proc created with proc returns a description including file and line number	bug		Expected "#<Proc:/var/folders/_j/3cwlydtn7ks30gp_gn6xrb2m0000gn/T/cameo-spec20261021-35508-8cmomw/to_s_spec.rb:273>" =~ /^#<Proc:([^ ]*?) \/var\/folders\/_j\/3cwlydtn7ks30gp_gn6xrb2m0000gn\/T\/cameo\-spec20261021\-35508\-8cmomw\/to_s_spec\.
+core/proc/to_s_spec.rb	Proc#to_s for a proc created with proc returns a description including file and line number	bug		Expected "#<Proc:/var/folders/_j/3cwlydtn7ks30gp_gn6xrb2m0000gn/T/cameo-spec20261021-46947-uex9tl/to_s_spec.rb:273>" =~ /^#<Proc:([^ ]*?) \/var\/folders\/_j\/3cwlydtn7ks30gp_gn6xrb2m0000gn\/T\/cameo\-spec20261021\-46947\-uex9tl\/to_s_spec\.
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with proc has a binary encoding	pass		
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with UnboundMethod#to_proc returns a description including '(lambda)' and optionally including file and line number	expected	metaprogramming	undefined method 'method' for main (NoMethodError)
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with UnboundMethod#to_proc has a binary encoding	expected	metaprogramming	undefined method 'method' for main (NoMethodError)
