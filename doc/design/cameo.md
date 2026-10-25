@@ -814,10 +814,17 @@ re-opened by accident:
   - `Array` and `Hash` are the Ruby-visible names of cameo's lists and maps,
     so `[].class`, inspect and error messages match Ruby; the field types
     keep their protobuf names, `list` and `map`.
-  - Random numbers come from Go's `math/rand/v2`: one generator per
-    interpreter, seeded by `srand`. Reproducing Ruby's Mersenne Twister
-    sequence was rejected as not worth its code, so seeded scripts do not
-    print Ruby's numbers.
+  - Random numbers come from MT19937, seeded and converted to floats and
+    integers as CRuby does, so a seeded script prints Ruby's numbers:
+    `Kernel#rand`, `shuffle` and `sample` draw from one generator per
+    interpreter, which `srand` reseeds, and an `async` process's generator
+    is seeded from its parent's when the process starts.
+  - A `Random` is a handle on a generator, as a file handle is on a file:
+    each draw advances the generator for every holder of the handle, the
+    one exception to values never changing. A generator is a source, like
+    a file, and copying it would repeat its numbers, so a Random is not
+    copied: `dup`, `clone`, `async` and typed fields refuse it with a
+    `TypeError`, as they refuse a Proc.
   - `String#succ` follows Ruby's full rules, and ranges over strings iterate
     with it: `include?` walks such a range, `cover?` and `===` compare its
     ends.

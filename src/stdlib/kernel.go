@@ -1,9 +1,6 @@
 package stdlib
 
 import (
-	"math"
-	"math/big"
-	"math/rand/v2"
 	"strings"
 
 	"github.com/cameo-lang/cameo/src/object"
@@ -13,23 +10,6 @@ import (
 // value, as Ruby's Kernel does.
 func installKernel() {
 	o := object.ObjectClass
-	def(o, "rand", -1, kernelRand)
-	// srand reseeds the generator, with a random seed when given none, and
-	// returns the previous seed.
-	def(o, "srand", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if len(args) > 1 {
-			return object.Value{}, argError(ctx, len(args), "0..1")
-		}
-		seed := rand.Uint64() >> 1
-		if len(args) == 1 {
-			s, err := wantInt(ctx, args[0], "")
-			if err != nil {
-				return object.Value{}, err
-			}
-			seed = uint64(s)
-		}
-		return object.Int(int64(ctx.Srand(seed))), nil
-	})
 	def(o, "puts", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Nil, puts(ctx, false, args)
 	})
@@ -245,69 +225,6 @@ func raise(ctx object.Context, args []object.Value) error {
 // systemExit makes the SystemExit for exit and abort.
 func systemExit(status int64, msg string) error {
 	return &object.Exception{Cls: object.SystemExit, Message: msg, Attrs: map[string]object.Value{"status": object.Int(status)}}
-}
-
-// kernelRand is Kernel#rand: a float in [0, 1) without an argument (or
-// with nil or 0), an integer below max.to_i.abs for a number, and a number
-// within a range, or nil for an empty one.
-func kernelRand(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-	if len(args) > 1 {
-		return object.Value{}, argError(ctx, len(args), "0..1")
-	}
-	r := ctx.Rand()
-	if len(args) == 0 || args[0].IsNil() {
-		return object.Float(r.Float64()), nil
-	}
-	switch a := args[0]; a.Kind() {
-	case object.KindBig:
-		return object.BigInt(randBelow(r, new(big.Int).Abs(a.Big()))), nil
-	case object.KindInt, object.KindFloat:
-		f, _ := a.AsNumber()
-		n := int64(math.Abs(f))
-		if n == 0 {
-			return object.Float(r.Float64()), nil
-		}
-		return object.Int(r.Int64N(n)), nil
-	case object.KindRange:
-		rg := a.Range()
-		lo, hi := object.OrNil(rg.Lo), object.OrNil(rg.Hi)
-		if li, ok := lo.AsInt(); ok {
-			if hiI, ok := hi.AsInt(); ok {
-				if rg.Exclusive {
-					hiI--
-				}
-				if hiI < li {
-					return object.Nil, nil
-				}
-				return object.Int(li + r.Int64N(hiI-li+1)), nil
-			}
-		}
-		lf, ok1 := lo.AsNumber()
-		hf, ok2 := hi.AsNumber()
-		if ok1 && ok2 {
-			if hf < lf || (rg.Exclusive && hf == lf) {
-				return object.Nil, nil
-			}
-			return object.Float(lf + r.Float64()*(hf-lf)), nil
-		}
-	}
-	return object.Value{}, ctx.Raise(object.ArgumentError, "invalid argument - %s", kindName(args[0]))
-}
-
-// randBelow is a uniform integer in [0, n), for an n beyond 64 bits: random
-// words with the bits of n, drawn again while they reach n.
-func randBelow(r *rand.Rand, n *big.Int) *big.Int {
-	words := (n.BitLen() + 63) / 64
-	extra := uint(words*64 - n.BitLen())
-	for {
-		v := new(big.Int)
-		for i := 0; i < words; i++ {
-			v.Lsh(v, 64).Or(v, new(big.Int).SetUint64(r.Uint64()))
-		}
-		if v.Rsh(v, extra).Cmp(n) < 0 {
-			return v
-		}
-	}
 }
 
 // toFloat is Kernel#Float of one value: a number as a float, or a string

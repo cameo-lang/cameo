@@ -3,7 +3,6 @@ package eval
 import (
 	"errors"
 	"fmt"
-	"math/rand/v2"
 	"sort"
 	"strings"
 
@@ -57,7 +56,7 @@ func (in *Interp) Dump(source string) (*protogen.Dump, error) {
 		d.Loaded = append(d.Loaded, lib)
 	}
 	sort.Strings(d.Loaded)
-	if d.Rand, err = in.pcg.MarshalBinary(); err != nil {
+	if d.Rand, err = in.rng.MarshalBinary(); err != nil {
 		return nil, err
 	}
 	return d, nil
@@ -163,11 +162,11 @@ func (in *Interp) Resume(prog *syntax.Program, d *protogen.Dump) error {
 		}
 	}
 	if d.Rand != nil {
-		pcg := &rand.PCG{}
-		if err := pcg.UnmarshalBinary(d.Rand); err != nil {
-			return err
+		if err := in.rng.UnmarshalBinary(d.Rand); err != nil {
+			// A dump of a cameo before Random followed CRuby's MT19937 holds
+			// another generator's state.
+			return fmt.Errorf("the dump's random number state is not one this cameo reads: %w", err)
 		}
-		in.pcg, in.rng = pcg, rand.New(pcg)
 	}
 	in.from = d.Next
 	return nil
