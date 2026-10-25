@@ -393,6 +393,10 @@ var (
 	EnumeratorClass = NewClass("Enumerator", ObjectClass)
 	LazyClass       = NewClass("Lazy", EnumeratorClass)
 	ExceptionClass  = NewClass("Exception", ObjectClass)
+	// Kernel is the module Object includes, as in Ruby. The methods every
+	// value has are Object's own, so Kernel is there for `Kernel.format`,
+	// `is_a?(Kernel)` and the ancestors.
+	Kernel = NewModule("Kernel")
 	// Enumerable is the module List, Map, Set and Range include.
 	Enumerable = NewModule("Enumerable")
 	// Comparable is the module Integer, Float, String, Symbol and Time include.
@@ -415,15 +419,14 @@ var (
 	TypeError         = NewClass("TypeError", StandardError)
 	NameError         = NewClass("NameError", StandardError)
 	NoMethodError     = NewClass("NoMethodError", NameError)
-	KeyError          = NewClass("KeyError", StandardError)
 	IndexError        = NewClass("IndexError", StandardError)
+	KeyError          = NewClass("KeyError", IndexError)
 	RangeError        = NewClass("RangeError", StandardError)
 	FloatDomainError  = NewClass("FloatDomainError", RangeError)
 	ZeroDivisionError = NewClass("ZeroDivisionError", StandardError)
-	StopIteration     = NewClass("StopIteration", StandardError)
+	StopIteration     = NewClass("StopIteration", IndexError)
 	NoMatchingPattern = NewClass("NoMatchingPatternError", StandardError)
 	FrozenError       = NewClass("FrozenError", RuntimeError)
-	NotImplementedErr = NewClass("NotImplementedError", StandardError)
 	RegexpError       = NewClass("RegexpError", StandardError)
 	LocalJumpError    = NewClass("LocalJumpError", StandardError)
 	CameoError        = NewClass("CameoError", StandardError)
@@ -431,6 +434,29 @@ var (
 	// rescue does not catch a failed require, as in Ruby.
 	ScriptError = NewClass("ScriptError", ExceptionClass)
 	LoadError   = NewClass("LoadError", ScriptError)
+	// NotImplementedError is a ScriptError, as in Ruby, so a bare rescue
+	// does not catch it either.
+	NotImplementedErr = NewClass("NotImplementedError", ScriptError)
+	SyntaxError       = NewClass("SyntaxError", ScriptError)
+	// UncaughtThrowError is what throw raises without a catch for its tag.
+	UncaughtThrowError = NewClass("UncaughtThrowError", ArgumentError)
+	// SystemExit is what exit and abort raise; the command ends with its
+	// status when nothing rescues it.
+	SystemExit = NewClass("SystemExit", ExceptionClass)
+	// The classes below are Ruby's for what cameo does not do: I/O,
+	// threads, fibers, signals and system calls. They exist so a script can
+	// name them in a rescue; the interpreter raises none of them.
+	NoMemoryError    = NewClass("NoMemoryError", ExceptionClass)
+	SecurityError    = NewClass("SecurityError", ExceptionClass)
+	SignalException  = NewClass("SignalException", ExceptionClass)
+	Interrupt        = NewClass("Interrupt", SignalException)
+	SystemStackError = NewClass("SystemStackError", ExceptionClass)
+	IOError          = NewClass("IOError", StandardError)
+	EOFError         = NewClass("EOFError", IOError)
+	FiberError       = NewClass("FiberError", StandardError)
+	ThreadError      = NewClass("ThreadError", StandardError)
+	ClosedQueueError = NewClass("ClosedQueueError", StopIteration)
+	SystemCallError  = NewClass("SystemCallError", StandardError)
 	// EncodingError and the three below it, bound in Encoding, are what
 	// combining and converting strings of different encodings raises.
 	EncodingError            = NewClass("EncodingError", StandardError)
@@ -442,6 +468,7 @@ var (
 )
 
 func init() {
+	ObjectClass.Include(Kernel)
 	ListClass.Include(Enumerable)
 	MapClass.Include(Enumerable)
 	SetClass.Include(Enumerable)
@@ -464,10 +491,12 @@ func init() {
 	BasicClasses = []*Class{
 		ObjectClass, ModuleClass, ClassClass, NilClass, BoolClass, IntegerClass, FloatClass,
 		StringClass, SymbolClass, ListClass, MapClass, SetClass, RangeClass, TimeClass, RegexpClass, MatchDataClass, EnumeratorClass, EncodingClass, PathnameClass, ProcClass,
-		ExceptionClass, Enumerable, Comparable, MathModule, ProcessModule, CameoModule,
+		ExceptionClass, Kernel, Enumerable, Comparable, MathModule, ProcessModule, CameoModule,
 		StandardError, RuntimeError, ArgumentError, TypeError, NameError, NoMethodError, KeyError,
 		IndexError, RangeError, ZeroDivisionError, StopIteration, NoMatchingPattern, FrozenError,
 		NotImplementedErr, LocalJumpError, CameoError, RegexpError, FloatDomainError, ScriptError, LoadError, EncodingError,
+		SyntaxError, UncaughtThrowError, SystemExit, NoMemoryError, SecurityError, SignalException, Interrupt,
+		SystemStackError, IOError, EOFError, FiberError, ThreadError, ClosedQueueError, SystemCallError,
 	}
 	for _, c := range BasicClasses {
 		ObjectClass.Consts[c.Name] = ClassValue(c)

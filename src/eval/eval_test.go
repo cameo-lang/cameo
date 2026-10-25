@@ -71,7 +71,7 @@ func TestErrorsNameLineAndClass(t *testing.T) {
 func TestScopes(t *testing.T) {
 	expectOutput(t, "x = 1\n[1].each { |i| x = i + 10; y = 5 }\nputs x\nputs defined?(y).inspect rescue puts \"nil\"\n", "11\nnil\n")
 	expectOutput(t, "def m\n  v = 1\n  l = -> { v += 1 }\n  l.call\n  l.call\n  v\nend\nputs m\n", "3\n")
-	expectOutput(t, "x = 10\ndef m = x\nbegin\n  m\nrescue NameError, NoMethodError => e\n  puts e.class\nend\n", "NoMethodError\n")
+	expectOutput(t, "x = 10\ndef m = x\nbegin\n  m\nrescue NameError, NoMethodError => e\n  puts e.class\nend\n", "NameError\n")
 }
 
 func TestBlocksAndReturns(t *testing.T) {
@@ -853,4 +853,25 @@ func TestRubyVersionConstantsCannotBeReassigned(t *testing.T) {
 	expectError(t, "RUBY_VERSION = \"9.9.9\"\n", "cannot reassign the builtin constant RUBY_VERSION")
 	expectError(t, "RUBY_PATCHLEVEL = 1\n", "cannot reassign the builtin constant RUBY_PATCHLEVEL")
 	expectOutput(t, "class A\n  RUBY_VERSION = \"1.8\"\n  def self.v = RUBY_VERSION\nend\nputs A.v\nputs RUBY_VERSION\n", "1.8\n3.4.0\n")
+}
+
+func TestAnAssignmentBindsItsLocalBeforeItsValue(t *testing.T) {
+	// The lambda calls itself through fact, and x = x reads the new local.
+	expectOutput(t, "fact = ->(n) { n <= 1 ? 1 : n * fact.(n - 1) }\np fact.(5)\nx = x\np x\n", "120\nnil\n")
+	// A def in the value has its own locals: z there is a method call.
+	expectOutput(t, "def z = 3\nz = Class.new { def m = z }\np z.new.m\n", "3\n")
+}
+
+func TestLineIsTheLineOfItsStatement(t *testing.T) {
+	expectOutput(t, "p __LINE__\n\ndef f\n  __LINE__\nend\np f\n[1].each do |v|\n  p \"#{__LINE__}\"\nend\n", "1\n4\n\"8\"\n")
+	expectOutput(t, "x = 1\n\np(/a#{__LINE__ }b/)\n", "/a3b/\n")
+}
+
+func TestNilMatchesNothingAndNoClassIsASingleton(t *testing.T) {
+	expectOutput(t, "p nil =~ /a/, nil =~ \"a\"\np Class.new.singleton_class?, NilClass.singleton_class?, Comparable.singleton_class?\n", "nil\nnil\nfalse\nfalse\nfalse\n")
+}
+
+func TestProcsShowWhereTheyWereWritten(t *testing.T) {
+	expectOutput(t, "p proc { 1 }\nputs -> { 1 }, :up.to_proc\np proc { 1 }.to_s.encoding\n",
+		"#<Proc:t.cameo:1>\n#<Proc:t.cameo:2 (lambda)>\n#<Proc:(&:up) (lambda)>\n#<Encoding:BINARY (ASCII-8BIT)>\n")
 }

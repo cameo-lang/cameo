@@ -59,6 +59,8 @@ type Interp struct {
 	loaded map[string]bool
 	// stop ends the run, and is shared with the workers; see Stop.
 	stop *stopper
+	// catches are the tags of the catch blocks running, innermost last.
+	catches []*catchTag
 	// last is the value of the last top-level expression Run evaluated.
 	last object.Value
 	// interpreted counts the calls of compiled methods running on the

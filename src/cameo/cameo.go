@@ -43,6 +43,20 @@ func RunFile(path string, stdout, stderr io.Writer) error {
 	return Run(path, string(src), stdout, stderr)
 }
 
+// ExitStatus returns the status a script ended with by exit or abort, or
+// by raising SystemExit itself, and false when err is anything else.
+func ExitStatus(err error) (int, bool) {
+	var exc *object.Exception
+	if !errors.As(err, &exc) || !exc.Cls.IsA(object.SystemExit) {
+		return 0, false
+	}
+	status, ok := exc.Attr("status")
+	if !ok || status.Kind() != object.KindInt {
+		return 0, true
+	}
+	return int(status.Int()), true
+}
+
 // RunError is an exception that ended a script, with its message formatted
 // for the terminal: "script.cameo:12: message (Class)".
 type RunError struct {

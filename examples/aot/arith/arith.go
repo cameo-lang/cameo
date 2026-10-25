@@ -118,7 +118,7 @@ end
 `
 
 // digest identifies the program: syntax.Digest of Script, parsed.
-const digest = "c4f5b8430902734e"
+const digest = "2b2b764a44b1200b"
 
 func init() {
 	eval.RegisterCompiled(digest, eval.Compiled{

@@ -360,3 +360,22 @@ func typeName(n Node) string { return fmt.Sprintf("%T", n) }
 func TestTapWithAHashPointsAtWith(t *testing.T) {
 	rejects(t, "p = q.tap { |x| { a: 1 } }\n", "tap returns its receiver unchanged; for a copy with changes use with")
 }
+
+func TestOnlyABeginBeforeWhileTestsAfterThePass(t *testing.T) {
+	for src, want := range map[string]bool{
+		"begin\n  x = 1\nend while false":         true,
+		"begin; x = 1; end until true":            true,
+		"x = 1 while false":                       false,
+		"x = 0\nx += 1 rescue 2 while false":      false,
+		"while false\n  begin\n    1\n  end\nend": false,
+	} {
+		body := parse(t, src).Body
+		w, ok := body[len(body)-1].(*While)
+		if !ok {
+			t.Fatalf("%q: the last statement is %T, want a While", src, body[len(body)-1])
+		}
+		if w.DoWhile != want {
+			t.Errorf("%q: DoWhile is %v, want %v", src, w.DoWhile, want)
+		}
+	}
+}

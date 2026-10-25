@@ -56,6 +56,21 @@ CAMEO
   assert_eq $'{"a":[1,2.5,null],"b":{"c":"é"}}\n{\n  "c": "é"\n}\n'"$script"$':4: unexpected token at \']\' (JSON::ParserError)' "$out"
 }
 
+test_exit_ends_the_run_with_its_status() {
+  local dir out rc
+  dir="$(mktemp -d)"
+  printf 'begin\n  puts "before"\n  exit 3\nensure\n  puts "ensure"\nend\nputs "after"\n' >"$dir/exit.cameo"
+  rc=0
+  out=$("$CAMEO_BIN" "$dir/exit.cameo" 2>&1) || rc=$?
+  assert_eq 3 "$rc" "exit 3 sets the status"
+  assert_eq $'before\nensure' "$out"
+  printf 'abort "gone"\n' >"$dir/abort.cameo"
+  rc=0
+  out=$("$CAMEO_BIN" "$dir/abort.cameo" 2>&1) || rc=$?
+  assert_eq 1 "$rc" "abort exits 1"
+  assert_eq "gone" "$out"
+}
+
 test_benchmark_reports_the_time_inside_the_script() {
   local script out
   script="$(mktemp -d)/bench.cameo"

@@ -7,13 +7,13 @@ import (
 )
 
 // control is a non-local exit travelling up the evaluator as an error:
-// break, next, return and retry. A raised exception travels as an
+// break, next, redo, return, retry, and a throw to its catch. A raised exception travels as an
 // *object.Exception instead.
 type control struct {
 	kind   ctrlKind
 	value  object.Value
 	line   int
-	target any // the *Frame a return goes to, the *Proc a break leaves
+	target any // the *Frame a return goes to, the *Proc a break leaves, the *catchTag a throw ends
 }
 
 type ctrlKind int
@@ -23,6 +23,8 @@ const (
 	ctrlNext
 	ctrlReturn
 	ctrlRetry
+	ctrlRedo
+	ctrlThrow
 )
 
 func (k ctrlKind) String() string {
@@ -35,6 +37,10 @@ func (k ctrlKind) String() string {
 		return "return"
 	case ctrlRetry:
 		return "retry"
+	case ctrlRedo:
+		return "redo"
+	case ctrlThrow:
+		return "throw"
 	}
 	return "control"
 }
@@ -82,5 +88,23 @@ func typeName(v object.Value) string {
 	if v.IsNil() {
 		return "nil"
 	}
+	if inst, ok := v.AsInstance(); ok && inst.Cls.Digest == "main" {
+		return "main"
+	}
 	return "an instance of " + v.Class().QualifiedName()
+}
+
+// noMethod makes the error for a call of name that recv has no method
+// for: a NoMethodError, or a NameError for a bare name, which may have
+// been meant as a local. Either carries the name and the receiver, and a
+// NoMethodError the arguments.
+func (in *Interp) noMethod(recv object.Value, name string, args []object.Value, vcall bool, line int) error {
+	attrs := map[string]object.Value{"name": object.Symbol(name), "receiver": recv}
+	if vcall {
+		return &object.Exception{Cls: object.NameError, Line: line, Attrs: attrs,
+			Message: fmt.Sprintf("undefined local variable or method '%s' for %s", name, typeName(recv))}
+	}
+	attrs["args"] = object.NewList(append([]object.Value{}, args...)...)
+	return &object.Exception{Cls: object.NoMethodError, Line: line, Attrs: attrs,
+		Message: fmt.Sprintf("undefined method '%s' for %s", name, typeName(recv))}
 }
