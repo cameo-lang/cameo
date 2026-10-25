@@ -218,8 +218,10 @@ func (t *translator) group(b *strings.Builder) error {
 			return t.unsupported("a malformed group name")
 		}
 		name := t.src[t.i+3 : t.i+3+end]
+		// The group is a plain one for Go, whose names are ASCII words
+		// only; the caller numbers groups by name from t.names.
 		t.names = append(t.names, name)
-		b.WriteString("(?P<" + name + ">")
+		b.WriteByte('(')
 		t.i += 3 + end + 1
 		t.extended = append(t.extended, ext)
 		return nil

@@ -143,7 +143,7 @@ func installStringPatterns() {
 					case object.KindInt:
 						g = int(a.Int())
 					case object.KindString, object.KindBytes, object.KindASCII, object.KindSymbol:
-						if g = r.GroupIndex(a.Str()); g < 0 {
+						if g = m.NameIndex(a.Str()); g < 0 {
 							return object.Value{}, ctx.Raise(object.IndexError, "undefined group name reference: %s", a.Str())
 						}
 					}

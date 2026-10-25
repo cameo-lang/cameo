@@ -53,8 +53,16 @@ module Classify
     [/ruby2_keywords/, "expected", "ruby2_keywords"],
   ].freeze
 
-  # status returns [status, reason] for a message that stopped a spec.
-  def self.status(message)
+  # Examples whose name says they test something cameo leaves out, where
+  # the message does not.
+  NAME_RULES = [
+    [/'[es]' (modifier|option)|EUC-JP|Windows-31J|Shift_JIS|UTF-16|UTF-32|ISO-8859/, "expected", "encodings"],
+  ].freeze
+
+  # status returns [status, reason] for a message that stopped a spec, the
+  # example's name, if there is one, deciding first.
+  def self.status(message, name = "")
+    NAME_RULES.each { |pattern, status, reason| return [status, reason] if name.match?(pattern) }
     if (name = message[/undefined (?:local variable or )?method '([^']+)' for/, 1]) && HARNESS.include?(name)
       return ["harness", name]
     end
