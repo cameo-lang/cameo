@@ -5,7 +5,7 @@
 
 BINARY := bin/cameo
 
-.PHONY: default help prerequisites deps build tests integration-tests lint check conformance clean install
+.PHONY: default help prerequisites deps build tests integration-tests lint check conformance ruby-spec spec-status clean install
 
 default: build
 	@echo "Build succeeded. Run tests via 'make tests'. Show help via 'make help'."
@@ -48,6 +48,10 @@ check: lint tests integration-tests ## Everything CI runs
 # Not part of check, which needs no tool but Go: this one needs a Ruby.
 conformance: prerequisites ## Run every example and CRuby case compiled and interpreted, and compare
 	ruby tests/conformance/run.rb
+
+# Not part of check: it needs a Ruby and a ruby/spec copy.
+spec-status: build ## Run ruby/spec's language and core, and rewrite specs/status.tsv
+	ruby specs/run.rb --cameo $(BINARY) --ruby ruby --status specs/status.tsv
 
 # Not part of check either: it clones or pulls github.com/ruby/spec.
 ruby-spec: ## Clone ruby/spec into ruby-spec/ of the main repository, or pull it
