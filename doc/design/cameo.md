@@ -127,7 +127,7 @@ for the enclosing scope. Nothing else in the program can observe the old
 value, since no value refers to a variable.
 
 A call that changes its receiver in Ruby -- `x << y`, `x.push(y)`,
-`x.pop`, `h.delete(k)`, `s.add(y)`, any bang method -- is a rebinding too,
+`x.pop`, `h.delete(k)`, `s.add(y)`, a bang method of Ruby's core -- is a rebinding too,
 when its receiver is a local variable or a field inside `initialize`: x
 becomes the changed copy, as `h[k] = v` makes h one. The call's value is
 Ruby's: the receiver for most, the removed element for `pop`, `shift` and
@@ -717,6 +717,14 @@ re-opened by accident:
   `initialize`, which only `new` runs on an instance under construction.
   Leaving it out cost scripts that pick a method from data; the parser
   cannot see the name, so the refusal happens when the call runs.
+- **A bang method a script defines** (`def save!`) is a call like any
+  other: it returns its result, rebinds nothing, and may be called on any
+  receiver. The checker learns the names from the script's `def`s, so a
+  bang method the script does not define is still one of Ruby's mutators
+  and refused where it cannot rebind. Making a script's bang methods
+  rebind their receiver to their result, as the core's do, was rejected:
+  a bang method that returns nil, as Ruby's do when nothing changed,
+  would set the variable to nil.
 - **Concurrency is a module a script includes.** `include Cameo` brings
   `async`, `await`, `promise`, `resolve` and `fail`; without it they are
   unknown, so a script states that it runs work concurrently. `async`

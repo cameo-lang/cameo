@@ -7,7 +7,6 @@
 #   a.should.raise(E, "m")    __should_raise(false, a, E, "m")
 #   a.should.include?(x)      __should_pred(false, a, :include?, x)
 #   a.should be_close(x, t)   __should(false, a, be_close(x, t))
-#   quarantine! do … end      __quarantine do … end
 #
 # and the same with true for should_not. A matcher is a lambda that takes
 # the actual value and returns [matched, expectation]. Values are immutable
@@ -227,7 +226,7 @@ def little_endian(&block) = __spec_guard(true, &block)
 def big_endian(&block) = __spec_guard(false, &block)
 def as_user(&block) = __spec_guard(true, &block)
 def as_superuser(&block) = __spec_guard(false, &block)
-def __quarantine(&block) = __spec_guard(false, &block)
+def quarantine!(&block) = __spec_guard(false, &block)
 def slow_test(&block) = __spec_guard(true, &block)
 def deviates_on(*impls, &block) = __spec_guard(false, &block)
 def extended_on(*impls, &block) = __spec_guard(false, &block)
