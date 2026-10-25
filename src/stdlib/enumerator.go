@@ -181,6 +181,9 @@ func installEnumerator() {
 		if block.IsZero() {
 			return self, nil
 		}
+		if call := en(self).Call; call != nil {
+			return call(ctx, block)
+		}
 		err := en(self).Each(ctx, func(v object.Value) error {
 			_, err := ctx.Yield(block, v)
 			return err

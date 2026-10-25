@@ -41,7 +41,7 @@ core/array/allocate_spec.rb	Array.allocate returns a fully-formed instance of Ar
 core/array/allocate_spec.rb	Array.allocate does not accept any arguments	pass		
 core/array/any_spec.rb	*	expected	instance-variables	@value_to_return = …: cameo has no instance variables; initialize sets a field with self.value_to_return = …
 core/array/append_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
-core/array/array_spec.rb	Array includes Enumerable	bug		undefined method 'include?' for class Array (NoMethodError)
+core/array/array_spec.rb	Array includes Enumerable	pass		
 core/array/assoc_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/array/at_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/array/bsearch_index_spec.rb	*	expected	instance-variables	@object: cameo has no instance variables; a field is read with its reader, object or self.object
@@ -127,7 +127,7 @@ core/array/pack/comment_spec.rb	*	expected	instance-variables	instance_variable_
 core/array/pack/d_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/array/pack/e_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/array/pack/empty_spec.rb	Array#pack with empty format returns an empty String	pass		
-core/array/pack/empty_spec.rb	Array#pack with empty format returns a String with US-ASCII encoding	bug		Expected #<Encoding:ASCII-8BIT> == #<Encoding:US-ASCII> to be truthy but was false
+core/array/pack/empty_spec.rb	Array#pack with empty format returns a String with US-ASCII encoding	bug		Expected #<Encoding:BINARY (ASCII-8BIT)> == #<Encoding:US-ASCII> to be truthy but was false
 core/array/pack/f_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/array/pack/g_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/array/pack/h_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
@@ -647,7 +647,7 @@ core/enumerator/chain/size_spec.rb	*	expected	instance-variables	@list = …: ca
 core/enumerator/each_spec.rb	*	expected	instance-variables	@enum = …: cameo has no instance variables; initialize sets a field with self.enum = …
 core/enumerator/each_with_index_spec.rb	*	expected	instance-variables	@list = …: cameo has no instance variables; initialize sets a field with self.list = …
 core/enumerator/each_with_object_spec.rb	*	expected	instance-variables	@enum = …: cameo has no instance variables; initialize sets a field with self.enum = …
-core/enumerator/enumerator_spec.rb	Enumerator includes Enumerable	bug		undefined method 'include?' for class Enumerator (NoMethodError)
+core/enumerator/enumerator_spec.rb	Enumerator includes Enumerable	pass		
 core/enumerator/feed_spec.rb	*	expected	mutation	<< changes its receiver, which cameo rebinds only for a local variable or a field in initialize; use + or append
 core/enumerator/first_spec.rb	Enumerator#first returns arrays correctly when calling #first (2376)	expected	literal-only	undefined method 'new' for class Enumerator: use a literal (NoMethodError)
 core/enumerator/initialize_spec.rb	*	expected	instance-variables	@uninitialized = …: cameo has no instance variables; initialize sets a field with self.uninitialized = …
@@ -1187,7 +1187,7 @@ core/float/finite_spec.rb	Float#finite? returns true for finite values	pass
 core/float/finite_spec.rb	Float#finite? returns false for positive infinity	pass		
 core/float/finite_spec.rb	Float#finite? returns false for negative infinity	pass		
 core/float/finite_spec.rb	Float#finite? returns false for NaN	pass		
-core/float/float_spec.rb	Float includes Comparable	bug		undefined method 'include?' for class Float (NoMethodError)
+core/float/float_spec.rb	Float includes Comparable	pass		
 core/float/float_spec.rb	Float .allocate raises a TypeError	expected	metaprogramming	allocate is not supported: use new (NoMethodError)
 core/float/float_spec.rb	Float .new is undefined	pass		
 core/float/floor_spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
@@ -1358,7 +1358,7 @@ core/hash/gt_spec.rb	*	expected	instance-variables	@method: cameo has no instanc
 core/hash/gte_spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
 core/hash/has_key_spec.rb	Hash#has_key? is an alias of Hash#include?	expected	metaprogramming	undefined method 'instance_method' for class Hash (NoMethodError)
 core/hash/has_value_spec.rb	Hash#has_value? is an alias of Hash#value?	expected	metaprogramming	undefined method 'instance_method' for class Hash (NoMethodError)
-core/hash/hash_spec.rb	Hash includes Enumerable	bug		undefined method 'include?' for class Hash (NoMethodError)
+core/hash/hash_spec.rb	Hash includes Enumerable	pass		
 core/hash/hash_spec.rb	Hash#hash returns a value which doesn't depend on the hash order	pass		
 core/hash/hash_spec.rb	Hash#hash returns a value in which element values do not cancel each other out	pass		
 core/hash/hash_spec.rb	Hash#hash returns a value in which element keys and values do not cancel each other out	pass		
@@ -1527,7 +1527,7 @@ core/integer/gcdlcm_spec.rb	Integer#gcdlcm raises a TypeError unless the argumen
 core/integer/gt_spec.rb	*	expected	instance-variables	@v = …: cameo has no instance variables; initialize sets a field with self.v = …
 core/integer/gte_spec.rb	*	expected	instance-variables	@v = …: cameo has no instance variables; initialize sets a field with self.v = …
 core/integer/inspect_spec.rb	Integer#inspect is an alias of Integer#to_s	expected	metaprogramming	undefined method 'instance_method' for class Integer (NoMethodError)
-core/integer/integer_spec.rb	Integer includes Comparable	bug		undefined method 'include?' for class Integer (NoMethodError)
+core/integer/integer_spec.rb	Integer includes Comparable	pass		
 core/integer/integer_spec.rb	Integer is the class of both small and large integers	expected	identity-and-freezing	undefined method 'equal?' for class Integer (NoMethodError)
 core/integer/integer_spec.rb	Integer#integer? returns true for Integers	pass		
 core/integer/lcm_spec.rb	Integer#lcm returns self if equal to the argument	pass		
@@ -1975,7 +1975,7 @@ core/matchdata/element_reference_spec.rb	MatchData#[Symbol] returns the last mat
 core/matchdata/element_reference_spec.rb	MatchData#[Symbol] returns nil on non-matching named matches	pass		
 core/matchdata/element_reference_spec.rb	MatchData#[Symbol] raises an IndexError if there is no named match corresponding to the Symbol	pass		
 core/matchdata/element_reference_spec.rb	MatchData#[Symbol] raises an IndexError if there is no named match corresponding to the String	pass		
-core/matchdata/element_reference_spec.rb	MatchData#[Symbol] returns matches in the String's encoding	bug		unknown encoding name - euc-jp (ArgumentError)
+core/matchdata/element_reference_spec.rb	MatchData#[Symbol] returns matches in the String's encoding	expected	encodings	unknown encoding name - euc-jp (ArgumentError)
 core/matchdata/end_spec.rb	MatchData#end when passed an integer argument returns the character offset of the end of the nth element	pass		
 core/matchdata/end_spec.rb	MatchData#end when passed an integer argument returns nil when the nth match isn't found	pass		
 core/matchdata/end_spec.rb	MatchData#end when passed an integer argument returns the character offset for multi-byte strings	pass		
@@ -2434,13 +2434,13 @@ core/proc/to_proc_spec.rb	Proc#to_proc returns self	expected	literal-only	undefi
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with Proc.new returns a description including file and line number	expected	literal-only	undefined method 'new' for class Proc: use a literal (NoMethodError)
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with Proc.new has a binary encoding	expected	literal-only	undefined method 'new' for class Proc: use a literal (NoMethodError)
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with lambda returns a description including '(lambda)' and including file and line number	bug		undefined method '__LINE__' for an instance of Object (NoMethodError)
-core/proc/to_s_spec.rb	Proc#to_s for a proc created with lambda has a binary encoding	bug		Expected #<Encoding:UTF-8> == #<Encoding:ASCII-8BIT> to be truthy but was false
+core/proc/to_s_spec.rb	Proc#to_s for a proc created with lambda has a binary encoding	bug		Expected #<Encoding:UTF-8> == #<Encoding:BINARY (ASCII-8BIT)> to be truthy but was false
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with proc returns a description including file and line number	bug		undefined method '__LINE__' for an instance of Object (NoMethodError)
-core/proc/to_s_spec.rb	Proc#to_s for a proc created with proc has a binary encoding	bug		Expected #<Encoding:UTF-8> == #<Encoding:ASCII-8BIT> to be truthy but was false
+core/proc/to_s_spec.rb	Proc#to_s for a proc created with proc has a binary encoding	bug		Expected #<Encoding:UTF-8> == #<Encoding:BINARY (ASCII-8BIT)> to be truthy but was false
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with UnboundMethod#to_proc returns a description including '(lambda)' and optionally including file and line number	expected	metaprogramming	undefined method 'method' for an instance of Object (NoMethodError)
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with UnboundMethod#to_proc has a binary encoding	expected	metaprogramming	undefined method 'method' for an instance of Object (NoMethodError)
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with Symbol#to_proc returns a description including '(&:symbol)'	bug		Expected "#<Proc>".include?("(&:foobar)") to be truthy but was false
-core/proc/to_s_spec.rb	Proc#to_s for a proc created with Symbol#to_proc has a binary encoding	bug		Expected #<Encoding:UTF-8> == #<Encoding:ASCII-8BIT> to be truthy but was false
+core/proc/to_s_spec.rb	Proc#to_s for a proc created with Symbol#to_proc has a binary encoding	bug		Expected #<Encoding:UTF-8> == #<Encoding:BINARY (ASCII-8BIT)> to be truthy but was false
 core/proc/yield_spec.rb	Proc#yield is an alias of Proc#call	expected	metaprogramming	undefined method 'instance_method' for class Proc (NoMethodError)
 core/process/_fork_spec.rb	*	bug		fork is not supported; use async
 core/process/abort_spec.rb	*	expected	mutation	multiple assignment binds local variables only
@@ -2683,7 +2683,7 @@ core/range/overlap_spec.rb	Range#overlap? return false when other Range is empty
 core/range/overlap_spec.rb	Range#overlap? takes into account exclusive end	pass		
 core/range/percent_spec.rb	Range#% works as a Range#step	bug		uninitialized constant Enumerator::ArithmeticSequence (NameError)
 core/range/percent_spec.rb	Range#% produces an arithmetic sequence with a percent sign in #inspect	bug		Expected "[1, 3, 5, 7, 9]" == "((1..10).%(2))" to be truthy but was false
-core/range/range_spec.rb	Range includes Enumerable	bug		undefined method 'include?' for class Range (NoMethodError)
+core/range/range_spec.rb	Range includes Enumerable	pass		
 core/range/reverse_each_spec.rb	Range#reverse_each traverses the Range in reverse order and passes each element to block	pass		
 core/range/reverse_each_spec.rb	Range#reverse_each returns self	expected	identity-and-freezing	undefined method 'equal?' for an instance of Range (NoMethodError)
 core/range/reverse_each_spec.rb	Range#reverse_each returns an Enumerator if no block given	bug		Expected [3, 2, 1].instance_of?(Enumerator) to be truthy but was false
@@ -2872,9 +2872,9 @@ core/regexp/quote_spec.rb	Regexp.quote escapes any characters with special meani
 core/regexp/quote_spec.rb	Regexp.quote works with symbols	pass		
 core/regexp/quote_spec.rb	Regexp.quote works with substrings	pass		
 core/regexp/quote_spec.rb	Regexp.quote works for broken strings	pass		
-core/regexp/quote_spec.rb	Regexp.quote sets the encoding of the result to US-ASCII if there are only US-ASCII characters present in the input String	bug		unknown encoding name - euc-jp (ArgumentError)
+core/regexp/quote_spec.rb	Regexp.quote sets the encoding of the result to US-ASCII if there are only US-ASCII characters present in the input String	expected	encodings	unknown encoding name - euc-jp (ArgumentError)
 core/regexp/quote_spec.rb	Regexp.quote sets the encoding of the result to the encoding of the String if any non-US-ASCII characters are present in an input String with valid encoding	pass		
-core/regexp/quote_spec.rb	Regexp.quote sets the encoding of the result to BINARY if any non-US-ASCII characters are present in an input String with invalid encoding	harness	fails under Ruby too	Expected #<Encoding:UTF-8> == #<Encoding:ASCII-8BIT> to be truthy but was false
+core/regexp/quote_spec.rb	Regexp.quote sets the encoding of the result to BINARY if any non-US-ASCII characters are present in an input String with invalid encoding	harness	fails under Ruby too	Expected #<Encoding:UTF-8> == #<Encoding:BINARY (ASCII-8BIT)> to be truthy but was false
 core/regexp/source_spec.rb	Regexp#source returns the original string of the pattern	pass		
 core/regexp/source_spec.rb	Regexp#source keeps escape sequences as is	pass		
 core/regexp/source_spec.rb	Regexp#source escaping keeps escaping of metacharacter	pass		
@@ -2910,24 +2910,24 @@ core/set/difference_spec.rb	Set#difference is an alias of Set#-	expected	metapro
 core/set/disjoint_spec.rb	*	expected	instance-variables	@entries = …: cameo has no instance variables; initialize sets a field with self.entries = …
 core/set/divide_spec.rb	Set#divide divides self into a set of subsets based on the blocks return values	pass		
 core/set/divide_spec.rb	Set#divide yields each Object to the block	pass		
-core/set/divide_spec.rb	Set#divide returns an enumerator when not passed a block	bug		no block given (divide) (LocalJumpError)
+core/set/divide_spec.rb	Set#divide returns an enumerator when not passed a block	pass		
 core/set/divide_spec.rb	Set#divide does not retain compare_by_identity flag	bug		undefined method 'compare_by_identity?' for an instance of Set (NoMethodError)
 core/set/divide_spec.rb	Set#divide when passed a block with an arity of 2 divides self into a set of subsets based on the blocks return values	pass		
-core/set/divide_spec.rb	Set#divide when passed a block with an arity of 2 yields each two Object to the block	bug		Expected [[1, 2]] == [[1, 1], [1, 2], [2, 1], [2, 2]] to be truthy but was false
-core/set/divide_spec.rb	Set#divide when passed a block with an arity of 2 returns an enumerator when not passed a block	bug		no block given (divide) (LocalJumpError)
+core/set/divide_spec.rb	Set#divide when passed a block with an arity of 2 yields each two Object to the block	pass		
+core/set/divide_spec.rb	Set#divide when passed a block with an arity of 2 returns an enumerator when not passed a block	pass		
 core/set/divide_spec.rb	Set#divide when passed a block with an arity of > 2 only uses the first element if the arity > 2	pass		
 core/set/divide_spec.rb	Set#divide when passed a block with an arity of > 2 only uses the first element if the arity = -1	pass		
 core/set/each_spec.rb	*	expected	instance-variables	@set = …: cameo has no instance variables; initialize sets a field with self.set = …
 core/set/empty_spec.rb	Set#empty? returns true if self is empty	pass		
 core/set/enumerable/to_set_spec.rb	Enumerable#to_set returns a new Set created from self	pass		
-core/set/enumerable/to_set_spec.rb	Enumerable#to_set passes down passed blocks	bug		Expected #<Set: {1, 2, 3}> == #<Set: {1, 4, 9}> to be truthy but was false
+core/set/enumerable/to_set_spec.rb	Enumerable#to_set passes down passed blocks	pass		
 core/set/eql_spec.rb	Set#eql? returns true when the passed argument is a Set and contains the same elements	pass		
 core/set/equal_value_spec.rb	*	expected	instance-variables	@entries = …: cameo has no instance variables; initialize sets a field with self.entries = …
 core/set/exclusion_spec.rb	*	expected	instance-variables	@set = …: cameo has no instance variables; initialize sets a field with self.set = …
 core/set/filter_spec.rb	Set#filter! is an alias of Set#select!	expected	metaprogramming	undefined method 'instance_method' for class Set (NoMethodError)
 core/set/flatten_merge_spec.rb	Set#flatten_merge is protected	bug		undefined method 'protected_instance_methods' for class Set (NoMethodError)
-core/set/flatten_merge_spec.rb	Set#flatten_merge flattens the passed Set and merges it into self	bug		undefined method 'flatten_merge' for an instance of Set (NoMethodError)
-core/set/flatten_merge_spec.rb	Set#flatten_merge raises an ArgumentError when trying to flatten a recursive Set	bug		undefined method 'flatten_merge' for an instance of Set (NoMethodError)
+core/set/flatten_merge_spec.rb	Set#flatten_merge flattens the passed Set and merges it into self	pass		
+core/set/flatten_merge_spec.rb	Set#flatten_merge raises an ArgumentError when trying to flatten a recursive Set	bug		Expected ArgumentError but no exception was raised (#<Set: {1, 2, 3, 5, 6, 7}> was returned)
 core/set/flatten_spec.rb	*	expected	instance-variables	@entries = …: cameo has no instance variables; initialize sets a field with self.entries = …
 core/set/gt_spec.rb	Set#> is an alias of Set#proper_superset?	expected	metaprogramming	undefined method 'instance_method' for class Set (NoMethodError)
 core/set/gte_spec.rb	Set#>= is an alias of Set#superset?	expected	metaprogramming	undefined method 'instance_method' for class Set (NoMethodError)
@@ -2941,11 +2941,11 @@ core/set/initialize_spec.rb	Set#initialize uses #each_entry on the provided Enum
 core/set/initialize_spec.rb	Set#initialize uses #each on the provided Enumerable if it does not respond to #each_entry	harness	fails under Ruby too	uninitialized constant MockObject (NameError)
 core/set/initialize_spec.rb	Set#initialize raises if the provided Enumerable does not respond to #each_entry or #each	harness	fails under Ruby too	uninitialized constant MockObject (NameError)
 core/set/initialize_spec.rb	Set#initialize should initialize with empty array and set	pass		
-core/set/initialize_spec.rb	Set#initialize preprocesses all elements by a passed block before adding to self	bug		Expected #<Set: {1, 2, 3}>.include?(4) to be truthy but was false
+core/set/initialize_spec.rb	Set#initialize preprocesses all elements by a passed block before adding to self	pass		
 core/set/initialize_spec.rb	Set#initialize should initialize with empty array and block	pass		
 core/set/initialize_spec.rb	Set#initialize should initialize with empty set and block	pass		
 core/set/initialize_spec.rb	Set#initialize should initialize with set	pass		
-core/set/initialize_spec.rb	Set#initialize should initialize with set and block	bug		Expected #<Set: {1, 2}>.include?(3) to be truthy but was false
+core/set/initialize_spec.rb	Set#initialize should initialize with set and block	pass		
 core/set/initialize_spec.rb	Set#initialize should initialize with just block	pass		
 core/set/inspect_spec.rb	Set#inspect is an alias of Set#to_s	expected	metaprogramming	undefined method 'instance_method' for class Set (NoMethodError)
 core/set/intersect_spec.rb	*	expected	instance-variables	@entries = …: cameo has no instance variables; initialize sets a field with self.entries = …
@@ -2961,11 +2961,11 @@ core/set/lt_spec.rb	Set#< is an alias of Set#proper_subset?	expected	metaprogram
 core/set/lte_spec.rb	Set#<= is an alias of Set#subset?	expected	metaprogramming	undefined method 'instance_method' for class Set (NoMethodError)
 core/set/map_spec.rb	*	expected	instance-variables	@set = …: cameo has no instance variables; initialize sets a field with self.set = …
 core/set/member_spec.rb	Set#member? is an alias of Set#include?	expected	metaprogramming	undefined method 'instance_method' for class Set (NoMethodError)
-core/set/merge_spec.rb	Set#merge adds the elements of the passed Enumerable to self	bug		undefined method 'merge' for an instance of Set (NoMethodError)
+core/set/merge_spec.rb	Set#merge adds the elements of the passed Enumerable to self	pass		
 core/set/merge_spec.rb	Set#merge returns self	expected	identity-and-freezing	undefined method 'equal?' for an instance of Set (NoMethodError)
-core/set/merge_spec.rb	Set#merge raises an ArgumentError when passed a non-Enumerable	bug		undefined method 'merge' for an instance of Set (NoMethodError)
+core/set/merge_spec.rb	Set#merge raises an ArgumentError when passed a non-Enumerable	pass		
 core/set/merge_spec.rb	Set#merge raises RuntimeError when called during iteration	bug		Expected RuntimeError(/iteration/) but no exception was raised (#<Set: {:a, :b, 1, 2}> was returned)
-core/set/merge_spec.rb	Set#merge accepts multiple arguments	bug		undefined method 'merge' for an instance of Set (NoMethodError)
+core/set/merge_spec.rb	Set#merge accepts multiple arguments	pass		
 core/set/merge_spec.rb	Set#merge retains compare_by_identity flag	bug		undefined method 'compare_by_identity?' for an instance of Set (NoMethodError)
 core/set/minus_spec.rb	*	expected	instance-variables	@set = …: cameo has no instance variables; initialize sets a field with self.set = …
 core/set/plus_spec.rb	Set#+ is an alias of Set#|	expected	metaprogramming	undefined method 'instance_method' for class Set (NoMethodError)
@@ -3015,13 +3015,13 @@ core/sizedqueue/size_spec.rb	*	expected	instance-variables	@object: cameo has no
 core/string/allocate_spec.rb	String.allocate returns an instance of String	expected	metaprogramming	allocate is not supported: use new (NoMethodError)
 core/string/allocate_spec.rb	String.allocate returns a fully-formed String	expected	metaprogramming	allocate is not supported: use new (NoMethodError)
 core/string/allocate_spec.rb	String.allocate returns a binary String	expected	metaprogramming	allocate is not supported: use new (NoMethodError)
-core/string/append_as_bytes_spec.rb	String#append_bytes doesn't allow to mutate frozen strings	bug		undefined method 'append_as_bytes' for an instance of String (NoMethodError)
-core/string/append_as_bytes_spec.rb	String#append_bytes allows creating broken strings in UTF8	bug		undefined method 'append_as_bytes' for an instance of String (NoMethodError)
+core/string/append_as_bytes_spec.rb	String#append_bytes doesn't allow to mutate frozen strings	expected	identity-and-freezing	Expected FrozenError but no exception was raised ("hello\xE2\x82" was returned)
+core/string/append_as_bytes_spec.rb	String#append_bytes allows creating broken strings in UTF8	pass		
 core/string/append_as_bytes_spec.rb	String#append_bytes allows creating broken strings in UTF_32	expected	encodings	uninitialized constant Encoding::UTF_32LE (NameError)
-core/string/append_as_bytes_spec.rb	String#append_bytes never changes the receiver encoding	bug		undefined method 'append_as_bytes' for an instance of String (NoMethodError)
-core/string/append_as_bytes_spec.rb	String#append_bytes accepts variadic String or Integer arguments	bug		undefined method 'append_as_bytes' for an instance of String (NoMethodError)
-core/string/append_as_bytes_spec.rb	String#append_bytes truncates integers to the least significant byte	bug		undefined method 'append_as_bytes' for an instance of String (NoMethodError)
-core/string/append_as_bytes_spec.rb	String#append_bytes wraps negative integers	bug		undefined method 'append_as_bytes' for an instance of String (NoMethodError)
+core/string/append_as_bytes_spec.rb	String#append_bytes never changes the receiver encoding	pass		
+core/string/append_as_bytes_spec.rb	String#append_bytes accepts variadic String or Integer arguments	pass		
+core/string/append_as_bytes_spec.rb	String#append_bytes truncates integers to the least significant byte	pass		
+core/string/append_as_bytes_spec.rb	String#append_bytes wraps negative integers	pass		
 core/string/append_as_bytes_spec.rb	String#append_bytes only accepts strings or integers, and doesn't attempt to cast with #to_str or #to_int	harness	fails under Ruby too	undefined method 'mock' for an instance of Object (NoMethodError)
 core/string/append_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/ascii_only_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
@@ -3036,46 +3036,46 @@ core/string/byterindex_spec.rb	*	expected	instance-variables	instance_variable_g
 core/string/bytes_spec.rb	*	expected	instance-variables	@utf8 = …: cameo has no instance variables; initialize sets a field with self.utf8 = …
 core/string/bytesize_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/byteslice_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
-core/string/bytesplice_spec.rb	String#bytesplice raises IndexError when index is less than -bytesize	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice raises IndexError when index is greater than bytesize	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice raises IndexError for negative length	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice replaces with integer indices	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice raises RangeError when range left boundary is less than -bytesize	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice replaces with ranges	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice raises TypeError when integer index is provided without length argument	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice replaces on an empty string	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice mutates self	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice raises when string is frozen	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice raises IndexError when str_index is less than -bytesize	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice raises IndexError when str_index is greater than bytesize	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice raises IndexError for negative str length	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice replaces with integer str indices	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice raises RangeError when str range left boundary is less than -bytesize	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice replaces with str ranges	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice raises ArgumentError when integer str index is provided without str length argument	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice replaces on an empty string with str index/length	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice mutates self with substring and str index/length	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice raises when string is frozen and str index/length	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice replaces on an empty string with str range	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice mutates self with substring and str range	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice raises when string is frozen and str range	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when index is out of byte size boundary	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when index is not on a codepoint boundary	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when length is not matching the codepoint boundary	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters replaces with integer indices	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters replaces with range	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters treats negative length for range as 0	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises when ranges not match codepoint boundaries	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters deals with a different encoded argument	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when str_index is out of byte size boundary	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when str_index is not on a codepoint boundary	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when str_length is not matching the codepoint boundary	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters replaces with integer str indices	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters replaces with str range	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters treats negative length for str range as 0	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises when ranges not match codepoint boundaries in str	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters deals with a different encoded argument with str index/length	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters deals with a different encoded argument with str range	bug		undefined method 'bytesplice' for an instance of String (NoMethodError)
+core/string/bytesplice_spec.rb	String#bytesplice raises IndexError when index is less than -bytesize	pass		
+core/string/bytesplice_spec.rb	String#bytesplice raises IndexError when index is greater than bytesize	pass		
+core/string/bytesplice_spec.rb	String#bytesplice raises IndexError for negative length	pass		
+core/string/bytesplice_spec.rb	String#bytesplice replaces with integer indices	pass		
+core/string/bytesplice_spec.rb	String#bytesplice raises RangeError when range left boundary is less than -bytesize	pass		
+core/string/bytesplice_spec.rb	String#bytesplice replaces with ranges	pass		
+core/string/bytesplice_spec.rb	String#bytesplice raises TypeError when integer index is provided without length argument	pass		
+core/string/bytesplice_spec.rb	String#bytesplice replaces on an empty string	pass		
+core/string/bytesplice_spec.rb	String#bytesplice mutates self	expected	identity-and-freezing	undefined method 'equal?' for an instance of String (NoMethodError)
+core/string/bytesplice_spec.rb	String#bytesplice raises when string is frozen	expected	identity-and-freezing	Expected FrozenError("can't modify frozen String: \"hello\"") but no exception was raised ("hexxxlo" was returned)
+core/string/bytesplice_spec.rb	String#bytesplice raises IndexError when str_index is less than -bytesize	pass		
+core/string/bytesplice_spec.rb	String#bytesplice raises IndexError when str_index is greater than bytesize	pass		
+core/string/bytesplice_spec.rb	String#bytesplice raises IndexError for negative str length	pass		
+core/string/bytesplice_spec.rb	String#bytesplice replaces with integer str indices	pass		
+core/string/bytesplice_spec.rb	String#bytesplice raises RangeError when str range left boundary is less than -bytesize	pass		
+core/string/bytesplice_spec.rb	String#bytesplice replaces with str ranges	pass		
+core/string/bytesplice_spec.rb	String#bytesplice raises ArgumentError when integer str index is provided without str length argument	pass		
+core/string/bytesplice_spec.rb	String#bytesplice replaces on an empty string with str index/length	pass		
+core/string/bytesplice_spec.rb	String#bytesplice mutates self with substring and str index/length	expected	identity-and-freezing	undefined method 'equal?' for an instance of String (NoMethodError)
+core/string/bytesplice_spec.rb	String#bytesplice raises when string is frozen and str index/length	expected	identity-and-freezing	Expected FrozenError("can't modify frozen String: \"hello\"") but no exception was raised ("hexlo" was returned)
+core/string/bytesplice_spec.rb	String#bytesplice replaces on an empty string with str range	pass		
+core/string/bytesplice_spec.rb	String#bytesplice mutates self with substring and str range	expected	identity-and-freezing	undefined method 'equal?' for an instance of String (NoMethodError)
+core/string/bytesplice_spec.rb	String#bytesplice raises when string is frozen and str range	expected	identity-and-freezing	Expected FrozenError("can't modify frozen String: \"hello\"") but no exception was raised ("heyzlo" was returned)
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when index is out of byte size boundary	pass		
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when index is not on a codepoint boundary	pass		
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when length is not matching the codepoint boundary	pass		
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters replaces with integer indices	pass		
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters replaces with range	pass		
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters treats negative length for range as 0	pass		
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises when ranges not match codepoint boundaries	pass		
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters deals with a different encoded argument	pass		
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when str_index is out of byte size boundary	pass		
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when str_index is not on a codepoint boundary	pass		
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when str_length is not matching the codepoint boundary	pass		
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters replaces with integer str indices	pass		
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters replaces with str range	pass		
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters treats negative length for str range as 0	pass		
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises when ranges not match codepoint boundaries in str	pass		
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters deals with a different encoded argument with str index/length	pass		
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters deals with a different encoded argument with str range	pass		
 core/string/capitalize_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/case_compare_spec.rb	String#=== is an alias of String#==	expected	metaprogramming	undefined method 'instance_method' for class String (NoMethodError)
 core/string/casecmp_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
@@ -3123,17 +3123,17 @@ core/string/force_encoding_spec.rb	*	expected	instance-variables	@original_encod
 core/string/freeze_spec.rb	String#freeze produces the same object whenever called on an instance of a literal in the source	expected	identity-and-freezing	undefined method 'equal?' for an instance of String (NoMethodError)
 core/string/freeze_spec.rb	String#freeze doesn't produce the same object for different instances of literals in the source	expected	identity-and-freezing	undefined method 'equal?' for an instance of String (NoMethodError)
 core/string/freeze_spec.rb	String#freeze being a special form doesn't change the value of defined?	pass		
-core/string/getbyte_spec.rb	String#getbyte returns an Integer if given a valid index	bug		undefined method 'getbyte' for an instance of String (NoMethodError)
-core/string/getbyte_spec.rb	String#getbyte starts indexing at 0	bug		undefined method 'getbyte' for an instance of String (NoMethodError)
-core/string/getbyte_spec.rb	String#getbyte counts from the end of the String if given a negative argument	bug		undefined method 'getbyte' for an instance of String (NoMethodError)
-core/string/getbyte_spec.rb	String#getbyte returns an Integer between 0 and 255	bug		undefined method 'getbyte' for an instance of String (NoMethodError)
-core/string/getbyte_spec.rb	String#getbyte regards a multi-byte character as having multiple bytes	bug		undefined method 'getbyte' for an instance of String (NoMethodError)
-core/string/getbyte_spec.rb	String#getbyte mirrors the output of #bytes	bug		undefined method 'getbyte' for an instance of String (NoMethodError)
-core/string/getbyte_spec.rb	String#getbyte interprets bytes relative to the String's encoding	bug		undefined method 'getbyte' for an instance of String (NoMethodError)
-core/string/getbyte_spec.rb	String#getbyte returns nil for out-of-bound indexes	bug		undefined method 'getbyte' for an instance of String (NoMethodError)
-core/string/getbyte_spec.rb	String#getbyte regards the empty String as containing no bytes	bug		undefined method 'getbyte' for an instance of String (NoMethodError)
-core/string/getbyte_spec.rb	String#getbyte raises an ArgumentError unless given one argument	bug		undefined method 'getbyte' for an instance of String (NoMethodError)
-core/string/getbyte_spec.rb	String#getbyte raises a TypeError unless its argument can be coerced into an Integer	bug		undefined method 'getbyte' for an instance of String (NoMethodError)
+core/string/getbyte_spec.rb	String#getbyte returns an Integer if given a valid index	pass		
+core/string/getbyte_spec.rb	String#getbyte starts indexing at 0	pass		
+core/string/getbyte_spec.rb	String#getbyte counts from the end of the String if given a negative argument	pass		
+core/string/getbyte_spec.rb	String#getbyte returns an Integer between 0 and 255	pass		
+core/string/getbyte_spec.rb	String#getbyte regards a multi-byte character as having multiple bytes	pass		
+core/string/getbyte_spec.rb	String#getbyte mirrors the output of #bytes	pass		
+core/string/getbyte_spec.rb	String#getbyte interprets bytes relative to the String's encoding	expected	encodings	unknown encoding name - utf-16le (ArgumentError)
+core/string/getbyte_spec.rb	String#getbyte returns nil for out-of-bound indexes	pass		
+core/string/getbyte_spec.rb	String#getbyte regards the empty String as containing no bytes	pass		
+core/string/getbyte_spec.rb	String#getbyte raises an ArgumentError unless given one argument	pass		
+core/string/getbyte_spec.rb	String#getbyte raises a TypeError unless its argument can be coerced into an Integer	pass		
 core/string/grapheme_clusters_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/gsub_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/hash_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
@@ -3161,7 +3161,7 @@ core/string/ord_spec.rb	String#ord ignores subsequent characters	pass
 core/string/ord_spec.rb	String#ord understands multibyte characters	pass		
 core/string/ord_spec.rb	String#ord is equivalent to #codepoints.first	pass		
 core/string/ord_spec.rb	String#ord raises an ArgumentError if called on an empty String	pass		
-core/string/ord_spec.rb	String#ord raises ArgumentError if the character is broken	bug		Expected ArgumentError("invalid byte sequence in US-ASCII") but no exception was raised (194 was returned)
+core/string/ord_spec.rb	String#ord raises ArgumentError if the character is broken	pass		
 core/string/partition_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/plus_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/prepend_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
@@ -3173,18 +3173,18 @@ core/string/rpartition_spec.rb	*	expected	instance-variables	instance_variable_g
 core/string/rstrip_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/scan_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/scrub_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
-core/string/setbyte_spec.rb	String#setbyte returns an Integer	bug		undefined method 'setbyte' for an instance of String (NoMethodError)
+core/string/setbyte_spec.rb	String#setbyte returns an Integer	pass		
 core/string/setbyte_spec.rb	String#setbyte modifies the receiver	expected	identity-and-freezing	undefined method 'object_id' for an instance of String (NoMethodError)
-core/string/setbyte_spec.rb	String#setbyte changes the byte at the given index to the new byte	bug		undefined method 'setbyte' for an instance of String (NoMethodError)
-core/string/setbyte_spec.rb	String#setbyte allows changing bytes in multi-byte characters	bug		undefined method 'setbyte' for an instance of String (NoMethodError)
-core/string/setbyte_spec.rb	String#setbyte can invalidate a String's encoding	bug		undefined method 'setbyte' for an instance of String (NoMethodError)
-core/string/setbyte_spec.rb	String#setbyte regards a negative index as counting from the end of the String	bug		undefined method 'setbyte' for an instance of String (NoMethodError)
-core/string/setbyte_spec.rb	String#setbyte raises an IndexError if the index is greater than the String bytesize	bug		undefined method 'setbyte' for an instance of String (NoMethodError)
-core/string/setbyte_spec.rb	String#setbyte raises an IndexError if the negative index is greater magnitude than the String bytesize	bug		undefined method 'setbyte' for an instance of String (NoMethodError)
-core/string/setbyte_spec.rb	String#setbyte sets a byte at an index greater than String size	bug		undefined method 'setbyte' for an instance of String (NoMethodError)
+core/string/setbyte_spec.rb	String#setbyte changes the byte at the given index to the new byte	pass		
+core/string/setbyte_spec.rb	String#setbyte allows changing bytes in multi-byte characters	pass		
+core/string/setbyte_spec.rb	String#setbyte can invalidate a String's encoding	pass		
+core/string/setbyte_spec.rb	String#setbyte regards a negative index as counting from the end of the String	pass		
+core/string/setbyte_spec.rb	String#setbyte raises an IndexError if the index is greater than the String bytesize	pass		
+core/string/setbyte_spec.rb	String#setbyte raises an IndexError if the negative index is greater magnitude than the String bytesize	pass		
+core/string/setbyte_spec.rb	String#setbyte sets a byte at an index greater than String size	pass		
 core/string/setbyte_spec.rb	String#setbyte does not modify the original string when using String.new	expected	literal-only	undefined method 'new' for class String: use a literal (NoMethodError)
-core/string/setbyte_spec.rb	String#setbyte raises a FrozenError if self is frozen	bug		undefined method 'setbyte' for an instance of String (NoMethodError)
-core/string/setbyte_spec.rb	String#setbyte raises a TypeError unless the second argument is an Integer	bug		undefined method 'setbyte' for an instance of String (NoMethodError)
+core/string/setbyte_spec.rb	String#setbyte raises a FrozenError if self is frozen	expected	identity-and-freezing	Expected FrozenError but no exception was raised (96 was returned)
+core/string/setbyte_spec.rb	String#setbyte raises a TypeError unless the second argument is an Integer	pass		
 core/string/setbyte_spec.rb	String#setbyte calls #to_int to convert the index	harness	fails under Ruby too	undefined method 'mock' for an instance of Object (NoMethodError)
 core/string/setbyte_spec.rb	String#setbyte calls to_int to convert the value	harness	fails under Ruby too	undefined method 'mock' for an instance of Object (NoMethodError)
 core/string/size_spec.rb	String#size is an alias of String#length	expected	metaprogramming	undefined method 'instance_method' for class String (NoMethodError)
@@ -3192,7 +3192,7 @@ core/string/slice_spec.rb	*	expected	instance-variables	instance_variable_get is
 core/string/split_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/squeeze_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/start_with_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
-core/string/string_spec.rb	String includes Comparable	bug		undefined method 'include?' for class String (NoMethodError)
+core/string/string_spec.rb	String includes Comparable	pass		
 core/string/strip_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/sub_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/succ_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
@@ -3219,13 +3219,13 @@ core/string/to_str_spec.rb	String#to_str is an alias of String#to_s	expected	met
 core/string/to_sym_spec.rb	String#to_sym returns the symbol corresponding to self	expected	identity-and-freezing	undefined method 'equal?' for an instance of Symbol (NoMethodError)
 core/string/to_sym_spec.rb	String#to_sym does not special case +(binary) and -(binary)	expected	identity-and-freezing	undefined method 'equal?' for an instance of Symbol (NoMethodError)
 core/string/to_sym_spec.rb	String#to_sym does not special case certain operators	expected	identity-and-freezing	undefined method 'equal?' for an instance of Symbol (NoMethodError)
-core/string/to_sym_spec.rb	String#to_sym returns a US-ASCII Symbol for a UTF-8 String containing only US-ASCII characters	bug		undefined method 'encoding' for an instance of Symbol (NoMethodError)
-core/string/to_sym_spec.rb	String#to_sym returns a US-ASCII Symbol for a binary String containing only US-ASCII characters	bug		undefined method 'encoding' for an instance of Symbol (NoMethodError)
-core/string/to_sym_spec.rb	String#to_sym returns a UTF-8 Symbol for a UTF-8 String containing non US-ASCII characters	bug		undefined method 'encoding' for an instance of Symbol (NoMethodError)
+core/string/to_sym_spec.rb	String#to_sym returns a US-ASCII Symbol for a UTF-8 String containing only US-ASCII characters	expected	identity-and-freezing	undefined method 'equal?' for an instance of Symbol (NoMethodError)
+core/string/to_sym_spec.rb	String#to_sym returns a US-ASCII Symbol for a binary String containing only US-ASCII characters	expected	identity-and-freezing	undefined method 'equal?' for an instance of Symbol (NoMethodError)
+core/string/to_sym_spec.rb	String#to_sym returns a UTF-8 Symbol for a UTF-8 String containing non US-ASCII characters	expected	identity-and-freezing	undefined method 'equal?' for an instance of Symbol (NoMethodError)
 core/string/to_sym_spec.rb	String#to_sym returns a UTF-16LE Symbol for a UTF-16LE String containing non US-ASCII characters	expected	encodings	uninitialized constant Encoding::UTF_16LE (NameError)
-core/string/to_sym_spec.rb	String#to_sym returns a binary Symbol for a binary String containing non US-ASCII characters	bug		undefined method 'encoding' for an instance of Symbol (NoMethodError)
+core/string/to_sym_spec.rb	String#to_sym returns a binary Symbol for a binary String containing non US-ASCII characters	bug		Expected #<Encoding:UTF-8> == #<Encoding:BINARY (ASCII-8BIT)> to be truthy but was false
 core/string/to_sym_spec.rb	String#to_sym ignores existing symbols with different encoding	expected	encodings	uninitialized constant Encoding::ISO_8859_1 (NameError)
-core/string/to_sym_spec.rb	String#to_sym raises an EncodingError for UTF-8 String containing invalid bytes	bug		Expected EncodingError("invalid symbol in encoding UTF-8 :\"\\xC3\"") but no exception was raised (:� was returned)
+core/string/to_sym_spec.rb	String#to_sym raises an EncodingError for UTF-8 String containing invalid bytes	pass		
 core/string/tr_s_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/tr_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/try_convert_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
@@ -3307,8 +3307,8 @@ core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 4-byte
 core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 4-bytes character is not valid if the second, the third and the fourth bytes are missing	pass		
 core/string/valid_encoding_spec.rb	String#valid_encoding? returns true if the String's encoding is valid	pass		
 core/string/valid_encoding_spec.rb	String#valid_encoding? returns true if self is valid in the current encoding and other encodings	pass		
-core/string/valid_encoding_spec.rb	String#valid_encoding? returns true for all encodings self is valid in	bug		unknown encoding name - Big5 (ArgumentError)
-core/string/valid_encoding_spec.rb	String#valid_encoding? returns true for IBM720 encoding self is valid in	bug		unknown encoding name - IBM720 (ArgumentError)
+core/string/valid_encoding_spec.rb	String#valid_encoding? returns true for all encodings self is valid in	expected	encodings	unknown encoding name - Big5 (ArgumentError)
+core/string/valid_encoding_spec.rb	String#valid_encoding? returns true for IBM720 encoding self is valid in	expected	encodings	unknown encoding name - IBM720 (ArgumentError)
 core/string/valid_encoding_spec.rb	String#valid_encoding? returns false if self is valid in one encoding, but invalid in the one it's tagged with	pass		
 core/string/valid_encoding_spec.rb	String#valid_encoding? returns false if self contains a character invalid in the associated encoding	pass		
 core/string/valid_encoding_spec.rb	String#valid_encoding? returns false if a valid String had an invalid character appended to it	pass		
@@ -3363,27 +3363,27 @@ core/symbol/all_symbols_spec.rb	Symbol.all_symbols includes symbols that are str
 core/symbol/all_symbols_spec.rb	Symbol.all_symbols includes symbols that are referenced in source code but not yet executed	bug		undefined method 'all_symbols' for class Symbol (NoMethodError)
 core/symbol/capitalize_spec.rb	Symbol#capitalize returns a Symbol	pass		
 core/symbol/capitalize_spec.rb	Symbol#capitalize converts the first character to uppercase if it is ASCII	pass		
-core/symbol/capitalize_spec.rb	Symbol#capitalize leaves the first character alone if it is not an alphabetical character	bug		Expected :"��1.20" == :"£1.20" to be truthy but was false
-core/symbol/capitalize_spec.rb	Symbol#capitalize capitalizes the first character if it is Unicode	bug		Expected :��öü == :Äöü to be truthy but was false
+core/symbol/capitalize_spec.rb	Symbol#capitalize leaves the first character alone if it is not an alphabetical character	pass		
+core/symbol/capitalize_spec.rb	Symbol#capitalize capitalizes the first character if it is Unicode	pass		
 core/symbol/capitalize_spec.rb	Symbol#capitalize converts subsequent uppercase ASCII characters to their lowercase equivalents	pass		
 core/symbol/capitalize_spec.rb	Symbol#capitalize leaves ASCII characters already in the correct case as they were	pass		
 core/symbol/capitalize_spec.rb	Symbol#capitalize works with both upper- and lowercase ASCII characters in the same Symbol	pass		
 core/symbol/capitalize_spec.rb	Symbol#capitalize leaves lowercase Unicode characters (except in first position) as they were	pass		
 core/symbol/capitalize_spec.rb	Symbol#capitalize leaves non-alphabetic ASCII characters as they were	pass		
 core/symbol/case_compare_spec.rb	Symbol#=== is an alias of Symbol#==	expected	metaprogramming	undefined method 'instance_method' for class Symbol (NoMethodError)
-core/symbol/casecmp_spec.rb	Symbol#casecmp with Symbol compares symbols without regard to case	bug		undefined method 'casecmp' for an instance of Symbol (NoMethodError)
-core/symbol/casecmp_spec.rb	Symbol#casecmp with Symbol doesn't consider non-ascii characters equal that aren't	bug		undefined method 'casecmp' for an instance of Symbol (NoMethodError)
-core/symbol/casecmp_spec.rb	Symbol#casecmp with Symbol doesn't do case mapping for non-ascii characters	bug		undefined method 'casecmp' for an instance of Symbol (NoMethodError)
-core/symbol/casecmp_spec.rb	Symbol#casecmp with Symbol returns 0 for empty strings in different encodings	bug		unknown encoding name - UTF-32LE (ArgumentError)
-core/symbol/casecmp_spec.rb	Symbol#casecmp returns nil if other is a String	bug		undefined method 'casecmp' for an instance of Symbol (NoMethodError)
-core/symbol/casecmp_spec.rb	Symbol#casecmp returns nil if other is an Integer	bug		undefined method 'casecmp' for an instance of Symbol (NoMethodError)
+core/symbol/casecmp_spec.rb	Symbol#casecmp with Symbol compares symbols without regard to case	pass		
+core/symbol/casecmp_spec.rb	Symbol#casecmp with Symbol doesn't consider non-ascii characters equal that aren't	pass		
+core/symbol/casecmp_spec.rb	Symbol#casecmp with Symbol doesn't do case mapping for non-ascii characters	pass		
+core/symbol/casecmp_spec.rb	Symbol#casecmp with Symbol returns 0 for empty strings in different encodings	expected	encodings	unknown encoding name - UTF-32LE (ArgumentError)
+core/symbol/casecmp_spec.rb	Symbol#casecmp returns nil if other is a String	pass		
+core/symbol/casecmp_spec.rb	Symbol#casecmp returns nil if other is an Integer	pass		
 core/symbol/casecmp_spec.rb	Symbol#casecmp returns nil if other is an object	harness	fails under Ruby too	undefined method 'mock' for an instance of Object (NoMethodError)
-core/symbol/casecmp_spec.rb	Symbol#casecmp? compares symbols without regard to case	bug		undefined method 'casecmp?' for an instance of Symbol (NoMethodError)
-core/symbol/casecmp_spec.rb	Symbol#casecmp? doesn't consider non-ascii characters equal that aren't	bug		undefined method 'casecmp?' for an instance of Symbol (NoMethodError)
-core/symbol/casecmp_spec.rb	Symbol#casecmp? doesn't do case mapping for non-ascii and non-unicode characters	bug		undefined method 'casecmp?' for an instance of Symbol (NoMethodError)
-core/symbol/casecmp_spec.rb	Symbol#casecmp? does case mapping for unicode characters	bug		undefined method 'casecmp?' for an instance of Symbol (NoMethodError)
-core/symbol/casecmp_spec.rb	Symbol#casecmp? returns nil when comparing characters with different encodings	bug		undefined method 'casecmp?' for an instance of Symbol (NoMethodError)
-core/symbol/casecmp_spec.rb	Symbol#casecmp? returns true for empty symbols in different encodings	bug		unknown encoding name - UTF-32LE (ArgumentError)
+core/symbol/casecmp_spec.rb	Symbol#casecmp? compares symbols without regard to case	pass		
+core/symbol/casecmp_spec.rb	Symbol#casecmp? doesn't consider non-ascii characters equal that aren't	pass		
+core/symbol/casecmp_spec.rb	Symbol#casecmp? doesn't do case mapping for non-ascii and non-unicode characters	pass		
+core/symbol/casecmp_spec.rb	Symbol#casecmp? does case mapping for unicode characters	pass		
+core/symbol/casecmp_spec.rb	Symbol#casecmp? returns nil when comparing characters with different encodings	pass		
+core/symbol/casecmp_spec.rb	Symbol#casecmp? returns true for empty symbols in different encodings	expected	encodings	unknown encoding name - UTF-32LE (ArgumentError)
 core/symbol/comparison_spec.rb	Symbol#<=> with Symbol compares individual characters based on their ascii value	pass		
 core/symbol/comparison_spec.rb	Symbol#<=> with Symbol returns -1 when self is less than other	pass		
 core/symbol/comparison_spec.rb	Symbol#<=> with Symbol returns 0 when self is equal to other	pass		
@@ -3403,9 +3403,9 @@ core/symbol/dup_spec.rb	Symbol#dup returns self	expected	identity-and-freezing	u
 core/symbol/element_reference_spec.rb	*	expected	globals	global variables are not supported
 core/symbol/empty_spec.rb	Symbol#empty? returns true if self is empty	pass		
 core/symbol/empty_spec.rb	Symbol#empty? returns false if self is non-empty	pass		
-core/symbol/encoding_spec.rb	Symbol#encoding for ASCII symbols is US-ASCII	bug		undefined method 'encoding' for an instance of Symbol (NoMethodError)
-core/symbol/encoding_spec.rb	Symbol#encoding for ASCII symbols is US-ASCII after converting to string	bug		Expected "UTF-8" == "US-ASCII" to be truthy but was false
-core/symbol/encoding_spec.rb	Symbol#encoding for UTF-8 symbols is UTF-8	bug		undefined method 'encoding' for an instance of Symbol (NoMethodError)
+core/symbol/encoding_spec.rb	Symbol#encoding for ASCII symbols is US-ASCII	pass		
+core/symbol/encoding_spec.rb	Symbol#encoding for ASCII symbols is US-ASCII after converting to string	pass		
+core/symbol/encoding_spec.rb	Symbol#encoding for UTF-8 symbols is UTF-8	pass		
 core/symbol/encoding_spec.rb	Symbol#encoding for UTF-8 symbols is UTF-8 after converting to string	pass		
 core/symbol/end_with_spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
 core/symbol/equal_value_spec.rb	Symbol#== only returns true when the other is exactly the same symbol	pass		
@@ -3428,13 +3428,13 @@ core/symbol/start_with_spec.rb	*	expected	instance-variables	@method: cameo has 
 core/symbol/succ_spec.rb	Symbol#succ returns a successor	pass		
 core/symbol/succ_spec.rb	Symbol#succ propagates a 'carry'	pass		
 core/symbol/succ_spec.rb	Symbol#succ increments non-alphanumeric characters when no alphanumeric characters are present	pass		
-core/symbol/swapcase_spec.rb	Symbol#swapcase returns a Symbol	bug		undefined method 'swapcase' for an instance of Symbol (NoMethodError)
-core/symbol/swapcase_spec.rb	Symbol#swapcase converts lowercase ASCII characters to their uppercase equivalents	bug		undefined method 'swapcase' for an instance of Symbol (NoMethodError)
-core/symbol/swapcase_spec.rb	Symbol#swapcase converts uppercase ASCII characters to their lowercase equivalents	bug		undefined method 'swapcase' for an instance of Symbol (NoMethodError)
-core/symbol/swapcase_spec.rb	Symbol#swapcase works with both upper- and lowercase ASCII characters in the same Symbol	bug		undefined method 'swapcase' for an instance of Symbol (NoMethodError)
-core/symbol/swapcase_spec.rb	Symbol#swapcase swaps the case for Unicode characters	bug		undefined method 'swapcase' for an instance of Symbol (NoMethodError)
-core/symbol/swapcase_spec.rb	Symbol#swapcase leaves non-alphabetic ASCII characters as they were	bug		undefined method 'swapcase' for an instance of Symbol (NoMethodError)
-core/symbol/symbol_spec.rb	Symbol includes Comparable	bug		undefined method 'include?' for class Symbol (NoMethodError)
+core/symbol/swapcase_spec.rb	Symbol#swapcase returns a Symbol	pass		
+core/symbol/swapcase_spec.rb	Symbol#swapcase converts lowercase ASCII characters to their uppercase equivalents	pass		
+core/symbol/swapcase_spec.rb	Symbol#swapcase converts uppercase ASCII characters to their lowercase equivalents	pass		
+core/symbol/swapcase_spec.rb	Symbol#swapcase works with both upper- and lowercase ASCII characters in the same Symbol	pass		
+core/symbol/swapcase_spec.rb	Symbol#swapcase swaps the case for Unicode characters	pass		
+core/symbol/swapcase_spec.rb	Symbol#swapcase leaves non-alphabetic ASCII characters as they were	pass		
+core/symbol/symbol_spec.rb	Symbol includes Comparable	pass		
 core/symbol/symbol_spec.rb	Symbol .allocate raises a TypeError	expected	metaprogramming	allocate is not supported: use new (NoMethodError)
 core/symbol/symbol_spec.rb	Symbol .new is undefined	pass		
 core/symbol/to_proc_spec.rb	*	expected	visibility	public is not supported: every method is public
@@ -3644,7 +3644,7 @@ core/time/sunday_spec.rb	Time#sunday? returns true if time represents Sunday	pas
 core/time/sunday_spec.rb	Time#sunday? returns false if time doesn't represent Sunday	pass		
 core/time/thursday_spec.rb	Time#thursday? returns true if time represents Thursday	pass		
 core/time/thursday_spec.rb	Time#thursday? returns false if time doesn't represent Thursday	pass		
-core/time/time_spec.rb	Time includes Comparable	bug		undefined method 'include?' for class Time (NoMethodError)
+core/time/time_spec.rb	Time includes Comparable	pass		
 core/time/to_a_spec.rb	Time#to_a returns a 10 element array representing the deconstructed time	harness	fails under Ruby too	undefined method 'with_timezone' for an instance of Object (NoMethodError)
 core/time/to_f_spec.rb	Time#to_f returns the float number of seconds + usecs since the epoch	pass		
 core/time/to_i_spec.rb	Time#to_i returns the value of time as an integer number of seconds since epoch	pass		
