@@ -7,3 +7,14 @@ begin
 rescue TypeError => e
   p e
 end
+
+# Numeric is the superclass of Integer and Float, and BasicObject the root
+# above Object.
+p Integer.ancestors, Float.superclass, Object.superclass, BasicObject.superclass
+p 1.is_a?(Numeric), 2.5.is_a?(Numeric), "1".is_a?(Numeric), nil.is_a?(BasicObject)
+[3, 0.5, "3"].each do |x|
+  case x
+  when Numeric then puts "#{x.inspect} is a number"
+  else puts "#{x.inspect} is not"
+  end
+end

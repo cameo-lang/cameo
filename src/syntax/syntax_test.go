@@ -239,6 +239,8 @@ func TestRejections(t *testing.T) {
 		"yield 1\n":                                         "yield outside a method",
 		"def m; X = 1; end\n":                               "a constant cannot be assigned inside a method",
 		"x = 1\nfoo(\n":                                     "parse error at line 3",
+		"class X < Numeric\nend\n":                          "class X < Numeric: a subclass of Numeric is not supported",
+		"class X < BasicObject\nend\n":                      "class X < BasicObject: a subclass of BasicObject is not supported; use method_missing in an ordinary class",
 	}
 	for src, want := range cases {
 		rejects(t, src, want)

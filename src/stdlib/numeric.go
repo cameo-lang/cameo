@@ -7,7 +7,22 @@ import (
 	"github.com/cameo-lang/cameo/src/object"
 )
 
+// installNumeric defines Numeric's methods, the ones Integer and Float
+// share and Ruby defines on Numeric, then Integer's and Float's own.
 func installNumeric() {
+	n := object.NumericClass
+	def(n, "step", -1, numericStep)
+	def(n, "+@", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return self, nil
+	})
+	// A big integer is never zero, so its approximation as a float is not
+	// either.
+	def(n, "nonzero?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if f, _ := self.AsNumber(); f == 0 {
+			return object.Nil, nil
+		}
+		return self, nil
+	})
 	installInteger()
 	installFloat()
 }
@@ -25,7 +40,6 @@ func numArgs(ctx object.Context, self, other object.Value, op string) (a, b floa
 
 func installFloat() {
 	c := object.FloatClass
-	def(c, "step", -1, numericStep)
 	arith := func(name string, f func(a, b float64) float64) {
 		def(c, name, 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			a, b, _, err := numArgs(ctx, self, args[0], name)
@@ -81,9 +95,6 @@ func installFloat() {
 	def(c, "-@", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Float(-self.Float()), nil
 	})
-	def(c, "+@", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return self, nil
-	})
 	def(c, "<=>", 1, compareNumber)
 	def(c, "==", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Bool(object.Equal(self, args[0])), nil
@@ -112,12 +123,6 @@ func installFloat() {
 			return object.Int(-1), nil
 		}
 		return object.Nil, nil
-	})
-	def(c, "nonzero?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if self.Float() == 0 {
-			return object.Nil, nil
-		}
-		return self, nil
 	})
 	def(c, "round", -1, floatRound)
 	def(c, "coerce", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {

@@ -205,9 +205,6 @@ func installInteger() {
 	unary("succ", func(x int64) (int64, bool) { return object.AddInt(x, 1) }, func(b *big.Int) *big.Int { return new(big.Int).Add(b, big.NewInt(1)) })
 	def(c, "next", 0, c.Methods["succ"].Native)
 	unary("pred", func(x int64) (int64, bool) { return object.SubInt(x, 1) }, func(b *big.Int) *big.Int { return new(big.Int).Sub(b, big.NewInt(1)) })
-	def(c, "+@", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return self, nil
-	})
 	bitwise := func(name string, small func(a, b int64) int64, large func(a, b *big.Int) *big.Int) {
 		def(c, name, 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			if !args[0].IsInteger() {
@@ -309,12 +306,6 @@ func installInteger() {
 	def(c, "infinite?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Nil, nil
 	})
-	def(c, "nonzero?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if x, ok := self.AsInt(); ok && x == 0 {
-			return object.Nil, nil
-		}
-		return self, nil
-	})
 	def(c, "times", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		n, err := wantInt(ctx, self, "")
 		if err != nil {
@@ -385,7 +376,6 @@ func installInteger() {
 	}
 	step("upto", 1)
 	step("downto", -1)
-	def(c, "step", -1, numericStep)
 	def(c, "to_s", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		base := int64(10)
 		if len(args) == 1 {

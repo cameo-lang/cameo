@@ -787,6 +787,21 @@ re-opened by accident:
   digest, and it takes the name of the first constant it is bound to.
   `Module.new` stays out, since its use is to include or extend at run
   time.
+- **Numeric** is a builtin class above Integer and Float, and includes
+  Comparable for both, so the ancestors and the type checks
+  (`is_a?(Numeric)`, `when Numeric`) are Ruby's. `step`, `+@` and
+  `nonzero?` are Numeric's, as in Ruby. A script cannot subclass it: a
+  number of a script's own needs `coerce` in Integer's and Float's
+  arithmetic, which cameo leaves out.
+- **BasicObject** is the root class, above Object, with `==`, `!=`, `!`,
+  `__send__` and `method_missing`, so `ancestors`, `superclass` and
+  `is_a?(BasicObject)` are Ruby's. A script cannot subclass it: a subclass
+  is a blank-slate object without Object's methods, and the refusal names
+  `method_missing` in an ordinary class instead. `equal?` and `__id__`
+  stay out, since a value has no identity.
+- **`Data`** stays out. A class with typed fields and `with` is cameo's
+  Data, and a `Data.define` member has no type, which a protobuf field
+  needs. `doc/cameo-vs-ruby.md` shows the translation.
 - **Only current Ruby syntax**: keyword arguments are keywords, never a
   trailing hash; `=>` stays for hash literals.
 - **Native classes** take their fields from a generated protobuf message
