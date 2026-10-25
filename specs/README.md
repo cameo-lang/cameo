@@ -44,6 +44,53 @@ the support files its specs load: `spec_helper.rb`, the top-level
 and what a spec loads with `require_relative`, followed through. A support
 file is copied into every directory that needs it.
 
+## Running the specs
+
+[run.rb](run.rb) runs ruby/spec's `language/` and `core/` under cameo, or
+the directories and files it is given:
+
+```sh
+ruby run.rb --ruby ruby --out /tmp/spec-run
+```
+
+cameo cannot reopen `Object`, so mspec does not load. In its place,
+[runner/prelude.cameo](runner/prelude.cameo) has `describe`, `it`, the
+guards, the numeric helpers and the matchers, as functions, and run.rb
+rewrites each spec with Prism so that `a.should == b`,
+`a.should.raise(E)`, `a.should.pred?(x)` and `a.should matcher` call them.
+The fixtures a spec loads with `require_relative` are put in its place.
+The rewritten program goes through `cameo check`, which accepts or rejects
+the whole file, and then runs; each example prints one line, which run.rb
+counts.
+
+`before`, `after`, shared examples, `mock`, `should_receive`, `ScratchPad`,
+`fixture` and `ruby_exe` need state or I/O an example cannot keep in cameo,
+and are not in the prelude. `--ruby` runs each program under CRuby as well,
+which shows what the harness can run: the summary counts how many of the
+examples CRuby passes also pass under cameo.
+
+## Which examples pass, and which should
+
+[status.tsv](status.tsv) has one row per example of `language/` and
+`core/`, and one row, with the example `*`, per file that did not run.
+Its status is one of:
+
+| Status | Means |
+|---|---|
+| `pass` | passes under cameo |
+| `expected` | stopped by something cameo leaves out on purpose: mutation, instance variables, object identity, threads, I/O, `Rational`; the `reason` column names it |
+| `harness` | needs a part of mspec the prelude does not have, or fails under CRuby in this harness too |
+| `bug` | anything else: cameo should pass it |
+
+[runner/classify.rb](runner/classify.rb) maps the message that stopped
+an example to its status; a message it does not know is a bug. Regenerate
+the file after a change, and its diff shows what the change fixed and
+broke:
+
+```sh
+make spec-status
+```
+
 ## Where the files come from
 
 ruby/spec at the commit named in [COUNTS.md](COUNTS.md). [checkout.rb](checkout.rb)

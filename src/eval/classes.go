@@ -26,19 +26,25 @@ func (in *Interp) readField(name string, fr *Frame, line int) (object.Value, err
 // writeField sets a field of the instance initialize is building, as
 // `self.name = v` does.
 func (in *Interp) writeField(name string, v object.Value, fr *Frame, line int) error {
-	inst := fr.Building
-	if inst == nil {
+	var cls *object.Class
+	var fields []object.Value
+	switch {
+	case fr.Building != nil:
+		cls, fields = fr.Building.Cls, fr.Building.Fields
+	case fr.BuildingExc != nil:
+		cls, fields = fr.BuildingExc.Cls, fr.BuildingExc.Fields
+	default:
 		return in.raise(object.CameoError, line, "self.%s = …: a field is set in initialize only", name)
 	}
-	idx, ok := inst.Cls.FieldIndex[name]
+	idx, ok := cls.FieldIndex[name]
 	if !ok {
-		return in.raise(object.NameError, line, "self.%s = …: %s has no field %s", name, inst.Cls.QualifiedName(), name)
+		return in.raise(object.NameError, line, "self.%s = …: %s has no field %s", name, cls.QualifiedName(), name)
 	}
-	checked, err := in.checkField(inst.Cls.Fields[idx], v, line)
+	checked, err := in.checkField(cls.Fields[idx], v, line)
 	if err != nil {
 		return err
 	}
-	inst.Fields[idx] = checked
+	fields[idx] = checked
 	return nil
 }
 
@@ -63,7 +69,14 @@ func (in *Interp) lookupConst(name string, fr *Frame, line int) (object.Value, e
 	if v, ok := object.ObjectClass.Consts[name]; ok {
 		return v, nil
 	}
-	return object.Value{}, in.raise(object.NameError, line, "uninitialized constant %s", name)
+	return object.Value{}, uninitialized(object.ObjectClass, name, name, line)
+}
+
+// uninitialized makes the NameError for a constant scope lacks, which
+// the message names as shown.
+func uninitialized(scope *object.Class, name, shown string, line int) error {
+	return &object.Exception{Cls: object.NameError, Line: line, Message: "uninitialized constant " + shown,
+		Attrs: map[string]object.Value{"name": object.Symbol(name), "receiver": object.ClassValue(scope)}}
 }
 
 func (in *Interp) evalScopedConst(n *syntax.ScopedConst, env *Env, fr *Frame) (object.Value, error) {
@@ -74,7 +87,7 @@ func (in *Interp) evalScopedConst(n *syntax.ScopedConst, env *Env, fr *Frame) (o
 		if v, ok := object.ObjectClass.Consts[n.Name]; ok {
 			return v, nil
 		}
-		return object.Value{}, in.raise(object.NameError, n.Line(), "uninitialized constant %s", n.Name)
+		return object.Value{}, uninitialized(object.ObjectClass, n.Name, n.Name, n.Line())
 	}
 	v, err := in.eval(n.Scope, env, fr)
 	if err != nil {
@@ -89,7 +102,7 @@ func (in *Interp) evalScopedConst(n *syntax.ScopedConst, env *Env, fr *Frame) (o
 			return v, nil
 		}
 	}
-	return object.Value{}, in.raise(object.NameError, n.Line(), "uninitialized constant %s::%s", scope.QualifiedName(), n.Name)
+	return object.Value{}, uninitialized(scope, n.Name, scope.QualifiedName()+"::"+n.Name, n.Line())
 }
 
 // defineConst binds a constant in the innermost lexical scope. A constant
@@ -125,6 +138,9 @@ func (in *Interp) newClass(args []object.Value, block object.Value) (object.Valu
 			return object.Value{}, in.raise(object.TypeError, 0, "superclass must be a Class (%s given)", typeName(args[0]))
 		}
 		super = s
+	}
+	if msg, refused := subclassRefused(super); refused {
+		return object.Value{}, in.raise(object.CameoError, 0, "Class.new(%s): %s", super.Name, msg)
 	}
 	cls := object.NewClass("", super)
 	cls.Digest = "new:" + super.QualifiedName()
@@ -233,6 +249,9 @@ func (in *Interp) evalClassDef(n *syntax.ClassDef, env *Env, fr *Frame) (object.
 		}
 		super = cls
 	}
+	if msg, refused := subclassRefused(super); refused {
+		return object.Value{}, in.raise(object.CameoError, n.Line(), "class %s < %s: %s", n.Name, super.Name, msg)
+	}
 	previous, bound := table[n.Name]
 	existing, _ := previous.AsClass()
 	if existing != nil && !existing.IsModule && ranLast(existing, n.Digest) && (super == nil || existing.Super == super) {
@@ -332,6 +351,15 @@ func (in *Interp) evalBound(cls, reopened *object.Class, body []syntax.Node, env
 		return err
 	}
 	return nil
+}
+
+// subclassRefused is syntax.SubclassRefused for the builtin class super,
+// which the checker sees only at the top level.
+func subclassRefused(super *object.Class) (string, bool) {
+	if super != object.NumericClass && super != object.BasicObjectClass {
+		return "", false
+	}
+	return syntax.SubclassRefused(super.Name)
 }
 
 // hostDefined reports whether v is a module the host defined: a class

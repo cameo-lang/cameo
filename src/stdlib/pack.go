@@ -16,9 +16,11 @@ import (
 // Array#pack and String#unpack, for the directives that carry values:
 // integers of 8, 16, 32 and 64 bits (C c S s L l Q q J j, n N v V, with <
 // and > for the byte order and _ and ! accepted), UTF-8 characters (U),
-// floats (e E f F d D g G), strings (a A Z), hex (H h), base64 (m) and a
-// NUL byte (x). pack makes bytes, or a string when the format starts with
-// U, as Ruby's makes a UTF-8 string then.
+// floats (e E f F d D g G), strings (a A Z), bits (B b), hex (H h),
+// base64 (m), and the positioning directives: a NUL byte (x), back a byte
+// (X) and an absolute position (@). pack makes bytes, or a string when the
+// format starts with U, as Ruby's makes a UTF-8 string then, and US-ASCII
+// for a format with no directives.
 
 // directive is one item of a pack format: its letter, its count (-1 for
 // *, 1 when none is given), whether a count was given, and its byte order.
@@ -59,7 +61,14 @@ func parseFormat(ctx object.Context, format string) ([]directive, error) {
 			d.count, _ = strconv.Atoi(format[j:i])
 			d.explicit = true
 		}
-		if strings.IndexByte("CcSsLlQqJjnNvVUeEfFdDgGaAZHhmx", c) < 0 {
+		if c == '#' {
+			// A comment runs to the end of the line.
+			for i < len(format) && format[i] != '\n' {
+				i++
+			}
+			continue
+		}
+		if strings.IndexByte("CcSsLlQqJjnNvVUeEfFdDgGaAZBbHhmxX@", c) < 0 {
 			return nil, ctx.Raise(object.ArgumentError, "unknown pack directive '%c' in '%s'", c, format)
 		}
 		out = append(out, d)
@@ -113,12 +122,17 @@ func textOf(ctx object.Context, v object.Value) (string, error) {
 	return wantString(ctx, v)
 }
 
-func pack(ctx object.Context, elems []object.Value, format string) (object.Value, error) {
+// pack is Array#pack: the bytes of elems by format, after those of buffer
+// when it is a string.
+func pack(ctx object.Context, elems []object.Value, format string, buffer object.Value) (object.Value, error) {
 	ds, err := parseFormat(ctx, format)
 	if err != nil {
 		return object.Value{}, err
 	}
 	var out []byte
+	if !buffer.IsZero() {
+		out = []byte(buffer.Str())
+	}
 	next := 0
 	take := func() (object.Value, error) {
 		if next >= len(elems) {
@@ -187,6 +201,19 @@ func pack(ctx object.Context, elems []object.Value, format string) (object.Value
 			}
 		case d.letter == 'x':
 			out = append(out, make([]byte, max(d.count, 0))...)
+		case d.letter == 'X':
+			n := max(d.count, 0)
+			if n > len(out) {
+				return object.Value{}, ctx.Raise(object.ArgumentError, "X outside of string")
+			}
+			out = out[:len(out)-n]
+		case d.letter == '@':
+			n := max(d.count, 0)
+			if n <= len(out) {
+				out = out[:n]
+			} else {
+				out = append(out, make([]byte, n-len(out))...)
+			}
 		default:
 			v, err := take()
 			if err != nil {
@@ -199,7 +226,12 @@ func pack(ctx object.Context, elems []object.Value, format string) (object.Value
 			out = append(out, packText(d, s)...)
 		}
 	}
-	if len(ds) > 0 && ds[0].letter == 'U' {
+	switch {
+	case !buffer.IsZero():
+		return object.StringOf(buffer.Kind(), string(out)), nil
+	case len(ds) == 0:
+		return object.StringOf(object.KindASCII, ""), nil
+	case ds[0].letter == 'U':
 		return object.String(string(out)), nil
 	}
 	return object.Bytes(out), nil
@@ -245,6 +277,25 @@ func packText(d directive, s string) []byte {
 			out = append(out, pad)
 		}
 		return out
+	case 'B', 'b':
+		// Each character's low bit is a bit, from the high bit of each byte
+		// for B and from the low bit for b.
+		bits := s
+		if d.count >= 0 && d.count < len(bits) {
+			bits = bits[:d.count]
+		}
+		out := make([]byte, (len(bits)+7)/8)
+		for i := 0; i < len(bits); i++ {
+			if bits[i]&1 == 0 {
+				continue
+			}
+			if d.letter == 'B' {
+				out[i/8] |= 0x80 >> (i % 8)
+			} else {
+				out[i/8] |= 1 << (i % 8)
+			}
+		}
+		return out
 	case 'H', 'h':
 		digits := s
 		if d.count >= 0 && d.count < len(digits) {
@@ -284,13 +335,15 @@ func packText(d directive, s string) []byte {
 	return nil
 }
 
-func unpack(ctx object.Context, data []byte, format string) ([]object.Value, error) {
+// unpack is String#unpack of data from the byte offset start; @ counts
+// from the start of data.
+func unpack(ctx object.Context, data []byte, format string, start int) ([]object.Value, error) {
 	ds, err := parseFormat(ctx, format)
 	if err != nil {
 		return nil, err
 	}
 	out := []object.Value{}
-	at := 0
+	at := start
 	for _, d := range ds {
 		switch {
 		case intSize(d.letter) > 0 || floatSize(d.letter) > 0:
@@ -318,7 +371,58 @@ func unpack(ctx object.Context, data []byte, format string) ([]object.Value, err
 				at += size
 			}
 		case d.letter == 'x':
-			at += max(d.count, 0)
+			n := max(d.count, 0)
+			if at+n > len(data) {
+				return nil, ctx.Raise(object.ArgumentError, "x outside of string")
+			}
+			at += n
+		case d.letter == 'X':
+			n := max(d.count, 0)
+			if n > at {
+				return nil, ctx.Raise(object.ArgumentError, "X outside of string")
+			}
+			at -= n
+		case d.letter == '@':
+			n := len(data)
+			if d.count >= 0 {
+				// A bare @ is @0 here, where pack's is @1.
+				n = 0
+				if d.explicit {
+					n = d.count
+				}
+			}
+			if n > len(data) {
+				return nil, ctx.Raise(object.ArgumentError, "@ outside of string")
+			}
+			at = n
+		case d.letter == 'B' || d.letter == 'b':
+			n := (len(data) - at) * 8
+			if d.count >= 0 && d.count < n {
+				n = d.count
+			}
+			bits := make([]byte, n)
+			for i := range bits {
+				b := data[at+i/8]
+				var bit byte
+				if d.letter == 'B' {
+					bit = b >> (7 - i%8) & 1
+				} else {
+					bit = b >> (i % 8) & 1
+				}
+				bits[i] = '0' + bit
+			}
+			at += (n + 7) / 8
+			out = append(out, object.StringOf(object.KindASCII, string(bits)))
+		case d.letter == 'm' && d.explicit && d.count == 0:
+			// m0 is strict RFC 4648 base64.
+			// Go's decoder skips line breaks, which RFC 4648 does not allow.
+			text := string(data[at:])
+			dec, err := base64.StdEncoding.Strict().DecodeString(text)
+			if err != nil || strings.ContainsAny(text, "\r\n") {
+				return nil, ctx.Raise(object.ArgumentError, "invalid base64")
+			}
+			out = append(out, object.Bytes(dec))
+			at = len(data)
 		case d.letter == 'm':
 			text := strings.Map(func(r rune) rune {
 				if r == '\n' || r == '\r' {
@@ -407,8 +511,35 @@ func installPack() {
 		if err != nil {
 			return object.Value{}, err
 		}
-		return pack(ctx, self.List().Elems, f)
+		buffer, err := keywordArg(ctx, kw, "buffer")
+		if err != nil {
+			return object.Value{}, err
+		}
+		if !buffer.IsZero() && !buffer.IsNil() && !buffer.IsString() {
+			return object.Value{}, ctx.Raise(object.TypeError, "buffer must be String, not %s", buffer.Class().Name)
+		}
+		if buffer.IsNil() {
+			buffer = object.Value{}
+		}
+		return pack(ctx, self.List().Elems, f, buffer)
 	})
+	// offset reads unpack's offset: keyword, a byte offset into data.
+	offset := func(ctx object.Context, kw *object.Map, data string) (int, error) {
+		v, err := keywordArg(ctx, kw, "offset")
+		if err != nil || v.IsZero() {
+			return 0, err
+		}
+		n, err := wantInt(ctx, v, "")
+		switch {
+		case err != nil:
+			return 0, err
+		case n < 0:
+			return 0, ctx.Raise(object.ArgumentError, "offset can't be negative")
+		case n > int64(len(data)):
+			return 0, ctx.Raise(object.ArgumentError, "offset outside of string")
+		}
+		return int(n), nil
+	}
 	for _, c := range []*object.Class{object.StringClass} {
 		def(c, "unpack", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			f, err := wantString(ctx, args[0])
@@ -419,7 +550,11 @@ func installPack() {
 			if err != nil {
 				return object.Value{}, err
 			}
-			vals, err := unpack(ctx, []byte(data), f)
+			start, err := offset(ctx, kw, data)
+			if err != nil {
+				return object.Value{}, err
+			}
+			vals, err := unpack(ctx, []byte(data), f, start)
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -434,11 +569,34 @@ func installPack() {
 			if err != nil {
 				return object.Value{}, err
 			}
-			vals, err := unpack(ctx, []byte(data), f)
+			start, err := offset(ctx, kw, data)
+			if err != nil {
+				return object.Value{}, err
+			}
+			vals, err := unpack(ctx, []byte(data), f, start)
 			if err != nil || len(vals) == 0 {
 				return object.Nil, err
 			}
 			return vals[0], nil
 		})
 	}
+}
+
+// keywordArg returns the one keyword a method takes, none when it is not
+// given, and fails on any other keyword.
+func keywordArg(ctx object.Context, kw *object.Map, name string) (object.Value, error) {
+	if kw == nil {
+		return object.Value{}, nil
+	}
+	for _, k := range kw.Keys() {
+		if s, _ := k.AsSymbol(); s != name {
+			text, err := ctx.Inspect(k)
+			if err != nil {
+				return object.Value{}, err
+			}
+			return object.Value{}, ctx.Raise(object.ArgumentError, "unknown keyword: %s", text)
+		}
+	}
+	v, _ := kw.Get(object.Symbol(name))
+	return v, nil
 }

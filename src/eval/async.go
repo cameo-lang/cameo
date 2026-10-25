@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"math/big"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -459,7 +460,11 @@ type asyncCall struct {
 // run makes the call and settles p with its result.
 func (c *asyncCall) run(p *Promise) {
 	result, exc := c.w.runCall(c.recv, c.method, c.args, c.kw)
-	p.settle(result, exc, nil)
+	if exc != nil {
+		p.settle(object.Value{}, exc, nil)
+		return
+	}
+	p.settle(result, nil, nil)
 }
 
 // topLevel is a copy of an interpreter's top level: its constants, its
@@ -511,24 +516,26 @@ func copyMainClass(c *object.Class) *object.Class {
 func (in *Interp) worker() *Interp {
 	top := in.snapshot()
 	w := &Interp{
-		stdout:    in.stdout,
-		stderr:    in.stderr,
-		outMu:     in.outMu,
-		file:      in.file,
-		mainClass: top.mainClass,
-		main:      top.main,
-		top:       NewEnv(nil),
-		consts:    top.consts,
-		proto:     in.proto,
-		promises:  in.promises,
-		cameoTop:  top.cameoTop,
-		code:      in.code,
-		stop:      in.stop,
-		snap:      top,
+		IgnoreMutationErrors: in.IgnoreMutationErrors,
+		stdout:               in.stdout,
+		stderr:               in.stderr,
+		outMu:                in.outMu,
+		file:                 in.file,
+		mainClass:            top.mainClass,
+		main:                 top.main,
+		top:                  NewEnv(nil),
+		consts:               top.consts,
+		proto:                in.proto,
+		promises:             in.promises,
+		cameoTop:             top.cameoTop,
+		code:                 in.code,
+		stop:                 in.stop,
+		snap:                 top,
 	}
 	// The worker's generator is seeded from this one, here on the
 	// parent's goroutine, so a seeded script stays reproducible.
-	w.Srand(in.rng.Uint64())
+	seed := uint64(in.rng.Uint32())<<32 | uint64(in.rng.Uint32())
+	w.rng = object.NewRandom(object.BigInt(new(big.Int).SetUint64(seed)))
 	return w
 }
 

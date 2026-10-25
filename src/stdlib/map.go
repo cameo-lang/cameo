@@ -36,6 +36,9 @@ func installMap() {
 		}
 		return out
 	}
+	def(c, "deconstruct_keys", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return self, nil
+	})
 	def(c, "size", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Int(m(self).Len()), nil
 	})
@@ -63,7 +66,8 @@ func installMap() {
 			return args[1], nil
 		}
 		s, _ := ctx.Inspect(args[0])
-		return object.Value{}, ctx.Raise(object.KeyError, "key not found: %s", s)
+		return object.Value{}, &object.Exception{Cls: object.KeyError, Message: "key not found: " + s,
+			Attrs: map[string]object.Value{"key": args[0], "receiver": self}}
 	})
 	def(c, "dig", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return dig(ctx, self, args)
@@ -170,8 +174,8 @@ func installMap() {
 	})
 	filter := func(name string, keep bool) {
 		def(c, name, 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-			if err := needBlock(ctx, block, name); err != nil {
-				return object.Value{}, err
+			if block.IsZero() {
+				return blockless(self, name, nil, true), nil
 			}
 			b := object.NewMapBuilder()
 			for i, k := range m(self).Keys() {
@@ -191,8 +195,8 @@ func installMap() {
 	filter("filter", true)
 	filter("reject", false)
 	def(c, "transform_values", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if err := needBlock(ctx, block, "transform_values"); err != nil {
-			return object.Value{}, err
+		if block.IsZero() {
+			return blockless(self, "transform_values", nil, true), nil
 		}
 		b := object.NewMapBuilder()
 		for i, k := range m(self).Keys() {
@@ -208,6 +212,9 @@ func installMap() {
 		var mapping *object.Map
 		if len(args) == 1 {
 			mapping, _ = args[0].AsMap()
+		}
+		if mapping == nil && len(args) == 0 && block.IsZero() {
+			return blockless(self, "transform_keys", nil, true), nil
 		}
 		if mapping == nil {
 			if err := needBlock(ctx, block, "transform_keys"); err != nil {
@@ -277,22 +284,24 @@ func installMap() {
 		}
 		return object.MapValue(keepDefault(m(self), b.Map())), nil
 	})
-	eachPair := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if block.IsZero() {
-			return self, nil
-		}
-		for i, k := range m(self).Keys() {
-			if _, err := ctx.Yield(block, k, m(self).Values()[i]); err != nil {
-				return object.Value{}, err
+	eachPair := func(name string) {
+		def(c, name, 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+			if block.IsZero() {
+				return blockless(self, name, nil, true), nil
 			}
-		}
-		return self, nil
+			for i, k := range m(self).Keys() {
+				if _, err := ctx.Yield(block, k, m(self).Values()[i]); err != nil {
+					return object.Value{}, err
+				}
+			}
+			return self, nil
+		})
 	}
-	def(c, "each", 0, eachPair)
-	def(c, "each_pair", 0, eachPair)
+	eachPair("each")
+	eachPair("each_pair")
 	def(c, "each_key", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if err := needBlock(ctx, block, "each_key"); err != nil {
-			return object.Value{}, err
+		if block.IsZero() {
+			return blockless(self, "each_key", nil, true), nil
 		}
 		for _, k := range m(self).Keys() {
 			if _, err := ctx.Yield(block, k); err != nil {
@@ -302,8 +311,8 @@ func installMap() {
 		return self, nil
 	})
 	def(c, "each_value", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if err := needBlock(ctx, block, "each_value"); err != nil {
-			return object.Value{}, err
+		if block.IsZero() {
+			return blockless(self, "each_value", nil, true), nil
 		}
 		for _, v := range m(self).Values() {
 			if _, err := ctx.Yield(block, v); err != nil {

@@ -1,6 +1,6 @@
 "h\xC3\xA9llo\xFF"
 String
-#<Encoding:ASCII-8BIT>
+#<Encoding:BINARY (ASCII-8BIT)>
 7
 7
 7
@@ -10,7 +10,7 @@ String
 ["h", "\xC3", "\xA9"]
 "\xFFoll\xA9\xC3h"
 "H\xC3\xA9LLO\xFF"
-#<Encoding:ASCII-8BIT>
+#<Encoding:BINARY (ASCII-8BIT)>
 3
 true
 true
@@ -26,13 +26,13 @@ true
 nil
 true
 "a\xFF"
-#<Encoding:ASCII-8BIT>
-#<Encoding:ASCII-8BIT>
+#<Encoding:BINARY (ASCII-8BIT)>
+#<Encoding:BINARY (ASCII-8BIT)>
 #<Encoding:UTF-8>
 Encoding::CompatibilityError
-#<Encoding:ASCII-8BIT>
-#<Encoding:ASCII-8BIT>
-#<Encoding:ASCII-8BIT>
+#<Encoding:BINARY (ASCII-8BIT)>
+#<Encoding:BINARY (ASCII-8BIT)>
+#<Encoding:BINARY (ASCII-8BIT)>
 "US"
 #<Encoding:US-ASCII>
 true
@@ -43,7 +43,7 @@ false
 "A"
 #<Encoding:US-ASCII>
 "\xE9"
-#<Encoding:ASCII-8BIT>
+#<Encoding:BINARY (ASCII-8BIT)>
 "é"
 "☺"
 "héllo"
@@ -54,10 +54,10 @@ false
 "U+00E9 from UTF-8 to US-ASCII"
 "\"\\xE9\" from ASCII-8BIT to UTF-8"
 "ab\xFF"
-#<Encoding:ASCII-8BIT>
+#<Encoding:BINARY (ASCII-8BIT)>
 3
-#<Encoding:ASCII-8BIT>
-#<Encoding:ASCII-8BIT>
+#<Encoding:BINARY (ASCII-8BIT)>
+#<Encoding:BINARY (ASCII-8BIT)>
 #<Encoding:UTF-8>
 [195, 169]
 "é"
@@ -67,3 +67,26 @@ false
 "zb"
 "ab"
 2
+195
+99
+nil
+#<Encoding:US-ASCII>
+#<Encoding:UTF-8>
+#<Encoding:US-ASCII>
+#<Encoding:BINARY (ASCII-8BIT)>
+195
+233
+"invalid symbol in encoding UTF-8 :\"\\xC3\""
+:AbC
+:Äöü
+:äöü
+-1
+nil
+true
+-1
+nil
+true
+:c
+true
+true
+true

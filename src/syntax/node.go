@@ -147,13 +147,6 @@ type MultiAssign struct {
 	Values     []Node
 }
 
-// Field reads a field of self. The converter makes one only as the target
-// of a MutCall in initialize, `self.items << x`, which rebinds the field.
-type Field struct {
-	Pos
-	Name string
-}
-
 // FieldAssign is `self.name = value` inside initialize, which sets a field
 // of the instance being built. The checker rejects it anywhere else.
 type FieldAssign struct {
@@ -197,6 +190,18 @@ type Call struct {
 	BlockArg Node
 	Block    *Block
 	Safe     bool // &. : the call on a nil receiver returns nil
+	// Dropped is set on a statement whose value nothing reads: one before
+	// the last of a body, or the last of the script.
+	Dropped bool
+	// VCall marks a bare name, without receiver, arguments or parentheses,
+	// which may have been meant as a local: a missing method raises
+	// NameError for it rather than NoMethodError.
+	VCall bool
+	// Rebinds is set on a call whose value is assigned back to its
+	// receiver, `a = a << 1` or `self.xs = self.xs.push(x)` in initialize:
+	// one of Ruby's mutators returns Ruby's value, computed on a copy,
+	// instead of raising.
+	Rebinds bool
 }
 
 // Block is a literal block or a lambda body.
@@ -279,6 +284,10 @@ type Next struct {
 // Retry restarts the begin body from a rescue clause.
 type Retry struct{ Pos }
 
+// Redo restarts the current block iteration or loop pass without
+// evaluating the loop's condition again.
+type Redo struct{ Pos }
+
 // If is `if`/`unless`/ternary/modifier; elsif chains nest in Else.
 type If struct {
 	Pos
@@ -287,11 +296,14 @@ type If struct {
 	Else []Node // nil when absent
 }
 
-// While is `while`/`until` (an until has its condition negated).
+// While is `while`/`until` (an until has its condition negated). DoWhile is
+// `begin … end while cond`, whose body runs once before the condition is
+// first evaluated.
 type While struct {
 	Pos
-	Cond Node
-	Body []Node
+	Cond    Node
+	Body    []Node
+	DoWhile bool
 }
 
 // And is `a && b` / `a and b`; Or is `a || b` / `a or b`; Not is `!a` / `not a`.
@@ -304,20 +316,6 @@ type And struct {
 type Or struct {
 	Pos
 	Left, Right Node
-}
-
-// MutCall is a call that may change its receiver, on a local or on a field
-// inside initialize: `x << a << b`, `x.push(a)`, `h.delete(k)`,
-// `x.map! { ... }`. The Steps run in order, each on what the one before
-// left; one that changes a list, string, hash or set of the receiver's
-// kind computes the changed copy instead, and Target is rebound to it, as
-// `h[k] = v` rebinds h. A step that does not change its receiver for its
-// kind, such as String#delete, is an ordinary call. Each step's Recv is
-// nil.
-type MutCall struct {
-	Pos
-	Target Node // *Var or *Field
-	Steps  []*Call
 }
 
 // Alias is `alias new old`: a second name for a method.

@@ -2,8 +2,10 @@ package stdlib
 
 import "github.com/cameo-lang/cameo/src/object"
 
-// installObject defines the methods every value has.
+// installObject defines the methods every value has: BasicObject's, which
+// are Ruby's BasicObject's, and Object's.
 func installObject() {
+	b := object.BasicObjectClass
 	o := object.ObjectClass
 	def(o, "to_s", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		s, err := ctx.ToS(self)
@@ -13,11 +15,11 @@ func installObject() {
 		s, err := ctx.Inspect(self)
 		return object.String(s), err
 	})
-	def(o, "==", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	def(b, "==", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		eq, err := ctx.Equal(self, args[0])
 		return object.Bool(eq), err
 	})
-	def(o, "!=", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	def(b, "!=", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		eq, err := ctx.Equal(self, args[0])
 		return object.Bool(!eq), err
 	})
@@ -28,7 +30,7 @@ func installObject() {
 		eq, err := ctx.Equal(self, args[0])
 		return object.Bool(eq), err
 	})
-	def(o, "!", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	def(b, "!", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Bool(!self.Truthy()), nil
 	})
 	def(o, "class", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -83,7 +85,34 @@ func installObject() {
 	}
 	def(o, "itself", 0, identity)
 	def(o, "dup", 0, identity)
-	def(o, "clone", 0, identity)
+	// clone(freeze: false) of a value Ruby always freezes, a number, a
+	// Symbol, nil or a boolean, fails as in Ruby; of any other value it
+	// returns the value, which stays frozen.
+	def(o, "clone", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if kw == nil || kw.Len() == 0 {
+			return self, nil
+		}
+		for _, k := range kw.Keys() {
+			if k.Kind() != object.KindSymbol || k.Str() != "freeze" {
+				s, err := ctx.Inspect(k)
+				if err != nil {
+					return object.Value{}, err
+				}
+				return object.Value{}, ctx.Raise(object.ArgumentError, "unknown keyword: %s", s)
+			}
+		}
+		v, _ := kw.Get(object.Symbol("freeze"))
+		if v.Kind() != object.KindNil && v.Kind() != object.KindBool {
+			return object.Value{}, ctx.Raise(object.ArgumentError, "unexpected value for freeze: %s", v.Class().Name)
+		}
+		if b, ok := v.AsBool(); ok && !b {
+			switch self.Kind() {
+			case object.KindInt, object.KindBig, object.KindFloat, object.KindSymbol, object.KindNil, object.KindBool:
+				return object.Value{}, ctx.Raise(object.ArgumentError, "can't unfreeze %s", self.Class().Name)
+			}
+		}
+		return self, nil
+	})
 	// then yields self; without a block it is an enumerator of self.
 	then := func(name string) {
 		def(o, name, 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {

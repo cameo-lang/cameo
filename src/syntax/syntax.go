@@ -53,12 +53,24 @@ func Parse(file, src string) (*Program, error) {
 		}
 		return nil, ErrorList{e}
 	}
-	c := &converter{file: file, lines: tree.Lines, stack: []frame{{kind: ctxTop}}}
+	c := &converter{file: file, lines: tree.Lines, stack: []frame{{kind: ctxTop}}, bangs: bangMethods(tree.Lines)}
 	prog := &Program{Body: c.body(tree.Body)}
 	if len(c.errs) > 0 {
 		return nil, c.errs
 	}
 	return prog, nil
+}
+
+// bangMethods returns the names of the bang methods a script defines. The
+// parser records a line for every node, so its keys are the whole tree.
+func bangMethods(lines map[ast.Node]int) map[string]bool {
+	out := map[string]bool{}
+	for n := range lines {
+		if d, ok := n.(*ast.MethodDef); ok && strings.HasSuffix(d.Name, "!") && d.Name != "!" {
+			out[d.Name] = true
+		}
+	}
+	return out
 }
 
 // digest identifies a class or module definition by its normalised body: the

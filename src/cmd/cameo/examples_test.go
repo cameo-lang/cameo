@@ -67,7 +67,7 @@ func TestCheckReportsErrors(t *testing.T) {
 		t.Fatal("check accepted a script with a syntax error")
 	}
 	mutating := filepath.Join(dir, "mutating.cameo")
-	if err := os.WriteFile(mutating, []byte("A = []\nA << 1\n"), 0o644); err != nil {
+	if err := os.WriteFile(mutating, []byte("A = []\nA.sort!\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	err := check(mutating)
@@ -124,5 +124,36 @@ func TestProtoCommand(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(dir, "cameo", "value.proto")); err != nil {
 		t.Fatalf("cameo/value.proto not written: %v", err)
+	}
+}
+
+// TestProtoCommandWritesAnExceptionClass proves `cameo proto` writes a
+// script's exception class as a message of its parts and its fields.
+func TestProtoCommandWritesAnExceptionClass(t *testing.T) {
+	script := filepath.Join(t.TempDir(), "errors.cameo")
+	src := "class HTTPError < StandardError\n  int :status, number: 16\nend\n"
+	if err := os.WriteFile(script, []byte(src), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var out bytes.Buffer
+	if err := protoFiles(script, "", &out); err != nil {
+		t.Fatal(err)
+	}
+	want := `// cameo.proto
+syntax = "proto3";
+
+package cameo;
+
+import "cameo/value.proto";
+
+message HTTPError {
+  optional string message = 1;
+  optional int64 line = 2;
+  optional cameo.Value cause = 3;
+  optional int64 status = 16;
+}
+`
+	if !strings.HasPrefix(out.String(), want) {
+		t.Fatalf("cameo proto wrote:\n%s\nwant it to start with:\n%s", out.String(), want)
 	}
 }

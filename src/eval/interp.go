@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"math/rand/v2"
 	"sync"
 	"sync/atomic"
 
@@ -20,9 +19,12 @@ import (
 // error streams, and the constants the script defines. Workers started by
 // async get interpreters of their own.
 type Interp struct {
-	stdout, stderr io.Writer
-	outMu          *sync.Mutex
-	file           string
+	// IgnoreMutationErrors makes a call of one of Ruby's mutators return
+	// its result on a copy instead of raising; see mutate.go.
+	IgnoreMutationErrors bool
+	stdout, stderr       io.Writer
+	outMu                *sync.Mutex
+	file                 string
 	// mainClass is the class of the top-level self: top-level defs are its
 	// methods, so one interpreter's definitions never reach another's.
 	mainClass *object.Class
@@ -46,16 +48,18 @@ type Interp struct {
 	snap *topLevel
 	// code is the compiled program, shared with the workers.
 	code *code
-	// rng is this interpreter's random number generator, pcg its source,
-	// and seed the seed it started from; see Rand and Srand.
-	rng  *rand.Rand
-	pcg  *rand.PCG
-	seed uint64
+	// rng is this interpreter's generator; see Rand.
+	rng *object.Random
 	// loaded is the libraries require has loaded, which a second require
 	// of answers false.
 	loaded map[string]bool
 	// stop ends the run, and is shared with the workers; see Stop.
 	stop *stopper
+	// catches are the tags of the catch blocks running, innermost last.
+	catches []*catchTag
+	// rescuing is the exception the innermost running rescue clause
+	// rescued, Ruby's $!; nil outside one.
+	rescuing *object.Exception
 	// last is the value of the last top-level expression Run evaluated.
 	last object.Value
 	// interpreted counts the calls of compiled methods running on the
@@ -154,21 +158,12 @@ func New(stdout, stderr io.Writer) *Interp {
 		code:      &code{},
 		stop:      newStopper(),
 	}
-	in.Srand(rand.Uint64())
+	in.rng = object.NewRandom(object.NewSeed())
 	return in
 }
 
 // Rand implements object.Context.
-func (in *Interp) Rand() *rand.Rand { return in.rng }
-
-// Srand implements object.Context: a new generator from seed.
-func (in *Interp) Srand(seed uint64) uint64 {
-	old := in.seed
-	in.seed = seed
-	in.pcg = rand.NewPCG(seed, seed^0x9e3779b97f4a7c15)
-	in.rng = rand.New(in.pcg)
-	return old
-}
+func (in *Interp) Rand() *object.Random { return in.rng }
 
 var installOnce sync.Once
 

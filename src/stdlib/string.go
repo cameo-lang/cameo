@@ -133,16 +133,13 @@ func installString() {
 			return object.Value{}, err
 		}
 		exclusive := len(args) == 2 && args[1].Truthy()
-		out := []object.Value{}
+		if block.IsZero() {
+			return enumFor(self, "upto", args, nil), nil
+		}
 		for s := range stringsUpto(self.Str(), hi, exclusive, false) {
-			if block.IsZero() {
-				out = append(out, object.String(s))
-			} else if _, err := ctx.Yield(block, object.String(s)); err != nil {
+			if _, err := ctx.Yield(block, object.String(s)); err != nil {
 				return object.Value{}, err
 			}
-		}
-		if block.IsZero() {
-			return object.NewList(out...), nil
 		}
 		return self, nil
 	})
@@ -161,6 +158,13 @@ func installString() {
 		return b.String()
 	})
 	def(c, "to_sym", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if !validIn(self.Kind(), str(self)) {
+			quoted := object.QuoteString(str(self))
+			if self.Kind() == object.KindASCII {
+				quoted = object.QuoteBytes([]byte(str(self)))
+			}
+			return object.Value{}, ctx.Raise(object.EncodingError, "invalid symbol in encoding %s :%s", encodingName(self.Kind()), quoted)
+		}
 		return object.Symbol(str(self)), nil
 	})
 	def(c, "intern", 0, c.Methods["to_sym"].Native)
@@ -194,10 +198,23 @@ func installString() {
 		return object.Int(0), nil
 	})
 	def(c, "ord", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if str(self) == "" {
+		s := str(self)
+		if s == "" {
 			return object.Value{}, ctx.Raise(object.ArgumentError, "empty string")
 		}
-		r, _ := utf8.DecodeRuneInString(str(self))
+		switch self.Kind() {
+		case object.KindBytes:
+			return object.Int(int64(s[0])), nil
+		case object.KindASCII:
+			if s[0] >= 0x80 {
+				return object.Value{}, ctx.Raise(object.ArgumentError, "invalid byte sequence in US-ASCII")
+			}
+			return object.Int(int64(s[0])), nil
+		}
+		r, size := utf8.DecodeRuneInString(s)
+		if r == utf8.RuneError && size < 2 {
+			return object.Value{}, ctx.Raise(object.ArgumentError, "invalid byte sequence in UTF-8")
+		}
 		return object.Int(r), nil
 	})
 	def(c, "chr", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -218,8 +235,10 @@ func installString() {
 		return object.NewList(elems...), nil
 	})
 	def(c, "each_char", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if err := needBlock(ctx, block, "each_char"); err != nil {
-			return object.Value{}, err
+		if block.IsZero() {
+			return enumFor(self, "each_char", nil, func(ctx object.Context) (object.Value, error) {
+				return ctx.Call(self, "size")
+			}), nil
 		}
 		for _, r := range str(self) {
 			if _, err := ctx.Yield(block, object.String(string(r))); err != nil {
@@ -284,8 +303,8 @@ func installString() {
 		return object.NewList(lines(str(self))...), nil
 	})
 	def(c, "each_line", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if err := needBlock(ctx, block, "each_line"); err != nil {
-			return object.Value{}, err
+		if block.IsZero() {
+			return enumFor(self, "each_line", args, nil), nil
 		}
 		for _, l := range lines(str(self)) {
 			if _, err := ctx.Yield(block, l); err != nil {
@@ -316,9 +335,11 @@ func installString() {
 		}
 		return object.Int(n)
 	})
-	strArg("casecmp?", func(s, a string) object.Value { return object.Bool(strings.EqualFold(s, a)) })
-	strArg("casecmp", func(s, a string) object.Value {
-		return object.Int(strings.Compare(strings.ToLower(s), strings.ToLower(a)))
+	def(c, "casecmp", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return casecmp(self, args[0]), nil
+	})
+	def(c, "casecmp?", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return casecmpP(self, args[0]), nil
 	})
 	def(c, "tr", 2, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		from, err := wantString(ctx, args[0])
@@ -520,17 +541,18 @@ func stringIndex(ctx object.Context, s string, args []object.Value) (object.Valu
 }
 
 // rangeBounds resolves a range over a sequence of length n into a start and
-// a length, false when it is out of bounds.
+// a length, false when it is out of bounds. A nil end, written or left
+// out, is the sequence's end.
 func rangeBounds(ctx object.Context, r *object.Range, n int) (start, length int, ok bool) {
 	lo, hi := 0, n-1
-	if !r.Lo.IsZero() {
+	if !object.OrNil(r.Lo).IsNil() {
 		v, isInt := r.Lo.AsInt()
 		if !isInt {
 			return 0, 0, false
 		}
 		lo = int(v)
 	}
-	if !r.Hi.IsZero() {
+	if !object.OrNil(r.Hi).IsNil() {
 		v, isInt := r.Hi.AsInt()
 		if !isInt {
 			return 0, 0, false
@@ -568,4 +590,48 @@ func parseIntBase(s string, base int) (object.Value, bool) {
 		return object.Value{}, false
 	}
 	return object.BigInt(b), true
+}
+
+// casecmp is String#casecmp: the order of two strings with ASCII letters
+// folded to lower case, nil when other is not a String or the encodings
+// are incompatible.
+func casecmp(self, other object.Value) object.Value {
+	if !other.IsString() {
+		return object.Nil
+	}
+	if _, ok := compatible(self, other); !ok {
+		return object.Nil
+	}
+	a, b := self.Str(), other.Str()
+	for i := 0; i < len(a) && i < len(b); i++ {
+		if x, y := asciiLower(a[i]), asciiLower(b[i]); x != y {
+			if x < y {
+				return object.Int(-1)
+			}
+			return object.Int(1)
+		}
+	}
+	switch {
+	case len(a) == len(b):
+		return object.Int(0)
+	case len(a) > len(b):
+		return object.Int(1)
+	}
+	return object.Int(-1)
+}
+
+// casecmpP is String#casecmp?: whether two strings are equal after case
+// folding, Unicode's for UTF-8 strings and ASCII's for the others, nil
+// when other is not a String or the encodings are incompatible.
+func casecmpP(self, other object.Value) object.Value {
+	if !other.IsString() {
+		return object.Nil
+	}
+	if _, ok := compatible(self, other); !ok {
+		return object.Nil
+	}
+	if self.Kind() == object.KindString && other.Kind() == object.KindString {
+		return object.Bool(strings.EqualFold(self.Str(), other.Str()))
+	}
+	return object.Bool(asciiCase(self.Str(), asciiLower) == asciiCase(other.Str(), asciiLower))
 }

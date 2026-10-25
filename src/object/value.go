@@ -54,6 +54,8 @@ const (
 	// KindProc is the evaluator's: a block or lambda. The object is opaque
 	// here; see Opaque.
 	KindProc
+	// KindRandom is a Random: a handle on a generator; see Random.
+	KindRandom
 )
 
 func (k Kind) String() string {
@@ -102,6 +104,8 @@ func (k Kind) String() string {
 		return "ascii"
 	case KindProc:
 		return "proc"
+	case KindRandom:
+		return "random"
 	}
 	return "kind(" + strconv.Itoa(int(k)) + ")"
 }
@@ -184,12 +188,19 @@ func (v Value) Class() *Class {
 	case KindMatch:
 		return MatchDataClass
 	case KindEnumerator:
-		if (*Enumerator)(v.p).Lazy {
+		switch e := (*Enumerator)(v.p); {
+		case e.Lazy:
 			return LazyClass
+		case e.Arith != nil:
+			return ArithSeqClass
+		case e.Of != nil:
+			return e.Of
 		}
 		return EnumeratorClass
 	case KindProc:
 		return ProcClass
+	case KindRandom:
+		return RandomClass
 	}
 	return NilClass
 }
@@ -407,6 +418,15 @@ func (v Value) AsSymbol() (string, bool) {
 	return v.Str(), true
 }
 
+// AsFieldName returns the field a keyword names, by a Symbol or a String,
+// and false for any other key.
+func (v Value) AsFieldName() (string, bool) {
+	if v.kind == KindSymbol || v.IsString() {
+		return v.Str(), true
+	}
+	return "", false
+}
+
 func (v Value) AsBytes() ([]byte, bool) {
 	if v.kind != KindBytes {
 		return nil, false
@@ -539,12 +559,55 @@ func (i *Instance) Field(name string) (Value, bool) {
 
 // Exception is a raised error: an instance of an exception class with a
 // message. It travels up the evaluator as a Go error, and is a Value when
-// a script holds it (`rescue => e`).
+// a script holds it (`rescue => e`). Like an Instance it is a protobuf
+// message, whose parts protogen names: the message, the line, the cause,
+// the Attrs, and the Fields the class declares.
 type Exception struct {
 	Cls     *Class
 	Message string
 	// Line is the source line the exception was raised on, or 0.
 	Line int
+	// Attrs holds what an exception of Ruby's core carries besides its
+	// message, by the name of the method that reads it: a NameError's name
+	// and receiver, a NoMethodError's args, a KeyError's key and receiver,
+	// a SystemExit's status, an UncaughtThrowError's tag and value. It is
+	// nil when there is none, and never changed once the exception is made.
+	Attrs map[string]Value
+	// Cause is the exception that was being rescued when this one was
+	// raised: zero when there was none, nil when the raise said
+	// `cause: nil`.
+	Cause Value
+	// Fields are the fields the class declares, in its declaration order,
+	// as an Instance holds them; nil for a class that declares none.
+	Fields []Value
+	// Building is set while new runs initialize on the exception, the one
+	// time its message and fields may be set.
+	Building bool
+}
+
+// Attr returns the attribute name of the exception, and false when it has
+// none.
+func (e *Exception) Attr(name string) (Value, bool) {
+	v, ok := e.Attrs[name]
+	return v, ok
+}
+
+// Copy returns a copy of the exception to change before anyone else sees
+// it: the copy shares the attributes and the fields, which are never
+// changed in place.
+func (e *Exception) Copy() *Exception {
+	c := *e
+	c.Building = false
+	return &c
+}
+
+// Field returns the field named name, and false when the class has none.
+func (e *Exception) Field(name string) (Value, bool) {
+	idx, ok := e.Cls.FieldIndex[name]
+	if !ok || idx >= len(e.Fields) {
+		return Value{}, false
+	}
+	return e.Fields[idx], true
 }
 
 func (e *Exception) Error() string { return e.Cls.Name + ": " + e.Message }

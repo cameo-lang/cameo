@@ -1,5 +1,5 @@
 256
-#<Encoding:ASCII-8BIT>
+#<Encoding:BINARY (ASCII-8BIT)>
 512
 [97, 98, 99, 100, 101]
 [65, 66, 67]
@@ -28,11 +28,28 @@
 [9786, 65]
 "6162"
 [[97, 98], [99]]
+"A"
+"A"
+["010000010100"]
+"10000010"
+[97, 98, 0, 0, 0]
+"a"
+"12AB"
+"1A"
+[1, 2]
+true
+68
+"01000001"
+nil
+[65, 65]
+"test"
+invalid base64
+offset outside of string
 false
 "h�llo��"
 "h?llo??"
 "h<1>llo<1><2>"
-#<Encoding:ASCII-8BIT>
+#<Encoding:BINARY (ASCII-8BIT)>
 true
 "café"
 #<Encoding:UTF-8>
@@ -40,7 +57,7 @@ true
 "héllo"
 #<Encoding:UTF-8>
 true
-#<Encoding:ASCII-8BIT>
+#<Encoding:BINARY (ASCII-8BIT)>
 #<Encoding:UTF-8>
 "ASCII-8BIT"
 "UTF-8"

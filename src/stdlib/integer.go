@@ -150,7 +150,7 @@ func installInteger() {
 		if err != nil {
 			return object.Value{}, err
 		}
-		return object.Float(math.Pow(a, b)), nil
+		return object.Float(floatPow(a, b)), nil
 	})
 	def(c, "pow", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) == 2 {
@@ -205,9 +205,6 @@ func installInteger() {
 	unary("succ", func(x int64) (int64, bool) { return object.AddInt(x, 1) }, func(b *big.Int) *big.Int { return new(big.Int).Add(b, big.NewInt(1)) })
 	def(c, "next", 0, c.Methods["succ"].Native)
 	unary("pred", func(x int64) (int64, bool) { return object.SubInt(x, 1) }, func(b *big.Int) *big.Int { return new(big.Int).Sub(b, big.NewInt(1)) })
-	def(c, "+@", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return self, nil
-	})
 	bitwise := func(name string, small func(a, b int64) int64, large func(a, b *big.Int) *big.Int) {
 		def(c, name, 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			if !args[0].IsInteger() {
@@ -309,23 +306,15 @@ func installInteger() {
 	def(c, "infinite?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Nil, nil
 	})
-	def(c, "nonzero?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if x, ok := self.AsInt(); ok && x == 0 {
-			return object.Nil, nil
-		}
-		return self, nil
-	})
 	def(c, "times", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		n, err := wantInt(ctx, self, "")
 		if err != nil {
 			return object.Value{}, err
 		}
 		if block.IsZero() {
-			elems := []object.Value{}
-			for i := int64(0); i < n; i++ {
-				elems = append(elems, object.Int(i))
-			}
-			return object.NewList(elems...), nil
+			return enumFor(self, "times", nil, func(ctx object.Context) (object.Value, error) {
+				return object.Int(max(n, 0)), nil
+			}), nil
 		}
 		for i := int64(0); i < n; i++ {
 			if _, err := ctx.Yield(block, object.Int(i)); err != nil {
@@ -334,39 +323,70 @@ func installInteger() {
 		}
 		return self, nil
 	})
+	bits := func(name string, f func(and, mask *big.Int) bool) {
+		def(c, name, 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+			mask := args[0]
+			if mask.Kind() == object.KindFloat {
+				if _, err := floatToInteger(ctx, mask.Float()); err != nil {
+					return object.Value{}, err
+				}
+				mask = object.FloatToInteger(mask.Float())
+			}
+			if !mask.IsInteger() {
+				return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into Integer", kindName(mask))
+			}
+			m := bigOf(mask)
+			return object.Bool(f(new(big.Int).And(bigOf(self), m), m)), nil
+		})
+	}
+	bits("allbits?", func(and, mask *big.Int) bool { return and.Cmp(mask) == 0 })
+	bits("anybits?", func(and, mask *big.Int) bool { return and.Sign() != 0 })
+	bits("nobits?", func(and, mask *big.Int) bool { return and.Sign() == 0 })
 	step := func(name string, dir int64) {
 		def(c, name, 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			to := args[0]
 			if !to.IsInteger() {
-				if _, err := wantInt(ctx, to, ""); err != nil {
-					return object.Value{}, err
+				if to.Kind() != object.KindFloat {
+					return object.Value{}, compareError(ctx, self, to)
 				}
 				to = object.FloatToInteger(math.Floor(to.Float()))
 				if dir < 0 {
 					to = object.FloatToInteger(math.Ceil(args[0].Float()))
 				}
 			}
-			var elems []object.Value
+			if block.IsZero() {
+				return enumFor(self, name, args, func(ctx object.Context) (object.Value, error) {
+					// The size is (to - self) * dir + 1, and 0 below 1.
+					d, err := ctx.Call(to, "-", self)
+					if err != nil {
+						return object.Value{}, err
+					}
+					if dir < 0 {
+						if d, err = ctx.Call(d, "-@"); err != nil {
+							return object.Value{}, err
+						}
+					}
+					if d, err = ctx.Call(d, "+", object.Int(1)); err != nil {
+						return object.Value{}, err
+					}
+					if r, err := ctx.Call(d, "<", object.Int(0)); err != nil || r.Truthy() {
+						return object.Int(0), err
+					}
+					return d, nil
+				}), nil
+			}
 			err := eachInteger(self, to, dir, func(i object.Value) error {
-				if block.IsZero() {
-					elems = append(elems, i)
-					return nil
-				}
 				_, err := ctx.Yield(block, i)
 				return err
 			})
 			if err != nil {
 				return object.Value{}, err
 			}
-			if block.IsZero() {
-				return object.NewList(elems...), nil
-			}
 			return self, nil
 		})
 	}
 	step("upto", 1)
 	step("downto", -1)
-	def(c, "step", -1, numericStep)
 	def(c, "to_s", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		base := int64(10)
 		if len(args) == 1 {
@@ -464,6 +484,46 @@ func installInteger() {
 		l.Mul(l, bigOf(args[0]))
 		return object.BigInt(l.Abs(l)), nil
 	})
+	def(c, "gcdlcm", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		g, err := c.Methods["gcd"].Native(ctx, self, args, kw, block)
+		if err != nil {
+			return object.Value{}, err
+		}
+		l, err := c.Methods["lcm"].Native(ctx, self, args, kw, block)
+		if err != nil {
+			return object.Value{}, err
+		}
+		return object.NewList(g, l), nil
+	})
+	// remainder is x - y * (x / y).truncate: its sign is the receiver's.
+	// Ruby raises for a Float zero only on a bignum receiver.
+	def(c, "remainder", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		other := args[0]
+		if other.IsInteger() {
+			if bigOf(other).Sign() == 0 {
+				return object.Value{}, ctx.Raise(object.ZeroDivisionError, "divided by 0")
+			}
+			return object.BigInt(new(big.Int).Rem(bigOf(self), bigOf(other))), nil
+		}
+		y, ok := other.AsNumber()
+		if !ok {
+			return object.Value{}, ctx.Raise(object.TypeError, "%s can't be coerced into Integer", kindName(other))
+		}
+		if _, small := self.AsInt(); !small && y == 0 {
+			return object.Value{}, ctx.Raise(object.ZeroDivisionError, "divided by 0")
+		}
+		x, _ := self.AsNumber()
+		return object.Float(math.Mod(x, y)), nil
+	})
+	arg := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if bigOf(self).Sign() < 0 {
+			return object.Float(math.Pi), nil
+		}
+		return object.Int(0), nil
+	}
+	def(c, "arg", 0, arg)
+	def(c, "angle", 0, arg)
+	def(c, "phase", 0, arg)
 	def(c, "digits", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		base := int64(10)
 		if len(args) == 1 {
@@ -536,14 +596,19 @@ func installInteger() {
 		}
 		return q
 	})
-	rounding("round", func(q, m, p *big.Int) *big.Int {
-		// q*p+m with 0 <= m < p: up from half, and at half away from
-		// zero, which for a negative number is down.
-		twice := new(big.Int).Lsh(m, 1)
-		if c := twice.Cmp(p); c > 0 || c == 0 && q.Sign() >= 0 {
-			return new(big.Int).Add(q, one)
+	def(c, "round", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if len(args) > 1 {
+			return object.Value{}, argError(ctx, len(args), "0..1")
 		}
-		return q
+		mode, err := roundingMode(ctx, kw)
+		if err != nil || len(args) == 0 {
+			return self, err
+		}
+		digits, err := wantInt(ctx, args[0], "")
+		if err != nil {
+			return object.Value{}, err
+		}
+		return roundInteger(self, digits, mode), nil
 	})
 	def(c, "size", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if self.Kind() == object.KindInt {
@@ -555,11 +620,7 @@ func installInteger() {
 		if args[0].IsInteger() {
 			return object.NewList(args[0], self), nil
 		}
-		a, b, _, err := numArgs(ctx, self, args[0], "coerce")
-		if err != nil {
-			return object.Value{}, err
-		}
-		return object.NewList(object.Float(b), object.Float(a)), nil
+		return coerceFloats(ctx, self, args[0])
 	})
 	object.ObjectClass.Consts["Integer"] = object.ClassValue(c)
 	def(c.Class(), "sqrt", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -658,6 +719,27 @@ func floorDivMod(a, b *big.Int) (q, m *big.Int) {
 	return q, m
 }
 
+// roundInteger rounds an integer to a negative number of digits, a
+// multiple of a power of ten, with ties by mode: "up" away from zero,
+// "down" toward it, or "even".
+func roundInteger(v object.Value, digits int64, mode string) object.Value {
+	if digits >= 0 {
+		return v
+	}
+	p := new(big.Int).Exp(big.NewInt(10), big.NewInt(-digits), nil)
+	// q*p+m with 0 <= m < p.
+	q, m := floorDivMod(bigOf(v), p)
+	twice := new(big.Int).Lsh(m, 1)
+	c := twice.Cmp(p)
+	// q is negative exactly when v is, so at a tie q+1 is toward zero
+	// for a negative v and away from it otherwise.
+	negative := q.Sign() < 0
+	if c > 0 || c == 0 && (mode == "up" && !negative || mode == "down" && negative || mode == "even" && q.Bit(0) == 1) {
+		q.Add(q, big.NewInt(1))
+	}
+	return object.BigInt(q.Mul(q, p))
+}
+
 func floatMod(a, b float64) float64 {
 	m := math.Mod(a, b)
 	if m != 0 && ((m < 0) != (b < 0)) {
@@ -721,4 +803,20 @@ func abs64(a int64) int64 {
 		return -a
 	}
 	return a
+}
+
+// compareError is Ruby's rb_cmperr: the ArgumentError of a failed
+// comparison, which names b by its inspect when b is nil, a boolean, a
+// Symbol or a number, and by its class otherwise.
+func compareError(ctx object.Context, a, b object.Value) error {
+	name := b.Class().Name
+	switch b.Kind() {
+	case object.KindNil, object.KindBool, object.KindSymbol, object.KindInt, object.KindFloat:
+		s, err := ctx.Inspect(b)
+		if err != nil {
+			return err
+		}
+		name = s
+	}
+	return ctx.Raise(object.ArgumentError, "comparison of %s with %s failed", a.Class().Name, name)
 }

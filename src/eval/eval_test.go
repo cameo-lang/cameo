@@ -71,7 +71,7 @@ func TestErrorsNameLineAndClass(t *testing.T) {
 func TestScopes(t *testing.T) {
 	expectOutput(t, "x = 1\n[1].each { |i| x = i + 10; y = 5 }\nputs x\nputs defined?(y).inspect rescue puts \"nil\"\n", "11\nnil\n")
 	expectOutput(t, "def m\n  v = 1\n  l = -> { v += 1 }\n  l.call\n  l.call\n  v\nend\nputs m\n", "3\n")
-	expectOutput(t, "x = 10\ndef m = x\nbegin\n  m\nrescue NameError, NoMethodError => e\n  puts e.class\nend\n", "NoMethodError\n")
+	expectOutput(t, "x = 10\ndef m = x\nbegin\n  m\nrescue NameError, NoMethodError => e\n  puts e.class\nend\n", "NameError\n")
 }
 
 func TestBlocksAndReturns(t *testing.T) {
@@ -186,6 +186,37 @@ p defined?(B)
 `, "stop\n1\nnil\n")
 }
 
+func TestNumericIsTheSuperclassOfIntegerAndFloat(t *testing.T) {
+	expectOutput(t, "p Integer.ancestors, Float.ancestors\n",
+		"[Integer, Numeric, Comparable, Object, Kernel, BasicObject]\n[Float, Numeric, Comparable, Object, Kernel, BasicObject]\n")
+	expectOutput(t, "p Integer.superclass, Float.superclass, Numeric.superclass\n", "Numeric\nNumeric\nObject\n")
+	expectOutput(t, "p 1.is_a?(Numeric), 1.5.is_a?(Numeric), (2**70).is_a?(Numeric), \"1\".is_a?(Numeric)\n", "true\ntrue\ntrue\nfalse\n")
+	expectOutput(t, "[1, 2.5, \"x\"].each { |v| case v when Numeric then p v else p :other end }\n", "1\n2.5\n:other\n")
+	// The methods Integer and Float share through Numeric keep their results.
+	expectOutput(t, "p 0.nonzero?, 3.nonzero?, 0.0.nonzero?, -0.0.nonzero?, (2**70).nonzero?, +5, +1.5\n",
+		"nil\n3\nnil\nnil\n1180591620717411303424\n5\n1.5\n")
+	expectOutput(t, "p 1.step(5, 2).to_a, 1.0.step(2.0, 0.5).to_a\n", "[1, 3, 5]\n[1.0, 1.5, 2.0]\n")
+}
+
+func TestBasicObjectIsTheRoot(t *testing.T) {
+	expectOutput(t, "p Object.superclass, BasicObject.superclass, BasicObject.ancestors, Object.ancestors\n",
+		"BasicObject\nnil\n[BasicObject]\n[Object, Kernel, BasicObject]\n")
+	expectOutput(t, "class A; end\np A.ancestors, A.new.is_a?(BasicObject), nil.is_a?(BasicObject), BasicObject === 1\n",
+		"[A, Object, Kernel, BasicObject]\ntrue\ntrue\ntrue\n")
+	expectOutput(t, "p 1 == 1, 1 != 1, !nil, 3.__send__(:+, 4)\n", "true\nfalse\ntrue\n7\n")
+	// super from a class's method_missing reaches BasicObject's.
+	expectError(t, "class A\n def method_missing(name, *args) = super\nend\nA.new.zz\n", "undefined method 'zz' for an instance of A")
+}
+
+func TestNumericAndBasicObjectCannotBeSubclassed(t *testing.T) {
+	expectError(t, "module M\n class X < Numeric\n end\nend\n", "class X < Numeric: a subclass of Numeric is not supported; Integer and Float do not coerce other numbers")
+	expectError(t, "module M\n class X < BasicObject\n end\nend\n", "class X < BasicObject: a subclass of BasicObject is not supported; use method_missing in an ordinary class")
+	expectError(t, "X = Class.new(Numeric)\n", "Class.new(Numeric): a subclass of Numeric is not supported")
+	expectError(t, "X = Class.new(BasicObject)\n", "Class.new(BasicObject): a subclass of BasicObject is not supported")
+	// A module's own Numeric is an ordinary class.
+	expectOutput(t, "module M\n class Numeric; end\n class X < Numeric; end\n p X.superclass\nend\n", "M::Numeric\n")
+}
+
 func TestExceptions(t *testing.T) {
 	expectOutput(t, "begin\n  raise ArgumentError\nrescue => e\n  puts e.message\n  puts e.class\nend\n", "ArgumentError\nArgumentError\n")
 	expectOutput(t, "class E < StandardError; end\nbegin\n  raise E, \"m\"\nrescue RuntimeError\n  puts 1\nrescue E => e\n  puts e.message\nensure\n  puts :done\nend\n", "m\ndone\n")
@@ -275,6 +306,22 @@ g.bar
 	expectOutput(t, strings.TrimSuffix(src, "g.bar\n"), "[[1], 2]\ntrue\nfalse\n")
 }
 
+// TestBangMethodsOfAClass holds a bang method a script defines to a plain
+// call: it returns its result and rebinds nothing.
+func TestBangMethodsOfAClass(t *testing.T) {
+	expectOutput(t, `
+class Counter
+  int :n
+  def bump! = with(n: n + 1)
+  def self.zero! = new(n: 0)
+end
+def twice!(x) = x * 2
+c = Counter.new(n: 1)
+d = c.bump!
+p c.n, d.n, Counter.zero!.bump!.n, c.send(:bump!).n, twice!(4)
+`, "1\n2\n1\n2\n8\n")
+}
+
 func TestSend(t *testing.T) {
 	// send calls a method by name, a symbol or a string, with the
 	// arguments, keywords and block it is given, and reaches method_missing
@@ -294,8 +341,8 @@ p send(:helper, 4), %i[upcase reverse].map { |m| "abc".send(m) }
 	// send rebinds no variable, so it refuses what a call on a temporary
 	// refuses, and initialize, which runs only in new.
 	for src, want := range map[string]string{
-		"a = [1]\na.send(:push, 2)\n":             "send(:push): push changes its receiver",
-		"p [2, 1].send(:sort!)\n":                 "send(:sort!): sort!: a bang method changes its receiver",
+		"a = [1]\na.send(:push, 2)\n":             "cameo does not support mutating calls without rebinding",
+		"p [2, 1].send(:sort!)\n":                 "send(:sort!): This is not supported, use x = x.sort instead",
 		"h = {a: 1}\nh.send(:[]=, :b, 2)\n":       "send(:[]=): []= is not supported",
 		"p 1.send(:eval, \"1\")\n":                "send(:eval): eval is not supported",
 		"class G\nend\nG.new.send(:initialize)\n": "send(:initialize): initialize runs only in new",
@@ -712,7 +759,7 @@ end
 `
 	expectOutput(t, src, `[-Infinity, -2.0, -0.0, 0.0, 3.5, 1.0e+300]
 ["", "B", "a", "a", "ab", "b", "é"]
-[#<Encoding:ASCII-8BIT>, #<Encoding:UTF-8>, #<Encoding:UTF-8>]
+[#<Encoding:BINARY (ASCII-8BIT)>, #<Encoding:UTF-8>, #<Encoding:UTF-8>]
 [0, 1, 2.5]
 ["b", "a"]
 nan
@@ -837,4 +884,25 @@ func TestRubyVersionConstantsCannotBeReassigned(t *testing.T) {
 	expectError(t, "RUBY_VERSION = \"9.9.9\"\n", "cannot reassign the builtin constant RUBY_VERSION")
 	expectError(t, "RUBY_PATCHLEVEL = 1\n", "cannot reassign the builtin constant RUBY_PATCHLEVEL")
 	expectOutput(t, "class A\n  RUBY_VERSION = \"1.8\"\n  def self.v = RUBY_VERSION\nend\nputs A.v\nputs RUBY_VERSION\n", "1.8\n3.4.0\n")
+}
+
+func TestAnAssignmentBindsItsLocalBeforeItsValue(t *testing.T) {
+	// The lambda calls itself through fact, and x = x reads the new local.
+	expectOutput(t, "fact = ->(n) { n <= 1 ? 1 : n * fact.(n - 1) }\np fact.(5)\nx = x\np x\n", "120\nnil\n")
+	// A def in the value has its own locals: z there is a method call.
+	expectOutput(t, "def z = 3\nz = Class.new { def m = z }\np z.new.m\n", "3\n")
+}
+
+func TestLineIsTheLineOfItsStatement(t *testing.T) {
+	expectOutput(t, "p __LINE__\n\ndef f\n  __LINE__\nend\np f\n[1].each do |v|\n  p \"#{__LINE__}\"\nend\n", "1\n4\n\"8\"\n")
+	expectOutput(t, "x = 1\n\np(/a#{__LINE__ }b/)\n", "/a3b/\n")
+}
+
+func TestNilMatchesNothingAndNoClassIsASingleton(t *testing.T) {
+	expectOutput(t, "p nil =~ /a/, nil =~ \"a\"\np Class.new.singleton_class?, NilClass.singleton_class?, Comparable.singleton_class?\n", "nil\nnil\nfalse\nfalse\nfalse\n")
+}
+
+func TestProcsShowWhereTheyWereWritten(t *testing.T) {
+	expectOutput(t, "p proc { 1 }\nputs -> { 1 }, :up.to_proc\np proc { 1 }.to_s.encoding\n",
+		"#<Proc:t.cameo:1>\n#<Proc:t.cameo:2 (lambda)>\n#<Proc:(&:up) (lambda)>\n#<Encoding:BINARY (ASCII-8BIT)>\n")
 }

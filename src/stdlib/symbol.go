@@ -2,6 +2,7 @@ package stdlib
 
 import (
 	"strings"
+	"unicode/utf8"
 
 	"github.com/cameo-lang/cameo/src/object"
 )
@@ -10,7 +11,10 @@ func installSymbol() {
 	c := object.SymbolClass
 	sym := func(self object.Value) string { return string(self.Str()) }
 	def(c, "to_s", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(sym(self)), nil
+		return symString(self), nil
+	})
+	def(c, "encoding", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return encodingValue(symKind(sym(self))), nil
 	})
 	def(c, "name", 0, c.Methods["to_s"].Native)
 	def(c, "id2name", 0, c.Methods["to_s"].Native)
@@ -18,7 +22,7 @@ func installSymbol() {
 		return self, nil
 	})
 	def(c, "inspect", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(object.SymbolInspect(sym(self))), nil
+		return object.StringOf(symKind(sym(self)), object.SymbolInspect(sym(self))), nil
 	})
 	def(c, "==", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		o, ok := args[0].AsSymbol()
@@ -38,20 +42,33 @@ func installSymbol() {
 	def(c, "empty?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Bool(sym(self) == ""), nil
 	})
-	mapSym := func(name string, f func(string) string) {
-		def(c, name, 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-			return object.Symbol(f(sym(self))), nil
+	// The case methods are String's, in the symbol's encoding.
+	for _, name := range []string{"upcase", "downcase", "capitalize", "swapcase"} {
+		def(c, name, -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+			v, err := object.StringClass.Methods[name].Native(ctx, symString(self), args, kw, block)
+			if err != nil {
+				return object.Value{}, err
+			}
+			return object.Symbol(v.Str()), nil
 		})
 	}
-	mapSym("upcase", strings.ToUpper)
-	mapSym("downcase", strings.ToLower)
-	mapSym("capitalize", func(s string) string {
-		if s == "" {
-			return s
-		}
-		return strings.ToUpper(s[:1]) + strings.ToLower(s[1:])
+	def(c, "succ", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return object.Symbol(succ(sym(self))), nil
 	})
-	mapSym("succ", succ)
+	// casecmp and casecmp? compare as String's do, and with anything but
+	// a Symbol return nil.
+	def(c, "casecmp", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if _, ok := args[0].AsSymbol(); !ok {
+			return object.Nil, nil
+		}
+		return casecmp(symString(self), symString(args[0])), nil
+	})
+	def(c, "casecmp?", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if _, ok := args[0].AsSymbol(); !ok {
+			return object.Nil, nil
+		}
+		return casecmpP(symString(self), symString(args[0])), nil
+	})
 	strArg := func(name string, f func(s, a string) bool) {
 		def(c, name, 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			a, err := wantString(ctx, args[0])
@@ -70,6 +87,22 @@ func installSymbol() {
 		return object.Int(hashString(object.Key(self))), nil
 	})
 }
+
+// symKind is the encoding of a symbol named s. A symbol keeps no
+// encoding of its own: one of ASCII alone is US-ASCII, as in Ruby, other
+// valid UTF-8 is UTF-8, and any other bytes are binary.
+func symKind(s string) object.Kind {
+	switch {
+	case object.ASCIIOnly(s):
+		return object.KindASCII
+	case utf8.ValidString(s):
+		return object.KindString
+	}
+	return object.KindBytes
+}
+
+// symString is a symbol's name as a String in the symbol's encoding.
+func symString(v object.Value) object.Value { return object.StringOf(symKind(v.Str()), v.Str()) }
 
 func installNilBool() {
 	n := object.NilClass
@@ -90,6 +123,11 @@ func installNilBool() {
 	})
 	def(n, "inspect", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.String("nil"), nil
+	})
+	// nil =~ anything is nil, as in Ruby, where every other receiver
+	// without a =~ of its own raises NoMethodError.
+	def(n, "=~", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return object.Nil, nil
 	})
 	def(n, "&", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.False, nil
@@ -116,56 +154,4 @@ func installNilBool() {
 	})
 	object.ObjectClass.Consts["TrueClass"] = object.ClassValue(b)
 	object.ObjectClass.Consts["FalseClass"] = object.ClassValue(b)
-}
-
-func installException() {
-	c := object.ExceptionClass
-	exc := func(self object.Value) *object.Exception { return self.Exception() }
-	def(c, "message", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(exc(self).Message), nil
-	})
-	def(c, "to_s", 0, c.Methods["message"].Native)
-	def(c, "full_message", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(exc(self).Message + " (" + exc(self).Cls.QualifiedName() + ")"), nil
-	})
-	def(c, "inspect", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String("#<" + exc(self).Cls.QualifiedName() + ": " + exc(self).Message + ">"), nil
-	})
-	def(c, "backtrace", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Nil, nil
-	})
-	def(c, "cause", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Nil, nil
-	})
-	def(c, "==", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		o, ok := args[0].AsException()
-		return object.Bool(ok && o.Cls == exc(self).Cls && o.Message == exc(self).Message), nil
-	})
-	def(c, "exception", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if len(args) == 0 {
-			return self, nil
-		}
-		msg, err := ctx.ToS(args[0])
-		if err != nil {
-			return object.Value{}, err
-		}
-		return object.ExceptionValue(&object.Exception{Cls: exc(self).Cls, Message: msg}), nil
-	})
-	newExc := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		cls := self.Cls()
-		msg := cls.QualifiedName()
-		if len(args) > 1 {
-			return object.Value{}, argError(ctx, len(args), "0..1")
-		}
-		if len(args) == 1 {
-			s, err := ctx.ToS(args[0])
-			if err != nil {
-				return object.Value{}, err
-			}
-			msg = s
-		}
-		return object.ExceptionValue(&object.Exception{Cls: cls, Message: msg}), nil
-	}
-	c.DefineSingleton("new", -1, newExc)
-	c.DefineSingleton("exception", -1, newExc)
 }

@@ -13,9 +13,11 @@ import (
 func Install() {
 	installObject()
 	installKernel()
+	installRandom()
 	installNilBool()
 	installNumeric()
 	installString()
+	installStringBytes()
 	installSymbol()
 	installException()
 	installClass()

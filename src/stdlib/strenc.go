@@ -29,6 +29,8 @@ var ownEncoding = map[string]bool{
 	"to_f": true, "hex": true, "oct": true, "==": true, "eql?": true, "===": true, "<=>": true,
 	"empty?": true, "ascii_only?": true, "frozen?": true, "-@": true, "+@": true, "dedup": true,
 	"to_s": true, "to_str": true, "include?": true, "start_with?": true, "end_with?": true,
+	"getbyte": true, "setbyte": true, "bytesplice": true, "append_as_bytes": true, "ord": true,
+	"casecmp": true, "casecmp?": true,
 }
 
 // patternMethods take a string or a regexp to match the bytes with.
@@ -182,7 +184,9 @@ func installStringEncodings() {
 			return nil
 		}
 		if block.IsZero() {
-			return enumerator(false, self, "each_char", nil, chars), nil
+			return enumFor(self, "each_char", nil, func(ctx object.Context) (object.Value, error) {
+				return ctx.Call(self, "size")
+			}), nil
 		}
 		err := chars(ctx, func(v object.Value) error {
 			_, err := ctx.Yield(block, v)

@@ -9,7 +9,7 @@ func installSet() {
 		if s, ok := v.AsSet(); ok {
 			return s, nil
 		}
-		elems, err := toList(ctx, v)
+		elems, err := setElems(ctx, v)
 		if err != nil {
 			return nil, err
 		}
@@ -34,7 +34,7 @@ func installSet() {
 	def(c, "contain?", 1, has)
 	def(c, "each", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if block.IsZero() {
-			return self, nil
+			return blockless(self, "each", nil, true), nil
 		}
 		for _, e := range set(self).Elems() {
 			if _, err := ctx.Yield(block, e); err != nil {
@@ -49,6 +49,26 @@ func installSet() {
 			out = out.With(a)
 		}
 		return object.SetValue(out), nil
+	})
+	def(c, "merge", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		out := set(self)
+		for _, a := range args {
+			elems, err := setElems(ctx, a)
+			if err != nil {
+				return object.Value{}, err
+			}
+			for _, e := range elems {
+				out = out.With(e)
+			}
+		}
+		return object.SetValue(out), nil
+	})
+	def(c, "flatten_merge", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		o, err := other(ctx, args[0])
+		if err != nil {
+			return object.Value{}, err
+		}
+		return object.SetValue(flattenSet(o, set(self))), nil
 	})
 	def(c, "without", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		out := set(self)
@@ -101,23 +121,12 @@ func installSet() {
 		return join(ctx, set(self).Elems(), sep)
 	})
 	def(c, "flatten", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		var flat func(s *object.Set, out *object.Set) *object.Set
-		flat = func(s *object.Set, out *object.Set) *object.Set {
-			for _, e := range s.Elems() {
-				if inner, ok := e.AsSet(); ok {
-					out = flat(inner, out)
-					continue
-				}
-				out = out.With(e)
-			}
-			return out
-		}
-		return object.SetValue(flat(set(self), object.NewSet())), nil
+		return object.SetValue(flattenSet(set(self), object.NewSet())), nil
 	})
 	// classify groups the members by the block's value, as a hash of sets.
 	def(c, "classify", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if err := needBlock(ctx, block, "classify"); err != nil {
-			return object.Value{}, err
+		if block.IsZero() {
+			return blockless(self, "classify", nil, true), nil
 		}
 		groups := object.NewMap()
 		for _, e := range set(self).Elems() {
@@ -134,11 +143,25 @@ func installSet() {
 		return object.MapValue(groups), nil
 	})
 	// divide is classify's sets with a one-argument block, and with a
-	// two-argument one the sets of members the block relates, directly or
-	// through others.
-	def(c, "divide", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if err := needBlock(ctx, block, "divide"); err != nil {
-			return object.Value{}, err
+	// two-argument one the sets of members the block relates both ways,
+	// directly or through others. Without a block it is an enumerator
+	// whose each divides by the block each takes.
+	var divide fn
+	divide = func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if block.IsZero() {
+			e := enumerator(false, self, "divide", nil, func(ctx object.Context, yield func(object.Value) error) error {
+				for _, el := range set(self).Elems() {
+					if err := yield(el); err != nil {
+						return err
+					}
+				}
+				return nil
+			})
+			e.Enumerator().Call = func(ctx object.Context, block object.Value) (object.Value, error) {
+				return divide(ctx, self, nil, nil, block)
+			}
+			e.Enumerator().Size = sizeOf(self)
+			return e, nil
 		}
 		arity, err := ctx.Call(block, "arity")
 		if err != nil {
@@ -152,47 +175,31 @@ func installSet() {
 			}
 			return object.SetValue(object.NewSet(groups.Map().Values()...)), nil
 		}
-		parent := make([]int, len(elems))
-		for i := range parent {
-			parent[i] = i
-		}
-		var find func(i int) int
-		find = func(i int) int {
-			for parent[i] != i {
-				parent[i] = parent[parent[i]]
-				i = parent[i]
-			}
-			return i
-		}
+		// As in Ruby 3.4, the block sees every pair, a member with itself
+		// too, and the sets are the graph's strongly connected components.
+		edges := make([][]int, len(elems))
 		for i := range elems {
 			for j := range elems {
-				if i == j || find(i) == find(j) {
-					continue
-				}
 				r, err := ctx.Yield(block, elems[i], elems[j])
 				if err != nil {
 					return object.Value{}, err
 				}
 				if r.Truthy() {
-					parent[find(j)] = find(i)
+					edges[i] = append(edges[i], j)
 				}
 			}
 		}
-		var order []int
-		members := map[int][]object.Value{}
-		for i, e := range elems {
-			root := find(i)
-			if _, seen := members[root]; !seen {
-				order = append(order, root)
+		var out []object.Value
+		for _, comp := range components(edges) {
+			members := make([]object.Value, len(comp))
+			for k, i := range comp {
+				members[k] = elems[i]
 			}
-			members[root] = append(members[root], e)
-		}
-		out := make([]object.Value, len(order))
-		for k, root := range order {
-			out[k] = object.SetValue(object.NewSet(members[root]...))
+			out = append(out, object.SetValue(object.NewSet(members...)))
 		}
 		return object.SetValue(object.NewSet(out...)), nil
-	})
+	}
+	def(c, "divide", 0, divide)
 	predicate := func(names []string, f func(a, b *object.Set) bool) {
 		for _, name := range names {
 			def(c, name, 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -214,8 +221,8 @@ func installSet() {
 	predicate([]string{"=="}, func(a, b *object.Set) bool { return a.Len() == b.Len() && subset(a, b) })
 	filter := func(name string, keep bool) {
 		def(c, name, 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-			if err := needBlock(ctx, block, name); err != nil {
-				return object.Value{}, err
+			if block.IsZero() {
+				return blockless(self, name, nil, true), nil
 			}
 			out := []object.Value{}
 			for _, e := range set(self).Elems() {
@@ -237,18 +244,33 @@ func installSet() {
 		return object.Enumerable.Methods["map"].Native(ctx, self, args, kw, block)
 	})
 	def(c, "to_set", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return self, nil
+		if block.IsZero() {
+			return self, nil
+		}
+		return object.Enumerable.Methods["to_set"].Native(ctx, self, args, kw, block)
 	})
 	def(c, "hash", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Int(hashString(object.Key(self))), nil
 	})
 	object.SetClass.DefineSingleton("new", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if len(args) == 0 {
+		if len(args) > 1 {
+			return object.Value{}, argError(ctx, len(args), "0..1")
+		}
+		if len(args) == 0 || args[0].IsNil() {
 			return object.SetValue(object.NewSet()), nil
 		}
-		elems, err := toList(ctx, args[0])
+		elems, err := setElems(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
+		}
+		if !block.IsZero() {
+			mapped := make([]object.Value, len(elems))
+			for i, e := range elems {
+				if mapped[i], err = ctx.Yield(block, e); err != nil {
+					return object.Value{}, err
+				}
+			}
+			elems = mapped
 		}
 		return object.SetValue(object.NewSet(elems...)), nil
 	})
@@ -264,4 +286,80 @@ func setSubset(a, b *object.Set) bool {
 		}
 	}
 	return true
+}
+
+// setElems is the elements Set.new and merge take from v: those of an
+// Enumerable, or an ArgumentError for anything without each.
+func setElems(ctx object.Context, v object.Value) ([]object.Value, error) {
+	switch v.Kind() {
+	case object.KindList, object.KindSet, object.KindMap, object.KindRange, object.KindEnumerator:
+		return toList(ctx, v)
+	}
+	if v.Kind() == object.KindInstance && ctx.RespondsTo(v, "each") {
+		return toList(ctx, v)
+	}
+	return nil, ctx.Raise(object.ArgumentError, "value must be enumerable")
+}
+
+// flattenSet adds the members of s to out, those of a member set in its
+// place.
+func flattenSet(s, out *object.Set) *object.Set {
+	for _, e := range s.Elems() {
+		if inner, ok := e.AsSet(); ok {
+			out = flattenSet(inner, out)
+			continue
+		}
+		out = out.With(e)
+	}
+	return out
+}
+
+// components returns the strongly connected components of the graph of
+// edges, each in the order its nodes were reached, in the order Tarjan's
+// algorithm, as Ruby's TSort runs it, completes them.
+func components(edges [][]int) [][]int {
+	index := make([]int, len(edges))
+	low := make([]int, len(edges))
+	onStack := make([]bool, len(edges))
+	for i := range index {
+		index[i] = -1
+	}
+	var stack []int
+	var out [][]int
+	next := 0
+	var visit func(v int)
+	visit = func(v int) {
+		index[v], low[v] = next, next
+		next++
+		stack = append(stack, v)
+		onStack[v] = true
+		for _, w := range edges[v] {
+			switch {
+			case index[w] < 0:
+				visit(w)
+				low[v] = min(low[v], low[w])
+			case onStack[w]:
+				low[v] = min(low[v], index[w])
+			}
+		}
+		if low[v] != index[v] {
+			return
+		}
+		at := len(stack) - 1
+		for stack[at] != v {
+			at--
+		}
+		comp := append([]int{}, stack[at:]...)
+		for _, w := range comp {
+			onStack[w] = false
+		}
+		stack = stack[:at]
+		out = append(out, comp)
+	}
+	for v := range edges {
+		if index[v] < 0 {
+			visit(v)
+		}
+	}
+	return out
 }

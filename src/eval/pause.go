@@ -3,7 +3,6 @@ package eval
 import (
 	"errors"
 	"fmt"
-	"math/rand/v2"
 	"sort"
 	"strings"
 
@@ -57,7 +56,7 @@ func (in *Interp) Dump(source string) (*protogen.Dump, error) {
 		d.Loaded = append(d.Loaded, lib)
 	}
 	sort.Strings(d.Loaded)
-	if d.Rand, err = in.pcg.MarshalBinary(); err != nil {
+	if d.Rand, err = in.rng.MarshalBinary(); err != nil {
 		return nil, err
 	}
 	return d, nil
@@ -103,6 +102,11 @@ func (in *Interp) settledPromises(enc *protogen.Encoder) ([]protogen.PromiseStat
 		s := protogen.PromiseState{ID: id, Method: p.method, Awaited: awaited}
 		if exc != nil {
 			s.Failure = &protogen.Failure{Class: exc.Cls.QualifiedName(), Message: exc.Message, Line: exc.Line}
+			// The whole exception, with its fields and cause, when the
+			// envelope carries it.
+			if data, err := enc.Encode(object.ExceptionValue(exc)); err == nil {
+				s.Value = data
+			}
 		} else if s.Value, err = enc.Encode(result); err != nil {
 			return nil, fmt.Errorf("promise %d (%s): %w", id, p.method, err)
 		}
@@ -163,11 +167,11 @@ func (in *Interp) Resume(prog *syntax.Program, d *protogen.Dump) error {
 		}
 	}
 	if d.Rand != nil {
-		pcg := &rand.PCG{}
-		if err := pcg.UnmarshalBinary(d.Rand); err != nil {
-			return err
+		if err := in.rng.UnmarshalBinary(d.Rand); err != nil {
+			// A dump of a cameo before Random followed CRuby's MT19937 holds
+			// another generator's state.
+			return fmt.Errorf("the dump's random number state is not one this cameo reads: %w", err)
 		}
-		in.pcg, in.rng = pcg, rand.New(pcg)
 	}
 	in.from = d.Next
 	return nil
@@ -224,7 +228,16 @@ func (in *Interp) restorePromise(dec *protogen.Decoder, s protogen.PromiseState)
 		if cls == nil {
 			return fmt.Errorf("no class %s", s.Failure.Class)
 		}
-		exc = &object.Exception{Cls: cls, Message: s.Failure.Message, Line: s.Failure.Line}
+		exc = &object.Exception{Cls: cls, Message: s.Failure.Message, Line: s.Failure.Line, Fields: defaultFields(cls)}
+		if len(s.Value) > 0 {
+			v, err := dec.Decode(s.Value)
+			if err != nil {
+				return err
+			}
+			if e, ok := v.AsException(); ok {
+				exc = e
+			}
+		}
 	} else {
 		var err error
 		if result, err = dec.Decode(s.Value); err != nil {

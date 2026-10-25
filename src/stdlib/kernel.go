@@ -1,9 +1,6 @@
 package stdlib
 
 import (
-	"math"
-	"math/big"
-	"math/rand/v2"
 	"strings"
 
 	"github.com/cameo-lang/cameo/src/object"
@@ -13,23 +10,6 @@ import (
 // value, as Ruby's Kernel does.
 func installKernel() {
 	o := object.ObjectClass
-	def(o, "rand", -1, kernelRand)
-	// srand reseeds the generator, with a random seed when given none, and
-	// returns the previous seed.
-	def(o, "srand", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if len(args) > 1 {
-			return object.Value{}, argError(ctx, len(args), "0..1")
-		}
-		seed := rand.Uint64() >> 1
-		if len(args) == 1 {
-			s, err := wantInt(ctx, args[0], "")
-			if err != nil {
-				return object.Value{}, err
-			}
-			seed = uint64(s)
-		}
-		return object.Int(int64(ctx.Srand(seed))), nil
-	})
 	def(o, "puts", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Nil, puts(ctx, false, args)
 	})
@@ -71,6 +51,40 @@ func installKernel() {
 		return object.Value{}, raise(ctx, args)
 	})
 	def(o, "fail", -1, o.Methods["raise"].Native)
+	// exit raises SystemExit, which ensure clauses see and a rescue may
+	// catch; the command ends with its status when nothing does.
+	def(o, "exit", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if len(args) > 1 {
+			return object.Value{}, argError(ctx, len(args), "0..1")
+		}
+		status := int64(0)
+		if len(args) == 1 {
+			s, ok := exitStatus(args[0])
+			if !ok {
+				return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into Integer", args[0].Class().QualifiedName())
+			}
+			status = s
+		}
+		return object.Value{}, systemExit(status, "exit")
+	})
+	// abort writes its message to standard error and raises SystemExit
+	// with status 1.
+	def(o, "abort", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if len(args) > 1 {
+			return object.Value{}, argError(ctx, len(args), "0..1")
+		}
+		if len(args) == 0 {
+			return object.Value{}, systemExit(1, "exit")
+		}
+		msg, err := wantString(ctx, args[0])
+		if err != nil {
+			return object.Value{}, err
+		}
+		if err := ctx.Write(true, msg+"\n"); err != nil {
+			return object.Value{}, err
+		}
+		return object.Value{}, systemExit(1, msg)
+	})
 	def(o, "format", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) == 0 {
 			return object.Value{}, argError(ctx, 0, "1+")
@@ -118,22 +132,7 @@ func installKernel() {
 		return object.Value{}, ctx.Raise(object.TypeError, "can't convert %s into Integer", kindName(args[0]))
 	})
 	def(o, "Float", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		switch args[0].Kind() {
-		case object.KindInt, object.KindBig:
-			f, _ := args[0].AsNumber()
-			return object.Float(f), nil
-		case object.KindFloat:
-			v := args[0].Float()
-			return object.Float(v), nil
-		case object.KindString, object.KindBytes, object.KindASCII:
-			v := args[0].Str()
-			f, ok := parseFloat(strings.TrimSpace(string(v)))
-			if !ok {
-				return object.Value{}, ctx.Raise(object.ArgumentError, "invalid value for Float(): %s", object.QuoteString(string(v)))
-			}
-			return object.Float(f), nil
-		}
-		return object.Value{}, ctx.Raise(object.TypeError, "can't convert %s into Float", kindName(args[0]))
+		return toFloat(ctx, args[0])
 	})
 	def(o, "String", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		s, err := ctx.ToS(args[0])
@@ -201,7 +200,9 @@ func raise(ctx object.Context, args []object.Value) error {
 		v := args[0].Exception()
 		if len(args) > 1 {
 			if msg, err := wantString(ctx, args[1]); err == nil {
-				return &object.Exception{Cls: v.Cls, Message: msg}
+				out := v.Copy()
+				out.Message, out.Line = msg, 0
+				return out
 			}
 		}
 		return v
@@ -209,6 +210,17 @@ func raise(ctx object.Context, args []object.Value) error {
 		v := args[0].Cls()
 		if !v.IsA(object.ExceptionClass) {
 			return ctx.Raise(object.TypeError, "exception class/object expected")
+		}
+		if !plainException(v) {
+			out, err := ctx.CallWith(args[0], "exception", args[1:min(len(args), 2)], nil, object.Value{})
+			if err != nil {
+				return err
+			}
+			exc, ok := out.AsException()
+			if !ok {
+				return ctx.Raise(object.TypeError, "exception object expected")
+			}
+			return exc
 		}
 		msg := v.QualifiedName()
 		if len(args) > 1 {
@@ -223,65 +235,43 @@ func raise(ctx object.Context, args []object.Value) error {
 	return ctx.Raise(object.TypeError, "exception class/object expected")
 }
 
-// kernelRand is Kernel#rand: a float in [0, 1) without an argument (or
-// with nil or 0), an integer below max.to_i.abs for a number, and a number
-// within a range, or nil for an empty one.
-func kernelRand(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-	if len(args) > 1 {
-		return object.Value{}, argError(ctx, len(args), "0..1")
+// plainException reports whether an exception of cls is made here rather
+// than by cls.exception: its class declares no fields and has Exception's
+// own initialize, exception and new. It reads the classes' own methods rather than looking
+// initialize up, which costs a raise in a loop a tenth of its time.
+func plainException(cls *object.Class) bool {
+	if len(cls.Fields) > 0 {
+		return false
 	}
-	r := ctx.Rand()
-	if len(args) == 0 || args[0].IsNil() {
-		return object.Float(r.Float64()), nil
-	}
-	switch a := args[0]; a.Kind() {
-	case object.KindBig:
-		return object.BigInt(randBelow(r, new(big.Int).Abs(a.Big()))), nil
-	case object.KindInt, object.KindFloat:
-		f, _ := a.AsNumber()
-		n := int64(math.Abs(f))
-		if n == 0 {
-			return object.Float(r.Float64()), nil
-		}
-		return object.Int(r.Int64N(n)), nil
-	case object.KindRange:
-		rg := a.Range()
-		lo, hi := object.OrNil(rg.Lo), object.OrNil(rg.Hi)
-		if li, ok := lo.AsInt(); ok {
-			if hiI, ok := hi.AsInt(); ok {
-				if rg.Exclusive {
-					hiI--
-				}
-				if hiI < li {
-					return object.Nil, nil
-				}
-				return object.Int(li + r.Int64N(hiI-li+1)), nil
-			}
-		}
-		lf, ok1 := lo.AsNumber()
-		hf, ok2 := hi.AsNumber()
-		if ok1 && ok2 {
-			if hf < lf || (rg.Exclusive && hf == lf) {
-				return object.Nil, nil
-			}
-			return object.Float(lf + r.Float64()*(hf-lf)), nil
+	for c := cls; c != nil && c != object.ExceptionClass; c = c.Super {
+		if c.Methods["initialize"] != nil || len(c.Includes) > 0 || c.SingletonMethods["exception"] != nil || c.SingletonMethods["new"] != nil {
+			return false
 		}
 	}
-	return object.Value{}, ctx.Raise(object.ArgumentError, "invalid argument - %s", kindName(args[0]))
+	return true
 }
 
-// randBelow is a uniform integer in [0, n), for an n beyond 64 bits: random
-// words with the bits of n, drawn again while they reach n.
-func randBelow(r *rand.Rand, n *big.Int) *big.Int {
-	words := (n.BitLen() + 63) / 64
-	extra := uint(words*64 - n.BitLen())
-	for {
-		v := new(big.Int)
-		for i := 0; i < words; i++ {
-			v.Lsh(v, 64).Or(v, new(big.Int).SetUint64(r.Uint64()))
+// systemExit makes the SystemExit for exit and abort.
+func systemExit(status int64, msg string) error {
+	return &object.Exception{Cls: object.SystemExit, Message: msg, Attrs: map[string]object.Value{"status": object.Int(status)}}
+}
+
+// toFloat is Kernel#Float of one value: a number as a float, or a string
+// parsed as one.
+func toFloat(ctx object.Context, v object.Value) (object.Value, error) {
+	switch v.Kind() {
+	case object.KindInt, object.KindBig:
+		f, _ := v.AsNumber()
+		return object.Float(f), nil
+	case object.KindFloat:
+		return v, nil
+	case object.KindString, object.KindBytes, object.KindASCII:
+		s := v.Str()
+		f, ok := parseFloat(strings.TrimSpace(string(s)))
+		if !ok {
+			return object.Value{}, ctx.Raise(object.ArgumentError, "invalid value for Float(): %s", object.QuoteString(string(s)))
 		}
-		if v.Rsh(v, extra).Cmp(n) < 0 {
-			return v
-		}
+		return object.Float(f), nil
 	}
+	return object.Value{}, ctx.Raise(object.TypeError, "can't convert %s into Float", kindName(v))
 }

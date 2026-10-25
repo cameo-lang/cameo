@@ -106,8 +106,8 @@ puts s.sort.inspect
 puts s.min
 puts s.sum
 puts s == [1, 2, 3].to_set
-puts s.add(5).size
-puts s.add(5).to_a.sort.inspect
+puts (s | [5]).size
+puts (s | [5]).to_a.sort.inspect
 
 r = (1..10)
 puts r.sum
@@ -139,3 +139,14 @@ puts Array.new([1, 2]).inspect, Array[1, 2, 3].inspect, Array(nil).inspect, Arra
 
 # min and max take the first of equal elements, as Ruby's do.
 p [3, 1, 2, 1.0, 3.0].min, [3, 1, 2, 1.0, 3.0].max, [3, 1, 2, 1.0, 3.0].minmax
+# Set.new and to_set map through a block; | takes any enumerable; divide
+# with two parameters groups what relates both ways.
+p Set.new([1, 2, 3]) { _1 * 10 }, [1, 2].to_set { -_1 }
+p Set[1] | [2] | Set[3] | (4..5)
+p Set[1, 3, 4, 6, 9, 10, 11].divide { |x, y| (x - y).abs == 1 }
+p Set[1, 2, 3, 4].divide.each { |a, b| (a + b).even? }
+begin
+  Set[1] | 1
+rescue ArgumentError => e
+  p e.message
+end

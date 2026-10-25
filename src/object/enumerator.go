@@ -16,6 +16,29 @@ type Enumerator struct {
 	Recv Value
 	Meth string
 	Args []Value
+	// Call, when set, calls that method again with a block, for each with
+	// a block to return what the method returns, as Ruby's enum_for does.
+	Call func(ctx Context, block Value) (Value, error)
+	// Kw is the keywords of what made it, for inspect.
+	Kw *Map
+	// Size, when set, computes Enumerator#size without enumerating;
+	// otherwise the size is nil.
+	Size func(ctx Context) (Value, error)
+	// Arith, when set, makes it an Enumerator::ArithmeticSequence, from
+	// Numeric#step or Range#step: equal to another with the same Arith.
+	Arith *ArithSeq
+	// Of, when set, is its class, Enumerator::Chain or
+	// Enumerator::Product, and Parts the enumerables it combines.
+	Of    *Class
+	Parts []Value
+}
+
+// ArithSeq is what an Enumerator::ArithmeticSequence counts: from Begin
+// by Step to End, which is nil for an endless one, and excluded when Excl
+// is set. Begin is nil for one from a beginless range.
+type ArithSeq struct {
+	Begin, End, Step Value
+	Excl             bool
 }
 
 // EnumeratorValue wraps an enumerator as a value.

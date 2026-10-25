@@ -56,6 +56,21 @@ CAMEO
   assert_eq $'{"a":[1,2.5,null],"b":{"c":"é"}}\n{\n  "c": "é"\n}\n'"$script"$':4: unexpected token at \']\' (JSON::ParserError)' "$out"
 }
 
+test_exit_ends_the_run_with_its_status() {
+  local dir out rc
+  dir="$(mktemp -d)"
+  printf 'begin\n  puts "before"\n  exit 3\nensure\n  puts "ensure"\nend\nputs "after"\n' >"$dir/exit.cameo"
+  rc=0
+  out=$("$CAMEO_BIN" "$dir/exit.cameo" 2>&1) || rc=$?
+  assert_eq 3 "$rc" "exit 3 sets the status"
+  assert_eq $'before\nensure' "$out"
+  printf 'abort "gone"\n' >"$dir/abort.cameo"
+  rc=0
+  out=$("$CAMEO_BIN" "$dir/abort.cameo" 2>&1) || rc=$?
+  assert_eq 1 "$rc" "abort exits 1"
+  assert_eq "gone" "$out"
+}
+
 test_benchmark_reports_the_time_inside_the_script() {
   local script out
   script="$(mktemp -d)/bench.cameo"
@@ -143,6 +158,33 @@ CAMEO
   out=$(cd "$(dirname "$script")" && "$CAMEO_BIN" run fact.rb 2>&1) || rc=$?
   assert_eq 1 "$rc" "an uncaught exception does not fail cameo run"
   assert_eq $'15511210043330985984000000\nfact.rb:5: done (RuntimeError)' "$out"
+}
+
+# A call of one of Ruby's mutators raises: cameo deviates from Ruby and
+# never changes or rebinds the receiver. --ignore-mutation-errors makes the
+# call return Ruby's result on a copy, the receiver left as it was.
+test_mutators_raise_unless_ignored() {
+  local script out rc=0
+  script="$(mktemp -d)/mutate.cameo"
+  cat >"$script" <<'CAMEO'
+a = [1, 2]
+p a.pop
+p a
+CAMEO
+  out=$("$CAMEO_BIN" "$script" 2>&1) || rc=$?
+  assert_neq 0 "$rc" "a mutator ran without an error"
+  assert_contains "$out" "cameo does not support mutating calls without rebinding; use last and take (CameoError)"
+  out=$("$CAMEO_BIN" --ignore-mutation-errors "$script")
+  assert_eq $'2\n[1, 2]' "$out"
+}
+
+test_bang_methods_are_refused_with_the_flag_too() {
+  local script out rc=0
+  script="$(mktemp -d)/bang.cameo"
+  printf 'x = [nil, 1]\nx.compact!\n' >"$script"
+  out=$("$CAMEO_BIN" --ignore-mutation-errors "$script" 2>&1) || rc=$?
+  assert_neq 0 "$rc" "a bang method ran"
+  assert_contains "$out" "This is not supported, use x = x.compact instead"
 }
 
 run_tests

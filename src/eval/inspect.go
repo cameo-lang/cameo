@@ -188,6 +188,10 @@ func (in *Interp) inspectBuiltin(v object.Value) (string, error) {
 			// A bare Object has no fields to show, and cameo no address.
 			return "#<Object>", nil
 		case object.EncodingClass:
+			// Ruby 3.4 shows binary by both its names.
+			if v.Fields[0].Str() == "ASCII-8BIT" {
+				return "#<Encoding:BINARY (ASCII-8BIT)>", nil
+			}
 			return "#<Encoding:" + v.Fields[0].Str() + ">", nil
 		case object.PathnameClass:
 			return "#<Pathname:" + v.Fields[0].Str() + ">", nil
@@ -204,11 +208,7 @@ func (in *Interp) inspectBuiltin(v object.Value) (string, error) {
 		}
 		return v.Cls.QualifiedName() + "(" + strings.Join(parts, ", ") + ")", nil
 	case object.KindProc:
-		v := proc(v)
-		if v.Strict {
-			return "#<Proc (lambda)>", nil
-		}
-		return "#<Proc>", nil
+		return in.procInspect(proc(v)), nil
 	}
 	if v.IsNil() {
 		return "nil", nil
@@ -332,6 +332,10 @@ func (in *Interp) Compare(a, b object.Value) (int, error) {
 			return cmp(int64(len(a.Elems)), int64(len(bl.Elems))), nil
 		}
 	}
+	// Object#<=> is 0 for the same object, so nil <=> nil is 0.
+	if object.Same(a, b) {
+		return 0, nil
+	}
 	return 0, in.incomparable(a, b)
 }
 
@@ -393,4 +397,20 @@ func (in *Interp) rangeToList(r *object.Range, line int) (*object.List, error) {
 		return nil, withLine(err, line)
 	}
 	return object.NewList(elems...).List(), nil
+}
+
+// procInspect shows a proc as Ruby does, without the address: where its
+// block was written, or the symbol it calls, and whether it is a lambda.
+func (in *Interp) procInspect(p *Proc) string {
+	switch {
+	case p.Sym != "" && p.Recv.IsZero():
+		return "#<Proc:(&" + object.SymbolInspect(p.Sym) + ") (lambda)>"
+	case p.Block != nil && p.Strict:
+		return "#<Proc:" + in.file + ":" + strconv.Itoa(p.Block.Line()) + " (lambda)>"
+	case p.Block != nil:
+		return "#<Proc:" + in.file + ":" + strconv.Itoa(p.Block.Line()) + ">"
+	case p.Strict:
+		return "#<Proc (lambda)>"
+	}
+	return "#<Proc>"
 }

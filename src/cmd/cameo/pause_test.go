@@ -42,7 +42,7 @@ func pausedDump(t *testing.T) string {
 // of a paused script and exits 0.
 func TestResumeCommandContinuesTheScript(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	if status := resume(pausedDump(t), false, &stdout, &stderr); status != 0 {
+	if status := resume(pausedDump(t), false, false, &stdout, &stderr); status != 0 {
 		t.Fatalf("exit status %d, stderr:\n%s", status, stderr.String())
 	}
 	if stdout.String() != "2\n" {
@@ -68,7 +68,7 @@ func TestInspectCommandShowsTheDump(t *testing.T) {
 // that does not exist fails with status 1 and says so.
 func TestResumeCommandRejectsAMissingDump(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	if status := resume(filepath.Join(t.TempDir(), "none.dump"), false, &stdout, &stderr); status != 1 {
+	if status := resume(filepath.Join(t.TempDir(), "none.dump"), false, false, &stdout, &stderr); status != 1 {
 		t.Fatalf("exit status %d, want 1", status)
 	}
 	if !strings.Contains(stderr.String(), "none.dump") {

@@ -44,6 +44,43 @@ type converter struct {
 	// lent names the hash parameters of the Hash.new blocks being
 	// converted, which the block must not store into.
 	lent []string
+	// bangs names the bang methods the script defines, which are calls
+	// like any other; any other bang method is one of Ruby's mutators.
+	bangs map[string]bool
+	// assigning holds the locals whose `x = value` is being converted. Ruby
+	// binds x before it evaluates the value, so a lambda in the value may
+	// call itself through x; the parser declares x after the value and
+	// leaves such an x a method call.
+	assigning []pendingLocal
+}
+
+// pendingLocal is a local being assigned, with the scope it belongs to.
+type pendingLocal struct {
+	name  string
+	scope int
+}
+
+// scope returns the index of the innermost frame that starts a scope of
+// locals: a block shares its method's.
+func (c *converter) scope() int {
+	for i := len(c.stack) - 1; i > 0; i-- {
+		if c.stack[i].kind != ctxBlock {
+			return i
+		}
+	}
+	return 0
+}
+
+// assigned returns true when a bare name is a local whose assignment is
+// being converted in the current scope.
+func (c *converter) assigned(name string) bool {
+	scope := c.scope()
+	for _, p := range c.assigning {
+		if p.name == name && p.scope == scope {
+			return true
+		}
+	}
+	return false
 }
 
 func (c *converter) fail(format string, args ...any) {
@@ -100,11 +137,14 @@ func (c *converter) insideClass() bool {
 func (c *converter) body(nodes []ast.Node) []Node {
 	saved := c.line
 	out := make([]Node, 0, len(nodes))
-	for _, n := range nodes {
+	for i, n := range nodes {
 		if l, ok := c.lines[n]; ok {
 			c.line = l
 		}
 		if e := c.expr(n); e != nil {
+			if i < len(nodes)-1 {
+				dropValue(e)
+			}
 			out = append(out, e)
 		}
 	}
@@ -170,7 +210,11 @@ func (c *converter) expr(n ast.Node) Node {
 	case *ast.VarRef:
 		return &Var{c.pos(), n.Name}
 	case *ast.Assign:
-		return &Assign{c.pos(), n.Name, c.expr(n.Value)}
+		c.assigning = append(c.assigning, pendingLocal{n.Name, c.scope()})
+		value := c.expr(n.Value)
+		c.assigning = c.assigning[:len(c.assigning)-1]
+		markRebinds(value, &Var{Name: n.Name})
+		return &Assign{c.pos(), n.Name, value}
 	case *ast.OpAssign:
 		return c.opAssign(n)
 	case *ast.MultiAssign:
@@ -196,7 +240,10 @@ func (c *converter) expr(n ast.Node) Node {
 	case *ast.If:
 		return c.ifExpr(n)
 	case *ast.While:
-		return &While{c.pos(), c.expr(n.Cond), c.body(n.Body)}
+		w := &While{c.pos(), c.expr(n.Cond), c.body(n.Body), c.isBeginBlock(n.Body)}
+		// A loop's value is never its body's.
+		dropLast(w.Body)
+		return w
 	case *ast.For:
 		return c.forLoop(n)
 	case *ast.MethodDef:
@@ -317,8 +364,7 @@ func (c *converter) opAssign(n *ast.OpAssign) Node {
 	case "&&":
 		rhs = &And{c.pos(), read, value}
 	case "<<":
-		c.fail("<< mutates its receiver: cameo values are immutable; use + or append")
-		return nil
+		rhs = &Call{Pos: c.pos(), Recv: read, Name: n.Op, Args: []Node{value}, Rebinds: true}
 	default:
 		rhs = &Call{Pos: c.pos(), Recv: read, Name: n.Op, Args: []Node{value}}
 	}
@@ -331,14 +377,6 @@ func (c *converter) binary(n *ast.BinaryExpr) Node {
 		return &And{c.pos(), c.expr(n.Left), c.expr(n.Right)}
 	case "||":
 		return &Or{c.pos(), c.expr(n.Left), c.expr(n.Right)}
-	case "<<":
-		if m := c.mutCall(n); m != nil {
-			return m
-		}
-		if _, isInt := n.Left.(*ast.IntLit); !isInt {
-			c.fail("<< changes its receiver, which cameo rebinds only for a local variable or a field in initialize; use + or append")
-			return nil
-		}
 	}
 	return &Call{Pos: c.pos(), Recv: c.expr(n.Left), Name: n.Op, Args: []Node{c.expr(n.Right)}}
 }
@@ -392,7 +430,48 @@ func (c *converter) fieldAssign(name string, value Node) Node {
 		c.fail("self.%s = …: a field is set in initialize only; elsewhere use with", name)
 		return nil
 	}
+	markRebinds(value, &Call{Recv: &Self{}, Name: name})
 	return &FieldAssign{c.pos(), name, value}
+}
+
+// markRebinds sets Rebinds on value when it is a call on target, the
+// variable or field the assignment binds: `a = a << 1` rebinds a to Ruby's
+// result. In a chain on target, `a = a << 1 << 2`, every call of the chain
+// does.
+func markRebinds(value, target Node) {
+	var chain []*Call
+	for n := value; ; {
+		call, ok := n.(*Call)
+		if !ok || call.Recv == nil {
+			return
+		}
+		chain = append(chain, call)
+		if isTarget(call.Recv, target) {
+			for _, c := range chain {
+				c.Rebinds = true
+			}
+			return
+		}
+		n = call.Recv
+	}
+}
+
+// isTarget reports whether recv reads target, the variable or field an
+// assignment binds.
+func isTarget(recv, target Node) bool {
+	switch t := target.(type) {
+	case *Var:
+		r, ok := recv.(*Var)
+		return ok && r.Name == t.Name
+	case *Call:
+		r, ok := recv.(*Call)
+		if !ok || r.Name != t.Name || len(r.Args) != 0 || r.Block != nil {
+			return false
+		}
+		_, self := r.Recv.(*Self)
+		return self
+	}
+	return false
 }
 
 // inInitialize reports a position inside a class's initialize.
@@ -401,54 +480,168 @@ func (c *converter) inInitialize() bool {
 	return ok && def.name == "initialize" && c.insideClass()
 }
 
-// selfField is the field name of `self.name`, a reader call on self that
-// initialize may rebind; ok is false for anything else.
-func (c *converter) selfField(n ast.Node) (string, bool) {
-	call, ok := n.(*ast.Call)
-	if !ok || call.Safe || call.Block != nil || len(call.Args) > 0 || !isPlainName(call.Name) {
-		return "", false
-	}
-	if _, isSelf := call.Recv.(*ast.SelfLit); !isSelf || !c.inInitialize() {
-		return "", false
-	}
-	return call.Name, true
-}
-
-// Refused is why cameo refuses a call of name on a receiver it cannot
-// rebind: a method that changes its receiver, a bang method, or one cameo
-// leaves out. ok is false for a name cameo calls on any receiver.
+// Refused is why cameo refuses a call of name whatever its receiver: a
+// bang method of Ruby's core, or a method cameo leaves out. ok is false for
+// any other name.
 func Refused(name string) (msg string, ok bool) {
-	if alt, listed := mutators[name]; listed {
-		if mayMutate(name) {
-			return fmt.Sprintf("%s changes its receiver, which cameo rebinds only for a local variable or a field in initialize; use %s", name, alt), true
-		}
+	if alt, listed := unsupported[name]; listed {
 		return fmt.Sprintf("%s is not supported; use %s", name, alt), true
 	}
-	if strings.HasSuffix(name, "!") && name != "!" && name != "!=" {
-		return fmt.Sprintf("%s: a bang method changes its receiver, which cameo rebinds only for a local variable or a field in initialize", name), true
+	if IsBang(name) {
+		return BangMessage("x", name), true
 	}
 	return "", false
 }
 
-// mutators are methods of Ruby's core that change their receiver. cameo has
-// none; the checker names the alternative where one exists.
-var mutators = map[string]string{
-	"push":                  "append, or +",
-	"pop":                   "last and take",
-	"shift":                 "first and drop",
-	"unshift":               "[x] + list",
-	"insert":                "a list literal with a splat",
-	"concat":                "+",
-	"delete":                "without",
-	"delete_at":             "without",
-	"delete_if":             "reject",
-	"keep_if":               "select",
-	"clear":                 "an empty literal",
-	"store":                 "put",
-	"replace":               "rebinding the variable",
+// SubclassRefused is why cameo refuses a subclass of the builtin class
+// named super, and false for a class a script may subclass.
+func SubclassRefused(super string) (msg string, ok bool) {
+	switch super {
+	case "Numeric":
+		return "a subclass of Numeric is not supported; Integer and Float do not coerce other numbers in their arithmetic", true
+	case "BasicObject":
+		return "a subclass of BasicObject is not supported; use method_missing in an ordinary class", true
+	}
+	return "", false
+}
+
+// IsBang reports whether name is a bang method, such as compact! or
+// merge!; the operators ! and != and exit! are not.
+func IsBang(name string) bool {
+	return strings.HasSuffix(name, "!") && name != "!" && name != "!=" && name != "exit!"
+}
+
+// BangMessage is the error for a call of a bang method of Ruby's core on
+// recv, which names the copying form.
+func BangMessage(recv, name string) string {
+	return fmt.Sprintf("This is not supported, use %s = %s.%s instead", recv, recv, strings.TrimSuffix(name, "!"))
+}
+
+// MutationMessage is the error for a call of one of Ruby's mutators on a
+// value of the kind it changes, naming the rebinding and the non-mutating
+// forms.
+func MutationMessage(name string) string {
+	msg := "cameo does not support mutating calls without rebinding"
+	alts := []string{}
+	if rebind, ok := rebindForms[name]; ok {
+		alts = append(alts, rebind)
+	}
+	if alt, ok := mutationAlternatives[name]; ok {
+		alts = append(alts, alt)
+	}
+	if len(alts) > 0 {
+		msg += "; use " + strings.Join(alts, ", ")
+	}
+	return msg
+}
+
+// rebindForms are the mutators whose Ruby value is the changed receiver,
+// so that assigning it back is the rebinding form: `a = a << 1`. The
+// others return what they removed or found, which rebinding would bind
+// instead.
+var rebindForms = map[string]string{
+	"<<":      "a = a << 1",
+	"push":    "a = a.push(x)",
+	"unshift": "a = a.unshift(x)",
+	"insert":  "a = a.insert(i, x)",
+	"concat":  "a = a.concat(x)",
+	"prepend": "a = a.prepend(x)",
+	"replace": "a = a.replace(x)",
+	"update":  "a = a.update(x)",
+	"merge":   "a = a.merge(x)",
+	"add":     "a = a.add(x)",
+}
+
+// ReturnsCopy reports whether name is a mutator of Ruby's that cameo keeps
+// as a method returning the changed copy: force_encoding, which nothing
+// else replaces.
+func ReturnsCopy(name string) bool { return name == "force_encoding" }
+
+// dropValue marks n as a statement whose value nothing reads, and with it
+// the last statement of each body whose value would be n's: an if's
+// branches, a case's, a begin's.
+func dropValue(n Node) {
+	switch n := n.(type) {
+	case *Call:
+		n.Dropped = true
+	case *If:
+		dropLast(n.Then)
+		dropLast(n.Else)
+	case *Case:
+		for _, w := range n.Whens {
+			dropLast(w.Body)
+		}
+		dropLast(n.Else)
+	case *Begin:
+		dropLast(n.Body)
+		for _, r := range n.Rescues {
+			dropLast(r.Body)
+		}
+		dropLast(n.Else)
+	case *Seq:
+		dropLast(n.Body)
+	}
+}
+
+// dropLast marks the last statement of body as one whose value nothing
+// reads.
+func dropLast(body []Node) {
+	if len(body) > 0 {
+		dropValue(body[len(body)-1])
+	}
+}
+
+// RecvName names a call's receiver in an error message: the variable or
+// constant it is, x for anything else.
+func RecvName(recv Node) string {
+	switch r := recv.(type) {
+	case *Var:
+		return r.Name
+	case *Const:
+		return r.Name
+	}
+	return "x"
+}
+
+// DroppedMessage is the error for a call of such a method whose value the
+// script drops.
+func DroppedMessage(name string) string {
+	return fmt.Sprintf("%s returns a copy in cameo and changes nothing, and this call drops it; use x = x.%s(...)", name, name)
+}
+
+// mutationAlternatives are the non-mutating forms of Ruby's mutators,
+// which the evaluator names when a script calls one.
+var mutationAlternatives = map[string]string{
+	"<<":              "+, or append",
+	"push":            "+, or append",
+	"pop":             "last and take",
+	"shift":           "first and drop",
+	"unshift":         "[x] + list",
+	"insert":          "a literal with a splat, or +",
+	"concat":          "+",
+	"prepend":         "+",
+	"delete":          "without, or - on a set",
+	"delete_at":       "take and drop",
+	"delete_if":       "reject",
+	"keep_if":         "select",
+	"clear":           "an empty literal",
+	"store":           "put",
+	"update":          "merge",
+	"replace":         "assignment",
+	"add":             "| [x]",
+	"add?":            "| [x]",
+	"delete?":         "- [x]",
+	"merge":           "|",
+	"subtract":        "-",
+	"setbyte":         "byteslice and +",
+	"bytesplice":      "byteslice and +",
+	"append_as_bytes": "+",
+}
+
+// unsupported are methods cameo leaves out on every receiver, with what
+// to use instead.
+var unsupported = map[string]string{
 	"fill":                  "a list literal",
-	"rotate!":               "rotate",
-	"<<":                    "append, or +",
 	"[]=":                   "assignment, which copies",
 	"define_method":         "def",
 	"instance_variable_set": "initialize",
@@ -482,8 +675,18 @@ func isFieldType(name string) bool { return compositeFieldTypes[name] || object.
 
 func (c *converter) call(n *ast.Call) Node {
 	name := n.Name
-	if c.interpolating > 0 && n.Recv == nil && len(n.Args) == 0 && n.Block == nil && !n.Paren {
-		return &VarOrCall{c.pos(), name}
+	if n.Recv == nil && len(n.Args) == 0 && n.Block == nil && !n.Paren {
+		// The line of __LINE__ is the statement's: the parser records no
+		// finer position.
+		if name == "__LINE__" {
+			return &Int{c.pos(), int64(c.line)}
+		}
+		if c.assigned(name) {
+			return &Var{c.pos(), name}
+		}
+		if c.interpolating > 0 {
+			return &VarOrCall{c.pos(), name}
+		}
 	}
 	if cnst, ok := n.Recv.(*ast.ConstRef); ok && cnst.Name == "Cameo" && (name == "async" || name == "await") {
 		if name == "async" {
@@ -493,11 +696,20 @@ func (c *converter) call(n *ast.Call) Node {
 	}
 	if n.Recv == nil {
 		switch name {
+		case "redo":
+			if len(n.Args) == 0 && n.Block == nil && !n.Paren {
+				return &Redo{c.pos()}
+			}
 		case "defined?":
 			if len(n.Args) == 1 {
 				return &Defined{c.pos(), c.expr(n.Args[0])}
 			}
 		case "lambda", "proc":
+			// proc(&p) is p as a Proc, as in Ruby; lambda wants a literal
+			// block, which Ruby 3.3 made an ArgumentError.
+			if bp, ok := soleBlockPass(n); ok && name == "proc" {
+				return &Call{Pos: c.pos(), Recv: c.expr(bp.Value), Name: "to_proc"}
+			}
 			if n.Block == nil || len(n.Args) > 0 {
 				c.fail("%s takes a block and nothing else", name)
 				return nil
@@ -535,12 +747,11 @@ func (c *converter) call(n *ast.Call) Node {
 		}
 	}
 	lib := isLibraryFunction(n)
-	if n.Recv != nil && mayMutate(name) && !lib {
-		if m := c.mutCall(n); m != nil {
-			return m
-		}
+	if IsBang(name) && !lib && !c.bangs[name] {
+		c.fail("%s", BangMessage(receiverName(n.Recv), name))
+		return nil
 	}
-	if msg, refused := Refused(name); refused && name != "[]=" && !lib {
+	if msg, refused := Refused(name); refused && name != "[]=" && !lib && !c.bangs[name] {
 		c.fail("%s", msg)
 		return nil
 	}
@@ -553,7 +764,7 @@ func (c *converter) call(n *ast.Call) Node {
 			return nil
 		}
 	}
-	call := &Call{Pos: c.pos(), Name: name, Safe: n.Safe}
+	call := &Call{Pos: c.pos(), Name: name, Safe: n.Safe, VCall: n.Recv == nil && len(n.Args) == 0 && n.Block == nil && !n.Paren}
 	if n.Recv != nil {
 		call.Recv = c.expr(n.Recv)
 	}
@@ -701,6 +912,37 @@ func (c *converter) anonymous(name string) Node { return &Var{c.pos(), name} }
 
 // forLoop rewrites `for x in xs ... end` into `xs.each { |v| x = v ... }`,
 // declaring x first, since a for loop's variables outlive it in Ruby.
+// soleBlockPass returns the &arg of a call whose one argument it is.
+func soleBlockPass(n *ast.Call) (*ast.BlockPass, bool) {
+	if n.Block != nil || len(n.Args) != 1 {
+		return nil, false
+	}
+	bp, ok := n.Args[0].(*ast.BlockPass)
+	return bp, ok
+}
+
+// isBeginBlock returns true when a while modifier's body is a `begin … end`,
+// which makes the loop test its condition after each pass. The body of a
+// `while … end` is a statement with a line of its own, and a modifier's
+// operand has none. The parser gives `x rescue y` and a parenthesised
+// `(a; b)` the node of a begin as well: the first is told apart by its
+// shape, the second is taken for a begin.
+func (c *converter) isBeginBlock(body []ast.Node) bool {
+	if len(body) != 1 {
+		return false
+	}
+	b, ok := body[0].(*ast.Begin)
+	if !ok {
+		return false
+	}
+	if _, statement := c.lines[b]; statement {
+		return false
+	}
+	modifierRescue := len(b.Body) == 1 && len(b.Rescues) == 1 && b.ElseBody == nil && b.EnsureBody == nil &&
+		len(b.Rescues[0].Classes) == 0 && b.Rescues[0].Var == "" && b.Rescues[0].VarTarget == nil && len(b.Rescues[0].Body) == 1
+	return !modifierRescue
+}
+
 func (c *converter) forLoop(n *ast.For) Node {
 	if n.Target != nil {
 		c.fail("for with a nested or non-local target is not supported")
@@ -734,10 +976,6 @@ func (c *converter) def(d *ast.MethodDef) Node {
 	}
 	if isSetter(d.Name) {
 		c.fail("def %s: setters are not supported; a field changes through with", d.Name)
-		return nil
-	}
-	if strings.HasSuffix(d.Name, "!") && d.Name != "!" {
-		c.fail("def %s: bang methods are not supported, since nothing mutates", d.Name)
 		return nil
 	}
 	if _, inDef := c.enclosingDef(); inDef {
@@ -781,6 +1019,14 @@ func (c *converter) classDef(d *ast.ClassDef) Node {
 	case d.Super != "":
 		out.Super = &Const{c.pos(), d.Super}
 	}
+	// At the top level a bare name is the builtin class, which no script
+	// rebinds; inside a module the evaluator decides, once it knows.
+	if super, ok := out.Super.(*Const); ok && !c.insideClass() {
+		if msg, refused := SubclassRefused(super.Name); refused {
+			c.fail("class %s < %s: %s", d.Name, super.Name, msg)
+			return nil
+		}
+	}
 	c.push(ctxClass, d.Name)
 	out.Body = c.body(d.Body)
 	c.pop()
@@ -822,6 +1068,7 @@ func (c *converter) begin(b *ast.Begin) Node {
 	}
 	if b.EnsureBody != nil {
 		out.Ensure = c.body(b.EnsureBody)
+		dropLast(out.Ensure)
 	}
 	return out
 }
@@ -1219,58 +1466,16 @@ func (c *converter) scopeOf(path ast.Node) Node {
 	return c.expr(sc.Recv)
 }
 
-// mayMutate reports whether a call of name may change its receiver: one of
-// Ruby's core mutators or a bang method. Whether it does depends on the
-// receiver's kind, which only the evaluator knows.
-func mayMutate(name string) bool {
-	switch name {
-	case "<<", "push", "pop", "shift", "unshift", "insert", "concat", "delete", "delete_at", "prepend",
-		"delete_if", "keep_if", "clear", "store", "replace", "fill",
-		"add", "add?", "delete?", "merge", "subtract", "update", "reset", "force_encoding":
-		return true
-	case "!", "!=", "exit!":
-		return false
+// receiverName is how the error for a bang method names its receiver: a
+// variable or a constant by its name, anything else as x.
+func receiverName(recv ast.Node) string {
+	switch r := recv.(type) {
+	case *ast.VarRef:
+		return r.Name
+	case *ast.ConstRef:
+		return r.Name
 	}
-	return strings.HasSuffix(name, "!")
-}
-
-// mutCall makes a MutCall of a chain of calls that may change their
-// receiver, `x << a << b` or `x.push(a).push(b)`, when the chain starts at
-// a local variable or at a field inside initialize. It returns nil for any
-// other receiver, which the caller rejects.
-func (c *converter) mutCall(n ast.Node) Node {
-	var steps []*Call
-	for cur := n; ; {
-		var recv ast.Node
-		switch m := cur.(type) {
-		case *ast.BinaryExpr:
-			if m.Op != "<<" {
-				return nil
-			}
-			recv = m.Left
-			steps = append([]*Call{{Pos: c.pos(), Name: "<<", Args: []Node{c.expr(m.Right)}}}, steps...)
-		case *ast.Call:
-			if m.Recv == nil || m.Safe || !mayMutate(m.Name) {
-				return nil
-			}
-			recv = m.Recv
-			step := &Call{Pos: c.pos(), Name: m.Name}
-			step.Args, step.KwArgs, step.BlockArg = c.args(m.Args)
-			if m.Block != nil {
-				step.Block = c.block(m.Block)
-			}
-			steps = append([]*Call{step}, steps...)
-		default:
-			return nil
-		}
-		if r, ok := recv.(*ast.VarRef); ok {
-			return &MutCall{c.pos(), &Var{c.pos(), r.Name}, steps}
-		}
-		if name, ok := c.selfField(recv); ok {
-			return &MutCall{c.pos(), &Field{c.pos(), name}, steps}
-		}
-		cur = recv
-	}
+	return "x"
 }
 
 // regexp converts a regexp literal. The parser leaves `#{...}` in the
@@ -1287,6 +1492,8 @@ func (c *converter) regexp(n *ast.RegexpLit) Node {
 			options |= 4
 		case 'n':
 			options |= 32
+		case 'u':
+			options |= 16
 		}
 	}
 	var parts []Node

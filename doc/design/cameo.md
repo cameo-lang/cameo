@@ -52,8 +52,8 @@ What cameo leaves out, and the checker rejects by name:
   `instance_variable_set`, `eval`, `undef`,
   `extend`, singleton classes, `def self.x` on an instance
 - mutating methods (`<<`, `push`, `pop`, `delete`, `merge!`, `map!`, every
-  bang method) on anything but a local or a field in `initialize`, which
-  they rebind, see *Variables rebind*; `freeze` is accepted and changes
+  bang method): a mutator raises when it runs and a bang method is refused
+  by the checker, see *Variables rebind*; `freeze` is accepted and changes
   nothing, since everything already is frozen
 - threads, fibers, `fork`, files, sockets, `require` of another file
   (`require_relative`, `load`, a library cameo does not build in), `$stdin`. Standard
@@ -78,6 +78,7 @@ Every value is immutable. The kinds of value are:
 | Regexp | in `cameo.Value`, a `Regexp` message: source and options; a MatchData does not travel |
 | Time | in `cameo.Value`, a `Time` message: seconds, nanoseconds, UTC offset and zone; there is no field type for it yet |
 | an instance of a user class | the message that class declares |
+| an exception | the message its class is: its message, line and cause, what Ruby's exception of that class carries, and the fields the class declares; see [exceptions.md](exceptions.md) |
 | Class, Proc, Enumerator, Encoding, Pathname | not serialisable; see *Async* |
 
 Equality is structural everywhere: two lists with equal elements are `==`,
@@ -126,19 +127,20 @@ scope exactly as in Ruby, so a block that assigns an outer variable rebinds it
 for the enclosing scope. Nothing else in the program can observe the old
 value, since no value refers to a variable.
 
-A call that changes its receiver in Ruby -- `x << y`, `x.push(y)`,
-`x.pop`, `h.delete(k)`, `s.add(y)`, any bang method -- is a rebinding too,
-when its receiver is a local variable or a field inside `initialize`: x
-becomes the changed copy, as `h[k] = v` makes h one. The call's value is
-Ruby's: the receiver for most, the removed element for `pop`, `shift` and
-`delete`, nil from a bang method that changed nothing. Whether a call
-changes its receiver depends on the receiver's kind, which the evaluator
-checks: `String#delete` returns a new string, `Integer#<<` shifts, and an
-instance's methods are its own. Another variable that held the old value
-keeps it, where Ruby would show the change. On any other receiver -- an
-element, a constant, a call's result -- such a call is rejected, since
-there is no variable to rebind. cameo's own `append`, `prepend`, `put` and
-`without` return a copy and change nothing.
+Only assignment rebinds: `x = …`, `x += …`, `h[k] = v` and `x.a = v`. A
+call never does. A call that changes its receiver in Ruby -- `x << y`,
+`x.push(y)`, `x.pop`, `h.delete(k)`, `s.add(y)` -- raises a CameoError
+naming the non-mutating form, whatever its receiver. Whether a call is
+one depends on the receiver's kind, which the evaluator checks:
+`Integer#<<` shifts, and an instance's methods are its own. With
+IgnoreMutationErrors (`cameo --ignore-mutation-errors`) the call returns
+Ruby's value, computed on a copy -- the receiver for most, the removed
+element for `pop`, `shift` and `delete` -- and the receiver keeps its
+value. A bang method of Ruby's core is refused by the checker, with the
+copying form to assign: "This is not supported, use x = x.compact
+instead". `force_encoding` returns the relabelled copy, since nothing else
+reinterprets bytes; dropping its value raises. cameo's own `append`,
+`prepend`, `put` and `without` return a copy and change nothing.
 
 ### `with`
 
@@ -320,10 +322,32 @@ inside a block returns from the enclosing method; `break` and `next` behave as
 in Ruby. Procs are values but not serialisable, so they cannot cross `async`.
 
 Exceptions are Ruby's: `raise "msg"`, `raise ErrorClass, "msg"`,
-`rescue Class => e`, `ensure`, `retry`. `StandardError`, `ArgumentError`,
+`rescue Class => e`, `ensure`, `retry`, `cause`. `StandardError`, `ArgumentError`,
 `TypeError`, `KeyError`, `IndexError`, `NoMethodError`, `ZeroDivisionError`,
 `RuntimeError`, `StopIteration` and `CameoError` (cameo's own, for checker
 and type violations) are predefined; a script can subclass `StandardError`.
+An exception class is a class: it declares typed fields, its `initialize`
+runs on `new` and on `raise` and sets them with `self.x = v`, and `super(msg)`
+sets the message. Every exception is a protobuf message, see
+[exceptions.md](exceptions.md):
+
+```ruby
+class HTTPError < StandardError
+  int :status
+
+  def initialize(status)
+    super("HTTP #{status}")
+    self.status = status
+  end
+end
+
+begin
+  raise HTTPError.new(503)
+rescue HTTPError => e
+  e.status                                        # 503
+  e = e.with(status: 502, message: "bad gateway") # a copy, message included
+end
+```
 
 ## Async
 
@@ -370,8 +394,8 @@ the same time. Every promise of a run, the workers' included, is in one
 table; a promise is settled once, and settling it again raises.
 
 `await promise` blocks until the promise is settled and returns its value;
-if it failed, `await` raises the same exception class with the same message
-in the awaiting scope. Awaiting a promise twice returns the same result,
+if it failed, `await` raises the exception in the awaiting scope, read back
+from its message: the same class, message, line, cause and fields. Awaiting a promise twice returns the same result,
 as long as the method that started it has not returned.
 
 A promise `async` started lives as long as that method: when it returns,
@@ -488,10 +512,15 @@ with `protoc` gets generated Go types whose wire form matches what the
 interpreter produces, so a message can be marshalled on one side and
 unmarshalled on the other without any cameo code in between.
 
+**Exceptions** are messages too: an exception class's message holds the
+exception's message, line and cause, what Ruby's exception of that class
+carries (a KeyError's key and receiver), and the fields the class declares;
+[exceptions.md](exceptions.md) has the parts and their numbers.
+
 **The value envelope.** Values that are not instances — scalars, lists, maps,
 sets, ranges — travel in `cameo.Value`, a message with a `oneof` over the
 scalar kinds plus `List`, `Map`, `Set`, `Range`, `Time`, `Regexp` and `Object` (a
-class name and the packed message). A symbol travels as a string, see *Symbols*.
+class name and the packed message of an instance or an exception). A symbol travels as a string, see *Symbols*.
 A hash's default value travels with it; a hash with a default block cannot
 travel. It is what `async` serialises, what the
 Go host API takes and returns, and what `cameo proto` emits alongside the
@@ -505,6 +534,7 @@ err        = prog.Run()                            // run once; the classes stay
 err        = prog.RunContext(ctx)                  // the same, stopped when ctx ends
 value, err := prog.LastValue()                     // the last expression, as p shows it
 out, err  := prog.Call(recv, "method", args...)    // recv: a Go value, a class name, a proto.Message
+msg       := runErr.Exception()                    // the exception that ended a run, as its message
 text, err := prog.Proto("Geo::Point")              // the .proto text of a class
 files     := prog.ProtoFiles()                     // every package's .proto, and cameo/value.proto
 data, err := prog.Encode(v); v, err = prog.Decode(data)   // the envelope
@@ -515,7 +545,7 @@ Go values convert to cameo values by the table under *Values*: nil, bool,
 the integer and float kinds and `*big.Int`, string, `[]byte`, `[]any`, `map[string]any`,
 and a `proto.Message` whose full name is a loaded class's message. Results
 come back as nil, bool, int64 (a `*big.Int` beyond 64 bits), float64, string, `[]byte`, `[]any`,
-`map[any]any`, and a `proto.Message` for an instance; a symbol, range or
+`map[any]any`, and a `proto.Message` for an instance or an exception; a symbol, range or
 class stays an `object.Value`. A Hash's Symbol keys become strings, as
 symbols do wherever a value leaves cameo; a Hash whose keys have no Go map
 form (a key not comparable in Go, or `:a` beside `"a"`) is an error.
@@ -711,12 +741,26 @@ re-opened by accident:
   and name out of use.
 - **`send`** calls a method by name, as Ruby's does, and so do
   `public_send` and `__send__`, since every method is public. It reaches
-  `method_missing` and the top-level methods a bare call reaches. It never
-  rebinds its receiver, so it refuses what a call on a receiver cameo
-  cannot rebind refuses, `push` and the bang methods among them, and
-  `initialize`, which only `new` runs on an instance under construction.
+  `method_missing` and the top-level methods a bare call reaches. It
+  refuses what a call refuses, Ruby's mutators and bang methods among
+  them, and `initialize`, which only `new` runs on an instance under
+  construction.
   Leaving it out cost scripts that pick a method from data; the parser
   cannot see the name, so the refusal happens when the call runs.
+- **A bang method a script defines** (`def save!`) is a call like any
+  other: it returns its result, rebinds nothing, and may be called on any
+  receiver. The checker learns the names from the script's `def`s, so a
+  bang method the script does not define is one of Ruby's and refused.
+- **No call changes or rebinds its receiver.** Only assignment rebinds a
+  local. A call of one of Ruby's mutators raises, naming the
+  non-mutating form, unless the run ignores mutation errors, when it
+  returns Ruby's value computed on a copy; a bang method of Ruby's core
+  is refused by the checker whatever the setting. Rebinding the local a
+  mutator was called on, which cameo did before, was rejected: code read
+  as Ruby changes a value it does not change, and a call on anything but
+  a local could not rebind at all. `force_encoding` alone returns its
+  copy, since nothing else reinterprets bytes, and raises when its value
+  is dropped.
 - **Concurrency is a module a script includes.** `include Cameo` brings
   `async`, `await`, `promise`, `resolve` and `fail`; without it they are
   unknown, so a script states that it runs work concurrently. `async`
@@ -752,6 +796,13 @@ re-opened by accident:
   module version, and the git commit and its date Go records, or
   `"unknown"`. A script cannot assign them, nor any other builtin constant,
   at the top level.
+- **Every exception is a protobuf message**, and a script's exception
+  classes declare fields and run their `initialize`, on `new` and on
+  `raise`, as any class does. Errors that carry data matter most where
+  they cross, to an awaiting interpreter and to the Go host, and one model
+  for instances and exceptions serves both. The exception stays a Go
+  struct, which builds its message when it crosses, so a raise costs about
+  what it did; see [exceptions.md](exceptions.md).
 - **No instance variables.** `initialize` sets a field with `self.x = v`,
   and a field is read with its reader, so `@` is free for later use. Ruby
   code that sets `@x` in `initialize` no longer runs unchanged; it never
@@ -772,6 +823,21 @@ re-opened by accident:
   digest, and it takes the name of the first constant it is bound to.
   `Module.new` stays out, since its use is to include or extend at run
   time.
+- **Numeric** is a builtin class above Integer and Float, and includes
+  Comparable for both, so the ancestors and the type checks
+  (`is_a?(Numeric)`, `when Numeric`) are Ruby's. `step`, `+@` and
+  `nonzero?` are Numeric's, as in Ruby. A script cannot subclass it: a
+  number of a script's own needs `coerce` in Integer's and Float's
+  arithmetic, which cameo leaves out.
+- **BasicObject** is the root class, above Object, with `==`, `!=`, `!`,
+  `__send__` and `method_missing`, so `ancestors`, `superclass` and
+  `is_a?(BasicObject)` are Ruby's. A script cannot subclass it: a subclass
+  is a blank-slate object without Object's methods, and the refusal names
+  `method_missing` in an ordinary class instead. `equal?` and `__id__`
+  stay out, since a value has no identity.
+- **`Data`** stays out. A class with typed fields and `with` is cameo's
+  Data, and a `Data.define` member has no type, which a protobuf field
+  needs. `doc/cameo-vs-ruby.md` shows the translation.
 - **Only current Ruby syntax**: keyword arguments are keywords, never a
   trailing hash; `=>` stays for hash literals.
 - **Native classes** take their fields from a generated protobuf message
@@ -784,10 +850,17 @@ re-opened by accident:
   - `Array` and `Hash` are the Ruby-visible names of cameo's lists and maps,
     so `[].class`, inspect and error messages match Ruby; the field types
     keep their protobuf names, `list` and `map`.
-  - Random numbers come from Go's `math/rand/v2`: one generator per
-    interpreter, seeded by `srand`. Reproducing Ruby's Mersenne Twister
-    sequence was rejected as not worth its code, so seeded scripts do not
-    print Ruby's numbers.
+  - Random numbers come from MT19937, seeded and converted to floats and
+    integers as CRuby does, so a seeded script prints Ruby's numbers:
+    `Kernel#rand`, `shuffle` and `sample` draw from one generator per
+    interpreter, which `srand` reseeds, and an `async` process's generator
+    is seeded from its parent's when the process starts.
+  - A `Random` is a handle on a generator, as a file handle is on a file:
+    each draw advances the generator for every holder of the handle, the
+    one exception to values never changing. A generator is a source, like
+    a file, and copying it would repeat its numbers, so a Random is not
+    copied: `dup`, `clone`, `async` and typed fields refuse it with a
+    `TypeError`, as they refuse a Proc.
   - `String#succ` follows Ruby's full rules, and ranges over strings iterate
     with it: `include?` walks such a range, `cover?` and `===` compare its
     ends.
@@ -808,7 +881,8 @@ re-opened by accident:
 - **The language follows CRuby's benchmarks too**, a second round over
   what they use beyond the standard library:
   - Taken in: a mutating call on a local (`x << y`, `x.push(y)`,
-    `x.map!`, `s.add(y)`) rebinds the local, as `h[k] = v` already does;
+    `x.map!`, `s.add(y)`) rebinds the local, as `h[k] = v` already does
+    (since replaced: no call rebinds, see *Decisions taken*);
     `freeze`, `frozen?` and `compare_by_identity` as no-ops, since values
     are immutable and have no identity; argument forwarding (`...`, `*`,
     `**`, `&`); a top-level `def self.x`; `:sym.to_proc` as a value;
@@ -886,9 +960,9 @@ re-opened by accident:
     results its encoding; `+`, `<<`, `join` and interpolation take the
     encoding their parts are compatible in, or raise
     Encoding::CompatibilityError. `valid_encoding?` and `scrub` deal with
-    bytes an encoding does not allow. `force_encoding` rebinds a local, as
-    Ruby's changes its receiver; on anything else it returns the relabelled
-    string, which is all Ruby's leaves to see. Integer and Symbol `to_s`
+    bytes an encoding does not allow. `force_encoding` returns the
+    relabelled string and leaves its receiver, and raises when its value
+    is dropped. Integer and Symbol `to_s`
     give UTF-8 where Ruby gives US-ASCII; only `encoding` tells.
   - Paths are arithmetic, not I/O: `File.join`, `basename`, `dirname`,
     `extname`, `split`, `expand_path` and `absolute_path`, and `Pathname`,
@@ -902,8 +976,8 @@ re-opened by accident:
     yielding the receiver and returning it. Until this round `tap` made the
     copy, which left Ruby's `tap` idiom out.
   - A mutating call on a temporary (`s.dup.merge!(x)`, `[1, 2].push(3)`,
-    `foo.bar[0] = 1`) stays rejected: there is no variable to rebind, and
-    the non-mutating form (`merge`, `+`, `with`) says what is meant.
+    `foo.bar[0] = 1`) stays rejected: the non-mutating form (`merge`, `+`,
+    `with`) says what is meant.
   - The `cameo` binary sets the collector to GOGC=400 with a soft memory
     limit of 1 GB, unless the environment sets GOGC or GOMEMLIMIT. On
     CRuby's benchmarks that takes a quarter off the total time (5000! in a

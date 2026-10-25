@@ -106,9 +106,7 @@ func (in *Interp) evalSlow(n syntax.Node, env *Env, fr *Frame) (object.Value, er
 		if v, ok := env.Get(n.Name); ok {
 			return v, nil
 		}
-		return in.evalCall(&syntax.Call{Pos: n.Pos, Name: n.Name}, env, fr)
-	case *syntax.MutCall:
-		return in.evalMutCall(n, env, fr)
+		return in.evalCall(&syntax.Call{Pos: n.Pos, Name: n.Name, VCall: true}, env, fr)
 	case *syntax.Seq:
 		return in.evalBody(n.Body, env, fr)
 	case *syntax.Alias:
@@ -156,6 +154,14 @@ func (in *Interp) evalArgs(nodes []syntax.Node, env *Env, fr *Frame) ([]object.V
 					return nil, err
 				}
 				out = append(out, list.Elems...)
+			case object.KindEnumerator:
+				err := v.Enumerator().Each(in, func(el object.Value) error {
+					out = append(out, el)
+					return nil
+				})
+				if err != nil {
+					return nil, err
+				}
 			default:
 				if v.IsNil() {
 					continue

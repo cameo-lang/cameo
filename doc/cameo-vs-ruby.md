@@ -57,28 +57,38 @@ mspec's own `before` blocks.
   regular expressions, `%w[]` and `%i[]`.
 - **Control flow**: `if`/`unless`/`elsif`, modifiers, `case`/`when`,
   pattern matching with `case`/`in`, `while`/`until` and `begin … end
-  while`, `loop` and `break` with a value, `next`, `retry`, safe
-  navigation `&.`, `BEGIN`.
+  while`, `loop` and `break` with a value, `next`, `redo`, `retry`, `catch` and
+  `throw`, safe navigation `&.`, `BEGIN`.
 - **Methods**: positional, optional, `*rest`, keyword, `**kwrest` and
   `&block` parameters; endless `def`; argument forwarding (`...`, `*`, `**`,
   `&`); `yield` and `block_given?`; a second `def` of a name replaces the
   first.
 - **Blocks and procs**: `{ }` and `do … end`, numbered parameters (`_1`),
   `->` lambdas, `proc`, `&:sym`, `then` and `tap`.
-- **Classes and modules**: single inheritance, overriding and `super`;
+- **Classes and modules**: single inheritance, overriding and `super`,
+  under Ruby's hierarchy: BasicObject above Object, and Numeric above
+  Integer and Float, so `Integer.ancestors` is `[Integer, Numeric,
+  Comparable, Object, Kernel, BasicObject]` and `case x when Numeric`
+  matches both;
   `module` as a namespace and a mixin through `include` and `extend`;
   `Comparable`, and `Enumerable` for a class that defines `each`;
+  bang methods a class defines, `def save!`, which return their result
+  and rebind nothing;
   `method_missing` and `respond_to_missing?`; `send`, `public_send` and
-  `__send__`, which refuse a mutating method as a call on a temporary
+  `__send__`, which refuse a mutating method as a call
   does; `Class.new(Base) { … }`;
   `def self.x` in a class body.
 - **Exceptions**: `begin`/`rescue`/`else`/`ensure`, `rescue => e`,
-  `raise`, `retry`, and the exception classes of Ruby's core.
-- **Core classes**: Integer, Float, String, Symbol, Array, Hash, Set (as in
+  `raise`, a bare `raise` in a rescue clause, `retry`, `cause` and `raise
+  ..., cause:`, an exception class's own `initialize` with `super(msg)`,
+  `exit` and `abort`, which raise SystemExit and end the command with its
+  status, and the exception classes of Ruby's core.
+- **Core classes**: BasicObject, Numeric, Integer, Float, String, Symbol, Array, Hash, Set (as in
   3.4, without `require`), Range, Regexp and MatchData, Time, Math,
   Enumerator and `lazy`, Comparable and Enumerable, with most of their
-  methods. `format` and `String#%`, `pack` and `unpack`, `rand` and `srand`,
-  `Integer()`, `Float()`, `String()` and `Array()`,
+  methods. `format` and `String#%`, `pack` and `unpack`, `Random`,
+  `rand` and `srand` on Ruby's Mersenne Twister, so a seeded script draws
+  Ruby's numbers, `Integer()`, `Float()`, `String()` and `Array()`,
   `Process.clock_gettime`.
 - **Libraries**: `require` of `set`, `time`, `pp`, `pathname`, `cgi`,
   `json` and `benchmark`, which cameo builds in. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
@@ -100,20 +110,51 @@ mspec's own `before` blocks.
 
 ## Different in cameo
 
-**Values are immutable.** Nothing changes in place, so what would change a
-value in Ruby makes a changed copy:
+**Values are immutable.** Nothing changes in place, and no call changes or
+rebinds its receiver:
 
-- A mutating call on a local variable rebinds it: `s << "x"`, `a.push(1)`,
-  `a.map! { … }` and `h.merge!(other)` leave the local holding the changed
-  copy, and any other reference holds what it held before.
-- `a.x = 1`, `a.x.y = 1` and `h[k] = v` rebind the local `a` or `h` to a
-  copy with the change. The chain must start at a local variable, or at
-  `self` inside `initialize`.
+- A call of one of Ruby's mutators on a value of the kind it changes
+  raises a `CameoError` that names the non-mutating form: `a << 1` and
+  `a.push(1)` on an array ("use +, or append"), `s << "x"` and
+  `s.setbyte(0, 65)` on a string, `h.store(k, v)`, `h.delete(k)` and
+  `h.update(o)` on a hash, `st.add(x)` and `st.merge(o)` on a set. The
+  test `src/eval/mutation_test.go` lists every one. With `cameo
+  --ignore-mutation-errors` (or `Program.IgnoreMutationErrors` from Go)
+  the call instead returns what Ruby's returns, computed on a copy, and
+  the receiver keeps its value: `a.pop` is the last element, and `a` is
+  as it was.
+- A mutator whose value is assigned back to its receiver rebinds it:
+  `a = a << 1`, `a <<= 1` and `self.xs = self.xs << x` in `initialize`
+  return what Ruby's returns, computed on a copy, and the assignment binds
+  it. Another variable that held the old value keeps it.
+- A bang method of Ruby's core (`compact!`, `sort!`, `gsub!`, `merge!`)
+  is refused before the script runs: "This is not supported, use x =
+  x.compact instead". A bang method a class defines is an ordinary call.
+- `force_encoding` returns the string relabelled and leaves the receiver,
+  since nothing else reinterprets bytes. A call whose value the script
+  drops, a statement on its own, raises, since it would do nothing.
+- The same names on a value they do not change are ordinary calls:
+  `Integer#<<` shifts, and a class's own `push` is its own method.
+- Assignment makes the copy and rebinds the local: `a += [1]`, `a.x = 1`,
+  `a.x.y = 1` and `h[k] = v` rebind `a` or `h` to a copy with the change.
+  The chain must start at a local variable, or at `self` inside
+  `initialize`.
 - `frozen?` is true for everything; `freeze` and `dup` change nothing.
 - Equality is structural: two arrays, hashes or instances with equal
   contents are `==` and hash alike. There is no object identity, so
-  `equal?` and `object_id` do not exist, and `compare_by_identity` changes
+  `equal?`, `object_id` and `__id__` do not exist, and `compare_by_identity` changes
   nothing.
+
+**A Random is a handle on a generator**, as a file handle is on a file:
+`r.rand`, `r.bytes` and `r.random_number` advance the generator `r` names,
+so each call returns the next number, and every holder of `r` (another
+variable, an array, a hash, a block, a method's argument) draws from the
+same generator. It is the one value whose calls change something. A copy
+would draw the numbers its original draws next, so a Random is not copied:
+`dup` and `clone` raise a `TypeError` ("a Random cannot be copied"), and so
+do passing one to `async`, returning one from an `async` call and storing
+one in a typed field, as for a Proc. `r == other` compares seed and
+position, as in Ruby, and `p r` prints `#<Random>`, without an address.
 
 **Classes declare typed fields**, and every instance is a protobuf message:
 
@@ -142,19 +183,60 @@ q = p.with(x: 3)            # a copy; p is unchanged
   the changed copy.
 - A class without `initialize` takes its fields as keywords:
   `Point.new(x: 1, y: 2)`.
+- An exception class is a class: it declares fields and sets them in
+  `initialize`, where Ruby sets instance variables. Without an
+  `initialize` of its own it takes the message as its one positional
+  argument and its fields as keywords, `HTTPError.new("down", status:
+  503)`, and `e.with(status: 502, message: "bad gateway")` makes the copy.
+  An exception raised in a rescue clause gets its cause on a copy: a
+  local that holds the exception keeps it without the cause, where Ruby
+  sets it on the object.
 - A class is a value bound to its name. Evaluating the same `class X … end`
   again gives the same class; a different body reopens a copy of the
   class and rebinds `X` to it. Instances made before, and classes that
   inherit from it, keep the class as it was and do not see what the
   reopening adds, as they do in Ruby. A builtin class cannot be reopened.
+- Numeric and BasicObject cannot be subclassed. A Numeric of a script's
+  own would need Integer's and Float's arithmetic to `coerce` it, which it
+  does not; a BasicObject subclass is a blank-slate object without
+  Object's methods, which cameo does not make. `method_missing` in an
+  ordinary class does what a BasicObject proxy does in Ruby.
+
+`Data` is left out: a class with typed fields is cameo's Data, and `with`
+is Data's `with`. Ruby's
+
+```ruby
+Point = Data.define(:x, :y)
+a = Point.new(x: 1, y: 2)
+b = a.with(y: 3)
+```
+
+is, in cameo,
+
+```ruby
+class Point
+  int :x, :y
+end
+
+a = Point.new(x: 1, y: 2)
+b = a.with(y: 3)
+```
+
+`Point.new(1, 2)` with positional arguments needs an `initialize` that
+sets the fields, and `p a` prints `Point(x: 1, y: 2)` where Ruby prints
+`#<data Point x=1, y=2>`.
 
 **Smaller differences:**
 
 - Hash and array literals, and errors, print as CRuby 3.4 prints them:
   `{x: 1}`, not 3.3's `{:x=>1}`.
-- A bare `Object` prints as `#<Object>`, without an address.
-- `rand` and `srand` use Go's generator, so a seeded sequence is not
-  Ruby's.
+- A bare `Object` prints as `#<Object>`, without an address, and a Proc
+  as `#<Proc:script.rb:3 (lambda)>`, where it was written.
+- `__LINE__` is the line its statement starts on, which differs from
+  Ruby's inside a statement that spans lines.
+- A `throw` ends the `catch` whose tag is equal to its own, where Ruby
+  wants the same object: `catch("a") { throw "a" }` returns nil. The
+  Object a `catch` without a tag makes is still a tag of its own.
 - `Time` is immutable: `utc` and `localtime` return a new time, and
   `subsec` is a Float, since `Rational` is left out.
 - A String is UTF-8, ASCII-8BIT (binary) or US-ASCII; other encodings do not
@@ -169,6 +251,13 @@ q = p.with(x: 3)            # a copy; p is unchanged
   `JSON::State`; passing it on to `to_json` nests the same way.
 - `Benchmark::Tms#add!` does not exist: it changes its receiver. Use
   `t = t.add { ... }`. `p` of a `Benchmark::Tms` shows no address.
+- An iterating method called without a block returns an Enumerator, as
+  Ruby's does: `map.with_index(1)`, `each_slice(2).to_a` and `3.times.size`
+  work as in Ruby. An Enumerator has no `next`, `peek` or `rewind`, which
+  advance it in place. `with_object` passes the block's value on as the
+  next memo, as `each_with_object` does. `chunk` with a block,
+  `chunk_while`, `slice_when`, `slice_before` and `slice_after` return an
+  Array of the slices, not an Enumerator.
 - A Symbol becomes a String where a value leaves cameo, in a protobuf
   message or an `async` call, unless an `enum` field declares it.
 - Ruby's version constants describe cameo. A script tells cameo from CRuby
@@ -202,7 +291,8 @@ The checker rejects these by name, with the line:
 | `private`, `protected`, `public`, `module_function` | none: every method is public |
 | `eval`, `instance_eval`, `class_eval`, `define_method`, `instance_variable_get` and `_set`, `undef` | a direct call or a `def` |
 | `def obj.x`, `class << self` | `def self.x` in a class body |
-| a mutating or bang method on anything but a local, such as `[3, 1].sort!` or `obj.list << x` | the non-mutating form: `sort`, `+`, `append`, `with` |
+| a subclass of Numeric or BasicObject, `class X < Numeric` | none for Numeric; `method_missing` in an ordinary class for BasicObject. Inside a module, and with `Class.new(Numeric)`, the refusal is a `CameoError` when the definition runs |
+| a bang method of Ruby's core, such as `a.sort!` | the copying form, assigned: `a = a.sort` |
 | nested multiple assignment, `a, (b, c) = …` | separate assignments |
 | `require_relative`, `load` | one file per script |
 | backticks, `fork` | none; `fork`'s message names `async` |
@@ -214,24 +304,25 @@ The checker rejects these by name, with the line:
 These are absent, and a script that uses one fails when it reaches it:
 
 - **Left out by design**: `Struct` and `Data` (classes declare typed
-  fields), `Rational` and `Complex`, `Marshal` (instances are protobuf
+  fields; see above for Data), `Rational` and `Complex`, `Marshal` (instances are protobuf
   messages), `ObjectSpace`, `GC`, `ENV`, `Module.new`,
   refinements, `binding`, `method` and `Proc#curry`.
 - **No I/O beyond standard output and error**: `File`, `IO`, `Dir`,
   `gets`, `STDIN`, `STDOUT`, `STDERR`, `$stdout`.
 - **No threads or processes**: `Thread`, `Fiber`, `Mutex`, `sleep`,
   `system`, `exec`, `spawn`; cameo has `async` and `await` instead.
-- **Not there yet**: `exit`, `at_exit`, `catch` and `throw`, `redo`,
-  `printf` (`format` exists), `__method__`, `__LINE__`, `Enumerator.new`,
-  `Integer()` with a base, `Random` as a class (`rand` and `srand` exist),
-  and `autoload`.
+- **Not there yet**: `at_exit`, `exit!`,
+  `printf` (`format` exists), `__method__`, `Enumerator.new`,
+  `Integer()` with a base, and `autoload`.
 - **Libraries**: `require` of any library but the seven above, such as
   `yaml`, raises a `LoadError`.
 
 ## Only in cameo
 
 - Typed fields, with every class a protobuf message: `to_proto`,
-  `from_proto`, and `Point.proto` for its `.proto` text.
+  `from_proto`, and `Point.proto` for its `.proto` text. Every exception is
+  a message too, of its message, line, cause and fields, and crosses to
+  `await` and to a Go host with them.
 - `with`, which returns a copy with some fields changed.
 - The Cameo module, which a script includes: `async receiver, :method,
   args…` runs a method concurrently and returns its promise, an

@@ -10,9 +10,10 @@ import (
 )
 
 // An Enumerator produces its elements on demand (object.Enumerator). An
-// eager one, from a blockless cycle or then, answers Enumerable's methods
-// by listing its elements, except those that can stop early: first, take,
-// take_while, find and include?, which also work on an endless one. A lazy
+// eager one, from an iterating method called without a block (enumFor),
+// answers Enumerable's methods by listing its elements, except those that
+// can stop early: first, take, take_while, find and include?, which also
+// work on an endless one. A lazy
 // one, from lazy, answers map, select, take and the rest with another lazy
 // enumerator, and does no work until first, to_a, force or each asks.
 
@@ -116,6 +117,73 @@ func enumerator(lazy bool, recv object.Value, meth string, args []object.Value, 
 	return object.EnumeratorValue(&object.Enumerator{Lazy: lazy, Each: e, Recv: recv, Meth: meth, Args: args})
 }
 
+// sizedEnumerator makes an eager enumerator value whose size is known
+// without enumerating it.
+func sizedEnumerator(recv object.Value, meth string, args []object.Value, e each, size func(ctx object.Context) (object.Value, error)) object.Value {
+	return object.EnumeratorValue(&object.Enumerator{Each: e, Recv: recv, Meth: meth, Args: args, Size: size})
+}
+
+// enumFor returns what an iterating method returns when called without a
+// block, as Ruby's enum_for(name, *args) does: an enumerator whose each
+// calls the method on self again with a block that yields what the method
+// yields, and whose each with a block calls the method with that block, so
+// that map.with_index { } returns what map does. size, when set, is its
+// Enumerator#size.
+func enumFor(self object.Value, name string, args []object.Value, size func(ctx object.Context) (object.Value, error)) object.Value {
+	args = append([]object.Value(nil), args...)
+	call := func(ctx object.Context, block object.Value) (object.Value, error) {
+		return ctx.CallWith(self, name, args, nil, block)
+	}
+	return object.EnumeratorValue(&object.Enumerator{
+		Each: func(ctx object.Context, yield func(object.Value) error) error {
+			_, err := call(ctx, ctx.Block(func(args []object.Value) (object.Value, error) {
+				return object.Nil, yield(yielded(args))
+			}))
+			return err
+		},
+		Call: call, Recv: self, Meth: name, Args: args, Size: size,
+	})
+}
+
+// sizeOf returns how Enumerator#size counts the elements of self: an
+// Array, Hash, Set or Range by its size, an enumerator by its own size,
+// and any other object by its size method, nil when it has none.
+func sizeOf(self object.Value) func(ctx object.Context) (object.Value, error) {
+	return func(ctx object.Context) (object.Value, error) {
+		switch self.Kind() {
+		case object.KindList, object.KindMap, object.KindSet, object.KindRange:
+			return ctx.Call(self, "size")
+		case object.KindEnumerator:
+			if size := self.Enumerator().Size; size != nil {
+				return size(ctx)
+			}
+			return object.Nil, nil
+		}
+		if self.Kind() == object.KindInstance && ctx.RespondsTo(self, "size") {
+			return ctx.Call(self, "size")
+		}
+		return object.Nil, nil
+	}
+}
+
+// runEnum is Enumerator#each with a block: the method that made e called
+// with the block, or, for an enumerator no method made, the block called
+// with each element and self returned.
+func runEnum(ctx object.Context, self object.Value, block object.Value) (object.Value, error) {
+	e := self.Enumerator()
+	if e.Call != nil {
+		return e.Call(ctx, block)
+	}
+	err := e.Each(ctx, func(v object.Value) error {
+		_, err := ctx.Yield(block, v)
+		return err
+	})
+	if err != nil {
+		return object.Value{}, err
+	}
+	return self, nil
+}
+
 // enumElems lists an enumerator's elements; an endless one never returns.
 func enumElems(ctx object.Context, e *object.Enumerator) ([]object.Value, error) {
 	out := []object.Value{}
@@ -143,6 +211,12 @@ func firstOf(ctx object.Context, e each, n int64) ([]object.Value, error) {
 // and for a lazy one #<Enumerator::Lazy: ...>, the receiver being the
 // enumerator a lazy method was called on.
 func EnumeratorInspect(ctx object.Context, e *object.Enumerator) (string, error) {
+	if e.Arith != nil {
+		return arithInspect(ctx, e)
+	}
+	if e.Of != nil {
+		return combinedInspect(ctx, e)
+	}
 	var b strings.Builder
 	b.WriteString("#<")
 	b.WriteString(object.EnumeratorValue(e).Class().QualifiedName())
@@ -181,15 +255,63 @@ func installEnumerator() {
 		if block.IsZero() {
 			return self, nil
 		}
-		err := en(self).Each(ctx, func(v object.Value) error {
-			_, err := ctx.Yield(block, v)
-			return err
-		})
-		if err != nil {
-			return object.Value{}, err
-		}
-		return self, nil
+		return runEnum(ctx, self, block)
 	})
+	// with_index and each_with_index call the block with each element and
+	// its index, from an offset for with_index, and return what the
+	// enumerator's method returns with a block; the block's value is what
+	// that method sees, so map.with_index maps.
+	withIndex := func(name string) {
+		def(c, name, -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+			limit := "0..1"
+			if name == "each_with_index" {
+				limit = "0"
+			}
+			if limit == "0" && len(args) > 0 || len(args) > 1 {
+				return object.Value{}, argError(ctx, len(args), limit)
+			}
+			i := object.Int(0)
+			if len(args) == 1 && !args[0].IsNil() {
+				n, err := wantInt(ctx, args[0], "")
+				if err != nil {
+					return object.Value{}, err
+				}
+				i = object.Int(n)
+			}
+			if block.IsZero() {
+				return enumFor(self, name, args, sizeOf(self)), nil
+			}
+			return runEnum(ctx, self, ctx.Block(func(args []object.Value) (object.Value, error) {
+				at := i
+				i = addIntegers(i, object.Int(1))
+				return ctx.Yield(block, yielded(args), at)
+			}))
+		})
+	}
+	withIndex("with_index")
+	withIndex("each_with_index")
+	// with_object and each_with_object call the block with each element
+	// and the memo, and return the last memo. Nothing mutates, so the
+	// block's value is the next memo, as in Enumerable#each_with_object.
+	withObject := func(name string) {
+		def(c, name, 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+			if block.IsZero() {
+				return withMemo(enumFor(self, name, args, sizeOf(self)), self, args[0]), nil
+			}
+			memo := args[0]
+			_, err := runEnum(ctx, self, ctx.Block(func(args []object.Value) (object.Value, error) {
+				v, err := ctx.Yield(block, yielded(args), memo)
+				memo = v
+				return v, err
+			}))
+			if err != nil {
+				return object.Value{}, err
+			}
+			return memo, nil
+		})
+	}
+	withObject("with_object")
+	withObject("each_with_object")
 	toA := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		elems, err := enumElems(ctx, en(self))
 		if err != nil {
@@ -230,8 +352,8 @@ func installEnumerator() {
 		return object.NewList(elems...), err
 	})
 	def(c, "take_while", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if err := needBlock(ctx, block, "take_while"); err != nil {
-			return object.Value{}, err
+		if block.IsZero() {
+			return enumFor(self, "take_while", nil, nil), nil
 		}
 		out := []object.Value{}
 		_, err := until(ctx, en(self).Each, func(v object.Value) (bool, error) {
@@ -244,23 +366,25 @@ func installEnumerator() {
 		})
 		return object.NewList(out...), err
 	})
-	find := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if err := needBlock(ctx, block, "find"); err != nil {
-			return object.Value{}, err
-		}
-		found := object.Nil
-		_, err := until(ctx, en(self).Each, func(v object.Value) (bool, error) {
-			r, err := ctx.Yield(block, v)
-			if err == nil && r.Truthy() {
-				found = v
-				return true, nil
+	findIn := func(name string) {
+		def(c, name, 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+			if block.IsZero() {
+				return enumFor(self, name, nil, nil), nil
 			}
-			return false, err
+			found := object.Nil
+			_, err := until(ctx, en(self).Each, func(v object.Value) (bool, error) {
+				r, err := ctx.Yield(block, v)
+				if err == nil && r.Truthy() {
+					found = v
+					return true, nil
+				}
+				return false, err
+			})
+			return found, err
 		})
-		return found, err
 	}
-	def(c, "find", 0, find)
-	def(c, "detect", 0, find)
+	findIn("find")
+	findIn("detect")
 	include := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		found, err := until(ctx, en(self).Each, func(v object.Value) (bool, error) {
 			return ctx.Equal(v, args[0])
@@ -276,6 +400,9 @@ func installEnumerator() {
 		return enumerator(true, self, "", nil, en(self).Each), nil
 	})
 	def(c, "size", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if size := en(self).Size; size != nil {
+			return size(ctx)
+		}
 		return object.Nil, nil
 	})
 	inspect := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -285,6 +412,8 @@ func installEnumerator() {
 	def(c, "inspect", 0, inspect)
 	def(c, "to_s", 0, inspect)
 	installLazy()
+	installArithSeq()
+	installCombined()
 }
 
 // installLazy defines Enumerator::Lazy's methods, each a new lazy
@@ -572,10 +701,84 @@ func installLazy() {
 		})
 		return object.Nil, err
 	})
+	for _, name := range []string{"chunk_while", "slice_when", "slice_before", "slice_after"} {
+		def(c, name, -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+			slice, err := slicer(ctx, name, args, block)
+			if err != nil {
+				return object.Value{}, err
+			}
+			parent := self.Enumerator().Each
+			return enumerator(true, self, name, args, func(ctx object.Context, yield func(object.Value) error) error {
+				return slice(ctx, parent, yield)
+			}), nil
+		})
+	}
+	def(c, "chunk", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if err := needBlock(ctx, block, "chunk"); err != nil {
+			return object.Value{}, err
+		}
+		chunk := chunker(ctx, block)
+		parent := self.Enumerator().Each
+		return enumerator(true, self, "chunk", nil, func(ctx object.Context, yield func(object.Value) error) error {
+			return chunk(ctx, parent, yield)
+		}), nil
+	})
+	def(c, "find_all", -1, c.Methods["select"].Native)
+	def(c, "force", 0, object.EnumeratorClass.Methods["to_a"].Native)
+	// to_enum and enum_for of a lazy enumerator are another over its
+	// elements. Ruby's also take a lazy method, which runs eagerly inside
+	// the new one; cameo's lazy methods do not run with a block given.
+	toEnum := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if len(args) > 0 {
+			if m, _ := args[0].AsSymbol(); m != "each" || len(args) > 1 {
+				return object.Value{}, ctx.Raise(object.NotImplementedErr, "to_enum of a lazy enumerator takes no method but each")
+			}
+		}
+		return enumerator(true, self, "each", nil, self.Enumerator().Each), nil
+	}
+	def(c, "to_enum", -1, toEnum)
+	def(c, "enum_for", -1, toEnum)
 	def(c, "lazy", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return self, nil
 	})
 	def(c, "eager", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return enumerator(false, self, "each", nil, self.Enumerator().Each), nil
 	})
+}
+
+// blockless is enumFor sized by the receiver when sized is set, and of no
+// size otherwise.
+func blockless(self object.Value, name string, args []object.Value, sized bool) object.Value {
+	// Array's collect and filter are aliases of map and select, the names
+	// Ruby's enumerator of an Array shows.
+	if self.Kind() == object.KindList {
+		switch name {
+		case "collect":
+			name = "map"
+		case "filter":
+			name = "select"
+		}
+	}
+	var size func(ctx object.Context) (object.Value, error)
+	if sized {
+		size = sizeOf(self)
+	}
+	return enumFor(self, name, args, size)
+}
+
+// withMemo gives e, an enumerator of each_with_object or with_object
+// without a block, the elements Ruby's has: each of src's elements paired
+// with the memo as it was given. Its each with a block still threads the
+// memo through the block's values.
+func withMemo(e object.Value, src object.Value, memo object.Value) object.Value {
+	e.Enumerator().Each = func(ctx object.Context, yield func(object.Value) error) error {
+		each, err := eachOf(ctx, src)
+		if err != nil {
+			return err
+		}
+		return each(ctx, func(v object.Value) error {
+			return yield(object.NewList(v, memo))
+		})
+	}
+	return e
 }

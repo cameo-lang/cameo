@@ -17,6 +17,11 @@ func installClass() {
 	def(m, "==", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Bool(object.Same(self, args[0])), nil
 	})
+	// singleton_class? is false for every class: cameo has no singleton
+	// classes, and the classes of nil, true and false are not ones in Ruby.
+	def(m, "singleton_class?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return object.False, nil
+	})
 	def(m, "ancestors", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		anc := cls(self).Ancestors()
 		out := make([]object.Value, len(anc))
@@ -24,6 +29,13 @@ func installClass() {
 			out[i] = object.ClassValue(a)
 		}
 		return object.NewList(out...), nil
+	})
+	def(m, "include?", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		other, ok := args[0].AsClass()
+		if !ok || !other.IsModule {
+			return object.Value{}, ctx.Raise(object.TypeError, "wrong argument type %s (expected Module)", args[0].Class().QualifiedName())
+		}
+		return object.Bool(cls(self) != other && cls(self).IsA(other)), nil
 	})
 	def(m, "<", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		other, ok := args[0].AsClass()
