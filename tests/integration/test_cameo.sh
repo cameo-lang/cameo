@@ -145,6 +145,14 @@ test_no_pause_lets_the_interrupt_end_the_script() {
   assert_eq "before" "$out"
 }
 
+test_irb_evaluates_lines_at_the_top_level() {
+  local out
+  out=$(printf 'x = 20\ndef twice(n)\n  n * 2\nend\ntwice(x) + 2\nexit\n' | "$CAMEO_BIN" irb)
+  assert_contains "$out" "cameo(main):001> => 20"
+  assert_contains "$out" "cameo(main):002* => :twice"
+  assert_contains "$out" "cameo(main):003> => 42"
+}
+
 test_run_builds_and_runs_the_compiled_script() {
   local script out rc=0
   script="$(mktemp -d)/fact.rb"
