@@ -14,8 +14,8 @@ merge commit when `main` takes no pushes, so `main` keeps one commit per
 source pull request.
 
 Asking for this skill is the authorization to force-push the stack's branches,
-to push the merge pull request to `main` and to close the source pull requests. Nothing
-else is merged or closed.
+to push the merge pull request to `main` or merge it in GitHub, and to close
+the source pull requests. Nothing else is merged or closed.
 
 ## Before you start
 
