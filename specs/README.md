@@ -69,6 +69,28 @@ and are not in the prelude. `--ruby` runs each program under CRuby as well,
 which shows what the harness can run: the summary counts how many of the
 examples CRuby passes also pass under cameo.
 
+## Which examples pass, and which should
+
+[status.tsv](status.tsv) has one row per example of `language/` and
+`core/`, and one row, with the example `*`, per file that did not run.
+Its status is one of:
+
+| Status | Means |
+|---|---|
+| `pass` | passes under cameo |
+| `expected` | stopped by something cameo leaves out on purpose: mutation, instance variables, object identity, threads, I/O, `Rational`; the `reason` column names it |
+| `harness` | needs a part of mspec the prelude does not have, or fails under CRuby in this harness too |
+| `bug` | anything else: cameo should pass it |
+
+[runner/classify.rb](runner/classify.rb) maps the message that stopped
+an example to its status; a message it does not know is a bug. Regenerate
+the file after a change, and its diff shows what the change fixed and
+broke:
+
+```sh
+make spec-status
+```
+
 ## Where the files come from
 
 ruby/spec at the commit named in [COUNTS.md](COUNTS.md). [checkout.rb](checkout.rb)
