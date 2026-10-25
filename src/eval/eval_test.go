@@ -728,7 +728,7 @@ end
 `
 	expectOutput(t, src, `[-Infinity, -2.0, -0.0, 0.0, 3.5, 1.0e+300]
 ["", "B", "a", "a", "ab", "b", "é"]
-[#<Encoding:ASCII-8BIT>, #<Encoding:UTF-8>, #<Encoding:UTF-8>]
+[#<Encoding:BINARY (ASCII-8BIT)>, #<Encoding:UTF-8>, #<Encoding:UTF-8>]
 [0, 1, 2.5]
 ["b", "a"]
 nan

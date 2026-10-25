@@ -45,7 +45,7 @@ module Classify
     [/scoped constant/, "expected", "scoped-constants"],
     [/undefined method '(const_set|initialize_copy|initialize_clone|initialize_dup)'/, "expected", "metaprogramming"],
     [/undefined method '(to_r|rationalize)'/, "expected", "rational-complex"],
-    [/undefined method '(list|aliases|name_list|find|default_external|default_internal|compatible\?)' for class Encoding|uninitialized constant Encoding::(?!UTF_8\b|BINARY\b|ASCII_8BIT\b|US_ASCII\b)|fixed_encoding\?|FIXEDENCODING|force_encoding/, "expected", "encodings"],
+    [/undefined method '(list|aliases|name_list|find|default_external|default_internal|compatible\?)' for class Encoding|uninitialized constant Encoding::(?!UTF_8\b|BINARY\b|ASCII_8BIT\b|US_ASCII\b)|fixed_encoding\?|FIXEDENCODING|force_encoding|unknown encoding name/, "expected", "encodings"],
     [/undefined method 'last_match' for class Regexp/, "expected", "globals"],
     # cameo's own refusal, which names the alternative
     [/: use a literal \(NoMethodError\)/, "expected", "literal-only"],
