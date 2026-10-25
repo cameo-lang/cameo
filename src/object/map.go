@@ -320,7 +320,13 @@ func writeKey(b *strings.Builder, v Value) {
 	case KindRegexp:
 		r := v.Regexp()
 		b.WriteString("x")
-		b.WriteString(strconv.Itoa(r.Options))
+		// The n flag changes nothing for an ASCII pattern, and Ruby's ==
+		// and hash leave it out.
+		options := r.Options
+		if allASCII(r.Source) {
+			options &^= RegexpNoEncoding
+		}
+		b.WriteString(strconv.Itoa(options))
 		b.WriteByte(':')
 		b.WriteString(r.Source)
 	case KindMatch:

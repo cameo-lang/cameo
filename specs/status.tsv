@@ -1898,80 +1898,80 @@ core/matchdata/begin_spec.rb	MatchData#begin when passed an integer argument ret
 core/matchdata/begin_spec.rb	MatchData#begin when passed an integer argument returns the character offset for multi-byte strings	pass		
 core/matchdata/begin_spec.rb	MatchData#begin when passed an integer argument returns the character offset for multi-byte strings with unicode regexp	pass		
 core/matchdata/begin_spec.rb	MatchData#begin when passed an integer argument tries to convert the passed argument to an Integer using #to_int	harness	fails under Ruby too	undefined method 'mock' for an instance of Object (NoMethodError)
-core/matchdata/begin_spec.rb	MatchData#begin when passed an integer argument raises IndexError if index is out of bounds	bug		Expected IndexError("index -1 out of matches") but no exception was raised (3 was returned)
+core/matchdata/begin_spec.rb	MatchData#begin when passed an integer argument raises IndexError if index is out of bounds	pass		
 core/matchdata/begin_spec.rb	MatchData#begin when passed a String argument return the character offset of the start of the named capture	pass		
 core/matchdata/begin_spec.rb	MatchData#begin when passed a String argument returns the character offset for multi byte strings	pass		
 core/matchdata/begin_spec.rb	MatchData#begin when passed a String argument returns the character offset for multi byte strings with unicode regexp	pass		
-core/matchdata/begin_spec.rb	MatchData#begin when passed a String argument returns the character offset for the farthest match when multiple named captures use the same name	bug		Expected 1 == 3 to be truthy but was false
-core/matchdata/begin_spec.rb	MatchData#begin when passed a String argument returns the character offset for multi-byte names	bug		error parsing regexp: invalid named capture: `(?P<æ>`: /(?<æ>.)(.)(?<b>\d+)(\d)/ (RegexpError)
+core/matchdata/begin_spec.rb	MatchData#begin when passed a String argument returns the character offset for the farthest match when multiple named captures use the same name	pass		
+core/matchdata/begin_spec.rb	MatchData#begin when passed a String argument returns the character offset for multi-byte names	pass		
 core/matchdata/begin_spec.rb	MatchData#begin when passed a String argument raises IndexError if there is no group with the provided name	pass		
 core/matchdata/begin_spec.rb	MatchData#begin when passed a Symbol argument return the character offset of the start of the named capture	pass		
 core/matchdata/begin_spec.rb	MatchData#begin when passed a Symbol argument returns the character offset for multi byte strings	pass		
 core/matchdata/begin_spec.rb	MatchData#begin when passed a Symbol argument returns the character offset for multi byte strings with unicode regexp	pass		
-core/matchdata/begin_spec.rb	MatchData#begin when passed a Symbol argument returns the character offset for the farthest match when multiple named captures use the same name	bug		Expected 1 == 3 to be truthy but was false
-core/matchdata/begin_spec.rb	MatchData#begin when passed a Symbol argument returns the character offset for multi-byte names	bug		error parsing regexp: invalid named capture: `(?P<æ>`: /(?<æ>.)(.)(?<b>\d+)(\d)/ (RegexpError)
+core/matchdata/begin_spec.rb	MatchData#begin when passed a Symbol argument returns the character offset for the farthest match when multiple named captures use the same name	pass		
+core/matchdata/begin_spec.rb	MatchData#begin when passed a Symbol argument returns the character offset for multi-byte names	pass		
 core/matchdata/begin_spec.rb	MatchData#begin when passed a Symbol argument raises IndexError if there is no group with the provided name	pass		
-core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed an integer argument returns the byte-based offset of the start of the nth element	bug		undefined method 'bytebegin' for an instance of MatchData (NoMethodError)
-core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed an integer argument returns nil when the nth match isn't found	bug		undefined method 'bytebegin' for an instance of MatchData (NoMethodError)
-core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed an integer argument returns the byte-based offset for multi-byte strings	bug		undefined method 'bytebegin' for an instance of MatchData (NoMethodError)
-core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed an integer argument returns the byte-based offset for multi-byte strings with unicode regexp	bug		undefined method 'bytebegin' for an instance of MatchData (NoMethodError)
+core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed an integer argument returns the byte-based offset of the start of the nth element	pass		
+core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed an integer argument returns nil when the nth match isn't found	pass		
+core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed an integer argument returns the byte-based offset for multi-byte strings	pass		
+core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed an integer argument returns the byte-based offset for multi-byte strings with unicode regexp	pass		
 core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed an integer argument tries to convert the passed argument to an Integer using #to_int	harness	fails under Ruby too	undefined method 'mock' for an instance of Object (NoMethodError)
-core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed an integer argument raises IndexError if index is out of bounds	bug		undefined method 'bytebegin' for an instance of MatchData (NoMethodError)
-core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed a String argument return the byte-based offset of the start of the named capture	bug		undefined method 'bytebegin' for an instance of MatchData (NoMethodError)
-core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed a String argument returns the byte-based offset for multi byte strings	bug		undefined method 'bytebegin' for an instance of MatchData (NoMethodError)
-core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed a String argument returns the byte-based offset for multi byte strings with unicode regexp	bug		undefined method 'bytebegin' for an instance of MatchData (NoMethodError)
-core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed a String argument returns the byte-based offset for the farthest match when multiple named captures use the same name	bug		undefined method 'bytebegin' for an instance of MatchData (NoMethodError)
-core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed a String argument returns the byte-based offset for multi-byte names	bug		error parsing regexp: invalid named capture: `(?P<æ>`: /(?<æ>.)(.)(?<b>\d+)(\d)/ (RegexpError)
-core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed a String argument raises IndexError if there is no group with the provided name	bug		undefined method 'bytebegin' for an instance of MatchData (NoMethodError)
-core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed a Symbol argument return the byte-based offset of the start of the named capture	bug		undefined method 'bytebegin' for an instance of MatchData (NoMethodError)
-core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed a Symbol argument returns the byte-based offset for multi byte strings	bug		undefined method 'bytebegin' for an instance of MatchData (NoMethodError)
-core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed a Symbol argument returns the byte-based offset for multi byte strings with unicode regexp	bug		undefined method 'bytebegin' for an instance of MatchData (NoMethodError)
-core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed a Symbol argument returns the byte-based offset for the farthest match when multiple named captures use the same name	bug		undefined method 'bytebegin' for an instance of MatchData (NoMethodError)
-core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed a Symbol argument returns the byte-based offset for multi-byte names	bug		error parsing regexp: invalid named capture: `(?P<æ>`: /(?<æ>.)(.)(?<b>\d+)(\d)/ (RegexpError)
-core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed a Symbol argument raises IndexError if there is no group with the provided name	bug		undefined method 'bytebegin' for an instance of MatchData (NoMethodError)
-core/matchdata/byteend_spec.rb	MatchData#byteend when passed an integer argument returns the byte-based offset of the end of the nth element	bug		undefined method 'byteend' for an instance of MatchData (NoMethodError)
-core/matchdata/byteend_spec.rb	MatchData#byteend when passed an integer argument returns nil when the nth match isn't found	bug		undefined method 'byteend' for an instance of MatchData (NoMethodError)
-core/matchdata/byteend_spec.rb	MatchData#byteend when passed an integer argument returns the byte-based offset for multi-byte strings	bug		undefined method 'byteend' for an instance of MatchData (NoMethodError)
-core/matchdata/byteend_spec.rb	MatchData#byteend when passed an integer argument returns the byte-based offset for multi-byte strings with unicode regexp	bug		undefined method 'byteend' for an instance of MatchData (NoMethodError)
+core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed an integer argument raises IndexError if index is out of bounds	pass		
+core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed a String argument return the byte-based offset of the start of the named capture	pass		
+core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed a String argument returns the byte-based offset for multi byte strings	pass		
+core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed a String argument returns the byte-based offset for multi byte strings with unicode regexp	pass		
+core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed a String argument returns the byte-based offset for the farthest match when multiple named captures use the same name	pass		
+core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed a String argument returns the byte-based offset for multi-byte names	pass		
+core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed a String argument raises IndexError if there is no group with the provided name	pass		
+core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed a Symbol argument return the byte-based offset of the start of the named capture	pass		
+core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed a Symbol argument returns the byte-based offset for multi byte strings	pass		
+core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed a Symbol argument returns the byte-based offset for multi byte strings with unicode regexp	pass		
+core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed a Symbol argument returns the byte-based offset for the farthest match when multiple named captures use the same name	pass		
+core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed a Symbol argument returns the byte-based offset for multi-byte names	pass		
+core/matchdata/bytebegin_spec.rb	MatchData#bytebegin when passed a Symbol argument raises IndexError if there is no group with the provided name	pass		
+core/matchdata/byteend_spec.rb	MatchData#byteend when passed an integer argument returns the byte-based offset of the end of the nth element	pass		
+core/matchdata/byteend_spec.rb	MatchData#byteend when passed an integer argument returns nil when the nth match isn't found	pass		
+core/matchdata/byteend_spec.rb	MatchData#byteend when passed an integer argument returns the byte-based offset for multi-byte strings	pass		
+core/matchdata/byteend_spec.rb	MatchData#byteend when passed an integer argument returns the byte-based offset for multi-byte strings with unicode regexp	pass		
 core/matchdata/byteend_spec.rb	MatchData#byteend when passed an integer argument tries to convert the passed argument to an Integer using #to_int	harness	fails under Ruby too	undefined method 'mock' for an instance of Object (NoMethodError)
-core/matchdata/byteend_spec.rb	MatchData#byteend when passed a String argument return the byte-based offset of the start of the named capture	bug		undefined method 'byteend' for an instance of MatchData (NoMethodError)
-core/matchdata/byteend_spec.rb	MatchData#byteend when passed a String argument returns the byte-based offset for multi byte strings	bug		undefined method 'byteend' for an instance of MatchData (NoMethodError)
-core/matchdata/byteend_spec.rb	MatchData#byteend when passed a String argument returns the byte-based offset for multi byte strings with unicode regexp	bug		undefined method 'byteend' for an instance of MatchData (NoMethodError)
-core/matchdata/byteend_spec.rb	MatchData#byteend when passed a String argument returns the byte-based offset for the farthest match when multiple named captures use the same name	bug		undefined method 'byteend' for an instance of MatchData (NoMethodError)
-core/matchdata/byteend_spec.rb	MatchData#byteend when passed a String argument returns the byte-based offset for multi-byte names	bug		error parsing regexp: invalid named capture: `(?P<æ>`: /(?<æ>.)(.)(?<b>\d+)(\d)/ (RegexpError)
-core/matchdata/byteend_spec.rb	MatchData#byteend when passed a Symbol argument return the byte-based offset of the start of the named capture	bug		undefined method 'byteend' for an instance of MatchData (NoMethodError)
-core/matchdata/byteend_spec.rb	MatchData#byteend when passed a Symbol argument returns the byte-based offset for multi byte strings	bug		undefined method 'byteend' for an instance of MatchData (NoMethodError)
-core/matchdata/byteend_spec.rb	MatchData#byteend when passed a Symbol argument returns the byte-based offset for multi byte strings with unicode regexp	bug		undefined method 'byteend' for an instance of MatchData (NoMethodError)
-core/matchdata/byteend_spec.rb	MatchData#byteend when passed a Symbol argument returns the byte-based offset for the farthest match when multiple named captures use the same name	bug		undefined method 'byteend' for an instance of MatchData (NoMethodError)
-core/matchdata/byteend_spec.rb	MatchData#byteend when passed a Symbol argument returns the byte-based offset for multi-byte names	bug		error parsing regexp: invalid named capture: `(?P<æ>`: /(?<æ>.)(.)(?<b>\d+)(\d)/ (RegexpError)
+core/matchdata/byteend_spec.rb	MatchData#byteend when passed a String argument return the byte-based offset of the start of the named capture	pass		
+core/matchdata/byteend_spec.rb	MatchData#byteend when passed a String argument returns the byte-based offset for multi byte strings	pass		
+core/matchdata/byteend_spec.rb	MatchData#byteend when passed a String argument returns the byte-based offset for multi byte strings with unicode regexp	pass		
+core/matchdata/byteend_spec.rb	MatchData#byteend when passed a String argument returns the byte-based offset for the farthest match when multiple named captures use the same name	pass		
+core/matchdata/byteend_spec.rb	MatchData#byteend when passed a String argument returns the byte-based offset for multi-byte names	pass		
+core/matchdata/byteend_spec.rb	MatchData#byteend when passed a Symbol argument return the byte-based offset of the start of the named capture	pass		
+core/matchdata/byteend_spec.rb	MatchData#byteend when passed a Symbol argument returns the byte-based offset for multi byte strings	pass		
+core/matchdata/byteend_spec.rb	MatchData#byteend when passed a Symbol argument returns the byte-based offset for multi byte strings with unicode regexp	pass		
+core/matchdata/byteend_spec.rb	MatchData#byteend when passed a Symbol argument returns the byte-based offset for the farthest match when multiple named captures use the same name	pass		
+core/matchdata/byteend_spec.rb	MatchData#byteend when passed a Symbol argument returns the byte-based offset for multi-byte names	pass		
 core/matchdata/byteoffset_spec.rb	*	expected	metaprogramming	def to_int on an object: methods belong to classes
 core/matchdata/captures_spec.rb	MatchData#captures returns an array of the match captures	pass		
 core/matchdata/captures_spec.rb	MatchData#captures returns instances of String when given a String subclass	bug		wrong number of arguments (given 1, expected 0): MatchDataSpecs::MyString takes its fields as keywords (ArgumentError)
-core/matchdata/deconstruct_keys_spec.rb	MatchData#deconstruct_keys returns whole hash for nil as an argument	bug		undefined method 'deconstruct_keys' for an instance of MatchData (NoMethodError)
-core/matchdata/deconstruct_keys_spec.rb	MatchData#deconstruct_keys returns only specified keys	bug		undefined method 'deconstruct_keys' for an instance of MatchData (NoMethodError)
-core/matchdata/deconstruct_keys_spec.rb	MatchData#deconstruct_keys requires one argument	bug		undefined method 'deconstruct_keys' for an instance of MatchData (NoMethodError)
-core/matchdata/deconstruct_keys_spec.rb	MatchData#deconstruct_keys it raises error when argument is neither nil nor array	bug		undefined method 'deconstruct_keys' for an instance of MatchData (NoMethodError)
-core/matchdata/deconstruct_keys_spec.rb	MatchData#deconstruct_keys returns {} when passed []	bug		undefined method 'deconstruct_keys' for an instance of MatchData (NoMethodError)
-core/matchdata/deconstruct_keys_spec.rb	MatchData#deconstruct_keys does not accept non-Symbol keys	bug		undefined method 'deconstruct_keys' for an instance of MatchData (NoMethodError)
-core/matchdata/deconstruct_keys_spec.rb	MatchData#deconstruct_keys process keys till the first non-existing one	bug		undefined method 'deconstruct_keys' for an instance of MatchData (NoMethodError)
-core/matchdata/deconstruct_keys_spec.rb	MatchData#deconstruct_keys returns {} when there are no named captured groups at all	bug		undefined method 'deconstruct_keys' for an instance of MatchData (NoMethodError)
-core/matchdata/deconstruct_keys_spec.rb	MatchData#deconstruct_keys returns {} when passed more keys than named captured groups	bug		undefined method 'deconstruct_keys' for an instance of MatchData (NoMethodError)
-core/matchdata/deconstruct_keys_spec.rb	MatchData#deconstruct_keys includes non-participating captures as nil for nil argument	bug		undefined method 'deconstruct_keys' for an instance of MatchData (NoMethodError)
-core/matchdata/deconstruct_keys_spec.rb	MatchData#deconstruct_keys includes non-participating captures as nil for explicit keys	bug		undefined method 'deconstruct_keys' for an instance of MatchData (NoMethodError)
-core/matchdata/deconstruct_keys_spec.rb	MatchData#deconstruct_keys does not stop iterating at a non-participating capture	bug		undefined method 'deconstruct_keys' for an instance of MatchData (NoMethodError)
+core/matchdata/deconstruct_keys_spec.rb	MatchData#deconstruct_keys returns whole hash for nil as an argument	pass		
+core/matchdata/deconstruct_keys_spec.rb	MatchData#deconstruct_keys returns only specified keys	pass		
+core/matchdata/deconstruct_keys_spec.rb	MatchData#deconstruct_keys requires one argument	pass		
+core/matchdata/deconstruct_keys_spec.rb	MatchData#deconstruct_keys it raises error when argument is neither nil nor array	pass		
+core/matchdata/deconstruct_keys_spec.rb	MatchData#deconstruct_keys returns {} when passed []	pass		
+core/matchdata/deconstruct_keys_spec.rb	MatchData#deconstruct_keys does not accept non-Symbol keys	pass		
+core/matchdata/deconstruct_keys_spec.rb	MatchData#deconstruct_keys process keys till the first non-existing one	pass		
+core/matchdata/deconstruct_keys_spec.rb	MatchData#deconstruct_keys returns {} when there are no named captured groups at all	pass		
+core/matchdata/deconstruct_keys_spec.rb	MatchData#deconstruct_keys returns {} when passed more keys than named captured groups	pass		
+core/matchdata/deconstruct_keys_spec.rb	MatchData#deconstruct_keys includes non-participating captures as nil for nil argument	pass		
+core/matchdata/deconstruct_keys_spec.rb	MatchData#deconstruct_keys includes non-participating captures as nil for explicit keys	pass		
+core/matchdata/deconstruct_keys_spec.rb	MatchData#deconstruct_keys does not stop iterating at a non-participating capture	pass		
 core/matchdata/deconstruct_spec.rb	MatchData#deconstruct is an alias of MatchData#captures	expected	metaprogramming	undefined method 'instance_method' for class MatchData (NoMethodError)
 core/matchdata/dup_spec.rb	*	expected	instance-variables	instance_variable_set is not supported; use initialize
 core/matchdata/element_reference_spec.rb	MatchData#[] acts as normal array indexing [index]	pass		
-core/matchdata/element_reference_spec.rb	MatchData#[] supports accessors [start, length]	bug		wrong number of arguments (given 2, expected 1) (ArgumentError)
-core/matchdata/element_reference_spec.rb	MatchData#[] supports ranges [start..end]	bug		no implicit conversion of Range into Integer (TypeError)
-core/matchdata/element_reference_spec.rb	MatchData#[] supports endless ranges [start..]	bug		no implicit conversion of Range into Integer (TypeError)
-core/matchdata/element_reference_spec.rb	MatchData#[] supports beginningless ranges [..end]	bug		no implicit conversion of Range into Integer (TypeError)
-core/matchdata/element_reference_spec.rb	MatchData#[] supports beginningless endless ranges [nil..nil]	bug		no implicit conversion of Range into Integer (TypeError)
+core/matchdata/element_reference_spec.rb	MatchData#[] supports accessors [start, length]	pass		
+core/matchdata/element_reference_spec.rb	MatchData#[] supports ranges [start..end]	pass		
+core/matchdata/element_reference_spec.rb	MatchData#[] supports endless ranges [start..]	pass		
+core/matchdata/element_reference_spec.rb	MatchData#[] supports beginningless ranges [..end]	pass		
+core/matchdata/element_reference_spec.rb	MatchData#[] supports beginningless endless ranges [nil..nil]	pass		
 core/matchdata/element_reference_spec.rb	MatchData#[] returns instances of String when given a String subclass	bug		wrong number of arguments (given 1, expected 0): MatchDataSpecs::MyString takes its fields as keywords (ArgumentError)
 core/matchdata/element_reference_spec.rb	MatchData#[Symbol] returns the corresponding named match when given a Symbol	pass		
 core/matchdata/element_reference_spec.rb	MatchData#[Symbol] returns the corresponding named match when given a String	pass		
-core/matchdata/element_reference_spec.rb	MatchData#[Symbol] returns the matching version of multiple corresponding named match	bug		Expected nil == "foo" to be truthy but was false
-core/matchdata/element_reference_spec.rb	MatchData#[Symbol] returns the last match when multiple named matches exist with the same name	bug		Expected "hay" == "stack" to be truthy but was false
+core/matchdata/element_reference_spec.rb	MatchData#[Symbol] returns the matching version of multiple corresponding named match	pass		
+core/matchdata/element_reference_spec.rb	MatchData#[Symbol] returns the last match when multiple named matches exist with the same name	pass		
 core/matchdata/element_reference_spec.rb	MatchData#[Symbol] returns nil on non-matching named matches	pass		
 core/matchdata/element_reference_spec.rb	MatchData#[Symbol] raises an IndexError if there is no named match corresponding to the Symbol	pass		
 core/matchdata/element_reference_spec.rb	MatchData#[Symbol] raises an IndexError if there is no named match corresponding to the String	pass		
@@ -1984,13 +1984,13 @@ core/matchdata/end_spec.rb	MatchData#end when passed an integer argument tries t
 core/matchdata/end_spec.rb	MatchData#end when passed a String argument return the character offset of the start of the named capture	pass		
 core/matchdata/end_spec.rb	MatchData#end when passed a String argument returns the character offset for multi byte strings	pass		
 core/matchdata/end_spec.rb	MatchData#end when passed a String argument returns the character offset for multi byte strings with unicode regexp	pass		
-core/matchdata/end_spec.rb	MatchData#end when passed a String argument returns the character offset for the farthest match when multiple named captures use the same name	bug		Expected 2 == 6 to be truthy but was false
-core/matchdata/end_spec.rb	MatchData#end when passed a String argument returns the character offset for multi-byte names	bug		error parsing regexp: invalid named capture: `(?P<æ>`: /(?<æ>.)(.)(?<b>\d+)(\d)/ (RegexpError)
+core/matchdata/end_spec.rb	MatchData#end when passed a String argument returns the character offset for the farthest match when multiple named captures use the same name	pass		
+core/matchdata/end_spec.rb	MatchData#end when passed a String argument returns the character offset for multi-byte names	pass		
 core/matchdata/end_spec.rb	MatchData#end when passed a Symbol argument return the character offset of the start of the named capture	pass		
 core/matchdata/end_spec.rb	MatchData#end when passed a Symbol argument returns the character offset for multi byte strings	pass		
 core/matchdata/end_spec.rb	MatchData#end when passed a Symbol argument returns the character offset for multi byte strings with unicode regexp	pass		
-core/matchdata/end_spec.rb	MatchData#end when passed a Symbol argument returns the character offset for the farthest match when multiple named captures use the same name	bug		Expected 2 == 6 to be truthy but was false
-core/matchdata/end_spec.rb	MatchData#end when passed a Symbol argument returns the character offset for multi-byte names	bug		error parsing regexp: invalid named capture: `(?P<æ>`: /(?<æ>.)(.)(?<b>\d+)(\d)/ (RegexpError)
+core/matchdata/end_spec.rb	MatchData#end when passed a Symbol argument returns the character offset for the farthest match when multiple named captures use the same name	pass		
+core/matchdata/end_spec.rb	MatchData#end when passed a Symbol argument returns the character offset for multi-byte names	pass		
 core/matchdata/eql_spec.rb	MatchData#eql? is an alias of MatchData#==	expected	metaprogramming	undefined method 'instance_method' for class MatchData (NoMethodError)
 core/matchdata/equal_value_spec.rb	MatchData#== returns true if both operands have equal target strings, patterns, and match positions	pass		
 core/matchdata/equal_value_spec.rb	MatchData#== returns false if the operands have different target strings	pass		
@@ -1998,24 +1998,24 @@ core/matchdata/equal_value_spec.rb	MatchData#== returns false if the operands ha
 core/matchdata/equal_value_spec.rb	MatchData#== returns false if the argument is not a MatchData object	pass		
 core/matchdata/inspect_spec.rb	*	expected	instance-variables	@match_data = …: cameo has no instance variables; initialize sets a field with self.match_data = …
 core/matchdata/length_spec.rb	MatchData#length is an alias of MatchData#size	expected	metaprogramming	undefined method 'instance_method' for class MatchData (NoMethodError)
-core/matchdata/match_length_spec.rb	MatchData#match_length returns the length of the corresponding match when given an Integer	bug		undefined method 'match_length' for an instance of MatchData (NoMethodError)
-core/matchdata/match_length_spec.rb	MatchData#match_length returns nil on non-matching index matches	bug		undefined method 'match_length' for an instance of MatchData (NoMethodError)
-core/matchdata/match_length_spec.rb	MatchData#match_length returns the length of the corresponding named match when given a Symbol	bug		undefined method 'match_length' for an instance of MatchData (NoMethodError)
-core/matchdata/match_length_spec.rb	MatchData#match_length returns nil on non-matching index matches	bug		undefined method 'match_length' for an instance of MatchData (NoMethodError)
-core/matchdata/match_spec.rb	MatchData#match returns the corresponding match when given an Integer	bug		undefined method 'match' for an instance of MatchData (NoMethodError)
-core/matchdata/match_spec.rb	MatchData#match returns nil on non-matching index matches	bug		undefined method 'match' for an instance of MatchData (NoMethodError)
-core/matchdata/match_spec.rb	MatchData#match returns the corresponding named match when given a Symbol	bug		undefined method 'match' for an instance of MatchData (NoMethodError)
-core/matchdata/match_spec.rb	MatchData#match returns nil on non-matching index matches	bug		undefined method 'match' for an instance of MatchData (NoMethodError)
+core/matchdata/match_length_spec.rb	MatchData#match_length returns the length of the corresponding match when given an Integer	pass		
+core/matchdata/match_length_spec.rb	MatchData#match_length returns nil on non-matching index matches	pass		
+core/matchdata/match_length_spec.rb	MatchData#match_length returns the length of the corresponding named match when given a Symbol	pass		
+core/matchdata/match_length_spec.rb	MatchData#match_length returns nil on non-matching index matches	pass		
+core/matchdata/match_spec.rb	MatchData#match returns the corresponding match when given an Integer	pass		
+core/matchdata/match_spec.rb	MatchData#match returns nil on non-matching index matches	pass		
+core/matchdata/match_spec.rb	MatchData#match returns the corresponding named match when given a Symbol	pass		
+core/matchdata/match_spec.rb	MatchData#match returns nil on non-matching index matches	pass		
 core/matchdata/named_captures_spec.rb	MatchData#named_captures returns a Hash that has captured name and the matched string pairs	pass		
-core/matchdata/named_captures_spec.rb	MatchData#named_captures prefers later captures	bug		Expected {"a" => "0", "b" => "1"} == {"a" => "3", "b" => "2"} to be truthy but was false
-core/matchdata/named_captures_spec.rb	MatchData#named_captures returns the latest matched capture, even if a later one that does not match exists	bug		Expected {"a" => "0", "b" => "1"} == {"a" => "0", "b" => "2"} to be truthy but was false
-core/matchdata/named_captures_spec.rb	MatchData#named_captures returns a Hash with Symbol keys when symbolize_names is provided a true value	bug		Expected {"a" => "0", "b" => nil} == {a: "0", b: nil} to be truthy but was false
+core/matchdata/named_captures_spec.rb	MatchData#named_captures prefers later captures	pass		
+core/matchdata/named_captures_spec.rb	MatchData#named_captures returns the latest matched capture, even if a later one that does not match exists	pass		
+core/matchdata/named_captures_spec.rb	MatchData#named_captures returns a Hash with Symbol keys when symbolize_names is provided a true value	pass		
 core/matchdata/named_captures_spec.rb	MatchData#named_captures returns a Hash with String keys when symbolize_names is provided a false value	pass		
 core/matchdata/names_spec.rb	MatchData#names returns an Array	pass		
 core/matchdata/names_spec.rb	MatchData#names sets each element to a String	pass		
 core/matchdata/names_spec.rb	MatchData#names returns the names of the named capture groups	pass		
 core/matchdata/names_spec.rb	MatchData#names returns [] if there were no named captures	pass		
-core/matchdata/names_spec.rb	MatchData#names returns each name only once	bug		Expected ["hay", "dot", "hay"] == ["hay", "dot"] to be truthy but was false
+core/matchdata/names_spec.rb	MatchData#names returns each name only once	pass		
 core/matchdata/names_spec.rb	MatchData#names equals Regexp#names	pass		
 core/matchdata/offset_spec.rb	*	expected	metaprogramming	def to_int on an object: methods belong to classes
 core/matchdata/post_match_spec.rb	*	expected	globals	global variables are not supported
@@ -2029,16 +2029,16 @@ core/matchdata/to_s_spec.rb	MatchData#to_s returns the entire matched string	pas
 core/matchdata/to_s_spec.rb	MatchData#to_s returns an instance of String when given a String subclass	bug		wrong number of arguments (given 1, expected 0): MatchDataSpecs::MyString takes its fields as keywords (ArgumentError)
 core/matchdata/values_at_spec.rb	MatchData#values_at when passed a list of Integers returns an array containing each value given by one of integers	pass		
 core/matchdata/values_at_spec.rb	MatchData#values_at when passed a list of Integers returns nil value for any integer that is out of range	pass		
-core/matchdata/values_at_spec.rb	MatchData#values_at when passed an integer Range returns an array containing each value given by the elements of the range	bug		no implicit conversion of Range into Integer (TypeError)
-core/matchdata/values_at_spec.rb	MatchData#values_at when passed an integer Range fills with nil values for range elements larger than the captured values number	bug		no implicit conversion of Range into Integer (TypeError)
-core/matchdata/values_at_spec.rb	MatchData#values_at when passed an integer Range raises RangeError if any element of the range is negative and out of range	bug		no implicit conversion of Range into Integer (TypeError)
-core/matchdata/values_at_spec.rb	MatchData#values_at when passed an integer Range supports endless Range	bug		no implicit conversion of Range into Integer (TypeError)
-core/matchdata/values_at_spec.rb	MatchData#values_at when passed an integer Range supports beginningless Range	bug		no implicit conversion of Range into Integer (TypeError)
-core/matchdata/values_at_spec.rb	MatchData#values_at when passed an integer Range returns an empty Array when Range is empty	bug		no implicit conversion of Range into Integer (TypeError)
+core/matchdata/values_at_spec.rb	MatchData#values_at when passed an integer Range returns an array containing each value given by the elements of the range	pass		
+core/matchdata/values_at_spec.rb	MatchData#values_at when passed an integer Range fills with nil values for range elements larger than the captured values number	pass		
+core/matchdata/values_at_spec.rb	MatchData#values_at when passed an integer Range raises RangeError if any element of the range is negative and out of range	pass		
+core/matchdata/values_at_spec.rb	MatchData#values_at when passed an integer Range supports endless Range	pass		
+core/matchdata/values_at_spec.rb	MatchData#values_at when passed an integer Range supports beginningless Range	pass		
+core/matchdata/values_at_spec.rb	MatchData#values_at when passed an integer Range returns an empty Array when Range is empty	pass		
 core/matchdata/values_at_spec.rb	MatchData#values_at when passed names slices captures with the given names	pass		
 core/matchdata/values_at_spec.rb	MatchData#values_at when passed names slices captures with the given String names	pass		
-core/matchdata/values_at_spec.rb	MatchData#values_at supports multiple integer Ranges	bug		no implicit conversion of Range into Integer (TypeError)
-core/matchdata/values_at_spec.rb	MatchData#values_at supports mixing integer Ranges and Integers	bug		no implicit conversion of Range into Integer (TypeError)
+core/matchdata/values_at_spec.rb	MatchData#values_at supports multiple integer Ranges	pass		
+core/matchdata/values_at_spec.rb	MatchData#values_at supports mixing integer Ranges and Integers	pass		
 core/matchdata/values_at_spec.rb	MatchData#values_at supports mixing of names and indices	pass		
 core/matchdata/values_at_spec.rb	MatchData#values_at returns a new empty Array if no arguments given	pass		
 core/matchdata/values_at_spec.rb	MatchData#values_at fails when passed arguments of unsupported types	pass		
@@ -2802,7 +2802,7 @@ core/regexp/case_compare_spec.rb	Regexp#=== is false if there is no match	pass
 core/regexp/case_compare_spec.rb	Regexp#=== returns true if it matches a Symbol	pass		
 core/regexp/case_compare_spec.rb	Regexp#=== returns false if it does not match a Symbol	pass		
 core/regexp/case_compare_spec.rb	Regexp#=== returns false if the other value cannot be coerced to a string	pass		
-core/regexp/case_compare_spec.rb	Regexp#=== uses #to_str on string-like objects	bug		Expected false == true to be truthy but was false
+core/regexp/case_compare_spec.rb	Regexp#=== uses #to_str on string-like objects	pass		
 core/regexp/casefold_spec.rb	Regexp#casefold? returns the value of the case-insensitive flag	pass		
 core/regexp/compile_spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
 core/regexp/encoding_spec.rb	*	expected	mutation	….default_internal = …: the left side of an assignment must start with a local variable, so the copy has somewhere to go
@@ -2810,20 +2810,20 @@ core/regexp/eql_spec.rb	Regexp#eql? is an alias of Regexp#==	expected	metaprogra
 core/regexp/equal_value_spec.rb	Regexp#== is true if self and other have the same pattern	pass		
 core/regexp/equal_value_spec.rb	Regexp#== is true if self and other have the same character set code	pass		
 core/regexp/equal_value_spec.rb	Regexp#== is true if other has the same #casefold? values	pass		
-core/regexp/equal_value_spec.rb	Regexp#== is true if self does not specify /n option and other does	bug		Expected false == true to be truthy but was false
-core/regexp/equal_value_spec.rb	Regexp#== is true if self specifies /n option and other does not	bug		Expected false == true to be truthy but was false
+core/regexp/equal_value_spec.rb	Regexp#== is true if self does not specify /n option and other does	pass		
+core/regexp/equal_value_spec.rb	Regexp#== is true if self specifies /n option and other does not	pass		
 core/regexp/escape_spec.rb	Regexp.escape is an alias of Regexp.quote	expected	metaprogramming	undefined method 'method' for class Regexp (NoMethodError)
-core/regexp/fixed_encoding_spec.rb	Regexp#fixed_encoding? returns false by default	expected	encodings	undefined method 'fixed_encoding?' for an instance of Regexp (NoMethodError)
-core/regexp/fixed_encoding_spec.rb	Regexp#fixed_encoding? returns false if the 'n' modifier was supplied to the Regexp	expected	encodings	undefined method 'fixed_encoding?' for an instance of Regexp (NoMethodError)
-core/regexp/fixed_encoding_spec.rb	Regexp#fixed_encoding? returns true if the 'u' modifier was supplied to the Regexp	expected	encodings	undefined method 'fixed_encoding?' for an instance of Regexp (NoMethodError)
-core/regexp/fixed_encoding_spec.rb	Regexp#fixed_encoding? returns true if the 's' modifier was supplied to the Regexp	expected	encodings	undefined method 'fixed_encoding?' for an instance of Regexp (NoMethodError)
-core/regexp/fixed_encoding_spec.rb	Regexp#fixed_encoding? returns true if the 'e' modifier was supplied to the Regexp	expected	encodings	undefined method 'fixed_encoding?' for an instance of Regexp (NoMethodError)
-core/regexp/fixed_encoding_spec.rb	Regexp#fixed_encoding? returns true if the Regexp contains a \u escape	expected	encodings	undefined method 'fixed_encoding?' for an instance of Regexp (NoMethodError)
-core/regexp/fixed_encoding_spec.rb	Regexp#fixed_encoding? returns true if the Regexp contains a UTF-8 literal	expected	encodings	undefined method 'fixed_encoding?' for an instance of Regexp (NoMethodError)
-core/regexp/fixed_encoding_spec.rb	Regexp#fixed_encoding? returns true if the Regexp was created with the Regexp::FIXEDENCODING option	expected	encodings	uninitialized constant Regexp::FIXEDENCODING (NameError)
+core/regexp/fixed_encoding_spec.rb	Regexp#fixed_encoding? returns false by default	pass		
+core/regexp/fixed_encoding_spec.rb	Regexp#fixed_encoding? returns false if the 'n' modifier was supplied to the Regexp	pass		
+core/regexp/fixed_encoding_spec.rb	Regexp#fixed_encoding? returns true if the 'u' modifier was supplied to the Regexp	pass		
+core/regexp/fixed_encoding_spec.rb	Regexp#fixed_encoding? returns true if the 's' modifier was supplied to the Regexp	expected	encodings	Expected false == true to be truthy but was false
+core/regexp/fixed_encoding_spec.rb	Regexp#fixed_encoding? returns true if the 'e' modifier was supplied to the Regexp	expected	encodings	Expected false == true to be truthy but was false
+core/regexp/fixed_encoding_spec.rb	Regexp#fixed_encoding? returns true if the Regexp contains a \u escape	pass		
+core/regexp/fixed_encoding_spec.rb	Regexp#fixed_encoding? returns true if the Regexp contains a UTF-8 literal	pass		
+core/regexp/fixed_encoding_spec.rb	Regexp#fixed_encoding? returns true if the Regexp was created with the Regexp::FIXEDENCODING option	pass		
 core/regexp/hash_spec.rb	Regexp#hash is provided	pass		
-core/regexp/hash_spec.rb	Regexp#hash is based on the text and options of Regexp	bug		Expected false == true to be truthy but was false
-core/regexp/hash_spec.rb	Regexp#hash returns the same value for two Regexps differing only in the /n option	bug		Expected false == true to be truthy but was false
+core/regexp/hash_spec.rb	Regexp#hash is based on the text and options of Regexp	pass		
+core/regexp/hash_spec.rb	Regexp#hash returns the same value for two Regexps differing only in the /n option	pass		
 core/regexp/initialize_spec.rb	Regexp#initialize is a private method	bug		undefined method 'private_instance_methods' for class Regexp (NoMethodError)
 core/regexp/initialize_spec.rb	Regexp#initialize raises a FrozenError on a Regexp literal	bug		send(:initialize): initialize runs only in new (CameoError)
 core/regexp/initialize_spec.rb	Regexp#initialize raises a TypeError on an initialized non-literal Regexp	bug		send(:initialize): initialize runs only in new (CameoError)
@@ -2846,28 +2846,28 @@ core/regexp/last_match_spec.rb	Regexp.last_match when given an Object coerces ar
 core/regexp/last_match_spec.rb	Regexp.last_match when given an Object raises a TypeError when unable to coerce	expected	globals	undefined method 'last_match' for class Regexp (NoMethodError)
 core/regexp/linear_time_spec.rb	*	expected	regexp	This regexp is not supported in Cameo: /(a)\1/ uses a backreference
 core/regexp/match_spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
-core/regexp/named_captures_spec.rb	Regexp#named_captures returns a Hash	bug		undefined method 'named_captures' for an instance of Regexp (NoMethodError)
-core/regexp/named_captures_spec.rb	Regexp#named_captures returns an empty Hash when there are no capture groups	bug		undefined method 'named_captures' for an instance of Regexp (NoMethodError)
-core/regexp/named_captures_spec.rb	Regexp#named_captures sets the keys of the Hash to the names of the capture groups	bug		undefined method 'named_captures' for an instance of Regexp (NoMethodError)
-core/regexp/named_captures_spec.rb	Regexp#named_captures sets the values of the Hash to Arrays	bug		undefined method 'named_captures' for an instance of Regexp (NoMethodError)
-core/regexp/named_captures_spec.rb	Regexp#named_captures sets each element of the Array to the corresponding group's index	bug		undefined method 'named_captures' for an instance of Regexp (NoMethodError)
-core/regexp/named_captures_spec.rb	Regexp#named_captures works with duplicate capture group names	bug		undefined method 'named_captures' for an instance of Regexp (NoMethodError)
+core/regexp/named_captures_spec.rb	Regexp#named_captures returns a Hash	pass		
+core/regexp/named_captures_spec.rb	Regexp#named_captures returns an empty Hash when there are no capture groups	pass		
+core/regexp/named_captures_spec.rb	Regexp#named_captures sets the keys of the Hash to the names of the capture groups	pass		
+core/regexp/named_captures_spec.rb	Regexp#named_captures sets the values of the Hash to Arrays	pass		
+core/regexp/named_captures_spec.rb	Regexp#named_captures sets each element of the Array to the corresponding group's index	pass		
+core/regexp/named_captures_spec.rb	Regexp#named_captures works with duplicate capture group names	pass		
 core/regexp/names_spec.rb	Regexp#names returns an Array	pass		
 core/regexp/names_spec.rb	Regexp#names returns an empty Array if there are no named captures	pass		
 core/regexp/names_spec.rb	Regexp#names returns each named capture as a String	pass		
 core/regexp/names_spec.rb	Regexp#names returns all of the named captures	pass		
 core/regexp/names_spec.rb	Regexp#names works with nested named captures	pass		
-core/regexp/names_spec.rb	Regexp#names returns each capture name only once	bug		Expected ["cap", "cap"] == ["cap"] to be truthy but was false
+core/regexp/names_spec.rb	Regexp#names returns each capture name only once	pass		
 core/regexp/new_spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
 core/regexp/options_spec.rb	Regexp#options returns an Integer bitvector of regexp options for the Regexp object	pass		
 core/regexp/options_spec.rb	Regexp#options allows checking for presence of a certain option with bitwise &	pass		
 core/regexp/options_spec.rb	Regexp#options returns 0 for a Regexp literal without options	pass		
 core/regexp/options_spec.rb	Regexp#options raises a TypeError on an uninitialized Regexp	expected	metaprogramming	allocate is not supported: use new (NoMethodError)
-core/regexp/options_spec.rb	Regexp#options includes Regexp::FIXEDENCODING for a Regexp literal with the 'u' option	expected	encodings	uninitialized constant Regexp::FIXEDENCODING (NameError)
-core/regexp/options_spec.rb	Regexp#options includes Regexp::FIXEDENCODING for a Regexp literal with the 'e' option	expected	encodings	uninitialized constant Regexp::FIXEDENCODING (NameError)
-core/regexp/options_spec.rb	Regexp#options includes Regexp::FIXEDENCODING for a Regexp literal with the 's' option	expected	encodings	uninitialized constant Regexp::FIXEDENCODING (NameError)
-core/regexp/options_spec.rb	Regexp#options does not include Regexp::FIXEDENCODING for a Regexp literal with the 'n' option	expected	encodings	uninitialized constant Regexp::FIXEDENCODING (NameError)
-core/regexp/options_spec.rb	Regexp#options includes Regexp::NOENCODING for a Regexp literal with the 'n' option	bug		uninitialized constant Regexp::NOENCODING (NameError)
+core/regexp/options_spec.rb	Regexp#options includes Regexp::FIXEDENCODING for a Regexp literal with the 'u' option	pass		
+core/regexp/options_spec.rb	Regexp#options includes Regexp::FIXEDENCODING for a Regexp literal with the 'e' option	expected	encodings	Expected 0 == 0 to be falsy but was true
+core/regexp/options_spec.rb	Regexp#options includes Regexp::FIXEDENCODING for a Regexp literal with the 's' option	expected	encodings	Expected 0 == 0 to be falsy but was true
+core/regexp/options_spec.rb	Regexp#options does not include Regexp::FIXEDENCODING for a Regexp literal with the 'n' option	pass		
+core/regexp/options_spec.rb	Regexp#options includes Regexp::NOENCODING for a Regexp literal with the 'n' option	pass		
 core/regexp/quote_spec.rb	Regexp.quote escapes any characters with special meaning in a regular expression	pass		
 core/regexp/quote_spec.rb	Regexp.quote works with symbols	pass		
 core/regexp/quote_spec.rb	Regexp.quote works with substrings	pass		
@@ -2885,8 +2885,8 @@ core/regexp/source_spec.rb	Regexp#source has US-ASCII encoding when created from
 core/regexp/source_spec.rb	Regexp#source has UTF-8 encoding when created from a non-ASCII-only \u{} literal	expected	identity-and-freezing	undefined method 'equal?' for an instance of Encoding (NoMethodError)
 core/regexp/timeout_spec.rb	*	expected	mutation	….timeout = …: the left side of an assignment must start with a local variable, so the copy has somewhere to go
 core/regexp/to_s_spec.rb	*	expected	regexp	This regexp is not supported in Cameo: /(?=5)/ uses lookahead
-core/regexp/try_convert_spec.rb	Regexp.try_convert returns the argument if given a Regexp	bug		undefined method 'try_convert' for class Regexp (NoMethodError)
-core/regexp/try_convert_spec.rb	Regexp.try_convert returns nil if given an argument that can't be converted to a Regexp	bug		undefined method 'try_convert' for class Regexp (NoMethodError)
+core/regexp/try_convert_spec.rb	Regexp.try_convert returns the argument if given a Regexp	pass		
+core/regexp/try_convert_spec.rb	Regexp.try_convert returns nil if given an argument that can't be converted to a Regexp	pass		
 core/regexp/try_convert_spec.rb	Regexp.try_convert tries to coerce the argument by calling #to_regexp	harness	fails under Ruby too	undefined method 'mock' for an instance of Object (NoMethodError)
 core/regexp/try_convert_spec.rb	Regexp.try_convert raises a TypeError if the object does not return an Regexp from #to_regexp	harness	fails under Ruby too	undefined method 'mock' for an instance of Object (NoMethodError)
 core/regexp/union_spec.rb	*	expected	regexp	This regexp is not supported in Cameo: /(?!)/ uses lookahead
@@ -3549,8 +3549,8 @@ core/time/dst_spec.rb	Time#dst? returns whether time is during daylight saving t
 core/time/dup_spec.rb	Time#dup returns a Time object that represents the same time	pass		
 core/time/dup_spec.rb	Time#dup copies the gmt state flag	pass		
 core/time/dup_spec.rb	Time#dup returns an independent Time object	pass		
-core/time/dup_spec.rb	Time#dup returns a subclass instance	bug		Expected 2026-10-21 22:26:49.899289 +0200.instance_of?(#<Class>) to be truthy but was false
-core/time/dup_spec.rb	Time#dup returns a clone of Time instance	bug		Expected 2026-10-21 22:26:49.899317 +0200.instance_of?(Time) to be falsy but was true
+core/time/dup_spec.rb	Time#dup returns a subclass instance	bug		Expected <time>.instance_of?(#<Class>) to be truthy but was false
+core/time/dup_spec.rb	Time#dup returns a clone of Time instance	bug		Expected <time>.instance_of?(Time) to be falsy but was true
 core/time/dup_spec.rb	Time#dup does not copy frozen status from the original	bug		Expected true == false to be truthy but was false
 core/time/eql_spec.rb	Time#eql? returns true if self and other have the same whole number of seconds	pass		
 core/time/eql_spec.rb	Time#eql? returns false if self and other have differing whole numbers of seconds	pass		
@@ -3586,7 +3586,7 @@ core/time/localtime_spec.rb	Time#localtime converts self to local time, modifyin
 core/time/localtime_spec.rb	Time#localtime returns self	expected	identity-and-freezing	undefined method 'equal?' for an instance of Time (NoMethodError)
 core/time/localtime_spec.rb	Time#localtime converts time to the UTC offset specified as an Integer number of seconds	bug		Expected 0 == 3630 to be truthy but was false
 core/time/localtime_spec.rb	Time#localtime on a frozen time does not raise an error if already in the right time zone	expected	identity-and-freezing	undefined method 'equal?' for an instance of Time (NoMethodError)
-core/time/localtime_spec.rb	Time#localtime on a frozen time raises a FrozenError if the time has a different time zone	expected	identity-and-freezing	Expected FrozenError but no exception was raised (2007-01-09 13:00:00 +0100 was returned)
+core/time/localtime_spec.rb	Time#localtime on a frozen time raises a FrozenError if the time has a different time zone	expected	identity-and-freezing	Expected FrozenError but no exception was raised (<time> was returned)
 core/time/localtime_spec.rb	Time#localtime with an argument that responds to #to_int coerces using #to_int	harness	fails under Ruby too	undefined method 'mock' for an instance of Object (NoMethodError)
 core/time/localtime_spec.rb	Time#localtime returns a Time with a UTC offset of the specified number of Rational seconds	expected	rational-complex	undefined method 'Rational' for an instance of Object (NoMethodError)
 core/time/localtime_spec.rb	Time#localtime with an argument that responds to #to_r coerces using #to_r	harness	fails under Ruby too	undefined method 'mock_numeric' for an instance of Object (NoMethodError)

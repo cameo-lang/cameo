@@ -520,17 +520,18 @@ func stringIndex(ctx object.Context, s string, args []object.Value) (object.Valu
 }
 
 // rangeBounds resolves a range over a sequence of length n into a start and
-// a length, false when it is out of bounds.
+// a length, false when it is out of bounds. A nil end, written or left
+// out, is the sequence's end.
 func rangeBounds(ctx object.Context, r *object.Range, n int) (start, length int, ok bool) {
 	lo, hi := 0, n-1
-	if !r.Lo.IsZero() {
+	if !object.OrNil(r.Lo).IsNil() {
 		v, isInt := r.Lo.AsInt()
 		if !isInt {
 			return 0, 0, false
 		}
 		lo = int(v)
 	}
-	if !r.Hi.IsZero() {
+	if !object.OrNil(r.Hi).IsNil() {
 		v, isInt := r.Hi.AsInt()
 		if !isInt {
 			return 0, 0, false
