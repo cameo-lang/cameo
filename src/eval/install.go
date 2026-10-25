@@ -23,6 +23,11 @@ func installStdlib() {
 	procClass.Define("[]", -1, call)
 	procClass.Define("yield", -1, call)
 	procClass.Define("===", -1, call)
+	// to_s is binary, as Ruby's is.
+	procClass.Define("to_s", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return object.Bytes([]byte(ctx.(*Interp).procInspect(proc(self)))), nil
+	})
+	procClass.Define("inspect", 0, procClass.Methods["to_s"].Native)
 	procClass.Define("to_proc", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return self, nil
 	})
@@ -114,8 +119,10 @@ func init() {
 			return object.Value{}, in.raise(object.ArgumentError, 0, "no method name given")
 		}
 		name, _ := args[0].AsSymbol()
-		return object.Value{}, in.raise(object.NoMethodError, 0, "undefined method '%s' for %s", name, typeName(self))
+		return object.Value{}, in.noMethod(self, name, args[1:], false, 0)
 	})
+	object.ObjectClass.Define("catch", -1, catchBlock)
+	object.ObjectClass.Define("throw", -1, throwTag)
 	// __FILE__ is the script's path as it was given, and __dir__ the
 	// absolute directory it is in.
 	object.ObjectClass.Define("__FILE__", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -239,4 +246,68 @@ func (in *Interp) require(name object.Value) (object.Value, error) {
 		in.loaded[lib] = true
 	}
 	return object.True, nil
+}
+
+// catchTag is a running catch block's tag.
+type catchTag struct{ tag object.Value }
+
+// catchBlock is Kernel#catch: it calls the block with the tag, a new
+// Object when none is given, and returns the block's value, or the value
+// a throw of the tag passes.
+func catchBlock(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	in := ctx.(*Interp)
+	if len(args) > 1 {
+		return object.Value{}, in.raise(object.ArgumentError, 0, "wrong number of arguments (given %d, expected 0..1)", len(args))
+	}
+	if block.IsZero() {
+		return object.Value{}, in.raise(object.LocalJumpError, 0, "no block given (yield)")
+	}
+	tag := object.InstanceValue(&object.Instance{Cls: object.ObjectClass})
+	if len(args) == 1 {
+		tag = args[0]
+	}
+	c := &catchTag{tag: tag}
+	in.catches = append(in.catches, c)
+	v, err := in.callBlock(block, []object.Value{tag}, nil, object.Value{})
+	in.catches = in.catches[:len(in.catches)-1]
+	if ctl, ok := err.(*control); ok && ctl.kind == ctrlThrow && ctl.target == c {
+		return ctl.value, nil
+	}
+	return v, err
+}
+
+// throwTag is Kernel#throw: it ends the innermost catch of the tag with
+// the value, running the ensure clauses on the way and no rescue, or
+// raises UncaughtThrowError when no catch of the tag is running. A tag is
+// a catch's when the two are equal, except that an instance is only its
+// own tag: the Object a catch makes up is equal to every other.
+func throwTag(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	in := ctx.(*Interp)
+	if len(args) < 1 || len(args) > 2 {
+		return object.Value{}, in.raise(object.ArgumentError, 0, "wrong number of arguments (given %d, expected 1..2)", len(args))
+	}
+	tag, value := args[0], object.Nil
+	if len(args) == 2 {
+		value = args[1]
+	}
+	for i := len(in.catches) - 1; i >= 0; i-- {
+		c := in.catches[i]
+		same := object.Same(c.tag, tag)
+		if !same && c.tag.Kind() != object.KindInstance && tag.Kind() != object.KindInstance {
+			eq, err := in.Equal(c.tag, tag)
+			if err != nil {
+				return object.Value{}, err
+			}
+			same = eq
+		}
+		if same {
+			return object.Value{}, &control{kind: ctrlThrow, value: value, target: c}
+		}
+	}
+	shown, err := in.Inspect(tag)
+	if err != nil {
+		return object.Value{}, err
+	}
+	return object.Value{}, &object.Exception{Cls: object.UncaughtThrowError, Message: "uncaught throw " + shown,
+		Attrs: map[string]object.Value{"tag": tag, "value": value}}
 }

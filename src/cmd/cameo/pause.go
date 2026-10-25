@@ -95,6 +95,9 @@ func runProgram(prog *cameo.Program, pause bool, stderr io.Writer) int {
 	if errors.Is(err, cameo.ErrPaused) {
 		return writeDump(prog, stderr)
 	}
+	if status, ok := cameo.ExitStatus(err); ok {
+		return status
+	}
 	if err != nil {
 		fmt.Fprintln(stderr, err)
 		return 1

@@ -193,6 +193,10 @@ type Call struct {
 	// Dropped is set on a statement whose value nothing reads: one before
 	// the last of a body, or the last of the script.
 	Dropped bool
+	// VCall marks a bare name, without receiver, arguments or parentheses,
+	// which may have been meant as a local: a missing method raises
+	// NameError for it rather than NoMethodError.
+	VCall bool
 	// Rebinds is set on a call whose value is assigned back to its
 	// receiver, `a = a << 1` or `self.xs = self.xs.push(x)` in initialize:
 	// one of Ruby's mutators returns Ruby's value, computed on a copy,
@@ -280,6 +284,10 @@ type Next struct {
 // Retry restarts the begin body from a rescue clause.
 type Retry struct{ Pos }
 
+// Redo restarts the current block iteration or loop pass without
+// evaluating the loop's condition again.
+type Redo struct{ Pos }
+
 // If is `if`/`unless`/ternary/modifier; elsif chains nest in Else.
 type If struct {
 	Pos
@@ -288,11 +296,14 @@ type If struct {
 	Else []Node // nil when absent
 }
 
-// While is `while`/`until` (an until has its condition negated).
+// While is `while`/`until` (an until has its condition negated). DoWhile is
+// `begin … end while cond`, whose body runs once before the condition is
+// first evaluated.
 type While struct {
 	Pos
-	Cond Node
-	Body []Node
+	Cond    Node
+	Body    []Node
+	DoWhile bool
 }
 
 // And is `a && b` / `a and b`; Or is `a || b` / `a or b`; Not is `!a` / `not a`.

@@ -63,7 +63,14 @@ func (in *Interp) lookupConst(name string, fr *Frame, line int) (object.Value, e
 	if v, ok := object.ObjectClass.Consts[name]; ok {
 		return v, nil
 	}
-	return object.Value{}, in.raise(object.NameError, line, "uninitialized constant %s", name)
+	return object.Value{}, uninitialized(object.ObjectClass, name, name, line)
+}
+
+// uninitialized makes the NameError for a constant scope lacks, which
+// the message names as shown.
+func uninitialized(scope *object.Class, name, shown string, line int) error {
+	return &object.Exception{Cls: object.NameError, Line: line, Message: "uninitialized constant " + shown,
+		Attrs: map[string]object.Value{"name": object.Symbol(name), "receiver": object.ClassValue(scope)}}
 }
 
 func (in *Interp) evalScopedConst(n *syntax.ScopedConst, env *Env, fr *Frame) (object.Value, error) {
@@ -74,7 +81,7 @@ func (in *Interp) evalScopedConst(n *syntax.ScopedConst, env *Env, fr *Frame) (o
 		if v, ok := object.ObjectClass.Consts[n.Name]; ok {
 			return v, nil
 		}
-		return object.Value{}, in.raise(object.NameError, n.Line(), "uninitialized constant %s", n.Name)
+		return object.Value{}, uninitialized(object.ObjectClass, n.Name, n.Name, n.Line())
 	}
 	v, err := in.eval(n.Scope, env, fr)
 	if err != nil {
@@ -89,7 +96,7 @@ func (in *Interp) evalScopedConst(n *syntax.ScopedConst, env *Env, fr *Frame) (o
 			return v, nil
 		}
 	}
-	return object.Value{}, in.raise(object.NameError, n.Line(), "uninitialized constant %s::%s", scope.QualifiedName(), n.Name)
+	return object.Value{}, uninitialized(scope, n.Name, scope.QualifiedName()+"::"+n.Name, n.Line())
 }
 
 // defineConst binds a constant in the innermost lexical scope. A constant

@@ -186,9 +186,19 @@ func (f *fn) expr(n syntax.Node, value bool) string {
 		return f.ifExpr(n, value)
 	case *syntax.While:
 		stop := f.stopFlag()
-		f.line("for {")
+		if n.DoWhile {
+			// The test runs before every pass but the first, so a next,
+			// which continues, still tests the condition.
+			f.line("for first := true; ; first = false {")
+		} else {
+			f.line("for {")
+		}
 		f.depth++
 		f.pass(stop)
+		if n.DoWhile {
+			f.line("if !first {")
+			f.depth++
+		}
 		// until x is while !x, which leaves the loop when x holds.
 		if not, ok := n.Cond.(*syntax.Not); ok {
 			f.line("if %s {", f.expr(not.Value, true))
@@ -197,6 +207,10 @@ func (f *fn) expr(n syntax.Node, value bool) string {
 		}
 		f.line("\tbreak")
 		f.line("}")
+		if n.DoWhile {
+			f.depth--
+			f.line("}")
+		}
 		f.body(n.Body, false)
 		f.depth--
 		f.line("}")

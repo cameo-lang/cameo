@@ -1,0 +1,9 @@
+# Object includes Kernel, whose functions are called on it too.
+Kernel.puts Kernel.format("%05d", 3)
+p Object.ancestors.take(2), 1.is_a?(Kernel), Kernel.class
+p Object.include?(Kernel), Integer.include?(Comparable), Comparable.include?(Comparable)
+begin
+  Integer.include?(String)
+rescue TypeError => e
+  p e
+end
