@@ -98,6 +98,9 @@ func init() {
 			}
 			return object.Value{}, ctx.Raise(object.CameoError, "send(:%s): %s", name, msg)
 		}
+		if v, handled, err := ctx.(*Interp).mutating(nil, self, "x", name, args[1:], kw, block, 0); handled {
+			return v, err
+		}
 		return ctx.(*Interp).call(nil, self, name, args[1:], kw, block, true, 0)
 	}
 	for _, name := range []string{"send", "public_send", "__send__"} {

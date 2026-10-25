@@ -145,4 +145,31 @@ CAMEO
   assert_eq $'15511210043330985984000000\nfact.rb:5: done (RuntimeError)' "$out"
 }
 
+# A call of one of Ruby's mutators raises: cameo deviates from Ruby and
+# never changes or rebinds the receiver. --ignore-mutation-errors makes the
+# call return Ruby's result on a copy, the receiver left as it was.
+test_mutators_raise_unless_ignored() {
+  local script out rc=0
+  script="$(mktemp -d)/mutate.cameo"
+  cat >"$script" <<'CAMEO'
+a = [1, 2]
+p a.pop
+p a
+CAMEO
+  out=$("$CAMEO_BIN" "$script" 2>&1) || rc=$?
+  assert_neq 0 "$rc" "a mutator ran without an error"
+  assert_contains "$out" "pop changes its receiver, which cameo does not do; use last and take (CameoError)"
+  out=$("$CAMEO_BIN" --ignore-mutation-errors "$script")
+  assert_eq $'2\n[1, 2]' "$out"
+}
+
+test_bang_methods_are_refused_with_the_flag_too() {
+  local script out rc=0
+  script="$(mktemp -d)/bang.cameo"
+  printf 'x = [nil, 1]\nx.compact!\n' >"$script"
+  out=$("$CAMEO_BIN" --ignore-mutation-errors "$script" 2>&1) || rc=$?
+  assert_neq 0 "$rc" "a bang method ran"
+  assert_contains "$out" "This is not supported, use x = x.compact instead"
+}
+
 run_tests

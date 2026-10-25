@@ -119,11 +119,15 @@ below cover.</p>
 
 <h2 id="immutable">Values are immutable</h2>
 
-<p>Nothing changes in place. A call that changes its receiver in Ruby
-(<code>&lt;&lt;</code>, <code>push</code>, <code>delete</code>,
-<code>merge!</code>, any bang method of Ruby's core) rebinds the local variable it is
-called on to the changed copy. Another variable that held the old value
-keeps it.</p>
+<p>Nothing changes in place, and no call rebinds its receiver. A call of
+one of Ruby's mutators (<code>&lt;&lt;</code>, <code>push</code>,
+<code>delete</code>, <code>store</code>, <code>add</code>) on a value it
+would change raises a <code>CameoError</code> that names the non-mutating
+form; <code>cameo --ignore-mutation-errors</code> makes it return Ruby's
+result instead and leaves the receiver as it was. Assignment makes the copy
+and rebinds the local: <code>a += [3]</code>, <code>h[k] = v</code>,
+<code>a.x = 1</code>. Another variable that held the old value keeps
+it.</p>
 
 <div class="pair">
 <div>
@@ -139,40 +143,40 @@ p a, b</code></pre>
 <h4>cameo</h4>
 <pre class="cameo"><code>a = [1, 2]
 b = a
-a &lt;&lt; 3
+begin
+  a &lt;&lt; 3
+rescue CameoError =&gt; e
+  puts e.message
+end
+a += [3]
 p a, b</code></pre>
-<pre class="output"><code>[1, 2, 3]
+<pre class="output"><code>&lt;&lt; changes its receiver, which cameo does not do; use +, or append
+[1, 2, 3]
 [1, 2]</code></pre>
 </div>
 </div>
 
-<p>The call returns what it returns in Ruby: the receiver for most, the
-removed element for <code>pop</code>, <code>shift</code> and
-<code>delete</code>. <code>h[k] = v</code> and <code>a.x = 1</code> rebind
-the local the same way.</p>
-
-<p>Such a call needs a local variable to rebind. On anything else, an
-element, a constant or a call's result, the checker rejects it: write the
-non-mutating form and assign the result.</p>
+<p>A bang method of Ruby's core is refused before the script runs, with
+the copying form to write instead.</p>
 
 <div class="pair">
 <div>
 <h4>Ruby</h4>
-<pre class="ruby"><code>config = { tags: ["a"] }
-config[:tags] &lt;&lt; "b"
-p config[:tags]</code></pre>
-<pre class="output"><code>["a", "b"]</code></pre>
+<pre class="ruby"><code>a = [3, 1, 2]
+a.sort!
+p a</code></pre>
+<pre class="output"><code>[1, 2, 3]</code></pre>
 </div>
 <div>
 <h4>cameo</h4>
-<pre class="cameo rejected"><code>config = { tags: ["a"] }
-config[:tags] &lt;&lt; "b"
-p config[:tags]</code></pre>
-<pre class="output error"><code>script.cameo:2: &lt;&lt; changes its receiver, which cameo rebinds only for a local variable or a field in initialize; use + or append</code></pre>
-<pre class="cameo"><code>config = { tags: ["a"] }
-config[:tags] += ["b"]
-p config[:tags]</code></pre>
-<pre class="output"><code>["a", "b"]</code></pre>
+<pre class="cameo rejected"><code>a = [3, 1, 2]
+a.sort!
+p a</code></pre>
+<pre class="output error"><code>script.cameo:2: This is not supported, use a = a.sort instead</code></pre>
+<pre class="cameo"><code>a = [3, 1, 2]
+a = a.sort
+p a</code></pre>
+<pre class="output"><code>[1, 2, 3]</code></pre>
 </div>
 </div>
 
@@ -312,7 +316,7 @@ script.cameo:11: global variables are not supported</code></pre>
 <tr><td><code>private</code>, <code>protected</code>, <code>public</code>, <code>module_function</code></td><td>none: every method is public</td></tr>
 <tr><td><code>eval</code>, <code>instance_eval</code>, <code>class_eval</code>, <code>define_method</code>, <code>instance_variable_get</code> and <code>_set</code>, <code>undef</code></td><td>a direct call or a <code>def</code></td></tr>
 <tr><td><code>def obj.x</code>, <code>class &lt;&lt; self</code></td><td><code>def self.x</code> in a class body</td></tr>
-<tr><td>a mutating or bang method of Ruby's core on anything but a local, such as <code>[3, 1].sort!</code> or <code>obj.list &lt;&lt; x</code></td><td>the non-mutating form: <code>sort</code>, <code>+</code>, <code>append</code>, <code>with</code></td></tr>
+<tr><td>a bang method of Ruby's core, such as <code>a.sort!</code></td><td>the copying form, assigned: <code>a = a.sort</code></td></tr>
 <tr><td>nested multiple assignment, <code>a, (b, c) = …</code></td><td>separate assignments</td></tr>
 <tr><td><code>require_relative</code>, <code>load</code></td><td>one file per script</td></tr>
 <tr><td>backticks, <code>fork</code></td><td>none; a host can give the script a module of Go methods, and <code>async</code> runs a call on a goroutine</td></tr>

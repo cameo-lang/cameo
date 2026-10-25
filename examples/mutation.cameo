@@ -1,84 +1,73 @@
-# A call that changes its receiver in Ruby -- <<, push, pop, delete, a
-# bang method -- rebinds the local it is called on to the changed copy, as
-# h[k] = v does. Its value is Ruby's: the receiver, the removed element,
-# or nil from a bang method that changed nothing.
+# cameo values never change, and no call changes or rebinds its receiver.
+# This is where cameo deviates from Ruby on purpose:
+#
+# - A call of one of Ruby's mutators -- <<, push, pop, delete, store, add
+#   -- on a value of the kind it changes raises a CameoError that names
+#   the non-mutating form. `cameo --ignore-mutation-errors` makes the call
+#   return Ruby's result instead, with the receiver left as it was.
+# - A bang method of Ruby's core is refused before the script runs:
+#   `x.compact!` is "This is not supported, use x = x.compact instead".
+# - force_encoding returns the string relabelled and leaves the receiver;
+#   a call whose value is dropped raises, since it would do nothing.
+#
+# Assignment to an element or a field makes a copy and rebinds the local.
+def try
+  yield
+rescue CameoError => e
+  puts e.message
+end
+
 a = [1, 2]
-a << 3 << 4
-p a
-p a.push(5, 6)
-p a.pop
-p a.pop(2)
-p a.shift
-p a.unshift(0)
-p a.insert(1, :x)
-p a.insert(-1, :y)
-p a.concat([7], [8])
-p a.delete(:x)
-p a.delete(:none)
-p a.delete_at(0)
-p a.delete_at(99)
-p a
-x = [3, 1, 2, 2, nil]
-p x.compact!
-p x.compact!
-p x.uniq!
-p x.sort!
-p x.map! { _1 * 2 }
-p x.select! { _1 > 2 }
-p x.select! { true }
-p x.reject! { _1 > 5 }
-p x
-x.clear
-p x
-p x.replace([9])
-p(x.delete_if { _1 > 5 })
-p x.keep_if { true }
+b = a
+try { a << 3 }
+try { a.push(3) }
+try { a.pop }
+try { a.delete(1) }
+p a, b
+a = a + [3]
+p a, b, a.last, a.take(2), a.without(1)
+a[0] = 0
+p a, b
+
 s = "ab"
-s << "c" << 100
+try { s << "c" }
+try { s.prepend(">") }
+try { s.setbyte(0, 65) }
+s = s + "c"
 p s
-p s.concat("e", "f")
-p s.prepend(">")
-p s.insert(1, "_")
-p s.upcase!
-p s.upcase!
-p s
-p s.reverse!
-p s.succ!
-h = Hash.new(0)
-h.store(:a, 1)
+
+h = {a: 1}
+try { h.store(:b, 2) }
+try { h.delete(:a) }
+try { h.update(b: 2) }
 h[:b] = 2
-p h.delete(:a)
-p h.delete(:zz)
-p h[:missing]
-p h.to_a
-p h.update(c: 3).to_a
-p h.shift
-p h.to_a
-p h.select! { |k, v| v > 2 }.to_a
-p h.select! { true }
-p h[:nope]
-p h.merge!(d: 4).to_a
+p h, h.put(:c, 3), h.without(:a), h.merge(d: 4), h
+
 st = Set[1, 2]
-st << 3
-st.add(4)
-p st.add?(4)
-p st.add?(5).to_a
-p st.delete(1).to_a
-p st.delete?(99)
-p st.merge([6, 7]).size
-p st.subtract([2]).to_a
-p st.map! { _1 * 10 }.to_a
-p st.size
+try { st << 3 }
+try { st.add(3) }
+try { st.merge([3]) }
+p st | [3], st - [1], st
+
+bytes = "caf\xC3\xA9".b
+text = bytes.force_encoding("UTF-8")
+p text, text.encoding, bytes.encoding
+try do
+  bytes.force_encoding("UTF-8")
+  nil
+end
+
+# The same names on a value they do not change are ordinary calls:
+# Integer#<< shifts, and a class's own push is its own method.
+class Stack
+  list :items, of: :int
+  def push(x) = with(items: items + [x])
+end
 n = 1
-n << 3
-p n, (n << 3)
-words = %w[b a c]
-words.sort!.reverse!
-p words
-# The byte mutators rebind a local; setbyte returns the byte it set.
-b = "hat"
-p b.setbyte(1, 105), b
-p b.bytesplice(0, 1, "c"), b
-raw = "ab".b
-raw.append_as_bytes("c", 0x164, -1)
-p raw, raw.encoding
+p n << 3, n
+stack = Stack.new(items: [])
+p stack.push(1).items, stack.items
+
+x = [3, nil, 1, 3]
+x = x.compact.uniq.sort
+p x

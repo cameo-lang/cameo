@@ -310,8 +310,8 @@ p send(:helper, 4), %i[upcase reverse].map { |m| "abc".send(m) }
 	// send rebinds no variable, so it refuses what a call on a temporary
 	// refuses, and initialize, which runs only in new.
 	for src, want := range map[string]string{
-		"a = [1]\na.send(:push, 2)\n":             "send(:push): push changes its receiver",
-		"p [2, 1].send(:sort!)\n":                 "send(:sort!): sort!: a bang method changes its receiver",
+		"a = [1]\na.send(:push, 2)\n":             "push changes its receiver, which cameo does not do",
+		"p [2, 1].send(:sort!)\n":                 "send(:sort!): This is not supported, use x = x.sort instead",
 		"h = {a: 1}\nh.send(:[]=, :b, 2)\n":       "send(:[]=): []= is not supported",
 		"p 1.send(:eval, \"1\")\n":                "send(:eval): eval is not supported",
 		"class G\nend\nG.new.send(:initialize)\n": "send(:initialize): initialize runs only in new",

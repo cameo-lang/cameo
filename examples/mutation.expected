@@ -1,64 +1,40 @@
-[1, 2, 3, 4]
-[1, 2, 3, 4, 5, 6]
-6
-[4, 5]
-1
-[0, 2, 3]
-[0, :x, 2, 3]
-[0, :x, 2, 3, :y]
-[0, :x, 2, 3, :y, 7, 8]
-:x
-nil
-0
-nil
-[2, 3, :y, 7, 8]
-[3, 1, 2, 2]
-nil
-[3, 1, 2]
+<< changes its receiver, which cameo does not do; use +, or append
+push changes its receiver, which cameo does not do; use +, or append
+pop changes its receiver, which cameo does not do; use last and take
+delete changes its receiver, which cameo does not do; use without, or - on a set
+[1, 2]
+[1, 2]
 [1, 2, 3]
-[2, 4, 6]
-[4, 6]
-nil
-[4]
-[4]
-[]
-[9]
-[]
-[]
-"abcd"
-"abcdef"
-">abcdef"
-">_abcdef"
-">_ABCDEF"
-nil
-">_ABCDEF"
-"FEDCBA_>"
-"FEDCBB_>"
-1
-nil
-0
-[[:b, 2]]
-[[:b, 2], [:c, 3]]
-[:b, 2]
-[[:c, 3]]
-[]
-nil
-0
-[[:c, 3], [:d, 4]]
-nil
-[1, 2, 3, 4, 5]
-[2, 3, 4, 5]
-nil
-6
-[3, 4, 5, 6, 7]
-[30, 40, 50, 60, 70]
-5
-1
-8
-["c", "b", "a"]
-105
-"hit"
-"cit"
-"cit"
-"abcd\xFF"
+[1, 2]
+3
+[1, 2]
+[2, 3]
+[0, 2, 3]
+[1, 2]
+<< changes its receiver, which cameo does not do; use +, or append
+prepend changes its receiver, which cameo does not do; use +
+setbyte changes its receiver, which cameo does not do; use byteslice and +
+"abc"
+store changes its receiver, which cameo does not do; use put
+delete changes its receiver, which cameo does not do; use without, or - on a set
+update changes its receiver, which cameo does not do; use merge
+{a: 1, b: 2}
+{a: 1, b: 2, c: 3}
+{b: 2}
+{a: 1, b: 2, d: 4}
+{a: 1, b: 2}
+<< changes its receiver, which cameo does not do; use +, or append
+add changes its receiver, which cameo does not do; use | [x]
+merge changes its receiver, which cameo does not do; use |
+#<Set: {1, 2, 3}>
+#<Set: {2}>
+#<Set: {1, 2}>
+"café"
+#<Encoding:UTF-8>
 #<Encoding:BINARY (ASCII-8BIT)>
+force_encoding returns a copy in cameo and changes nothing, and this call drops it; use x = x.force_encoding(...)
+8
+1
+[1]
+[]
+[1, 3]

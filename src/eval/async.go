@@ -511,20 +511,21 @@ func copyMainClass(c *object.Class) *object.Class {
 func (in *Interp) worker() *Interp {
 	top := in.snapshot()
 	w := &Interp{
-		stdout:    in.stdout,
-		stderr:    in.stderr,
-		outMu:     in.outMu,
-		file:      in.file,
-		mainClass: top.mainClass,
-		main:      top.main,
-		top:       NewEnv(nil),
-		consts:    top.consts,
-		proto:     in.proto,
-		promises:  in.promises,
-		cameoTop:  top.cameoTop,
-		code:      in.code,
-		stop:      in.stop,
-		snap:      top,
+		IgnoreMutationErrors: in.IgnoreMutationErrors,
+		stdout:               in.stdout,
+		stderr:               in.stderr,
+		outMu:                in.outMu,
+		file:                 in.file,
+		mainClass:            top.mainClass,
+		main:                 top.main,
+		top:                  NewEnv(nil),
+		consts:               top.consts,
+		proto:                in.proto,
+		promises:             in.promises,
+		cameoTop:             top.cameoTop,
+		code:                 in.code,
+		stop:                 in.stop,
+		snap:                 top,
 	}
 	// The worker's generator is seeded from this one, here on the
 	// parent's goroutine, so a seeded script stays reproducible.

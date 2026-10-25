@@ -19,8 +19,9 @@ const statusPaused = 3
 
 // runScript runs the script at path and returns the process exit status.
 // With pause set, ^C pauses the script and writes its dump; see
-// runProgram.
-func runScript(path string, pause bool, stdout, stderr io.Writer) int {
+// runProgram. With ignoreMutations set, a call of one of Ruby's mutators
+// returns its result on a copy instead of raising.
+func runScript(path string, pause, ignoreMutations bool, stdout, stderr io.Writer) int {
 	src, err := os.ReadFile(path)
 	if err != nil {
 		fmt.Fprintln(stderr, err)
@@ -36,12 +37,13 @@ func runScript(path string, pause bool, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return 1
 	}
+	prog.IgnoreMutationErrors(ignoreMutations)
 	return runProgram(prog, pause, stderr)
 }
 
 // resume continues the script the dump at path holds and returns the
 // process exit status, as runScript does.
-func resume(path string, pause bool, stdout, stderr io.Writer) int {
+func resume(path string, pause, ignoreMutations bool, stdout, stderr io.Writer) int {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		fmt.Fprintln(stderr, err)
@@ -52,6 +54,7 @@ func resume(path string, pause bool, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return 1
 	}
+	prog.IgnoreMutationErrors(ignoreMutations)
 	return runProgram(prog, pause, stderr)
 }
 

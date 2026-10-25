@@ -11,13 +11,15 @@ p "ABC".unpack("C*"), "\x01\x02".b.unpack("n"), "\x01\x02".b.unpack("v"), "☺A"
 s = "h\xC3llo\xFF\xE3\x81".dup
 p s.valid_encoding?, s.scrub, s.scrub("?"), s.scrub { |b| "<#{b.bytes.size}>" }
 t = "caf\xC3\xA9".b
-p t.encoding, t.valid_encoding?, t.force_encoding("UTF-8"), t.encoding, t.size
+p t.encoding, t.valid_encoding?
+utf = t.force_encoding("UTF-8")
+p utf, utf.encoding, utf.size
 u = "héllo".b.force_encoding(Encoding::UTF_8)
 p u, u.encoding, u.valid_encoding?, "x".force_encoding("BINARY").encoding, Encoding::UTF_8, Encoding::BINARY.to_s, "a".encoding.name
 w = "\xff\xfe".dup.force_encoding("UTF-8")
 p w.valid_encoding?
 v = "ok\xff".dup
-v.scrub!
+v = v.scrub
 p v
 begin
   "x".force_encoding("EBCDIC")
@@ -27,7 +29,7 @@ end
 E = { " ".b => ' '.b, ">".b => '>'.b, "<".b => '<'.b }
 P = Regexp.union(E.keys)
 s = ("ab<c d>" * 2).b
-s.gsub!(P, E)
+s = s.gsub(P, E)
 p s.force_encoding(Encoding::UTF_8)
 t = "x<y".b
 p t.sub("<".b, "&lt;").force_encoding("UTF-8"), t.gsub(P) { |m| "[#{m.bytes.size}]" }.force_encoding("UTF-8")

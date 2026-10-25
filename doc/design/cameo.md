@@ -52,8 +52,8 @@ What cameo leaves out, and the checker rejects by name:
   `instance_variable_set`, `eval`, `undef`,
   `extend`, singleton classes, `def self.x` on an instance
 - mutating methods (`<<`, `push`, `pop`, `delete`, `merge!`, `map!`, every
-  bang method) on anything but a local or a field in `initialize`, which
-  they rebind, see *Variables rebind*; `freeze` is accepted and changes
+  bang method): a mutator raises when it runs and a bang method is refused
+  by the checker, see *Variables rebind*; `freeze` is accepted and changes
   nothing, since everything already is frozen
 - threads, fibers, `fork`, files, sockets, `require` of another file
   (`require_relative`, `load`, a library cameo does not build in), `$stdin`. Standard
@@ -126,19 +126,20 @@ scope exactly as in Ruby, so a block that assigns an outer variable rebinds it
 for the enclosing scope. Nothing else in the program can observe the old
 value, since no value refers to a variable.
 
-A call that changes its receiver in Ruby -- `x << y`, `x.push(y)`,
-`x.pop`, `h.delete(k)`, `s.add(y)`, a bang method of Ruby's core -- is a rebinding too,
-when its receiver is a local variable or a field inside `initialize`: x
-becomes the changed copy, as `h[k] = v` makes h one. The call's value is
-Ruby's: the receiver for most, the removed element for `pop`, `shift` and
-`delete`, nil from a bang method that changed nothing. Whether a call
-changes its receiver depends on the receiver's kind, which the evaluator
-checks: `String#delete` returns a new string, `Integer#<<` shifts, and an
-instance's methods are its own. Another variable that held the old value
-keeps it, where Ruby would show the change. On any other receiver -- an
-element, a constant, a call's result -- such a call is rejected, since
-there is no variable to rebind. cameo's own `append`, `prepend`, `put` and
-`without` return a copy and change nothing.
+Only assignment rebinds: `x = …`, `x += …`, `h[k] = v` and `x.a = v`. A
+call never does. A call that changes its receiver in Ruby -- `x << y`,
+`x.push(y)`, `x.pop`, `h.delete(k)`, `s.add(y)` -- raises a CameoError
+naming the non-mutating form, whatever its receiver. Whether a call is
+one depends on the receiver's kind, which the evaluator checks:
+`Integer#<<` shifts, and an instance's methods are its own. With
+IgnoreMutationErrors (`cameo --ignore-mutation-errors`) the call returns
+Ruby's value, computed on a copy -- the receiver for most, the removed
+element for `pop`, `shift` and `delete` -- and the receiver keeps its
+value. A bang method of Ruby's core is refused by the checker, with the
+copying form to assign: "This is not supported, use x = x.compact
+instead". `force_encoding` returns the relabelled copy, since nothing else
+reinterprets bytes; dropping its value raises. cameo's own `append`,
+`prepend`, `put` and `without` return a copy and change nothing.
 
 ### `with`
 
@@ -711,20 +712,26 @@ re-opened by accident:
   and name out of use.
 - **`send`** calls a method by name, as Ruby's does, and so do
   `public_send` and `__send__`, since every method is public. It reaches
-  `method_missing` and the top-level methods a bare call reaches. It never
-  rebinds its receiver, so it refuses what a call on a receiver cameo
-  cannot rebind refuses, `push` and the bang methods among them, and
-  `initialize`, which only `new` runs on an instance under construction.
+  `method_missing` and the top-level methods a bare call reaches. It
+  refuses what a call refuses, Ruby's mutators and bang methods among
+  them, and `initialize`, which only `new` runs on an instance under
+  construction.
   Leaving it out cost scripts that pick a method from data; the parser
   cannot see the name, so the refusal happens when the call runs.
 - **A bang method a script defines** (`def save!`) is a call like any
   other: it returns its result, rebinds nothing, and may be called on any
   receiver. The checker learns the names from the script's `def`s, so a
-  bang method the script does not define is still one of Ruby's mutators
-  and refused where it cannot rebind. Making a script's bang methods
-  rebind their receiver to their result, as the core's do, was rejected:
-  a bang method that returns nil, as Ruby's do when nothing changed,
-  would set the variable to nil.
+  bang method the script does not define is one of Ruby's and refused.
+- **No call changes or rebinds its receiver.** Only assignment rebinds a
+  local. A call of one of Ruby's mutators raises, naming the
+  non-mutating form, unless the run ignores mutation errors, when it
+  returns Ruby's value computed on a copy; a bang method of Ruby's core
+  is refused by the checker whatever the setting. Rebinding the local a
+  mutator was called on, which cameo did before, was rejected: code read
+  as Ruby changes a value it does not change, and a call on anything but
+  a local could not rebind at all. `force_encoding` alone returns its
+  copy, since nothing else reinterprets bytes, and raises when its value
+  is dropped.
 - **Concurrency is a module a script includes.** `include Cameo` brings
   `async`, `await`, `promise`, `resolve` and `fail`; without it they are
   unknown, so a script states that it runs work concurrently. `async`
@@ -816,7 +823,8 @@ re-opened by accident:
 - **The language follows CRuby's benchmarks too**, a second round over
   what they use beyond the standard library:
   - Taken in: a mutating call on a local (`x << y`, `x.push(y)`,
-    `x.map!`, `s.add(y)`) rebinds the local, as `h[k] = v` already does;
+    `x.map!`, `s.add(y)`) rebinds the local, as `h[k] = v` already does
+    (since replaced: no call rebinds, see *Decisions taken*);
     `freeze`, `frozen?` and `compare_by_identity` as no-ops, since values
     are immutable and have no identity; argument forwarding (`...`, `*`,
     `**`, `&`); a top-level `def self.x`; `:sym.to_proc` as a value;
@@ -894,9 +902,9 @@ re-opened by accident:
     results its encoding; `+`, `<<`, `join` and interpolation take the
     encoding their parts are compatible in, or raise
     Encoding::CompatibilityError. `valid_encoding?` and `scrub` deal with
-    bytes an encoding does not allow. `force_encoding` rebinds a local, as
-    Ruby's changes its receiver; on anything else it returns the relabelled
-    string, which is all Ruby's leaves to see. Integer and Symbol `to_s`
+    bytes an encoding does not allow. `force_encoding` returns the
+    relabelled string and leaves its receiver, and raises when its value
+    is dropped. Integer and Symbol `to_s`
     give UTF-8 where Ruby gives US-ASCII; only `encoding` tells.
   - Paths are arithmetic, not I/O: `File.join`, `basename`, `dirname`,
     `extname`, `split`, `expand_path` and `absolute_path`, and `Pathname`,
@@ -910,8 +918,8 @@ re-opened by accident:
     yielding the receiver and returning it. Until this round `tap` made the
     copy, which left Ruby's `tap` idiom out.
   - A mutating call on a temporary (`s.dup.merge!(x)`, `[1, 2].push(3)`,
-    `foo.bar[0] = 1`) stays rejected: there is no variable to rebind, and
-    the non-mutating form (`merge`, `+`, `with`) says what is meant.
+    `foo.bar[0] = 1`) stays rejected: the non-mutating form (`merge`, `+`,
+    `with`) says what is meant.
   - The `cameo` binary sets the collector to GOGC=400 with a soft memory
     limit of 1 GB, unless the environment sets GOGC or GOMEMLIMIT. On
     CRuby's benchmarks that takes a quarter off the total time (5000! in a
