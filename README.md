@@ -67,6 +67,7 @@ cameo run script.cameo        # the same, built with go and run; needs Go and th
 cameo resume path/to/dump     # continue a script that ^C paused
 cameo inspect path/to/dump    # show where it paused and what its top level held
 cameo irb [script.cameo]      # evaluate lines typed in, at the top level of the script when one is given
+cameo debug script.cameo      # run the script under the debugger, stopped before its first statement
 ```
 
 `^C` pauses a running script before its next top-level statement and writes
@@ -80,6 +81,13 @@ is in [doc/design/pause.md](doc/design/pause.md).
 level, its value is printed, and a line that is not a whole expression yet
 waits for the next. With a script given, the script runs first and the
 lines see what it defined.
+
+`cameo debug` runs a script under a debugger with the commands of Ruby's
+debug library: `step`, `next`, `finish`, `continue`, `break` on a line or
+a method, `backtrace`, `info`, `list`, `up`, `down`, and any expression,
+evaluated in the frame it stopped in. A script that requires `"debug"`
+stops at `debugger` and `binding.break` the same way.
+[doc/debugger.md](doc/debugger.md) has the commands.
 
 `cameo build` is the first step of ahead-of-time compilation; see
 [doc/design/aot.md](doc/design/aot.md).

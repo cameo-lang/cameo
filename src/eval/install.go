@@ -76,6 +76,26 @@ func init() {
 	object.ClassClass.Define("new", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return ctx.(*Interp).newInstance(self.Cls(), args, kw, block)
 	})
+	// debugger and binding.break stop the run when the debugger is on
+	// (debug.go); without the debug library they are undefined, as in
+	// Ruby.
+	breakHere := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		in := ctx.(*Interp)
+		if in.loaded == nil || !in.loaded["debug"] {
+			return object.Value{}, in.raise(object.NoMethodError, 0, "undefined method 'debugger': require \"debug\" first")
+		}
+		in.Break()
+		return object.Nil, nil
+	}
+	object.ObjectClass.Define("debugger", 0, breakHere)
+	binding := object.NewClass("Binding", object.ObjectClass)
+	object.ObjectClass.Consts["Binding"] = object.ClassValue(binding)
+	binding.Define("break", -1, breakHere)
+	binding.Define("b", -1, breakHere)
+	binding.Define("irb", 0, breakHere)
+	object.ObjectClass.Define("binding", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return object.InstanceValue(&object.Instance{Cls: binding}), nil
+	})
 	object.ObjectClass.Define("require", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return ctx.(*Interp).require(args[0])
 	})
@@ -218,6 +238,8 @@ var builtinLibraries = map[string][]string{
 	"cgi/util":   {"cgi/escape"},
 	"json":       nil,
 	"benchmark":  nil,
+	// debug switches the debugger on; see debug.go.
+	"debug": nil,
 	// cameo/runner is the Ruby library that gives CRuby Cameo::Runner;
 	// cameo has Cameo::Runner built in.
 	"cameo/runner": nil,
@@ -244,6 +266,9 @@ func (in *Interp) require(name object.Value) (object.Value, error) {
 	in.loaded[s] = true
 	for _, lib := range also {
 		in.loaded[lib] = true
+	}
+	if s == "debug" && in.console != nil {
+		in.Debug(in.console, in.consoleOut, in.source, false)
 	}
 	return object.True, nil
 }

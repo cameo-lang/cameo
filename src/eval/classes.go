@@ -375,7 +375,14 @@ func hostDefined(v object.Value) bool {
 func (in *Interp) evalClassBody(cls, reopened *object.Class, body []syntax.Node, env *Env, fr *Frame) error {
 	lexical := append(append([]*object.Class{}, fr.Lexical...), cls)
 	bodyFrame := &Frame{Self: object.ClassValue(cls), Lexical: lexical, DefTarget: cls, Reopened: reopened}
-	_, err := in.evalBody(body, NewEnv(nil), bodyFrame)
+	bodyEnv := NewEnv(nil)
+	if in.dbg != nil {
+		// A class body is a frame of its own, as in Ruby, so next at
+		// the class statement steps over it.
+		in.dbg.enter("<class:"+cls.Name+">", bodyEnv, bodyFrame)
+		defer in.dbg.leave()
+	}
+	_, err := in.evalBody(body, bodyEnv, bodyFrame)
 	return err
 }
 

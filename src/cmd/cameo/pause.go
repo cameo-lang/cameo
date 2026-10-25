@@ -38,6 +38,9 @@ func runScript(path string, pause, ignoreMutations bool, stdout, stderr io.Write
 		return 1
 	}
 	prog.IgnoreMutationErrors(ignoreMutations)
+	// A script that requires "debug" talks to the debugger on the
+	// terminal.
+	prog.Console(os.Stdin, stdout)
 	return runProgram(prog, pause, stderr)
 }
 
@@ -99,6 +102,11 @@ func runProgram(prog *cameo.Program, pause bool, stderr io.Writer) int {
 		return status
 	}
 	if err != nil {
+		// The debugger's quit ends the run, which is not the script
+		// failing.
+		if prog.Quit() {
+			return 0
+		}
 		fmt.Fprintln(stderr, err)
 		return 1
 	}

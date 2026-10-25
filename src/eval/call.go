@@ -3,6 +3,7 @@ package eval
 import (
 	"fmt"
 	"math"
+	"strings"
 
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/syntax"
@@ -315,6 +316,30 @@ func (in *Interp) reinvoke(m *object.Method, recv object.Value, args []object.Va
 	return in.invoke(m, recv, args, kw, block, line)
 }
 
+// methodName names a method's frame for the debugger: Class#name, or
+// Class.name for a class method, or name alone at the top level.
+func methodName(m *object.Method, recv object.Value) string {
+	if m.Owner == nil || m.Owner.Digest == "main" {
+		return m.Name
+	}
+	if _, isClass := recv.AsClass(); isClass {
+		return m.Owner.QualifiedName() + "." + m.Name
+	}
+	return m.Owner.QualifiedName() + "#" + m.Name
+}
+
+// blockName names a block's frame for the debugger: "block in" the frame
+// it was written in.
+func blockName(d *Debugger, fr *Frame) string {
+	for i := len(d.stack) - 1; i >= 0; i-- {
+		if d.stack[i].fr == fr {
+			name := d.stack[i].name
+			return "block in " + strings.TrimPrefix(name, "block in ")
+		}
+	}
+	return "block"
+}
+
 // invoke runs a user method.
 func (in *Interp) invoke(m *object.Method, recv object.Value, args []object.Value, kw *object.Map, block object.Value, line int) (object.Value, error) {
 	if err := in.stopped(); err != nil {
@@ -346,7 +371,13 @@ func (in *Interp) invoke(m *object.Method, recv object.Value, args []object.Valu
 	}
 	v, err := object.Value{}, in.bindParams(&def.Params, args, kw, block, env, fr, true, m.Name, line)
 	if err == nil {
-		v, err = cd.body(in, env, fr)
+		if in.dbg != nil {
+			in.dbg.enter(methodName(m, recv), env, fr)
+			v, err = cd.body(in, env, fr)
+			in.dbg.leave()
+		} else {
+			v, err = cd.body(in, env, fr)
+		}
 	}
 	if len(env.promises) > 0 {
 		in.promises.end(env.promises)
@@ -558,6 +589,10 @@ func (in *Interp) callBlock(block object.Value, args []object.Value, kw *object.
 		return object.Value{}, err
 	}
 	body := in.code.body(p.Block, p.Block.Body)
+	if in.dbg != nil {
+		in.dbg.enter(blockName(in.dbg, p.Frame), env, fr)
+		defer in.dbg.leave()
+	}
 	v, err := body(in, env, fr)
 	for err != nil {
 		c, ok := err.(*control)

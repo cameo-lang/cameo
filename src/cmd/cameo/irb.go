@@ -102,3 +102,27 @@ func incomplete(err error) bool {
 	}
 	return false
 }
+
+// debugScript runs the script at path under the debugger, which stops before
+// its first statement and talks on stdin and stdout; see doc/debugger.md.
+// It returns the process exit status: the script's, or 0 when the user
+// quit the debugger.
+func debugScript(path string, pause bool, stdin io.Reader, stdout, stderr io.Writer) int {
+	src, err := os.ReadFile(path)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	prog, err := cameo.Load(path, string(src), stdout, stderr)
+	if err != nil {
+		var errs syntax.ErrorList
+		if errors.As(err, &errs) {
+			fmt.Fprintln(stderr, errs)
+			return 1
+		}
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	prog.Debug(stdin, stdout)
+	return runProgram(prog, pause, stderr)
+}

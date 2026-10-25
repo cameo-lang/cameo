@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/stdlib"
@@ -28,6 +29,10 @@ type code struct {
 	// program's top-level methods, nil when it made none; see
 	// RegisterCompiled.
 	compiled Compiled
+	// debug is set while a debugger is on: every statement compiled from
+	// then on reports its line to it (statement). Workers compile on
+	// their own goroutines, and require "debug" sets it on the main one.
+	debug atomic.Bool
 }
 
 // expr returns the thunk of n, compiling it on first use.
@@ -35,7 +40,7 @@ func (c *code) expr(n syntax.Node) thunk {
 	if t, ok := c.exprs.Load(n); ok {
 		return t.(thunk)
 	}
-	t := compile(n)
+	t := c.compile(n)
 	c.exprs.Store(n, t)
 	return t
 }
@@ -46,7 +51,7 @@ func (c *code) body(owner syntax.Node, body []syntax.Node) thunk {
 	if t, ok := c.bodies.Load(owner); ok {
 		return t.(thunk)
 	}
-	t := compileBody(body)
+	t := c.compileBody(body)
 	c.bodies.Store(owner, t)
 	return t
 }
@@ -59,16 +64,16 @@ type compiledDef struct {
 }
 
 // compileBody compiles a statement sequence: the last value, nil for none.
-func compileBody(body []syntax.Node) thunk {
+func (c *code) compileBody(body []syntax.Node) thunk {
 	switch len(body) {
 	case 0:
 		return func(*Interp, *Env, *Frame) (object.Value, error) { return object.Nil, nil }
 	case 1:
-		return compile(body[0])
+		return c.statement(body[0])
 	}
 	thunks := make([]thunk, len(body))
 	for i, n := range body {
-		thunks[i] = compile(n)
+		thunks[i] = c.statement(n)
 	}
 	return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 		var last object.Value = object.Nil
@@ -83,18 +88,36 @@ func compileBody(body []syntax.Node) thunk {
 	}
 }
 
+// statement compiles one statement of a body: with the debugger on, its
+// thunk tells the debugger the line it is about to run (debug.go).
+func (c *code) statement(n syntax.Node) thunk {
+	t := c.compile(n)
+	if !c.debug.Load() {
+		return t
+	}
+	line := n.Line()
+	return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
+		if in.dbg != nil {
+			if err := in.dbg.line(line, env, fr); err != nil {
+				return object.Value{}, err
+			}
+		}
+		return t(in, env, fr)
+	}
+}
+
 // compileOptional compiles a node that may be absent, reading nil for it.
-func compileOptional(n syntax.Node) thunk {
+func (c *code) compileOptional(n syntax.Node) thunk {
 	if n == nil {
 		return func(*Interp, *Env, *Frame) (object.Value, error) { return object.Nil, nil }
 	}
-	return compile(n)
+	return c.compile(n)
 }
 
 // compile turns one node into its thunk. The kinds that carry the cost of
 // a running program are specialised here; every other kind is evaluated
 // by the tree walker in evalSlow.
-func compile(n syntax.Node) thunk {
+func (c *code) compile(n syntax.Node) thunk {
 	switch n := n.(type) {
 	case *syntax.Nil:
 		return func(*Interp, *Env, *Frame) (object.Value, error) { return object.Nil, nil }
@@ -128,7 +151,7 @@ func compile(n syntax.Node) thunk {
 			return object.Nil, nil
 		}
 	case *syntax.Assign:
-		name, value := n.Name, compile(n.Value)
+		name, value := n.Name, c.compile(n.Value)
 		return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 			v, err := value(in, env, fr)
 			if err != nil {
@@ -138,7 +161,7 @@ func compile(n syntax.Node) thunk {
 			return v, nil
 		}
 	case *syntax.FieldAssign:
-		name, line, value := n.Name, n.Line(), compile(n.Value)
+		name, line, value := n.Name, n.Line(), c.compile(n.Value)
 		return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 			v, err := value(in, env, fr)
 			if err != nil {
@@ -147,7 +170,7 @@ func compile(n syntax.Node) thunk {
 			return v, in.writeField(name, v, fr, line)
 		}
 	case *syntax.Regexp:
-		return compileRegexp(n)
+		return c.compileRegexp(n)
 	case *syntax.Const:
 		name, line := n.Name, n.Line()
 		return func(in *Interp, _ *Env, fr *Frame) (object.Value, error) {
@@ -156,7 +179,7 @@ func compile(n syntax.Node) thunk {
 	case *syntax.Interp:
 		parts := make([]thunk, len(n.Parts))
 		for i, p := range n.Parts {
-			parts[i] = compile(p)
+			parts[i] = c.compile(p)
 		}
 		line := n.Line()
 		return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
@@ -187,7 +210,7 @@ func compile(n syntax.Node) thunk {
 			return object.StringOf(kind, b.String()), nil
 		}
 	case *syntax.List:
-		if elems, ok := compileArgs(n.Elems); ok {
+		if elems, ok := c.compileArgs(n.Elems); ok {
 			return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 				values, err := elems(in, env, fr)
 				if err != nil {
@@ -197,14 +220,14 @@ func compile(n syntax.Node) thunk {
 			}
 		}
 	case *syntax.Call:
-		return compileCall(n)
+		return c.compileCall(n)
 	case *syntax.Lambda:
 		block, strict := n.Block, n.Strict
 		return func(_ *Interp, env *Env, fr *Frame) (object.Value, error) {
 			return procValue(&Proc{Block: block, Env: env, Frame: fr, Strict: strict}), nil
 		}
 	case *syntax.Yield:
-		args, ok := compileArgs(n.Args)
+		args, ok := c.compileArgs(n.Args)
 		if !ok || len(n.KwArgs) > 0 {
 			break
 		}
@@ -221,7 +244,7 @@ func compile(n syntax.Node) thunk {
 			return v, withLine(err, line)
 		}
 	case *syntax.Return:
-		value, line := compileOptional(n.Value), n.Line()
+		value, line := c.compileOptional(n.Value), n.Line()
 		return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 			v, err := value(in, env, fr)
 			if err != nil {
@@ -230,7 +253,7 @@ func compile(n syntax.Node) thunk {
 			return object.Value{}, &control{kind: ctrlReturn, value: v, target: fr, line: line}
 		}
 	case *syntax.Break:
-		value, line := compileOptional(n.Value), n.Line()
+		value, line := c.compileOptional(n.Value), n.Line()
 		return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 			v, err := value(in, env, fr)
 			if err != nil {
@@ -239,7 +262,7 @@ func compile(n syntax.Node) thunk {
 			return object.Value{}, &control{kind: ctrlBreak, value: v, line: line}
 		}
 	case *syntax.Next:
-		value, line := compileOptional(n.Value), n.Line()
+		value, line := c.compileOptional(n.Value), n.Line()
 		return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 			v, err := value(in, env, fr)
 			if err != nil {
@@ -253,7 +276,7 @@ func compile(n syntax.Node) thunk {
 			return object.Value{}, &control{kind: ctrlRedo, line: line}
 		}
 	case *syntax.If:
-		cond, then, els := compile(n.Cond), compileBody(n.Then), compileBody(n.Else)
+		cond, then, els := c.compile(n.Cond), c.compileBody(n.Then), c.compileBody(n.Else)
 		return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 			c, err := cond(in, env, fr)
 			if err != nil {
@@ -265,7 +288,7 @@ func compile(n syntax.Node) thunk {
 			return els(in, env, fr)
 		}
 	case *syntax.While:
-		cond, body, test := compile(n.Cond), compileBody(n.Body), !n.DoWhile
+		cond, body, test := c.compile(n.Cond), c.compileBody(n.Body), !n.DoWhile
 		return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 			for first := true; ; first = false {
 				if err := in.stopped(); err != nil {
@@ -300,7 +323,7 @@ func compile(n syntax.Node) thunk {
 			}
 		}
 	case *syntax.And:
-		left, right := compile(n.Left), compile(n.Right)
+		left, right := c.compile(n.Left), c.compile(n.Right)
 		return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 			l, err := left(in, env, fr)
 			if err != nil || !l.Truthy() {
@@ -309,7 +332,7 @@ func compile(n syntax.Node) thunk {
 			return right(in, env, fr)
 		}
 	case *syntax.Or:
-		left, right := compile(n.Left), compile(n.Right)
+		left, right := c.compile(n.Left), c.compile(n.Right)
 		return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 			l, err := left(in, env, fr)
 			if err != nil || l.Truthy() {
@@ -318,7 +341,7 @@ func compile(n syntax.Node) thunk {
 			return right(in, env, fr)
 		}
 	case *syntax.Not:
-		value := compile(n.Value)
+		value := c.compile(n.Value)
 		return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 			v, err := value(in, env, fr)
 			if err != nil {
@@ -327,7 +350,7 @@ func compile(n syntax.Node) thunk {
 			return object.Bool(!v.Truthy()), nil
 		}
 	case *syntax.Begin:
-		return compileBegin(n)
+		return c.compileBegin(n)
 	}
 	return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 		return in.evalSlow(n, env, fr)
@@ -339,13 +362,13 @@ type argsThunk func(in *Interp, env *Env, fr *Frame) ([]object.Value, error)
 
 // compileArgs compiles a list of expressions with no splat; false when
 // there is one, which the tree walker splices.
-func compileArgs(nodes []syntax.Node) (argsThunk, bool) {
+func (c *code) compileArgs(nodes []syntax.Node) (argsThunk, bool) {
 	thunks := make([]thunk, len(nodes))
 	for i, n := range nodes {
 		if _, splat := n.(*syntax.Splat); splat {
 			return nil, false
 		}
-		thunks[i] = compile(n)
+		thunks[i] = c.compile(n)
 	}
 	switch len(thunks) {
 	case 0:
@@ -375,7 +398,7 @@ func compileArgs(nodes []syntax.Node) (argsThunk, bool) {
 
 // compileCall compiles a method call. A call with a splat, keyword
 // arguments or a &block argument is left to the tree walker.
-func compileCall(n *syntax.Call) thunk {
+func (c *code) compileCall(n *syntax.Call) thunk {
 	line, name, safe, vcall := n.Line(), n.Name, n.Safe, n.VCall
 	selfCall := n.Recv == nil
 	if selfCall && name == "block_given?" && len(n.Args) == 0 {
@@ -383,7 +406,7 @@ func compileCall(n *syntax.Call) thunk {
 			return object.Bool(!fr.Block.IsZero()), nil
 		}
 	}
-	args, simple := compileArgs(n.Args)
+	args, simple := c.compileArgs(n.Args)
 	if !simple || len(n.KwArgs) > 0 || n.BlockArg != nil {
 		return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 			return in.evalCall(n, env, fr)
@@ -391,10 +414,10 @@ func compileCall(n *syntax.Call) thunk {
 	}
 	var recv thunk
 	if !selfCall {
-		recv = compile(n.Recv)
+		recv = c.compile(n.Recv)
 	}
 	block := n.Block
-	if t := compileBinary(n); t != nil {
+	if t := c.compileBinary(n); t != nil {
 		return t
 	}
 	checkMutation := !selfCall && mayMutate(name)
@@ -441,16 +464,16 @@ func compileCall(n *syntax.Call) thunk {
 
 // compileBegin compiles begin/rescue/else/ensure. The rescue clauses'
 // classes are evaluated by the tree walker when an exception arrives.
-func compileBegin(n *syntax.Begin) thunk {
-	body, els := compileBody(n.Body), compileBody(n.Else)
+func (c *code) compileBegin(n *syntax.Begin) thunk {
+	body, els := c.compileBody(n.Body), c.compileBody(n.Else)
 	hasElse := n.Else != nil
 	clauses := make([]thunk, len(n.Rescues))
 	for i := range n.Rescues {
-		clauses[i] = compileBody(n.Rescues[i].Body)
+		clauses[i] = c.compileBody(n.Rescues[i].Body)
 	}
 	var ensure thunk
 	if n.Ensure != nil {
-		ensure = compileBody(n.Ensure)
+		ensure = c.compileBody(n.Ensure)
 	}
 	run := func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 		for {
@@ -516,7 +539,7 @@ func compileBegin(n *syntax.Begin) thunk {
 type intThunk func(in *Interp, env *Env, fr *Frame) (i int64, v object.Value, err error)
 
 // compileInt compiles n for an operator that wants an integer operand.
-func compileInt(n syntax.Node) intThunk {
+func (c *code) compileInt(n syntax.Node) intThunk {
 	switch n := n.(type) {
 	case *syntax.Int:
 		c := n.Value
@@ -535,12 +558,12 @@ func compileInt(n syntax.Node) intThunk {
 		}
 	case *syntax.Call:
 		if operatorCall(n) {
-			if t := compileIntArith(n); t != nil {
+			if t := c.compileIntArith(n); t != nil {
 				return t
 			}
 		}
 	}
-	t := compile(n)
+	t := c.compile(n)
 	return func(in *Interp, env *Env, fr *Frame) (int64, object.Value, error) {
 		v, err := t(in, env, fr)
 		if err != nil {
@@ -624,8 +647,8 @@ func operatorCall(n *syntax.Call) bool {
 // them, left first; both come back as raw integers when both are integers.
 type operands func(in *Interp, env *Env, fr *Frame) (x, y int64, xv, yv object.Value, err error)
 
-func compileOperands(n *syntax.Call) operands {
-	left, right := compileInt(n.Recv), compileInt(n.Args[0])
+func (c *code) compileOperands(n *syntax.Call) operands {
+	left, right := c.compileInt(n.Recv), c.compileInt(n.Args[0])
 	return func(in *Interp, env *Env, fr *Frame) (int64, int64, object.Value, object.Value, error) {
 		x, xv, err := left(in, env, fr)
 		if err != nil {
@@ -659,12 +682,12 @@ func dispatch(in *Interp, fr *Frame, name string, op func(a, b object.Value) obj
 
 // compileIntArith compiles an arithmetic operator call to an intThunk,
 // or nil when the name is not one.
-func compileIntArith(n *syntax.Call) intThunk {
+func (c *code) compileIntArith(n *syntax.Call) intThunk {
 	arith := intArith(n.Name)
 	if arith == nil {
 		return nil
 	}
-	ops, op, name, line := compileOperands(n), binaryOp(n.Name), n.Name, n.Line()
+	ops, op, name, line := c.compileOperands(n), binaryOp(n.Name), n.Name, n.Line()
 	return func(in *Interp, env *Env, fr *Frame) (int64, object.Value, error) {
 		x, y, xv, yv, err := ops(in, env, fr)
 		if err != nil {
@@ -684,11 +707,11 @@ func compileIntArith(n *syntax.Call) intThunk {
 // or nil when the operator has no fast path. Arithmetic keeps its
 // operands' intermediate results as raw integers; a comparison reads them
 // the same way and returns a boolean.
-func compileBinary(n *syntax.Call) thunk {
+func (c *code) compileBinary(n *syntax.Call) thunk {
 	if !operatorCall(n) {
 		return nil
 	}
-	if arith := compileIntArith(n); arith != nil {
+	if arith := c.compileIntArith(n); arith != nil {
 		return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 			i, v, err := arith(in, env, fr)
 			if err != nil || !v.IsZero() {
@@ -701,7 +724,7 @@ func compileBinary(n *syntax.Call) thunk {
 	if cmp == nil {
 		return nil
 	}
-	ops, op, name, line := compileOperands(n), binaryOp(n.Name), n.Name, n.Line()
+	ops, op, name, line := c.compileOperands(n), binaryOp(n.Name), n.Name, n.Line()
 	return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 		x, y, xv, yv, err := ops(in, env, fr)
 		if err != nil {
@@ -717,7 +740,7 @@ func compileBinary(n *syntax.Call) thunk {
 // compileRegexp compiles a regexp literal: once, on first use, when it
 // has no interpolation, and on every evaluation otherwise, where a regexp
 // interpolated embeds as its to_s, (?flags:source), as in Ruby.
-func compileRegexp(n *syntax.Regexp) thunk {
+func (c *code) compileRegexp(n *syntax.Regexp) thunk {
 	line, options := n.Line(), n.Options
 	build := func(in *Interp, source string) (object.Value, error) {
 		re, err := object.NewRegexp(source, options)
@@ -739,7 +762,7 @@ func compileRegexp(n *syntax.Regexp) thunk {
 	}
 	parts := make([]thunk, len(n.Parts))
 	for i, p := range n.Parts {
-		parts[i] = compile(p)
+		parts[i] = c.compile(p)
 	}
 	return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 		var b strings.Builder
