@@ -66,6 +66,7 @@ cameo build script.cameo out/ # compile the top-level Integer methods to Go: out
 cameo run script.cameo        # the same, built with go and run; needs Go and the cameo source cameo was built from
 cameo resume path/to/dump     # continue a script that ^C paused
 cameo inspect path/to/dump    # show where it paused and what its top level held
+cameo irb [script.cameo]      # evaluate lines typed in, at the top level of the script when one is given
 ```
 
 `^C` pauses a running script before its next top-level statement and writes
@@ -74,6 +75,11 @@ it, `cameo inspect` shows it, and `cameo --no-pause script.cameo` lets `^C`
 end the script instead. A statement that never ends is never paused: a
 second `^C` ends the script. What the dump holds, and what it leaves out,
 is in [doc/design/pause.md](doc/design/pause.md).
+
+`cameo irb` is a read-eval-print loop: each line typed in runs at the top
+level, its value is printed, and a line that is not a whole expression yet
+waits for the next. With a script given, the script runs first and the
+lines see what it defined.
 
 `cameo build` is the first step of ahead-of-time compilation; see
 [doc/design/aot.md](doc/design/aot.md).

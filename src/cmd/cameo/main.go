@@ -23,6 +23,7 @@ const usage = `usage: cameo [--no-pause] <script.cameo>  run the script; ^C paus
                                          result on a copy instead of raising; resume takes it too
        cameo inspect <dump>              show what a dump holds: where the script paused, its variables,
                                          constants and promises
+       cameo irb [script.cameo]          evaluate lines typed in, at the top level of the script when one is given
        cameo check <script.cameo>        parse and check the script, report every error
        cameo proto <script.cameo> [dir]  print the .proto files of the script's classes, or write them into dir
        cameo build <script.cameo> <dir> [package]
@@ -105,13 +106,19 @@ flags:
 		return runCompiled(args[1], os.Stdout, os.Stderr)
 	case len(args) == 2 && args[0] == "resume":
 		return resume(args[1], pause, ignoreMutations, os.Stdout, os.Stderr)
+	case (len(args) == 1 || len(args) == 2) && args[0] == "irb":
+		path := ""
+		if len(args) == 2 {
+			path = args[1]
+		}
+		return irb(path, os.Stdin, os.Stdout, os.Stderr)
 	case len(args) == 2 && args[0] == "inspect":
 		if err := inspect(args[1], os.Stdout); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return 1
 		}
 		return 0
-	case len(args) == 1 && args[0] != "check" && args[0] != "proto" && args[0] != "build" && args[0] != "run" && args[0] != "resume" && args[0] != "inspect":
+	case len(args) == 1 && args[0] != "check" && args[0] != "proto" && args[0] != "build" && args[0] != "run" && args[0] != "resume" && args[0] != "inspect" && args[0] != "irb":
 		return runScript(args[0], pause, ignoreMutations, os.Stdout, os.Stderr)
 	default:
 		fmt.Fprintln(os.Stderr, usage)
