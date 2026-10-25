@@ -228,7 +228,11 @@ func writeKey(b *strings.Builder, v Value) {
 		b.WriteString(v.Big().String())
 	case KindFloat:
 		b.WriteString("d")
-		b.WriteString(strconv.FormatFloat(v.Float(), 'g', -1, 64))
+		f := v.Float()
+		if f == 0 {
+			f = 0 // -0.0 is eql? to 0.0 and hashes alike
+		}
+		b.WriteString(strconv.FormatFloat(f, 'g', -1, 64))
 	case KindString, KindBytes, KindASCII, KindSymbol:
 		// A string of ASCII alone is the same key in every encoding, as
 		// in Ruby; one with other bytes is its encoding's.
@@ -338,6 +342,22 @@ func writeKey(b *strings.Builder, v Value) {
 		b.WriteString(e.Cls.QualifiedName())
 		b.WriteByte(':')
 		b.WriteString(e.Message)
+	case KindEnumerator:
+		if a := v.Enumerator().Arith; a != nil {
+			// An arithmetic sequence is its numbers, however it was made.
+			b.WriteString("A")
+			writeKey(b, a.Begin)
+			b.WriteByte(',')
+			writeKey(b, a.End)
+			b.WriteByte(',')
+			writeKey(b, a.Step)
+			if a.Excl {
+				b.WriteString("...")
+			}
+			return
+		}
+		b.WriteString("p")
+		b.WriteString(strconv.FormatUint(uint64(identity(v)), 16))
 	default:
 		// Procs and processes have identity, not structure.
 		b.WriteString("p")
@@ -372,6 +392,15 @@ func Equal(a, b Value) bool {
 	}
 	if a.kind != b.kind || a.Class() != b.Class() {
 		return false
+	}
+	if a.kind == KindEnumerator {
+		// Arithmetic sequences compare their numbers with ==, as Ruby's
+		// do, while their Key, which hash and eql? read, tells 1 and 1.0
+		// apart.
+		x, y := a.Enumerator().Arith, b.Enumerator().Arith
+		if x != nil && y != nil {
+			return x.Excl == y.Excl && Equal(x.Begin, y.Begin) && Equal(x.End, y.End) && Equal(x.Step, y.Step)
+		}
 	}
 	return Key(a) == Key(b)
 }

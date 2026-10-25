@@ -150,7 +150,7 @@ func installInteger() {
 		if err != nil {
 			return object.Value{}, err
 		}
-		return object.Float(math.Pow(a, b)), nil
+		return object.Float(floatPow(a, b)), nil
 	})
 	def(c, "pow", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) == 2 {
@@ -334,12 +334,31 @@ func installInteger() {
 		}
 		return self, nil
 	})
+	bits := func(name string, f func(and, mask *big.Int) bool) {
+		def(c, name, 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+			mask := args[0]
+			if mask.Kind() == object.KindFloat {
+				if _, err := floatToInteger(ctx, mask.Float()); err != nil {
+					return object.Value{}, err
+				}
+				mask = object.FloatToInteger(mask.Float())
+			}
+			if !mask.IsInteger() {
+				return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into Integer", kindName(mask))
+			}
+			m := bigOf(mask)
+			return object.Bool(f(new(big.Int).And(bigOf(self), m), m)), nil
+		})
+	}
+	bits("allbits?", func(and, mask *big.Int) bool { return and.Cmp(mask) == 0 })
+	bits("anybits?", func(and, mask *big.Int) bool { return and.Sign() != 0 })
+	bits("nobits?", func(and, mask *big.Int) bool { return and.Sign() == 0 })
 	step := func(name string, dir int64) {
 		def(c, name, 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			to := args[0]
 			if !to.IsInteger() {
-				if _, err := wantInt(ctx, to, ""); err != nil {
-					return object.Value{}, err
+				if to.Kind() != object.KindFloat {
+					return object.Value{}, compareError(ctx, self, to)
 				}
 				to = object.FloatToInteger(math.Floor(to.Float()))
 				if dir < 0 {
@@ -576,14 +595,19 @@ func installInteger() {
 		}
 		return q
 	})
-	rounding("round", func(q, m, p *big.Int) *big.Int {
-		// q*p+m with 0 <= m < p: up from half, and at half away from
-		// zero, which for a negative number is down.
-		twice := new(big.Int).Lsh(m, 1)
-		if c := twice.Cmp(p); c > 0 || c == 0 && q.Sign() >= 0 {
-			return new(big.Int).Add(q, one)
+	def(c, "round", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if len(args) > 1 {
+			return object.Value{}, argError(ctx, len(args), "0..1")
 		}
-		return q
+		mode, err := roundingMode(ctx, kw)
+		if err != nil || len(args) == 0 {
+			return self, err
+		}
+		digits, err := wantInt(ctx, args[0], "")
+		if err != nil {
+			return object.Value{}, err
+		}
+		return roundInteger(self, digits, mode), nil
 	})
 	def(c, "size", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if self.Kind() == object.KindInt {
@@ -595,11 +619,7 @@ func installInteger() {
 		if args[0].IsInteger() {
 			return object.NewList(args[0], self), nil
 		}
-		a, b, _, err := numArgs(ctx, self, args[0], "coerce")
-		if err != nil {
-			return object.Value{}, err
-		}
-		return object.NewList(object.Float(b), object.Float(a)), nil
+		return coerceFloats(ctx, self, args[0])
 	})
 	object.ObjectClass.Consts["Integer"] = object.ClassValue(c)
 	def(c.Class(), "sqrt", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -698,6 +718,27 @@ func floorDivMod(a, b *big.Int) (q, m *big.Int) {
 	return q, m
 }
 
+// roundInteger rounds an integer to a negative number of digits, a
+// multiple of a power of ten, with ties by mode: "up" away from zero,
+// "down" toward it, or "even".
+func roundInteger(v object.Value, digits int64, mode string) object.Value {
+	if digits >= 0 {
+		return v
+	}
+	p := new(big.Int).Exp(big.NewInt(10), big.NewInt(-digits), nil)
+	// q*p+m with 0 <= m < p.
+	q, m := floorDivMod(bigOf(v), p)
+	twice := new(big.Int).Lsh(m, 1)
+	c := twice.Cmp(p)
+	// q is negative exactly when v is, so at a tie q+1 is toward zero
+	// for a negative v and away from it otherwise.
+	negative := q.Sign() < 0
+	if c > 0 || c == 0 && (mode == "up" && !negative || mode == "down" && negative || mode == "even" && q.Bit(0) == 1) {
+		q.Add(q, big.NewInt(1))
+	}
+	return object.BigInt(q.Mul(q, p))
+}
+
 func floatMod(a, b float64) float64 {
 	m := math.Mod(a, b)
 	if m != 0 && ((m < 0) != (b < 0)) {
@@ -761,4 +802,20 @@ func abs64(a int64) int64 {
 		return -a
 	}
 	return a
+}
+
+// compareError is Ruby's rb_cmperr: the ArgumentError of a failed
+// comparison, which names b by its inspect when b is nil, a boolean, a
+// Symbol or a number, and by its class otherwise.
+func compareError(ctx object.Context, a, b object.Value) error {
+	name := b.Class().Name
+	switch b.Kind() {
+	case object.KindNil, object.KindBool, object.KindSymbol, object.KindInt, object.KindFloat:
+		s, err := ctx.Inspect(b)
+		if err != nil {
+			return err
+		}
+		name = s
+	}
+	return ctx.Raise(object.ArgumentError, "comparison of %s with %s failed", a.Class().Name, name)
 }
