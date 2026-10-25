@@ -70,6 +70,25 @@ func (in *Interp) Classes() []*object.Class {
 	return out
 }
 
+// HostExceptions lists the exception classes the host defined in its
+// modules (Module.Exception). They have no digest, so Classes leaves
+// them out.
+func (in *Interp) HostExceptions() []*object.Class {
+	var out []*object.Class
+	for _, name := range sortedKeys(in.consts) {
+		if !hostDefined(in.consts[name]) {
+			continue
+		}
+		mod, _ := in.consts[name].AsClass()
+		for _, inner := range sortedKeys(mod.Consts) {
+			if cls, ok := mod.Consts[inner].AsClass(); ok && !cls.IsModule && cls.IsA(object.ExceptionClass) {
+				out = append(out, cls)
+			}
+		}
+	}
+	return out
+}
+
 func sortedKeys(m map[string]object.Value) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
@@ -87,7 +106,7 @@ func init() {
 	cls := object.ClassClass
 	cls.Define("proto", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		c := self.Cls()
-		if c.Digest == "" || c.IsModule {
+		if c.Digest == "" && !c.IsA(object.ExceptionClass) || c.IsModule {
 			return object.Value{}, ctx.Raise(object.TypeError, "%s is not a class with fields", c.QualifiedName())
 		}
 		if _, err := ctx.(*Interp).proto.Message(c); err != nil {
@@ -108,6 +127,13 @@ func init() {
 		default:
 			return object.Value{}, ctx.Raise(object.TypeError, "from_proto takes bytes, not %s", typeName(args[0]))
 		}
+		if c.IsA(object.ExceptionClass) {
+			exc, err := ctx.(*Interp).Decoder().UnmarshalException(c, data)
+			if err != nil {
+				return object.Value{}, ctx.Raise(object.ArgumentError, "%s", err.Error())
+			}
+			return object.ExceptionValue(exc), nil
+		}
 		inst, err := ctx.(*Interp).proto.Unmarshal(c, data)
 		if err != nil {
 			return object.Value{}, ctx.Raise(object.ArgumentError, "%s", err.Error())
@@ -115,6 +141,13 @@ func init() {
 		return object.InstanceValue(inst), nil
 	})
 	object.ObjectClass.Define("to_proto", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if exc, ok := self.AsException(); ok {
+			data, err := ctx.(*Interp).proto.MarshalException(exc)
+			if err != nil {
+				return object.Value{}, ctx.Raise(object.CameoError, "%s", err.Error())
+			}
+			return object.Bytes(data), nil
+		}
 		inst, ok := self.AsInstance()
 		if !ok || inst.Cls.Digest == "" || inst.Cls == ctx.(*Interp).mainClass {
 			return object.Value{}, ctx.Raise(object.TypeError, "%s is not an instance of a class with fields", typeName(self))

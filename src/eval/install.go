@@ -13,7 +13,13 @@ import (
 // package's Proc.
 func installStdlib() {
 	stdlib.Install()
+	installRaise()
 	installCameo()
+	newException := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return ctx.(*Interp).newException(self.Cls(), args, kw, block)
+	}
+	object.ExceptionClass.DefineSingleton("new", -1, newException)
+	object.ExceptionClass.DefineSingleton("exception", -1, newException)
 	procClass := object.ProcClass
 	call := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return ctx.(*Interp).callBlock(self, args, kw, block)
@@ -177,15 +183,8 @@ func (in *Interp) newInstance(cls *object.Class, args []object.Value, kw *object
 	}
 	if kw != nil {
 		for i, k := range kw.Keys() {
-			var name string
-			switch k.Kind() {
-			case object.KindSymbol:
-				k := k.Str()
-				name = string(k)
-			case object.KindString, object.KindBytes, object.KindASCII:
-				k := k.Str()
-				name = string(k)
-			default:
+			name, ok := k.AsFieldName()
+			if !ok {
 				return object.Value{}, in.raise(object.ArgumentError, 0, "%s.new: fields are named by symbols", cls.QualifiedName())
 			}
 			idx, ok := cls.FieldIndex[name]

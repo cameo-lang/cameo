@@ -149,6 +149,50 @@ func TestResumedRandomNumbersContinue(t *testing.T) {
 	}
 }
 
+// TestResumedFailureKeepsItsFields proves the exception a settled promise
+// failed with comes back from a dump with its fields and its cause, and
+// that with copies it.
+func TestResumedFailureKeepsItsFields(t *testing.T) {
+	const src = `include Cameo
+class HTTPError < StandardError
+  int :status
+end
+class Fetcher
+  def get
+    raise "inner"
+  rescue
+    raise HTTPError.new(status: 503)
+  end
+end
+failed = async Fetcher.new, :get
+Test.pause
+begin
+  await failed
+rescue HTTPError => e
+  p e.status, e.with(status: 1).status, e.cause
+end
+`
+	prog, _ := pausing(t, src)
+	if err := prog.Run(); !errors.Is(err, ErrPaused) {
+		t.Fatalf("Run returned %v, want ErrPaused", err)
+	}
+	dump, err := prog.Dump()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var resumed bytes.Buffer
+	cont, err := Resume(dump.Data, &resumed, &resumed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := cont.Run(); err != nil {
+		t.Fatal(err)
+	}
+	if got, want := resumed.String(), "503\n1\n#<RuntimeError: inner>\n"; got != want {
+		t.Fatalf("output after the resume %q, want %q", got, want)
+	}
+}
+
 // TestPauseAfterTheLastStatementEndsTheRun proves a pause asked for
 // during the last statement does not pause: there is nothing left to
 // continue, and Run ends as it would have.

@@ -200,7 +200,9 @@ func raise(ctx object.Context, args []object.Value) error {
 		v := args[0].Exception()
 		if len(args) > 1 {
 			if msg, err := wantString(ctx, args[1]); err == nil {
-				return &object.Exception{Cls: v.Cls, Message: msg, Attrs: v.Attrs}
+				out := v.Copy()
+				out.Message, out.Line = msg, 0
+				return out
 			}
 		}
 		return v
@@ -208,6 +210,17 @@ func raise(ctx object.Context, args []object.Value) error {
 		v := args[0].Cls()
 		if !v.IsA(object.ExceptionClass) {
 			return ctx.Raise(object.TypeError, "exception class/object expected")
+		}
+		if !plainException(v) {
+			out, err := ctx.CallWith(args[0], "exception", args[1:min(len(args), 2)], nil, object.Value{})
+			if err != nil {
+				return err
+			}
+			exc, ok := out.AsException()
+			if !ok {
+				return ctx.Raise(object.TypeError, "exception object expected")
+			}
+			return exc
 		}
 		msg := v.QualifiedName()
 		if len(args) > 1 {
@@ -220,6 +233,22 @@ func raise(ctx object.Context, args []object.Value) error {
 		return &object.Exception{Cls: v, Message: msg}
 	}
 	return ctx.Raise(object.TypeError, "exception class/object expected")
+}
+
+// plainException reports whether an exception of cls is made here rather
+// than by cls.exception: its class declares no fields and has Exception's
+// own initialize, exception and new. It reads the classes' own methods rather than looking
+// initialize up, which costs a raise in a loop a tenth of its time.
+func plainException(cls *object.Class) bool {
+	if len(cls.Fields) > 0 {
+		return false
+	}
+	for c := cls; c != nil && c != object.ExceptionClass; c = c.Super {
+		if c.Methods["initialize"] != nil || len(c.Includes) > 0 || c.SingletonMethods["exception"] != nil || c.SingletonMethods["new"] != nil {
+			return false
+		}
+	}
+	return true
 }
 
 // systemExit makes the SystemExit for exit and abort.

@@ -48,6 +48,9 @@ func (in *Interp) evalFieldDecl(n *syntax.FieldDecl, env *Env, fr *Frame) (objec
 				return object.Value{}, in.raise(object.CameoError, n.Line(), "field %s is reserved in %s", name, cls.QualifiedName())
 			}
 		}
+		if protogen.ExceptionPart(cls, name) {
+			return object.Value{}, in.raise(object.CameoError, n.Line(), "field %s: an exception of %s carries its %s already", name, cls.QualifiedName(), name)
+		}
 		if m := cls.Lookup(name); m != nil && m.Owner == cls {
 			return object.Value{}, in.raise(object.CameoError, n.Line(), "field %s: %s already defines a method %s", name, cls.QualifiedName(), name)
 		}
@@ -95,8 +98,12 @@ func (in *Interp) declaredBefore(cls *object.Class, i int, typ *object.FieldType
 // reader makes the native method that reads a field.
 func reader(name string) object.NativeFn {
 	return func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		inst := self.Instance()
-		v, _ := inst.Field(name)
+		var v object.Value
+		if exc, ok := self.AsException(); ok {
+			v, _ = exc.Field(name)
+		} else {
+			v, _ = self.Instance().Field(name)
+		}
 		if v.IsZero() {
 			return object.Nil, nil
 		}
@@ -118,6 +125,9 @@ func (in *Interp) fieldNumber(cls *object.Class, name string, n *syntax.FieldDec
 	}
 	if n.Number == 0 {
 		return protogen.FieldNumber(name, taken), nil
+	}
+	if exceptionNumber(cls, n.Number) {
+		return 0, in.raise(object.CameoError, n.Line(), "field %s: numbers 1 to %d are the exception's own", name, protogen.ExceptionNumbers)
 	}
 	for _, f := range cls.Fields {
 		if f.Number == n.Number {
@@ -466,6 +476,12 @@ func (in *Interp) evalReserved(n *syntax.Reserved, fr *Frame) (object.Value, err
 	if cls == nil || cls.IsModule || !isClassValue(fr.Self, cls) {
 		return object.Value{}, in.raise(object.CameoError, n.Line(), "reserved belongs to a class body")
 	}
+	if exceptionNumber(cls, n.Number) {
+		return object.Value{}, in.raise(object.CameoError, n.Line(), "reserved %d: numbers 1 to %d are the exception's own", n.Number, protogen.ExceptionNumbers)
+	}
+	if n.Name != "" && protogen.ExceptionPart(cls, n.Name) {
+		return object.Value{}, in.raise(object.CameoError, n.Line(), "reserved :%s: an exception of %s carries its %s", n.Name, cls.QualifiedName(), n.Name)
+	}
 	for _, f := range cls.Fields {
 		if f.Number == n.Number {
 			return object.Value{}, in.raise(object.CameoError, n.Line(), "reserved %d: field %s already holds that number", n.Number, f.Name)
@@ -572,6 +588,8 @@ func (in *Interp) with(target, key, value object.Value) (object.Value, error) {
 		fields := append([]object.Value{}, t.Fields...)
 		fields[idx] = checked
 		return object.InstanceValue(&object.Instance{Cls: t.Cls, Fields: fields}), nil
+	case object.KindException:
+		return in.withException(target.Exception(), key, value)
 	case object.KindMap:
 		t := target.Map()
 		return object.MapValue(t.Put(key, value)), nil
@@ -599,6 +617,39 @@ func (in *Interp) with(target, key, value object.Value) (object.Value, error) {
 	return object.Value{}, in.raise(object.TypeError, 0, "cannot assign into %s", typeName(target))
 }
 
+// withException returns a copy of an exception with key set to value: its
+// message, or a field its class declares. The copy keeps the line and the
+// cause.
+func (in *Interp) withException(t *object.Exception, key, value object.Value) (object.Value, error) {
+	name, ok := key.AsSymbol()
+	if !ok {
+		if name, ok = key.AsString(); !ok {
+			return object.Value{}, in.raise(object.TypeError, 0, "a field of %s is named by a symbol, not %s", t.Cls.QualifiedName(), typeName(key))
+		}
+	}
+	out := t.Copy()
+	if name == "message" {
+		msg, ok := value.AsString()
+		if !ok {
+			return object.Value{}, in.raise(object.TypeError, 0, "the message of %s is a String, not %s", t.Cls.QualifiedName(), typeName(value))
+		}
+		out.Message = msg
+		return object.ExceptionValue(out), nil
+	}
+	idx, ok := t.Cls.FieldIndex[name]
+	if !ok {
+		return object.Value{}, in.raise(object.NameError, 0, "%s has no field %s", t.Cls.QualifiedName(), name)
+	}
+	checked, err := in.checkField(t.Cls.Fields[idx], value, 0)
+	if err != nil {
+		return object.Value{}, err
+	}
+	out.Fields = defaultFields(t.Cls)
+	copy(out.Fields, t.Fields)
+	out.Fields[idx] = checked
+	return object.ExceptionValue(out), nil
+}
+
 // withChanges is `value.with(key: new, …)` or `value.with { |v| { key:
 // new, … } }`: a copy with every entry of the keywords, then of the map the
 // block returns, applied.
@@ -610,9 +661,9 @@ func (in *Interp) withChanges(self object.Value, args []object.Value, kw *object
 		return object.Value{}, in.raise(object.ArgumentError, 0, "with needs the changes, as keywords or from its block")
 	}
 	switch self.Kind() {
-	case object.KindInstance, object.KindMap, object.KindList:
+	case object.KindInstance, object.KindException, object.KindMap, object.KindList:
 	default:
-		return object.Value{}, in.raise(object.TypeError, 0, "with copies an instance, a map or a list, not %s", typeName(self))
+		return object.Value{}, in.raise(object.TypeError, 0, "with copies an instance, an exception, a map or a list, not %s", typeName(self))
 	}
 	out := self
 	var err error
@@ -655,6 +706,12 @@ func (in *Interp) inheritFields(cls, super *object.Class) error {
 	cls.ReservedNumbers = append(cls.ReservedNumbers, super.ReservedNumbers...)
 	cls.ReservedNames = append(cls.ReservedNames, super.ReservedNames...)
 	return nil
+}
+
+// exceptionNumber reports whether number is one an exception class keeps
+// for the parts of its message besides its fields.
+func exceptionNumber(cls *object.Class, number int64) bool {
+	return cls.IsA(object.ExceptionClass) && number <= protogen.ExceptionNumbers
 }
 
 // isClassValue reports whether v is the class cls itself.

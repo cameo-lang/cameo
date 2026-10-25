@@ -102,6 +102,11 @@ func (in *Interp) settledPromises(enc *protogen.Encoder) ([]protogen.PromiseStat
 		s := protogen.PromiseState{ID: id, Method: p.method, Awaited: awaited}
 		if exc != nil {
 			s.Failure = &protogen.Failure{Class: exc.Cls.QualifiedName(), Message: exc.Message, Line: exc.Line}
+			// The whole exception, with its fields and cause, when the
+			// envelope carries it.
+			if data, err := enc.Encode(object.ExceptionValue(exc)); err == nil {
+				s.Value = data
+			}
 		} else if s.Value, err = enc.Encode(result); err != nil {
 			return nil, fmt.Errorf("promise %d (%s): %w", id, p.method, err)
 		}
@@ -223,7 +228,16 @@ func (in *Interp) restorePromise(dec *protogen.Decoder, s protogen.PromiseState)
 		if cls == nil {
 			return fmt.Errorf("no class %s", s.Failure.Class)
 		}
-		exc = &object.Exception{Cls: cls, Message: s.Failure.Message, Line: s.Failure.Line}
+		exc = &object.Exception{Cls: cls, Message: s.Failure.Message, Line: s.Failure.Line, Fields: defaultFields(cls)}
+		if len(s.Value) > 0 {
+			v, err := dec.Decode(s.Value)
+			if err != nil {
+				return err
+			}
+			if e, ok := v.AsException(); ok {
+				exc = e
+			}
+		}
 	} else {
 		var err error
 		if result, err = dec.Decode(s.Value); err != nil {

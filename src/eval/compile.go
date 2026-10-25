@@ -472,14 +472,25 @@ func compileBegin(n *syntax.Begin) thunk {
 			if i < 0 {
 				return object.Value{}, exc
 			}
+			if in.rescuing != nil {
+				// Raised inside another rescue clause and rescued before it
+				// ends: it takes its cause where it is caught.
+				exc = caused(exc, in.rescuing).(*object.Exception)
+			}
 			if v := n.Rescues[i].Var; v != "" {
 				env.Set(v, object.ExceptionValue(exc))
 			}
+			outer := in.rescuing
+			in.rescuing = exc
 			result, err = clauses[i](in, env, fr)
+			in.rescuing = outer
+			if err == nil {
+				return result, nil
+			}
 			if c, ok := err.(*control); ok && c.kind == ctrlRetry {
 				continue
 			}
-			return result, err
+			return result, caused(err, exc)
 		}
 	}
 	if ensure == nil {

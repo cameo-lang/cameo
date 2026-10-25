@@ -57,7 +57,7 @@ type Binding struct {
 }
 
 // PromiseState is a settled promise: its result in Value, or the exception
-// it failed with in Failure. Awaited is set when the script awaited it
+// it failed with in Failure, and in Value too when the envelope carries it. Awaited is set when the script awaited it
 // before the pause.
 type PromiseState struct {
 	ID      int64

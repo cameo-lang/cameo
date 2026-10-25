@@ -136,8 +136,10 @@ type Frame struct {
 	// Reopened is the class DefTarget is a copy of while a body reopens
 	// it, whose fields the body may declare again with the same type.
 	Reopened *object.Class
-	// Building is the instance initialize is filling, while it runs.
-	Building *object.Instance
+	// Building is the instance initialize is filling, while it runs, and
+	// BuildingExc the exception.
+	Building    *object.Instance
+	BuildingExc *object.Exception
 	// Lambda marks the frame of a lambda call, where return stops.
 	Lambda bool
 }

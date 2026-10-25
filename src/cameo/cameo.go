@@ -11,7 +11,9 @@ import (
 	"math/big"
 	"os"
 	"reflect"
+	"slices"
 	"sort"
+	"sync"
 	"time"
 
 	"google.golang.org/protobuf/proto"
@@ -62,10 +64,28 @@ func ExitStatus(err error) (int, bool) {
 type RunError struct {
 	Err     error
 	Message string
+	proto   *protogen.Registry
 }
 
 func (e *RunError) Error() string { return e.Message }
 func (e *RunError) Unwrap() error { return e.Err }
+
+// Exception returns the exception that ended the script as the protobuf
+// message its class is: its message, line and cause, what an exception of
+// Ruby's core carries (a KeyError's key), and the fields the class
+// declares, read by name with protoreflect. It returns nil when the script
+// ended with an error that is not an exception.
+func (e *RunError) Exception() proto.Message {
+	var exc *object.Exception
+	if e.proto == nil || !errors.As(e.Err, &exc) {
+		return nil
+	}
+	msg, err := e.proto.ExceptionMessage(exc)
+	if err != nil {
+		return nil
+	}
+	return msg
+}
 
 // Program is a loaded script: parsed and checked, with an interpreter that
 // runs it and keeps its classes afterwards.
@@ -104,7 +124,7 @@ func (p *Program) Run() error {
 	if err == nil || errors.Is(err, ErrPaused) {
 		return err
 	}
-	return &RunError{Err: err, Message: p.in.FormatError(err)}
+	return &RunError{Err: err, Message: p.in.FormatError(err), proto: p.in.Proto()}
 }
 
 // LastValue returns the script's last top-level expression as p shows it,
@@ -175,7 +195,7 @@ func (p *Program) Call(recv any, method string, args ...any) (any, error) {
 		out, err = p.in.Call(r, method, values...)
 	}
 	if err != nil {
-		return nil, &RunError{Err: err, Message: p.in.FormatError(err)}
+		return nil, &RunError{Err: err, Message: p.in.FormatError(err), proto: p.in.Proto()}
 	}
 	return p.ToGo(out)
 }
@@ -248,14 +268,16 @@ func (p *Program) Decode(data []byte) (any, error) {
 // *big.Int among them),
 // floats, string, []byte, time.Time, []any, map[string]any or
 // map[any]any, an object.Value as it is, or a proto.Message whose descriptor full name is a
-// loaded class's.
+// loaded class's or an exception class of Ruby's, which becomes an
+// instance or an exception.
 func (p *Program) ToValue(v any) (object.Value, error) { return conv{p.in}.toValue(v) }
 
 // ToGo converts a cameo value to a Go value: nil, bool, int64 (a *big.Int
 // beyond 64 bits), float64,
 // string, []byte, time.Time, []any, map[any]any (with a Symbol key as a
 // string), a proto.Message for an instance (a value of the registered Go
-// type for a native class, a dynamic message otherwise, either a copy),
+// type for a native class, a dynamic message otherwise, either a copy) or
+// an exception (a dynamic message, as RunError.Exception gives),
 // and the object.Value itself for everything else (symbols, ranges,
 // classes). A Hash with a key that is not comparable in Go, or with two
 // keys that are one in Go, such as :a and "a", is an error.
@@ -361,13 +383,20 @@ func (c conv) toValue(v any) (object.Value, error) {
 			return object.InstanceValue(inst), nil
 		}
 		full := string(v.ProtoReflect().Descriptor().FullName())
-		for _, cls := range c.in.Classes() {
+		for _, cls := range slices.Concat(c.in.Classes(), c.in.HostExceptions(), builtinExceptions()) {
 			if protogen.Package(cls)+"."+cls.Name != full {
 				continue
 			}
 			data, err := proto.Marshal(v)
 			if err != nil {
 				return object.Value{}, err
+			}
+			if cls.IsA(object.ExceptionClass) {
+				exc, err := c.in.Decoder().UnmarshalException(cls, data)
+				if err != nil {
+					return object.Value{}, err
+				}
+				return object.ExceptionValue(exc), nil
 			}
 			inst, err := c.in.Proto().Unmarshal(cls, data)
 			if err != nil {
@@ -451,6 +480,8 @@ func (c conv) toGo(v object.Value) (any, error) {
 		return out, nil
 	case object.KindTime:
 		return v.Time(), nil
+	case object.KindException:
+		return c.in.Proto().ExceptionMessage(v.Exception())
 	case object.KindInstance:
 		v := v.Instance()
 		if v.Cls.Digest == "" {
@@ -463,3 +494,32 @@ func (c conv) toGo(v object.Value) (any, error) {
 	}
 	return v, nil
 }
+
+// builtinExceptions lists the exception classes of Ruby's core that cameo
+// has, those inside a builtin module (JSON::ParserError) among them. They
+// are fixed once the standard library is installed, which Load does
+// before anything converts a value.
+var builtinExceptions = sync.OnceValue(func() []*object.Class {
+	registryMu.Lock()
+	defer registryMu.Unlock()
+	var out []*object.Class
+	for _, v := range object.ObjectClass.Consts {
+		cls, ok := v.AsClass()
+		if !ok || cls.Digest != "" {
+			continue
+		}
+		if cls.IsA(object.ExceptionClass) && !cls.IsModule {
+			out = append(out, cls)
+		}
+		if cls == object.ObjectClass {
+			// Object's constants are the top level this loop walks.
+			continue
+		}
+		for _, inner := range cls.Consts {
+			if c, ok := inner.AsClass(); ok && !c.IsModule && c.Digest == "" && c.IsA(object.ExceptionClass) {
+				out = append(out, c)
+			}
+		}
+	}
+	return out
+})

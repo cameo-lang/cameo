@@ -126,3 +126,34 @@ func TestProtoCommand(t *testing.T) {
 		t.Fatalf("cameo/value.proto not written: %v", err)
 	}
 }
+
+// TestProtoCommandWritesAnExceptionClass proves `cameo proto` writes a
+// script's exception class as a message of its parts and its fields.
+func TestProtoCommandWritesAnExceptionClass(t *testing.T) {
+	script := filepath.Join(t.TempDir(), "errors.cameo")
+	src := "class HTTPError < StandardError\n  int :status, number: 16\nend\n"
+	if err := os.WriteFile(script, []byte(src), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var out bytes.Buffer
+	if err := protoFiles(script, "", &out); err != nil {
+		t.Fatal(err)
+	}
+	want := `// cameo.proto
+syntax = "proto3";
+
+package cameo;
+
+import "cameo/value.proto";
+
+message HTTPError {
+  optional string message = 1;
+  optional int64 line = 2;
+  optional cameo.Value cause = 3;
+  optional int64 status = 16;
+}
+`
+	if !strings.HasPrefix(out.String(), want) {
+		t.Fatalf("cameo proto wrote:\n%s\nwant it to start with:\n%s", out.String(), want)
+	}
+}
