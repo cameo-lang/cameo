@@ -1,6 +1,6 @@
 ---
 name: merge-stack
-description: Merge a stack of pull requests into main as one merge pull request - squash each pull request to one commit, restack them on a fresh origin/main, run CI on the top only and fix a failure in the pull request that introduced it, review the whole stack and fix findings where they belong, then cherry-pick every commit onto an mq/<topic> branch, fast-forward main to it once CI is green, and close the source pull requests. Use when asked to merge a stack, or to land the work in flight.
+description: Merge a stack of pull requests into main as one merge pull request - squash each pull request to one commit, restack them on a fresh origin/main, run CI on the top only and fix a failure in the pull request that introduced it, review the whole stack and fix findings where they belong, then cherry-pick every commit onto an mq/<topic> branch, fast-forward main to it once CI is green, or merge it in GitHub when main takes no pushes, and close the source pull requests. Use when asked to merge a stack, or to land the work in flight.
 ---
 
 # Merge a stack
@@ -9,7 +9,8 @@ Work goes out as a stack of pull requests, each based on the branch of the one
 below it ([agents/CLAUDE.md](../../../agents/CLAUDE.md)). Merging them one by one
 squash-merges each, and every merge forces a restack of what is above it. This
 skill lands the whole stack at once: one commit per pull request, in one merge
-pull request that `main` is fast-forwarded to, so `main` keeps one commit per
+pull request that `main` is fast-forwarded to, or that GitHub merges with a
+merge commit when `main` takes no pushes, so `main` keeps one commit per
 source pull request.
 
 Asking for this skill is the authorization to force-push the stack's branches,
@@ -239,26 +240,42 @@ pull request against `main`:
   - #136 syntax: accepts bang methods a script defines, as plain calls
   ```
 
-## 6. Wait for CI and fast-forward main
+## 6. Wait for CI and merge
 
 ```sh
 gh pr checks <merge pr> --watch
+```
+
+Then choose how to merge from what `main` allows:
+
+```sh
+gh api repos/<owner>/<repo>/branches/main --jq .protected
+gh api repos/<owner>/<repo>/rules/branches/main --jq 'map(.type)'
+```
+
+**Pushing to main is allowed** (`false`, and no rule such as `pull_request`
+or `non_fast_forward` that blocks a push): fast-forward `main`.
+
+```sh
 git fetch origin
 git push origin mq/<topic>:main
 ```
 
-The push fast-forwards `main` to the merge pull request's head: `main` gets the
-stack's commits as they are, with the SHAs CI tested, and no merge commit.
-GitHub marks the pull request merged when its head reaches `main`. A push that
-is not a fast-forward is refused, without `--force`, when `main` moved since
-step 5. Then rebase `mq/<topic>` onto `origin/main`, push it, wait for its CI
-again, and push to `main`.
+`main` gets the stack's commits as they are, with the SHAs CI tested, and no
+merge commit. GitHub marks the pull request merged when its head reaches
+`main`. The push needs no `--force`, and is refused when `main` moved since
+step 5: rebase `mq/<topic>` onto `origin/main`, push it, wait for its CI again,
+and push to `main`.
 
-Never `--squash`: it leaves one commit for the whole stack. When `main` is
-protected against pushes, merge in GitHub instead:
-`gh pr merge <merge pr> --merge --subject "Merging stack: <short summary> (#<merge pr>)"`
-keeps the commits under a merge commit; `--rebase` keeps them in a line but
-rewrites them, so `main` holds SHAs CI never ran on.
+**Pushing to main is not allowed:** merge the pull request in GitHub.
+
+```sh
+gh pr merge <merge pr> --merge --subject "Merging stack: <short summary> (#<merge pr>)"
+```
+
+`--merge` keeps the commits under a merge commit. Never `--squash`, which
+leaves one commit for the whole stack, and not `--rebase`, which rewrites the
+commits, so `main` holds SHAs CI never ran on.
 
 Check the result: `git log --oneline origin/main` shows one commit per pull
 request on top of the old `main`, and `gh pr view <merge pr> --json state` is
