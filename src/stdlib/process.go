@@ -42,10 +42,14 @@ func installProcess() {
 			return object.Value{}, ctx.Raise(object.ArgumentError, "Invalid argument - clock_gettime(%d)", id)
 		}
 		unit := "float_second"
-		if len(args) == 2 {
+		if len(args) == 2 && !args[1].IsNil() {
 			s, ok := args[1].AsSymbol()
 			if !ok {
-				return object.Value{}, ctx.Raise(object.ArgumentError, "unexpected unit: %s", kindName(args[1]))
+				s, err := ctx.ToS(args[1])
+				if err != nil {
+					return object.Value{}, err
+				}
+				return object.Value{}, ctx.Raise(object.ArgumentError, "unexpected unit: %s", s)
 			}
 			unit = s
 		}

@@ -392,7 +392,13 @@ var (
 	PathnameClass   = NewClass("Pathname", ObjectClass)
 	EnumeratorClass = NewClass("Enumerator", ObjectClass)
 	LazyClass       = NewClass("Lazy", EnumeratorClass)
-	ExceptionClass  = NewClass("Exception", ObjectClass)
+	// ArithSeqClass is Enumerator::ArithmeticSequence.
+	ArithSeqClass = NewClass("ArithmeticSequence", EnumeratorClass)
+	// ChainClass is Enumerator::Chain and ProductClass
+	// Enumerator::Product.
+	ChainClass     = NewClass("Chain", EnumeratorClass)
+	ProductClass   = NewClass("Product", EnumeratorClass)
+	ExceptionClass = NewClass("Exception", ObjectClass)
 	// Kernel is the module Object includes, as in Ruby. The methods every
 	// value has are Object's own, so Kernel is there for `Kernel.format`,
 	// `is_a?(Kernel)` and the ancestors.
@@ -480,6 +486,10 @@ func init() {
 		EncodingClass.Consts[c.Name] = ClassValue(c)
 	}
 	EnumeratorClass.Consts["Lazy"] = ClassValue(LazyClass)
+	for _, c := range []*Class{ArithSeqClass, ChainClass, ProductClass} {
+		c.Lexical = EnumeratorClass
+		EnumeratorClass.Consts[c.Name] = ClassValue(c)
+	}
 	CameoRunnerModule.Lexical = CameoModule
 	CameoRunnerModule.Include(CameoModule)
 	CameoModule.Consts["Runner"] = ClassValue(CameoRunnerModule)

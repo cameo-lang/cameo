@@ -17,3 +17,9 @@ p p3.relative_path_from('foo/bar/qux/quax'), Pathname("a/b").parent, Pathname("a
 p Pathname("a") / "b" / "..", Pathname("/a/b") + "../../..", Pathname("a/b/../c").cleanpath, Pathname("../a/..").cleanpath, Pathname("a").to_s, Pathname("x/y.rb").basename, Pathname("x/y.rb").dirname, Pathname("x/y.rb").extname
 p Pathname("a") == Pathname("a"), Pathname("a/b").each_filename.to_a, [Pathname("b"), Pathname("a/b"), Pathname("a")].sort, Pathname("a").parent, Pathname("/").parent, Pathname(".").parent
 p "#{Pathname("q")}", File.basename(Pathname("a/b"))
+p File.join("usr/", "//bin"), File.join("usr//", "/bin"), File.join("", ""), File.join([], []), File.join("a", []), File::PATH_SEPARATOR, File::ALT_SEPARATOR
+begin
+  File.join("\x00x", "m")
+rescue ArgumentError => e
+  puts e.message
+end

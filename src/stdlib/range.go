@@ -12,10 +12,10 @@ func installRange() {
 	c := object.RangeClass
 	r := func(self object.Value) *object.Range { return self.Range() }
 	def(c, "first", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if object.OrNil(r(self).Lo).IsNil() {
+			return object.Value{}, ctx.Raise(object.RangeError, "cannot get the first element of beginless range")
+		}
 		if len(args) == 0 {
-			if r(self).Lo.IsZero() {
-				return object.Value{}, ctx.Raise(object.RangeError, "cannot get the first element of beginless range")
-			}
 			return r(self).Lo, nil
 		}
 		// An endless range has a first n all the same.
@@ -49,6 +49,22 @@ func installRange() {
 				}
 				return object.NewList(out...), nil
 			}
+		}
+		// first(n) produces no more elements than it returns.
+		if len(args) == 1 {
+			n, err := wantInt(ctx, args[0], "")
+			if err != nil {
+				return object.Value{}, err
+			}
+			if n < 0 {
+				return object.Value{}, ctx.Raise(object.ArgumentError, "negative array size (or size too big)")
+			}
+			e, err := eachOf(ctx, self)
+			if err != nil {
+				return object.Value{}, err
+			}
+			out, err := firstOf(ctx, e, n)
+			return object.NewList(out...), err
 		}
 		return object.Enumerable.Methods["first"].Native(ctx, self, args, kw, block)
 	})
@@ -126,6 +142,20 @@ func installRange() {
 			return object.Value{}, ctx.Raise(object.TypeError, "can't iterate from %s", kindName(object.OrNil(r(self).Lo)))
 		}
 		lo, hi, ok := intEnds(r(self))
+		if f, isFloat := r(self).Hi.AsFloat(); isFloat && !ok {
+			// An Integer start to a Float end counts the integers up to it.
+			switch {
+			case math.IsInf(f, 1):
+				return object.Float(math.Inf(1)), nil
+			case math.IsNaN(f) || math.IsInf(f, -1):
+				return object.Int(0), nil
+			}
+			last := math.Floor(f)
+			if r(self).Exclusive && last == f {
+				last--
+			}
+			lo, hi, ok = r(self).Lo, object.FloatToInteger(last), true
+		}
 		if !ok {
 			if r(self).Hi.IsZero() {
 				return object.Float(math.Inf(1)), nil
@@ -177,7 +207,15 @@ func installRange() {
 	})
 	def(c, "each", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if block.IsZero() {
-			return self, nil
+			return sizedEnumerator(self, "each", nil, func(ctx object.Context, yield func(object.Value) error) error {
+				e, err := eachOf(ctx, self)
+				if err != nil {
+					return err
+				}
+				return e(ctx, yield)
+			}, func(ctx object.Context) (object.Value, error) {
+				return c.Methods["size"].Native(ctx, self, nil, nil, object.Value{})
+			}), nil
 		}
 		if seq, sym, _, ok := rangeStrings(r(self)); ok {
 			for s := range seq {
@@ -215,14 +253,19 @@ func installRange() {
 		}
 		return self, nil
 	})
-	// reverse_each walks a range of integers down from its end, without
-	// listing it first; any other range reverses its list.
+	// reverse_each walks a range down from an Integer end, without
+	// listing it first, and endlessly for a beginless one; any other
+	// range reverses its list. Without a block it is an enumerator.
 	def(c, "reverse_each", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		lo, hi, ok := intEnds(r(self))
-		if !ok || block.IsZero() {
-			return object.Enumerable.Methods["reverse_each"].Native(ctx, self, args, kw, block)
+		walk := func(ctx object.Context, yield func(object.Value) error) error {
+			return rangeReverseEach(ctx, r(self), yield)
 		}
-		err := eachInteger(hi, lo, -1, func(v object.Value) error {
+		if block.IsZero() {
+			return sizedEnumerator(self, "reverse_each", nil, walk, func(ctx object.Context) (object.Value, error) {
+				return rangeReverseSize(ctx, r(self))
+			}), nil
+		}
+		err := walk(ctx, func(v object.Value) error {
 			_, err := ctx.Yield(block, v)
 			return err
 		})
@@ -231,7 +274,10 @@ func installRange() {
 		}
 		return self, nil
 	})
-	def(c, "step", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	stepElems := func(ctx object.Context, self object.Value, args []object.Value, block object.Value) (object.Value, error) {
+		if len(args) == 0 {
+			args = []object.Value{object.Int(1)}
+		}
 		by, err := wantInt(ctx, args[0], "")
 		if err != nil {
 			return object.Value{}, err
@@ -248,8 +294,44 @@ func installRange() {
 			out = append(out, elems[i])
 		}
 		return yieldEach(ctx, out, block)
-	})
-	def(c, "%", 1, c.Methods["step"].Native)
+	}
+	// step of a numeric range is an arithmetic sequence; of any other
+	// range it takes every n-th element.
+	rangeStep := func(meth string) fn {
+		return func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+			if len(args) > 1 {
+				return object.Value{}, argError(ctx, len(args), "0..1")
+			}
+			lo, hi := object.OrNil(r(self).Lo), object.OrNil(r(self).Hi)
+			_, loNum := lo.AsNumber()
+			_, hiNum := hi.AsNumber()
+			by := object.Int(1)
+			if len(args) == 1 {
+				by = args[0]
+			}
+			_, byNum := by.AsNumber()
+			if !(loNum || hiNum) || !(loNum || lo.IsNil()) || !(hiNum || hi.IsNil()) || !byNum {
+				return stepElems(ctx, self, args, block)
+			}
+			if f, _ := by.AsNumber(); f == 0 {
+				return object.Value{}, ctx.Raise(object.ArgumentError, "step can't be 0")
+			}
+			s := &object.ArithSeq{Begin: lo, End: hi, Step: by, Excl: r(self).Exclusive}
+			if block.IsZero() {
+				return arithSeq(self, meth, args, nil, s), nil
+			}
+			err := arithEach(ctx, s, func(v object.Value) error {
+				_, err := ctx.Yield(block, v)
+				return err
+			})
+			if err != nil {
+				return object.Value{}, err
+			}
+			return self, nil
+		}
+	}
+	def(c, "step", -1, rangeStep("step"))
+	def(c, "%", -1, rangeStep("%"))
 	def(c, "bsearch", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if err := needBlock(ctx, block, "bsearch"); err != nil {
 			return object.Value{}, err
@@ -278,16 +360,22 @@ func installRange() {
 		}
 		return object.Enumerable.Methods["sum"].Native(ctx, self, args, kw, block)
 	})
-	// min and max of a range compare its ends rather than walk it, but for
-	// a block, a count, or a range without a last element to name.
+	// min and max of a range compare its ends rather than walk it, after
+	// CRuby's range_min and range_max: min(n) is first(n), and max(n) of
+	// an Integer range counts down from its end.
 	def(c, "min", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		lo, hi := object.OrNil(r(self).Lo), object.OrNil(r(self).Hi)
-		_, numeric := hi.AsNumber()
-		if len(args) > 0 || !block.IsZero() || r(self).Exclusive && !numeric {
-			return object.Enumerable.Methods["min"].Native(ctx, self, args, kw, block)
-		}
 		if lo.IsNil() {
 			return object.Value{}, ctx.Raise(object.RangeError, "cannot get the minimum of beginless range")
+		}
+		if !block.IsZero() {
+			if hi.IsNil() {
+				return object.Value{}, ctx.Raise(object.RangeError, "cannot get the minimum of endless range with custom comparison method")
+			}
+			return object.Enumerable.Methods["min"].Native(ctx, self, args, kw, block)
+		}
+		if len(args) > 0 {
+			return c.Methods["first"].Native(ctx, self, args, kw, block)
 		}
 		if hi.IsNil() {
 			return lo, nil
@@ -308,6 +396,26 @@ func installRange() {
 		}
 		_, numeric := hi.AsNumber()
 		if len(args) > 0 || !block.IsZero() || r(self).Exclusive && !numeric {
+			if lo.IsNil() {
+				return object.Value{}, ctx.Raise(object.RangeError, "cannot get the maximum of beginless range with custom comparison method")
+			}
+			if first, last, ok := intEnds(r(self)); ok && block.IsZero() && len(args) == 1 {
+				n, err := wantInt(ctx, args[0], "")
+				if err != nil {
+					return object.Value{}, err
+				}
+				if n < 0 {
+					return object.Value{}, ctx.Raise(object.ArgumentError, "negative size (%d)", n)
+				}
+				out := []object.Value{}
+				for i := last; int64(len(out)) < n; i = addIntegers(i, object.Int(-1)) {
+					if c, _ := object.CompareNumbers(i, first); c < 0 {
+						break
+					}
+					out = append(out, i)
+				}
+				return object.NewList(out...), nil
+			}
 			return object.Enumerable.Methods["max"].Native(ctx, self, args, kw, block)
 		}
 		cmp := -1
@@ -449,6 +557,71 @@ func RangeElems(ctx object.Context, r *object.Range) ([]object.Value, error) {
 
 // intEnds reads a range of integers as its first and last, the end less
 // one for an exclusive range; ok is false for any other range.
+// rangeReverseEach is Range#reverse_each: down from an Integer end, to
+// an Integer begin or endlessly, and for any other range that iterates
+// its elements reversed.
+func rangeReverseEach(ctx object.Context, r *object.Range, yield func(object.Value) error) error {
+	lo, hi := object.OrNil(r.Lo), object.OrNil(r.Hi)
+	iterErr := func(v object.Value) error {
+		return ctx.Raise(object.TypeError, "can't iterate from %s", v.Class().Name)
+	}
+	switch {
+	case hi.IsNil():
+		return iterErr(hi)
+	case hi.IsInteger() && lo.IsNil():
+		i := hi
+		if r.Exclusive {
+			i = addIntegers(i, object.Int(-1))
+		}
+		for ; ; i = addIntegers(i, object.Int(-1)) {
+			if err := yield(i); err != nil {
+				return err
+			}
+		}
+	case hi.IsInteger() && lo.IsInteger():
+		first, last, _ := intEnds(r)
+		return eachInteger(last, first, -1, yield)
+	case hi.IsInteger() || lo.IsNil():
+		return iterErr(lo)
+	}
+	src, err := eachOf(ctx, object.RangeValue(r))
+	if err != nil {
+		return err
+	}
+	var elems []object.Value
+	err = src(ctx, func(v object.Value) error {
+		elems = append(elems, v)
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	for i := len(elems) - 1; i >= 0; i-- {
+		if err := yield(elems[i]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// rangeReverseSize is the size of Range#reverse_each's enumerator, after
+// CRuby 3.4: Infinity for a beginless range to an Integer, the range's
+// size from an Integer, nil for other ranges that iterate, and a TypeError
+// naming the end's class for one that does not.
+func rangeReverseSize(ctx object.Context, r *object.Range) (object.Value, error) {
+	lo, hi := object.OrNil(r.Lo), object.OrNil(r.Hi)
+	_, numeric := lo.AsNumber()
+	switch {
+	case lo.IsNil() && hi.IsInteger():
+		return object.Float(math.Inf(1)), nil
+	case lo.IsInteger() && !hi.IsNil():
+		return object.RangeClass.Methods["size"].Native(ctx, object.RangeValue(r), nil, nil, object.Value{})
+	case lo.IsNil() || numeric || hi.IsNil():
+		return object.Value{}, ctx.Raise(object.TypeError, "can't iterate from %s", hi.Class().Name)
+	}
+	return object.Nil, nil
+}
+
 func intEnds(r *object.Range) (lo, hi object.Value, ok bool) {
 	if !r.Lo.IsInteger() || !r.Hi.IsInteger() {
 		return object.Value{}, object.Value{}, false

@@ -3,6 +3,7 @@ package stdlib
 import (
 	"math"
 	"math/big"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -72,11 +73,34 @@ func installTime() {
 		}
 		return object.TimeValue(t.In(loc)), nil
 	})
-	newTime := func(defaultLoc *time.Location) fn {
+	// newTime is Time.new, or with civil Time.utc and Time.local, whose
+	// seventh argument is microseconds, not a zone, and which also take
+	// the ten values of Time#to_a.
+	newTime := func(defaultLoc *time.Location, civil bool) fn {
 		return func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			loc, err := inKeyword(ctx, kw, defaultLoc)
 			if err != nil {
 				return object.Value{}, err
+			}
+			usec := object.Nil
+			switch {
+			case civil && len(args) == 10:
+				args = []object.Value{args[5], args[4], args[3], args[2], args[1], args[0]}
+			case civil && (len(args) == 7 || len(args) == 8):
+				usec, args = args[6], args[:6]
+			case civil && len(args) > 8:
+				return object.Value{}, argError(ctx, len(args), "1..8")
+			}
+			if !usec.IsNil() {
+				t, err := civilTime(ctx, args, loc)
+				if err != nil {
+					return object.Value{}, err
+				}
+				ns, err := microseconds(ctx, usec)
+				if err != nil {
+					return object.Value{}, err
+				}
+				return object.TimeValue(t.Truncate(time.Second).Add(time.Duration(ns))), nil
 			}
 			if len(args) == 7 {
 				if loc, err = zoneArg(ctx, args[6]); err != nil {
@@ -104,11 +128,11 @@ func installTime() {
 			return object.TimeValue(t), nil
 		}
 	}
-	c.DefineSingleton("new", -1, newTime(time.Local))
-	c.DefineSingleton("local", -1, newTime(time.Local))
-	c.DefineSingleton("mktime", -1, newTime(time.Local))
-	c.DefineSingleton("utc", -1, newTime(time.UTC))
-	c.DefineSingleton("gm", -1, newTime(time.UTC))
+	c.DefineSingleton("new", -1, newTime(time.Local, false))
+	c.DefineSingleton("local", -1, newTime(time.Local, true))
+	c.DefineSingleton("mktime", -1, newTime(time.Local, true))
+	c.DefineSingleton("utc", -1, newTime(time.UTC, true))
+	c.DefineSingleton("gm", -1, newTime(time.UTC, true))
 
 	ints := map[string]func(t time.Time) int64{
 		"year":  func(t time.Time) int64 { return int64(t.Year()) },
@@ -192,6 +216,40 @@ func installTime() {
 	}
 	def(c, "localtime", -1, toLocal)
 	def(c, "getlocal", -1, toLocal)
+	timeKeys := []string{"year", "month", "day", "yday", "wday", "hour", "min", "sec", "subsec", "dst", "zone"}
+	def(c, "deconstruct_keys", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		keys := timeKeys
+		if !args[0].IsNil() {
+			l, ok := args[0].AsList()
+			if !ok {
+				return object.Value{}, ctx.Raise(object.TypeError, "wrong argument type %s (expected Array or nil)", args[0].Class().Name)
+			}
+			keys = nil
+			for _, k := range l.Elems {
+				if name, ok := k.AsSymbol(); ok && slices.Contains(timeKeys, name) {
+					keys = append(keys, name)
+				}
+			}
+		}
+		out := object.NewMap()
+		for _, k := range keys {
+			m := "dst?"
+			if k != "dst" {
+				m = k
+			}
+			v, err := c.Methods[m].Native(ctx, self, nil, nil, object.Value{})
+			if err != nil {
+				return object.Value{}, err
+			}
+			out = out.Put(object.Symbol(k), v)
+		}
+		return object.MapValue(out), nil
+	})
+	asctime := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return object.String(Strftime(tm(self), "%a %b %e %H:%M:%S %Y")), nil
+	}
+	def(c, "asctime", 0, asctime)
+	def(c, "ctime", 0, asctime)
 	def(c, "to_a", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		t := tm(self)
 		zone := object.Nil
@@ -447,6 +505,35 @@ func civilTime(ctx object.Context, args []object.Value, loc *time.Location) (tim
 		return time.Time{}, ctx.Raise(object.ArgumentError, "sec out of range")
 	}
 	return time.Date(int(f[0]), time.Month(f[1]), int(f[2]), int(f[3]), int(f[4]), int(f[5]), int(floorScaled(frac, 1e9)), loc), nil
+}
+
+// microseconds reads the microseconds argument of Time.utc and
+// Time.local, a number or a string of digits, as nanoseconds.
+func microseconds(ctx object.Context, v object.Value) (int64, error) {
+	if s, ok := v.AsString(); ok {
+		n, ok := parseInt(strings.TrimSpace(s))
+		if !ok {
+			return 0, ctx.Raise(object.ArgumentError, "invalid value for Integer(): %s", object.QuoteString(s))
+		}
+		v = object.Int(n)
+	}
+	var ns int64
+	if x, ok := v.AsFloat(); ok {
+		ns = floorScaled(x, 1000)
+	} else {
+		n, err := wantInt(ctx, v, "")
+		if err != nil {
+			return 0, err
+		}
+		if n < 0 || n >= 1e6 {
+			return 0, ctx.Raise(object.ArgumentError, "subsecx out of range")
+		}
+		ns = n * 1000
+	}
+	if ns < 0 || ns >= 1e9 {
+		return 0, ctx.Raise(object.ArgumentError, "subsecx out of range")
+	}
+	return ns, nil
 }
 
 func monthNamed(s string) int {

@@ -73,18 +73,19 @@ func extname(p string) string {
 	return base[i:]
 }
 
-// joinPaths is File.join: the parts with one / between each two, however
-// many they end or start with.
+// joinPaths is File.join: the parts with a / between each two that have
+// none, and the separators of the right one where both have them.
 func joinPaths(parts []string) string {
 	if len(parts) == 0 {
 		return ""
 	}
 	out := parts[0]
 	for _, p := range parts[1:] {
+		// Where both sides have separators, the right side's stay.
 		switch {
-		case strings.HasSuffix(out, "/"):
-			out += strings.TrimLeft(p, "/")
 		case strings.HasPrefix(p, "/"):
+			out = strings.TrimRight(out, "/") + p
+		case strings.HasSuffix(out, "/"):
 			out += p
 		default:
 			out += "/" + p
@@ -238,6 +239,18 @@ func installPaths() {
 	object.ObjectClass.Consts["File"] = object.ClassValue(f)
 	f.Consts["SEPARATOR"] = object.String("/")
 	f.Consts["Separator"] = object.String("/")
+	f.Consts["PATH_SEPARATOR"] = object.String(":")
+	f.Consts["ALT_SEPARATOR"] = object.Nil
+	// The open, lock and fnmatch flags, with Linux's values. cameo opens
+	// no files; they are here for code that names them.
+	for name, v := range map[string]int64{
+		"RDONLY": 0, "WRONLY": 1, "RDWR": 2, "CREAT": 0o100, "EXCL": 0o200, "NOCTTY": 0o400,
+		"TRUNC": 0o1000, "APPEND": 0o2000, "NONBLOCK": 0o4000,
+		"LOCK_SH": 1, "LOCK_EX": 2, "LOCK_NB": 4, "LOCK_UN": 8,
+		"FNM_NOESCAPE": 1, "FNM_PATHNAME": 2, "FNM_DOTMATCH": 4, "FNM_CASEFOLD": 8, "FNM_EXTGLOB": 16, "FNM_SYSCASE": 0,
+	} {
+		f.Consts[name] = object.Int(v)
+	}
 	str := func(ctx object.Context, v object.Value) (string, error) {
 		if p, ok := pathnameOf(v); ok {
 			return p, nil
@@ -297,27 +310,28 @@ func installPaths() {
 		return object.NewList(object.String(dirname(p)), object.String(basename(p, ""))), nil
 	})
 	f.DefineSingleton("join", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		var parts []string
-		var add func(v object.Value) error
-		add = func(v object.Value) error {
-			if l, ok := v.AsList(); ok {
-				for _, e := range l.Elems {
-					if err := add(e); err != nil {
-						return err
-					}
+		// An array joins into one part, as File.join(*array).
+		var join func(args []object.Value) (string, error)
+		join = func(args []object.Value) (string, error) {
+			parts := make([]string, len(args))
+			for i, a := range args {
+				var err error
+				if l, ok := a.AsList(); ok {
+					parts[i], err = join(l.Elems)
+				} else {
+					parts[i], err = str(ctx, a)
 				}
-				return nil
+				if err != nil {
+					return "", err
+				}
+				if strings.IndexByte(parts[i], 0) >= 0 {
+					return "", ctx.Raise(object.ArgumentError, "string contains null byte")
+				}
 			}
-			s, err := str(ctx, v)
-			parts = append(parts, s)
-			return err
+			return joinPaths(parts), nil
 		}
-		for _, a := range args {
-			if err := add(a); err != nil {
-				return object.Value{}, err
-			}
-		}
-		return object.String(joinPaths(parts)), nil
+		s, err := join(args)
+		return object.String(s), err
 	})
 	expand := func(home bool) object.NativeFn {
 		return func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
