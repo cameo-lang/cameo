@@ -269,7 +269,22 @@ func (c *converter) expr(n ast.Node) Node {
 	case *ast.ScopedConstAssign:
 		c.fail("assignment to a scoped constant is not supported: define it inside its module")
 		return nil
-	case *ast.GVarRef, *ast.GVarAssign:
+	case *ast.GVarRef:
+		// $stdout and $stderr are the streams, STDOUT and STDERR; no
+		// other global variable exists.
+		switch n.Name {
+		case "$stdout":
+			return &Const{c.pos(), "STDOUT"}
+		case "$stderr":
+			return &Const{c.pos(), "STDERR"}
+		}
+		c.fail("global variables are not supported")
+		return nil
+	case *ast.GVarAssign:
+		if n.Name == "$stdout" || n.Name == "$stderr" {
+			c.fail("%s cannot be reassigned: it is the script's own stream", n.Name)
+			return nil
+		}
 		c.fail("global variables are not supported")
 		return nil
 	case *ast.CVarRef, *ast.CVarAssign:

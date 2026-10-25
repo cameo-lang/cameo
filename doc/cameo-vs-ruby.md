@@ -286,7 +286,7 @@ The checker rejects these by name, with the line:
 | Construct | Instead |
 |---|---|
 | instance variables, `@x` | `self.x = v` in `initialize`; read `x` or `self.x` |
-| class variables, `@@x`; global variables, `$x`, including `$stdout`, `$!` and `$~` | a constant, a field or a local; `rescue => e`; the MatchData of `match` |
+| class variables, `@@x`; global variables, `$x`, including `$!` and `$~` | a constant, a field or a local; `rescue => e`; the MatchData of `match`. `$stdout` and `$stderr` exist: they are `STDOUT` and `STDERR`, with `puts`, `print`, `write`, `flush` and `sync` |
 | setters, `def x=(v)`; `attr_reader`, `attr_writer`, `attr_accessor` | field declarations, which define readers, and `with` |
 | `private`, `protected`, `public`, `module_function` | none: every method is public |
 | `eval`, `instance_eval`, `class_eval`, `define_method`, `instance_variable_get` and `_set`, `undef` | a direct call or a `def` |
