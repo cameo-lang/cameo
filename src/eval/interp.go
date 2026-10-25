@@ -74,6 +74,15 @@ type Interp struct {
 	next     int
 	nextLine int
 	from     int
+	// dbg is the debugger, once Debug switched it on; dbgTop the top-level
+	// frame it shows, while Run runs. console, consoleOut and source are
+	// what a debugger the script switches on with require "debug" talks
+	// on, and lists; see SetConsole.
+	dbg        *Debugger
+	dbgTop     *dbgFrame
+	console    io.Reader
+	consoleOut io.Writer
+	source     string
 }
 
 // Last returns the value of the script's last top-level expression, once
@@ -173,12 +182,21 @@ func (in *Interp) Run(file string, prog *syntax.Program) error {
 	in.file = file
 	in.code.compiled = CompiledFor(prog)
 	fr := in.topFrame()
+	in.dbgTop = &dbgFrame{name: "<main>", env: in.top, fr: fr}
+	if in.dbg != nil {
+		in.dbg.stack = []*dbgFrame{in.dbgTop}
+	}
 	var v object.Value = object.Nil
 	var err error
 	for i := in.from; i < len(prog.Body); i++ {
 		if in.pause.Load() {
 			in.paused, in.next, in.nextLine = true, i, prog.Body[i].Line()
 			return ErrPaused
+		}
+		if in.dbg != nil {
+			if err = in.dbg.line(prog.Body[i].Line(), in.top, fr); err != nil {
+				break
+			}
 		}
 		if v, err = in.code.expr(prog.Body[i])(in, in.top, fr); err != nil {
 			break

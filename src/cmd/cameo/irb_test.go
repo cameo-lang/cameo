@@ -59,3 +59,22 @@ func TestIrbEndsWithTheScriptsExit(t *testing.T) {
 		t.Fatalf("stdout %q, stderr %q", stdout.String(), stderr.String())
 	}
 }
+
+// TestDebugCommandStopsFirstAndQuits proves cameo debug stops before the
+// first statement, and quitting the debugger exits 0 without an error.
+func TestDebugCommandStopsFirstAndQuits(t *testing.T) {
+	script := filepath.Join(t.TempDir(), "s.cameo")
+	if err := os.WriteFile(script, []byte("puts 1\nputs 2\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr bytes.Buffer
+	if status := debugScript(script, false, strings.NewReader("n\nq\n"), &stdout, &stderr); status != 0 {
+		t.Fatalf("exit status %d, stderr:\n%s", status, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "=>#0\t<main> at "+script+":1") || !strings.Contains(stdout.String(), "(rdbg) 1\n") || strings.Contains(stdout.String(), "(rdbg) 2\n") {
+		t.Fatalf("output %q", stdout.String())
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("stderr %q", stderr.String())
+	}
+}

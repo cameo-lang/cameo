@@ -10,6 +10,11 @@ import (
 func (in *Interp) evalBody(body []syntax.Node, env *Env, fr *Frame) (object.Value, error) {
 	var last object.Value = object.Nil
 	for _, n := range body {
+		if in.dbg != nil {
+			if err := in.dbg.line(n.Line(), env, fr); err != nil {
+				return object.Value{}, err
+			}
+		}
 		v, err := in.eval(n, env, fr)
 		if err != nil {
 			return object.Value{}, err

@@ -153,6 +153,24 @@ test_irb_evaluates_lines_at_the_top_level() {
   assert_contains "$out" "cameo(main):003> => 42"
 }
 
+test_debug_stops_at_a_breakpoint_and_shows_the_frame() {
+  local script out
+  script="$(mktemp -d)/fib.cameo"
+  cat >"$script" <<'CAMEO'
+def fib(n)
+  return n if n < 2
+  fib(n - 1) + fib(n - 2)
+end
+puts fib(3)
+CAMEO
+  out=$(printf 'b 3\nc\nbt\np n * 10\nc\n' | "$CAMEO_BIN" debug "$script")
+  assert_contains "$out" $'=>#0\tfib(n=3) at '"$script"':3'
+  assert_contains "$out" $'  #1\t<main> at '"$script"':5'
+  assert_contains "$out" "=> 30"
+  # The console ends at the second stop, and the run goes on to print 2.
+  assert_contains "$out" $'(rdbg) \n2'
+}
+
 test_run_builds_and_runs_the_compiled_script() {
   local script out rc=0
   script="$(mktemp -d)/fact.rb"
