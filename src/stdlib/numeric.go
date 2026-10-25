@@ -154,6 +154,33 @@ func installFloat() {
 	c.Consts["NAN"] = object.Float(math.NaN())
 	c.Consts["EPSILON"] = object.Float(2.220446049250313e-16)
 	c.Consts["MAX"] = object.Float(math.MaxFloat64)
+	def(c, "next_float", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return object.Float(math.Nextafter(self.Float(), math.Inf(1))), nil
+	})
+	def(c, "prev_float", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return object.Float(math.Nextafter(self.Float(), math.Inf(-1))), nil
+	})
+	// arg is the angle of the float on the complex plane: pi for a negative
+	// float, -0.0 included, and NaN for NaN.
+	arg := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		switch x := self.Float(); {
+		case math.IsNaN(x):
+			return self, nil
+		case math.Signbit(x):
+			return object.Float(math.Pi), nil
+		}
+		return object.Int(0), nil
+	}
+	def(c, "arg", 0, arg)
+	def(c, "angle", 0, arg)
+	def(c, "phase", 0, arg)
+	def(c, "remainder", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		x, y, _, err := numArgs(ctx, self, args[0], "remainder")
+		if err != nil {
+			return object.Value{}, err
+		}
+		return object.Float(math.Mod(x, y)), nil
+	})
 	c.Consts["MIN"] = object.Float(2.2250738585072014e-308)
 	_ = strings.TrimSpace
 }

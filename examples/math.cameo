@@ -16,3 +16,19 @@ p steps.size, steps.last, 1.0.step(2.0, 0.25).to_a, 1.step(2, 0.5).to_a, 10.step
 p (1..10000).bsearch { |x| x >= 5000 }, (1..10).bsearch { |x| x > 20 }, (0..4).bsearch { |x| 2 <=> x }
 p (1..).bsearch { |x| x >= 10000000000 }, (..0).bsearch { |x| x >= -100 }
 p (0.0..100.0).bsearch { |x| x >= 2.5 }, (0.0..Float::INFINITY).bsearch { |x| Math.log(x) >= 0 }
+
+# Gamma and its logarithm, exact on small integers. Elsewhere Go's
+# functions may differ from C's in the last digit.
+p Math.gamma(5), Math.gamma(0.5).round(12), Math.gamma(-0.0), Math.lgamma(6.0).first.round(12), Math.lgamma(-0.5)
+begin
+  Math.gamma(-1)
+rescue Math::DomainError => e
+  puts e.message
+end
+
+# Integer and Float helpers.
+p 12.gcdlcm(18), -5.remainder(3), 5.remainder(-3.0), 5.5.remainder(2)
+p 1.0.next_float - 1.0 == Float::EPSILON, 1.0.prev_float < 1.0, (-0.0).arg, 2.0.arg, -3.arg
+
+# Ranges that share a value.
+p (0..2).overlap?(2..4), (0...2).overlap?(2..4), (..0).overlap?(0..), ("a".."c").overlap?("d".."f")

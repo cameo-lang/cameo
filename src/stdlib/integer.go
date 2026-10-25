@@ -464,6 +464,46 @@ func installInteger() {
 		l.Mul(l, bigOf(args[0]))
 		return object.BigInt(l.Abs(l)), nil
 	})
+	def(c, "gcdlcm", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		g, err := c.Methods["gcd"].Native(ctx, self, args, kw, block)
+		if err != nil {
+			return object.Value{}, err
+		}
+		l, err := c.Methods["lcm"].Native(ctx, self, args, kw, block)
+		if err != nil {
+			return object.Value{}, err
+		}
+		return object.NewList(g, l), nil
+	})
+	// remainder is x - y * (x / y).truncate: its sign is the receiver's.
+	// Ruby raises for a Float zero only on a bignum receiver.
+	def(c, "remainder", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		other := args[0]
+		if other.IsInteger() {
+			if bigOf(other).Sign() == 0 {
+				return object.Value{}, ctx.Raise(object.ZeroDivisionError, "divided by 0")
+			}
+			return object.BigInt(new(big.Int).Rem(bigOf(self), bigOf(other))), nil
+		}
+		y, ok := other.AsNumber()
+		if !ok {
+			return object.Value{}, ctx.Raise(object.TypeError, "%s can't be coerced into Integer", kindName(other))
+		}
+		if _, small := self.AsInt(); !small && y == 0 {
+			return object.Value{}, ctx.Raise(object.ZeroDivisionError, "divided by 0")
+		}
+		x, _ := self.AsNumber()
+		return object.Float(math.Mod(x, y)), nil
+	})
+	arg := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if bigOf(self).Sign() < 0 {
+			return object.Float(math.Pi), nil
+		}
+		return object.Int(0), nil
+	}
+	def(c, "arg", 0, arg)
+	def(c, "angle", 0, arg)
+	def(c, "phase", 0, arg)
 	def(c, "digits", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		base := int64(10)
 		if len(args) == 1 {

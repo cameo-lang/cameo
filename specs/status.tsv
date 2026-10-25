@@ -1130,14 +1130,14 @@ core/filetest/writable_spec.rb	*	expected	instance-variables	@file = …: cameo 
 core/filetest/zero_spec.rb	FileTest.zero? is an alias of FileTest.empty?	expected	io	uninitialized constant FileTest (NameError)
 core/float/abs_spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
 core/float/angle_spec.rb	Float#angle is an alias of Float#arg	expected	metaprogramming	undefined method 'instance_method' for class Float (NoMethodError)
-core/float/arg_spec.rb	Float#arg returns NaN if NaN	bug		undefined method 'arg' for an instance of Float (NoMethodError)
-core/float/arg_spec.rb	Float#arg returns self if NaN	bug		undefined method 'arg' for an instance of Float (NoMethodError)
-core/float/arg_spec.rb	Float#arg returns 0 if positive	bug		undefined method 'arg' for an instance of Float (NoMethodError)
-core/float/arg_spec.rb	Float#arg returns 0 if +0.0	bug		undefined method 'arg' for an instance of Float (NoMethodError)
-core/float/arg_spec.rb	Float#arg returns 0 if +Infinity	bug		undefined method 'arg' for an instance of Float (NoMethodError)
-core/float/arg_spec.rb	Float#arg returns Pi if negative	bug		undefined method 'arg' for an instance of Float (NoMethodError)
-core/float/arg_spec.rb	Float#arg returns Pi if -0.0	bug		undefined method 'arg' for an instance of Float (NoMethodError)
-core/float/arg_spec.rb	Float#arg returns Pi if -Infinity	bug		undefined method 'arg' for an instance of Float (NoMethodError)
+core/float/arg_spec.rb	Float#arg returns NaN if NaN	pass		
+core/float/arg_spec.rb	Float#arg returns self if NaN	expected	identity-and-freezing	undefined method 'equal?' for an instance of Float (NoMethodError)
+core/float/arg_spec.rb	Float#arg returns 0 if positive	pass		
+core/float/arg_spec.rb	Float#arg returns 0 if +0.0	pass		
+core/float/arg_spec.rb	Float#arg returns 0 if +Infinity	pass		
+core/float/arg_spec.rb	Float#arg returns Pi if negative	pass		
+core/float/arg_spec.rb	Float#arg returns Pi if -0.0	pass		
+core/float/arg_spec.rb	Float#arg returns Pi if -Infinity	pass		
 core/float/case_compare_spec.rb	Float#=== is an alias of Float#==	expected	metaprogramming	undefined method 'instance_method' for class Float (NoMethodError)
 core/float/ceil_spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
 core/float/coerce_spec.rb	Float#coerce returns [other, self] both as Floats	bug		undefined method 'coerce' for an instance of Float (NoMethodError)
@@ -1220,15 +1220,15 @@ core/float/negative_spec.rb	Float#negative? on zero returns false	pass
 core/float/negative_spec.rb	Float#negative? on negative zero returns false	pass		
 core/float/negative_spec.rb	Float#negative? on negative numbers returns true	pass		
 core/float/negative_spec.rb	Float#negative? on NaN returns false	pass		
-core/float/next_float_spec.rb	Float#next_float returns a float the smallest possible step greater than the receiver	bug		undefined method 'next_float' for an instance of Float (NoMethodError)
-core/float/next_float_spec.rb	Float#next_float returns Float::INFINITY for Float::INFINITY	bug		undefined method 'next_float' for an instance of Float (NoMethodError)
-core/float/next_float_spec.rb	Float#next_float steps directly between MAX and INFINITY	bug		undefined method 'next_float' for an instance of Float (NoMethodError)
-core/float/next_float_spec.rb	Float#next_float steps directly between 1.0 and 1.0 + EPSILON	bug		undefined method 'next_float' for an instance of Float (NoMethodError)
-core/float/next_float_spec.rb	Float#next_float steps directly between -1.0 and -1.0 + EPSILON/2	bug		undefined method 'next_float' for an instance of Float (NoMethodError)
-core/float/next_float_spec.rb	Float#next_float reverses the effect of prev_float for all Floats except INFINITY and +0.0	bug		undefined method 'prev_float' for an instance of Float (NoMethodError)
-core/float/next_float_spec.rb	Float#next_float returns negative zero when stepping upward from just below zero	bug		undefined method 'prev_float' for an instance of Float (NoMethodError)
-core/float/next_float_spec.rb	Float#next_float gives the same result for -0.0 as for +0.0	bug		undefined method 'next_float' for an instance of Float (NoMethodError)
-core/float/next_float_spec.rb	Float#next_float returns NAN if NAN was the receiver	bug		undefined method 'next_float' for an instance of Float (NoMethodError)
+core/float/next_float_spec.rb	Float#next_float returns a float the smallest possible step greater than the receiver	pass		
+core/float/next_float_spec.rb	Float#next_float returns Float::INFINITY for Float::INFINITY	pass		
+core/float/next_float_spec.rb	Float#next_float steps directly between MAX and INFINITY	pass		
+core/float/next_float_spec.rb	Float#next_float steps directly between 1.0 and 1.0 + EPSILON	pass		
+core/float/next_float_spec.rb	Float#next_float steps directly between -1.0 and -1.0 + EPSILON/2	pass		
+core/float/next_float_spec.rb	Float#next_float reverses the effect of prev_float for all Floats except INFINITY and +0.0	pass		
+core/float/next_float_spec.rb	Float#next_float returns negative zero when stepping upward from just below zero	pass		
+core/float/next_float_spec.rb	Float#next_float gives the same result for -0.0 as for +0.0	pass		
+core/float/next_float_spec.rb	Float#next_float returns NAN if NAN was the receiver	pass		
 core/float/numerator_spec.rb	*	expected	instance-variables	@numbers = …: cameo has no instance variables; initialize sets a field with self.numbers = …
 core/float/phase_spec.rb	Float#phase is an alias of Float#arg	expected	metaprogramming	undefined method 'instance_method' for class Float (NoMethodError)
 core/float/plus_spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
@@ -1237,15 +1237,15 @@ core/float/positive_spec.rb	Float#positive? on zero returns false	pass
 core/float/positive_spec.rb	Float#positive? on negative zero returns false	pass		
 core/float/positive_spec.rb	Float#positive? on negative numbers returns false	pass		
 core/float/positive_spec.rb	Float#positive? on NaN returns false	pass		
-core/float/prev_float_spec.rb	Float#prev_float returns a float the smallest possible step smaller than the receiver	bug		undefined method 'prev_float' for an instance of Float (NoMethodError)
-core/float/prev_float_spec.rb	Float#prev_float returns -Float::INFINITY for -Float::INFINITY	bug		undefined method 'prev_float' for an instance of Float (NoMethodError)
-core/float/prev_float_spec.rb	Float#prev_float steps directly between MAX and INFINITY	bug		undefined method 'prev_float' for an instance of Float (NoMethodError)
-core/float/prev_float_spec.rb	Float#prev_float steps directly between 1.0 and 1.0 - EPSILON/2	bug		undefined method 'prev_float' for an instance of Float (NoMethodError)
-core/float/prev_float_spec.rb	Float#prev_float steps directly between -1.0 and -1.0 - EPSILON	bug		undefined method 'prev_float' for an instance of Float (NoMethodError)
-core/float/prev_float_spec.rb	Float#prev_float reverses the effect of next_float for all Floats except -INFINITY and -0.0	bug		undefined method 'next_float' for an instance of Float (NoMethodError)
-core/float/prev_float_spec.rb	Float#prev_float returns positive zero when stepping downward from just above zero	bug		undefined method 'next_float' for an instance of Float (NoMethodError)
-core/float/prev_float_spec.rb	Float#prev_float gives the same result for -0.0 as for +0.0	bug		undefined method 'prev_float' for an instance of Float (NoMethodError)
-core/float/prev_float_spec.rb	Float#prev_float returns NAN if NAN was the receiver	bug		undefined method 'prev_float' for an instance of Float (NoMethodError)
+core/float/prev_float_spec.rb	Float#prev_float returns a float the smallest possible step smaller than the receiver	pass		
+core/float/prev_float_spec.rb	Float#prev_float returns -Float::INFINITY for -Float::INFINITY	pass		
+core/float/prev_float_spec.rb	Float#prev_float steps directly between MAX and INFINITY	pass		
+core/float/prev_float_spec.rb	Float#prev_float steps directly between 1.0 and 1.0 - EPSILON/2	pass		
+core/float/prev_float_spec.rb	Float#prev_float steps directly between -1.0 and -1.0 - EPSILON	pass		
+core/float/prev_float_spec.rb	Float#prev_float reverses the effect of next_float for all Floats except -INFINITY and -0.0	pass		
+core/float/prev_float_spec.rb	Float#prev_float returns positive zero when stepping downward from just above zero	pass		
+core/float/prev_float_spec.rb	Float#prev_float gives the same result for -0.0 as for +0.0	pass		
+core/float/prev_float_spec.rb	Float#prev_float returns NAN if NAN was the receiver	pass		
 core/float/quo_spec.rb	Float#quo is an alias of Float#fdiv	expected	metaprogramming	undefined method 'instance_method' for class Float (NoMethodError)
 core/float/rationalize_spec.rb	Float#rationalize returns self as a simplified Rational with no argument	expected	rational-complex	undefined method 'rationalize' for an instance of Float (NoMethodError)
 core/float/rationalize_spec.rb	Float#rationalize simplifies self to the degree specified by a Rational argument	expected	rational-complex	undefined method 'Rational' for an instance of Object (NoMethodError)
@@ -1514,16 +1514,16 @@ core/integer/gcd_spec.rb	Integer#gcd doesn't cause an integer overflow	pass
 core/integer/gcd_spec.rb	Integer#gcd raises an ArgumentError if not given an argument	pass		
 core/integer/gcd_spec.rb	Integer#gcd raises an ArgumentError if given more than one argument	pass		
 core/integer/gcd_spec.rb	Integer#gcd raises a TypeError unless the argument is an Integer	pass		
-core/integer/gcdlcm_spec.rb	Integer#gcdlcm returns [self, self] if self is equal to the argument	bug		undefined method 'gcdlcm' for an instance of Integer (NoMethodError)
-core/integer/gcdlcm_spec.rb	Integer#gcdlcm returns an Array	bug		undefined method 'gcdlcm' for an instance of Integer (NoMethodError)
-core/integer/gcdlcm_spec.rb	Integer#gcdlcm returns a two-element Array	bug		undefined method 'gcdlcm' for an instance of Integer (NoMethodError)
-core/integer/gcdlcm_spec.rb	Integer#gcdlcm returns the greatest common divisor of self and argument as the first element	bug		undefined method 'gcdlcm' for an instance of Integer (NoMethodError)
-core/integer/gcdlcm_spec.rb	Integer#gcdlcm returns the least common multiple of self and argument as the last element	bug		undefined method 'gcdlcm' for an instance of Integer (NoMethodError)
-core/integer/gcdlcm_spec.rb	Integer#gcdlcm accepts a Bignum argument	bug		undefined method 'gcdlcm' for an instance of Integer (NoMethodError)
-core/integer/gcdlcm_spec.rb	Integer#gcdlcm works if self is a Bignum	bug		undefined method 'gcdlcm' for an instance of Integer (NoMethodError)
-core/integer/gcdlcm_spec.rb	Integer#gcdlcm raises an ArgumentError if not given an argument	bug		undefined method 'gcdlcm' for an instance of Integer (NoMethodError)
-core/integer/gcdlcm_spec.rb	Integer#gcdlcm raises an ArgumentError if given more than one argument	bug		undefined method 'gcdlcm' for an instance of Integer (NoMethodError)
-core/integer/gcdlcm_spec.rb	Integer#gcdlcm raises a TypeError unless the argument is an Integer	bug		undefined method 'gcdlcm' for an instance of Integer (NoMethodError)
+core/integer/gcdlcm_spec.rb	Integer#gcdlcm returns [self, self] if self is equal to the argument	pass		
+core/integer/gcdlcm_spec.rb	Integer#gcdlcm returns an Array	pass		
+core/integer/gcdlcm_spec.rb	Integer#gcdlcm returns a two-element Array	pass		
+core/integer/gcdlcm_spec.rb	Integer#gcdlcm returns the greatest common divisor of self and argument as the first element	pass		
+core/integer/gcdlcm_spec.rb	Integer#gcdlcm returns the least common multiple of self and argument as the last element	pass		
+core/integer/gcdlcm_spec.rb	Integer#gcdlcm accepts a Bignum argument	pass		
+core/integer/gcdlcm_spec.rb	Integer#gcdlcm works if self is a Bignum	pass		
+core/integer/gcdlcm_spec.rb	Integer#gcdlcm raises an ArgumentError if not given an argument	pass		
+core/integer/gcdlcm_spec.rb	Integer#gcdlcm raises an ArgumentError if given more than one argument	pass		
+core/integer/gcdlcm_spec.rb	Integer#gcdlcm raises a TypeError unless the argument is an Integer	pass		
 core/integer/gt_spec.rb	*	expected	instance-variables	@v = …: cameo has no instance variables; initialize sets a field with self.v = …
 core/integer/gte_spec.rb	*	expected	instance-variables	@v = …: cameo has no instance variables; initialize sets a field with self.v = …
 core/integer/inspect_spec.rb	Integer#inspect is an alias of Integer#to_s	expected	metaprogramming	undefined method 'instance_method' for class Integer (NoMethodError)
@@ -1564,13 +1564,13 @@ core/integer/plus_spec.rb	*	expected	instance-variables	@v = …: cameo has no i
 core/integer/pow_spec.rb	*	expected	instance-variables	@v = …: cameo has no instance variables; initialize sets a field with self.v = …
 core/integer/pred_spec.rb	Integer#pred returns the Integer equal to self - 1	pass		
 core/integer/rationalize_spec.rb	*	expected	instance-variables	@numbers = …: cameo has no instance variables; initialize sets a field with self.numbers = …
-core/integer/remainder_spec.rb	Integer#remainder fixnum returns the remainder of dividing self by other	bug		undefined method 'remainder' for an instance of Integer (NoMethodError)
-core/integer/remainder_spec.rb	Integer#remainder fixnum means x-y*(x/y).truncate	bug		undefined method 'remainder' for an instance of Integer (NoMethodError)
-core/integer/remainder_spec.rb	Integer#remainder fixnum keeps sign of self	bug		undefined method 'remainder' for an instance of Integer (NoMethodError)
-core/integer/remainder_spec.rb	Integer#remainder fixnum raises TypeError if passed non-numeric argument	bug		undefined method 'remainder' for an instance of Integer (NoMethodError)
-core/integer/remainder_spec.rb	Integer#remainder bignum returns the remainder of dividing self by other	bug		undefined method 'remainder' for an instance of Integer (NoMethodError)
-core/integer/remainder_spec.rb	Integer#remainder bignum raises a ZeroDivisionError if other is zero and not a Float	bug		undefined method 'remainder' for an instance of Integer (NoMethodError)
-core/integer/remainder_spec.rb	Integer#remainder bignum does raises ZeroDivisionError if other is zero and a Float	bug		undefined method 'remainder' for an instance of Integer (NoMethodError)
+core/integer/remainder_spec.rb	Integer#remainder fixnum returns the remainder of dividing self by other	expected	rational-complex	undefined method 'Rational' for an instance of Object (NoMethodError)
+core/integer/remainder_spec.rb	Integer#remainder fixnum means x-y*(x/y).truncate	pass		
+core/integer/remainder_spec.rb	Integer#remainder fixnum keeps sign of self	pass		
+core/integer/remainder_spec.rb	Integer#remainder fixnum raises TypeError if passed non-numeric argument	pass		
+core/integer/remainder_spec.rb	Integer#remainder bignum returns the remainder of dividing self by other	pass		
+core/integer/remainder_spec.rb	Integer#remainder bignum raises a ZeroDivisionError if other is zero and not a Float	pass		
+core/integer/remainder_spec.rb	Integer#remainder bignum does raises ZeroDivisionError if other is zero and a Float	pass		
 core/integer/right_shift_spec.rb	*	expected	instance-variables	@bignum = …: cameo has no instance variables; initialize sets a field with self.bignum = …
 core/integer/round_spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
 core/integer/size_spec.rb	Integer#size returns the number of bytes in the machine representation of self	pass		
@@ -2058,31 +2058,31 @@ core/math/erfc_spec.rb	*	expected	instance-variables	@value = …: cameo has no 
 core/math/exp_spec.rb	*	expected	instance-variables	@value = …: cameo has no instance variables; initialize sets a field with self.value = …
 core/math/expm1_spec.rb	*	expected	instance-variables	@value = …: cameo has no instance variables; initialize sets a field with self.value = …
 core/math/frexp_spec.rb	*	expected	instance-variables	@value = …: cameo has no instance variables; initialize sets a field with self.value = …
-core/math/gamma_spec.rb	Math.gamma returns +infinity given 0	bug		undefined method 'gamma' for module Math (NoMethodError)
-core/math/gamma_spec.rb	Math.gamma returns -infinity given -0.0	bug		undefined method 'gamma' for module Math (NoMethodError)
-core/math/gamma_spec.rb	Math.gamma returns Math.sqrt(Math::PI) given 0.5	bug		undefined method 'gamma' for module Math (NoMethodError)
-core/math/gamma_spec.rb	Math.gamma returns exactly (n-1)! given n for n between 2 and 23	bug		undefined method 'gamma' for module Math (NoMethodError)
-core/math/gamma_spec.rb	Math.gamma returns approximately (n-1)! given n for n between 24 and 30	bug		undefined method 'gamma' for module Math (NoMethodError)
-core/math/gamma_spec.rb	Math.gamma returns good numerical approximation for gamma(3.2)	bug		undefined method 'gamma' for module Math (NoMethodError)
-core/math/gamma_spec.rb	Math.gamma returns good numerical approximation for gamma(-2.15)	bug		undefined method 'gamma' for module Math (NoMethodError)
-core/math/gamma_spec.rb	Math.gamma returns good numerical approximation for gamma(0.00001)	bug		undefined method 'gamma' for module Math (NoMethodError)
-core/math/gamma_spec.rb	Math.gamma returns good numerical approximation for gamma(-0.00001)	bug		undefined method 'gamma' for module Math (NoMethodError)
-core/math/gamma_spec.rb	Math.gamma raises Math::DomainError given -1	bug		undefined method 'gamma' for module Math (NoMethodError)
-core/math/gamma_spec.rb	Math.gamma returns +infinity given +infinity	bug		undefined method 'gamma' for module Math (NoMethodError)
-core/math/gamma_spec.rb	Math.gamma raises Math::DomainError given negative infinity	bug		undefined method 'gamma' for module Math (NoMethodError)
-core/math/gamma_spec.rb	Math.gamma returns NaN given NaN	bug		undefined method 'gamma' for module Math (NoMethodError)
+core/math/gamma_spec.rb	Math.gamma returns +infinity given 0	pass		
+core/math/gamma_spec.rb	Math.gamma returns -infinity given -0.0	pass		
+core/math/gamma_spec.rb	Math.gamma returns Math.sqrt(Math::PI) given 0.5	pass		
+core/math/gamma_spec.rb	Math.gamma returns exactly (n-1)! given n for n between 2 and 23	pass		
+core/math/gamma_spec.rb	Math.gamma returns approximately (n-1)! given n for n between 24 and 30	pass		
+core/math/gamma_spec.rb	Math.gamma returns good numerical approximation for gamma(3.2)	pass		
+core/math/gamma_spec.rb	Math.gamma returns good numerical approximation for gamma(-2.15)	pass		
+core/math/gamma_spec.rb	Math.gamma returns good numerical approximation for gamma(0.00001)	pass		
+core/math/gamma_spec.rb	Math.gamma returns good numerical approximation for gamma(-0.00001)	pass		
+core/math/gamma_spec.rb	Math.gamma raises Math::DomainError given -1	pass		
+core/math/gamma_spec.rb	Math.gamma returns +infinity given +infinity	pass		
+core/math/gamma_spec.rb	Math.gamma raises Math::DomainError given negative infinity	pass		
+core/math/gamma_spec.rb	Math.gamma returns NaN given NaN	pass		
 core/math/hypot_spec.rb	*	expected	instance-variables	@value = …: cameo has no instance variables; initialize sets a field with self.value = …
 core/math/ldexp_spec.rb	*	expected	instance-variables	@value = …: cameo has no instance variables; initialize sets a field with self.value = …
-core/math/lgamma_spec.rb	Math.lgamma returns [Infinity, 1] when passed 0	bug		undefined method 'lgamma' for module Math (NoMethodError)
-core/math/lgamma_spec.rb	Math.lgamma returns [Infinity, ...] when passed -1	bug		undefined method 'lgamma' for module Math (NoMethodError)
-core/math/lgamma_spec.rb	Math.lgamma returns [Infinity, -1] when passed -0.0	bug		undefined method 'lgamma' for module Math (NoMethodError)
-core/math/lgamma_spec.rb	Math.lgamma returns [log(sqrt(PI)), 1] when passed 0.5	bug		undefined method 'lgamma' for module Math (NoMethodError)
-core/math/lgamma_spec.rb	Math.lgamma returns [log(2/3*PI, 1] when passed 6.0	bug		undefined method 'lgamma' for module Math (NoMethodError)
-core/math/lgamma_spec.rb	Math.lgamma returns an approximate value when passed -0.5	bug		undefined method 'lgamma' for module Math (NoMethodError)
-core/math/lgamma_spec.rb	Math.lgamma returns an approximate value when passed -1.5	bug		undefined method 'lgamma' for module Math (NoMethodError)
-core/math/lgamma_spec.rb	Math.lgamma raises Math::DomainError when passed -Infinity	bug		undefined method 'lgamma' for module Math (NoMethodError)
-core/math/lgamma_spec.rb	Math.lgamma returns [Infinity, 1] when passed Infinity	bug		undefined method 'lgamma' for module Math (NoMethodError)
-core/math/lgamma_spec.rb	Math.lgamma returns [NaN, ...] when passed NaN	bug		undefined method 'lgamma' for module Math (NoMethodError)
+core/math/lgamma_spec.rb	Math.lgamma returns [Infinity, 1] when passed 0	pass		
+core/math/lgamma_spec.rb	Math.lgamma returns [Infinity, ...] when passed -1	pass		
+core/math/lgamma_spec.rb	Math.lgamma returns [Infinity, -1] when passed -0.0	pass		
+core/math/lgamma_spec.rb	Math.lgamma returns [log(sqrt(PI)), 1] when passed 0.5	pass		
+core/math/lgamma_spec.rb	Math.lgamma returns [log(2/3*PI, 1] when passed 6.0	pass		
+core/math/lgamma_spec.rb	Math.lgamma returns an approximate value when passed -0.5	pass		
+core/math/lgamma_spec.rb	Math.lgamma returns an approximate value when passed -1.5	pass		
+core/math/lgamma_spec.rb	Math.lgamma raises Math::DomainError when passed -Infinity	pass		
+core/math/lgamma_spec.rb	Math.lgamma returns [Infinity, 1] when passed Infinity	pass		
+core/math/lgamma_spec.rb	Math.lgamma returns [NaN, ...] when passed NaN	pass		
 core/math/log10_spec.rb	*	expected	instance-variables	@value = …: cameo has no instance variables; initialize sets a field with self.value = …
 core/math/log1p_spec.rb	*	expected	instance-variables	@value = …: cameo has no instance variables; initialize sets a field with self.value = …
 core/math/log2_spec.rb	*	expected	instance-variables	@value = …: cameo has no instance variables; initialize sets a field with self.value = …
@@ -2672,15 +2672,15 @@ core/range/min_spec.rb	Range#min raises RangeError when called on an beginless r
 core/range/min_spec.rb	*	bug	timeout	timeout after 20s
 core/range/minmax_spec.rb	*	expected	instance-variables	@x = …: cameo has no instance variables; initialize sets a field with self.x = …
 core/range/new_spec.rb	*	expected	attr-accessor	attr_reader is not supported: a field declaration defines its reader, and there are no setters
-core/range/overlap_spec.rb	Range#overlap? returns true if other Range overlaps self	bug		undefined method 'overlap?' for an instance of Range (NoMethodError)
-core/range/overlap_spec.rb	Range#overlap? returns false if other Range does not overlap self	bug		undefined method 'overlap?' for an instance of Range (NoMethodError)
-core/range/overlap_spec.rb	Range#overlap? raises TypeError when called with non-Range argument	bug		undefined method 'overlap?' for an instance of Range (NoMethodError)
-core/range/overlap_spec.rb	Range#overlap? returns true when beginningless and endless Ranges overlap	bug		undefined method 'overlap?' for an instance of Range (NoMethodError)
-core/range/overlap_spec.rb	Range#overlap? returns false when beginningless and endless Ranges do not overlap	bug		undefined method 'overlap?' for an instance of Range (NoMethodError)
-core/range/overlap_spec.rb	Range#overlap? returns false when Ranges are not compatible	bug		undefined method 'overlap?' for an instance of Range (NoMethodError)
-core/range/overlap_spec.rb	Range#overlap? return false when self is empty	bug		undefined method 'overlap?' for an instance of Range (NoMethodError)
-core/range/overlap_spec.rb	Range#overlap? return false when other Range is empty	bug		undefined method 'overlap?' for an instance of Range (NoMethodError)
-core/range/overlap_spec.rb	Range#overlap? takes into account exclusive end	bug		undefined method 'overlap?' for an instance of Range (NoMethodError)
+core/range/overlap_spec.rb	Range#overlap? returns true if other Range overlaps self	pass		
+core/range/overlap_spec.rb	Range#overlap? returns false if other Range does not overlap self	pass		
+core/range/overlap_spec.rb	Range#overlap? raises TypeError when called with non-Range argument	pass		
+core/range/overlap_spec.rb	Range#overlap? returns true when beginningless and endless Ranges overlap	pass		
+core/range/overlap_spec.rb	Range#overlap? returns false when beginningless and endless Ranges do not overlap	pass		
+core/range/overlap_spec.rb	Range#overlap? returns false when Ranges are not compatible	pass		
+core/range/overlap_spec.rb	Range#overlap? return false when self is empty	pass		
+core/range/overlap_spec.rb	Range#overlap? return false when other Range is empty	pass		
+core/range/overlap_spec.rb	Range#overlap? takes into account exclusive end	pass		
 core/range/percent_spec.rb	Range#% works as a Range#step	bug		uninitialized constant Enumerator::ArithmeticSequence (NameError)
 core/range/percent_spec.rb	Range#% produces an arithmetic sequence with a percent sign in #inspect	bug		Expected "[1, 3, 5, 7, 9]" == "((1..10).%(2))" to be truthy but was false
 core/range/range_spec.rb	Range includes Enumerable	bug		undefined method 'include?' for class Range (NoMethodError)
@@ -3549,8 +3549,8 @@ core/time/dst_spec.rb	Time#dst? returns whether time is during daylight saving t
 core/time/dup_spec.rb	Time#dup returns a Time object that represents the same time	pass		
 core/time/dup_spec.rb	Time#dup copies the gmt state flag	pass		
 core/time/dup_spec.rb	Time#dup returns an independent Time object	pass		
-core/time/dup_spec.rb	Time#dup returns a subclass instance	bug		Expected 2026-10-21 22:23:31.700387 +0200.instance_of?(#<Class>) to be truthy but was false
-core/time/dup_spec.rb	Time#dup returns a clone of Time instance	bug		Expected 2026-10-21 22:23:31.700415 +0200.instance_of?(Time) to be falsy but was true
+core/time/dup_spec.rb	Time#dup returns a subclass instance	bug		Expected 2026-10-21 22:26:49.899289 +0200.instance_of?(#<Class>) to be truthy but was false
+core/time/dup_spec.rb	Time#dup returns a clone of Time instance	bug		Expected 2026-10-21 22:26:49.899317 +0200.instance_of?(Time) to be falsy but was true
 core/time/dup_spec.rb	Time#dup does not copy frozen status from the original	bug		Expected true == false to be truthy but was false
 core/time/eql_spec.rb	Time#eql? returns true if self and other have the same whole number of seconds	pass		
 core/time/eql_spec.rb	Time#eql? returns false if self and other have differing whole numbers of seconds	pass		
