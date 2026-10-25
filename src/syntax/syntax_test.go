@@ -179,11 +179,19 @@ func TestJSONFunctionsWithMutatingNamesAreCalls(t *testing.T) {
 	rejects(t, "A = {}\nA.parse!\n", "parse!: a bang method changes its receiver")
 }
 
+func TestBangMethodsTheScriptDefinesAreCalls(t *testing.T) {
+	parse(t, "class A\n  def save! = 1\nend\nA.new.save!\n")
+	parse(t, "A.new.save!\nclass A\n  def save! = 1\nend\n")
+	parse(t, "def top!(x) = x\ntop!(1)\n")
+	parse(t, "class A\n  def self.reset! = 1\nend\nA.reset!\n")
+	// A bang method the script does not define is one of Ruby's mutators.
+	rejects(t, "class A\n  def save! = 1\nend\n[[2, 1]].first.sort!\n", "sort!: a bang method changes its receiver")
+}
+
 func TestRejections(t *testing.T) {
 	cases := map[string]string{
 		"attr_accessor :x\n":                 "attr_accessor is not supported",
 		"def x=(v); end\n":                   "def x=: setters are not supported",
-		"def save!; end\n":                   "bang methods are not supported",
 		"A = []\nA << 1\n":                   "<< changes its receiver",
 		"a = [[]]\na.first.push(1)\n":        "push changes its receiver",
 		"A = {}\nA.merge!({})\n":             "merge!: a bang method changes its receiver",

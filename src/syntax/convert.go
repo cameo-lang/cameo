@@ -44,6 +44,9 @@ type converter struct {
 	// lent names the hash parameters of the Hash.new blocks being
 	// converted, which the block must not store into.
 	lent []string
+	// bangs names the bang methods the script defines, which are calls
+	// like any other; any other bang method is one of Ruby's mutators.
+	bangs map[string]bool
 }
 
 func (c *converter) fail(format string, args ...any) {
@@ -540,7 +543,7 @@ func (c *converter) call(n *ast.Call) Node {
 			return m
 		}
 	}
-	if msg, refused := Refused(name); refused && name != "[]=" && !lib {
+	if msg, refused := Refused(name); refused && name != "[]=" && !lib && !c.bangs[name] {
 		c.fail("%s", msg)
 		return nil
 	}
@@ -734,10 +737,6 @@ func (c *converter) def(d *ast.MethodDef) Node {
 	}
 	if isSetter(d.Name) {
 		c.fail("def %s: setters are not supported; a field changes through with", d.Name)
-		return nil
-	}
-	if strings.HasSuffix(d.Name, "!") && d.Name != "!" {
-		c.fail("def %s: bang methods are not supported, since nothing mutates", d.Name)
 		return nil
 	}
 	if _, inDef := c.enclosingDef(); inDef {

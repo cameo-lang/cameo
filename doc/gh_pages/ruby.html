@@ -121,7 +121,7 @@ below cover.</p>
 
 <p>Nothing changes in place. A call that changes its receiver in Ruby
 (<code>&lt;&lt;</code>, <code>push</code>, <code>delete</code>,
-<code>merge!</code>, any bang method) rebinds the local variable it is
+<code>merge!</code>, any bang method of Ruby's core) rebinds the local variable it is
 called on to the changed copy. Another variable that held the old value
 keeps it.</p>
 
@@ -312,7 +312,7 @@ script.cameo:11: global variables are not supported</code></pre>
 <tr><td><code>private</code>, <code>protected</code>, <code>public</code>, <code>module_function</code></td><td>none: every method is public</td></tr>
 <tr><td><code>eval</code>, <code>instance_eval</code>, <code>class_eval</code>, <code>define_method</code>, <code>instance_variable_get</code> and <code>_set</code>, <code>undef</code></td><td>a direct call or a <code>def</code></td></tr>
 <tr><td><code>def obj.x</code>, <code>class &lt;&lt; self</code></td><td><code>def self.x</code> in a class body</td></tr>
-<tr><td>a mutating or bang method on anything but a local, such as <code>[3, 1].sort!</code> or <code>obj.list &lt;&lt; x</code></td><td>the non-mutating form: <code>sort</code>, <code>+</code>, <code>append</code>, <code>with</code></td></tr>
+<tr><td>a mutating or bang method of Ruby's core on anything but a local, such as <code>[3, 1].sort!</code> or <code>obj.list &lt;&lt; x</code></td><td>the non-mutating form: <code>sort</code>, <code>+</code>, <code>append</code>, <code>with</code></td></tr>
 <tr><td>nested multiple assignment, <code>a, (b, c) = …</code></td><td>separate assignments</td></tr>
 <tr><td><code>require_relative</code>, <code>load</code></td><td>one file per script</td></tr>
 <tr><td>backticks, <code>fork</code></td><td>none; a host can give the script a module of Go methods, and <code>async</code> runs a call on a goroutine</td></tr>

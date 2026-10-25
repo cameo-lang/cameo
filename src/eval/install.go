@@ -5,6 +5,7 @@ import (
 	"github.com/cameo-lang/cameo/src/stdlib"
 	"github.com/cameo-lang/cameo/src/syntax"
 	"path/filepath"
+	"strings"
 )
 
 // installStdlib installs the standard library once per process: the Go
@@ -89,7 +90,9 @@ func init() {
 		if name == "initialize" {
 			return object.Value{}, ctx.Raise(object.CameoError, "send(:initialize): initialize runs only in new")
 		}
-		if msg, refused := syntax.Refused(name); refused || name == "[]=" {
+		// A bang method a class defines is a call like any other.
+		defined := strings.HasSuffix(name, "!") && self.Class().Lookup(name) != nil
+		if msg, refused := syntax.Refused(name); (refused || name == "[]=") && !defined {
 			if !refused {
 				msg = "[]= is not supported; use assignment, which copies"
 			}
