@@ -184,7 +184,9 @@ func installStringEncodings() {
 			return nil
 		}
 		if block.IsZero() {
-			return enumerator(false, self, "each_char", nil, chars), nil
+			return enumFor(self, "each_char", nil, func(ctx object.Context) (object.Value, error) {
+				return ctx.Call(self, "size")
+			}), nil
 		}
 		err := chars(ctx, func(v object.Value) error {
 			_, err := ctx.Yield(block, v)

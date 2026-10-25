@@ -13,3 +13,121 @@ puts words.to_set.include?("fig")
 scores = { alice: 3, bob: 5 }
 scores.each { |name, score| puts "#{name}: #{score}" }
 puts scores.map { |name, score| score }.max
+
+# Without a block, an iterating method returns an Enumerator, as in Ruby:
+# its size, where Ruby knows it, its elements, and its inspect.
+def show(e)
+  puts "#{e.inspect} #{e.class} #{e.size.inspect} #{e.to_a.inspect}"
+end
+
+list = [3, 1, 2]
+show list.map
+show list.collect
+show list.flat_map
+show list.collect_concat
+show list.select
+show list.filter
+show list.find_all
+show list.reject
+show list.filter_map
+show list.partition
+show list.group_by
+show list.sort_by
+show list.min_by
+show list.max_by
+show list.minmax_by
+show list.find
+show list.detect
+show list.find_index
+show list.index
+show list.rindex
+show list.take_while
+show list.drop_while
+puts list.chunk.inspect, list.chunk.size
+show list.each
+show list.each_index
+show list.each_entry
+show list.each_with_index
+show list.each_with_object([])
+show list.reverse_each
+show list.each_slice(2)
+show list.each_cons(2)
+show list.combination(2)
+puts list.cycle.inspect, list.cycle.size, list.cycle.first(4).inspect, list.cycle(2).size
+
+hash = { a: 1, b: 2 }
+show hash.each
+show hash.each_pair
+show hash.each_key
+show hash.each_value
+show hash.select
+show hash.filter
+show hash.reject
+show hash.map
+show hash.filter_map
+show hash.transform_values
+show hash.transform_keys
+show hash.min_by
+show hash.each_slice(1)
+
+set = Set[1, 2]
+show set.each
+show set.select
+show set.reject
+show set.map
+show set.classify
+
+range = (1..4)
+show range.map
+show range.select
+show range.each_slice(3)
+show range.each_cons(3)
+show range.find
+show range.each_with_index
+show 3.times
+show 1.upto(3)
+show 3.downto(1)
+show "ab".each_char
+show "a\nb\n".each_line
+show "a".upto("c")
+
+# The block given to the chain is the block of the first method.
+puts list.map.with_index { |n, i| n * i }.inspect
+puts list.map.with_index(1).to_a.inspect
+puts list.map.with_index(1).inspect
+puts list.select.with_index { |n, i| i > 0 }.inspect
+puts list.reject.with_index(1) { |n, i| i == 2 }.inspect
+puts list.each_with_index.map { |n, i| n + i }.inspect
+puts list.each.with_index(1).to_a.inspect
+puts list.each_slice(2).map(&:sum).inspect
+puts list.each_slice(2).with_index.map { |s, i| s.size + i }.inspect
+puts list.each_slice(2).size, list.each_cons(2).size, list.find.size.inspect
+puts list.sort_by.with_index { |n, i| -i }.inspect
+puts list.min_by.with_index { |n, i| -i }
+puts list.group_by.with_index { |n, i| i.even? }.inspect
+puts 3.times.map { |i| i * 2 }.inspect
+puts 1.upto(3).with_index.to_a.inspect
+puts "ab".each_char.with_index.map { |c, i| c * (i + 1) }.inspect
+puts hash.each.with_index.to_a.inspect
+puts hash.map.with_index { |(k, v), i| "#{k}#{v}#{i}" }.inspect
+puts hash.select.with_index { |(k, v), i| i == 1 }.inspect
+puts (1..).map.size
+puts %w[b a c].minmax_by { |w| w }.inspect, %w[ab c de].minmax_by(&:size).inspect
+
+# A class that includes Enumerable gets the same enumerators, sized by its
+# size method when it has one.
+class Bag
+  include Enumerable
+
+  def each
+    yield 1
+    yield 2
+    self
+  end
+
+  def inspect = "#<Bag>"
+end
+bag = Bag.new
+show bag.map
+show bag.each_slice(1)
+puts bag.select.with_index(1).to_a.inspect
