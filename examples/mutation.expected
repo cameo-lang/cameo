@@ -1,7 +1,7 @@
-<< changes its receiver, which cameo does not do; use +, or append
-push changes its receiver, which cameo does not do; use +, or append
-pop changes its receiver, which cameo does not do; use last and take
-delete changes its receiver, which cameo does not do; use without, or - on a set
+cameo does not support mutating calls without rebinding; use a = a << 1, +, or append
+cameo does not support mutating calls without rebinding; use a = a.push(x), +, or append
+cameo does not support mutating calls without rebinding; use last and take
+cameo does not support mutating calls without rebinding; use without, or - on a set
 [1, 2]
 [1, 2]
 [1, 2, 3]
@@ -11,21 +11,21 @@ delete changes its receiver, which cameo does not do; use without, or - on a set
 [2, 3]
 [0, 2, 3]
 [1, 2]
-<< changes its receiver, which cameo does not do; use +, or append
-prepend changes its receiver, which cameo does not do; use +
-setbyte changes its receiver, which cameo does not do; use byteslice and +
+cameo does not support mutating calls without rebinding; use a = a << 1, +, or append
+cameo does not support mutating calls without rebinding; use a = a.prepend(x), +
+cameo does not support mutating calls without rebinding; use byteslice and +
 "abc"
-store changes its receiver, which cameo does not do; use put
-delete changes its receiver, which cameo does not do; use without, or - on a set
-update changes its receiver, which cameo does not do; use merge
+cameo does not support mutating calls without rebinding; use put
+cameo does not support mutating calls without rebinding; use without, or - on a set
+cameo does not support mutating calls without rebinding; use a = a.update(x), merge
 {a: 1, b: 2}
 {a: 1, b: 2, c: 3}
 {b: 2}
 {a: 1, b: 2, d: 4}
 {a: 1, b: 2}
-<< changes its receiver, which cameo does not do; use +, or append
-add changes its receiver, which cameo does not do; use | [x]
-merge changes its receiver, which cameo does not do; use |
+cameo does not support mutating calls without rebinding; use a = a << 1, +, or append
+cameo does not support mutating calls without rebinding; use a = a.add(x), | [x]
+cameo does not support mutating calls without rebinding; use a = a.merge(x), |
 #<Set: {1, 2, 3}>
 #<Set: {2}>
 #<Set: {1, 2}>

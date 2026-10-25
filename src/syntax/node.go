@@ -193,6 +193,11 @@ type Call struct {
 	// Dropped is set on a statement whose value nothing reads: one before
 	// the last of a body, or the last of the script.
 	Dropped bool
+	// Rebinds is set on a call whose value is assigned back to its
+	// receiver, `a = a << 1` or `self.xs = self.xs.push(x)` in initialize:
+	// one of Ruby's mutators returns Ruby's value, computed on a copy,
+	// instead of raising.
+	Rebinds bool
 }
 
 // Block is a literal block or a lambda body.

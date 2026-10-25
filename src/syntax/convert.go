@@ -176,7 +176,9 @@ func (c *converter) expr(n ast.Node) Node {
 	case *ast.VarRef:
 		return &Var{c.pos(), n.Name}
 	case *ast.Assign:
-		return &Assign{c.pos(), n.Name, c.expr(n.Value)}
+		value := c.expr(n.Value)
+		markRebinds(value, &Var{Name: n.Name})
+		return &Assign{c.pos(), n.Name, value}
 	case *ast.OpAssign:
 		return c.opAssign(n)
 	case *ast.MultiAssign:
@@ -326,8 +328,7 @@ func (c *converter) opAssign(n *ast.OpAssign) Node {
 	case "&&":
 		rhs = &And{c.pos(), read, value}
 	case "<<":
-		c.fail("<< mutates its receiver: cameo values are immutable; use + or append")
-		return nil
+		rhs = &Call{Pos: c.pos(), Recv: read, Name: n.Op, Args: []Node{value}, Rebinds: true}
 	default:
 		rhs = &Call{Pos: c.pos(), Recv: read, Name: n.Op, Args: []Node{value}}
 	}
@@ -393,7 +394,48 @@ func (c *converter) fieldAssign(name string, value Node) Node {
 		c.fail("self.%s = …: a field is set in initialize only; elsewhere use with", name)
 		return nil
 	}
+	markRebinds(value, &Call{Recv: &Self{}, Name: name})
 	return &FieldAssign{c.pos(), name, value}
+}
+
+// markRebinds sets Rebinds on value when it is a call on target, the
+// variable or field the assignment binds: `a = a << 1` rebinds a to Ruby's
+// result. In a chain on target, `a = a << 1 << 2`, every call of the chain
+// does.
+func markRebinds(value, target Node) {
+	var chain []*Call
+	for n := value; ; {
+		call, ok := n.(*Call)
+		if !ok || call.Recv == nil {
+			return
+		}
+		chain = append(chain, call)
+		if isTarget(call.Recv, target) {
+			for _, c := range chain {
+				c.Rebinds = true
+			}
+			return
+		}
+		n = call.Recv
+	}
+}
+
+// isTarget reports whether recv reads target, the variable or field an
+// assignment binds.
+func isTarget(recv, target Node) bool {
+	switch t := target.(type) {
+	case *Var:
+		r, ok := recv.(*Var)
+		return ok && r.Name == t.Name
+	case *Call:
+		r, ok := recv.(*Call)
+		if !ok || r.Name != t.Name || len(r.Args) != 0 || r.Block != nil {
+			return false
+		}
+		_, self := r.Recv.(*Self)
+		return self
+	}
+	return false
 }
 
 // inInitialize reports a position inside a class's initialize.
@@ -428,13 +470,38 @@ func BangMessage(recv, name string) string {
 }
 
 // MutationMessage is the error for a call of one of Ruby's mutators on a
-// value of the kind it changes, naming the non-mutating form.
+// value of the kind it changes, naming the rebinding and the non-mutating
+// forms.
 func MutationMessage(name string) string {
-	msg := fmt.Sprintf("%s changes its receiver, which cameo does not do", name)
+	msg := "cameo does not support mutating calls without rebinding"
+	alts := []string{}
+	if rebind, ok := rebindForms[name]; ok {
+		alts = append(alts, rebind)
+	}
 	if alt, ok := mutationAlternatives[name]; ok {
-		msg += "; use " + alt
+		alts = append(alts, alt)
+	}
+	if len(alts) > 0 {
+		msg += "; use " + strings.Join(alts, ", ")
 	}
 	return msg
+}
+
+// rebindForms are the mutators whose Ruby value is the changed receiver,
+// so that assigning it back is the rebinding form: `a = a << 1`. The
+// others return what they removed or found, which rebinding would bind
+// instead.
+var rebindForms = map[string]string{
+	"<<":      "a = a << 1",
+	"push":    "a = a.push(x)",
+	"unshift": "a = a.unshift(x)",
+	"insert":  "a = a.insert(i, x)",
+	"concat":  "a = a.concat(x)",
+	"prepend": "a = a.prepend(x)",
+	"replace": "a = a.replace(x)",
+	"update":  "a = a.update(x)",
+	"merge":   "a = a.merge(x)",
+	"add":     "a = a.add(x)",
 }
 
 // ReturnsCopy reports whether name is a mutator of Ruby's that cameo keeps

@@ -387,6 +387,7 @@ func compileCall(n *syntax.Call) thunk {
 	checkMutation := !selfCall && mayMutate(name)
 	recvName := syntax.RecvName(n.Recv)
 	dropped := !selfCall && n.Dropped
+	rebinds := n.Rebinds
 	return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 		r := fr.Self
 		if recv != nil {
@@ -408,7 +409,7 @@ func compileCall(n *syntax.Call) thunk {
 			blk = procValue(&Proc{Block: block, Env: env, Frame: fr})
 		}
 		if checkMutation {
-			if v, handled, err := in.mutating(fr, r, recvName, name, values, nil, blk, line); handled {
+			if v, handled, err := in.mutating(fr, r, recvName, name, values, nil, blk, rebinds, line); handled {
 				return v, err
 			}
 		}

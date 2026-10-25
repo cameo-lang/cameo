@@ -115,6 +115,10 @@ rebinds its receiver:
   the call instead returns what Ruby's returns, computed on a copy, and
   the receiver keeps its value: `a.pop` is the last element, and `a` is
   as it was.
+- A mutator whose value is assigned back to its receiver rebinds it:
+  `a = a << 1`, `a <<= 1` and `self.xs = self.xs << x` in `initialize`
+  return what Ruby's returns, computed on a copy, and the assignment binds
+  it. Another variable that held the old value keeps it.
 - A bang method of Ruby's core (`compact!`, `sort!`, `gsub!`, `merge!`)
   is refused before the script runs: "This is not supported, use x =
   x.compact instead". A bang method a class defines is an ordinary call.

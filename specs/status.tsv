@@ -699,8 +699,8 @@ core/enumerator/lazy/with_index_spec.rb	Enumerator::Lazy#with_index enumerates w
 core/enumerator/lazy/with_index_spec.rb	Enumerator::Lazy#with_index enumerates with an index starting at a given offset	pass		
 core/enumerator/lazy/with_index_spec.rb	Enumerator::Lazy#with_index enumerates with an index starting at 0 when offset is nil	pass		
 core/enumerator/lazy/with_index_spec.rb	Enumerator::Lazy#with_index raises TypeError when offset does not convert to Integer	bug		Expected TypeError but no exception was raised ([0, 1, 2] was returned)
-core/enumerator/lazy/with_index_spec.rb	Enumerator::Lazy#with_index enumerates with a given block	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
-core/enumerator/lazy/with_index_spec.rb	Enumerator::Lazy#with_index resets after a new call to each	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+core/enumerator/lazy/with_index_spec.rb	Enumerator::Lazy#with_index enumerates with a given block	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+core/enumerator/lazy/with_index_spec.rb	Enumerator::Lazy#with_index resets after a new call to each	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
 core/enumerator/lazy/zip_spec.rb	*	expected	instance-variables	@yieldsmixed = …: cameo has no instance variables; initialize sets a field with self.yieldsmixed = …
 core/enumerator/new_spec.rb	Enumerator.new no block given raises	expected	literal-only	undefined method 'new' for class Enumerator: use a literal (NoMethodError)
 core/enumerator/new_spec.rb	Enumerator.new when passed a block defines iteration with block, yielder argument and calling << method	expected	literal-only	undefined method 'new' for class Enumerator: use a literal (NoMethodError)
@@ -1045,7 +1045,7 @@ core/file/join_spec.rb	File.join inserts the separator in between empty strings 
 core/file/join_spec.rb	File.join handles leading parts edge cases	pass		
 core/file/join_spec.rb	File.join handles trailing parts edge cases	pass		
 core/file/join_spec.rb	File.join handles middle parts edge cases	pass		
-core/file/join_spec.rb	File.join raises an ArgumentError if passed a recursive array	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+core/file/join_spec.rb	File.join raises an ArgumentError if passed a recursive array	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
 core/file/join_spec.rb	File.join raises a TypeError exception when args are nil	pass		
 core/file/join_spec.rb	File.join calls #to_str	harness	fails under Ruby too	undefined method 'mock' for an instance of Object (NoMethodError)
 core/file/join_spec.rb	File.join doesn't mutate the object when calling #to_str	harness	fails under Ruby too	undefined method 'mock' for an instance of Object (NoMethodError)
@@ -1489,11 +1489,11 @@ core/integer/div_spec.rb	*	expected	instance-variables	@bignum = …: cameo has 
 core/integer/divide_spec.rb	*	expected	instance-variables	@v = …: cameo has no instance variables; initialize sets a field with self.v = …
 core/integer/divmod_spec.rb	*	expected	instance-variables	@bignum = …: cameo has no instance variables; initialize sets a field with self.bignum = …
 core/integer/downto_spec.rb	Integer#downto [stop] when self and stop are Integers does not yield when stop is greater than self	pass		
-core/integer/downto_spec.rb	Integer#downto [stop] when self and stop are Integers yields once when stop equals self	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
-core/integer/downto_spec.rb	Integer#downto [stop] when self and stop are Integers yields while decreasing self until it is less than stop	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
-core/integer/downto_spec.rb	Integer#downto [stop] when self and stop are Integers yields while decreasing self until it less than ceil for a Float endpoint	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+core/integer/downto_spec.rb	Integer#downto [stop] when self and stop are Integers yields once when stop equals self	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+core/integer/downto_spec.rb	Integer#downto [stop] when self and stop are Integers yields while decreasing self until it is less than stop	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+core/integer/downto_spec.rb	Integer#downto [stop] when self and stop are Integers yields while decreasing self until it less than ceil for a Float endpoint	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
 core/integer/downto_spec.rb	Integer#downto [stop] when self and stop are Integers raises an ArgumentError for invalid endpoints	bug		no implicit conversion of String into Integer (TypeError)
-core/integer/downto_spec.rb	Integer#downto [stop] when self and stop are Integers when no block is given returns an Enumerator	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+core/integer/downto_spec.rb	Integer#downto [stop] when self and stop are Integers when no block is given returns an Enumerator	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
 core/integer/downto_spec.rb	Integer#downto [stop] when self and stop are Integers when no block is given returned Enumerator size raises an ArgumentError for invalid endpoints	bug		no implicit conversion of String into Integer (TypeError)
 core/integer/downto_spec.rb	Integer#downto [stop] when self and stop are Integers when no block is given returned Enumerator size returns self - stop + 1	pass		
 core/integer/downto_spec.rb	Integer#downto [stop] when self and stop are Integers when no block is given returned Enumerator size returns 0 when stop > self	pass		
@@ -1614,13 +1614,13 @@ core/integer/succ_spec.rb	Integer#succ returns the next larger negative Bignum	p
 core/integer/succ_spec.rb	Integer#succ overflows a Fixnum to a Bignum	pass		
 core/integer/succ_spec.rb	Integer#succ underflows a Bignum to a Fixnum	pass		
 core/integer/times_spec.rb	Integer#times returns self	pass		
-core/integer/times_spec.rb	Integer#times yields each value from 0 to self - 1	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
-core/integer/times_spec.rb	Integer#times skips the current iteration when encountering 'next'	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
-core/integer/times_spec.rb	Integer#times skips all iterations when encountering 'break'	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+core/integer/times_spec.rb	Integer#times yields each value from 0 to self - 1	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+core/integer/times_spec.rb	Integer#times skips the current iteration when encountering 'next'	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+core/integer/times_spec.rb	Integer#times skips all iterations when encountering 'break'	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
 core/integer/times_spec.rb	Integer#times skips all iterations when encountering break with an argument and returns that argument	pass		
-core/integer/times_spec.rb	Integer#times executes a nested while loop containing a break expression	expected	mutation	shift changes its receiver, which cameo does not do; use first and drop (CameoError)
+core/integer/times_spec.rb	Integer#times executes a nested while loop containing a break expression	expected	mutation	cameo does not support mutating calls without rebinding; use first and drop (CameoError)
 core/integer/times_spec.rb	Integer#times executes a nested #times	pass		
-core/integer/times_spec.rb	Integer#times returns an Enumerator	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+core/integer/times_spec.rb	Integer#times returns an Enumerator	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
 core/integer/times_spec.rb	Integer#times when no block is given returned Enumerator size returns self	pass		
 core/integer/to_f_spec.rb	Integer#to_f fixnum returns self converted to a Float	pass		
 core/integer/to_f_spec.rb	Integer#to_f bignum returns self converted to a Float	pass		
@@ -1639,11 +1639,11 @@ core/integer/uminus_spec.rb	Integer#-@ fixnum returns self as a negative value	p
 core/integer/uminus_spec.rb	Integer#-@ fixnum negates self at Fixnum/Bignum boundaries	pass		
 core/integer/uminus_spec.rb	Integer#-@ bignum returns self as a negative value	pass		
 core/integer/upto_spec.rb	Integer#upto [stop] when self and stop are Integers does not yield when stop is less than self	pass		
-core/integer/upto_spec.rb	Integer#upto [stop] when self and stop are Integers yields once when stop equals self	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
-core/integer/upto_spec.rb	Integer#upto [stop] when self and stop are Integers yields while increasing self until it is less than stop	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
-core/integer/upto_spec.rb	Integer#upto [stop] when self and stop are Integers yields while increasing self until it is greater than floor of a Float endpoint	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+core/integer/upto_spec.rb	Integer#upto [stop] when self and stop are Integers yields once when stop equals self	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+core/integer/upto_spec.rb	Integer#upto [stop] when self and stop are Integers yields while increasing self until it is less than stop	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+core/integer/upto_spec.rb	Integer#upto [stop] when self and stop are Integers yields while increasing self until it is greater than floor of a Float endpoint	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
 core/integer/upto_spec.rb	Integer#upto [stop] when self and stop are Integers raises an ArgumentError for non-numeric endpoints	bug		no implicit conversion of String into Integer (TypeError)
-core/integer/upto_spec.rb	Integer#upto [stop] when self and stop are Integers when no block is given returns an Enumerator	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+core/integer/upto_spec.rb	Integer#upto [stop] when self and stop are Integers when no block is given returns an Enumerator	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
 core/integer/upto_spec.rb	Integer#upto [stop] when self and stop are Integers when no block is given returned Enumerator size raises an ArgumentError for non-numeric endpoints	bug		no implicit conversion of String into Integer (TypeError)
 core/integer/upto_spec.rb	Integer#upto [stop] when self and stop are Integers when no block is given returned Enumerator size returns stop - self + 1	pass		
 core/integer/upto_spec.rb	Integer#upto [stop] when self and stop are Integers when no block is given returned Enumerator size returns 0 when stop < self	pass		
@@ -2263,7 +2263,7 @@ core/mutex/sleep_spec.rb	Mutex#sleep relocks the mutex when woken	expected	threa
 core/mutex/sleep_spec.rb	Mutex#sleep relocks the mutex when woken by an exception being raised	expected	threads	uninitialized constant Mutex (NameError)
 core/mutex/sleep_spec.rb	Mutex#sleep returns the rounded number of seconds asleep	expected	threads	uninitialized constant Mutex (NameError)
 core/mutex/sleep_spec.rb	Mutex#sleep accepts nil as a sleep duration	harness	fails under Ruby too	uninitialized constant Mutex (NameError)
-core/mutex/sleep_spec.rb	Mutex#sleep wakes up when requesting sleep times near or equal to zero	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+core/mutex/sleep_spec.rb	Mutex#sleep wakes up when requesting sleep times near or equal to zero	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
 core/mutex/synchronize_spec.rb	Mutex#synchronize wraps the lock/unlock pair in an ensure	expected	threads	uninitialized constant Mutex (NameError)
 core/mutex/synchronize_spec.rb	Mutex#synchronize blocks the caller if already locked	harness	fails under Ruby too	uninitialized constant Mutex (NameError)
 core/mutex/synchronize_spec.rb	Mutex#synchronize does not block the caller if not locked	harness	fails under Ruby too	uninitialized constant Mutex (NameError)
@@ -2674,15 +2674,15 @@ core/range/overlap_spec.rb	Range#overlap? takes into account exclusive end	pass
 core/range/percent_spec.rb	Range#% works as a Range#step	bug		uninitialized constant Enumerator::ArithmeticSequence (NameError)
 core/range/percent_spec.rb	Range#% produces an arithmetic sequence with a percent sign in #inspect	bug		Expected "[1, 3, 5, 7, 9]" == "((1..10).%(2))" to be truthy but was false
 core/range/range_spec.rb	Range includes Enumerable	pass		
-core/range/reverse_each_spec.rb	Range#reverse_each traverses the Range in reverse order and passes each element to block	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+core/range/reverse_each_spec.rb	Range#reverse_each traverses the Range in reverse order and passes each element to block	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
 core/range/reverse_each_spec.rb	Range#reverse_each returns self	expected	identity-and-freezing	undefined method 'equal?' for an instance of Range (NoMethodError)
 core/range/reverse_each_spec.rb	Range#reverse_each returns an Enumerator if no block given	bug		Expected [3, 2, 1].instance_of?(Enumerator) to be truthy but was false
 core/range/reverse_each_spec.rb	Range#reverse_each raises a TypeError for endless Ranges of Integers	bug		cannot convert endless range to a list (RangeError)
 core/range/reverse_each_spec.rb	Range#reverse_each raises a TypeError for endless Ranges of non-Integers	bug		cannot convert endless range to a list (RangeError)
 core/range/reverse_each_spec.rb	Range#reverse_each Integer boundaries supports beginningless Ranges	bug		can't iterate from nil (TypeError)
 core/range/reverse_each_spec.rb	Range#reverse_each non-Integer boundaries uses #succ to iterate a Range of non-Integer elements	harness	fails under Ruby too	undefined method 'mock' for an instance of Object (NoMethodError)
-core/range/reverse_each_spec.rb	Range#reverse_each non-Integer boundaries uses #succ to iterate a Range of Strings	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
-core/range/reverse_each_spec.rb	Range#reverse_each non-Integer boundaries uses #succ to iterate a Range of Symbols	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+core/range/reverse_each_spec.rb	Range#reverse_each non-Integer boundaries uses #succ to iterate a Range of Strings	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+core/range/reverse_each_spec.rb	Range#reverse_each non-Integer boundaries uses #succ to iterate a Range of Symbols	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
 core/range/reverse_each_spec.rb	Range#reverse_each non-Integer boundaries raises a TypeError when `begin` value does not respond to #succ	pass		
 core/range/reverse_each_spec.rb	Range#reverse_each non-Integer boundaries does not support beginningless Ranges	bug		can't iterate from nil (TypeError)
 core/range/reverse_each_spec.rb	Range#reverse_each when no block is given returned Enumerator size returns the Range size when Range size is finite	bug		can't iterate from Integer (TypeError)
@@ -2978,11 +2978,11 @@ core/set/delete_spec.rb	*	expected	instance-variables	@set = …: cameo has no i
 core/set/difference_spec.rb	Set#difference is an alias of Set#-	expected	metaprogramming	undefined method 'instance_method' for class Set (NoMethodError)
 core/set/disjoint_spec.rb	*	expected	instance-variables	@entries = …: cameo has no instance variables; initialize sets a field with self.entries = …
 core/set/divide_spec.rb	Set#divide divides self into a set of subsets based on the blocks return values	pass		
-core/set/divide_spec.rb	Set#divide yields each Object to the block	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+core/set/divide_spec.rb	Set#divide yields each Object to the block	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
 core/set/divide_spec.rb	Set#divide returns an enumerator when not passed a block	pass		
 core/set/divide_spec.rb	Set#divide does not retain compare_by_identity flag	bug		undefined method 'compare_by_identity?' for an instance of Set (NoMethodError)
 core/set/divide_spec.rb	Set#divide when passed a block with an arity of 2 divides self into a set of subsets based on the blocks return values	pass		
-core/set/divide_spec.rb	Set#divide when passed a block with an arity of 2 yields each two Object to the block	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+core/set/divide_spec.rb	Set#divide when passed a block with an arity of 2 yields each two Object to the block	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
 core/set/divide_spec.rb	Set#divide when passed a block with an arity of 2 returns an enumerator when not passed a block	pass		
 core/set/divide_spec.rb	Set#divide when passed a block with an arity of > 2 only uses the first element if the arity > 2	pass		
 core/set/divide_spec.rb	Set#divide when passed a block with an arity of > 2 only uses the first element if the arity = -1	pass		
@@ -2996,7 +2996,7 @@ core/set/exclusion_spec.rb	*	expected	instance-variables	@set = …: cameo has n
 core/set/filter_spec.rb	Set#filter! is an alias of Set#select!	expected	metaprogramming	undefined method 'instance_method' for class Set (NoMethodError)
 core/set/flatten_merge_spec.rb	Set#flatten_merge is protected	bug		undefined method 'protected_instance_methods' for class Set (NoMethodError)
 core/set/flatten_merge_spec.rb	Set#flatten_merge flattens the passed Set and merges it into self	pass		
-core/set/flatten_merge_spec.rb	Set#flatten_merge raises an ArgumentError when trying to flatten a recursive Set	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+core/set/flatten_merge_spec.rb	Set#flatten_merge raises an ArgumentError when trying to flatten a recursive Set	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
 core/set/flatten_spec.rb	*	expected	instance-variables	@entries = …: cameo has no instance variables; initialize sets a field with self.entries = …
 core/set/gt_spec.rb	Set#> is an alias of Set#proper_superset?	expected	metaprogramming	undefined method 'instance_method' for class Set (NoMethodError)
 core/set/gte_spec.rb	Set#>= is an alias of Set#superset?	expected	metaprogramming	undefined method 'instance_method' for class Set (NoMethodError)
@@ -3030,12 +3030,12 @@ core/set/lt_spec.rb	Set#< is an alias of Set#proper_subset?	expected	metaprogram
 core/set/lte_spec.rb	Set#<= is an alias of Set#subset?	expected	metaprogramming	undefined method 'instance_method' for class Set (NoMethodError)
 core/set/map_spec.rb	*	expected	instance-variables	@set = …: cameo has no instance variables; initialize sets a field with self.set = …
 core/set/member_spec.rb	Set#member? is an alias of Set#include?	expected	metaprogramming	undefined method 'instance_method' for class Set (NoMethodError)
-core/set/merge_spec.rb	Set#merge adds the elements of the passed Enumerable to self	expected	mutation	merge changes its receiver, which cameo does not do; use | (CameoError)
-core/set/merge_spec.rb	Set#merge returns self	expected	mutation	merge changes its receiver, which cameo does not do; use | (CameoError)
-core/set/merge_spec.rb	Set#merge raises an ArgumentError when passed a non-Enumerable	expected	mutation	merge changes its receiver, which cameo does not do; use | (CameoError)
-core/set/merge_spec.rb	Set#merge raises RuntimeError when called during iteration	expected	mutation	merge changes its receiver, which cameo does not do; use | (CameoError)
-core/set/merge_spec.rb	Set#merge accepts multiple arguments	expected	mutation	merge changes its receiver, which cameo does not do; use | (CameoError)
-core/set/merge_spec.rb	Set#merge retains compare_by_identity flag	expected	mutation	merge changes its receiver, which cameo does not do; use | (CameoError)
+core/set/merge_spec.rb	Set#merge adds the elements of the passed Enumerable to self	expected	mutation	cameo does not support mutating calls without rebinding; use a = a.merge(x), | (CameoError)
+core/set/merge_spec.rb	Set#merge returns self	expected	mutation	cameo does not support mutating calls without rebinding; use a = a.merge(x), | (CameoError)
+core/set/merge_spec.rb	Set#merge raises an ArgumentError when passed a non-Enumerable	expected	mutation	cameo does not support mutating calls without rebinding; use a = a.merge(x), | (CameoError)
+core/set/merge_spec.rb	Set#merge raises RuntimeError when called during iteration	expected	mutation	cameo does not support mutating calls without rebinding; use a = a.merge(x), | (CameoError)
+core/set/merge_spec.rb	Set#merge accepts multiple arguments	expected	mutation	cameo does not support mutating calls without rebinding; use a = a.merge(x), | (CameoError)
+core/set/merge_spec.rb	Set#merge retains compare_by_identity flag	expected	mutation	cameo does not support mutating calls without rebinding; use a = a.merge(x), | (CameoError)
 core/set/minus_spec.rb	*	expected	instance-variables	@set = …: cameo has no instance variables; initialize sets a field with self.set = …
 core/set/plus_spec.rb	Set#+ is an alias of Set#|	expected	metaprogramming	undefined method 'instance_method' for class Set (NoMethodError)
 core/set/pretty_print_cycle_spec.rb	Set#pretty_print_cycle passes the 'pretty print' representation of a self-referencing Set to the pretty print writer	harness	fails under Ruby too	undefined method 'mock' for an instance of Object (NoMethodError)
@@ -3054,7 +3054,7 @@ core/set/to_a_spec.rb	Set#to_a returns an array containing elements of self	pass
 core/set/to_s_spec.rb	Set#to_s returns a String representation of self	pass		
 core/set/to_s_spec.rb	Set#to_s does include the elements of the set	pass		
 core/set/to_s_spec.rb	Set#to_s puts spaces between the elements	pass		
-core/set/to_s_spec.rb	Set#to_s correctly handles cyclic-references	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+core/set/to_s_spec.rb	Set#to_s correctly handles cyclic-references	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
 core/set/union_spec.rb	*	expected	instance-variables	@set = …: cameo has no instance variables; initialize sets a field with self.set = …
 core/signal/list_spec.rb	Signal.list doesn't contain other signals than the known list	expected	process	uninitialized constant Signal (NameError)
 core/signal/list_spec.rb	Signal.list (describe body)	harness	fails under Ruby too	uninitialized constant Signal (NameError)
@@ -3084,13 +3084,13 @@ core/sizedqueue/size_spec.rb	*	expected	instance-variables	@object: cameo has no
 core/string/allocate_spec.rb	String.allocate returns an instance of String	expected	metaprogramming	allocate is not supported: use new (NoMethodError)
 core/string/allocate_spec.rb	String.allocate returns a fully-formed String	expected	metaprogramming	allocate is not supported: use new (NoMethodError)
 core/string/allocate_spec.rb	String.allocate returns a binary String	expected	metaprogramming	allocate is not supported: use new (NoMethodError)
-core/string/append_as_bytes_spec.rb	String#append_bytes doesn't allow to mutate frozen strings	expected	mutation	append_as_bytes changes its receiver, which cameo does not do; use + (CameoError)
-core/string/append_as_bytes_spec.rb	String#append_bytes allows creating broken strings in UTF8	expected	mutation	append_as_bytes changes its receiver, which cameo does not do; use + (CameoError)
+core/string/append_as_bytes_spec.rb	String#append_bytes doesn't allow to mutate frozen strings	expected	mutation	cameo does not support mutating calls without rebinding; use + (CameoError)
+core/string/append_as_bytes_spec.rb	String#append_bytes allows creating broken strings in UTF8	expected	mutation	cameo does not support mutating calls without rebinding; use + (CameoError)
 core/string/append_as_bytes_spec.rb	String#append_bytes allows creating broken strings in UTF_32	expected	encodings	uninitialized constant Encoding::UTF_32LE (NameError)
-core/string/append_as_bytes_spec.rb	String#append_bytes never changes the receiver encoding	expected	mutation	append_as_bytes changes its receiver, which cameo does not do; use + (CameoError)
-core/string/append_as_bytes_spec.rb	String#append_bytes accepts variadic String or Integer arguments	expected	mutation	append_as_bytes changes its receiver, which cameo does not do; use + (CameoError)
-core/string/append_as_bytes_spec.rb	String#append_bytes truncates integers to the least significant byte	expected	mutation	append_as_bytes changes its receiver, which cameo does not do; use + (CameoError)
-core/string/append_as_bytes_spec.rb	String#append_bytes wraps negative integers	expected	mutation	append_as_bytes changes its receiver, which cameo does not do; use + (CameoError)
+core/string/append_as_bytes_spec.rb	String#append_bytes never changes the receiver encoding	expected	mutation	cameo does not support mutating calls without rebinding; use + (CameoError)
+core/string/append_as_bytes_spec.rb	String#append_bytes accepts variadic String or Integer arguments	expected	mutation	cameo does not support mutating calls without rebinding; use + (CameoError)
+core/string/append_as_bytes_spec.rb	String#append_bytes truncates integers to the least significant byte	expected	mutation	cameo does not support mutating calls without rebinding; use + (CameoError)
+core/string/append_as_bytes_spec.rb	String#append_bytes wraps negative integers	expected	mutation	cameo does not support mutating calls without rebinding; use + (CameoError)
 core/string/append_as_bytes_spec.rb	String#append_bytes only accepts strings or integers, and doesn't attempt to cast with #to_str or #to_int	harness	fails under Ruby too	undefined method 'mock' for an instance of Object (NoMethodError)
 core/string/append_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/ascii_only_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
@@ -3105,44 +3105,44 @@ core/string/byterindex_spec.rb	*	expected	instance-variables	instance_variable_g
 core/string/bytes_spec.rb	*	expected	instance-variables	@utf8 = …: cameo has no instance variables; initialize sets a field with self.utf8 = …
 core/string/bytesize_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/byteslice_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
-core/string/bytesplice_spec.rb	String#bytesplice raises IndexError when index is less than -bytesize	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice raises IndexError when index is greater than bytesize	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice raises IndexError for negative length	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice replaces with integer indices	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice raises RangeError when range left boundary is less than -bytesize	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice replaces with ranges	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice raises TypeError when integer index is provided without length argument	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice replaces on an empty string	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice mutates self	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice raises when string is frozen	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice raises IndexError when str_index is less than -bytesize	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice raises IndexError when str_index is greater than bytesize	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice raises IndexError for negative str length	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice replaces with integer str indices	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice raises RangeError when str range left boundary is less than -bytesize	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice replaces with str ranges	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice raises ArgumentError when integer str index is provided without str length argument	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice replaces on an empty string with str index/length	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice mutates self with substring and str index/length	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice raises when string is frozen and str index/length	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice replaces on an empty string with str range	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice mutates self with substring and str range	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice raises when string is frozen and str range	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when index is out of byte size boundary	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when index is not on a codepoint boundary	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when length is not matching the codepoint boundary	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters replaces with integer indices	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters replaces with range	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters treats negative length for range as 0	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises when ranges not match codepoint boundaries	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice raises IndexError when index is less than -bytesize	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice raises IndexError when index is greater than bytesize	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice raises IndexError for negative length	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice replaces with integer indices	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice raises RangeError when range left boundary is less than -bytesize	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice replaces with ranges	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice raises TypeError when integer index is provided without length argument	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice replaces on an empty string	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice mutates self	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice raises when string is frozen	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice raises IndexError when str_index is less than -bytesize	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice raises IndexError when str_index is greater than bytesize	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice raises IndexError for negative str length	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice replaces with integer str indices	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice raises RangeError when str range left boundary is less than -bytesize	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice replaces with str ranges	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice raises ArgumentError when integer str index is provided without str length argument	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice replaces on an empty string with str index/length	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice mutates self with substring and str index/length	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice raises when string is frozen and str index/length	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice replaces on an empty string with str range	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice mutates self with substring and str range	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice raises when string is frozen and str range	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when index is out of byte size boundary	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when index is not on a codepoint boundary	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when length is not matching the codepoint boundary	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters replaces with integer indices	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters replaces with range	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters treats negative length for range as 0	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises when ranges not match codepoint boundaries	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
 core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters deals with a different encoded argument	expected	mutation	force_encoding returns a copy in cameo and changes nothing, and this call drops it; use x = x.force_encoding(...) (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when str_index is out of byte size boundary	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when str_index is not on a codepoint boundary	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when str_length is not matching the codepoint boundary	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters replaces with integer str indices	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters replaces with str range	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters treats negative length for str range as 0	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises when ranges not match codepoint boundaries in str	expected	mutation	bytesplice changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when str_index is out of byte size boundary	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when str_index is not on a codepoint boundary	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises IndexError when str_length is not matching the codepoint boundary	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters replaces with integer str indices	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters replaces with str range	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters treats negative length for str range as 0	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters raises when ranges not match codepoint boundaries in str	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
 core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters deals with a different encoded argument with str index/length	expected	mutation	force_encoding returns a copy in cameo and changes nothing, and this call drops it; use x = x.force_encoding(...) (CameoError)
 core/string/bytesplice_spec.rb	String#bytesplice with multibyte characters deals with a different encoded argument with str range	expected	mutation	force_encoding returns a copy in cameo and changes nothing, and this call drops it; use x = x.force_encoding(...) (CameoError)
 core/string/capitalize_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
@@ -3242,18 +3242,18 @@ core/string/rpartition_spec.rb	*	expected	instance-variables	instance_variable_g
 core/string/rstrip_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/scan_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/scrub_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
-core/string/setbyte_spec.rb	String#setbyte returns an Integer	expected	mutation	setbyte changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/setbyte_spec.rb	String#setbyte returns an Integer	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
 core/string/setbyte_spec.rb	String#setbyte modifies the receiver	expected	identity-and-freezing	undefined method 'object_id' for an instance of String (NoMethodError)
-core/string/setbyte_spec.rb	String#setbyte changes the byte at the given index to the new byte	expected	mutation	setbyte changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/setbyte_spec.rb	String#setbyte allows changing bytes in multi-byte characters	expected	mutation	setbyte changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/setbyte_spec.rb	String#setbyte can invalidate a String's encoding	expected	mutation	setbyte changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/setbyte_spec.rb	String#setbyte regards a negative index as counting from the end of the String	expected	mutation	setbyte changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/setbyte_spec.rb	String#setbyte raises an IndexError if the index is greater than the String bytesize	expected	mutation	setbyte changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/setbyte_spec.rb	String#setbyte raises an IndexError if the negative index is greater magnitude than the String bytesize	expected	mutation	setbyte changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/setbyte_spec.rb	String#setbyte sets a byte at an index greater than String size	expected	mutation	setbyte changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/setbyte_spec.rb	String#setbyte changes the byte at the given index to the new byte	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/setbyte_spec.rb	String#setbyte allows changing bytes in multi-byte characters	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/setbyte_spec.rb	String#setbyte can invalidate a String's encoding	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/setbyte_spec.rb	String#setbyte regards a negative index as counting from the end of the String	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/setbyte_spec.rb	String#setbyte raises an IndexError if the index is greater than the String bytesize	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/setbyte_spec.rb	String#setbyte raises an IndexError if the negative index is greater magnitude than the String bytesize	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/setbyte_spec.rb	String#setbyte sets a byte at an index greater than String size	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
 core/string/setbyte_spec.rb	String#setbyte does not modify the original string when using String.new	expected	literal-only	undefined method 'new' for class String: use a literal (NoMethodError)
-core/string/setbyte_spec.rb	String#setbyte raises a FrozenError if self is frozen	expected	mutation	setbyte changes its receiver, which cameo does not do; use byteslice and + (CameoError)
-core/string/setbyte_spec.rb	String#setbyte raises a TypeError unless the second argument is an Integer	expected	mutation	setbyte changes its receiver, which cameo does not do; use byteslice and + (CameoError)
+core/string/setbyte_spec.rb	String#setbyte raises a FrozenError if self is frozen	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
+core/string/setbyte_spec.rb	String#setbyte raises a TypeError unless the second argument is an Integer	expected	mutation	cameo does not support mutating calls without rebinding; use byteslice and + (CameoError)
 core/string/setbyte_spec.rb	String#setbyte calls #to_int to convert the index	harness	fails under Ruby too	undefined method 'mock' for an instance of Object (NoMethodError)
 core/string/setbyte_spec.rb	String#setbyte calls to_int to convert the value	harness	fails under Ruby too	undefined method 'mock' for an instance of Object (NoMethodError)
 core/string/size_spec.rb	String#size is an alias of String#length	expected	metaprogramming	undefined method 'instance_method' for class String (NoMethodError)
@@ -3380,8 +3380,8 @@ core/string/valid_encoding_spec.rb	String#valid_encoding? returns true for all e
 core/string/valid_encoding_spec.rb	String#valid_encoding? returns true for IBM720 encoding self is valid in	expected	encodings	unknown encoding name - IBM720 (ArgumentError)
 core/string/valid_encoding_spec.rb	String#valid_encoding? returns false if self is valid in one encoding, but invalid in the one it's tagged with	expected	mutation	force_encoding returns a copy in cameo and changes nothing, and this call drops it; use x = x.force_encoding(...) (CameoError)
 core/string/valid_encoding_spec.rb	String#valid_encoding? returns false if self contains a character invalid in the associated encoding	pass		
-core/string/valid_encoding_spec.rb	String#valid_encoding? returns false if a valid String had an invalid character appended to it	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
-core/string/valid_encoding_spec.rb	String#valid_encoding? returns true if an invalid string is appended another invalid one but both make a valid string	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+core/string/valid_encoding_spec.rb	String#valid_encoding? returns false if a valid String had an invalid character appended to it	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+core/string/valid_encoding_spec.rb	String#valid_encoding? returns true if an invalid string is appended another invalid one but both make a valid string	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
 core/struct/clone_spec.rb	*	expected	attr-accessor	attr_reader is not supported: a field declaration defines its reader, and there are no setters
 core/struct/constants_spec.rb	Struct::Group is no longer defined	expected	struct	uninitialized constant Struct (NameError)
 core/struct/constants_spec.rb	Struct::Passwd is no longer defined	expected	struct	uninitialized constant Struct (NameError)
@@ -3872,9 +3872,9 @@ language/loop_spec.rb	The loop expression repeats the given block until a break 
 language/loop_spec.rb	The loop expression executes code in its own scope	pass		
 language/loop_spec.rb	The loop expression returns the value passed to break if interrupted by break	pass		
 language/loop_spec.rb	The loop expression returns nil if interrupted by break with no arguments	pass		
-language/loop_spec.rb	The loop expression skips to end of body with next	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
-language/loop_spec.rb	The loop expression restarts the current iteration with redo	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
-language/loop_spec.rb	The loop expression uses a spaghetti nightmare of redo, next and break	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+language/loop_spec.rb	The loop expression skips to end of body with next	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+language/loop_spec.rb	The loop expression restarts the current iteration with redo	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+language/loop_spec.rb	The loop expression uses a spaghetti nightmare of redo, next and break	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
 language/magic_comment_spec.rb	*	expected	instance-variables	@default = …: cameo has no instance variables; initialize sets a field with self.default = …
 language/match_spec.rb	*	expected	instance-variables	@obj = …: cameo has no instance variables; initialize sets a field with self.obj = …
 language/metaclass_spec.rb	*	expected	metaprogramming	eval is not supported; use nothing
@@ -3917,7 +3917,7 @@ language/private_spec.rb	*	expected	visibility	private is not supported: every m
 language/proc_spec.rb	*	expected	instance-variables	@l = …: cameo has no instance variables; initialize sets a field with self.l = …
 language/range_spec.rb	Literal Ranges creates range object	expected	literal-only	undefined method 'new' for class Range: use a literal (NoMethodError)
 language/range_spec.rb	Literal Ranges creates range with excluded right boundary	expected	literal-only	undefined method 'new' for class Range: use a literal (NoMethodError)
-language/range_spec.rb	Literal Ranges creates a simple range as an object literal	expected	mutation	push changes its receiver, which cameo does not do; use +, or append (CameoError)
+language/range_spec.rb	Literal Ranges creates a simple range as an object literal	expected	mutation	cameo does not support mutating calls without rebinding; use a = a.push(x), +, or append (CameoError)
 language/range_spec.rb	Literal Ranges creates endless ranges	expected	literal-only	undefined method 'new' for class Range: use a literal (NoMethodError)
 language/range_spec.rb	Literal Ranges creates beginless ranges	expected	literal-only	undefined method 'new' for class Range: use a literal (NoMethodError)
 language/redo_spec.rb	*	expected	metaprogramming	eval is not supported; use nothing
@@ -3963,14 +3963,14 @@ language/until_spec.rb	The until expression allows body begin on the same line i
 language/until_spec.rb	The until expression executes code in containing variable scope	pass		
 language/until_spec.rb	The until expression executes code in containing variable scope with 'do'	pass		
 language/until_spec.rb	The until expression returns nil if ended when condition became true	pass		
-language/until_spec.rb	The until expression evaluates the body if expression is empty	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+language/until_spec.rb	The until expression evaluates the body if expression is empty	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
 language/until_spec.rb	The until expression stops running body if interrupted by break	pass		
 language/until_spec.rb	The until expression returns value passed to break if interrupted by break	pass		
 language/until_spec.rb	The until expression returns nil if interrupted by break with no arguments	pass		
-language/until_spec.rb	The until expression skips to end of body with next	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
-language/until_spec.rb	The until expression restarts the current iteration without reevaluating condition with redo	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+language/until_spec.rb	The until expression skips to end of body with next	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+language/until_spec.rb	The until expression restarts the current iteration without reevaluating condition with redo	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
 language/until_spec.rb	The until modifier runs preceding statement while the condition is false	pass		
-language/until_spec.rb	The until modifier evaluates condition before statement execution	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+language/until_spec.rb	The until modifier evaluates condition before statement execution	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
 language/until_spec.rb	The until modifier does not run preceding statement if the condition is true	pass		
 language/until_spec.rb	The until modifier returns nil if ended when condition became true	pass		
 language/until_spec.rb	The until modifier returns value passed to break if interrupted by break	pass		
@@ -3982,9 +3982,9 @@ language/until_spec.rb	The until modifier with begin .. end block stops running 
 language/until_spec.rb	The until modifier with begin .. end block returns value passed to break if interrupted by break	pass		
 language/until_spec.rb	The until modifier with begin .. end block returns nil if interrupted by break with no arguments	pass		
 language/until_spec.rb	The until modifier with begin .. end block runs block at least once (even if the expression is true)	bug		Expected 0 == 1 to be truthy but was false
-language/until_spec.rb	The until modifier with begin .. end block evaluates condition after block execution	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
-language/until_spec.rb	The until modifier with begin .. end block skips to end of body with next	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
-language/until_spec.rb	The until modifier with begin .. end block restart the current iteration without reevaluating condition with redo	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+language/until_spec.rb	The until modifier with begin .. end block evaluates condition after block execution	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+language/until_spec.rb	The until modifier with begin .. end block skips to end of body with next	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+language/until_spec.rb	The until modifier with begin .. end block restart the current iteration without reevaluating condition with redo	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
 language/variables_spec.rb	*	expected	attr-accessor	attr_accessor is not supported: a field declaration defines its reader, and there are no setters
 language/while_spec.rb	The while expression runs while the expression is true	pass		
 language/while_spec.rb	The while expression optionally takes a 'do' after the expression	pass		
@@ -4004,10 +4004,10 @@ language/while_spec.rb	The while expression stops running body if interrupted by
 language/while_spec.rb	The while expression stops running body if interrupted by break in a begin ... end attribute op-assign-or value	harness	fails under Ruby too	undefined method 'mock' for an instance of Object (NoMethodError)
 language/while_spec.rb	The while expression returns value passed to break if interrupted by break	pass		
 language/while_spec.rb	The while expression returns nil if interrupted by break with no arguments	pass		
-language/while_spec.rb	The while expression skips to end of body with next	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
-language/while_spec.rb	The while expression restarts the current iteration without reevaluating condition with redo	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+language/while_spec.rb	The while expression skips to end of body with next	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+language/while_spec.rb	The while expression restarts the current iteration without reevaluating condition with redo	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
 language/while_spec.rb	The while modifier runs preceding statement while the condition is true	pass		
-language/while_spec.rb	The while modifier evaluates condition before statement execution	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+language/while_spec.rb	The while modifier evaluates condition before statement execution	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
 language/while_spec.rb	The while modifier does not run preceding statement if the condition is false	pass		
 language/while_spec.rb	The while modifier does not run preceding statement if the condition is empty	pass		
 language/while_spec.rb	The while modifier returns nil if ended when condition became false	pass		
@@ -4020,7 +4020,7 @@ language/while_spec.rb	The while modifier with begin .. end block stops running 
 language/while_spec.rb	The while modifier with begin .. end block returns value passed to break if interrupted by break	pass		
 language/while_spec.rb	The while modifier with begin .. end block returns nil if interrupted by break with no arguments	pass		
 language/while_spec.rb	The while modifier with begin .. end block runs block at least once (even if the expression is false)	bug		Expected 0 == 1 to be truthy but was false
-language/while_spec.rb	The while modifier with begin .. end block evaluates condition after block execution	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
-language/while_spec.rb	The while modifier with begin .. end block skips to end of body with next	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
-language/while_spec.rb	The while modifier with begin .. end block restarts the current iteration without reevaluating condition with redo	expected	mutation	<< changes its receiver, which cameo does not do; use +, or append (CameoError)
+language/while_spec.rb	The while modifier with begin .. end block evaluates condition after block execution	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+language/while_spec.rb	The while modifier with begin .. end block skips to end of body with next	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+language/while_spec.rb	The while modifier with begin .. end block restarts the current iteration without reevaluating condition with redo	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
 language/yield_spec.rb	*	expected	metaprogramming	define_method is not supported; use def
