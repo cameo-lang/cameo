@@ -432,8 +432,7 @@ class Editor
   include Cameo::Runner
 
   def append(list, item)
-    list &lt;&lt; item
-    list
+    list + [item]
   end
 
   def demo

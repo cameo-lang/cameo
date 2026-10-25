@@ -42,7 +42,15 @@ func (in *Interp) evalCall(n *syntax.Call, env *Env, fr *Frame) (object.Value, e
 			return object.Value{}, err
 		}
 	}
+	if !selfCall && mayMutate(n.Name) {
+		if v, handled, err := in.mutating(fr, recv, syntax.RecvName(n.Recv), n.Name, args, kw, block, n.Line()); handled {
+			return v, err
+		}
+	}
 	v, err := in.call(fr, recv, n.Name, args, kw, block, selfCall, n.Line())
+	if err == nil && !selfCall && n.Dropped {
+		err = in.dropped(recv, n.Name, n.Line())
+	}
 	return v, withLine(err, n.Line())
 }
 

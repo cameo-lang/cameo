@@ -20,9 +20,12 @@ import (
 // error streams, and the constants the script defines. Workers started by
 // async get interpreters of their own.
 type Interp struct {
-	stdout, stderr io.Writer
-	outMu          *sync.Mutex
-	file           string
+	// IgnoreMutationErrors makes a call of one of Ruby's mutators return
+	// its result on a copy instead of raising; see mutate.go.
+	IgnoreMutationErrors bool
+	stdout, stderr       io.Writer
+	outMu                *sync.Mutex
+	file                 string
 	// mainClass is the class of the top-level self: top-level defs are its
 	// methods, so one interpreter's definitions never reach another's.
 	mainClass *object.Class

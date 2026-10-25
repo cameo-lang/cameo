@@ -130,12 +130,36 @@ func TestHashNewBlockMayReadItsHash(t *testing.T) {
 	parse(t, "h = Hash.new { |m, k| x = {}\nx[k] = 1\nx }\n")
 }
 
-func TestMutationRebindsALocal(t *testing.T) {
-	// A mutating call on a local or a field in initialize parses; the
-	// evaluator rebinds the local.
-	parse(t, "a = []\na << 1 << 2\na.push(3)\na.map! { _1 }\n")
-	parse(t, "class C\n  list :xs, of: :int\n  def initialize\n    self.xs = []\n    self.xs << 1\n    self.xs.push(2)\n  end\nend\n")
-	rejects(t, "class C\n  list :xs, of: :int\n  def add(x) = self.xs << x\nend\n", "<< changes its receiver")
+// TestMutatorCallsParse holds the checker to leaving Ruby's mutators to
+// the evaluator: whether push or << changes its receiver depends on the
+// receiver's kind (Integer#<< shifts), which only a run knows.
+func TestMutatorCallsParse(t *testing.T) {
+	parse(t, "a = []\na << 1 << 2\na.push(3)\n")
+	parse(t, "A = []\nA << 1\na = [[]]\na.first.push(1)\n")
+	parse(t, "class C\n  list :xs, of: :int\n  def add(x) = self.xs << x\nend\n")
+}
+
+// TestRubyBangMethodsAreRefused lists every bang method of Ruby's Array,
+// String, Hash and Set: cameo deviates from Ruby and refuses each, naming
+// the copying form, since no value changes and no call rebinds.
+func TestRubyBangMethodsAreRefused(t *testing.T) {
+	bangs := []string{
+		// Array
+		"collect!", "compact!", "filter!", "flatten!", "map!", "reject!", "reverse!", "rotate!",
+		"select!", "shuffle!", "slice!", "sort!", "sort_by!", "uniq!",
+		// String
+		"capitalize!", "chomp!", "chop!", "delete!", "delete_prefix!", "delete_suffix!", "downcase!",
+		"encode!", "gsub!", "lstrip!", "next!", "rstrip!", "scrub!", "squeeze!", "strip!",
+		"sub!", "succ!", "swapcase!", "tr!", "tr_s!", "unicode_normalize!", "upcase!",
+		// Hash
+		"merge!", "transform_keys!", "transform_values!",
+	}
+	for _, name := range bangs {
+		base := strings.TrimSuffix(name, "!")
+		rejects(t, "x = [1]\nx."+name+"\n", "This is not supported, use x = x."+base+" instead")
+	}
+	rejects(t, "X = [1]\nX.sort!\n", "This is not supported, use X = X.sort instead")
+	rejects(t, "[[2, 1]].first.sort!\n", "This is not supported, use x = x.sort instead")
 }
 
 func TestBacktrackingRegexpIsRefused(t *testing.T) {
@@ -176,7 +200,7 @@ func TestSugarParses(t *testing.T) {
 func TestJSONFunctionsWithMutatingNamesAreCalls(t *testing.T) {
 	parse(t, "JSON.parse!(\"[NaN]\")\nJSON.load(\"[1]\")\n")
 	rejects(t, "load(\"x.rb\")\n", "load is not supported")
-	rejects(t, "A = {}\nA.parse!\n", "parse!: a bang method changes its receiver")
+	rejects(t, "A = {}\nA.parse!\n", "This is not supported, use A = A.parse instead")
 }
 
 func TestBangMethodsTheScriptDefinesAreCalls(t *testing.T) {
@@ -185,16 +209,14 @@ func TestBangMethodsTheScriptDefinesAreCalls(t *testing.T) {
 	parse(t, "def top!(x) = x\ntop!(1)\n")
 	parse(t, "class A\n  def self.reset! = 1\nend\nA.reset!\n")
 	// A bang method the script does not define is one of Ruby's mutators.
-	rejects(t, "class A\n  def save! = 1\nend\n[[2, 1]].first.sort!\n", "sort!: a bang method changes its receiver")
+	rejects(t, "class A\n  def save! = 1\nend\n[[2, 1]].first.sort!\n", "This is not supported, use x = x.sort instead")
 }
 
 func TestRejections(t *testing.T) {
 	cases := map[string]string{
 		"attr_accessor :x\n":                 "attr_accessor is not supported",
 		"def x=(v); end\n":                   "def x=: setters are not supported",
-		"A = []\nA << 1\n":                   "<< changes its receiver",
-		"a = [[]]\na.first.push(1)\n":        "push changes its receiver",
-		"A = {}\nA.merge!({})\n":             "merge!: a bang method changes its receiver",
+		"A = {}\nA.merge!({})\n":             "This is not supported, use A = A.merge instead",
 		"h = Hash.new { |m, k| m[k] = 1 }\n": "Hash.new's block cannot store into its hash m",
 		"$x = 1\n":                           "global variables are not supported",
 		"@@x = 1\n":                          "class variables are not supported",
