@@ -190,7 +190,8 @@ type Encoder struct{ reg *Registry }
 func NewEncoder(reg *Registry) *Encoder { return &Encoder{reg: reg} }
 
 // Encode is the wire form of a value in the envelope. A Proc or a class
-// cannot be encoded.
+// cannot be encoded. An exception travels as an Object, as an instance
+// does.
 func (e *Encoder) Encode(v object.Value) ([]byte, error) {
 	msg, err := e.Message(v)
 	if err != nil {
@@ -325,16 +326,25 @@ func (e *Encoder) message(fd protoreflect.FileDescriptor, v object.Value) (*dyna
 		m.Set(md.Fields().ByName("source"), protoreflect.ValueOfString(r.Source))
 		m.Set(md.Fields().ByName("options"), protoreflect.ValueOfInt32(int32(r.Options)))
 		set("regexp", protoreflect.ValueOfMessage(m))
-	case object.KindInstance:
-		v := v.Instance()
-		data, err := e.reg.Marshal(v)
+	case object.KindInstance, object.KindException:
+		var cls *object.Class
+		var data []byte
+		var err error
+		if exc, ok := v.AsException(); ok {
+			cls = exc.Cls
+			data, err = e.reg.MarshalException(exc)
+		} else {
+			inst := v.Instance()
+			cls = inst.Cls
+			data, err = e.reg.Marshal(inst)
+		}
 		if err != nil {
 			return nil, err
 		}
 		objMd := fd.Messages().ByName("Object")
 		o := dynamicpb.NewMessage(objMd)
-		o.Set(objMd.Fields().ByName("class"), protoreflect.ValueOfString(v.Cls.QualifiedName()))
-		o.Set(objMd.Fields().ByName("digest"), protoreflect.ValueOfString(v.Cls.Digest))
+		o.Set(objMd.Fields().ByName("class"), protoreflect.ValueOfString(cls.QualifiedName()))
+		o.Set(objMd.Fields().ByName("digest"), protoreflect.ValueOfString(cls.Digest))
 		o.Set(objMd.Fields().ByName("message"), protoreflect.ValueOfBytes(data))
 		set("object", protoreflect.ValueOfMessage(o))
 	default:
@@ -504,7 +514,15 @@ func (d *Decoder) value(msg protoreflect.Message) (object.Value, error) {
 		if cls == nil {
 			return object.Value{}, fmt.Errorf("no class %s (digest %s) is loaded", name, digest)
 		}
-		inst, err := d.reg.Unmarshal(cls, o.Get(fields.ByName("message")).Bytes())
+		data := o.Get(fields.ByName("message")).Bytes()
+		if exceptionParts(cls) != nil {
+			exc, err := d.UnmarshalException(cls, data)
+			if err != nil {
+				return object.Value{}, err
+			}
+			return object.ExceptionValue(exc), nil
+		}
+		inst, err := d.reg.Unmarshal(cls, data)
 		if err != nil {
 			return object.Value{}, err
 		}

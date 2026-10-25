@@ -79,8 +79,10 @@ mspec's own `before` blocks.
   does; `Class.new(Base) { … }`;
   `def self.x` in a class body.
 - **Exceptions**: `begin`/`rescue`/`else`/`ensure`, `rescue => e`,
-  `raise`, `retry`, `exit` and `abort`, which raise SystemExit and end the
-  command with its status, and the exception classes of Ruby's core.
+  `raise`, a bare `raise` in a rescue clause, `retry`, `cause` and `raise
+  ..., cause:`, an exception class's own `initialize` with `super(msg)`,
+  `exit` and `abort`, which raise SystemExit and end the command with its
+  status, and the exception classes of Ruby's core.
 - **Core classes**: BasicObject, Numeric, Integer, Float, String, Symbol, Array, Hash, Set (as in
   3.4, without `require`), Range, Regexp and MatchData, Time, Math,
   Enumerator and `lazy`, Comparable and Enumerable, with most of their
@@ -181,6 +183,14 @@ q = p.with(x: 3)            # a copy; p is unchanged
   the changed copy.
 - A class without `initialize` takes its fields as keywords:
   `Point.new(x: 1, y: 2)`.
+- An exception class is a class: it declares fields and sets them in
+  `initialize`, where Ruby sets instance variables. Without an
+  `initialize` of its own it takes the message as its one positional
+  argument and its fields as keywords, `HTTPError.new("down", status:
+  503)`, and `e.with(status: 502, message: "bad gateway")` makes the copy.
+  An exception raised in a rescue clause gets its cause on a copy: a
+  local that holds the exception keeps it without the cause, where Ruby
+  sets it on the object.
 - A class is a value bound to its name. Evaluating the same `class X … end`
   again gives the same class; a different body reopens a copy of the
   class and rebinds `X` to it. Instances made before, and classes that
@@ -310,7 +320,9 @@ These are absent, and a script that uses one fails when it reaches it:
 ## Only in cameo
 
 - Typed fields, with every class a protobuf message: `to_proto`,
-  `from_proto`, and `Point.proto` for its `.proto` text.
+  `from_proto`, and `Point.proto` for its `.proto` text. Every exception is
+  a message too, of its message, line, cause and fields, and crosses to
+  `await` and to a Go host with them.
 - `with`, which returns a copy with some fields changed.
 - The Cameo module, which a script includes: `async receiver, :method,
   args…` runs a method concurrently and returns its promise, an

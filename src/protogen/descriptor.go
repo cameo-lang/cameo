@@ -69,7 +69,8 @@ func (r *Registry) file(cls *object.Class) (protoreflect.FileDescriptor, error) 
 	if ok {
 		return fd, nil
 	}
-	if cls.Digest == "" || cls.IsModule {
+	exception := exceptionParts(cls) != nil
+	if cls.Digest == "" && !exception || cls.IsModule {
 		return nil, fmt.Errorf("%s is not a class with fields", cls.QualifiedName())
 	}
 	fdp := &descriptorpb.FileDescriptorProto{
@@ -78,6 +79,16 @@ func (r *Registry) file(cls *object.Class) (protoreflect.FileDescriptor, error) 
 		Syntax:  strPtr("proto3"),
 	}
 	resolver := &chain{}
+	if exception {
+		// An exception's cause, and the values Ruby's exceptions carry, are
+		// cameo.Values.
+		env, err := envelope()
+		if err != nil {
+			return nil, err
+		}
+		fdp.Dependency = append(fdp.Dependency, env.Path())
+		resolver.add(env)
+	}
 	for _, dep := range refs(cls) {
 		if dep == cls {
 			continue
@@ -131,6 +142,7 @@ func messageProto(cls *object.Class) *descriptorpb.DescriptorProto {
 	}
 	m.ReservedName = append(m.ReservedName, cls.ReservedNames...)
 	oneofs := 0
+	partFields(m, exceptionParts(cls), &oneofs)
 	for _, f := range cls.Fields {
 		fp := &descriptorpb.FieldDescriptorProto{
 			Name:     strPtr(f.Name),

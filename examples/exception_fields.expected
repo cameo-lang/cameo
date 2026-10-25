@@ -1,0 +1,23 @@
+body of /a
+HTTP 503 for /busy: status 503, retryable: true
+HTTP 404 for /gone: status 404, retryable: false
+#<HTTPError: bad gateway>
+502
+500
+10
+"QuotaError"
+"slow down"
+nil
+#<HTTPError: HTTP 404 for /gone>
+404
+503
+"/busy"
+#<HTTPError: HTTP 418 for /tea>
+418
+message HTTPError {
+  optional string message = 1;
+  optional int64 line = 2;
+  optional cameo.Value cause = 3;
+  optional int64 status = 49197;
+  optional string url = 17384;
+}

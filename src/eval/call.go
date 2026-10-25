@@ -337,8 +337,12 @@ func (in *Interp) invoke(m *object.Method, recv object.Value, args []object.Valu
 	} else {
 		fr.DefTarget = object.ObjectClass
 	}
-	if inst, ok := recv.AsInstance(); ok && def.Name == "initialize" {
-		fr.Building = inst
+	if def.Name == "initialize" {
+		if inst, ok := recv.AsInstance(); ok {
+			fr.Building = inst
+		} else if exc, ok := recv.AsException(); ok && exc.Building {
+			fr.BuildingExc = exc
+		}
 	}
 	v, err := object.Value{}, in.bindParams(&def.Params, args, kw, block, env, fr, true, m.Name, line)
 	if err == nil {

@@ -27,6 +27,9 @@ func File(pkg string, classes []*object.Class) string {
 	fmt.Fprintf(&b, "package %s;\n", pkg)
 	imports := map[string]bool{}
 	for _, cls := range classes {
+		if exceptionParts(cls) != nil {
+			imports["cameo/value.proto"] = true
+		}
 		for _, dep := range refs(cls) {
 			if n := nativeOf(dep); n != nil {
 				imports[n.md.ParentFile().Path()] = true
@@ -87,6 +90,9 @@ func writeMessage(b *strings.Builder, cls *object.Class) {
 	}
 	for _, n := range cls.ReservedNames {
 		fmt.Fprintf(b, "  reserved \"%s\";\n", n)
+	}
+	for _, p := range exceptionParts(cls) {
+		fmt.Fprintf(b, "  %s\n", partText(p))
 	}
 	for _, f := range cls.Fields {
 		switch f.Type.Kind {

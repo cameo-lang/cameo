@@ -22,20 +22,31 @@ func (r *Registry) ToMessage(inst *object.Instance) (*dynamicpb.Message, error) 
 		return nil, err
 	}
 	msg := dynamicpb.NewMessage(md)
-	for i, f := range inst.Cls.Fields {
-		v := inst.Fields[i]
+	if err := r.setFields(msg, md, inst.Cls, inst.Fields); err != nil {
+		return nil, err
+	}
+	inst.Message = msg
+	return msg, nil
+}
+
+// setFields sets the fields cls declares, fields in its order, on msg.
+func (r *Registry) setFields(msg *dynamicpb.Message, md protoreflect.MessageDescriptor, cls *object.Class, fields []object.Value) error {
+	for i, f := range cls.Fields {
+		if i >= len(fields) {
+			break
+		}
+		v := fields[i]
 		if v.IsZero() || v.IsNil() {
 			continue
 		}
 		fd := md.Fields().ByName(protoreflect.Name(f.Name))
 		pv, err := r.toProto(fd, f.Type, v, msg)
 		if err != nil {
-			return nil, fmt.Errorf("%s.%s: %w", inst.Cls.QualifiedName(), f.Name, err)
+			return fmt.Errorf("%s.%s: %w", cls.QualifiedName(), f.Name, err)
 		}
 		msg.Set(fd, pv)
 	}
-	inst.Message = msg
-	return msg, nil
+	return nil
 }
 
 func (r *Registry) toProto(fd protoreflect.FieldDescriptor, t *object.FieldType, v object.Value, parent *dynamicpb.Message) (protoreflect.Value, error) {
@@ -187,7 +198,20 @@ func (r *Registry) narrow(msg *dynamicpb.Message, parent *object.Class) (*dynami
 
 // FromMessage builds an instance of cls from its message.
 func (r *Registry) FromMessage(cls *object.Class, msg protoreflect.Message) (*object.Instance, error) {
-	inst := &object.Instance{Cls: cls, Fields: make([]object.Value, len(cls.Fields))}
+	fields, err := r.readFields(cls, msg)
+	if err != nil {
+		return nil, err
+	}
+	inst := &object.Instance{Cls: cls, Fields: fields}
+	if dm, ok := msg.(*dynamicpb.Message); ok {
+		inst.Message = dm
+	}
+	return inst, nil
+}
+
+// readFields reads the fields cls declares from msg, in the class's order.
+func (r *Registry) readFields(cls *object.Class, msg protoreflect.Message) ([]object.Value, error) {
+	fields := make([]object.Value, len(cls.Fields))
 	md := msg.Descriptor()
 	for i, f := range cls.Fields {
 		fd := md.Fields().ByName(protoreflect.Name(f.Name))
@@ -203,12 +227,9 @@ func (r *Registry) FromMessage(cls *object.Class, msg protoreflect.Message) (*ob
 		if err != nil {
 			return nil, fmt.Errorf("%s.%s: %w", cls.QualifiedName(), f.Name, err)
 		}
-		inst.Fields[i] = v
+		fields[i] = v
 	}
-	if dm, ok := msg.(*dynamicpb.Message); ok {
-		inst.Message = dm
-	}
-	return inst, nil
+	return fields, nil
 }
 
 func (r *Registry) fromProto(fd protoreflect.FieldDescriptor, t *object.FieldType, pv protoreflect.Value) (object.Value, error) {

@@ -35,7 +35,7 @@ nil
 ann at 51
 ArgumentError: with needs the changes, as keywords or from its block
 ArgumentError: with takes the changes as keywords or from its block, not positional arguments
-TypeError: with copies an instance, a map or a list, not an instance of Integer
+TypeError: with copies an instance, an exception, a map or a list, not an instance of Integer
 ann
 true
 [3, 1, 2]

@@ -460,7 +460,11 @@ type asyncCall struct {
 // run makes the call and settles p with its result.
 func (c *asyncCall) run(p *Promise) {
 	result, exc := c.w.runCall(c.recv, c.method, c.args, c.kw)
-	p.settle(result, exc, nil)
+	if exc != nil {
+		p.settle(object.Value{}, exc, nil)
+		return
+	}
+	p.settle(result, nil, nil)
 }
 
 // topLevel is a copy of an interpreter's top level: its constants, its
