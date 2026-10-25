@@ -5,6 +5,8 @@ import (
 	"errors"
 	"strings"
 	"testing"
+
+	"github.com/cameo-lang/cameo/src/protogen"
 )
 
 // pausing loads src with a host method Test.pause that asks the script to
@@ -119,9 +121,9 @@ promises:
 
 // TestResumedRandomNumbersContinue proves the random number generator
 // resumes where it paused: a seeded script draws the same numbers paused
-// and resumed as in one run.
+// and resumed as in one run, and keeps its seed.
 func TestResumedRandomNumbersContinue(t *testing.T) {
-	const src = "srand 7\na = rand(1000)\nTest.pause\nputs a, rand(1000), rand(1000)\n"
+	const src = "srand(-7)\na = rand(1000)\nTest.pause\nputs a, rand(1000), rand(1000), Random.seed\n"
 	whole, out := pausing(t, strings.Replace(src, "Test.pause\n", "", 1))
 	if err := whole.Run(); err != nil {
 		t.Fatal(err)
@@ -171,5 +173,31 @@ func TestResumeRejectsWhatIsNotADump(t *testing.T) {
 	}
 	if _, err := InspectDump([]byte{0xff}); err == nil {
 		t.Fatal("InspectDump of garbage returned no error")
+	}
+}
+
+// TestResumeNamesARandomStateItCannotRead proves a dump whose generator
+// state is not MT19937's, a cameo's before Random followed CRuby's, fails
+// to resume with an error that says so.
+func TestResumeNamesARandomStateItCannotRead(t *testing.T) {
+	prog, _ := pausing(t, "rand\nTest.pause\nputs 1\n")
+	if err := prog.Run(); !errors.Is(err, ErrPaused) {
+		t.Fatalf("Run returned %v, want ErrPaused", err)
+	}
+	dump, err := prog.Dump()
+	if err != nil {
+		t.Fatal(err)
+	}
+	d, err := protogen.UnmarshalDump(dump.Data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	d.Rand = make([]byte, 20)
+	data, err := protogen.MarshalDump(d)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Resume(data, nil, nil); err == nil || !strings.Contains(err.Error(), "random number state") {
+		t.Fatalf("Resume returned %v, want an error about the random number state", err)
 	}
 }

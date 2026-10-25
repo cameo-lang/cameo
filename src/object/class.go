@@ -2,7 +2,6 @@ package object
 
 import (
 	"maps"
-	"math/rand/v2"
 	"slices"
 	"sort"
 	"sync/atomic"
@@ -389,6 +388,7 @@ var (
 	RegexpClass    = NewClass("Regexp", ObjectClass)
 	MatchDataClass = NewClass("MatchData", ObjectClass)
 	ProcClass      = NewClass("Proc", ObjectClass)
+	RandomClass    = NewClass("Random", ObjectClass)
 	// EnumeratorClass is Enumerator; LazyClass, Enumerator::Lazy, is
 	// bound inside it.
 	// EncodingClass is Encoding: an instance names one, as its one field.
@@ -469,6 +469,10 @@ var (
 	ThreadError      = NewClass("ThreadError", StandardError)
 	ClosedQueueError = NewClass("ClosedQueueError", StopIteration)
 	SystemCallError  = NewClass("SystemCallError", StandardError)
+	// ErrnoModule is Errno, and EDOMError Errno::EDOM, bound in it: what
+	// Random raises for a range outside its domain.
+	ErrnoModule = NewModule("Errno")
+	EDOMError   = NewClass("EDOM", SystemCallError)
 	// EncodingError and the three below it, bound in Encoding, are what
 	// combining and converting strings of different encodings raises.
 	EncodingError            = NewClass("EncodingError", StandardError)
@@ -505,13 +509,13 @@ func init() {
 	TimeClass.Include(Comparable)
 	BasicClasses = []*Class{
 		BasicObjectClass, ObjectClass, ModuleClass, ClassClass, NilClass, BoolClass, NumericClass, IntegerClass, FloatClass,
-		StringClass, SymbolClass, ListClass, MapClass, SetClass, RangeClass, TimeClass, RegexpClass, MatchDataClass, EnumeratorClass, EncodingClass, PathnameClass, ProcClass,
+		StringClass, SymbolClass, ListClass, MapClass, SetClass, RangeClass, TimeClass, RegexpClass, MatchDataClass, EnumeratorClass, EncodingClass, PathnameClass, ProcClass, RandomClass,
 		ExceptionClass, Kernel, Enumerable, Comparable, MathModule, ProcessModule, CameoModule,
 		StandardError, RuntimeError, ArgumentError, TypeError, NameError, NoMethodError, KeyError,
 		IndexError, RangeError, ZeroDivisionError, StopIteration, NoMatchingPattern, FrozenError,
 		NotImplementedErr, LocalJumpError, CameoError, RegexpError, FloatDomainError, ScriptError, LoadError, EncodingError,
 		SyntaxError, UncaughtThrowError, SystemExit, NoMemoryError, SecurityError, SignalException, Interrupt,
-		SystemStackError, IOError, EOFError, FiberError, ThreadError, ClosedQueueError, SystemCallError,
+		SystemStackError, IOError, EOFError, FiberError, ThreadError, ClosedQueueError, SystemCallError, ErrnoModule,
 	}
 	for _, c := range BasicClasses {
 		ObjectClass.Consts[c.Name] = ClassValue(c)
@@ -543,9 +547,7 @@ type Context interface {
 	Write(stderr bool, s string) error
 	// RespondsTo reports whether v has a method name.
 	RespondsTo(v Value, name string) bool
-	// Rand returns the interpreter's random number generator, and Srand
-	// reseeds it, returning the previous seed. A generator is not shared
-	// between goroutines: an async process has its own.
-	Rand() *rand.Rand
-	Srand(seed uint64) uint64
+	// Rand returns the interpreter's generator, the one Kernel#rand draws
+	// from: an async process has its own.
+	Rand() *Random
 }

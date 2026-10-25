@@ -84,8 +84,9 @@ mspec's own `before` blocks.
 - **Core classes**: BasicObject, Numeric, Integer, Float, String, Symbol, Array, Hash, Set (as in
   3.4, without `require`), Range, Regexp and MatchData, Time, Math,
   Enumerator and `lazy`, Comparable and Enumerable, with most of their
-  methods. `format` and `String#%`, `pack` and `unpack`, `rand` and `srand`,
-  `Integer()`, `Float()`, `String()` and `Array()`,
+  methods. `format` and `String#%`, `pack` and `unpack`, `Random`,
+  `rand` and `srand` on Ruby's Mersenne Twister, so a seeded script draws
+  Ruby's numbers, `Integer()`, `Float()`, `String()` and `Array()`,
   `Process.clock_gettime`.
 - **Libraries**: `require` of `set`, `time`, `pp`, `pathname`, `cgi`,
   `json` and `benchmark`, which cameo builds in. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
@@ -141,6 +142,17 @@ rebinds its receiver:
   contents are `==` and hash alike. There is no object identity, so
   `equal?`, `object_id` and `__id__` do not exist, and `compare_by_identity` changes
   nothing.
+
+**A Random is a handle on a generator**, as a file handle is on a file:
+`r.rand`, `r.bytes` and `r.random_number` advance the generator `r` names,
+so each call returns the next number, and every holder of `r` (another
+variable, an array, a hash, a block, a method's argument) draws from the
+same generator. It is the one value whose calls change something. A copy
+would draw the numbers its original draws next, so a Random is not copied:
+`dup` and `clone` raise a `TypeError` ("a Random cannot be copied"), and so
+do passing one to `async`, returning one from an `async` call and storing
+one in a typed field, as for a Proc. `r == other` compares seed and
+position, as in Ruby, and `p r` prints `#<Random>`, without an address.
 
 **Classes declare typed fields**, and every instance is a protobuf message:
 
@@ -215,8 +227,6 @@ sets the fields, and `p a` prints `Point(x: 1, y: 2)` where Ruby prints
 - A `throw` ends the `catch` whose tag is equal to its own, where Ruby
   wants the same object: `catch("a") { throw "a" }` returns nil. The
   Object a `catch` without a tag makes is still a tag of its own.
-- `rand` and `srand` use Go's generator, so a seeded sequence is not
-  Ruby's.
 - `Time` is immutable: `utc` and `localtime` return a new time, and
   `subsec` is a Float, since `Rational` is left out.
 - A String is UTF-8, ASCII-8BIT (binary) or US-ASCII; other encodings do not
@@ -286,8 +296,7 @@ These are absent, and a script that uses one fails when it reaches it:
   `system`, `exec`, `spawn`; cameo has `async` and `await` instead.
 - **Not there yet**: `at_exit`, `exit!`,
   `printf` (`format` exists), `__method__`, `Enumerator.new`,
-  `Integer()` with a base, `Random` as a class (`rand` and `srand` exist),
-  and `autoload`.
+  `Integer()` with a base, and `autoload`.
 - **Libraries**: `require` of any library but the seven above, such as
   `yaml`, raises a `LoadError`.
 
