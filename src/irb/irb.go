@@ -1,9 +1,10 @@
 // Package irb is cameo's irb as a library. A Session evaluates lines at the
 // top level of one program, as Ruby's irb does, and a Terminal edits them as
 // they are typed, on any byte stream: arrow keys, Ctrl-A, Ctrl-E, Ctrl-K,
-// Ctrl-W and a history on the up and down arrows (golang.org/x/term). The
-// cameo command runs both on its terminal; a program that embeds cameo runs
-// them on a stream of its own, such as an app's terminal that has no tty.
+// Ctrl-W, a history on the up and down arrows (golang.org/x/term), and Tab,
+// which completes a name. The cameo command runs both on its terminal; a
+// program that embeds cameo runs them on a stream of its own, such as an
+// app's terminal that has no tty.
 package irb
 
 import (
@@ -70,6 +71,15 @@ func (s *Session) Eval(line string) (output string, done bool) {
 		return err.Error() + "\n", false
 	}
 	return "=> " + value + "\n", false
+}
+
+// Complete returns the name being typed at the end of before, the line up
+// to the cursor, and the names it can be completed to; see
+// cameo.Program.Completions.
+func (s *Session) Complete(before string) (word string, names []string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.prog.Completions(before)
 }
 
 // Cancel drops an incomplete expression, as Ctrl-C does.

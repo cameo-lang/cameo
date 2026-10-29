@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"io"
+	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -18,10 +19,11 @@ type Terminal struct {
 	keys *keyReader
 	out  io.Writer
 
-	mu     sync.Mutex
-	editor *term.Terminal
-	cols   int
-	rows   int
+	mu      sync.Mutex
+	editor  *term.Terminal
+	cols    int
+	rows    int
+	session *Session
 }
 
 // NewTerminal returns a line editor on rw.
@@ -40,6 +42,12 @@ func (t *Terminal) newEditor(history term.History, prompt string) *term.Terminal
 	}{t.keys, t.out}, prompt)
 	if history != nil {
 		e.History = history
+	}
+	e.AutoCompleteCallback = func(line string, pos int, key rune) (string, int, bool) {
+		if key != '\t' {
+			return "", 0, false
+		}
+		return t.complete(e, line, pos)
 	}
 	t.mu.Lock()
 	cols, rows := t.cols, t.rows
@@ -79,6 +87,9 @@ func (t *Terminal) SetSize(cols, rows int) {
 // line being typed, and an incomplete expression. It returns the stream's
 // error, and nil when the session ended.
 func (t *Terminal) Run(s *Session) error {
+	t.mu.Lock()
+	t.session = s
+	t.mu.Unlock()
 	t.current().SetPrompt(s.Prompt())
 	for {
 		editor := t.current()
@@ -90,8 +101,10 @@ func (t *Terminal) Run(s *Session) error {
 			}
 			// x/term ends the line it was editing on Ctrl-C and keeps
 			// its text: a new editor starts an empty one.
+			// Straight to the screen: the old editor would draw its line
+			// again below it.
 			s.Cancel()
-			editor.Write([]byte("^C\n"))
+			t.out.Write([]byte("^C\r\n"))
 			next := t.newEditor(editor.History, s.Prompt())
 			t.mu.Lock()
 			t.editor = next
@@ -110,17 +123,60 @@ func (t *Terminal) Run(s *Session) error {
 	}
 }
 
+// complete answers Tab with the cursor at pos in line: the one name the
+// word before the cursor can be completed to, or the longest start the
+// names share, or, when the word is that start already, the names listed
+// above the line. A Tab that completes nothing changes nothing.
+func (t *Terminal) complete(e *term.Terminal, line string, pos int) (string, int, bool) {
+	t.mu.Lock()
+	s := t.session
+	t.mu.Unlock()
+	if s == nil {
+		return line, pos, true
+	}
+	word, names := s.Complete(line[:pos])
+	if len(names) == 0 {
+		return line, pos, true
+	}
+	common := names[0]
+	for _, n := range names[1:] {
+		for !strings.HasPrefix(n, common) {
+			common = common[:len(common)-1]
+		}
+	}
+	if len(common) > len(word) {
+		insert := common[len(word):]
+		return line[:pos] + insert + line[pos:], pos + len(insert), true
+	}
+	e.Write([]byte(strings.Join(names, "  ") + "\n"))
+	return line, pos, true
+}
+
 // keyReader is the stream's keys. It notes a Ctrl-C, which the editor ends
-// the line on as it does on Ctrl-D, so that Run can tell the two apart.
+// the line on as it does on Ctrl-D, so that Run can tell the two apart, and
+// ends a read at it: the keys after it go to the next read, which the new
+// editor Run starts after a Ctrl-C makes, where the old one would keep them.
 type keyReader struct {
 	r     io.Reader
 	ctrlC atomic.Bool
+	rest  []byte
 }
 
 func (k *keyReader) Read(p []byte) (int, error) {
-	n, err := k.r.Read(p)
-	if bytes.IndexByte(p[:n], 3) >= 0 {
+	if len(k.rest) == 0 {
+		buf := make([]byte, len(p))
+		n, err := k.r.Read(buf)
+		if n == 0 {
+			return 0, err
+		}
+		k.rest = buf[:n]
+	}
+	chunk := k.rest
+	if i := bytes.IndexByte(chunk, 3); i >= 0 {
+		chunk = chunk[:i+1]
 		k.ctrlC.Store(true)
 	}
-	return n, err
+	n := copy(p, chunk)
+	k.rest = k.rest[n:]
+	return n, nil
 }
