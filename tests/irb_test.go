@@ -120,3 +120,60 @@ func TestIRBTerminalEditsAndRunsLines(t *testing.T) {
 		t.Fatal("Ctrl-D did not end the session")
 	}
 }
+
+// TestIRBCompletesNamesAndMethods proves Tab's completions: the variables
+// and methods of the top level, a constant, and after a dot the methods of
+// a variable's value or a literal, without calling a method to find them.
+func TestIRBCompletesNamesAndMethods(t *testing.T) {
+	s := newIRBSession(t, io.Discard)
+	s.Eval("greeting = 'hi'")
+	s.Eval("def greet(n) = n")
+	word, names := s.Complete("gre")
+	assert.Equals(t, word, "gre")
+	assert.Equals(t, names, []string{"greet", "greeting"})
+	_, names = s.Complete("x = Integ")
+	assert.Equals(t, names, []string{"Integer"})
+	word, names = s.Complete("greeting.upc")
+	assert.Equals(t, word, "upc")
+	assert.Equals(t, names, []string{"upcase"})
+	_, names = s.Complete("42.ev")
+	assert.Equals(t, names, []string{"even?"})
+	// greet is a method: completing after its dot would call it.
+	_, names = s.Complete("greet.")
+	assert.Equals(t, len(names), 0)
+}
+
+// TestIRBTerminalCompletesOnTab proves Tab completes the one name a word
+// can be, and lists them when there are several.
+func TestIRBTerminalCompletesOnTab(t *testing.T) {
+	st := newStream()
+	term := irb.NewTerminal(st)
+	term.SetSize(80, 24)
+	prog, err := cameo.Load("(irb)", "", term, term)
+	assert.NoError(t, err)
+	go term.Run(irb.NewSession(prog))
+
+	st.shows(t, "cameo(main):001> ")
+	st.typing.Write([]byte("alpha = 1\r"))
+	st.shows(t, "cameo(main):002> ")
+	st.typing.Write([]byte("alp\t\r"))
+	st.shows(t, "=> 1\r\ncameo(main):003> ")
+	st.typing.Write([]byte("alpine = 2\r"))
+	st.shows(t, "cameo(main):004> ")
+	st.typing.Write([]byte("alp\t"))
+	st.shows(t, "alpha  alpine")
+}
+
+// TestIRBTerminalKeepsTheKeysAfterACtrlC proves the keys that arrive with a
+// Ctrl-C, in one read, reach the line after it.
+func TestIRBTerminalKeepsTheKeysAfterACtrlC(t *testing.T) {
+	st := newStream()
+	term := irb.NewTerminal(st)
+	prog, err := cameo.Load("(irb)", "", term, term)
+	assert.NoError(t, err)
+	go term.Run(irb.NewSession(prog))
+
+	st.shows(t, "cameo(main):001> ")
+	st.typing.Write([]byte("drop me\x036 * 7\r"))
+	st.shows(t, "=> 42")
+}

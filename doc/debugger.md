@@ -71,7 +71,14 @@ When its input and output are a terminal, `cameo irb` puts the terminal in
 raw mode and edits the line itself, with golang.org/x/term: the arrow keys,
 Ctrl-A, Ctrl-E, Ctrl-K and Ctrl-W, and a history on the up and down arrows.
 Ctrl-C drops the line being typed, and an expression that is not whole yet;
-Ctrl-D on an empty line ends the loop. Piped input is read a line at a time,
+Ctrl-D on an empty line ends the loop.
+
+Tab completes the name before the cursor: to the one name it can be, or to
+the longest start the names share, and lists them when the name is that start
+already. The names are the variables, the methods of the top level, the
+constants and the keywords; after a dot they are the methods of the receiver,
+when it is a variable, a constant or a literal. Completion runs no method: a
+receiver that is a method call, `items.first.`, completes nothing. Piped input is read a line at a time,
 as before. The loop is the package `src/irb`: a `Session` evaluates lines,
 and a `Terminal` edits them on any byte stream, so a program that embeds
 cameo, such as an app's terminal without a tty, runs the same loop.

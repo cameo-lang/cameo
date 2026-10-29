@@ -18,3 +18,13 @@ func (p *Program) Eval(src string) (string, error) {
 	}
 	return p.in.Inspect(v)
 }
+
+// Completions returns the name being typed at the end of before, a line
+// typed into cameo irb up to the cursor, and the names it can be completed
+// to at the top level of the script, sorted: after a dot, the methods of a
+// receiver that is a variable, a constant or a literal; else the
+// variables, methods, constants and keywords. It runs nothing but the
+// lookup of a constant or a literal.
+func (p *Program) Completions(before string) (word string, names []string) {
+	return p.in.Completions(before)
+}
