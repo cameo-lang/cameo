@@ -13,6 +13,7 @@ import (
 	"github.com/cameo-lang/cameo/src/aot"
 	"github.com/cameo-lang/cameo/src/cameo"
 	"github.com/cameo-lang/cameo/src/syntax"
+	"golang.org/x/term"
 )
 
 const usage = `usage: cameo [--no-pause] <script.cameo>  run the script; ^C pauses it before its next top-level statement
@@ -112,6 +113,9 @@ flags:
 		path := ""
 		if len(args) == 2 {
 			path = args[1]
+		}
+		if term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd())) {
+			return irbOnTerminal(path, os.Stdin, os.Stdout)
 		}
 		return irb(path, os.Stdin, os.Stdout, os.Stderr)
 	case len(args) == 2 && args[0] == "debug":

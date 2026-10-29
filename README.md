@@ -80,7 +80,10 @@ is in [doc/design/pause.md](doc/design/pause.md).
 `cameo irb` is a read-eval-print loop: each line typed in runs at the top
 level, its value is printed, and a line that is not a whole expression yet
 waits for the next. With a script given, the script runs first and the
-lines see what it defined.
+lines see what it defined. On a terminal it edits the line being typed:
+arrow keys, a history on the up and down arrows, and Ctrl-C to drop a line.
+A program that embeds cameo gets the same loop from the package
+[src/irb](src/irb), on a byte stream of its own.
 
 `cameo debug` runs a script under a debugger with the commands of Ruby's
 debug library: `step`, `next`, `finish`, `continue`, `break` on a line or

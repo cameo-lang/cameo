@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 
 	"github.com/cameo-lang/cameo/src/cameo"
+	cirb "github.com/cameo-lang/cameo/src/irb"
 	"github.com/cameo-lang/cameo/src/syntax"
+	"golang.org/x/term"
 )
 
 // irb reads lines from stdin and evaluates each at the top level of one
@@ -18,13 +19,66 @@ import (
 // a whole expression yet waits for the next. exit, quit or the end of the
 // input ends it. It returns the process exit status.
 func irb(path string, stdin io.Reader, stdout, stderr io.Writer) int {
+	prog, status, ok := loadIRB(path, stdout, stderr)
+	if !ok {
+		return status
+	}
+	s := cirb.NewSession(prog)
+	in := bufio.NewScanner(stdin)
+	in.Buffer(make([]byte, 1<<20), 1<<20)
+	for {
+		fmt.Fprint(stdout, s.Prompt())
+		if !in.Scan() {
+			fmt.Fprintln(stdout)
+			return 0
+		}
+		output, done := s.Eval(in.Text())
+		if done {
+			return 0
+		}
+		fmt.Fprint(stdout, output)
+	}
+}
+
+// irbOnTerminal is irb on the terminal of stdin and stdout, which it puts in
+// raw mode for the line editor (package irb): arrow keys, history and
+// Ctrl-C, which drops the line.
+func irbOnTerminal(path string, stdin, stdout *os.File) int {
+	fd := int(stdin.Fd())
+	state, err := term.MakeRaw(fd)
+	if err != nil {
+		return irb(path, stdin, stdout, os.Stderr)
+	}
+	defer term.Restore(fd, state)
+	t := cirb.NewTerminal(struct {
+		io.Reader
+		io.Writer
+	}{stdin, stdout})
+	if cols, rows, err := term.GetSize(int(stdout.Fd())); err == nil {
+		t.SetSize(cols, rows)
+	}
+	prog, status, ok := loadIRB(path, t, t)
+	if !ok {
+		return status
+	}
+	if err := t.Run(cirb.NewSession(prog)); err != nil {
+		fmt.Fprintln(t, err)
+		return 1
+	}
+	return 0
+}
+
+// loadIRB loads an empty program, or the script at path and runs it, for
+// irb. ok is false when the session does not start: the script did not
+// load, or it exited; status is then the process exit status.
+func loadIRB(path string, stdout, stderr io.Writer) (prog *cameo.Program, status int, ok bool) {
 	src := ""
 	file := "(irb)"
 	if path != "" {
 		data, err := os.ReadFile(path)
 		if err != nil {
 			fmt.Fprintln(stderr, err)
-			return 1
+			return nil, 1, false
 		}
 		src, file = string(data), path
 	}
@@ -33,74 +87,22 @@ func irb(path string, stdin io.Reader, stdout, stderr io.Writer) int {
 		var errs syntax.ErrorList
 		if errors.As(err, &errs) {
 			fmt.Fprintln(stderr, errs)
-			return 1
+			return nil, 1, false
 		}
 		fmt.Fprintln(stderr, err)
-		return 1
+		return nil, 1, false
 	}
 	if path != "" {
 		if err := prog.Run(); err != nil {
 			// The script's exit ends the session with its status, as
 			// a script run on its own.
 			if status, ok := cameo.ExitStatus(err); ok {
-				return status
+				return nil, status, false
 			}
 			fmt.Fprintln(stderr, err)
 		}
 	}
-	in := bufio.NewScanner(stdin)
-	in.Buffer(make([]byte, 1<<20), 1<<20)
-	var pending strings.Builder
-	n := 0
-	for {
-		if pending.Len() == 0 {
-			n++
-			fmt.Fprintf(stdout, "cameo(main):%03d> ", n)
-		} else {
-			fmt.Fprintf(stdout, "cameo(main):%03d* ", n)
-		}
-		if !in.Scan() {
-			fmt.Fprintln(stdout)
-			return 0
-		}
-		line := in.Text()
-		if pending.Len() == 0 {
-			switch strings.TrimSpace(line) {
-			case "":
-				n--
-				continue
-			case "exit", "quit", "exit!":
-				return 0
-			}
-		}
-		pending.WriteString(line)
-		pending.WriteString("\n")
-		value, err := prog.Eval(pending.String())
-		if incomplete(err) {
-			continue
-		}
-		pending.Reset()
-		if err != nil {
-			fmt.Fprintln(stdout, err)
-			continue
-		}
-		fmt.Fprintf(stdout, "=> %s\n", value)
-	}
-}
-
-// incomplete reports a parse error that more input would cure: the
-// parser ran out of input.
-func incomplete(err error) bool {
-	var errs syntax.ErrorList
-	if !errors.As(err, &errs) {
-		return false
-	}
-	for _, e := range errs {
-		if strings.Contains(e.Error(), "(EOF)") {
-			return true
-		}
-	}
-	return false
+	return prog, 0, true
 }
 
 // debugScript runs the script at path under the debugger, which stops before
