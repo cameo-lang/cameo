@@ -67,6 +67,15 @@ expression yet, `def f` or `[1,`, waits for the next lines. An exception
 prints its message and the loop goes on. `exit`, `quit` or the end of the
 input ends it.
 
+When its input and output are a terminal, `cameo irb` puts the terminal in
+raw mode and edits the line itself, with golang.org/x/term: the arrow keys,
+Ctrl-A, Ctrl-E, Ctrl-K and Ctrl-W, and a history on the up and down arrows.
+Ctrl-C drops the line being typed, and an expression that is not whole yet;
+Ctrl-D on an empty line ends the loop. Piped input is read a line at a time,
+as before. The loop is the package `src/irb`: a `Session` evaluates lines,
+and a `Terminal` edits them on any byte stream, so a program that embeds
+cameo, such as an app's terminal without a tty, runs the same loop.
+
 The parser reads a bare name as a variable only once it saw it assigned,
 so each line is parsed behind a prelude that names the variables bound so
 far, `x = nil if false;`, which never runs. The debugger's `p` does the same
