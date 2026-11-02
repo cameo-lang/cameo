@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/cameo-lang/cameo/src/lib/benchmark"
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/stdlib"
 )
@@ -68,8 +69,8 @@ func (in *Interp) ToS(v object.Value) (string, error) {
 			return "#<Object>", nil
 		case object.EncodingClass, object.PathnameClass:
 			return v.Instance().Fields[0].Str(), nil
-		case stdlib.BenchmarkTmsClass:
-			return stdlib.BenchmarkTmsToS(in, v)
+		case benchmark.TmsClass:
+			return benchmark.ToS(in, v)
 		}
 	}
 	if v.IsNil() {
@@ -195,8 +196,8 @@ func (in *Interp) inspectBuiltin(v object.Value) (string, error) {
 			return "#<Encoding:" + v.Fields[0].Str() + ">", nil
 		case object.PathnameClass:
 			return "#<Pathname:" + v.Fields[0].Str() + ">", nil
-		case stdlib.BenchmarkTmsClass:
-			return stdlib.BenchmarkTmsInspect(in, object.InstanceValue(v))
+		case benchmark.TmsClass:
+			return benchmark.Inspect(in, object.InstanceValue(v))
 		}
 		parts := make([]string, len(v.Cls.Fields))
 		for i, f := range v.Cls.Fields {
