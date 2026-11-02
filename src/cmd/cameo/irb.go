@@ -92,6 +92,7 @@ func loadIRB(path string, stdout, stderr io.Writer) (prog *cameo.Program, status
 		fmt.Fprintln(stderr, err)
 		return nil, 1, false
 	}
+	prog.HTTPClient(networkClient)
 	if path != "" {
 		if err := prog.Run(); err != nil {
 			// The script's exit ends the session with its status, as
@@ -125,6 +126,7 @@ func debugScript(path string, pause bool, stdin io.Reader, stdout, stderr io.Wri
 		fmt.Fprintln(stderr, err)
 		return 1
 	}
+	prog.HTTPClient(networkClient)
 	prog.Debug(stdin, stdout)
 	return runProgram(prog, pause, stderr)
 }

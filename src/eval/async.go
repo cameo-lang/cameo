@@ -517,6 +517,7 @@ func (in *Interp) worker() *Interp {
 	top := in.snapshot()
 	w := &Interp{
 		IgnoreMutationErrors: in.IgnoreMutationErrors,
+		HTTP:                 in.HTTP,
 		stdout:               in.stdout,
 		stderr:               in.stderr,
 		outMu:                in.outMu,

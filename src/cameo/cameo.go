@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"math/big"
+	"net/http"
 	"os"
 	"reflect"
 	"slices"
@@ -112,6 +113,13 @@ func Load(file, src string, stdout, stderr io.Writer) (*Program, error) {
 // such as a.push(1), returns its result on a copy instead of raising. The
 // receiver never changes either way.
 func (p *Program) IgnoreMutationErrors(ignore bool) { p.in.IgnoreMutationErrors = ignore }
+
+// HTTPClient gives the program network access: net/http makes its requests
+// with client. Without one, require "net/http" works and a request raises
+// SocketError, so an embedding program decides whether a script may reach
+// the network. Redirects are not followed, as Ruby's Net::HTTP does not
+// follow them, whatever client.CheckRedirect says.
+func (p *Program) HTTPClient(client *http.Client) { p.in.HTTP = client }
 
 // File is the script's path, as Load was given it.
 func (p *Program) File() string { return p.file }

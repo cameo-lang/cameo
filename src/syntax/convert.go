@@ -1187,7 +1187,7 @@ func (c *converter) assignment(n *ast.Call) Node {
 // self in initialize. attr tells that key names an attribute, `.key`, rather
 // than an index, `[key]`.
 func (c *converter) update(recv ast.Node, key Node, attr bool, value Node, origin *ast.Call) Node {
-	with := func(target Node) Node { return &With{c.pos(), target, key, value} }
+	with := func(target Node) Node { return &With{c.pos(), target, key, value, !attr} }
 	switch r := recv.(type) {
 	case *ast.VarRef:
 		if slices.Contains(c.lent, r.Name) {
