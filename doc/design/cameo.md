@@ -58,7 +58,9 @@ What cameo leaves out, and the checker rejects by name:
   nothing, since everything already is frozen
 - threads, fibers, `fork`, files, sockets, `require` of another file
   (`require_relative`, `load`, a library cameo does not build in), `$stdin`. Standard
-  output and standard error are the whole of I/O.
+  output and standard error are the whole of I/O, but for `net/http`,
+  which reaches the network through the HTTP client the host gives the
+  program and nothing without one.
 
 ## Values
 
@@ -927,7 +929,8 @@ re-opened by accident:
     yields. A builtin passes a Go function as the block, which the
     evaluator calls like any other.
   - `require` of a library cameo builds in (`set`, `time`, `cgi`,
-    `cgi/escape`, `pp`, `pathname`, `json`, `benchmark`, `uri`, `date`; the
+    `cgi/escape`, `pp`, `pathname`, `json`, `benchmark`, `uri`, `date`,
+    `net/http`; the
     list with each one's status is doc/stdlib.md) returns true the first
     time and false after, and any other is a LoadError: a script is one
     file. The libraries are there whether or not a script requires them;

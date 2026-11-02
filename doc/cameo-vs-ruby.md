@@ -91,7 +91,7 @@ mspec's own `before` blocks.
   Ruby's numbers, `Integer()`, `Float()`, `String()` and `Array()`,
   `Process.clock_gettime`.
 - **Libraries**: `require` of `set`, `time`, `pp`, `pathname`, `cgi`,
-  `json`, `benchmark`, `uri` and `date`, which cameo builds in; [stdlib.md](stdlib.md)
+  `json`, `benchmark`, `uri`, `date` and `net/http`, which cameo builds in; [stdlib.md](stdlib.md)
   has every library of Ruby's standard library with its status, the ones
   to come and the ones left out. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
   do without I/O: `escape` and `unescape`, the URI-component pair,
@@ -141,6 +141,32 @@ mspec's own `before` blocks.
   not `(59/1)`; `ajd`, `day_fraction`, `sec_fraction` and `offset` are
   Floats. `Date::Infinity` and `marshal_dump` are left out, and a day
   number past 64 bits raises `RangeError`.
+  `net/http` (with `net/https` and `net/protocol`) is Ruby 3.4's
+  net-http 0.6.0 in what a script calls: `Net::HTTP.get`,
+  `get_response`, `get_print`, `post`, `post_form`, `put`, `start` and
+  `new` with `use_ssl`, `open_timeout`, `read_timeout`, `request`, the
+  verbs (`get`, `head`, `post`, `put`, `patch`, `delete`, …),
+  `send_request`; `Net::HTTP::Get` and the other request classes with
+  `[]`, `[]=`, `body=`, `set_form_data`, `basic_auth`, `content_type`,
+  `each_header`, `to_hash`; `Net::HTTPResponse` and its classes by status
+  (`Net::HTTPOK`, `HTTPNotFound`, `HTTPSuccess`, …) with `code`,
+  `message`, `body`, `[]`, `value`, `error!`, `content_type`,
+  `content_length`, `uri`; `Net::HTTPError` and its hierarchy,
+  `Net::ReadTimeout`, `SocketError`, `Errno::ECONNREFUSED`,
+  `OpenSSL::SSL::SSLError`, with Ruby's messages. A program reaches the
+  network only through the HTTP client its Go host gives it
+  (`Program.HTTPClient`); the `cameo` command gives one, an embedding
+  program decides. Without one, `require "net/http"` works and a
+  request raises `SocketError`. Redirects are not followed, as in Ruby.
+  A request blocks the goroutine it runs on; a script fans requests out
+  with `async`. A connection, a request and a response are instances:
+  `http.use_ssl = true` and `req["Accept"] = "x"` rebind the variable to
+  the changed copy, and `req.set_form_data(h)` and `req.basic_auth(u, p)`
+  return the copy for the script to bind, `req = req.basic_auth(u, p)`,
+  where Ruby changes the request in place. `verify_mode=` is kept but
+  not applied: how certificates are verified is the host's client's
+  business. `Net::HTTP::Proxy`, `body_stream`, a request body streamed
+  from an IO and a response body read in pieces are left out.
 - **Output**: `puts`, `print`, `p`, `pp`, `warn`.
 
 ## Different in cameo
@@ -342,14 +368,14 @@ These are absent, and a script that uses one fails when it reaches it:
   fields; see above for Data), `Rational` and `Complex`, `Marshal` (instances are protobuf
   messages), `ObjectSpace`, `GC`, `ENV`, `Module.new`,
   refinements, `binding`, `method` and `Proc#curry`.
-- **No I/O beyond standard output and error**: `File`, `IO`, `Dir`,
-  `gets`, `STDIN`, `STDOUT`, `STDERR`, `$stdout`.
+- **No I/O beyond standard output and error, and the network through
+  `net/http`**: `File`, `IO`, `Dir`, `gets`, `STDIN`, `Socket`.
 - **No threads or processes**: `Thread`, `Fiber`, `Mutex`, `sleep`,
   `system`, `exec`, `spawn`; cameo has `async` and `await` instead.
 - **Not there yet**: `at_exit`, `exit!`,
   `printf` (`format` exists), `__method__`, `Enumerator.new`,
   `Integer()` with a base, and `autoload`.
-- **Libraries**: `require` of any library but the nine above, such as
+- **Libraries**: `require` of any library but the ten above, such as
   `yaml`, raises a `LoadError`. [stdlib.md](stdlib.md) says which are
   planned and which are left out, and why.
 
