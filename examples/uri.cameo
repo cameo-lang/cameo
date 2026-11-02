@@ -1,0 +1,75 @@
+# Ruby's uri library: URI.parse, the components, merging and routing,
+# and the www-form encoders. Each line prints what Ruby 3.4 prints.
+require "uri"
+
+u = URI.parse("https://user:pw@example.com:8443/a/b%20c/../d?x=1&y=two#frag")
+p u, u.class
+p [u.scheme, u.userinfo, u.user, u.password, u.host, u.port, u.path, u.query, u.fragment, u.opaque]
+p [u.hostname, u.default_port, u.absolute?, u.relative?, u.request_uri, u.authority, u.origin]
+p URI("http://EXAMPLE.com").normalize, URI("http://example.com").request_uri
+
+# The classes, by scheme; a scheme without one is a Generic, and so is a
+# relative reference.
+p URI("mailto:joe@example.com?subject=hi").class, URI("ftp://ftp.example.com/pub/f.txt;type=i").typecode
+p URI("file:///etc/hosts").path, URI("ws://x/y").class, URI("foo:bar").opaque, URI("//example.com/x").host
+p URI("/relative/path?q").class, URI.split("http://u:p@h:1/p?q#f")
+p URI("http://[::1]:80/").host, URI("http://[::1]:80/").hostname
+
+# A component is set on a copy: the variable is rebound, as every cameo
+# assignment does, and the value is checked as Ruby's setter checks it.
+v = URI("http://x.com/a")
+v.path = "/b"
+v.query = "q=1&r=a b"
+v.port = "444"
+v.scheme = "https"
+v.user = "u"
+p v
+begin
+  v.path = "no-slash"
+rescue URI::InvalidComponentError => e
+  puts e.message
+end
+begin
+  v.port = "x"
+rescue URI::InvalidComponentError => e
+  puts e.message
+end
+["http://exa mple.com", ":", "http://[::1", "http://x.com/ü"].each do |bad|
+  URI.parse(bad)
+rescue URI::InvalidURIError => e
+  puts e.message
+end
+
+# merge resolves a reference against a base, as a browser does; route_to
+# gives the reference that leads from one URI to another.
+base = URI("http://a/b/c/d;p?q")
+p base.merge("../g"), base + "g?y#s", URI.join("http://a/b/c/d", "../x", "y")
+p URI("http://a/b/c/d").route_to("http://a/b/x/y"), URI("http://a/b/c/d").route_from("http://a/b/x/y")
+p URI("http://x.com/a/b").merge("../../../c").to_s, URI("http://x.com/a/b/").merge(".").to_s
+begin
+  URI("/a/b").merge("c")
+rescue URI::BadURIError => e
+  puts e.message
+end
+
+# Equality normalizes the scheme and the host; the rest is compared as is.
+p URI("http://x.com/x") == URI("HTTP://EXAMPLE.COM/x"), URI("http://x.com/x") == URI("HTTP://X.COM/x")
+p URI("http://x.com/x").eql?(URI("http://x.com/x")), URI("http://example.com:80/").to_s
+
+# build takes the components by name or in the class's order.
+p URI::HTTP.build(host: "example.com", path: "/p", query: "a=1").to_s
+p URI::HTTPS.build(host: "example.com", port: 8443, path: "/p", fragment: "f").to_s
+p URI::MailTo.build(["joe@example.com", "subject=hi"]).to_s, URI("mailto:a@b.c?body=x").headers
+p URI::Generic.component, URI::HTTP::DEFAULT_PORT, URI.scheme_list.keys.sort
+
+# Forms: + for a space in a form, %20 in a URI component.
+p URI.encode_www_form(a: 1, b: "x y&z", c: [1, 2], d: nil, e: "ü")
+p URI.decode_www_form("a=1&b=x+y%26z&c=1&c=2&d&e=%C3%BC")
+p URI.encode_www_form_component("a b&c=d/é~*-._!"), URI.decode_www_form_component("a+b%26c")
+p URI.encode_uri_component("a b+c"), URI.decode_uri_component("a%20b+c")
+p URI.extract("see http://a.com/x and https://b.org/y?z=1, or mailto:me@x.org.")
+begin
+  URI.decode_www_form_component("%ZZ")
+rescue ArgumentError => e
+  puts e.message
+end
