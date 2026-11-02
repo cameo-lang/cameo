@@ -95,6 +95,7 @@ What asks for a library is measured, not guessed:
 | `date` | date 3.4.1 | `Date` and `DateTime`: `new`/`civil`, `jd`, `ordinal`, `commercial`, `today`, `now`, `parse` and `_parse` with Ruby's forms, `strptime`, `_strptime`, `iso8601`, `rfc3339`, `xmlschema`, `rfc2822`, `httpdate`, `jisx0301` and their `_` readers, `valid_*?`, `leap?`, the readers, `+`, `-`, `>>`, `<<`, `next_*`, `prev_*`, `step`, `upto`, `downto`, Ranges, `<=>`, `===`, `strftime` and the writers, `new_offset`, `deconstruct_keys`, `to_date`, `to_datetime`, `to_time`, `Time#to_date`, `to_datetime`, `Date::ITALY` and the other starts, the name constants, `Date::Error`; a Rational of Ruby's is an Integer when whole and a Float otherwise; `Date::Infinity` and `marshal_dump` are left out |
 | `net/http` (`net/https`, `net/protocol`) | net-http 0.6.0 | `Net::HTTP.get`, `get_response`, `get_print`, `post`, `post_form`, `put`, `start`, `new`, `use_ssl=`, the timeouts, `request`, the verbs, `send_request`; the request classes with `[]`, `[]=`, `body=`, `set_form_data`, `basic_auth`, the header methods; `Net::HTTPResponse` and its classes by status with `code`, `message`, `body`, `value`, `error!`, `content_type`, `uri`; the error hierarchy, `Net::ReadTimeout`, `SocketError`, `Errno::ECONNREFUSED`, `OpenSSL::SSL::SSLError`. The network is reached through the host's client alone (`Program.HTTPClient`; the `cameo` command gives one); redirects are not followed, as in Ruby; a request blocks its goroutine. `Net::HTTP::Proxy`, streamed bodies and `verify_mode` (kept, not applied) are left out |
 | time zones | — | an IANA zone name wherever Ruby takes a UTC offset: `Time.new(…, in:)` and its seventh argument, `Time.at(…, in:)`, `Time.now(in:)`, `localtime`, `getlocal`, `DateTime.new`'s offset and `new_offset`; `Time#zone` is the abbreviation in force, `utc_offset` and `dst?` follow the date; Go's `time/tzdata` is compiled in. Ruby takes a zone object there, so this is cameo's extension; an abbreviation alone is refused as Ruby refuses it |
+| `digest` (`digest/md5`, `sha1`, `sha2`) | digest 3.2.0 | `Digest::MD5`, `SHA1`, `SHA256`, `SHA384`, `SHA512`, `SHA2`: `hexdigest`, `digest`, `base64digest` on the class and on an object, `update`, `<<`, `reset`, `digest_length`, `block_length`, `==`, `Digest.hexencode`, `Digest()`; `OpenSSL::HMAC.hexdigest`, `digest`, `base64digest`, `OpenSSL::Digest.new`, `hexdigest`, `OpenSSL::Digest::SHA256` and kin. An object is a value: `update` returns the copy. `RMD160` (no RIPEMD-160 in Go) and `file` are left out |
 | `debug` | debug 1.10.0 | `debugger` and `binding.break` stop in cameo's debugger, which takes rdbg's commands ([debugger.md](debugger.md)) |
 | `cameo/runner` | — | cameo's own: the library that gives CRuby `Cameo::Runner` is built in |
 
@@ -105,7 +106,6 @@ Each is one pull request, which also moves its row to *Available*.
 | Library | Ruby's version | What goes in | Why this order |
 |---|---|---|---|
 | `yaml` (`psych`) | psych 5.2.2 | `YAML.load`, `safe_load`, `load_stream`, `dump`, `to_yaml`, `YAML.load_file` **unsupported** (a file); plain data only: scalars, arrays, hashes, symbols (`:sym`), times and dates; a `!ruby/object` tag is a `Psych::DisallowedClass`; an instance of a cameo class dumps as a mapping of its fields, as JSON does | configuration and fixtures; the LoadError sample on the site today |
-| `digest` (`digest/md5`, `sha1`, `sha2`, `sha256`…) | digest 3.2.0 | `Digest::MD5`, `SHA1`, `SHA256`, `SHA384`, `SHA512`, `RMD160`, `digest`, `hexdigest`, `base64digest`, `file` **unsupported**; an instance is a finished digest (`Digest::SHA256.new.update(s)` returns the updated digest and rebinds nothing, as every cameo value) | signing requests to APIs |
 | `base64` | base64 0.2.0 | `encode64`, `decode64`, `strict_*`, `urlsafe_*` | with `digest` |
 | `securerandom` (`random/formatter`) | securerandom 0.4.1 | `hex`, `uuid`, `uuid_v4`, `uuid_v7`, `random_bytes`, `random_number`, `alphanumeric`, `base64`, `urlsafe_base64`, `bytes`, `Random::Formatter` on `Random` too, drawing from Go's `crypto/rand` | tokens and ids; cheap |
 | `csv` | csv 3.3.2 | `CSV.parse`, `parse_line`, `generate`, `generate_line`, `headers: true`, `CSV::Row` and `Table`, `converters: :numeric`, quoting and `col_sep`; `CSV.read`, `foreach`, `open` **unsupported** (files) | 42 spec files; data scripts |
@@ -185,9 +185,8 @@ name and instance variables).
 
 **OpenSSL.** `openssl` 3.3.0 is a binding to a C library. TLS is Go's and
 `net/http` uses it; what scripts take from OpenSSL beyond that is
-`OpenSSL::Digest` and `OpenSSL::HMAC`, which `digest` will carry under
-their OpenSSL names too. Certificates, keys, ciphers and `OpenSSL::SSL`
-stay out.
+`OpenSSL::Digest` and `OpenSSL::HMAC`, which `digest` carries under their
+OpenSSL names. Certificates, keys, ciphers and `OpenSSL::SSL` stay out.
 
 **Core classes left out by design**, which are not libraries but are
 asked for as if they were: `Struct` and `Data` (classes declare typed
@@ -204,4 +203,5 @@ Pull requests, as they open and land:
 - [cameo-lang/cameo#179](https://github.com/cameo-lang/cameo/pull/179): `uri`.
 - [cameo-lang/cameo#180](https://github.com/cameo-lang/cameo/pull/180): `date`.
 - [cameo-lang/cameo#181](https://github.com/cameo-lang/cameo/pull/181): `net/http`.
-- time zones: available.
+- [cameo-lang/cameo#182](https://github.com/cameo-lang/cameo/pull/182): time zones.
+- `digest`: available.

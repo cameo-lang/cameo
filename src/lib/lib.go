@@ -8,6 +8,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/benchmark"
 	"github.com/cameo-lang/cameo/src/lib/cgi"
 	"github.com/cameo-lang/cameo/src/lib/date"
+	"github.com/cameo-lang/cameo/src/lib/digest"
 	"github.com/cameo-lang/cameo/src/lib/json"
 	nethttp "github.com/cameo-lang/cameo/src/lib/net/http"
 	"github.com/cameo-lang/cameo/src/lib/pathname"
@@ -26,6 +27,10 @@ var Libraries = map[string][]string{
 	"cgi/escape":   nil,
 	"cgi/util":     {"cgi/escape"},
 	"date":         nil,
+	"digest":       {"digest/md5", "digest/sha1", "digest/sha2"},
+	"digest/md5":   {"digest"},
+	"digest/sha1":  {"digest"},
+	"digest/sha2":  {"digest"},
 	"json":         nil,
 	"net/http":     {"net/protocol"},
 	"net/https":    {"net/http", "net/protocol"},
@@ -41,6 +46,7 @@ func Install() {
 	benchmark.Install()
 	cgi.Install()
 	date.Install()
+	digest.Install()
 	json.Install()
 	nethttp.Install()
 	pathname.Install()

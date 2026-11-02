@@ -34,7 +34,6 @@ var (
 	timeoutModule = object.NewModule("Timeout")
 	timeoutError  = object.NewClass("Error", object.RuntimeError)
 	socketError   = object.NewClass("SocketError", object.StandardError)
-	opensslModule = object.NewModule("OpenSSL")
 	sslModule     = object.NewModule("SSL")
 	sslError      = object.NewClass("SSLError", object.StandardError)
 
@@ -117,7 +116,7 @@ func Install() {
 	object.ObjectClass.Consts["Timeout"] = object.ClassValue(timeoutModule)
 	timeoutError.Lexical = timeoutModule
 	timeoutModule.Consts["Error"] = object.ClassValue(timeoutError)
-	object.ObjectClass.Consts["OpenSSL"] = object.ClassValue(opensslModule)
+	opensslModule := stdlib.Module("OpenSSL")
 	sslModule.Lexical = opensslModule
 	opensslModule.Consts["SSL"] = object.ClassValue(sslModule)
 	sslError.Lexical = sslModule
