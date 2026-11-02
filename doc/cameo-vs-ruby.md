@@ -91,7 +91,9 @@ mspec's own `before` blocks.
   Ruby's numbers, `Integer()`, `Float()`, `String()` and `Array()`,
   `Process.clock_gettime`.
 - **Libraries**: `require` of `set`, `time`, `pp`, `pathname`, `cgi`,
-  `json` and `benchmark`, which cameo builds in. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
+  `json` and `benchmark`, which cameo builds in; [stdlib.md](stdlib.md)
+  has every library of Ruby's standard library with its status, the ones
+  to come and the ones left out. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
   do without I/O: `escape` and `unescape`, the URI-component pair,
   `escapeHTML` and `unescapeHTML`, `escapeElement` and `unescapeElement`,
   `rfc1123_date` and `pretty`, with their snake_case names. A Symbol
@@ -315,7 +317,8 @@ These are absent, and a script that uses one fails when it reaches it:
   `printf` (`format` exists), `__method__`, `Enumerator.new`,
   `Integer()` with a base, and `autoload`.
 - **Libraries**: `require` of any library but the seven above, such as
-  `yaml`, raises a `LoadError`.
+  `yaml`, raises a `LoadError`. [stdlib.md](stdlib.md) says which are
+  planned and which are left out, and why.
 
 ## Only in cameo
 
