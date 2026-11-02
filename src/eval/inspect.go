@@ -326,6 +326,16 @@ func (in *Interp) Compare(a, b object.Value) (int, error) {
 		}
 		return 0, in.incomparable(a, b)
 	}
+	if m := ownNative(a, "<=>"); m != nil {
+		r, err := m.Native(in, a, []object.Value{b}, nil, object.Value{})
+		if err != nil {
+			return 0, err
+		}
+		if i, ok := r.AsInt(); ok {
+			return int(i), nil
+		}
+		return 0, in.incomparable(a, b)
+	}
 	switch a.Kind() {
 	case object.KindInt:
 		if b.Kind() == object.KindInt {
