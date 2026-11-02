@@ -38,6 +38,10 @@ func NeedBlock(ctx object.Context, block object.Value, name string) error {
 // "" for n <= 0.
 func Padding(fill string, n int) string { return padding(fill, n) }
 
+// ToList reads an iterable argument, an Array, a Set, a Range or an
+// Enumerator, as its elements, or fails with Ruby's TypeError.
+func ToList(ctx object.Context, v object.Value) ([]object.Value, error) { return toList(ctx, v) }
+
 // StringList is an Array of Strings.
 func StringList(ss []string) object.Value { return stringList(ss) }
 
