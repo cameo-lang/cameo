@@ -8,6 +8,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/benchmark"
 	"github.com/cameo-lang/cameo/src/lib/cgi"
 	"github.com/cameo-lang/cameo/src/lib/json"
+	"github.com/cameo-lang/cameo/src/lib/pathname"
 )
 
 // Libraries are the names require accepts, each with the libraries it
@@ -21,6 +22,7 @@ var Libraries = map[string][]string{
 	"cgi/escape": nil,
 	"cgi/util":   {"cgi/escape"},
 	"json":       nil,
+	"pathname":   nil,
 }
 
 // Install defines every library. The evaluator calls it once, after
@@ -29,4 +31,5 @@ func Install() {
 	benchmark.Install()
 	cgi.Install()
 	json.Install()
+	pathname.Install()
 }
