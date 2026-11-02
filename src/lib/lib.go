@@ -20,6 +20,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/logger"
 	"github.com/cameo-lang/cameo/src/lib/marshal"
 	"github.com/cameo-lang/cameo/src/lib/matrix"
+	nethttp "github.com/cameo-lang/cameo/src/lib/net/http"
 	"github.com/cameo-lang/cameo/src/lib/pathname"
 	"github.com/cameo-lang/cameo/src/lib/prime"
 	"github.com/cameo-lang/cameo/src/lib/securerandom"
@@ -76,6 +77,9 @@ var Libraries = map[string][]string{
 	"unicode_normalize/normalize": nil,
 	"uri":                         nil,
 	"zlib":                        nil,
+	"net/http":                    {"net/protocol"},
+	"net/https":                   {"net/http", "net/protocol"},
+	"net/protocol":                nil,
 }
 
 // Install defines every library. The evaluator calls it once, after
@@ -94,6 +98,7 @@ func Install() {
 	json.Install()
 	logger.Install()
 	marshal.Install()
+	nethttp.Install()
 	pathname.Install()
 	prime.Install()
 	securerandom.Install()

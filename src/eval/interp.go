@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"sync"
 	"sync/atomic"
 
@@ -22,9 +23,12 @@ type Interp struct {
 	// IgnoreMutationErrors makes a call of one of Ruby's mutators return
 	// its result on a copy instead of raising; see mutate.go.
 	IgnoreMutationErrors bool
-	stdout, stderr       io.Writer
-	outMu                *sync.Mutex
-	file                 string
+	// HTTP is the client net/http makes requests with; nil leaves the
+	// program without network access, and a request raises SocketError.
+	HTTP           *http.Client
+	stdout, stderr io.Writer
+	outMu          *sync.Mutex
+	file           string
 	// mainClass is the class of the top-level self: top-level defs are its
 	// methods, so one interpreter's definitions never reach another's.
 	mainClass *object.Class
@@ -173,6 +177,14 @@ func New(stdout, stderr io.Writer) *Interp {
 
 // Rand implements object.Context.
 func (in *Interp) Rand() *object.Random { return in.rng }
+
+// HTTPClient is the client net/http makes requests with, or nil when the
+// program has no network access; the library reads it from its Context.
+func (in *Interp) HTTPClient() *http.Client { return in.HTTP }
+
+// Done is closed when the run is stopped, so that a request in flight is
+// cancelled with it.
+func (in *Interp) Done() <-chan struct{} { return in.stop.chs[0] }
 
 var installOnce sync.Once
 
