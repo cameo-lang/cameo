@@ -577,6 +577,11 @@ func (in *Interp) with(target, key, value object.Value) (object.Value, error) {
 				return object.Value{}, in.raise(object.TypeError, 0, "a field of %s is named by a symbol, not %s", t.Cls.QualifiedName(), typeName(key))
 			}
 		}
+		// A library class checks a component in a native setter, name=,
+		// which returns the copy: URI::Generic#port= refuses "x".
+		if m := ownNative(target, string(name)+"="); m != nil {
+			return m.Native(in, target, []object.Value{value}, nil, object.Value{})
+		}
 		idx, ok := t.Cls.FieldIndex[string(name)]
 		if !ok {
 			return object.Value{}, in.raise(object.NameError, 0, "%s has no field %s", t.Cls.QualifiedName(), name)

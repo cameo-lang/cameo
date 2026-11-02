@@ -10,6 +10,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/json"
 	"github.com/cameo-lang/cameo/src/lib/pathname"
 	libtime "github.com/cameo-lang/cameo/src/lib/time"
+	"github.com/cameo-lang/cameo/src/lib/uri"
 )
 
 // Libraries are the names require accepts, each with the libraries it
@@ -25,6 +26,7 @@ var Libraries = map[string][]string{
 	"json":       nil,
 	"pathname":   nil,
 	"time":       nil,
+	"uri":        nil,
 }
 
 // Install defines every library. The evaluator calls it once, after
@@ -35,4 +37,5 @@ func Install() {
 	json.Install()
 	pathname.Install()
 	libtime.Install()
+	uri.Install()
 }

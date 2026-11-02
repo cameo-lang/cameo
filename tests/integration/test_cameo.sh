@@ -56,6 +56,23 @@ CAMEO
   assert_eq $'{"a":[1,2.5,null],"b":{"c":"é"}}\n{\n  "c": "é"\n}\n'"$script"$':4: unexpected token at \']\' (JSON::ParserError)' "$out"
 }
 
+test_uri_parses_merges_and_refuses() {
+  local script out
+  script="$(mktemp -d)/uri.cameo"
+  cat >"$script" <<'CAMEO'
+require "uri"
+u = URI("https://u:p@example.com:8443/a/b?x=1#f")
+puts u.host, u.port, u.request_uri, u.merge("../c?y"), URI.encode_www_form(q: "a b", n: [1, 2])
+u.path = "/z"
+puts u
+URI.parse("http://exa mple.com")
+CAMEO
+  local rc=0
+  out=$("$CAMEO_BIN" "$script" 2>&1) || rc=$?
+  assert_eq 1 "$rc" "an InvalidURIError does not fail the run"
+  assert_eq $'example.com\n8443\n/a/b?x=1\nhttps://u:p@example.com:8443/c?y\nq=a+b&n=1&n=2\nhttps://u:p@example.com:8443/z?x=1#f\n'"$script"$':6: bad URI (is not URI?): "http://exa mple.com" (URI::InvalidURIError)' "$out"
+}
+
 test_exit_ends_the_run_with_its_status() {
   local dir out rc
   dir="$(mktemp -d)"
