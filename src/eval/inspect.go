@@ -19,15 +19,19 @@ func userMethod(v object.Value, name string) *object.Method {
 }
 
 // ownNative finds a native method a library's class defines for its own
-// instances, such as URI::Generic#inspect: a method of a class other than
-// Object and BasicObject, on an instance. A module's, such as
-// Comparable#==, is not one; the core's fallbacks stand for those.
+// instances, such as URI::Generic#inspect or Net::HTTPHeader#[]=, on an
+// instance. The core's own, Object's, BasicObject's, Comparable's and
+// Enumerable's, are not such: the core's fallbacks stand for those.
 func ownNative(v object.Value, name string) *object.Method {
 	if v.Kind() != object.KindInstance {
 		return nil
 	}
 	m := v.Class().Lookup(name)
-	if m == nil || m.Native == nil || m.Body != nil || m.Owner.IsModule || m.Owner == object.ObjectClass || m.Owner == object.BasicObjectClass {
+	if m == nil || m.Native == nil || m.Body != nil {
+		return nil
+	}
+	switch m.Owner {
+	case object.ObjectClass, object.BasicObjectClass, object.Comparable, object.Enumerable:
 		return nil
 	}
 	return m

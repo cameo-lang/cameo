@@ -35,8 +35,9 @@ each handle's pull request states what its calls change.
 
 Network I/O is the one exception to "no I/O". `net/http` is in, because a
 script that fetches data is what cameo is for; it reaches the network only
-through a client the Go host gives the program, so an embedding program
-decides whether a script may make requests at all (see *net/http* below).
+through a client the Go host gives the program (`Program.HTTPClient`), so
+an embedding program decides whether a script may make requests at all.
+The `cameo` command gives its scripts one.
 
 What asks for a library is measured, not guessed:
 
@@ -92,6 +93,7 @@ What asks for a library is measured, not guessed:
 | `benchmark` | benchmark 0.4.0 | `measure`, `realtime`, `bm`, `bmbm`, `benchmark`, `Tms`; `Tms#add!` is a mutator |
 | `uri` | uri 1.0.2 | `URI.parse`, `URI()`, `join`, `split`, `for`, `extract`, `scheme_list`, `URI::Generic` and `HTTP`, `HTTPS`, `FTP`, `File`, `WS`, `WSS`, `LDAP`, `LDAPS`, `MailTo` with their components, the setters (a checked copy), `merge`, `+`, `route_from`, `route_to`, `normalize`, `select`, `build`, `==`, `encode_www_form`, `decode_www_form`, the `_component` pair, `encode_uri_component`, `InvalidURIError`, `InvalidComponentError`, `BadURIError`; `merge!` and `normalize!` are bang methods; `URI.regexp` is obsolete in Ruby and raises |
 | `date` | date 3.4.1 | `Date` and `DateTime`: `new`/`civil`, `jd`, `ordinal`, `commercial`, `today`, `now`, `parse` and `_parse` with Ruby's forms, `strptime`, `_strptime`, `iso8601`, `rfc3339`, `xmlschema`, `rfc2822`, `httpdate`, `jisx0301` and their `_` readers, `valid_*?`, `leap?`, the readers, `+`, `-`, `>>`, `<<`, `next_*`, `prev_*`, `step`, `upto`, `downto`, Ranges, `<=>`, `===`, `strftime` and the writers, `new_offset`, `deconstruct_keys`, `to_date`, `to_datetime`, `to_time`, `Time#to_date`, `to_datetime`, `Date::ITALY` and the other starts, the name constants, `Date::Error`; a Rational of Ruby's is an Integer when whole and a Float otherwise; `Date::Infinity` and `marshal_dump` are left out |
+| `net/http` (`net/https`, `net/protocol`) | net-http 0.6.0 | `Net::HTTP.get`, `get_response`, `get_print`, `post`, `post_form`, `put`, `start`, `new`, `use_ssl=`, the timeouts, `request`, the verbs, `send_request`; the request classes with `[]`, `[]=`, `body=`, `set_form_data`, `basic_auth`, the header methods; `Net::HTTPResponse` and its classes by status with `code`, `message`, `body`, `value`, `error!`, `content_type`, `uri`; the error hierarchy, `Net::ReadTimeout`, `SocketError`, `Errno::ECONNREFUSED`, `OpenSSL::SSL::SSLError`. The network is reached through the host's client alone (`Program.HTTPClient`; the `cameo` command gives one); redirects are not followed, as in Ruby; a request blocks its goroutine. `Net::HTTP::Proxy`, streamed bodies and `verify_mode` (kept, not applied) are left out |
 | `debug` | debug 1.10.0 | `debugger` and `binding.break` stop in cameo's debugger, which takes rdbg's commands ([debugger.md](debugger.md)) |
 | `cameo/runner` | — | cameo's own: the library that gives CRuby `Cameo::Runner` is built in |
 
@@ -101,7 +103,6 @@ Each is one pull request, which also moves its row to *Available*.
 
 | Library | Ruby's version | What goes in | Why this order |
 |---|---|---|---|
-| `net/http` (`net/https`, `net/protocol`) | net-http 0.6.0 | `Net::HTTP.get`, `get_response`, `post`, `post_form`, `start`, `new` with `use_ssl`, `open_timeout`, `read_timeout`, `request`, the request classes (`Get`, `Post`, `Put`, `Patch`, `Delete`, `Head`, `Options`) with headers, `body`, `set_form_data`, `basic_auth`, `Net::HTTPResponse` with `code`, `message`, `body`, `[]`, `each_header`, `value`, `content_type`, and the response classes (`HTTPSuccess`, `HTTPNotFound`, …) for `case`; `Net::HTTPError` and the `Net::HTTPExceptions` hierarchy, `Net::OpenTimeout`, `ReadTimeout`, `SocketError` | the I/O a data script needs; 131 spec files |
 | time zones | — | an IANA zone name wherever Ruby takes a UTC offset: `Time.new(…, in: "Europe/Berlin")`, `Time.now(in:)`, `Time.at(…, in:)`, `localtime`, `getlocal`; `Time#zone` is the abbreviation in force ("CET"); `TZ` in the process's environment names the local zone, as Go reads it. Go's `time/tzdata` is compiled in, so a zone resolves on a machine without a zoneinfo directory. Ruby takes a zone *object* here, so this is cameo's extension; `date` gets the same `in:` | "complete date and timezone"; Ruby has no zone database of its own |
 | `yaml` (`psych`) | psych 5.2.2 | `YAML.load`, `safe_load`, `load_stream`, `dump`, `to_yaml`, `YAML.load_file` **unsupported** (a file); plain data only: scalars, arrays, hashes, symbols (`:sym`), times and dates; a `!ruby/object` tag is a `Psych::DisallowedClass`; an instance of a cameo class dumps as a mapping of its fields, as JSON does | configuration and fixtures; the LoadError sample on the site today |
 | `digest` (`digest/md5`, `sha1`, `sha2`, `sha256`…) | digest 3.2.0 | `Digest::MD5`, `SHA1`, `SHA256`, `SHA384`, `SHA512`, `RMD160`, `digest`, `hexdigest`, `base64digest`, `file` **unsupported**; an instance is a finished digest (`Digest::SHA256.new.update(s)` returns the updated digest and rebinds nothing, as every cameo value) | signing requests to APIs |
@@ -201,4 +202,5 @@ Pull requests, as they open and land:
 - [cameo-lang/cameo#173](https://github.com/cameo-lang/cameo/pull/173): this page, the proposal.
 - [cameo-lang/cameo#174](https://github.com/cameo-lang/cameo/pull/174), [#175](https://github.com/cameo-lang/cameo/pull/175), [#176](https://github.com/cameo-lang/cameo/pull/176), [#177](https://github.com/cameo-lang/cameo/pull/177), [#178](https://github.com/cameo-lang/cameo/pull/178): `json`, `cgi`, `benchmark`, `pathname` and `time` move into packages of their own under `src/lib`.
 - [cameo-lang/cameo#179](https://github.com/cameo-lang/cameo/pull/179): `uri`.
-- `date`: available.
+- [cameo-lang/cameo#180](https://github.com/cameo-lang/cameo/pull/180): `date`.
+- `net/http`: available.

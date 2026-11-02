@@ -1036,3 +1036,48 @@ func headersValue(headers [][2]string) object.Value {
 	}
 	return object.NewList(out...)
 }
+
+// Components are a URI's parts as another library reads them: net/http
+// takes the host, port and request path of a URI::HTTP.
+type Components struct {
+	Scheme, Userinfo, Host, Path, Query, Fragment string
+	Port                                          int64
+	HasPort                                       bool
+	// RequestURI is the path with the query, "/" for an empty path.
+	RequestURI string
+}
+
+// Of reads a URI::Generic, and false for any other value.
+func Of(v object.Value) (Components, bool) {
+	if !isURI(v) {
+		return Components{}, false
+	}
+	p := read(v)
+	get := func(s *string) string {
+		if s == nil {
+			return ""
+		}
+		return *s
+	}
+	c := Components{Scheme: get(p.scheme), Userinfo: get(p.userinfo), Host: get(p.host), Path: get(p.path), Query: get(p.query), Fragment: get(p.fragment)}
+	if p.port != nil {
+		c.Port, c.HasPort = *p.port, true
+	}
+	c.RequestURI = c.Path
+	if p.query != nil {
+		c.RequestURI += "?" + *p.query
+	}
+	if !strings.HasPrefix(c.RequestURI, "/") {
+		c.RequestURI = "/" + c.RequestURI
+	}
+	return c, true
+}
+
+// Parse is URI.parse for another library: the URI of s, or
+// URI::InvalidURIError.
+func Parse(ctx object.Context, s string) (object.Value, error) {
+	return parse(ctx, object.String(s))
+}
+
+// Encode is URI.encode_www_form_component.
+func Encode(s string) string { return encodeComponent(s, true) }
