@@ -91,7 +91,8 @@ mspec's own `before` blocks.
   Ruby's numbers, `Integer()`, `Float()`, `String()` and `Array()`,
   `Process.clock_gettime`.
 - **Libraries**: `require` of `set`, `time`, `pp`, `pathname`, `cgi`,
-  `json`, `benchmark`, `uri`, `date`, `net/http`, `digest` and `base64`, which cameo builds in; [stdlib.md](stdlib.md)
+  `json`, `benchmark`, `uri`, `date`, `net/http`, `digest`, `base64` and
+  `securerandom`, which cameo builds in; [stdlib.md](stdlib.md)
   has every library of Ruby's standard library with its status, the ones
   to come and the ones left out. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
   do without I/O: `escape` and `unescape`, the URI-component pair,
@@ -182,6 +183,13 @@ mspec's own `before` blocks.
   `strict_encode64`, `strict_decode64`, `urlsafe_encode64` with
   `padding:` and `urlsafe_decode64`, with Ruby's line breaks, its lenient
   decoder and its `ArgumentError`.
+  `securerandom` is Ruby 3.4's securerandom 0.4.1: `SecureRandom.hex`,
+  `uuid`, `uuid_v4`, `uuid_v7`, `random_bytes`, `random_number`,
+  `alphanumeric` with `chars:`, `base64` and `urlsafe_base64`, drawing
+  from the operating system through Go's `crypto/rand`; and
+  `Random::Formatter`, which gives a `Random` the same methods, so a
+  seeded `Random` draws the hex, the tokens and the numbers CRuby's
+  draws.
 - **Output**: `puts`, `print`, `p`, `pp`, `warn`.
 
 ## Different in cameo
@@ -392,7 +400,7 @@ These are absent, and a script that uses one fails when it reaches it:
 - **Not there yet**: `at_exit`, `exit!`,
   `printf` (`format` exists), `__method__`, `Enumerator.new`,
   `Integer()` with a base, and `autoload`.
-- **Libraries**: `require` of any library but the twelve above, such as
+- **Libraries**: `require` of any library but the thirteen above, such as
   `yaml`, raises a `LoadError`. [stdlib.md](stdlib.md) says which are
   planned and which are left out, and why.
 
