@@ -200,4 +200,4 @@ Ruby's format (see *Planned* for cameo's). The reasons are in
 
 Pull requests, as they open and land:
 
-- this page, the proposal.
+- [cameo-lang/cameo#173](https://github.com/cameo-lang/cameo/pull/173): this page, the proposal.
