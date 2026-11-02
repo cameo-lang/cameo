@@ -91,7 +91,7 @@ mspec's own `before` blocks.
   Ruby's numbers, `Integer()`, `Float()`, `String()` and `Array()`,
   `Process.clock_gettime`.
 - **Libraries**: `require` of `set`, `time`, `pp`, `pathname`, `cgi`,
-  `json`, `benchmark`, `uri`, `date`, `net/http` and `digest`, which cameo builds in; [stdlib.md](stdlib.md)
+  `json`, `benchmark`, `uri`, `date`, `net/http`, `digest` and `base64`, which cameo builds in; [stdlib.md](stdlib.md)
   has every library of Ruby's standard library with its status, the ones
   to come and the ones left out. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
   do without I/O: `escape` and `unescape`, the URI-component pair,
@@ -173,6 +173,10 @@ mspec's own `before` blocks.
   `<<` return the object with more fed, for the variable to take,
   `d = d << "x"`, where Ruby feeds it in place. `RMD160` is left out
   (Go has no RIPEMD-160), and `file` reads a file, which cameo does not.
+  `base64` is Ruby 3.4's base64 0.2.0: `encode64`, `decode64`,
+  `strict_encode64`, `strict_decode64`, `urlsafe_encode64` with
+  `padding:` and `urlsafe_decode64`, with Ruby's line breaks, its lenient
+  decoder and its `ArgumentError`.
 - **Output**: `puts`, `print`, `p`, `pp`, `warn`.
 
 ## Different in cameo
@@ -383,7 +387,7 @@ These are absent, and a script that uses one fails when it reaches it:
 - **Not there yet**: `at_exit`, `exit!`,
   `printf` (`format` exists), `__method__`, `Enumerator.new`,
   `Integer()` with a base, and `autoload`.
-- **Libraries**: `require` of any library but the eleven above, such as
+- **Libraries**: `require` of any library but the twelve above, such as
   `yaml`, raises a `LoadError`. [stdlib.md](stdlib.md) says which are
   planned and which are left out, and why.
 
