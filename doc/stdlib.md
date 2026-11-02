@@ -10,7 +10,6 @@ status here.
 | **available** | built in; `require` returns true, and the library follows the Ruby 3.4.1 version named |
 | **in progress** | a pull request is open |
 | **planned** | decided in, in the order of the table |
-| **later** | nothing speaks against it, and nothing asks for it yet |
 | **unsupported** | left out, for the reason given; a `require` raises `LoadError` |
 
 Ruby 3.4.1 ships 58 default gems and 31 bundled gems. Every one is in a
@@ -23,11 +22,16 @@ A library goes in when its work is computation on values: parsing,
 formatting, arithmetic, encoding. It stays out when what it does is one of
 the things cameo leaves out on purpose
 ([cameo-vs-ruby.md](cameo-vs-ruby.md)): the file system and processes,
-threads, metaprogramming, object identity, mutable state inside a value. A
-library whose purpose is a mutable cursor or buffer (`StringIO`,
-`StringScanner`) could be a handle, as `Random` is: the one kind of value
-whose calls change something. None is one yet; those are *later*, with the
-question open.
+threads, metaprogramming, object identity, mutable state inside a value.
+
+A library whose purpose is a cursor, a buffer or a sink (`StringIO`,
+`StringScanner`, `Logger`) is a **handle**, as `Random` is: a value whose
+calls advance the thing it names, which every holder of the handle sees,
+and which cannot be copied, passed to `async` or stored in a field. That
+is cameo's one kind of mutable value, and these three take it rather than
+being left out: a script that tokenises a string or collects output needs
+them. The decision is recorded here so it is not re-opened by accident;
+each handle's pull request states what its calls change.
 
 Network I/O is the one exception to "no I/O". `net/http` is in, because a
 script that fetches data is what cameo is for; it reaches the network only
@@ -110,29 +114,19 @@ Each is one pull request, which also moves its row to *Available*.
 | `ipaddr` | ipaddr 1.2.7 | `IPAddr.new`, `include?`, `===`, `to_s`, `to_string`, `mask`, `to_range`, `ipv4?`, `ipv6?`, `private?`, `loopback?`, `succ`, `<=>` | small; pure |
 | `zlib` | zlib 3.2.1 | `crc32`, `adler32`, `Zlib::Deflate.deflate`, `Zlib::Inflate.inflate`, `Zlib.gzip`, `Zlib.gunzip`; `GzipReader`/`GzipWriter` on an IO **unsupported** | 25 spec files; compressed payloads from `net/http` |
 | `open-uri` | open-uri 0.5.0 | `URI.open(url)` and `URI::HTTP#open` with a block or `read`, over `net/http`, returning the body as a String with `base_uri`, `content_type`, `charset`, `status` on it; no `File` for a `file:` URL | the one-liner that fetches a page |
-
-## Later
-
-Nothing speaks against these; nothing asks for them yet. One becomes
-*planned* when a script needs it.
-
-| Library | Ruby's version | Note |
-|---|---|---|
-| `prime` | prime 0.1.3 | `Prime.each`, `prime?`, `prime_division`, `Integer#prime?`; pure |
-| `matrix` | matrix 0.4.2 | `Matrix` and `Vector`; pure, 94 spec files, and no script of cameo's has asked |
-| `bigdecimal` | bigdecimal 3.1.8 | a decimal Numeric of any precision: a new kind of value with Ruby's rounding modes, as large as `Integer` of any size was; pure, and worth doing once a script computes money |
-| `tsort` | tsort 0.2.0 | `TSort.tsort`, `strongly_connected_components` as module functions on a Hash of children |
-| `singleton` | singleton 0.3.0 | `include Singleton`; `instance` returns the one value, which, immutable, is what a Singleton is for |
-| `forwardable`, `delegate` | forwardable 1.3.3, delegate 0.4.0 | `def_delegators :field, :size, :each` and `SimpleDelegator` on a field; a class-body call that defines methods, which the checker has to learn as it learnt bang methods |
-| `logger` | logger 1.6.4 | `Logger.new($stderr)` with levels, `formatter`, `progname`; a logger is a handle on a stream, and `level=` changes it in place |
-| `stringio` | stringio 3.1.2 | `StringIO` as a handle like `Random`: `read`, `gets`, `each_line`, `write`, `puts`, `string`, `rewind`; the question is whether a handle is right for it or a cameo script should pass Strings |
-| `strscan` | strscan 3.1.2 | `StringScanner` as a handle: `scan`, `scan_until`, `skip`, `check`, `matched`, `pos`, `eos?`; the same question |
-| `optparse`, `getoptlong` | optparse 0.6.0, getoptlong 0.2.1 | cameo gives a script no `ARGV` today; when `cameo script.cameo -- args` passes one, `OptionParser` follows |
-| `rexml` | rexml 3.4.0 | `REXML::Document` from a String, `elements`, `attributes`, `text`, `XPath.match` for the common paths, and writing; on Go's `encoding/xml` |
-| `erb` | erb 4.0.4 | `ERB.new(template).result_with_hash(h)` alone; a template's Ruby runs through cameo's own evaluator, not `eval`; `result(binding)` is **unsupported** |
-| `abbrev` | abbrev 0.1.2 | `Abbrev.abbrev`; pure, tiny |
-| `resolv` | resolv 0.6.0 | `Resolv.getaddress`, `getname`, `Resolv::DNS` through the host's resolver, as `net/http` goes through its client |
-| `timeout` | timeout 0.4.3 | `Timeout.timeout(s) { }` would need to stop a running block, which only the host's deadline does; a cameo form could `await` with a limit |
+| `prime` | prime 0.1.3 | `Prime.each`, `prime?`, `first`, `take`, `prime_division`, `int_from_prime_division`, `Integer#prime?`, `prime_division`, `Prime.each(n)` lazily | pure, small |
+| `tsort` | tsort 0.2.0 | `TSort.tsort`, `tsort_each`, `strongly_connected_components`, `each_strongly_connected_component` as module functions on a Hash of children, and `include TSort` with `tsort_each_node` and `tsort_each_child` | pure, small |
+| `abbrev` | abbrev 0.1.2 | `Abbrev.abbrev`, `Array#abbrev` | pure, tiny |
+| `singleton` | singleton 0.3.0 | `include Singleton`: `instance` returns the one value, `new` is undefined; the value is immutable, so there is one and it never changes | small |
+| `forwardable`, `delegate` | forwardable 1.3.3, delegate 0.4.0 | `extend Forwardable` with `def_delegator` and `def_delegators` on a field or a method, `delegate … to:`; `SimpleDelegator` and `DelegateClass` forwarding to the wrapped value through `method_missing`, `__getobj__`; `__setobj__` is a mutator | a class-body call that defines methods, which the checker has to learn as it learnt bang methods |
+| `logger` | logger 1.6.4 | `Logger.new($stderr)`, the levels and their predicates, `formatter`, `progname`, `datetime_format`, `Logger::Formatter`; a Logger is a handle on a stream, so `level=` changes it for every holder | the way a script reports progress |
+| `stringio` | stringio 3.1.2 | `StringIO.new`, `read`, `gets`, `each_line`, `readlines`, `getc`, `write`, `<<`, `puts`, `print`, `printf`, `string`, `pos`, `rewind`, `eof?`, `truncate`, `closed?`; a handle | 58 spec files; builds output and feeds text to code that reads an IO |
+| `strscan` | strscan 3.1.2 | `StringScanner.new`, `scan`, `scan_until`, `skip`, `skip_until`, `check`, `check_until`, `match?`, `matched`, `matched?`, `pre_match`, `post_match`, `[]`, `captures`, `pos`, `pos=`, `eos?`, `rest`, `peek`, `getch`, `unscan`, `reset`, `terminate`, `string`; a handle | 44 spec files; tokenisers |
+| `ARGV`, `optparse`, `getoptlong` | optparse 0.6.0, getoptlong 0.2.1 | `ARGV` from `cameo script.cameo -- args`, and from the host through a Load option, then `OptionParser` with `on`, `parse!` returning the rest (`parse!` rebinds nothing: it returns the operands and the options go through the block), `banner`, `help`, `OptionParser::InvalidOption`; `GetoptLong` the same way | a script run from the command line takes arguments |
+| `rexml` | rexml 3.4.0 | `REXML::Document.new(string)`, `root`, `elements`, `each_element`, `attributes`, `text`, `name`, `XPath.first`, `XPath.match` for the paths of `//a/b[@c='d']` and `text()`, `Element#to_s`, `Document#write`, `Formatters::Pretty`, `REXML::ParseException`; on Go's `encoding/xml` | XML responses from `net/http` |
+| `matrix` | matrix 0.4.2 | `Matrix` and `Vector`: construction, `[]`, `row`, `column`, `+`, `-`, `*`, `**`, `/`, `transpose`, `determinant`, `inverse`, `rank`, `trace`, `each`, `map`, `minor`, `identity`, `zero`, `Vector#inner_product`, `cross_product`, `norm`, `Matrix::ErrDimensionMismatch` and kin; Ruby's are immutable but for `[]=`, which is a mutator | 94 spec files; pure |
+| `bigdecimal` (`bigdecimal/util`) | bigdecimal 3.1.8 | `BigDecimal` as a new Numeric kind of value: `BigDecimal("1.23")`, arithmetic with Integer and Float coercion, `round`, `floor`, `ceil`, `truncate` with Ruby's modes, `to_s` in Ruby's forms (`"0.123e1"`, `to_s("F")`), `precision`, `scale`, `sqrt`, `to_d` on String, Integer and Float, `BigDecimal.limit`, `mode`; on `math/big` | money; 56 spec files; the largest, so last of the pure ones |
+| `resolv` | resolv 0.6.0 | `Resolv.getaddress`, `getaddresses`, `getname`, `Resolv::DNS.new.getresources` for A, AAAA, MX, TXT, CNAME, `Resolv::ResolvError`; through the host's resolver, as `net/http` goes through its client | after `net/http`; the host decides whether a script may look names up |
 
 ## Unsupported
 
@@ -152,13 +146,17 @@ binary and US-ASCII do not exist), `english` 0.8.0 (global variables).
 
 **Threads and processes.** cameo has `async` and `await` in their place.
 `thread` (`Queue`, `Mutex`, `ConditionVariable`), `monitor`, `mutex_m`
-0.3.0, `timeout` 0.4.3 (see *Later*), `drb` 2.2.1, `rinda` 0.2.0,
+0.3.0, `timeout` 0.4.3 (`Timeout.timeout(s) { }` stops a running block
+from another thread; cameo has no thread to stop it from, and a deadline
+is the host's, on the context it runs the program with), `drb` 2.2.1, `rinda` 0.2.0,
 `continuation`.
 
 **Metaprogramming, `eval` and `binding`.** cameo refuses `eval`,
 `define_method`, `instance_variable_set` and `binding` before the script
-runs. `erb` 4.0.4's `result(binding)` (see *Later* for the form that
-works), `ostruct` 0.6.1 (an OpenStruct grows attributes at run time; a
+runs. `erb` 4.0.4 (a template is Ruby code evaluated when the template
+is rendered, which is `eval` under another name; string interpolation,
+`format` and heredocs are cameo's templating, and a `yaml` or `json`
+document the data), `ostruct` 0.6.1 (an OpenStruct grows attributes at run time; a
 class with typed fields or a Hash is cameo's form), `observer` 0.1.2 (a
 mutable list of observers on the observed value), `minitest` 5.25.4,
 `test-unit` 3.6.7 and `power_assert` 2.0.5 (test discovery by method
@@ -181,7 +179,7 @@ name and instance variables).
 **Network protocols nobody asked for.** `net/ftp` 0.3.8, `net/imap` 0.5.4,
 `net/pop` 0.1.2, `net/smtp` 0.5.0, `rss` 0.3.1, `resolv-replace` 0.1.1,
 `webrick` (not in 3.4). They would go through the host's connection as
-`net/http` does, and one becomes *later* when a script needs it.
+`net/http` does, and one becomes *planned* when a script needs it.
 
 **OpenSSL.** `openssl` 3.3.0 is a binding to a C library. TLS is Go's and
 `net/http` uses it; what scripts take from OpenSSL beyond that is
