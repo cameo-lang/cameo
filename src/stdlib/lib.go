@@ -41,6 +41,13 @@ func Padding(fill string, n int) string { return padding(fill, n) }
 // StringList is an Array of Strings.
 func StringList(ss []string) object.Value { return stringList(ss) }
 
+// MonthNamed is the month a name or its three-letter abbreviation names,
+// 1 to 12, and 0 for no month.
+func MonthNamed(s string) int { return monthNamed(s) }
+
+// PadDigits is n in decimal, zero-padded to width.
+func PadDigits(n int64, width int) string { return padDigits(n, width) }
+
 // EncodeCodepoint is UTF-8's encoding of r, a surrogate included, as
 // Ruby's unescapeHTML and JSON.parse write one.
 func EncodeCodepoint(r rune) string {
