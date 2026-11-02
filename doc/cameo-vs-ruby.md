@@ -298,6 +298,8 @@ sets the fields, and `p a` prints `Point(x: 1, y: 2)` where Ruby prints
 - A `throw` ends the `catch` whose tag is equal to its own, where Ruby
   wants the same object: `catch("a") { throw "a" }` returns nil. The
   Object a `catch` without a tag makes is still a tag of its own.
+- `Time` takes an IANA zone name, `"Europe/Berlin"`, wherever Ruby
+  takes a UTC offset; see *Only in cameo*.
 - `Time` is immutable: `utc` and `localtime` return a new time, and
   `subsec` is a Float, since `Rational` is left out.
 - A String is UTF-8, ASCII-8BIT (binary) or US-ASCII; other encodings do not
@@ -386,6 +388,17 @@ These are absent, and a script that uses one fails when it reaches it:
   a message too, of its message, line, cause and fields, and crosses to
   `await` and to a Go host with them.
 - `with`, which returns a copy with some fields changed.
+- Time zones by name. An IANA name such as `"Europe/Berlin"` or
+  `"America/New_York"` is accepted wherever Ruby takes a UTC offset:
+  `Time.new(…, in:)` and its seventh argument, `Time.at(…, in:)`,
+  `Time.now(in:)`, `localtime`, `getlocal`, `DateTime.new`'s offset and
+  `new_offset`. The time then carries the zone: `zone` is the
+  abbreviation in force, `"CEST"`, `utc_offset` and `dst?` follow the
+  date, and adding an hour across a change of clocks lands where the
+  clocks did. Ruby takes a zone object there and has no zone database;
+  cameo compiles Go's in (`time/tzdata`), so a name resolves on any
+  machine. A name it does not know is an `ArgumentError`; an
+  abbreviation alone, `"CET"`, is refused as Ruby refuses it.
 - The Cameo module, which a script includes: `async receiver, :method,
   args…` runs a method concurrently and returns its promise, an
   Integer; `await` collects a promise's result, or a list's, and `await

@@ -219,13 +219,26 @@ func startArg(ctx object.Context, v object.Value) (float64, error) {
 }
 
 // offsetArg reads a DateTime offset: a String such as "+09:00", "Z" or a
-// zone name, or a Numeric fraction of a day. Ruby ignores one it cannot
-// read, with a warning, and uses zero.
-func offsetArg(ctx object.Context, v object.Value) (int64, error) {
+// zone abbreviation, or a Numeric fraction of a day. Ruby ignores one it
+// cannot read, with a warning, and uses zero. An IANA zone name, cameo's
+// own, names an offset that depends on the moment: at reads it for the
+// UTC instant given, as new_offset needs, and nil for the local civil
+// time of the date being built, which newCivilDateTime resolves itself.
+func offsetArg(ctx object.Context, v object.Value, at func(loc *time.Location) int64) (int64, error) {
 	if v.IsNil() {
 		return 0, nil
 	}
 	if s, ok := v.AsString(); ok {
+		if strings.Contains(s, "/") {
+			loc, err := time.LoadLocation(s)
+			if err != nil {
+				return 0, ctx.Raise(object.ArgumentError, "unknown time zone %s: an IANA name such as Europe/Berlin, or an offset such as +01:00, expected", s)
+			}
+			if at == nil {
+				return 0, nil
+			}
+			return at(loc), nil
+		}
 		if off, ok := zoneToDiff(s); ok {
 			return off, nil
 		}
@@ -483,13 +496,14 @@ func installConstructors() {
 }
 
 // popOffset takes the offset off a DateTime constructor's arguments when
-// it is the nth, and returns the rest.
-func popOffset(ctx object.Context, a []object.Value, n int) ([]object.Value, int64, error) {
+// it is the nth, and returns the rest with the offset argument, which
+// timeOf resolves once it knows the civil time.
+func popOffset(ctx object.Context, a []object.Value, n int) ([]object.Value, object.Value, error) {
 	if len(a) < n {
-		return a, 0, nil
+		return a, object.Nil, nil
 	}
-	of, err := offsetArg(ctx, a[n-1])
-	return a[:n-1], of, err
+	_, err := offsetArg(ctx, a[n-1], nil)
+	return a[:n-1], a[n-1], err
 }
 
 // civilDate is Date.civil's result: the day, with a fraction of a day
@@ -527,13 +541,12 @@ func newCivilDateTime(ctx object.Context, cls *object.Class, a []object.Value, s
 		}
 		a = a[:7]
 	}
-	of := int64(0)
+	offset := object.Nil
 	if len(a) == 7 {
-		var err error
-		if of, err = offsetArg(ctx, a[6]); err != nil {
+		if _, err := offsetArg(ctx, a[6], nil); err != nil {
 			return object.Value{}, err
 		}
-		a = a[:6]
+		offset, a = a[6], a[:6]
 	}
 	vals, fracs, err := args(ctx, a, []int64{-4712, 1, 1, 0, 0, 0}, []string{"year", "month", "day", "hour", "minute", "second"})
 	if err != nil {
@@ -543,14 +556,23 @@ func newCivilDateTime(ctx object.Context, cls *object.Class, a []object.Value, s
 	if !ok {
 		return object.Value{}, invalid(ctx)
 	}
-	return timeOf(ctx, cls, jd, vals[3], vals[4], vals[5], fracs[5], of, sg)
+	return timeOf(ctx, cls, jd, vals[3], vals[4], vals[5], fracs[5], offset, sg)
 }
 
-// timeOf is a DateTime of a local day and a time of day.
-func timeOf(ctx object.Context, cls *object.Class, jd, h, m, s int64, frac float64, of int64, sg float64) (object.Value, error) {
+// timeOf is a DateTime of a local day and a time of day, under the offset
+// argument: an offset as it is, or a zone's offset at that civil time.
+func timeOf(ctx object.Context, cls *object.Class, jd, h, m, s int64, frac float64, offset object.Value, sg float64) (object.Value, error) {
 	df, carry, ok := clockOf(h, m, s)
 	if !ok {
 		return object.Value{}, invalid(ctx)
+	}
+	of, err := offsetArg(ctx, offset, func(loc *time.Location) int64 {
+		y, mo, d := jdToCivil(jd+carry, sg)
+		_, off := time.Date(int(y), time.Month(mo), int(d), int(df/3600), int(df/60%60), int(df%60), 0, loc).Zone()
+		return int64(off)
+	})
+	if err != nil {
+		return object.Value{}, err
 	}
 	sf := int64(math.Round(frac * nanos))
 	return newDateTime(cls, jd+carry, df, sf, of, sg), nil
@@ -727,17 +749,21 @@ func installReaders() {
 	treader("offset", func(d dt) object.Value { return ratio(float64(d.of), daySecs) })
 	treader("zone", func(d dt) object.Value { return object.String(offsetString(d.of, true)) })
 	t.Define("new_offset", -1, func(ctx object.Context, self object.Value, a []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		of := int64(0)
 		if len(a) > 1 {
 			return object.Value{}, stdlib.ArgError(ctx, len(a), "0..1")
 		}
+		d := read(self)
+		of := int64(0)
 		if len(a) == 1 {
 			var err error
-			if of, err = offsetArg(ctx, a[0]); err != nil {
+			// A zone name's offset is the one in force at this instant.
+			if of, err = offsetArg(ctx, a[0], func(loc *time.Location) int64 {
+				_, off := time.Unix((d.jd-unixEpoch)*daySecs+d.df, 0).In(loc).Zone()
+				return int64(off)
+			}); err != nil {
 				return object.Value{}, err
 			}
 		}
-		d := read(self)
 		d.of = of
 		return build(self.Instance().Cls, d), nil
 	})
