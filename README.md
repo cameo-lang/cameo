@@ -37,7 +37,8 @@ interpreter is built in the milestones listed there.
 [doc/cameo-vs-ruby.md](doc/cameo-vs-ruby.md) lists, for someone who knows
 Ruby, what is the same, what differs, and what cameo does not support.
 A script can `require` the libraries cameo builds in: `set`, `time`, `pp`,
-`pathname`, `cgi`, `json`, `benchmark`, `uri`, `date` and `digest`. [doc/stdlib.md](doc/stdlib.md)
+`pathname`, `cgi`, `json`, `benchmark`, `uri`, `date`, `digest` and
+`base64`. [doc/stdlib.md](doc/stdlib.md)
 lists every library of Ruby's standard library with its status in cameo:
 built in, planned, or left out and why.
 
