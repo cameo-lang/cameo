@@ -34,6 +34,10 @@ func NeedBlock(ctx object.Context, block object.Value, name string) error {
 	return needBlock(ctx, block, name)
 }
 
+// Padding is n characters of fill, repeated, as ljust and rjust pad with:
+// "" for n <= 0.
+func Padding(fill string, n int) string { return padding(fill, n) }
+
 // EncodeCodepoint is UTF-8's encoding of r, a surrogate included, as
 // Ruby's unescapeHTML and JSON.parse write one.
 func EncodeCodepoint(r rune) string {
