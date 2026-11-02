@@ -233,14 +233,11 @@ func hashProc(h object.Value) object.Value {
 // evaluator's own, each with the ones it loads along with it.
 var builtinLibraries = func() map[string][]string {
 	libs := map[string][]string{
-		"set":        nil,
-		"time":       nil,
-		"pp":         nil,
-		"pathname":   nil,
-		"cgi":        {"cgi/escape", "cgi/util"},
-		"cgi/escape": nil,
-		"cgi/util":   {"cgi/escape"},
-		"benchmark":  nil,
+		"set":       nil,
+		"time":      nil,
+		"pp":        nil,
+		"pathname":  nil,
+		"benchmark": nil,
 		// debug switches the debugger on; see debug.go.
 		"debug": nil,
 		// cameo/runner is the Ruby library that gives CRuby Cameo::Runner;
