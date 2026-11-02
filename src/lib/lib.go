@@ -5,6 +5,7 @@
 package lib
 
 import (
+	"github.com/cameo-lang/cameo/src/lib/base64"
 	"github.com/cameo-lang/cameo/src/lib/benchmark"
 	"github.com/cameo-lang/cameo/src/lib/cgi"
 	"github.com/cameo-lang/cameo/src/lib/date"
@@ -22,6 +23,7 @@ import (
 // exist before the require; require marks the name loaded and returns
 // true the first time and false after, as Ruby's does.
 var Libraries = map[string][]string{
+	"base64":       nil,
 	"benchmark":    nil,
 	"cgi":          {"cgi/escape", "cgi/util"},
 	"cgi/escape":   nil,
@@ -43,6 +45,7 @@ var Libraries = map[string][]string{
 // Install defines every library. The evaluator calls it once, after
 // stdlib.Install.
 func Install() {
+	base64.Install()
 	benchmark.Install()
 	cgi.Install()
 	date.Install()
