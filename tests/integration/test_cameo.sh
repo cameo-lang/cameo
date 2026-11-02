@@ -73,6 +73,21 @@ CAMEO
   assert_eq $'example.com\n8443\n/a/b?x=1\nhttps://u:p@example.com:8443/c?y\nq=a+b&n=1&n=2\nhttps://u:p@example.com:8443/z?x=1#f\n'"$script"$':6: bad URI (is not URI?): "http://exa mple.com" (URI::InvalidURIError)' "$out"
 }
 
+test_date_parses_counts_and_formats() {
+  local script out
+  script="$(mktemp -d)/date.cameo"
+  cat >"$script" <<'CAMEO'
+require "date"
+d = Date.parse("Thu, 29 Feb 2024 10:00:00 GMT")
+puts d, d >> 12, d.strftime("%A %-d %B %Y, week %V"), (d - Date.new(2024, 1, 1)), DateTime.new(2001, 2, 3, 4, 5, 6, "+07:00").new_offset(0)
+Date.new(2024, 2, 30)
+CAMEO
+  local rc=0
+  out=$("$CAMEO_BIN" "$script" 2>&1) || rc=$?
+  assert_eq 1 "$rc" "a Date::Error does not fail the run"
+  assert_eq $'2024-02-29\n2025-02-28\nThursday 29 February 2024, week 09\n59\n2001-02-02T21:05:06+00:00\n'"$script"$':4: invalid date (Date::Error)' "$out"
+}
+
 test_exit_ends_the_run_with_its_status() {
   local dir out rc
   dir="$(mktemp -d)"
