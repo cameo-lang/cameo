@@ -13,6 +13,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/json"
 	nethttp "github.com/cameo-lang/cameo/src/lib/net/http"
 	"github.com/cameo-lang/cameo/src/lib/pathname"
+	"github.com/cameo-lang/cameo/src/lib/securerandom"
 	libtime "github.com/cameo-lang/cameo/src/lib/time"
 	"github.com/cameo-lang/cameo/src/lib/uri"
 )
@@ -23,23 +24,25 @@ import (
 // exist before the require; require marks the name loaded and returns
 // true the first time and false after, as Ruby's does.
 var Libraries = map[string][]string{
-	"base64":       nil,
-	"benchmark":    nil,
-	"cgi":          {"cgi/escape", "cgi/util"},
-	"cgi/escape":   nil,
-	"cgi/util":     {"cgi/escape"},
-	"date":         nil,
-	"digest":       {"digest/md5", "digest/sha1", "digest/sha2"},
-	"digest/md5":   {"digest"},
-	"digest/sha1":  {"digest"},
-	"digest/sha2":  {"digest"},
-	"json":         nil,
-	"net/http":     {"net/protocol"},
-	"net/https":    {"net/http", "net/protocol"},
-	"net/protocol": nil,
-	"pathname":     nil,
-	"time":         nil,
-	"uri":          nil,
+	"base64":           nil,
+	"benchmark":        nil,
+	"cgi":              {"cgi/escape", "cgi/util"},
+	"cgi/escape":       nil,
+	"cgi/util":         {"cgi/escape"},
+	"date":             nil,
+	"digest":           {"digest/md5", "digest/sha1", "digest/sha2"},
+	"digest/md5":       {"digest"},
+	"digest/sha1":      {"digest"},
+	"digest/sha2":      {"digest"},
+	"json":             nil,
+	"net/http":         {"net/protocol"},
+	"net/https":        {"net/http", "net/protocol"},
+	"net/protocol":     nil,
+	"pathname":         nil,
+	"random/formatter": {"securerandom"},
+	"securerandom":     {"random/formatter"},
+	"time":             nil,
+	"uri":              nil,
 }
 
 // Install defines every library. The evaluator calls it once, after
@@ -53,6 +56,7 @@ func Install() {
 	json.Install()
 	nethttp.Install()
 	pathname.Install()
+	securerandom.Install()
 	libtime.Install()
 	uri.Install()
 }

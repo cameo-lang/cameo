@@ -1,0 +1,14 @@
+# Ruby's securerandom library: SecureRandom draws from the operating
+# system, and Random::Formatter gives a Random the same methods, so a
+# seeded Random draws what Ruby 3.4 draws. Each line prints what Ruby prints.
+require "securerandom"
+
+r = Random.new(42)
+p r.hex(4), r.random_number(10), r.random_number(1..6), r.alphanumeric(5), r.base64(3)
+p r.urlsafe_base64(4), r.urlsafe_base64(4, true), r.random_bytes(3).bytes
+p Random.new(3).alphanumeric(8, chars: ["a", "b"]), Random.new(9).alphanumeric(3, chars: %w[x y z])
+
+# SecureRandom's values differ on every run; their shapes do not.
+p SecureRandom.hex.size, SecureRandom.uuid.size, SecureRandom.uuid[14], SecureRandom.uuid_v7[14]
+p SecureRandom.random_number(6).between?(0, 5), SecureRandom.random_number.class
+p SecureRandom.base64(3).size, SecureRandom.urlsafe_base64(4).size, SecureRandom.random_bytes.bytesize
