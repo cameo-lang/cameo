@@ -91,7 +91,7 @@ mspec's own `before` blocks.
   Ruby's numbers, `Integer()`, `Float()`, `String()` and `Array()`,
   `Process.clock_gettime`.
 - **Libraries**: `require` of `set`, `time`, `pp`, `pathname`, `cgi`,
-  `json`, `benchmark` and `uri`, which cameo builds in; [stdlib.md](stdlib.md)
+  `json`, `benchmark`, `uri` and `date`, which cameo builds in; [stdlib.md](stdlib.md)
   has every library of Ruby's standard library with its status, the ones
   to come and the ones left out. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
   do without I/O: `escape` and `unescape`, the URI-component pair,
@@ -121,6 +121,22 @@ mspec's own `before` blocks.
   Ruby changes the URI in place (another variable holding the URI keeps
   it as it was). `merge!` and `normalize!` are bang methods, refused as
   every bang method of Ruby's core is.
+  `date` is Ruby 3.4's date 3.4.1: `Date` and `DateTime` with Ruby's
+  calendar (the Julian Day Number, the start of the Gregorian calendar,
+  `Date::ITALY`, `ENGLAND`, `JULIAN` and `GREGORIAN`), `new`/`civil`,
+  `jd`, `ordinal`, `commercial`, `today`, `now`, `valid_date?` and kin,
+  the readers, `+`, `-`, `>>`, `<<`, `next_*` and `prev_*`, `step`,
+  `upto`, `downto`, a Range of dates, `<=>`, `==`, `===`, `strftime`,
+  `to_s`, `inspect`, `iso8601`, `rfc3339`, `xmlschema`, `rfc2822`,
+  `httpdate`, `jisx0301`, `asctime`, `deconstruct_keys`, `Date.parse`
+  and `_parse` with the forms Ruby reads, `strptime` and `_strptime`,
+  the fixed formats and their underscored readers, `new_offset`,
+  `to_date`, `to_datetime`, `to_time`, and `Time#to_date` and
+  `to_datetime`. Where Ruby returns a Rational, cameo returns an Integer
+  when the value is whole and a Float otherwise: `Date - Date` is `59`,
+  not `(59/1)`; `ajd`, `day_fraction`, `sec_fraction` and `offset` are
+  Floats. `Date::Infinity` and `marshal_dump` are left out, and a day
+  number past 64 bits raises `RangeError`.
 - **Output**: `puts`, `print`, `p`, `pp`, `warn`.
 
 ## Different in cameo
@@ -329,7 +345,7 @@ These are absent, and a script that uses one fails when it reaches it:
 - **Not there yet**: `at_exit`, `exit!`,
   `printf` (`format` exists), `__method__`, `Enumerator.new`,
   `Integer()` with a base, and `autoload`.
-- **Libraries**: `require` of any library but the eight above, such as
+- **Libraries**: `require` of any library but the nine above, such as
   raises a `LoadError`. [stdlib.md](stdlib.md) says which are
   planned and which are left out, and why.
 
