@@ -8,6 +8,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/benchmark"
 	"github.com/cameo-lang/cameo/src/lib/cgi"
 	"github.com/cameo-lang/cameo/src/lib/date"
+	"github.com/cameo-lang/cameo/src/lib/digest"
 	"github.com/cameo-lang/cameo/src/lib/json"
 	"github.com/cameo-lang/cameo/src/lib/pathname"
 	libtime "github.com/cameo-lang/cameo/src/lib/time"
@@ -20,15 +21,19 @@ import (
 // exist before the require; require marks the name loaded and returns
 // true the first time and false after, as Ruby's does.
 var Libraries = map[string][]string{
-	"benchmark":  nil,
-	"cgi":        {"cgi/escape", "cgi/util"},
-	"cgi/escape": nil,
-	"cgi/util":   {"cgi/escape"},
-	"date":       nil,
-	"json":       nil,
-	"pathname":   nil,
-	"time":       nil,
-	"uri":        nil,
+	"benchmark":   nil,
+	"cgi":         {"cgi/escape", "cgi/util"},
+	"cgi/escape":  nil,
+	"cgi/util":    {"cgi/escape"},
+	"date":        nil,
+	"digest":      {"digest/md5", "digest/sha1", "digest/sha2"},
+	"digest/md5":  {"digest"},
+	"digest/sha1": {"digest"},
+	"digest/sha2": {"digest"},
+	"json":        nil,
+	"pathname":    nil,
+	"time":        nil,
+	"uri":         nil,
 }
 
 // Install defines every library. The evaluator calls it once, after
@@ -37,6 +42,7 @@ func Install() {
 	benchmark.Install()
 	cgi.Install()
 	date.Install()
+	digest.Install()
 	json.Install()
 	pathname.Install()
 	libtime.Install()
