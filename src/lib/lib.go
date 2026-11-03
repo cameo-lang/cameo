@@ -18,6 +18,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/json"
 	"github.com/cameo-lang/cameo/src/lib/logger"
 	"github.com/cameo-lang/cameo/src/lib/marshal"
+	"github.com/cameo-lang/cameo/src/lib/matrix"
 	"github.com/cameo-lang/cameo/src/lib/pathname"
 	"github.com/cameo-lang/cameo/src/lib/prime"
 	"github.com/cameo-lang/cameo/src/lib/securerandom"
@@ -56,6 +57,7 @@ var Libraries = map[string][]string{
 	"json":                        nil,
 	"logger":                      nil,
 	"marshal":                     nil,
+	"matrix":                      nil,
 	"pathname":                    nil,
 	"prime":                       nil,
 	"random/formatter":            {"securerandom"},
@@ -95,6 +97,7 @@ func Install() {
 	singleton.Install()
 	stringio.Install()
 	strscan.Install()
+	matrix.Install()
 	libtime.Install()
 	tsort.Install()
 	unicodenormalize.Install()
