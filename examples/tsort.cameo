@@ -1,0 +1,30 @@
+# Ruby's tsort library: a topological sort and the strongly connected
+# components of a graph, over two callables or through a class that
+# includes TSort. Each line prints what Ruby prints.
+require "tsort"
+
+deps = {"app" => ["lib", "log"], "lib" => ["log"], "log" => [], "test" => ["app"]}
+each_node = ->(&b) { deps.each_key(&b) }
+each_child = ->(n, &b) { deps[n].each(&b) }
+p TSort.tsort(each_node, each_child)
+p TSort.strongly_connected_components(each_node, each_child)
+
+cyclic = {1 => [2], 2 => [3, 4], 3 => [2], 4 => []}
+p TSort.strongly_connected_components(->(&b) { cyclic.each_key(&b) }, ->(n, &b) { cyclic[n].each(&b) })
+begin
+  TSort.tsort(->(&b) { cyclic.each_key(&b) }, ->(n, &b) { cyclic[n].each(&b) })
+rescue TSort::Cyclic => e
+  puts e.message
+end
+
+DEPS = deps
+class Build
+  include TSort
+  def tsort_each_node(&block)
+    DEPS.each_key(&block)
+  end
+  def tsort_each_child(node, &block)
+    DEPS[node].each(&block)
+  end
+end
+p Build.new.tsort, Build.new.each_strongly_connected_component_from("app").to_a

@@ -21,6 +21,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/securerandom"
 	"github.com/cameo-lang/cameo/src/lib/shellwords"
 	libtime "github.com/cameo-lang/cameo/src/lib/time"
+	"github.com/cameo-lang/cameo/src/lib/tsort"
 	unicodenormalize "github.com/cameo-lang/cameo/src/lib/unicode_normalize"
 	"github.com/cameo-lang/cameo/src/lib/uri"
 	"github.com/cameo-lang/cameo/src/lib/yaml"
@@ -57,6 +58,7 @@ var Libraries = map[string][]string{
 	"securerandom":                {"random/formatter"},
 	"shellwords":                  nil,
 	"time":                        nil,
+	"tsort":                       nil,
 	"unicode_normalize":           {"unicode_normalize/normalize"},
 	"unicode_normalize/normalize": nil,
 	"uri":                         nil,
@@ -83,6 +85,7 @@ func Install() {
 	securerandom.Install()
 	shellwords.Install()
 	libtime.Install()
+	tsort.Install()
 	unicodenormalize.Install()
 	uri.Install()
 	// open-uri defines methods on URI, so it follows uri.
