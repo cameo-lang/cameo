@@ -540,6 +540,11 @@ func (in *Interp) evalInclude(n *syntax.Include, env *Env, fr *Frame) (object.Va
 		cls.Extend(mod)
 	} else {
 		cls.Include(mod)
+		if mod.Included != nil {
+			if err := mod.Included(in, cls); err != nil {
+				return object.Value{}, withLine(err, n.Line())
+			}
+		}
 	}
 	return object.ClassValue(cls), nil
 }
