@@ -2,9 +2,9 @@
 // split, URI(), the classes URI::Generic, HTTP, HTTPS, FTP, File, WS, WSS,
 // LDAP, LDAPS and MailTo with their components, and the www-form encoders.
 //
-// It follows uri 1.0.2, the version Ruby 3.4 ships, with its RFC 3986
-// parser: the same strings parse, into the same components, and the same
-// ones are refused with its messages. A URI is an instance of its class
+// It follows uri 1.0.2, the version Ruby 3.4 ships. Go's net/url reads a
+// URI, resolves a reference and escapes a component; the components land
+// in Ruby's places and the refusals carry Ruby's messages. A URI is an instance of its class
 // with the components as typed fields, so it is a protobuf message like
 // every cameo instance, with and == work on it, and u.host = "x" rebinds u
 // to a copy, checked as Ruby's setter checks the value.
@@ -12,6 +12,7 @@ package uri
 
 import (
 	"fmt"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -283,67 +284,63 @@ var (
 )
 
 // split is URI.split: the nine components of s as Strings, or nil, with
-// the port as a String. The registry is always nil.
+// the port as a String. Go's net/url reads the string; what it reads is
+// put in Ruby's places: the scheme as written, the host with its
+// brackets, an empty host when the authority is there and empty, the
+// opaque part with its query, and the path as written. The registry is
+// always nil.
 func split(ctx object.Context, s string) ([]*string, error) {
 	if !object.ASCIIOnly(s) {
 		return nil, ctx.Raise(invalidURI, "URI must be ascii only %s", dump(s))
 	}
-	if m := rfc3986URI.FindStringSubmatchIndex(s); m != nil {
-		group := func(i int) *string {
-			if m[2*i] < 0 {
-				return nil
-			}
-			return str(s[m[2*i]:m[2*i+1]])
+	bad := func() error { return ctx.Raise(invalidURI, "bad URI (is not URI?): %s", object.QuoteString(s)) }
+	for i := 0; i < len(s); i++ {
+		if c := s[i]; c <= ' ' || c == 0x7f || strings.IndexByte("\"<>\\^`{|}", c) >= 0 {
+			return nil, bad()
 		}
-		out := make([]*string, 9)
-		out[0] = group(1)
-		if rootless := group(7); rootless != nil {
-			if q := group(8); q != nil {
-				rootless = str(*rootless + "?" + *q)
-			}
-			out[6] = rootless
-			out[8] = group(9)
-			return out, nil
+	}
+	u, err := url.Parse(s)
+	if err != nil {
+		return nil, bad()
+	}
+	out := make([]*string, 9)
+	rest := s
+	if u.Scheme != "" {
+		out[0] = str(s[:len(u.Scheme)])
+		rest = s[len(u.Scheme)+1:]
+	}
+	fragment := func() *string {
+		if i := strings.IndexByte(s, '#'); i >= 0 {
+			return str(s[i+1:])
 		}
-		out[1], out[2], out[3] = group(2), group(3), group(4)
-		path := group(5)
-		if path == nil {
-			path = group(6)
+		return nil
+	}
+	if u.Opaque != "" {
+		opaque := u.Opaque
+		if u.ForceQuery || u.RawQuery != "" {
+			opaque += "?" + u.RawQuery
 		}
-		if path == nil {
-			path = str("")
-		}
-		out[5], out[7], out[8] = path, group(8), group(9)
+		out[6] = str(opaque)
+		out[8] = fragment()
 		return out, nil
 	}
-	if m := rfc3986Relative.FindStringSubmatchIndex(s); m != nil {
-		group := func(i int) *string {
-			if m[2*i] < 0 {
-				return nil
-			}
-			return str(s[m[2*i]:m[2*i+1]])
+	if strings.HasPrefix(rest, "//") {
+		if u.User != nil {
+			out[1] = str(u.User.String())
 		}
-		out := make([]*string, 9)
-		out[1], out[3] = group(1), group(3)
-		// Ruby's host group ends in (?<!/): an empty host right after the
-		// two slashes is no host at all.
-		if h := group(2); h != nil && !(*h == "" && m[4] > 0 && s[m[4]-1] == '/') {
-			out[2] = h
+		host := u.Host
+		if i := strings.LastIndexByte(host, ':'); i >= 0 && !strings.HasSuffix(host, "]") {
+			out[3] = str(host[i+1:])
+			host = host[:i]
 		}
-		path := group(4)
-		if path == nil {
-			path = group(5)
-		}
-		if path == nil {
-			path = group(6)
-		}
-		if path == nil {
-			path = str("")
-		}
-		out[5], out[7], out[8] = path, group(7), group(8)
-		return out, nil
+		out[2] = str(host)
 	}
-	return nil, ctx.Raise(invalidURI, "bad URI (is not URI?): %s", object.QuoteString(s))
+	out[5] = str(u.EscapedPath())
+	if u.ForceQuery || u.RawQuery != "" {
+		out[7] = str(u.RawQuery)
+	}
+	out[8] = fragment()
+	return out, nil
 }
 
 // dump is Ruby's String#dump: inspect with every character past ASCII as
@@ -749,8 +746,8 @@ func toURI(ctx object.Context, v object.Value) (object.Value, error) {
 	return object.Value{}, ctx.Raise(invalidURI, "bad URI (is not URI?): %s", shown)
 }
 
-// merge is Generic#merge, RFC 2396's resolution of a reference against a
-// base, as Ruby does it.
+// merge is Generic#merge: the reference resolved against the base, as
+// Go's net/url resolves it, in the base's class.
 func merge(ctx object.Context, base, ref object.Value) (object.Value, error) {
 	oth, err := toURI(ctx, ref)
 	if err != nil {
@@ -764,105 +761,23 @@ func merge(ctx object.Context, base, ref object.Value) (object.Value, error) {
 	if b.scheme == nil {
 		return object.Value{}, ctx.Raise(badURI, "both URI are relative")
 	}
-	authority := o.userinfo != nil || o.host != nil || o.port != nil
-	if (o.path == nil || *o.path == "") && !authority && o.query == nil {
-		if o.fragment != nil {
-			b.fragment = o.fragment
-		}
-		return build(base.Instance().Cls, b), nil
+	if b.opaque != nil {
+		// An opaque base, mailto:x, has no path for a reference to join.
+		return base, nil
 	}
-	b.query, b.fragment = nil, nil
-	if !authority {
-		if b.path != nil && o.path != nil {
-			b.path = str(mergePath(*b.path, *o.path))
-		}
-	} else if o.path != nil {
-		b.path = o.path
+	bu, err := url.Parse(toS(base))
+	if err != nil {
+		return object.Value{}, ctx.Raise(badURI, "%s", err.Error())
 	}
-	if o.userinfo != nil {
-		b.userinfo = o.userinfo
+	ru, err := url.Parse(toS(oth))
+	if err != nil {
+		return object.Value{}, ctx.Raise(badURI, "%s", err.Error())
 	}
-	if o.host != nil {
-		b.host = o.host
+	c, err := split(ctx, bu.ResolveReference(ru).String())
+	if err != nil {
+		return object.Value{}, err
 	}
-	if o.port != nil {
-		b.port = o.port
-	}
-	if o.query != nil {
-		b.query = o.query
-	}
-	if o.fragment != nil {
-		b.fragment = o.fragment
-	}
-	return build(base.Instance().Cls, b), nil
-}
-
-// splitPath is Ruby's path.split("/", -1): no element for an empty path.
-func splitPath(p string) []string {
-	if p == "" {
-		return nil
-	}
-	return strings.Split(p, "/")
-}
-
-// mergePath is Generic#merge_path: RFC 2396 section 5.2, steps 5 and 6.
-func mergePath(base, rel string) string {
-	basePath := splitPath(base)
-	relPath := splitPath(rel)
-	if len(basePath) > 0 && basePath[len(basePath)-1] == ".." {
-		basePath = append(basePath, "")
-	}
-	for {
-		i := indexOf(basePath, "..")
-		if i < 0 {
-			break
-		}
-		if i == 0 {
-			basePath = basePath[1:]
-		} else {
-			basePath = append(basePath[:i-1], basePath[i+1:]...)
-		}
-	}
-	if len(relPath) > 0 && relPath[0] == "" {
-		basePath = nil
-		relPath = relPath[1:]
-	}
-	if n := len(relPath); n > 0 && (relPath[n-1] == "." || relPath[n-1] == "..") {
-		relPath = append(relPath, "")
-	}
-	relPath = without(relPath, ".")
-	var tmp []string
-	for _, x := range relPath {
-		if x == ".." && len(tmp) > 0 && tmp[len(tmp)-1] != ".." {
-			tmp = tmp[:len(tmp)-1]
-		} else {
-			tmp = append(tmp, x)
-		}
-	}
-	addTrailer := len(tmp) > 0
-	if len(basePath) == 0 {
-		basePath = []string{""}
-	} else if addTrailer {
-		basePath = basePath[:len(basePath)-1]
-	}
-	for len(tmp) > 0 {
-		x := tmp[0]
-		tmp = tmp[1:]
-		if x == ".." {
-			if len(basePath) > 1 {
-				basePath = basePath[:len(basePath)-1]
-			}
-		} else {
-			basePath = append(basePath, x)
-			basePath = append(basePath, tmp...)
-			addTrailer = false
-			break
-		}
-	}
-	if addTrailer {
-		basePath = append(basePath, "")
-	}
-	return strings.Join(basePath, "/")
+	return construct(ctx, base.Instance().Cls, c, false)
 }
 
 func indexOf(ss []string, s string) int {

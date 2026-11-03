@@ -108,7 +108,8 @@ mspec's own `before` blocks.
   readers, `format`, `to_a`, `to_h`, arithmetic and `add`. The times are
   read inside the script, so the interpreter's start is not in them; the
   CPU times are the whole process's, the work of `async` calls included.
-  `uri` is Ruby 3.4's uri 1.0.2 with its RFC 3986 parser: `URI.parse`,
+  `uri` is Ruby 3.4's uri 1.0.2 on Go's `net/url`, which reads a URI,
+  resolves a reference and escapes a component: `URI.parse`,
   `URI()`, `join`, `split`, `for`, `extract`, `scheme_list`, the
   www-form and URI-component encoders, and `URI::Generic` with `HTTP`,
   `HTTPS`, `FTP`, `File`, `WS`, `WSS`, `LDAP`, `LDAPS` and `MailTo`:
