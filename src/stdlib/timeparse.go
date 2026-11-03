@@ -60,37 +60,6 @@ func Fraction(digits string) int {
 	return n
 }
 
-// ZoneNamed reads a zone as a parsed time names one: an offset with or
-// without a colon, Z, UTC or GMT.
-func ZoneNamed(s string) (*time.Location, bool) {
-	switch strings.ToUpper(s) {
-	case "Z", "UTC":
-		return time.UTC, true
-	case "GMT", "UT":
-		// Ruby reads these as an offset of zero, not as UTC.
-		return time.FixedZone("", 0), true
-	}
-	if len(s) < 2 || s[0] != '+' && s[0] != '-' {
-		return nil, false
-	}
-	digits := strings.ReplaceAll(s[1:], ":", "")
-	if !allDigits(digits) || len(digits) == 0 || len(digits) > 4 {
-		return nil, false
-	}
-	if len(digits) <= 2 {
-		digits += "00"
-	} else if len(digits) == 3 {
-		digits = "0" + digits
-	}
-	h, _ := strconv.Atoi(digits[:2])
-	m, _ := strconv.Atoi(digits[2:])
-	off := h*3600 + m*60
-	if s[0] == '-' {
-		off = -off
-	}
-	return time.FixedZone("", off), true
-}
-
 var (
 	// A date alone, which Time.new refuses for want of a time.
 	dateOnly = regexp.MustCompile(`^\s*-?\d{4,}-\d{2}-\d{2}\s*$`)
