@@ -93,7 +93,8 @@ mspec's own `before` blocks.
 - **Libraries**: `require` of `set`, `time`, `pp`, `pathname`, `cgi`,
   `json`, `benchmark`, `uri`, `date`, `net/http`, `digest`, `base64`,
   `securerandom`, `csv`, `marshal`, `shellwords`, `ipaddr`, `zlib`,
-  `open-uri`, `prime` and `tsort`, which cameo builds in; [stdlib.md](stdlib.md)
+  `open-uri`, `prime`, `tsort` and `abbrev`, which cameo builds in;
+  [stdlib.md](stdlib.md)
   has every library of Ruby's standard library with its status, the ones
   to come and the ones left out. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
   do without I/O: `escape` and `unescape`, the URI-component pair,
@@ -245,6 +246,8 @@ mspec's own `before` blocks.
   callables, `->(&b) { graph.each_key(&b) }` and
   `->(n, &b) { graph[n].each(&b) }`, and the methods of a class that
   includes `TSort`, component for component in Ruby's order.
+  `abbrev` is Ruby 3.4's abbrev 0.1.2: `Abbrev.abbrev` and
+  `Array#abbrev`, with a prefix or a Regexp as the pattern.
 - **Output**: `puts`, `print`, `p`, `pp`, `warn`.
 
 ## Different in cameo
@@ -455,7 +458,7 @@ These are absent, and a script that uses one fails when it reaches it:
 - **Not there yet**: `at_exit`, `exit!`,
   `printf` (`format` exists), `__method__`, `Enumerator.new`,
   `Integer()` with a base, and `autoload`.
-- **Libraries**: `require` of any library but the twenty-two above, such as
+- **Libraries**: `require` of any library but the twenty-three above, such as
   `matrix`, raises a `LoadError`. [stdlib.md](stdlib.md) says which are
   planned and which are left out, and why.
 
