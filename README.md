@@ -40,8 +40,8 @@ A script can `require` the libraries cameo builds in: `set`, `time`, `pp`,
 `pathname`, `cgi`, `json`, `benchmark`, `uri`, `date`, `net/http`,
 `digest`, `base64`, `securerandom`, `csv`, `marshal`, `shellwords`,
 `ipaddr`, `zlib`, `open-uri`, `prime`, `tsort`, `abbrev`, `singleton`,
-`forwardable`, `delegate`, `logger`, `stringio`, `strscan`, `matrix` and
-`bigdecimal`.
+`forwardable`, `delegate`, `logger`, `stringio`, `strscan`, `optparse`,
+`getoptlong`, `matrix` and `bigdecimal`.
 [doc/stdlib.md](doc/stdlib.md)
 lists every library of Ruby's standard library with its status in cameo:
 built in, planned, or left out and why.
@@ -66,6 +66,7 @@ I/O is done; [examples/webfetch](examples/webfetch) fetches web pages so.
 
 ```sh
 cameo script.cameo            # run; an uncaught exception prints script:line: message (Class)
+cameo script.cameo a -b c     # run with ARGV = ["a", "-b", "c"]
 cameo check script.cameo      # parse and check only, report every error with its line
 cameo proto script.cameo      # the .proto files of the script's classes, one per package
 cameo proto script.cameo out/ # the same, written into out/

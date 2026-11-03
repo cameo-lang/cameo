@@ -1,0 +1,21 @@
+Usage: greet [options] WHO...
+    -v, --[no-]verbose               Say more
+    -n, --name NAME                  Who greets
+    -c, --count N                    How many times
+        --level LEVEL                Select level (low, high)
+level high
+["Bob", "Carol"]
+true
+"Ann"
+2
+["Eve"]
+["--no-verbose", "-nDee", "Eve"]
+false
+"Dee"
+{"a" => true, "c" => "3", "long" => nil}
+OptionParser::InvalidOption: invalid option: --bogus
+OptionParser::InvalidArgument: invalid argument: --count x
+OptionParser::MissingArgument: missing argument: --name
+OptionParser::NeedlessArgument: needless argument: --verbose=yes
+[]
+[]

@@ -216,7 +216,8 @@ func (quietContext) Write(stderr bool, s string) error { return nil }
 func (quietContext) RespondsTo(v object.Value, name string) bool {
 	return v.Class().Lookup(name) != nil
 }
-func (quietContext) Rand() *object.Random { return nil }
+func (quietContext) Rand() *object.Random                   { return nil }
+func (quietContext) Const(name string) (object.Value, bool) { return object.Value{}, false }
 
 // protogenNumber is protogen.FieldNumber, named here so request.go reads
 // without the import.

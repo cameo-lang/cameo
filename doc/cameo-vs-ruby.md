@@ -94,7 +94,8 @@ mspec's own `before` blocks.
   `json`, `benchmark`, `uri`, `date`, `net/http`, `digest`, `base64`,
   `securerandom`, `csv`, `marshal`, `shellwords`, `ipaddr`, `zlib`,
   `open-uri`, `prime`, `tsort`, `abbrev`, `singleton`, `forwardable`,
-  `delegate`, `logger`, `stringio`, `strscan`, `matrix` and `bigdecimal`, which cameo builds in; [stdlib.md](stdlib.md)
+  `delegate`, `logger`, `stringio`, `strscan`, `optparse`, `getoptlong`,
+  `matrix` and `bigdecimal`, which cameo builds in; [stdlib.md](stdlib.md)
   has every library of Ruby's standard library with its status, the ones
   to come and the ones left out. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
   do without I/O: `escape` and `unescape`, the URI-component pair,
@@ -286,6 +287,17 @@ mspec's own `before` blocks.
   `base_uri`, `status`, `meta`, `content_type`, `charset` and
   `last_modified`, where Ruby returns an IO with those methods mixed in.
   A file name, a `file:` URL and a proxy are left out.
+  `optparse` is Ruby 3.4's optparse 0.6.0: `OptionParser` with `on`,
+  `on_tail`, `separator`, `banner`, `version`, `help`, `parse`, `order`,
+  `permute`, `getopts`, the switch forms, argument types and completions,
+  and `ParseError` with its kinds. `ARGV` holds the script's arguments,
+  `cameo script.cameo a -b` (`Program.Args` from Go), and `parse!` with no
+  argument reads it. An Array is a value, so `parse!` returns the operands
+  and leaves its argument as it is; the options go through the blocks, or
+  `getopts` returns them as a Hash; `into:` is refused. `getoptlong` is
+  getoptlong 0.2.1: `GetoptLong` with `each`, `get`, `ordering`, `quiet`
+  and its errors, printed as Ruby prints them; the operands are in `rest`
+  rather than left in ARGV.
 - **Output**: `puts`, `print`, `p`, `pp`, `warn`.
 
 ## Different in cameo
@@ -496,7 +508,7 @@ These are absent, and a script that uses one fails when it reaches it:
 - **Not there yet**: `at_exit`, `exit!`,
   `printf` (`format` exists), `__method__`, `Enumerator.new`,
   `Integer()` with a base, and `autoload`.
-- **Libraries**: `require` of any library but the thirty-two above, such
+- **Libraries**: `require` of any library but the thirty-four above, such
   as `resolv`, raises a `LoadError`. [stdlib.md](stdlib.md) says which are
   planned and which are left out, and why.
 
