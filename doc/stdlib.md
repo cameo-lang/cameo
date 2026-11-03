@@ -111,6 +111,7 @@ What asks for a library is measured, not guessed:
 | `tsort` | tsort 0.2.0 | `TSort.tsort`, `tsort_each`, `strongly_connected_components`, `each_strongly_connected_component`, `each_strongly_connected_component_from` over two callables, with a block or as an Enumerator, and the same as the methods of a class that includes `TSort` and defines `tsort_each_node` and `tsort_each_child`; `TSort::Cyclic` with Ruby's message. The `id_map` and `stack` arguments start fresh each call, since a Hash is a value |
 | `abbrev` | abbrev 0.1.2 | `Abbrev.abbrev(words, pattern = nil)` and `Array#abbrev`, with a String prefix or a Regexp as the pattern |
 | `singleton` | singleton 0.2.0 | `include Singleton`: `instance` is the one instance, made by `initialize` the first time, a subclass with one of its own; `new` and `allocate` are refused with Ruby's NoMethodError, `dup` and `clone` with its TypeError. The module uses a new hook, `Class.Included`, which the evaluator runs when a class includes a module |
+| `rbconfig` | — | `RbConfig::CONFIG` and `MAKEFILE_CONFIG` with the version parts (`MAJOR`, `MINOR`, `TEENY`, `ruby_version`, `RUBY_PROGRAM_VERSION`), the names (`ruby_install_name` is `"cameo"`, `RUBY_ENGINE`), the host (`host_os`, `host_cpu`, `host`, `arch` as `RUBY_PLATFORM`, `EXEEXT`, `DLEXT`, `PATH_SEPARATOR`) and the running binary's directories (`bindir`, `prefix`, `libdir`…), `RbConfig::TOPDIR`, `RbConfig.ruby`, `RbConfig.expand`. The build details of a C Ruby, the compiler and its flags, are left out |
 | `debug` | debug 1.10.0 | `debugger` and `binding.break` stop in cameo's debugger, which takes rdbg's commands ([debugger.md](debugger.md)) |
 | `cameo/runner` | — | cameo's own: the library that gives CRuby `Cameo::Runner` is built in |
 
@@ -120,7 +121,6 @@ Each is one pull request, which also moves its row to *Available*.
 
 | Library | Ruby's version | What goes in | Why this order |
 |---|---|---|---|
-| `rbconfig` | — | `RbConfig::CONFIG` with `host_os`, `arch`, `ruby_version`, `MAJOR`, `MINOR`, `TEENY`, `ruby_install_name` (`"cameo"`), `RbConfig.ruby`, for a script that looks before it leaps | small; `RUBY_PLATFORM` covers most of it |
 | `forwardable`, `delegate` | forwardable 1.3.3, delegate 0.4.0 | `extend Forwardable` with `def_delegator` and `def_delegators` on a field or a method, `delegate … to:`; `SimpleDelegator` and `DelegateClass` forwarding to the wrapped value through `method_missing`, `__getobj__`; `__setobj__` is a mutator | a class-body call that defines methods, which the checker has to learn as it learnt bang methods |
 | `logger` | logger 1.6.4 | `Logger.new($stderr)`, the levels and their predicates, `formatter`, `progname`, `datetime_format`, `Logger::Formatter`; a Logger is a handle on a stream, so `level=` changes it for every holder | the way a script reports progress |
 | `stringio` | stringio 3.1.2 | `StringIO.new`, `read`, `gets`, `each_line`, `readlines`, `getc`, `write`, `<<`, `puts`, `print`, `printf`, `string`, `pos`, `rewind`, `eof?`, `truncate`, `closed?`; a handle | 58 spec files; builds output and feeds text to code that reads an IO |
@@ -219,4 +219,5 @@ Pull requests, as they open and land:
 - [cameo-lang/cameo#194](https://github.com/cameo-lang/cameo/pull/194): `prime`.
 - [cameo-lang/cameo#195](https://github.com/cameo-lang/cameo/pull/195): `tsort`.
 - [cameo-lang/cameo#196](https://github.com/cameo-lang/cameo/pull/196): `abbrev`.
-- `singleton`: available.
+- [cameo-lang/cameo#197](https://github.com/cameo-lang/cameo/pull/197): `singleton`.
+- `rbconfig`: available.

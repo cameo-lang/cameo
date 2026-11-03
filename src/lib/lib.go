@@ -19,6 +19,7 @@ import (
 	openuri "github.com/cameo-lang/cameo/src/lib/open-uri"
 	"github.com/cameo-lang/cameo/src/lib/pathname"
 	"github.com/cameo-lang/cameo/src/lib/prime"
+	"github.com/cameo-lang/cameo/src/lib/rbconfig"
 	"github.com/cameo-lang/cameo/src/lib/securerandom"
 	"github.com/cameo-lang/cameo/src/lib/shellwords"
 	"github.com/cameo-lang/cameo/src/lib/singleton"
@@ -57,6 +58,7 @@ var Libraries = map[string][]string{
 	"open-uri":                    {"uri", "net/http", "net/protocol"},
 	"pathname":                    nil,
 	"prime":                       nil,
+	"rbconfig":                    nil,
 	"random/formatter":            {"securerandom"},
 	"securerandom":                {"random/formatter"},
 	"shellwords":                  nil,
@@ -87,6 +89,7 @@ func Install() {
 	nethttp.Install()
 	pathname.Install()
 	prime.Install()
+	rbconfig.Install()
 	securerandom.Install()
 	shellwords.Install()
 	singleton.Install()
