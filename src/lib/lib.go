@@ -20,6 +20,7 @@ import (
 	libtime "github.com/cameo-lang/cameo/src/lib/time"
 	unicodenormalize "github.com/cameo-lang/cameo/src/lib/unicode_normalize"
 	"github.com/cameo-lang/cameo/src/lib/uri"
+	"github.com/cameo-lang/cameo/src/lib/zlib"
 )
 
 // Libraries are the names require accepts, each with the libraries it
@@ -50,6 +51,7 @@ var Libraries = map[string][]string{
 	"unicode_normalize":           {"unicode_normalize/normalize"},
 	"unicode_normalize/normalize": nil,
 	"uri":                         nil,
+	"zlib":                        nil,
 }
 
 // Install defines every library. The evaluator calls it once, after
@@ -70,4 +72,5 @@ func Install() {
 	libtime.Install()
 	unicodenormalize.Install()
 	uri.Install()
+	zlib.Install()
 }

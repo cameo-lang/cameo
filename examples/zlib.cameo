@@ -1,0 +1,25 @@
+# Ruby's zlib library: checksums, zlib streams and gzip members. The
+# compressed bytes are Go's, so the example prints what inflates and what
+# every zlib agrees on; each line prints what Ruby prints.
+require "zlib"
+
+text = "hello hello hello hello world"
+p Zlib.crc32(text), Zlib.adler32(text), Zlib.crc32("world", Zlib.crc32("hello "))
+
+packed = Zlib::Deflate.deflate(text)
+p packed.encoding, packed.bytes.first(2), packed.bytesize < text.bytesize, Zlib::Inflate.inflate(packed)
+p Zlib.inflate(["789ccb48cdc9c95728cf2fca4901001a0b045d"].pack("H*"))
+
+gz = Zlib.gzip(text, level: Zlib::BEST_COMPRESSION)
+p gz.bytes.first(3), Zlib.gunzip(gz), Zlib.gunzip(["1f8b0800dc37e96a0003cb48cdc9c957c8c020cbf38b725200336534341d000000"].pack("H*"))
+
+["garbage", packed[0, 10]].each do |bad|
+  Zlib::Inflate.inflate(bad)
+rescue Zlib::Error => e
+  puts "#{e.class}: #{e.message}"
+end
+begin
+  Zlib.gunzip(packed)
+rescue Zlib::GzipFile::Error => e
+  puts e.message
+end
