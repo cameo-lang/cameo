@@ -15,6 +15,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/json"
 	"github.com/cameo-lang/cameo/src/lib/marshal"
 	nethttp "github.com/cameo-lang/cameo/src/lib/net/http"
+	openuri "github.com/cameo-lang/cameo/src/lib/open-uri"
 	"github.com/cameo-lang/cameo/src/lib/pathname"
 	"github.com/cameo-lang/cameo/src/lib/securerandom"
 	"github.com/cameo-lang/cameo/src/lib/shellwords"
@@ -48,6 +49,7 @@ var Libraries = map[string][]string{
 	"net/http":                    {"net/protocol"},
 	"net/https":                   {"net/http", "net/protocol"},
 	"net/protocol":                nil,
+	"open-uri":                    {"uri", "net/http", "net/protocol"},
 	"pathname":                    nil,
 	"random/formatter":            {"securerandom"},
 	"securerandom":                {"random/formatter"},
@@ -80,6 +82,8 @@ func Install() {
 	libtime.Install()
 	unicodenormalize.Install()
 	uri.Install()
+	// open-uri defines methods on URI, so it follows uri.
+	openuri.Install()
 	yaml.Install()
 	zlib.Install()
 }
