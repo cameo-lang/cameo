@@ -92,7 +92,7 @@ mspec's own `before` blocks.
   `Process.clock_gettime`.
 - **Libraries**: `require` of `set`, `time`, `pp`, `pathname`, `cgi`,
   `json`, `benchmark`, `uri`, `date`, `net/http`, `digest`, `base64` and
-  `securerandom` and `yaml`, which cameo builds in; [stdlib.md](stdlib.md)
+  `securerandom`, `yaml` and `csv`, which cameo builds in; [stdlib.md](stdlib.md)
   has every library of Ruby's standard library with its status, the ones
   to come and the ones left out. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
   do without I/O: `escape` and `unescape`, the URI-component pair,
@@ -197,6 +197,14 @@ mspec's own `before` blocks.
   left out, as is `parse` with its node tree; `Psych::Set` loads as a
   Hash; a Proc, a Random or a MatchData dumps as the empty object Psych
   writes.
+  `csv` is Ruby 3.4's csv 3.3.2: `CSV.parse`, `parse_line`, `generate`,
+  `generate_line`, `String#parse_csv` and `Array#to_csv` with csv's
+  options, headers and converters, `CSV::Row`, `CSV::Table`, and
+  `CSV.new(string)` as a handle read with `shift` or `each`, written with
+  `<<`. A Row and a Table are values: `row["c"] = 3` rebinds `row` to the
+  copy, and `tb = tb << fields` is the form, where Ruby changes them in
+  place; `delete` returns the copy without the part, not the part. The
+  file methods, `read`, `foreach`, `open` and `table`, are left out.
 - **Output**: `puts`, `print`, `p`, `pp`, `warn`.
 
 ## Different in cameo
@@ -407,8 +415,8 @@ These are absent, and a script that uses one fails when it reaches it:
 - **Not there yet**: `at_exit`, `exit!`,
   `printf` (`format` exists), `__method__`, `Enumerator.new`,
   `Integer()` with a base, and `autoload`.
-- **Libraries**: `require` of any library but the fourteen above, such as
-  `csv`, raises a `LoadError`. [stdlib.md](stdlib.md) says which are
+- **Libraries**: `require` of any library but the fifteen above, such as
+  `matrix`, raises a `LoadError`. [stdlib.md](stdlib.md) says which are
   planned and which are left out, and why.
 
 ## Only in cameo
