@@ -18,6 +18,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/securerandom"
 	"github.com/cameo-lang/cameo/src/lib/shellwords"
 	libtime "github.com/cameo-lang/cameo/src/lib/time"
+	unicodenormalize "github.com/cameo-lang/cameo/src/lib/unicode_normalize"
 	"github.com/cameo-lang/cameo/src/lib/uri"
 	"github.com/cameo-lang/cameo/src/lib/yaml"
 )
@@ -28,30 +29,32 @@ import (
 // exist before the require; require marks the name loaded and returns
 // true the first time and false after, as Ruby's does.
 var Libraries = map[string][]string{
-	"base64":           nil,
-	"benchmark":        nil,
-	"cgi":              {"cgi/escape", "cgi/util"},
-	"cgi/escape":       nil,
-	"cgi/util":         {"cgi/escape"},
-	"csv":              nil,
-	"date":             nil,
-	"digest":           {"digest/md5", "digest/sha1", "digest/sha2"},
-	"digest/md5":       {"digest"},
-	"digest/sha1":      {"digest"},
-	"digest/sha2":      {"digest"},
-	"json":             nil,
-	"marshal":          nil,
-	"net/http":         {"net/protocol"},
-	"net/https":        {"net/http", "net/protocol"},
-	"net/protocol":     nil,
-	"pathname":         nil,
-	"random/formatter": {"securerandom"},
-	"securerandom":     {"random/formatter"},
-	"shellwords":       nil,
-	"time":             nil,
-	"uri":              nil,
-	"yaml":             {"psych"},
-	"psych":            {"yaml"},
+	"base64":                      nil,
+	"benchmark":                   nil,
+	"cgi":                         {"cgi/escape", "cgi/util"},
+	"cgi/escape":                  nil,
+	"cgi/util":                    {"cgi/escape"},
+	"csv":                         nil,
+	"date":                        nil,
+	"digest":                      {"digest/md5", "digest/sha1", "digest/sha2"},
+	"digest/md5":                  {"digest"},
+	"digest/sha1":                 {"digest"},
+	"digest/sha2":                 {"digest"},
+	"json":                        nil,
+	"marshal":                     nil,
+	"net/http":                    {"net/protocol"},
+	"net/https":                   {"net/http", "net/protocol"},
+	"net/protocol":                nil,
+	"pathname":                    nil,
+	"random/formatter":            {"securerandom"},
+	"securerandom":                {"random/formatter"},
+	"shellwords":                  nil,
+	"time":                        nil,
+	"unicode_normalize":           {"unicode_normalize/normalize"},
+	"unicode_normalize/normalize": nil,
+	"uri":                         nil,
+	"yaml":                        {"psych"},
+	"psych":                       {"yaml"},
 }
 
 // Install defines every library. The evaluator calls it once, after
@@ -70,6 +73,7 @@ func Install() {
 	securerandom.Install()
 	shellwords.Install()
 	libtime.Install()
+	unicodenormalize.Install()
 	uri.Install()
 	yaml.Install()
 }
