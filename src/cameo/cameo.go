@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"math/big"
+	"net"
 	"os"
 	"reflect"
 	"slices"
@@ -124,6 +125,12 @@ func (p *Program) Args(args []string) {
 // such as a.push(1), returns its result on a copy instead of raising. The
 // receiver never changes either way.
 func (p *Program) IgnoreMutationErrors(ignore bool) { p.in.IgnoreMutationErrors = ignore }
+
+// Resolver gives the program name lookups: resolv looks names up with
+// resolver, net.DefaultResolver for the system's. Without one, require
+// "resolv" works and a lookup raises Resolv::ResolvError, so an embedding
+// program decides whether a script may look names up.
+func (p *Program) Resolver(resolver *net.Resolver) { p.in.DNS = resolver }
 
 // File is the script's path, as Load was given it.
 func (p *Program) File() string { return p.file }

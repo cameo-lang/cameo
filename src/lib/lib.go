@@ -25,6 +25,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/optparse"
 	"github.com/cameo-lang/cameo/src/lib/pathname"
 	"github.com/cameo-lang/cameo/src/lib/prime"
+	"github.com/cameo-lang/cameo/src/lib/resolv"
 	"github.com/cameo-lang/cameo/src/lib/securerandom"
 	"github.com/cameo-lang/cameo/src/lib/shellwords"
 	"github.com/cameo-lang/cameo/src/lib/singleton"
@@ -74,6 +75,7 @@ var Libraries = map[string][]string{
 	"pathname":                    nil,
 	"prime":                       nil,
 	"random/formatter":            {"securerandom"},
+	"resolv":                      nil,
 	"securerandom":                {"random/formatter"},
 	"shellwords":                  nil,
 	"singleton":                   nil,
@@ -115,6 +117,7 @@ func Install() {
 	getoptlong.Install()
 	matrix.Install()
 	bigdecimal.Install()
+	resolv.Install()
 	libtime.Install()
 	tsort.Install()
 	unicodenormalize.Install()

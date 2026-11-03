@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -41,6 +42,7 @@ func runScript(path string, argv []string, pause, ignoreMutations bool, stdout, 
 		return 1
 	}
 	prog.IgnoreMutationErrors(ignoreMutations)
+	prog.Resolver(net.DefaultResolver)
 	// A script that requires "debug" talks to the debugger on the
 	// terminal.
 	prog.Console(os.Stdin, stdout)
@@ -61,6 +63,7 @@ func resume(path string, pause, ignoreMutations bool, stdout, stderr io.Writer) 
 		return 1
 	}
 	prog.IgnoreMutationErrors(ignoreMutations)
+	prog.Resolver(net.DefaultResolver)
 	return runProgram(prog, pause, stderr)
 }
 

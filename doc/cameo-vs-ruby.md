@@ -96,7 +96,7 @@ mspec's own `before` blocks.
   `securerandom`, `csv`, `marshal`, `shellwords`, `ipaddr`, `zlib`,
   `prime`, `tsort`, `abbrev`, `singleton`,
   `forwardable`, `delegate`, `logger`, `stringio`, `strscan`, `optparse`,
-  `getoptlong`, `matrix`, `bigdecimal` and `minispec`, which cameo builds in;
+  `getoptlong`, `matrix`, `bigdecimal`, `resolv` and `minispec`, which cameo builds in;
   [stdlib.md](stdlib.md)
   has every library of Ruby's standard library with its status, the ones
   to come and the ones left out. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
@@ -265,6 +265,15 @@ mspec's own `before` blocks.
   coerces to it, as Ruby's `coerce` protocol does. `sqrt` and `BigMath`
   give the digits asked for, correctly rounded, where Ruby pads them with
   its own extra digits; `to_r` is left out, since cameo has no Rational.
+  `resolv` is Ruby 3.4's resolv 0.6.0: `Resolv.getaddress`, `getname` and
+  kin, `Resolv::Hosts` on `/etc/hosts`, `Resolv::DNS` with `getresources`
+  for A, AAAA, MX, TXT, CNAME, NS, PTR and SRV, `Resolv::IPv4`, `IPv6` and
+  `DNS::Name`. The lookups go through the resolver the host gives the
+  program (`Program.Resolver`), as `net/http` goes through its client;
+  the `cameo` command gives the system's, and without one a lookup raises
+  `Resolv::ResolvError`. Go's resolver reads `/etc/hosts` for
+  `Resolv::DNS` too and gives no time to live, so `ttl` is nil; SOA is
+  left out.
 - **Output**: `puts`, `print`, `p`, `pp`, `warn`.
 
 ## Different in cameo
@@ -476,7 +485,7 @@ These are absent, and a script that uses one fails when it reaches it:
   `printf` (`format` exists), `__method__`, `Enumerator.new`,
   `Integer()` with a base, and `autoload`.
 - **Libraries**: `require` of any library but the thirty-five above, such
-  as `resolv`, raises a `LoadError`. [stdlib.md](stdlib.md) says which are
+  as `socket`, raises a `LoadError`. [stdlib.md](stdlib.md) says which are
   planned and which are left out, and why.
 
 ## Only in cameo

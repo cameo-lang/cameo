@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"sync"
 	"sync/atomic"
 
@@ -22,9 +23,12 @@ type Interp struct {
 	// IgnoreMutationErrors makes a call of one of Ruby's mutators return
 	// its result on a copy instead of raising; see mutate.go.
 	IgnoreMutationErrors bool
-	stdout, stderr       io.Writer
-	outMu                *sync.Mutex
-	file                 string
+	// DNS is the resolver resolv looks names up with; nil leaves the
+	// program without lookups, and one raises Resolv::ResolvError.
+	DNS            *net.Resolver
+	stdout, stderr io.Writer
+	outMu          *sync.Mutex
+	file           string
 	// mainClass is the class of the top-level self: top-level defs are its
 	// methods, so one interpreter's definitions never reach another's.
 	mainClass *object.Class
@@ -183,6 +187,9 @@ func New(stdout, stderr io.Writer) *Interp {
 
 // Rand implements object.Context.
 func (in *Interp) Rand() *object.Random { return in.rng }
+
+// Resolver is what resolv looks names up with; see DNS.
+func (in *Interp) Resolver() *net.Resolver { return in.DNS }
 
 var installOnce sync.Once
 

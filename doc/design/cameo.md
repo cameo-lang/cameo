@@ -934,7 +934,7 @@ re-opened by accident:
     `marshal`, `shellwords`, `ipaddr`, `zlib`, `prime`,
     `tsort`, `abbrev`, `singleton`, `forwardable`, `delegate`,
     `logger`, `stringio`, `strscan`, `optparse`, `getoptlong`, `matrix`,
-    `bigdecimal`; the
+    `bigdecimal`, `resolv`; the
     list with each one's status is doc/stdlib.md) returns true the first
     time and false after, and any other is a LoadError: a script is one
     file. The libraries are there whether or not a script requires them;
