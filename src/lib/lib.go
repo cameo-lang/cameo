@@ -23,6 +23,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/matrix"
 	"github.com/cameo-lang/cameo/src/lib/minispec"
 	nethttp "github.com/cameo-lang/cameo/src/lib/net/http"
+	openuri "github.com/cameo-lang/cameo/src/lib/open-uri"
 	"github.com/cameo-lang/cameo/src/lib/optparse"
 	"github.com/cameo-lang/cameo/src/lib/pathname"
 	"github.com/cameo-lang/cameo/src/lib/prime"
@@ -72,6 +73,7 @@ var Libraries = map[string][]string{
 	"net/http":                    {"net/protocol"},
 	"net/https":                   {"net/http", "net/protocol"},
 	"net/protocol":                nil,
+	"open-uri":                    {"uri", "net/http", "net/protocol"},
 	"openssl":                     {"digest"},
 	"optparse":                    nil,
 	"pathname":                    nil,
@@ -125,5 +127,7 @@ func Install() {
 	tsort.Install()
 	unicodenormalize.Install()
 	uri.Install()
+	// open-uri defines methods on URI, so it follows uri.
+	openuri.Install()
 	zlib.Install()
 }
