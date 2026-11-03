@@ -1,0 +1,28 @@
+# Ruby's forwardable and delegate libraries: methods that forward to a
+# field's value, and a wrapper that forwards whatever it lacks. Each line
+# prints what Ruby prints.
+require "forwardable"
+require "delegate"
+
+class Playlist
+  extend Forwardable
+  list :songs, of: :string
+  def_delegators :songs, :size, :first, :each
+  def_delegator :songs, :last, :latest
+  def initialize(songs)
+    self.songs = songs
+  end
+end
+
+list = Playlist.new(["Intro", "Chorus", "Outro"])
+p list.size, list.first, list.latest
+list.each { |song| puts song }
+
+class Loud < SimpleDelegator
+  def shout
+    "#{upcase}!"
+  end
+end
+
+loud = Loud.new("hello")
+p loud.length, loud.shout, loud == "hello", loud.__getobj__, loud.respond_to?(:upcase)
