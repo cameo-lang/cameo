@@ -42,7 +42,7 @@ true
 ["FILE", "FTP", "HTTP", "HTTPS", "LDAP", "LDAPS", "MAILTO", "WS", "WSS"]
 "a=1&b=x+y%26z&c=1&c=2&d&e=%C3%BC"
 [["a", "1"], ["b", "x y&z"], ["c", "1"], ["c", "2"], ["d", ""], ["e", "ü"]]
-"a+b%26c%3Dd%2F%C3%A9%7E*-._%21"
+"a+b%26c%3Dd%2F%C3%A9~%2A-._%21"
 "a b&c"
 "a%20b%2Bc"
 "a b+c"
