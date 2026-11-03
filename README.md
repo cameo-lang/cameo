@@ -41,7 +41,7 @@ A script can `require` the libraries cameo builds in: `set`, `time`, `pp`,
 `digest`, `base64`, `securerandom`, `csv`, `marshal`, `shellwords`,
 `ipaddr`, `zlib`, `open-uri`, `prime`, `tsort`, `abbrev`, `singleton`,
 `forwardable`, `delegate`, `logger`, `stringio`, `strscan`, `optparse`,
-`getoptlong`, `matrix` and `bigdecimal`.
+`getoptlong`, `matrix`, `bigdecimal` and `resolv`.
 [doc/stdlib.md](doc/stdlib.md)
 lists every library of Ruby's standard library with its status in cameo:
 built in, planned, or left out and why.

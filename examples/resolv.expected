@@ -1,0 +1,15 @@
+"127.0.0.1"
+"127.0.0.1"
+"localhost"
+"127.0.0.1"
+#<Resolv::IPv4 10.0.0.1>
+"10.0.0.1"
+"1.0.0.10.in-addr.arpa"
+"2001:db8::1"
+true
+false
+"www.example.com"
+["www", "example", "com"]
+false
+true
+/etc/hosts has no name: no-such-host.invalid
