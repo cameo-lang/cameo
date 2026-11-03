@@ -12,6 +12,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/date"
 	"github.com/cameo-lang/cameo/src/lib/digest"
 	"github.com/cameo-lang/cameo/src/lib/json"
+	"github.com/cameo-lang/cameo/src/lib/marshal"
 	nethttp "github.com/cameo-lang/cameo/src/lib/net/http"
 	"github.com/cameo-lang/cameo/src/lib/pathname"
 	"github.com/cameo-lang/cameo/src/lib/securerandom"
@@ -37,6 +38,7 @@ var Libraries = map[string][]string{
 	"digest/sha1":      {"digest"},
 	"digest/sha2":      {"digest"},
 	"json":             nil,
+	"marshal":          nil,
 	"net/http":         {"net/protocol"},
 	"net/https":        {"net/http", "net/protocol"},
 	"net/protocol":     nil,
@@ -57,6 +59,7 @@ func Install() {
 	date.Install()
 	digest.Install()
 	json.Install()
+	marshal.Install()
 	nethttp.Install()
 	pathname.Install()
 	securerandom.Install()
