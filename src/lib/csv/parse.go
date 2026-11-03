@@ -1,21 +1,39 @@
 package csv
 
 import (
+	"encoding/csv"
+	"errors"
+	"io"
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/cameo-lang/cameo/src/object"
 )
 
-// parser reads the rows of a string one at a time, as CSV's parser does,
-// with Ruby's rules for quoting and its errors.
+// parser reads the rows of a string one at a time with Go's encoding/csv,
+// and gives them Ruby's shape: an unquoted empty field is nil, a quoted
+// one the empty String, an empty line is an empty row, and a bad line is
+// CSV::MalformedCSVError with Ruby's words.
 type parser struct {
-	ctx  object.Context
-	o    *options
-	s    string
-	pos  int
-	rows int // rows read so far; Ruby's line numbers count them
+	ctx object.Context
+	o   *options
+	s   string
+	r   *csv.Reader
+	// lineStarts are the byte offsets where each line of s starts, so a
+	// field's position from the reader becomes an offset into s.
+	lineStarts []int
+	offset     int // what the reader has consumed
+	lineNo     int // lines wholly consumed
+	done       bool
+	// pendingEmpty counts the empty rows the reader skipped before stash,
+	// or at the end; they come out first.
+	pendingEmpty int
+	stash        []object.Value
+	stashLine    string
+	hasStash     bool
+	rows         int // rows read so far; Ruby's line numbers count them
 	// line is the last raw line read, as CSV#line.
 	line string
 	// headers is nil until the header row is known, when the options ask
@@ -27,6 +45,32 @@ type parser struct {
 	pendingHeaderRow object.Value
 }
 
+func newParser(ctx object.Context, o *options, s string) *parser {
+	p := &parser{ctx: ctx, o: o, s: s}
+	p.lineStarts = []int{0}
+	for i := 0; i < len(s); i++ {
+		if s[i] == '\n' {
+			p.lineStarts = append(p.lineStarts, i+1)
+		}
+	}
+	p.reset()
+	return p
+}
+
+// reset starts reading from the top again, as CSV#rewind does.
+func (p *parser) reset() {
+	r := csv.NewReader(strings.NewReader(p.s))
+	r.Comma, _ = utf8.DecodeRuneInString(p.o.colSep)
+	r.LazyQuotes = p.o.liberal
+	r.TrimLeadingSpace = p.o.strip
+	r.FieldsPerRecord = -1
+	p.r = r
+	p.offset, p.lineNo, p.rows, p.pendingEmpty = 0, 0, 0, 0
+	p.done, p.hasStash = false, false
+	p.line, p.headers, p.headersSet = "", nil, false
+	p.pendingHeaderRow = object.Value{}
+}
+
 // malformed is CSV::MalformedCSVError, with Ruby's message and line.
 func (p *parser) malformed(problem string) error {
 	line := p.rows + 1
@@ -34,43 +78,58 @@ func (p *parser) malformed(problem string) error {
 		Attrs: map[string]object.Value{"line_number": object.Int(line)}}
 }
 
-// rowSep is the row separator, found in the input when the options leave
-// it to auto: the first line break, "\n" when there is none.
+// translate gives a reader's error Ruby's words.
+func (p *parser) translate(err error) error {
+	var pe *csv.ParseError
+	if !errors.As(err, &pe) {
+		return p.malformed(err.Error())
+	}
+	switch {
+	case errors.Is(pe.Err, csv.ErrBareQuote):
+		return p.malformed("Illegal quoting")
+	case errors.Is(pe.Err, csv.ErrQuote):
+		if strings.Count(p.s[p.offset:], `"`)%2 == 1 {
+			return p.malformed("Unclosed quoted field")
+		}
+		return p.malformed("Any value after quoted field isn't allowed")
+	}
+	return p.malformed(pe.Err.Error())
+}
+
+// rowSep is the row separator CSV#row_sep reports: the first line break
+// of the input when the options leave it to auto, "\n" when there is none.
 func (p *parser) rowSep() string {
 	if p.o.rowSep != "" {
 		return p.o.rowSep
 	}
-	for i := 0; i < len(p.s); i++ {
-		switch p.s[i] {
-		case '\r':
-			if i+1 < len(p.s) && p.s[i+1] == '\n' {
-				return "\r\n"
-			}
-			return "\r"
-		case '\n':
-			return "\n"
-		}
+	if i := strings.IndexByte(p.s, '\n'); i > 0 && p.s[i-1] == '\r' {
+		return "\r\n"
 	}
 	return "\n"
 }
 
 // eof reports whether every row has been read.
-func (p *parser) eof() bool { return p.pos >= len(p.s) }
+func (p *parser) eof() bool {
+	if p.pendingEmpty > 0 || p.hasStash {
+		return false
+	}
+	return p.done || p.offset >= len(p.s)
+}
 
 // next reads the next row's raw fields: nil at the end of the input. An
 // unquoted empty field is a nil Value, a quoted one the empty String.
 func (p *parser) next() ([]object.Value, error) {
-	sep := p.rowSep()
-	for !p.eof() {
-		start := p.pos
-		fields, err := p.row(sep)
+	for {
+		fields, raw, err := p.record()
 		if err != nil {
 			return nil, err
 		}
-		end := p.pos
-		p.line = p.s[start:end]
+		if fields == nil {
+			return nil, nil
+		}
+		p.line = raw
 		p.rows++
-		if p.o.skipLines != nil && p.o.skipLines.MatchAt(strings.TrimSuffix(p.line, sep), 0) != nil {
+		if p.o.skipLines != nil && p.o.skipLines.MatchAt(strings.TrimRight(raw, "\r\n"), 0) != nil {
 			continue
 		}
 		if p.o.skipBlanks && len(fields) == 0 {
@@ -78,54 +137,75 @@ func (p *parser) next() ([]object.Value, error) {
 		}
 		return fields, nil
 	}
-	return nil, nil
 }
 
-// row reads one row from pos through its row separator.
-func (p *parser) row(sep string) ([]object.Value, error) {
-	fields := []object.Value{}
-	if strings.HasPrefix(p.s[p.pos:], sep) {
-		p.pos += len(sep)
-		return fields, nil
+// record is the next row with its raw text: the empty rows the reader
+// skipped first, then the record it read, nil at the end.
+func (p *parser) record() ([]object.Value, string, error) {
+	if p.pendingEmpty > 0 {
+		p.pendingEmpty--
+		return []object.Value{}, "", nil
 	}
-	for {
-		if p.o.strip {
-			p.skipStrip()
+	if p.hasStash {
+		p.hasStash = false
+		return p.stash, p.stashLine, nil
+	}
+	if p.done {
+		return nil, "", nil
+	}
+	rec, err := p.r.Read()
+	if err == io.EOF {
+		p.done = true
+		// The reader skips empty lines; each line break left over is one.
+		tail := p.s[p.offset:]
+		p.pendingEmpty = strings.Count(tail, "\n")
+		if p.pendingEmpty == 0 && strings.Count(tail, "\r") > 0 {
+			p.pendingEmpty = strings.Count(tail, "\r")
 		}
-		var field object.Value
-		var err error
-		if p.o.quoteChar != "" && strings.HasPrefix(p.s[p.pos:], p.o.quoteChar) {
-			field, err = p.quoted(sep)
-		} else {
-			field, err = p.unquoted(sep)
+		p.offset = len(p.s)
+		return p.record()
+	}
+	if err != nil {
+		return nil, "", p.translate(err)
+	}
+	line, _ := p.r.FieldPos(0)
+	skipped := line - p.lineNo - 1
+	start := p.offset
+	for i := 0; i < skipped; i++ {
+		if j := strings.IndexByte(p.s[start:], '\n'); j >= 0 {
+			start += j + 1
 		}
-		if err != nil {
-			return nil, err
+	}
+	end := int(p.r.InputOffset())
+	raw := p.s[start:end]
+	p.offset = end
+	p.lineNo = strings.Count(p.s[:end], "\n")
+	fields := make([]object.Value, len(rec))
+	for i, f := range rec {
+		fl, fc := p.r.FieldPos(i)
+		at := p.lineStarts[fl-1] + fc - 1
+		for p.o.strip && at < len(p.s) && p.stripped(p.s[at]) {
+			at++
 		}
-		fields = append(fields, field)
+		quoted := at < len(p.s) && p.s[at] == '"'
+		if p.o.strip && !quoted {
+			f = strings.TrimRightFunc(f, func(r rune) bool { return r < 128 && p.stripped(byte(r)) })
+		}
 		switch {
-		case strings.HasPrefix(p.s[p.pos:], p.o.colSep):
-			p.pos += len(p.o.colSep)
-			if p.eof() {
-				fields = append(fields, p.o.nilField())
-				return fields, nil
-			}
-		case strings.HasPrefix(p.s[p.pos:], sep):
-			p.pos += len(sep)
-			return fields, nil
-		case p.eof():
-			return fields, nil
+		case f == "" && quoted:
+			fields[i] = p.o.emptyField()
+		case f == "":
+			fields[i] = p.o.nilField()
 		default:
-			return nil, p.malformed("Any value after quoted field isn't allowed")
+			fields[i] = object.String(f)
 		}
 	}
-}
-
-// skipStrip skips the spaces strip: drops around a field.
-func (p *parser) skipStrip() {
-	for !p.eof() && p.stripped(p.s[p.pos]) {
-		p.pos++
+	if skipped > 0 {
+		p.pendingEmpty = skipped
+		p.stash, p.stashLine, p.hasStash = fields, raw, true
+		return p.record()
 	}
+	return fields, raw, nil
 }
 
 func (p *parser) stripped(c byte) bool {
@@ -149,62 +229,6 @@ func (o *options) emptyField() object.Value {
 		return o.emptyValue
 	}
 	return object.String("")
-}
-
-// quoted reads a quoted field from its opening quote through its closing
-// one; a doubled quote is one quote.
-func (p *parser) quoted(sep string) (object.Value, error) {
-	q := p.o.quoteChar
-	p.pos += len(q)
-	var b strings.Builder
-	for {
-		i := strings.Index(p.s[p.pos:], q)
-		if i < 0 {
-			return object.Value{}, p.malformed("Unclosed quoted field")
-		}
-		b.WriteString(p.s[p.pos : p.pos+i])
-		p.pos += i + len(q)
-		if strings.HasPrefix(p.s[p.pos:], q) {
-			b.WriteString(q)
-			p.pos += len(q)
-			continue
-		}
-		break
-	}
-	if p.o.strip {
-		p.skipStrip()
-	}
-	if b.Len() == 0 {
-		return p.o.emptyField(), nil
-	}
-	return object.String(b.String()), nil
-}
-
-// unquoted reads a field up to the column or row separator, refusing a
-// quote inside it and a line break that is not the row separator.
-func (p *parser) unquoted(sep string) (object.Value, error) {
-	start := p.pos
-	for !p.eof() {
-		rest := p.s[p.pos:]
-		if strings.HasPrefix(rest, p.o.colSep) || strings.HasPrefix(rest, sep) {
-			break
-		}
-		if p.o.quoteChar != "" && strings.HasPrefix(rest, p.o.quoteChar) && !p.o.liberal {
-			return object.Value{}, p.malformed("Illegal quoting")
-		}
-		if c := rest[0]; c == '\r' || c == '\n' {
-			return object.Value{}, p.malformed("Unquoted fields do not allow new line <" + strconv.Quote(string(c)) + ">")
-		}
-		p.pos++
-	}
-	s := p.s[start:p.pos]
-	if p.o.strip {
-		s = strings.TrimRightFunc(s, func(r rune) bool { return r < 128 && p.stripped(byte(r)) })
-	}
-	if s == "" {
-		return p.o.nilField(), nil
-	}
-	return object.String(s), nil
 }
 
 var (
@@ -367,7 +391,7 @@ func (p *parser) readHeaders() error {
 		}
 		raw = fields
 	case p.o.headers.IsString():
-		sub := &parser{ctx: p.ctx, o: p.o, s: p.o.headers.Str()}
+		sub := newParser(p.ctx, p.o, p.o.headers.Str())
 		fields, err := sub.next()
 		if err != nil {
 			return err

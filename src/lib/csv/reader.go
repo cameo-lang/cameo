@@ -19,7 +19,7 @@ func handleOf(v object.Value) *handle { return v.Instance().Message.(*handle) }
 
 func newHandle(ctx object.Context, input string, o *options) object.Value {
 	oc := *o
-	h := &handle{p: &parser{ctx: ctx, o: &oc, s: input}, w: newWriter(ctx, &oc)}
+	h := &handle{p: newParser(ctx, &oc, input), w: newWriter(ctx, &oc)}
 	return object.InstanceValue(&object.Instance{Cls: csvClass, Message: h})
 }
 
@@ -109,7 +109,7 @@ func installHandle() {
 	def("eof?", 0, eof)
 	def("eof", 0, eof)
 	def("rewind", 0, func(ctx object.Context, h *handle, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		h.p.pos, h.p.rows, h.p.line, h.p.headersSet, h.p.headers, h.p.pendingHeaderRow = 0, 0, "", false, nil, object.Value{}
+		h.p.reset()
 		return object.Nil, nil
 	})
 	def("string", 0, func(ctx object.Context, h *handle, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
