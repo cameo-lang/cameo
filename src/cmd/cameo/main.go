@@ -16,8 +16,10 @@ import (
 	"golang.org/x/term"
 )
 
-const usage = `usage: cameo [--no-pause] <script.cameo>  run the script; ^C pauses it before its next top-level statement
-                                         and writes its state to a temporary file, or ends it with --no-pause
+const usage = `usage: cameo [--no-pause] <script.cameo> [args...]
+                                         run the script, with args in ARGV; ^C pauses it before its next
+                                         top-level statement and writes its state to a temporary file,
+                                         or ends it with --no-pause
        cameo [--no-pause] resume <dump>  continue the script a dump holds
        cameo --ignore-mutation-errors <script.cameo>
                                          run it, a call of Ruby's mutators such as push returning its
@@ -126,8 +128,13 @@ flags:
 			return 1
 		}
 		return 0
-	case len(args) == 1 && args[0] != "check" && args[0] != "proto" && args[0] != "build" && args[0] != "run" && args[0] != "resume" && args[0] != "inspect" && args[0] != "irb" && args[0] != "debug":
-		return runScript(args[0], pause, ignoreMutations, os.Stdout, os.Stderr)
+	case len(args) >= 1 && args[0] != "check" && args[0] != "proto" && args[0] != "build" && args[0] != "run" && args[0] != "resume" && args[0] != "inspect" && args[0] != "irb" && args[0] != "debug":
+		// What follows the script is its ARGV; a -- before it is dropped.
+		argv := args[1:]
+		if len(argv) > 0 && argv[0] == "--" {
+			argv = argv[1:]
+		}
+		return runScript(args[0], argv, pause, ignoreMutations, os.Stdout, os.Stderr)
 	default:
 		fmt.Fprintln(os.Stderr, usage)
 		return 2

@@ -23,7 +23,7 @@ func TestScriptsRunByTheCommandReachTheNetwork(t *testing.T) {
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
-	if status := runScript(script, false, false, &stdout, &stderr); status != 0 {
+	if status := runScript(script, nil, false, false, &stdout, &stderr); status != 0 {
 		t.Fatalf("exit status %d, stderr:\n%s", status, stderr.String())
 	}
 	if stdout.String() != "from the server\n" {
