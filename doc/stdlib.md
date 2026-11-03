@@ -231,4 +231,4 @@ Pull requests, as they open and land:
 - [cameo-lang/cameo#203](https://github.com/cameo-lang/cameo/pull/203): `optparse`, `getoptlong`, `ARGV`.
 - [cameo-lang/cameo#205](https://github.com/cameo-lang/cameo/pull/205): `matrix`.
 - [cameo-lang/cameo#206](https://github.com/cameo-lang/cameo/pull/206): `bigdecimal`.
-- `resolv`: available.
+- [cameo-lang/cameo#207](https://github.com/cameo-lang/cameo/pull/207): `resolv`.
