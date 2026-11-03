@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"sync"
 	"sync/atomic"
@@ -25,7 +26,10 @@ type Interp struct {
 	IgnoreMutationErrors bool
 	// HTTP is the client net/http makes requests with; nil leaves the
 	// program without network access, and a request raises SocketError.
-	HTTP           *http.Client
+	HTTP *http.Client
+	// DNS is the resolver resolv looks names up with; nil leaves the
+	// program without lookups, and one raises Resolv::ResolvError.
+	DNS            *net.Resolver
 	stdout, stderr io.Writer
 	outMu          *sync.Mutex
 	file           string
@@ -184,6 +188,9 @@ func (in *Interp) Rand() *object.Random { return in.rng }
 // HTTPClient is the client net/http makes requests with, or nil when the
 // program has no network access; the library reads it from its Context.
 func (in *Interp) HTTPClient() *http.Client { return in.HTTP }
+
+// Resolver is what resolv looks names up with; see DNS.
+func (in *Interp) Resolver() *net.Resolver { return in.DNS }
 
 // Done is closed when the run is stopped, so that a request in flight is
 // cancelled with it.
