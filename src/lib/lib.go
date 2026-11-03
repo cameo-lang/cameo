@@ -16,6 +16,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/forwardable"
 	"github.com/cameo-lang/cameo/src/lib/ipaddr"
 	"github.com/cameo-lang/cameo/src/lib/json"
+	"github.com/cameo-lang/cameo/src/lib/logger"
 	"github.com/cameo-lang/cameo/src/lib/marshal"
 	"github.com/cameo-lang/cameo/src/lib/pathname"
 	"github.com/cameo-lang/cameo/src/lib/prime"
@@ -51,6 +52,7 @@ var Libraries = map[string][]string{
 	"forwardable":                 nil,
 	"ipaddr":                      nil,
 	"json":                        nil,
+	"logger":                      nil,
 	"marshal":                     nil,
 	"pathname":                    nil,
 	"prime":                       nil,
@@ -80,6 +82,7 @@ func Install() {
 	forwardable.Install()
 	ipaddr.Install()
 	json.Install()
+	logger.Install()
 	marshal.Install()
 	pathname.Install()
 	prime.Install()

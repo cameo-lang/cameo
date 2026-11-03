@@ -93,7 +93,7 @@ mspec's own `before` blocks.
 - **Libraries**: `require` of `set`, `time`, `pp`, `pathname`, `cgi`,
   `json`, `benchmark`, `uri`, `date`, `digest`, `base64`, `securerandom`,
   `csv`, `marshal`, `shellwords`, `ipaddr`, `zlib`, `prime`, `tsort`,
-  `abbrev`, `singleton`, `forwardable` and `delegate`, which cameo builds in; [stdlib.md](stdlib.md)
+  `abbrev`, `singleton`, `forwardable`, `delegate` and `logger`, which cameo builds in;
   has every library of Ruby's standard library with its status, the ones
   to come and the ones left out. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
   do without I/O: `escape` and `unescape`, the URI-component pair,
@@ -220,6 +220,12 @@ mspec's own `before` blocks.
   names the field, and `SimpleDelegator` and `DelegateClass` forwarding
   what they lack to the wrapped object. A delegator is a value:
   `__setobj__` returns the copy.
+  `logger` is Ruby 3.4's logger 1.6.4 on `STDOUT`, `STDERR` or `nil`:
+  the levels, `add`, the predicates, `progname`, `formatter`,
+  `datetime_format` and `Logger::Formatter`'s line. A Logger is a
+  value with no setters: `with(level: :warn)` returns a copy, and
+  `log.level = :warn` rebinds `log` to one, where Ruby changes the Logger
+  for every holder; a file is left out.
 - **Output**: `puts`, `print`, `p`, `pp`, `warn`.
 
 ## Different in cameo
@@ -430,7 +436,7 @@ These are absent, and a script that uses one fails when it reaches it:
 - **Not there yet**: `at_exit`, `exit!`,
   `printf` (`format` exists), `__method__`, `Enumerator.new`,
   `Integer()` with a base, and `autoload`.
-- **Libraries**: `require` of any library but the twenty-five above, such as
+- **Libraries**: `require` of any library but the twenty-six above, such as
   `matrix`, raises a `LoadError`. [stdlib.md](stdlib.md) says which are
   planned and which are left out, and why.
 

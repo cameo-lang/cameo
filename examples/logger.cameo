@@ -1,0 +1,17 @@
+# Ruby's logger library: a Logger on the standard output with levels, a
+# progname and a formatter. The default format carries the time and the
+# process id, so this example formats its lines itself. A Logger is a
+# value: log.level = :warn rebinds log to a copy, where Ruby changes the
+# Logger in place. Each line prints what Ruby prints.
+require "logger"
+
+log = Logger.new(STDOUT, progname: "app")
+log.formatter = proc { |severity, time, progname, message| "#{severity.ljust(5)} #{progname}: #{message}\n" }
+log.info("starting")
+log.debug { "details #{1 + 1}" }
+log.level = :warn
+log.info("not shown")
+log.warn("disk at 91%")
+log.error(RuntimeError.new("boom"))
+p log.level, log.warn?, log.info?, Logger::SEV_LABEL
+p Logger::Formatter.new.call("INFO", Time.utc(2020, 1, 2, 3, 4, 5), "p", "m").sub(/ #\d+\]/, " #PID]")

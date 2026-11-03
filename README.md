@@ -39,7 +39,7 @@ Ruby, what is the same, what differs, and what cameo does not support.
 A script can `require` the libraries cameo builds in: `set`, `time`, `pp`,
 `pathname`, `cgi`, `json`, `benchmark`, `uri`, `date`, `digest`, `base64`,
 `securerandom`, `csv`, `marshal`, `shellwords`, `ipaddr`, `zlib`, `prime`,
-`tsort`, `abbrev`, `singleton`, `forwardable` and `delegate`. [doc/stdlib.md](doc/stdlib.md)
+`tsort`, `abbrev`, `singleton`, `forwardable`, `delegate` and `logger`.
 lists every library of Ruby's standard library with its status in cameo:
 built in, planned, or left out and why.
 

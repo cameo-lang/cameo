@@ -1,0 +1,9 @@
+INFO  app: starting
+DEBUG app: details 2
+WARN  app: disk at 91%
+ERROR app: boom
+2
+true
+false
+["DEBUG", "INFO", "WARN", "ERROR", "FATAL", "ANY"]
+"I, [2020-01-02T03:04:05.000000 #PID]  INFO -- p: m\n"
