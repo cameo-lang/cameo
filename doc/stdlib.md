@@ -124,6 +124,11 @@ What asks for a library is measured, not guessed:
 Each is one pull request, which also moves its row to *Available*.
 Every row of the plan but `yaml` has landed.
 
+`rexml` was a row of the plan, was built, and was withdrawn before it
+landed: XML belongs behind a proper XML parser, chosen on its own terms,
+and not in the standard library yet. It is neither planned nor refused;
+`require "rexml/document"` raises `LoadError` for now.
+
 | Library | Ruby's version | What goes in | Why this order |
 |---|---|---|---|
 | `yaml` | psych 5.2.2 | `YAML.load`, `safe_load`, `load_stream`, `dump`, `to_yaml`, `YAML.load_file` **unsupported** (a file); plain data only: scalars, arrays, hashes, symbols (`:sym`), times and dates; a `!ruby/object` tag is a `Psych::DisallowedClass`; an instance of a cameo class dumps as a mapping of its fields, as JSON does | last, and not before a Go package writes what Psych writes: Go's standard library has no YAML, gopkg.in/yaml.v3 is archived, and its successor go.yaml.in/yaml/v3 indents, quotes, folds and reports errors in another shape than libyaml's. A library is one Go package on Go's packages, not a parser carried along |
