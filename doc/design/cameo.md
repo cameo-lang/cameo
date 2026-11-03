@@ -933,7 +933,7 @@ re-opened by accident:
     `net/http`, `digest`, `base64`, `securerandom`, `csv`,
     `marshal`, `shellwords`, `ipaddr`, `zlib`, `open-uri`, `prime`,
     `tsort`, `abbrev`, `singleton`, `forwardable`, `delegate`,
-    `logger`; the
+    `logger`, `stringio`; the
     list with each one's status is doc/stdlib.md) returns true the first
     time and false after, and any other is a LoadError: a script is one
     file. The libraries are there whether or not a script requires them;
