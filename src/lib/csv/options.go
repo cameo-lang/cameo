@@ -1,6 +1,7 @@
 package csv
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/cameo-lang/cameo/src/object"
@@ -77,6 +78,9 @@ func (o *options) read(ctx object.Context, kw *object.Map) error {
 			if s == "" {
 				return ctx.Raise(object.ArgumentError, ":col_sep must be 1 or more characters: \"\"")
 			}
+			if len([]rune(s)) != 1 {
+				return ctx.Raise(object.ArgumentError, "col_sep: must be one character, since cameo's csv is Go's encoding/csv: %s", strconv.Quote(s))
+			}
 			o.colSep = s
 		case "row_sep":
 			if sym, ok := v.AsSymbol(); ok && sym == "auto" {
@@ -87,20 +91,14 @@ func (o *options) read(ctx object.Context, kw *object.Map) error {
 			if err != nil {
 				return err
 			}
+			if s != "\n" && s != "\r\n" {
+				return ctx.Raise(object.ArgumentError, "row_sep: must be \"\\n\" or \"\\r\\n\", since cameo's csv is Go's encoding/csv: %s", strconv.Quote(s))
+			}
 			o.rowSep = s
 		case "quote_char":
-			if v.IsNil() {
-				o.quoteChar = ""
-				continue
+			if s, ok := v.AsString(); !ok || s != `"` {
+				return ctx.Raise(object.ArgumentError, "quote_char: must be '\"', since cameo's csv is Go's encoding/csv")
 			}
-			s, err := stdlib.WantString(ctx, v)
-			if err != nil {
-				return err
-			}
-			if len([]rune(s)) != 1 {
-				return ctx.Raise(object.ArgumentError, ":quote_char has to be nil or a single character String")
-			}
-			o.quoteChar = s
 		case "headers":
 			o.headers = v
 		case "return_headers":
@@ -155,7 +153,9 @@ func (o *options) read(ctx object.Context, kw *object.Map) error {
 		case "write_empty_value":
 			o.writeEmpty = v
 		case "force_quotes":
-			o.forceQuotes = v.Truthy()
+			if v.Truthy() {
+				return ctx.Raise(object.ArgumentError, "force_quotes: is left out, since cameo's csv is Go's encoding/csv, which quotes what needs it")
+			}
 		case "quote_empty":
 			o.quoteEmpty = v.Truthy()
 		}

@@ -1,14 +1,14 @@
 package csv
 
 import (
+	"encoding/csv"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/cameo-lang/cameo/src/object"
 )
 
-// writer turns rows into CSV text as CSV's writer does: a field is quoted
-// when it holds the column separator, the quote, a line break, or is the
-// empty string, or always with force_quotes.
+// writer turns rows into CSV text with Go's encoding/csv writer.
 type writer struct {
 	ctx object.Context
 	o   *options
@@ -25,7 +25,7 @@ func newWriter(ctx object.Context, o *options) *writer {
 	if list, ok := o.headers.AsList(); ok {
 		w.headers, w.headersKnown = list.Elems, true
 	} else if o.headers.IsString() {
-		p := &parser{ctx: ctx, o: o, s: o.headers.Str()}
+		p := newParser(ctx, o, o.headers.Str())
 		if fields, err := p.next(); err == nil {
 			w.headers, w.headersKnown = fields, true
 		}
@@ -79,60 +79,44 @@ func (w *writer) add(row object.Value) error {
 	return w.line(fields)
 }
 
-// line writes the fields as one line.
+// line writes the fields as one line through Go's encoding/csv writer,
+// which quotes a field that holds the separator, a quote or a line break.
 func (w *writer) line(fields []object.Value) error {
+	strs := make([]string, len(fields))
 	for i, f := range fields {
-		if i > 0 {
-			w.b.WriteString(w.o.colSep)
-		}
 		s, err := w.field(f)
 		if err != nil {
 			return err
 		}
-		w.b.WriteString(s)
+		strs[i] = s
 	}
-	w.b.WriteString(w.rowSep())
-	return nil
+	cw := csv.NewWriter(&w.b)
+	cw.Comma, _ = utf8.DecodeRuneInString(w.o.colSep)
+	cw.UseCRLF = w.rowSep() == "\r\n"
+	if err := cw.Write(strs); err != nil {
+		return w.ctx.Raise(object.ArgumentError, "%s", err.Error())
+	}
+	cw.Flush()
+	return cw.Error()
 }
 
-// field is one field's text, quoted when it has to be.
+// field is one field's text: nil and the empty String as the options say.
 func (w *writer) field(f object.Value) (string, error) {
-	var s string
 	switch {
 	case f.IsNil():
 		if !w.o.writeNil.IsZero() {
-			s = w.o.writeNil.Str()
-			break
-		}
-		if w.o.forceQuotes && w.o.quoteChar != "" {
-			return w.o.quoteChar + w.o.quoteChar, nil
+			return w.o.writeNil.Str(), nil
 		}
 		return "", nil
 	case f.IsString() && f.Str() == "":
 		if !w.o.writeEmpty.IsZero() {
-			s = w.o.writeEmpty.Str()
-			break
-		}
-		if (w.o.quoteEmpty || w.o.forceQuotes) && w.o.quoteChar != "" {
-			return w.o.quoteChar + w.o.quoteChar, nil
+			return w.o.writeEmpty.Str(), nil
 		}
 		return "", nil
 	case f.IsString():
-		s = f.Str()
-	default:
-		var err error
-		if s, err = w.ctx.ToS(f); err != nil {
-			return "", err
-		}
+		return f.Str(), nil
 	}
-	q := w.o.quoteChar
-	if q == "" {
-		return s, nil
-	}
-	if w.o.forceQuotes || strings.Contains(s, q) || strings.Contains(s, w.o.colSep) || strings.ContainsAny(s, "\r\n") {
-		return q + strings.ReplaceAll(s, q, q+q) + q, nil
-	}
-	return s, nil
+	return w.ctx.ToS(f)
 }
 
 // generateLine is CSV.generate_line: one row as text.
