@@ -11,7 +11,9 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/cgi"
 	"github.com/cameo-lang/cameo/src/lib/csv"
 	"github.com/cameo-lang/cameo/src/lib/date"
+	"github.com/cameo-lang/cameo/src/lib/delegate"
 	"github.com/cameo-lang/cameo/src/lib/digest"
+	"github.com/cameo-lang/cameo/src/lib/forwardable"
 	"github.com/cameo-lang/cameo/src/lib/ipaddr"
 	"github.com/cameo-lang/cameo/src/lib/json"
 	"github.com/cameo-lang/cameo/src/lib/marshal"
@@ -44,10 +46,12 @@ var Libraries = map[string][]string{
 	"cgi/util":                    {"cgi/escape"},
 	"csv":                         nil,
 	"date":                        nil,
+	"delegate":                    nil,
 	"digest":                      {"digest/md5", "digest/sha1", "digest/sha2"},
 	"digest/md5":                  {"digest"},
 	"digest/sha1":                 {"digest"},
 	"digest/sha2":                 {"digest"},
+	"forwardable":                 nil,
 	"ipaddr":                      nil,
 	"json":                        nil,
 	"marshal":                     nil,
@@ -79,7 +83,9 @@ func Install() {
 	cgi.Install()
 	csv.Install()
 	date.Install()
+	delegate.Install()
 	digest.Install()
+	forwardable.Install()
 	ipaddr.Install()
 	json.Install()
 	marshal.Install()

@@ -93,8 +93,8 @@ mspec's own `before` blocks.
 - **Libraries**: `require` of `set`, `time`, `pp`, `pathname`, `cgi`,
   `json`, `benchmark`, `uri`, `date`, `net/http`, `digest`, `base64` and
   `securerandom`, `yaml`, `csv`, `marshal`, `shellwords`, `ipaddr`, `zlib`,
-  `open-uri`, `prime`, `tsort`, `abbrev` and `singleton`, which cameo builds
-  in; [stdlib.md](stdlib.md)
+  `open-uri`, `prime`, `tsort`, `abbrev`, `singleton`,
+  `forwardable` and `delegate`, which cameo builds in; [stdlib.md](stdlib.md)
   has every library of Ruby's standard library with its status, the ones
   to come and the ones left out. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
   do without I/O: `escape` and `unescape`, the URI-component pair,
@@ -263,6 +263,11 @@ mspec's own `before` blocks.
   `Array#abbrev`, with a prefix or a Regexp as the pattern.
   `singleton` is Ruby 3.4's singleton 0.2.0: `include Singleton` gives
   the class `instance`, the one value, and takes `new` away.
+  `forwardable` and `delegate` are Ruby 3.4's: `extend Forwardable` with
+  `def_delegator`, `def_delegators` and `delegate`, where `:@items`
+  names the field, and `SimpleDelegator` and `DelegateClass` forwarding
+  what they lack to the wrapped object. A delegator is a value:
+  `__setobj__` returns the copy.
 - **Output**: `puts`, `print`, `p`, `pp`, `warn`.
 
 ## Different in cameo
@@ -473,7 +478,7 @@ These are absent, and a script that uses one fails when it reaches it:
 - **Not there yet**: `at_exit`, `exit!`,
   `printf` (`format` exists), `__method__`, `Enumerator.new`,
   `Integer()` with a base, and `autoload`.
-- **Libraries**: `require` of any library but the twenty-four above, such as
+- **Libraries**: `require` of any library but the twenty-seven above, such as
   `matrix`, raises a `LoadError`. [stdlib.md](stdlib.md) says which are
   planned and which are left out, and why.
 
