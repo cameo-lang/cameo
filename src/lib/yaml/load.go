@@ -204,7 +204,7 @@ func (l *loader) accept(n *node) (object.Value, error) {
 	case libyaml.Alias:
 		if !l.aliases {
 			return object.Value{}, &object.Exception{Cls: aliasesNotEnabled,
-				Message: "Alias parsing was not enabled. To enable it, pass `aliases: true` to `Psych::load` or `Psych::safe_load`."}
+				Message: "Alias parsing was not enabled. To enable it, pass `aliases: true` to `YAML::load` or `YAML::safe_load`."}
 		}
 		v, ok := l.anchors[n.anchor]
 		if !ok {
@@ -598,8 +598,9 @@ func (l *loader) mapping(n *node) (object.Value, error) {
 		}
 		return l.register(n, v), nil
 	case tag == "!set" || tag == "tag:yaml.org,2002:set":
-		// Psych::Set is a Hash; cameo gives the Hash itself.
-		if err := l.permit("Psych::Set"); err != nil {
+		// Ruby loads a set as Psych::Set, a Hash; cameo has no Psych name and
+		// gives the Hash itself, under the name Set.
+		if err := l.permit("Set"); err != nil {
 			return object.Value{}, err
 		}
 		return l.hash(n, true)

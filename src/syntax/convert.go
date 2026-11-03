@@ -676,7 +676,6 @@ var unsupported = map[string]string{
 var libraryFunctions = map[string]map[string]bool{
 	"JSON":    {"parse!": true, "load": true},
 	"YAML":    {"load": true},
-	"Psych":   {"load": true},
 	"Marshal": {"load": true},
 }
 

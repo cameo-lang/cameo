@@ -6,10 +6,10 @@ true
 {x: 1}
 #<Date: 2020-01-31 ((2458880j,0s,0n),+0s,-Infj)>
 2020-01-31 10:00:00 UTC
-Psych::DisallowedClass: Tried to load unspecified class: Date
-Psych::DisallowedClass: Tried to load unspecified class: Symbol
-Psych::AliasesNotEnabled: Alias parsing was not enabled. To enable it, pass `aliases: true` to `Psych::load` or `Psych::safe_load`.
-Psych::SyntaxError: (<unknown>): did not find expected ',' or ']' while parsing a flow sequence at line 1 column 4
+YAML::DisallowedClass: Tried to load unspecified class: Date
+YAML::DisallowedClass: Tried to load unspecified class: Symbol
+YAML::AliasesNotEnabled: Alias parsing was not enabled. To enable it, pass `aliases: true` to `YAML::load` or `YAML::safe_load`.
+YAML::SyntaxError: (<unknown>): did not find expected ',' or ']' while parsing a flow sequence at line 1 column 4
 ---
 name: cameo
 'yes': 'yes'

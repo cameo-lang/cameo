@@ -88,9 +88,8 @@ var Libraries = map[string][]string{
 	"unicode_normalize":           {"unicode_normalize/normalize"},
 	"unicode_normalize/normalize": nil,
 	"uri":                         nil,
-	"yaml":                        {"psych"},
+	"yaml":                        nil,
 	"zlib":                        nil,
-	"psych":                       {"yaml"},
 }
 
 // Install defines every library. The evaluator calls it once, after
