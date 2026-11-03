@@ -206,6 +206,7 @@ Pull requests, as they open and land:
 - [cameo-lang/cameo#174](https://github.com/cameo-lang/cameo/pull/174), [#175](https://github.com/cameo-lang/cameo/pull/175), [#176](https://github.com/cameo-lang/cameo/pull/176), [#177](https://github.com/cameo-lang/cameo/pull/177), [#178](https://github.com/cameo-lang/cameo/pull/178): `json`, `cgi`, `benchmark`, `pathname` and `time` move into packages of their own under `src/lib`.
 - [cameo-lang/cameo#179](https://github.com/cameo-lang/cameo/pull/179): `uri`.
 - [cameo-lang/cameo#180](https://github.com/cameo-lang/cameo/pull/180): `date`.
+- [cameo-lang/cameo#181](https://github.com/cameo-lang/cameo/pull/181): `net/http`.
 - [cameo-lang/cameo#182](https://github.com/cameo-lang/cameo/pull/182): time zones.
 - [cameo-lang/cameo#183](https://github.com/cameo-lang/cameo/pull/183): `digest`.
 - [cameo-lang/cameo#184](https://github.com/cameo-lang/cameo/pull/184): `base64`.
@@ -216,6 +217,7 @@ Pull requests, as they open and land:
 - [cameo-lang/cameo#190](https://github.com/cameo-lang/cameo/pull/190): `unicode_normalize`.
 - [cameo-lang/cameo#191](https://github.com/cameo-lang/cameo/pull/191): `ipaddr`.
 - [cameo-lang/cameo#192](https://github.com/cameo-lang/cameo/pull/192): `zlib`.
+- [cameo-lang/cameo#193](https://github.com/cameo-lang/cameo/pull/193): `open-uri`.
 - [cameo-lang/cameo#194](https://github.com/cameo-lang/cameo/pull/194): `prime`.
 - [cameo-lang/cameo#195](https://github.com/cameo-lang/cameo/pull/195): `tsort`.
 - [cameo-lang/cameo#196](https://github.com/cameo-lang/cameo/pull/196): `abbrev`.
@@ -224,8 +226,7 @@ Pull requests, as they open and land:
 - [cameo-lang/cameo#200](https://github.com/cameo-lang/cameo/pull/200): `logger`.
 - [cameo-lang/cameo#201](https://github.com/cameo-lang/cameo/pull/201): `stringio`.
 - [cameo-lang/cameo#202](https://github.com/cameo-lang/cameo/pull/202): `strscan`.
+- [cameo-lang/cameo#203](https://github.com/cameo-lang/cameo/pull/203): `optparse`, `getoptlong`, `ARGV`.
 - [cameo-lang/cameo#205](https://github.com/cameo-lang/cameo/pull/205): `matrix`.
-- `net/http`: available.
-- `open-uri`: available.
-- `optparse`, `getoptlong`, `ARGV`: available.
 - [cameo-lang/cameo#206](https://github.com/cameo-lang/cameo/pull/206): `bigdecimal`.
+- [cameo-lang/cameo#207](https://github.com/cameo-lang/cameo/pull/207): `resolv`.
