@@ -83,8 +83,8 @@ reaches it. The full list is
   <code>tsort</code>, <code>abbrev</code>, <code>singleton</code>,
   <code>forwardable</code>, <code>delegate</code>,
   <code>logger</code>, <code>stringio</code>, <code>strscan</code>,
-  <code>optparse</code>, <code>getoptlong</code>, <code>matrix</code> and
-  <code>bigdecimal</code>.</li>
+  <code>optparse</code>, <code>getoptlong</code>, <code>matrix</code>,
+  <code>bigdecimal</code> and <code>resolv</code>.</li>
 </ul>
 
 <p>This script prints the same under <code>ruby</code> 3.3 and under
@@ -376,8 +376,9 @@ reaches it, mostly with <code>NameError</code> or
   <code>tsort</code>, <code>abbrev</code>, <code>singleton</code>,
   <code>forwardable</code>, <code>delegate</code>,
   <code>logger</code>, <code>stringio</code>, <code>strscan</code>,
-  <code>optparse</code>, <code>getoptlong</code>, <code>matrix</code> and
-  <code>bigdecimal</code>, such as <code>resolv</code>.</li>
+  <code>optparse</code>, <code>getoptlong</code>, <code>matrix</code>,
+  <code>bigdecimal</code> and <code>resolv</code>, such as
+  <code>socket</code>.</li>
 </ul>
 
 <div class="pair">
@@ -404,11 +405,11 @@ p item.qty</code></pre>
 </div>
 
 <pre class="cameo"><code>begin
-  require "resolv"
+  require "socket"
 rescue LoadError =&gt; e
   puts e.message
 end</code></pre>
-<pre class="output"><code>cannot load such file -- resolv</code></pre>
+<pre class="output"><code>cannot load such file -- socket</code></pre>
 
 <p>Ruby's version constants describe cameo: <code>RUBY_ENGINE</code> is
 <code>"cameo"</code>, <code>RUBY_VERSION</code> is the Ruby cameo follows,

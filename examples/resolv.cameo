@@ -1,0 +1,19 @@
+# Ruby's resolv library: names and addresses. The lookups go through the
+# resolver the host gives the program; the cameo command gives the
+# system's. Each line prints what Ruby prints.
+require "resolv"
+
+p Resolv.getaddress("127.0.0.1"), Resolv.getaddress("localhost"), Resolv.getname("127.0.0.1")
+p Resolv::Hosts.new.getaddress("localhost")
+
+ip = Resolv::IPv4.create("10.0.0.1")
+p ip, ip.to_s, ip.to_name.to_s, Resolv::IPv6.create("2001:DB8:0:0:0:0:0:1").to_s, Resolv::IPv4::Regex.match?("1.2.3.4"), Resolv::IPv4::Regex.match?("1.2.3")
+
+name = Resolv::DNS::Name.create("www.example.com")
+p name.to_s, name.to_a.map(&:to_s), name.absolute?, name.subdomain_of?(Resolv::DNS::Name.create("example.com"))
+
+begin
+  Resolv::Hosts.new.getaddress("no-such-host.invalid")
+rescue Resolv::ResolvError => e
+  puts e.message
+end
