@@ -77,7 +77,7 @@ reaches it. The full list is
   <code>pathname</code>, <code>cgi</code>, <code>json</code>,
   <code>benchmark</code>, <code>uri</code>, <code>date</code>,
   <code>net/http</code>, <code>digest</code>, <code>base64</code>,
-  <code>securerandom</code> and <code>yaml</code>.</li>
+  <code>securerandom</code>, <code>yaml</code> and <code>csv</code>.</li>
 </ul>
 
 <p>This script prints the same under <code>ruby</code> 3.3 and under
@@ -363,8 +363,8 @@ reaches it, mostly with <code>NameError</code> or
   <code>pathname</code>, <code>cgi</code>, <code>json</code>,
   <code>benchmark</code>, <code>uri</code>, <code>date</code>,
   <code>net/http</code>, <code>digest</code>, <code>base64</code>,
-  <code>securerandom</code> and <code>yaml</code>, such as
-  <code>csv</code>.</li>
+  <code>securerandom</code>, <code>yaml</code> and <code>csv</code>, such as
+  <code>matrix</code>.</li>
 </ul>
 
 <div class="pair">
@@ -391,11 +391,11 @@ p item.qty</code></pre>
 </div>
 
 <pre class="cameo"><code>begin
-  require "csv"
+  require "matrix"
 rescue LoadError =&gt; e
   puts e.message
 end</code></pre>
-<pre class="output"><code>cannot load such file -- csv</code></pre>
+<pre class="output"><code>cannot load such file -- matrix</code></pre>
 
 <p>Ruby's version constants describe cameo: <code>RUBY_ENGINE</code> is
 <code>"cameo"</code>, <code>RUBY_VERSION</code> is the Ruby cameo follows,
