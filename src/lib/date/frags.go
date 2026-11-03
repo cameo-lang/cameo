@@ -449,9 +449,11 @@ func installParsing() {
 				return object.Value{}, err
 			}
 		}
-		f, ok := strptime(s, format)
-		if !ok {
+		f, err := strptime(s, format)
+		if err == errNoMatch {
 			return object.Nil, nil
+		} else if err != nil {
+			return object.Value{}, ctx.Raise(object.ArgumentError, "strptime: %s", err.Error())
 		}
 		return hashOf(f), nil
 	})
@@ -481,9 +483,11 @@ func installParsing() {
 				return object.Value{}, err
 			}
 		}
-		f, ok := strptime(s, format)
-		if !ok || f.has("leftover") {
+		f, err := strptime(s, format)
+		if err == errNoMatch {
 			return object.Value{}, invalid(ctx)
+		} else if err != nil {
+			return object.Value{}, ctx.Raise(object.ArgumentError, "strptime: %s", err.Error())
 		}
 		return dateFromFrags(ctx, self.Cls(), f, sg)
 	})
