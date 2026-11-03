@@ -92,7 +92,7 @@ mspec's own `before` blocks.
   `Process.clock_gettime`.
 - **Libraries**: `require` of `set`, `time`, `pp`, `pathname`, `cgi`,
   `json`, `benchmark`, `uri`, `date`, `digest`, `base64`, `securerandom`,
-  `csv`, `marshal`, `shellwords`, `ipaddr`, `zlib` and `prime`, which cameo builds in; [stdlib.md](stdlib.md)
+  `csv`, `marshal`, `shellwords`, `ipaddr`, `zlib`, `prime` and `tsort`, which cameo builds in; [stdlib.md](stdlib.md)
   has every library of Ruby's standard library with its status, the ones
   to come and the ones left out. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
   do without I/O: `escape` and `unescape`, the URI-component pair,
@@ -206,6 +206,10 @@ mspec's own `before` blocks.
   on `Prime`, with `Integer#prime?` and `prime_division`. The test is
   Miller-Rabin and the factorisation Pollard's rho, so a large number
   answers where Ruby's trial division does not finish.
+  `tsort` is Ruby 3.4's tsort 0.2.0: the module functions over two
+  callables, `->(&b) { graph.each_key(&b) }` and
+  `->(n, &b) { graph[n].each(&b) }`, and the methods of a class that
+  includes `TSort`, component for component in Ruby's order.
 - **Output**: `puts`, `print`, `p`, `pp`, `warn`.
 
 ## Different in cameo
@@ -416,7 +420,7 @@ These are absent, and a script that uses one fails when it reaches it:
 - **Not there yet**: `at_exit`, `exit!`,
   `printf` (`format` exists), `__method__`, `Enumerator.new`,
   `Integer()` with a base, and `autoload`.
-- **Libraries**: `require` of any library but the nineteen above, such as
+- **Libraries**: `require` of any library but the twenty above, such as
   `matrix`, raises a `LoadError`. [stdlib.md](stdlib.md) says which are
   planned and which are left out, and why.
 
