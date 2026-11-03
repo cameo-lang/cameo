@@ -16,6 +16,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/forwardable"
 	"github.com/cameo-lang/cameo/src/lib/ipaddr"
 	"github.com/cameo-lang/cameo/src/lib/json"
+	"github.com/cameo-lang/cameo/src/lib/logger"
 	"github.com/cameo-lang/cameo/src/lib/marshal"
 	nethttp "github.com/cameo-lang/cameo/src/lib/net/http"
 	openuri "github.com/cameo-lang/cameo/src/lib/open-uri"
@@ -54,6 +55,7 @@ var Libraries = map[string][]string{
 	"forwardable":                 nil,
 	"ipaddr":                      nil,
 	"json":                        nil,
+	"logger":                      nil,
 	"marshal":                     nil,
 	"net/http":                    {"net/protocol"},
 	"net/https":                   {"net/http", "net/protocol"},
@@ -88,6 +90,7 @@ func Install() {
 	forwardable.Install()
 	ipaddr.Install()
 	json.Install()
+	logger.Install()
 	marshal.Install()
 	nethttp.Install()
 	pathname.Install()
