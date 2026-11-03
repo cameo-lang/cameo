@@ -1,9 +1,0 @@
-# Ruby's rbconfig library: what a script asks about the Ruby it runs on,
-# answered about cameo. The lines that name the machine are left out,
-# since they differ from one to the next.
-require "rbconfig"
-
-config = RbConfig::CONFIG
-p config["ruby_version"], config["MAJOR"], config["MINOR"], config["ruby_install_name"], config["RUBY_ENGINE"]
-p config["arch"] == RUBY_PLATFORM, config["host_os"] == RbConfig::CONFIG["target_os"], config.key?("bindir")
-p RbConfig.expand("${MAJOR}.${MINOR}"), RbConfig.expand("$(bindir)/cameo") == config["bindir"] + "/cameo"

@@ -932,7 +932,7 @@ re-opened by accident:
     `cgi/escape`, `pp`, `pathname`, `json`, `benchmark`, `uri`, `date`,
     `net/http`, `digest`, `base64`, `securerandom`, `yaml`, `csv`,
     `marshal`, `shellwords`, `ipaddr`, `zlib`, `open-uri`, `prime`,
-    `tsort`, `abbrev`, `singleton`, `rbconfig`, `forwardable`, `delegate`,
+    `tsort`, `abbrev`, `singleton`, `forwardable`, `delegate`,
     `logger`, `stringio`, `strscan`, `optparse`, `getoptlong`, `matrix`,
     `bigdecimal`, `resolv`; the
     list with each one's status is doc/stdlib.md) returns true the first

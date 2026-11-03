@@ -93,7 +93,7 @@ mspec's own `before` blocks.
 - **Libraries**: `require` of `set`, `time`, `pp`, `pathname`, `cgi`,
   `json`, `benchmark`, `uri`, `date`, `net/http`, `digest`, `base64` and
   `securerandom`, `yaml`, `csv`, `marshal`, `shellwords`, `ipaddr`, `zlib`,
-  `open-uri`, `prime`, `tsort`, `abbrev`, `singleton`, `rbconfig`,
+  `open-uri`, `prime`, `tsort`, `abbrev`, `singleton`,
   `forwardable`, `delegate`, `logger`, `stringio`, `strscan`, `optparse`,
   `getoptlong`, `matrix`, `bigdecimal` and `resolv`, which cameo builds in;
   [stdlib.md](stdlib.md)
@@ -255,9 +255,6 @@ mspec's own `before` blocks.
   `Array#abbrev`, with a prefix or a Regexp as the pattern.
   `singleton` is Ruby 3.4's singleton 0.2.0: `include Singleton` gives
   the class `instance`, the one value, and takes `new` away.
-  `rbconfig` is `RbConfig::CONFIG` describing cameo: the version parts
-  of the Ruby it follows, `"cameo"` as the install name, the host in
-  Ruby's spelling, the running binary's directories, `RbConfig.ruby` and
   `expand`; a C Ruby's build details are left out.
   `forwardable` and `delegate` are Ruby 3.4's: `extend Forwardable` with
   `def_delegator`, `def_delegators` and `delegate`, where `:@items`
@@ -524,7 +521,7 @@ These are absent, and a script that uses one fails when it reaches it:
 - **Not there yet**: `at_exit`, `exit!`,
   `printf` (`format` exists), `__method__`, `Enumerator.new`,
   `Integer()` with a base, and `autoload`.
-- **Libraries**: `require` of any library but the thirty-five above, such
+- **Libraries**: `require` of any library but the thirty-four above, such
   as `socket`, raises a `LoadError`. [stdlib.md](stdlib.md) says which are
   planned and which are left out, and why.
 

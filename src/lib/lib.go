@@ -26,7 +26,6 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/optparse"
 	"github.com/cameo-lang/cameo/src/lib/pathname"
 	"github.com/cameo-lang/cameo/src/lib/prime"
-	"github.com/cameo-lang/cameo/src/lib/rbconfig"
 	"github.com/cameo-lang/cameo/src/lib/resolv"
 	"github.com/cameo-lang/cameo/src/lib/securerandom"
 	"github.com/cameo-lang/cameo/src/lib/shellwords"
@@ -77,7 +76,6 @@ var Libraries = map[string][]string{
 	"optparse":                    nil,
 	"pathname":                    nil,
 	"prime":                       nil,
-	"rbconfig":                    nil,
 	"resolv":                      nil,
 	"random/formatter":            {"securerandom"},
 	"securerandom":                {"random/formatter"},
@@ -114,7 +112,6 @@ func Install() {
 	nethttp.Install()
 	pathname.Install()
 	prime.Install()
-	rbconfig.Install()
 	securerandom.Install()
 	shellwords.Install()
 	singleton.Install()

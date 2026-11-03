@@ -111,7 +111,6 @@ What asks for a library is measured, not guessed:
 | `tsort` | tsort 0.2.0 | `TSort.tsort`, `tsort_each`, `strongly_connected_components`, `each_strongly_connected_component`, `each_strongly_connected_component_from` over two callables, with a block or as an Enumerator, and the same as the methods of a class that includes `TSort` and defines `tsort_each_node` and `tsort_each_child`; `TSort::Cyclic` with Ruby's message. The `id_map` and `stack` arguments start fresh each call, since a Hash is a value |
 | `abbrev` | abbrev 0.1.2 | `Abbrev.abbrev(words, pattern = nil)` and `Array#abbrev`, with a String prefix or a Regexp as the pattern |
 | `singleton` | singleton 0.2.0 | `include Singleton`: `instance` is the one instance, made by `initialize` the first time, a subclass with one of its own; `new` and `allocate` are refused with Ruby's NoMethodError, `dup` and `clone` with its TypeError. The module uses a new hook, `Class.Included`, which the evaluator runs when a class includes a module |
-| `rbconfig` | — | `RbConfig::CONFIG` and `MAKEFILE_CONFIG` with the version parts (`MAJOR`, `MINOR`, `TEENY`, `ruby_version`, `RUBY_PROGRAM_VERSION`), the names (`ruby_install_name` is `"cameo"`, `RUBY_ENGINE`), the host (`host_os`, `host_cpu`, `host`, `arch` as `RUBY_PLATFORM`, `EXEEXT`, `DLEXT`, `PATH_SEPARATOR`) and the running binary's directories (`bindir`, `prefix`, `libdir`…), `RbConfig::TOPDIR`, `RbConfig.ruby`, `RbConfig.expand`. The build details of a C Ruby, the compiler and its flags, are left out |
 | `forwardable`, `delegate` | forwardable 1.3.3, delegate 0.4.0 | `extend Forwardable` with `def_delegator`, `def_delegators`, `def_instance_delegator(s)`, `delegate … => :accessor` and `instance_delegate`, the accessor a method or a field (`:@items` names the field), and `SingleForwardable` with `def_single_delegator(s)` and `single_delegate` on a class or module; `SimpleDelegator`, `Delegator` and `DelegateClass(klass)` forwarding what they lack to the wrapped object through `method_missing`, with `__getobj__`, `respond_to?`, `==`, `to_s`, `inspect` and the other Object methods forwarded. A delegator is a value: `__setobj__` returns the copy with the new object. An accessor given as an expression String is refused, since cameo evaluates no strings. The evaluator now dispatches to a library's native `method_missing` too |
 | `logger` | logger 1.6.4 | `Logger.new(STDOUT`, `STDERR` or `nil, level:, progname:, formatter:, datetime_format:)`, the levels as Integers, Symbols or Strings, `debug` to `unknown` with a message, a progname and a block, `add` and `log`, `<<`, the predicates, `level=`, `progname=`, `formatter=`, `datetime_format=`, `close`; `Logger::Formatter` with Ruby's line, `Logger::SEV_LABEL`, `Logger::Severity`, `Logger::Error`. A Logger is a handle: the setters change it for every holder, as in Ruby. A file name, log rotation and `Logger::LogDevice` are left out, since cameo writes no files |
 | `stringio` | stringio 3.1.2 | `StringIO.new(string, mode)` and `open`, `read`, `gets`, `readline`, `readlines`, `each_line`, `each_char`, `each_byte`, `getc`, `readchar`, `getbyte`, `readbyte`, `ungetc`, `ungetbyte`, `readpartial`, `pread` with Ruby's separators, limits and `chomp:`; `write`, `<<`, `print`, `puts`, `printf`, `truncate`, writing over the position and padding past the end; `string`, `string=`, `reopen`, `pos`, `pos=`, `seek` with `IO::SEEK_SET`, `SEEK_CUR` and `SEEK_END`, `rewind`, `eof?`, `size`, `lineno`, `close`, `close_read`, `close_write` and the predicates, the modes `r`, `w`, `a` and `+`, with Ruby's `IOError`, `EOFError` and `Errno::EINVAL`. A StringIO is a handle; `string` returns the String as it is then, where Ruby returns the buffer itself |
@@ -151,6 +150,11 @@ given. `fileutils` 1.7.3, `tempfile` 0.3.1, `tmpdir` 0.3.1, `find` 0.2.0,
 `syslog` 0.2.0, `un` 0.3.0, `readline` 0.0.4, `reline` 0.6.0, `socket`,
 `win32ole` 1.9.1, `fiddle` 1.1.6, `nkf` 0.2.0 (encodings beyond UTF-8,
 binary and US-ASCII do not exist), `english` 0.8.0 (global variables).
+
+**The build of a Ruby.** `rbconfig` describes how a C Ruby was built and
+where it was installed; a cameo script has no use for either, and the
+version and platform it might want are `RUBY_VERSION`, `RUBY_ENGINE` and
+`RUBY_PLATFORM`. It was built in and dropped again.
 
 **Threads and processes.** cameo has `async` and `await` in their place.
 `thread` (`Queue`, `Mutex`, `ConditionVariable`), `monitor`, `mutex_m`
@@ -225,7 +229,7 @@ Pull requests, as they open and land:
 - [cameo-lang/cameo#195](https://github.com/cameo-lang/cameo/pull/195): `tsort`.
 - [cameo-lang/cameo#196](https://github.com/cameo-lang/cameo/pull/196): `abbrev`.
 - [cameo-lang/cameo#197](https://github.com/cameo-lang/cameo/pull/197): `singleton`.
-- [cameo-lang/cameo#198](https://github.com/cameo-lang/cameo/pull/198): `rbconfig`.
+- [cameo-lang/cameo#198](https://github.com/cameo-lang/cameo/pull/198): `rbconfig`, dropped again below.
 - [cameo-lang/cameo#199](https://github.com/cameo-lang/cameo/pull/199): `forwardable`, `delegate`.
 - [cameo-lang/cameo#200](https://github.com/cameo-lang/cameo/pull/200): `logger`.
 - [cameo-lang/cameo#201](https://github.com/cameo-lang/cameo/pull/201): `stringio`.
