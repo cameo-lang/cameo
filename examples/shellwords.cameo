@@ -1,0 +1,14 @@
+# Ruby's shellwords library: a command line split into words by the Bourne
+# shell's rules, and words escaped and joined back into one. Each line
+# prints what Ruby 3.4 prints.
+require "shellwords"
+
+p Shellwords.split("ruby -e 'puts 1' \"two words\" a\\ b")
+p "grep -n \"a\\\"b\" 'it''s' file".shellsplit
+p Shellwords.escape("it's a file"), "a\nb".shellescape, Shellwords.escape("")
+p ["ls", "-l", "my file", "$HOME"].shelljoin
+begin
+  Shellwords.split("echo 'unclosed")
+rescue ArgumentError => e
+  puts e.message
+end

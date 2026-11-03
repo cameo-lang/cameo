@@ -1,0 +1,7 @@
+["ruby", "-e", "puts 1", "two words", "a b"]
+["grep", "-n", "a\"b", "its", "file"]
+"it\\'s\\ a\\ file"
+"a'\n'b"
+"''"
+"ls -l my\\ file \\$HOME"
+Unmatched quote at 5: ...'
