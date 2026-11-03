@@ -1,0 +1,21 @@
+# Ruby's strscan library: a StringScanner walks a String from a position,
+# the way a tokeniser does. Each line prints what Ruby prints.
+require "strscan"
+
+s = StringScanner.new("let x = 42 + y")
+tokens = []
+until s.eos?
+  s.skip(/\s+/)
+  token = s.scan(/\d+/) || s.scan(/\w+/) || s.scan(/[=+]/)
+  tokens = tokens + [token]
+end
+p tokens, s.pos, s.eos?
+
+s.reset
+p s.scan(/(?<kw>let)\s+(?<name>\w+)/), s[:kw], s[:name], s.pre_match, s.post_match, s.check(/\s*=/), s.pos
+p s.scan_until(/=/), s.matched, s.peek(3), s.rest, s.charpos, s
+begin
+  StringScanner.new("x").unscan
+rescue StringScanner::Error => e
+  puts e.message
+end
