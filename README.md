@@ -38,8 +38,8 @@ interpreter is built in the milestones listed there.
 Ruby, what is the same, what differs, and what cameo does not support.
 A script can `require` the libraries cameo builds in: `set`, `time`, `pp`,
 `pathname`, `cgi`, `json`, `benchmark`, `uri`, `date`, `net/http`,
-`digest`, `base64`, `securerandom`, `yaml`, `csv`, `marshal` and
-`shellwords`. [doc/stdlib.md](doc/stdlib.md)
+`digest`, `base64`, `securerandom`, `yaml`, `csv`, `marshal`,
+`shellwords` and `ipaddr`. [doc/stdlib.md](doc/stdlib.md)
 lists every library of Ruby's standard library with its status in cameo:
 built in, planned, or left out and why.
 

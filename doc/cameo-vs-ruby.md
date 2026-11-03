@@ -92,8 +92,8 @@ mspec's own `before` blocks.
   `Process.clock_gettime`.
 - **Libraries**: `require` of `set`, `time`, `pp`, `pathname`, `cgi`,
   `json`, `benchmark`, `uri`, `date`, `net/http`, `digest`, `base64` and
-  `securerandom`, `yaml`, `csv`, `marshal` and `shellwords`, which cameo builds in;
-  [stdlib.md](stdlib.md)
+  `securerandom`, `yaml`, `csv`, `marshal`, `shellwords` and `ipaddr`, which cameo
+  builds in; [stdlib.md](stdlib.md)
   has every library of Ruby's standard library with its status, the ones
   to come and the ones left out. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
   do without I/O: `escape` and `unescape`, the URI-component pair,
@@ -221,6 +221,11 @@ mspec's own `before` blocks.
   `String#unicode_normalize` and `unicode_normalized?` take the four
   forms, on Go's `golang.org/x/text`, and are there without a `require`,
   as Ruby's are.
+  `ipaddr` is Ruby 3.4's ipaddr 1.2.7: `IPAddr.new` with a prefix or a
+  mask, Ruby's compressed `to_s` and full `to_string`, `include?`,
+  `mask`, `to_range`, `succ`, the predicates, the operators and the
+  reverse names. An IPAddr is a value: `mask` returns the masked copy
+  where Ruby's `mask!` changes the address in place.
 - **Output**: `puts`, `print`, `p`, `pp`, `warn`.
 
 ## Different in cameo
@@ -431,7 +436,7 @@ These are absent, and a script that uses one fails when it reaches it:
 - **Not there yet**: `at_exit`, `exit!`,
   `printf` (`format` exists), `__method__`, `Enumerator.new`,
   `Integer()` with a base, and `autoload`.
-- **Libraries**: `require` of any library but the seventeen above, such as
+- **Libraries**: `require` of any library but the eighteen above, such as
   `matrix`, raises a `LoadError`. [stdlib.md](stdlib.md) says which are
   planned and which are left out, and why.
 
