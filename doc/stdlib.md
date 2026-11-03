@@ -108,6 +108,7 @@ What asks for a library is measured, not guessed:
 | `zlib` | zlib 3.2.1 | `Zlib.crc32`, `adler32`, `crc_table`, `Zlib::Deflate.deflate` and `Zlib.deflate` with a level, `Zlib::Inflate.inflate` and `Zlib.inflate`, `Zlib.gzip` (`level:`) and `gunzip`, the constants, `Zlib::Error` and its kinds, `Zlib::GzipFile::Error`, `CRCError`, `LengthError`, `NoFooter`, with zlib's messages. On Go's `compress/zlib`, `compress/flate` and `hash`: what deflates here inflates in Ruby and the other way round, the headers, checksums and errors are zlib's, but the compressed bytes are Go's deflate's, not byte for byte zlib's. `Zlib::Deflate.new`, `Inflate.new` and the streaming methods, `GzipReader` and `GzipWriter` on an IO are left out |
 | `open-uri` | open-uri 0.5.0 | `URI.open(url, mode, headers, options)` with a block or not, `URI::HTTP#open` and `#read`, `OpenURI.open_uri`; the options `redirect:`, `max_redirects:`, `http_basic_authentication:`, `read_timeout:`, `encoding:` and the `r:encoding` mode, header fields as String keys; redirects followed as Ruby follows them, with its RuntimeErrors for a forbidden one and a loop; `OpenURI::HTTPError` with `io`, `HTTPRedirect` with `uri`, `TooManyRedirects`. What `open` returns is a value, `OpenURI::Document`, with `read`, `base_uri`, `status`, `meta`, `metas`, `content_type`, `charset`, `content_encoding`, `last_modified`, where Ruby returns a StringIO or Tempfile with those methods mixed in; `URI::HTTP#read` gives a plain String. The body's encoding follows the charset as in Ruby: binary without one. A file name, a `file:` or `ftp:` URL and the proxy options are refused; the network is the host's client's, as for `net/http` |
 | `prime` | prime 0.1.3 | `Prime.each` with a bound or endless, with a block or as an Enumerator, `prime?`, `include?`, `prime_division`, `int_from_prime_division`, `instance`, and the Enumerable methods on `Prime` itself (`first`, `take`, `lazy`, `select`…); `Integer#prime?`, `prime_division`, `Integer.from_prime_division`, `each_prime`. `prime?` is a Miller-Rabin test and `prime_division` divides out small factors then runs Pollard's rho, so a large number answers where Ruby's trial division does not finish; `Prime.each` returns an Enumerator, not `Prime::EratosthenesGenerator` |
+| `tsort` | tsort 0.2.0 | `TSort.tsort`, `tsort_each`, `strongly_connected_components`, `each_strongly_connected_component`, `each_strongly_connected_component_from` over two callables, with a block or as an Enumerator, and the same as the methods of a class that includes `TSort` and defines `tsort_each_node` and `tsort_each_child`; `TSort::Cyclic` with Ruby's message. The `id_map` and `stack` arguments start fresh each call, since a Hash is a value |
 | `debug` | debug 1.10.0 | `debugger` and `binding.break` stop in cameo's debugger, which takes rdbg's commands ([debugger.md](debugger.md)) |
 | `cameo/runner` | — | cameo's own: the library that gives CRuby `Cameo::Runner` is built in |
 
@@ -117,7 +118,6 @@ Each is one pull request, which also moves its row to *Available*.
 
 | Library | Ruby's version | What goes in | Why this order |
 |---|---|---|---|
-| `tsort` | tsort 0.2.0 | `TSort.tsort`, `tsort_each`, `strongly_connected_components`, `each_strongly_connected_component` as module functions on a Hash of children, and `include TSort` with `tsort_each_node` and `tsort_each_child` | pure, small |
 | `abbrev` | abbrev 0.1.2 | `Abbrev.abbrev`, `Array#abbrev` | pure, tiny |
 | `singleton` | singleton 0.3.0 | `include Singleton`: `instance` returns the one value, `new` is undefined; the value is immutable, so there is one and it never changes | small |
 | `forwardable`, `delegate` | forwardable 1.3.3, delegate 0.4.0 | `extend Forwardable` with `def_delegator` and `def_delegators` on a field or a method, `delegate … to:`; `SimpleDelegator` and `DelegateClass` forwarding to the wrapped value through `method_missing`, `__getobj__`; `__setobj__` is a mutator | a class-body call that defines methods, which the checker has to learn as it learnt bang methods |
@@ -220,4 +220,5 @@ Pull requests, as they open and land:
 - [cameo-lang/cameo#191](https://github.com/cameo-lang/cameo/pull/191): `ipaddr`.
 - [cameo-lang/cameo#192](https://github.com/cameo-lang/cameo/pull/192): `zlib`.
 - [cameo-lang/cameo#193](https://github.com/cameo-lang/cameo/pull/193): `open-uri`.
-- `prime`: available.
+- [cameo-lang/cameo#194](https://github.com/cameo-lang/cameo/pull/194): `prime`.
+- `tsort`: available.
