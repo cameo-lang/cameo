@@ -103,6 +103,7 @@ What asks for a library is measured, not guessed:
 | `zlib` | zlib 3.2.1 | `Zlib.crc32`, `adler32`, `crc_table`, `Zlib::Deflate.deflate` and `Zlib.deflate` with a level, `Zlib::Inflate.inflate` and `Zlib.inflate`, `Zlib.gzip` (`level:`) and `gunzip`, the constants, `Zlib::Error` and its kinds, `Zlib::GzipFile::Error`, `CRCError`, `LengthError`, `NoFooter`, with zlib's messages. On Go's `compress/zlib`, `compress/flate` and `hash`: what deflates here inflates in Ruby and the other way round, the headers, checksums and errors are zlib's, but the compressed bytes are Go's deflate's, not byte for byte zlib's. `Zlib::Deflate.new`, `Inflate.new` and the streaming methods, `GzipReader` and `GzipWriter` on an IO are left out |
 | `prime` | prime 0.1.3 | `Prime.each` with a bound or endless, with a block or as an Enumerator, `prime?`, `include?`, `prime_division`, `int_from_prime_division`, `instance`, and the Enumerable methods on `Prime` itself (`first`, `take`, `lazy`, `select`…); `Integer#prime?`, `prime_division`, `Integer.from_prime_division`, `each_prime`. `prime?` is a Miller-Rabin test and `prime_division` divides out small factors then runs Pollard's rho, so a large number answers where Ruby's trial division does not finish; `Prime.each` returns an Enumerator, not `Prime::EratosthenesGenerator` |
 | `tsort` | tsort 0.2.0 | `TSort.tsort`, `tsort_each`, `strongly_connected_components`, `each_strongly_connected_component`, `each_strongly_connected_component_from` over two callables, with a block or as an Enumerator, and the same as the methods of a class that includes `TSort` and defines `tsort_each_node` and `tsort_each_child`; `TSort::Cyclic` with Ruby's message. The `id_map` and `stack` arguments start fresh each call, since a Hash is a value |
+| `abbrev` | abbrev 0.1.2 | `Abbrev.abbrev(words, pattern = nil)` and `Array#abbrev`, with a String prefix or a Regexp as the pattern |
 | `debug` | debug 1.10.0 | `debugger` and `binding.break` stop in cameo's debugger, which takes rdbg's commands ([debugger.md](debugger.md)) |
 | `cameo/runner` | — | cameo's own: the library that gives CRuby `Cameo::Runner` is built in |
 
@@ -114,7 +115,6 @@ Each is one pull request, which also moves its row to *Available*.
 |---|---|---|---|
 | `net/http` (`net/https`, `net/protocol`) | net-http 0.6.0 | `Net::HTTP.get`, `get_response`, `post`, `post_form`, `start`, `new` with `use_ssl`, `open_timeout`, `read_timeout`, `request`, the request classes (`Get`, `Post`, `Put`, `Patch`, `Delete`, `Head`, `Options`) with headers, `body`, `set_form_data`, `basic_auth`, `Net::HTTPResponse` with `code`, `message`, `body`, `[]`, `each_header`, `value`, `content_type`, and the response classes (`HTTPSuccess`, `HTTPNotFound`, …) for `case`; `Net::HTTPError` and the `Net::HTTPExceptions` hierarchy, `Net::OpenTimeout`, `ReadTimeout`, `SocketError` | the I/O a data script needs; 131 spec files |
 | `open-uri` | open-uri 0.5.0 | `URI.open(url)` and `URI::HTTP#open` with a block or `read`, over `net/http`, returning the body as a String with `base_uri`, `content_type`, `charset`, `status` on it; no `File` for a `file:` URL | the one-liner that fetches a page |
-| `abbrev` | abbrev 0.1.2 | `Abbrev.abbrev`, `Array#abbrev` | pure, tiny |
 | `singleton` | singleton 0.3.0 | `include Singleton`: `instance` returns the one value, `new` is undefined; the value is immutable, so there is one and it never changes | small |
 | `forwardable`, `delegate` | forwardable 1.3.3, delegate 0.4.0 | `extend Forwardable` with `def_delegator` and `def_delegators` on a field or a method, `delegate … to:`; `SimpleDelegator` and `DelegateClass` forwarding to the wrapped value through `method_missing`, `__getobj__`; `__setobj__` is a mutator | a class-body call that defines methods, which the checker has to learn as it learnt bang methods |
 | `logger` | logger 1.6.4 | `Logger.new($stderr)`, the levels and their predicates, `formatter`, `progname`, `datetime_format`, `Logger::Formatter`; a Logger is a handle on a stream, so `level=` changes it for every holder | the way a script reports progress |
@@ -215,4 +215,5 @@ Pull requests, as they open and land:
 - [cameo-lang/cameo#191](https://github.com/cameo-lang/cameo/pull/191): `ipaddr`.
 - [cameo-lang/cameo#192](https://github.com/cameo-lang/cameo/pull/192): `zlib`.
 - [cameo-lang/cameo#194](https://github.com/cameo-lang/cameo/pull/194): `prime`.
-- `tsort`: available.
+- [cameo-lang/cameo#195](https://github.com/cameo-lang/cameo/pull/195): `tsort`.
+- `abbrev`: available.
