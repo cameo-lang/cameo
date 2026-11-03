@@ -12,6 +12,9 @@ import (
 type Class struct {
 	Name     string
 	IsModule bool
+	// Included, on a module, runs when a class includes it: Ruby's
+	// included hook, for a module that gives the class methods of its own.
+	Included func(ctx Context, into *Class) error
 	Super    *Class // nil for a module, and for BasicObject
 	// Digest identifies a user definition by its body; "" for a builtin class.
 	Digest string
