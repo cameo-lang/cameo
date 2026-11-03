@@ -91,8 +91,8 @@ mspec's own `before` blocks.
   Ruby's numbers, `Integer()`, `Float()`, `String()` and `Array()`,
   `Process.clock_gettime`.
 - **Libraries**: `require` of `set`, `time`, `pp`, `pathname`, `cgi`,
-  `json`, `benchmark`, `uri`, `date`, `digest`, `base64`, `securerandom`
-  and `csv`, which cameo builds in; [stdlib.md](stdlib.md)
+  `json`, `benchmark`, `uri`, `date`, `digest`, `base64`, `securerandom`,
+  `csv` and `marshal`, which cameo builds in; [stdlib.md](stdlib.md)
   has every library of Ruby's standard library with its status, the ones
   to come and the ones left out. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
   do without I/O: `escape` and `unescape`, the URI-component pair,
@@ -175,6 +175,14 @@ mspec's own `before` blocks.
   or without a carriage return, `force_quotes:` is refused, an empty
   String is written bare and a field with a leading space is quoted. The
   file methods, `read`, `foreach`, `open` and `table`, are left out.
+  `marshal` is `Marshal.dump`, `load` and `restore` in cameo's own wire
+  form, not Ruby's: the bytes are the protobuf `cameo.Value` envelope a
+  value crosses to a host in, so cameo reads them back and any protobuf
+  reader with `cameo/value.proto` reads them too. An instance of a cameo
+  class comes back by its class's name and digest. A Proc, a class, a
+  Random, an Enumerator and an instance of a library's class such as a
+  Date raise `TypeError`; a Symbol comes back as a String, as it crosses
+  to a host. An IO to write to or read from is left out.
 - **Output**: `puts`, `print`, `p`, `pp`, `warn`.
 
 ## Different in cameo
@@ -385,7 +393,7 @@ These are absent, and a script that uses one fails when it reaches it:
 - **Not there yet**: `at_exit`, `exit!`,
   `printf` (`format` exists), `__method__`, `Enumerator.new`,
   `Integer()` with a base, and `autoload`.
-- **Libraries**: `require` of any library but the fourteen above, such as
+- **Libraries**: `require` of any library but the fifteen above, such as
   `matrix`, raises a `LoadError`. [stdlib.md](stdlib.md) says which are
   planned and which are left out, and why.
 

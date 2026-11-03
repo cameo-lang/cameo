@@ -672,9 +672,10 @@ var unsupported = map[string]string{
 
 // libraryFunctions are module functions of a library cameo builds in whose
 // names read as a mutating or unsupported call: JSON.parse! changes nothing,
-// and JSON.load reads a string, not a file.
+// and JSON.load and Marshal.load read a string, not a file.
 var libraryFunctions = map[string]map[string]bool{
-	"JSON": {"parse!": true, "load": true},
+	"JSON":    {"parse!": true, "load": true},
+	"Marshal": {"load": true},
 }
 
 // isLibraryFunction reports a call of one of libraryFunctions.
