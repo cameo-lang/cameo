@@ -95,7 +95,7 @@ mspec's own `before` blocks.
   `securerandom`, `yaml`, `csv`, `marshal`, `shellwords`, `ipaddr`, `zlib`,
   `open-uri`, `prime`, `tsort`, `abbrev`, `singleton`,
   `forwardable`, `delegate`, `logger`, `stringio`, `strscan`, `optparse`,
-  `getoptlong` and `matrix`, which cameo builds in; [stdlib.md](stdlib.md)
+  `getoptlong`, `matrix` and `bigdecimal`, which cameo builds in; [stdlib.md](stdlib.md)
   has every library of Ruby's standard library with its status, the ones
   to come and the ones left out. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
   do without I/O: `escape` and `unescape`, the URI-component pair,
@@ -300,6 +300,16 @@ mspec's own `before` blocks.
   matrix's inverse has Floats, computed exactly first; `Matrix ** Float`
   and the eigensystem are left out, and `2 * m` is a TypeError, so write
   `m * 2`.
+  `bigdecimal` is bigdecimal 3.1, which Ruby 3.4 ships as a bundled gem:
+  `BigDecimal()` with Ruby's syntax and errors, exact `+`, `-` and `*`,
+  `/` to the digits bigdecimal computes, the rounding modes, `limit` and
+  `mode`, `to_s` in its forms, `precision`, `scale`, `split`, the
+  predicates, `to_d` from `bigdecimal/util` and `BigMath`. A BigDecimal
+  is a value with its digits as fields, a Hash key and a Set member; it
+  is a Numeric, and an Integer or Float on the left of an operator
+  coerces to it, as Ruby's `coerce` protocol does. `sqrt` and `BigMath`
+  give the digits asked for, correctly rounded, where Ruby pads them with
+  its own extra digits; `to_r` is left out, since cameo has no Rational.
 - **Output**: `puts`, `print`, `p`, `pp`, `warn`.
 
 ## Different in cameo
@@ -510,8 +520,8 @@ These are absent, and a script that uses one fails when it reaches it:
 - **Not there yet**: `at_exit`, `exit!`,
   `printf` (`format` exists), `__method__`, `Enumerator.new`,
   `Integer()` with a base, and `autoload`.
-- **Libraries**: `require` of any library but the thirty-three above, such
-  as `bigdecimal`, raises a `LoadError`. [stdlib.md](stdlib.md) says which are
+- **Libraries**: `require` of any library but the thirty-four above, such
+  as `resolv`, raises a `LoadError`. [stdlib.md](stdlib.md) says which are
   planned and which are left out, and why.
 
 ## Only in cameo

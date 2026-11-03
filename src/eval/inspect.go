@@ -319,6 +319,27 @@ func (in *Interp) Equal(a, b object.Value) (bool, error) {
 // Compare implements object.Context: <=>, through a user-defined one where a
 // class has it. It fails with an ArgumentError when the values do not
 // compare.
+// compareReversed orders a number against a value of a library's numeric
+// class, such as a BigDecimal, by asking that value and turning the
+// answer round.
+func (in *Interp) compareReversed(a, b object.Value) (int, bool, error) {
+	if b.Kind() != object.KindInstance {
+		return 0, false, nil
+	}
+	m := ownNative(b, "<=>")
+	if m == nil {
+		return 0, false, nil
+	}
+	r, err := m.Native(in, b, []object.Value{a}, nil, object.Value{})
+	if err != nil {
+		return 0, true, err
+	}
+	if i, ok := r.AsInt(); ok {
+		return -int(i), true, nil
+	}
+	return 0, false, nil
+}
+
 func (in *Interp) Compare(a, b object.Value) (int, error) {
 	if m := userMethod(a, "<=>"); m != nil {
 		r, err := in.invoke(m, a, []object.Value{b}, nil, object.Value{}, 0)
@@ -348,9 +369,15 @@ func (in *Interp) Compare(a, b object.Value) (int, error) {
 		if r, ok := object.CompareNumbers(a, b); ok {
 			return r, nil
 		}
+		if r, ok, err := in.compareReversed(a, b); ok || err != nil {
+			return r, err
+		}
 	case object.KindBig, object.KindFloat:
 		if r, ok := object.CompareNumbers(a, b); ok {
 			return r, nil
+		}
+		if r, ok, err := in.compareReversed(a, b); ok || err != nil {
+			return r, err
 		}
 	case object.KindString, object.KindBytes, object.KindASCII:
 		a := a.Str()
