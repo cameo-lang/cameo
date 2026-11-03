@@ -32,10 +32,12 @@ p e.class, e.message, e.code, Marshal.load(Marshal.dump(:sym)), Marshal.load(Mar
 rescue TypeError => e
   puts e.message
 end
+# protobuf-go varies the spacing of its messages from build to build, so
+# only the start of the message is checked.
 [nil, 1, "garbage"].each do |v|
   Marshal.load(v)
 rescue TypeError, ArgumentError => e
-  puts "#{e.class}: #{e.message}"
+  puts "#{e.class}: #{e.message.sub(/proto:.*/, "proto")}"
 end
 begin; Marshal.dump("a", "io"); rescue TypeError => e; puts e.message; end
 `)
@@ -71,7 +73,7 @@ no _dump_data is defined for class Random
 no _dump_data is defined for class Module
 TypeError: instance of IO needed
 TypeError: instance of IO needed
-ArgumentError: incompatible marshal data: proto: cannot parse invalid wire-format data
+ArgumentError: incompatible marshal data: proto
 Marshal.dump writes a String: an IO is not supported
 `)
 }
