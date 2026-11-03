@@ -122,6 +122,10 @@ mspec's own `before` blocks.
   bang methods, refused as every bang method of Ruby's core is.
   `date` is Ruby 3.4's date 3.4.1: `Date` and `DateTime` with Ruby's
   calendar (the Julian Day Number, the start of the Gregorian calendar,
+  Dates are read through Go's time package: `Date.parse` tries a fixed
+  list of forms, `strptime` goes through a Go layout, and what the layouts
+  cannot say, a week date, an ordinal suffix, an era word or a directive
+  such as `%V`, is not read.
   `Date::ITALY`, `ENGLAND`, `JULIAN` and `GREGORIAN`), `new`/`civil`,
   `jd`, `ordinal`, `commercial`, `today`, `now`, `valid_date?` and kin,
   the readers, `+`, `-`, `>>`, `<<`, `next_*` and `prev_*`, `step`,
