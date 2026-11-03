@@ -15,6 +15,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/json"
 	"github.com/cameo-lang/cameo/src/lib/marshal"
 	"github.com/cameo-lang/cameo/src/lib/pathname"
+	"github.com/cameo-lang/cameo/src/lib/prime"
 	"github.com/cameo-lang/cameo/src/lib/securerandom"
 	"github.com/cameo-lang/cameo/src/lib/shellwords"
 	libtime "github.com/cameo-lang/cameo/src/lib/time"
@@ -44,6 +45,7 @@ var Libraries = map[string][]string{
 	"json":                        nil,
 	"marshal":                     nil,
 	"pathname":                    nil,
+	"prime":                       nil,
 	"random/formatter":            {"securerandom"},
 	"securerandom":                {"random/formatter"},
 	"shellwords":                  nil,
@@ -67,6 +69,7 @@ func Install() {
 	json.Install()
 	marshal.Install()
 	pathname.Install()
+	prime.Install()
 	securerandom.Install()
 	shellwords.Install()
 	libtime.Install()

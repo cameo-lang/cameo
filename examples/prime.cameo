@@ -1,0 +1,8 @@
+# Ruby's prime library: the primes as an endless sequence, a primality
+# test, and prime factorisation. Each line prints what Ruby prints.
+require "prime"
+
+p Prime.first(10), Prime.each(30).to_a, Prime.each(100).count
+p Prime.prime?(97), 100.prime?, Prime.include?(2**31 - 1)
+p 360.prime_division, Prime.prime_division(2**32 + 1), Prime.int_from_prime_division([[2, 3], [3, 2], [5, 1]])
+p Prime.lazy.select { |x| x % 10 == 3 }.first(4), Prime.each(20).each_slice(3).to_a
