@@ -103,6 +103,7 @@ What asks for a library is measured, not guessed:
 | `unicode_normalize` | — (core) | `String#unicode_normalize` and `unicode_normalized?` with `:nfc`, `:nfd`, `:nfkc`, `:nfkd`, on `golang.org/x/text/unicode/norm`, there without a `require` as in Ruby; a binary String is `Encoding::CompatibilityError`; `unicode_normalize!` is a bang method |
 | `ipaddr` | ipaddr 1.2.7 | `IPAddr.new` from a string with a prefix length or a mask, or an Integer with its family, `to_s` compressed as Ruby compresses, `to_string`, `inspect`, `to_i`, `prefix`, `netmask`, `family`, `include?`, `===`, `==`, `eql?`, `<=>` and Comparable, `mask`, `to_range`, `succ` (so a Range of addresses iterates), `private?`, `loopback?`, `link_local?`, `ipv4?`, `ipv6?`, `ipv4_mapped?`, `ipv4_compat?`, `ipv4_mapped`, `ipv4_compat`, `native`, `\|`, `&`, `<<`, `>>`, `~`, `reverse`, `ip6_arpa`, `ip6_int`, `zone_id`, `hton`, `IPAddr.ntop`, the errors `IPAddr::Error`, `InvalidAddressError`, `InvalidPrefixError`, `AddressFamilyError`; `Socket::AF_INET`, `AF_INET6` and `AF_UNSPEC` are defined for the family argument. An IPAddr is a value with four fields, so it is a Hash key and a Set member; `mask!` and `set` are mutators, `mask` returns the copy; an error message names the address where ipaddr 1.2.6's left it out |
 | `zlib` | zlib 3.2.1 | `Zlib.crc32`, `adler32`, `crc_table`, `Zlib::Deflate.deflate` and `Zlib.deflate` with a level, `Zlib::Inflate.inflate` and `Zlib.inflate`, `Zlib.gzip` (`level:`) and `gunzip`, the constants, `Zlib::Error` and its kinds, `Zlib::GzipFile::Error`, `CRCError`, `LengthError`, `NoFooter`, with zlib's messages. On Go's `compress/zlib`, `compress/flate` and `hash`: what deflates here inflates in Ruby and the other way round, the headers, checksums and errors are zlib's, but the compressed bytes are Go's deflate's, not byte for byte zlib's. `Zlib::Deflate.new`, `Inflate.new` and the streaming methods, `GzipReader` and `GzipWriter` on an IO are left out |
+| `open-uri` | open-uri 0.5.0 | `URI.open(url, mode, headers, options)` with a block or not, `URI::HTTP#open` and `#read`, `OpenURI.open_uri`; the options `redirect:`, `max_redirects:`, `http_basic_authentication:`, `read_timeout:`, `encoding:` and the `r:encoding` mode, header fields as String keys; redirects followed as Ruby follows them, with its RuntimeErrors for a forbidden one and a loop; `OpenURI::HTTPError` with `io`, `HTTPRedirect` with `uri`, `TooManyRedirects`. What `open` returns is a value, `OpenURI::Document`, with `read`, `base_uri`, `status`, `meta`, `metas`, `content_type`, `charset`, `content_encoding`, `last_modified`, where Ruby returns a StringIO or Tempfile with those methods mixed in; `URI::HTTP#read` gives a plain String. The body's encoding follows the charset as in Ruby: binary without one. A file name, a `file:` or `ftp:` URL and the proxy options are refused; the network is the host's client's, as for `net/http` |
 | `debug` | debug 1.10.0 | `debugger` and `binding.break` stop in cameo's debugger, which takes rdbg's commands ([debugger.md](debugger.md)) |
 | `cameo/runner` | — | cameo's own: the library that gives CRuby `Cameo::Runner` is built in |
 
@@ -112,7 +113,6 @@ Each is one pull request, which also moves its row to *Available*.
 
 | Library | Ruby's version | What goes in | Why this order |
 |---|---|---|---|
-| `open-uri` | open-uri 0.5.0 | `URI.open(url)` and `URI::HTTP#open` with a block or `read`, over `net/http`, returning the body as a String with `base_uri`, `content_type`, `charset`, `status` on it; no `File` for a `file:` URL | the one-liner that fetches a page |
 | `prime` | prime 0.1.3 | `Prime.each`, `prime?`, `first`, `take`, `prime_division`, `int_from_prime_division`, `Integer#prime?`, `prime_division`, `Prime.each(n)` lazily | pure, small |
 | `tsort` | tsort 0.2.0 | `TSort.tsort`, `tsort_each`, `strongly_connected_components`, `each_strongly_connected_component` as module functions on a Hash of children, and `include TSort` with `tsort_each_node` and `tsort_each_child` | pure, small |
 | `abbrev` | abbrev 0.1.2 | `Abbrev.abbrev`, `Array#abbrev` | pure, tiny |
@@ -215,4 +215,5 @@ Pull requests, as they open and land:
 - [cameo-lang/cameo#189](https://github.com/cameo-lang/cameo/pull/189): `shellwords`.
 - [cameo-lang/cameo#190](https://github.com/cameo-lang/cameo/pull/190): `unicode_normalize`.
 - [cameo-lang/cameo#191](https://github.com/cameo-lang/cameo/pull/191): `ipaddr`.
-- `zlib`: available.
+- [cameo-lang/cameo#192](https://github.com/cameo-lang/cameo/pull/192): `zlib`.
+- `open-uri`: available.
