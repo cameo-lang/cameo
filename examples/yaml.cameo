@@ -1,0 +1,42 @@
+# Ruby's yaml library: Psych on libyaml, so what cameo loads and dumps is
+# what Ruby 3.4 loads and dumps, down to the quoting, the folding and the
+# error positions. Each line prints what Ruby prints.
+require "yaml"
+require "date"
+
+config = YAML.load(<<~YAML)
+  name: cameo
+  version: 1.2
+  tags: [ruby, go]
+  limits:
+    retries: 3
+    timeout: 1:30
+  enabled: yes
+  notes: |
+    one
+    two
+YAML
+p config, config["limits"]["timeout"], config["enabled"]
+
+# Scalars resolve as Psych resolves them: YAML 1.1 booleans, octal, symbols,
+# sexagesimal numbers, and dates and times only when their class is allowed.
+p YAML.load("- 017\n- 0x1f\n- 1_000\n- .inf\n- :sym\n- 'quoted'\n- ~\n- off")
+p YAML.load("a: &x [1, 2]\nb: *x", aliases: true), YAML.safe_load("x: 1", symbolize_names: true)
+p YAML.load("2020-01-31", permitted_classes: [Date]), YAML.load("2020-01-31 10:00:00 Z", permitted_classes: [Time])
+["2020-01-31", ":sym\n", "a: *x", "a: [1"].each do |doc|
+  YAML.safe_load(doc)
+rescue Psych::Exception => e
+  puts "#{e.class}: #{e.message}"
+end
+
+# dump writes what Psych writes: block style, Ruby's quoting rules, a tag
+# where the class needs one.
+puts YAML.dump({"name" => "cameo", "yes" => "yes", :sym => [1, 2.5, nil, true], "text" => "a\nb\n", "empty" => {}})
+puts [1..3, Set[1, 2], Date.new(2020, 1, 31), Time.utc(2020, 1, 31, 10, 0, 0)].to_yaml
+puts YAML.dump("word " * 20), YAML.dump({"k" => "word " * 20}, line_width: 30)
+puts YAML.dump_stream({"a" => 1}, [2])
+begin
+  YAML.safe_dump({a: 1})
+rescue Psych::DisallowedClass => e
+  puts e.message
+end
