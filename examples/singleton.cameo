@@ -1,0 +1,18 @@
+# Ruby's singleton library: a class with one instance, reached through
+# instance; new is refused. Each line prints what Ruby prints.
+require "singleton"
+
+class Settings
+  include Singleton
+  string :theme
+  def initialize
+    self.theme = "dark"
+  end
+end
+
+p Settings.instance.theme, Settings.instance == Settings.instance
+begin
+  Settings.new
+rescue NoMethodError => e
+  puts e.message
+end
