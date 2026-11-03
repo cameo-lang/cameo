@@ -8,6 +8,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/abbrev"
 	"github.com/cameo-lang/cameo/src/lib/base64"
 	"github.com/cameo-lang/cameo/src/lib/benchmark"
+	"github.com/cameo-lang/cameo/src/lib/bigdecimal"
 	"github.com/cameo-lang/cameo/src/lib/cgi"
 	"github.com/cameo-lang/cameo/src/lib/csv"
 	"github.com/cameo-lang/cameo/src/lib/date"
@@ -42,6 +43,9 @@ var Libraries = map[string][]string{
 	"abbrev":                      nil,
 	"base64":                      nil,
 	"benchmark":                   nil,
+	"bigdecimal":                  {"bigdecimal/util", "bigdecimal/math"},
+	"bigdecimal/util":             {"bigdecimal", "bigdecimal/math"},
+	"bigdecimal/math":             {"bigdecimal", "bigdecimal/util"},
 	"cgi":                         {"cgi/escape", "cgi/util"},
 	"cgi/escape":                  nil,
 	"cgi/util":                    {"cgi/escape"},
@@ -98,6 +102,7 @@ func Install() {
 	stringio.Install()
 	strscan.Install()
 	matrix.Install()
+	bigdecimal.Install()
 	libtime.Install()
 	tsort.Install()
 	unicodenormalize.Install()

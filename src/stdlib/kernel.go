@@ -265,6 +265,11 @@ func toFloat(ctx object.Context, v object.Value) (object.Value, error) {
 		return object.Float(f), nil
 	case object.KindFloat:
 		return v, nil
+	case object.KindInstance:
+		// A value of a library's numeric class, such as a BigDecimal.
+		if ctx.RespondsTo(v, "to_f") {
+			return ctx.Call(v, "to_f")
+		}
 	case object.KindString, object.KindBytes, object.KindASCII:
 		s := v.Str()
 		f, ok := parseFloat(strings.TrimSpace(string(s)))

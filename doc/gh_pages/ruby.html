@@ -81,7 +81,8 @@ reaches it. The full list is
   <code>ipaddr</code>, <code>zlib</code>, <code>prime</code>,
   <code>tsort</code>, <code>abbrev</code>, <code>singleton</code>,
   <code>forwardable</code>, <code>delegate</code>, <code>logger</code>,
-  <code>stringio</code>, <code>strscan</code> and <code>matrix</code>.</li>
+  <code>stringio</code>, <code>strscan</code>, <code>matrix</code> and
+  <code>bigdecimal</code>.</li>
 </ul>
 
 <p>This script prints the same under <code>ruby</code> 3.3 and under
@@ -371,8 +372,8 @@ reaches it, mostly with <code>NameError</code> or
   <code>ipaddr</code>, <code>zlib</code>, <code>prime</code>,
   <code>tsort</code>, <code>abbrev</code>, <code>singleton</code>,
   <code>forwardable</code>, <code>delegate</code>, <code>logger</code>,
-  <code>stringio</code>, <code>strscan</code> and <code>matrix</code>, such as
-  <code>bigdecimal</code>.</li>
+  <code>stringio</code>, <code>strscan</code>, <code>matrix</code> and
+  <code>bigdecimal</code>, such as <code>resolv</code>.</li>
 </ul>
 
 <div class="pair">
@@ -399,11 +400,11 @@ p item.qty</code></pre>
 </div>
 
 <pre class="cameo"><code>begin
-  require "bigdecimal"
+  require "resolv"
 rescue LoadError =&gt; e
   puts e.message
 end</code></pre>
-<pre class="output"><code>cannot load such file -- bigdecimal</code></pre>
+<pre class="output"><code>cannot load such file -- resolv</code></pre>
 
 <p>Ruby's version constants describe cameo: <code>RUBY_ENGINE</code> is
 <code>"cameo"</code>, <code>RUBY_VERSION</code> is the Ruby cameo follows,
