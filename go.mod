@@ -5,6 +5,7 @@ go 1.26.4
 require (
 	github.com/go-ruby-parser/parser v0.11.1
 	golang.org/x/term v0.45.0
+	golang.org/x/text v0.43.0
 	google.golang.org/protobuf v1.36.12
 )
 
