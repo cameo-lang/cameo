@@ -14,12 +14,14 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/delegate"
 	"github.com/cameo-lang/cameo/src/lib/digest"
 	"github.com/cameo-lang/cameo/src/lib/forwardable"
+	"github.com/cameo-lang/cameo/src/lib/getoptlong"
 	"github.com/cameo-lang/cameo/src/lib/ipaddr"
 	"github.com/cameo-lang/cameo/src/lib/json"
 	"github.com/cameo-lang/cameo/src/lib/logger"
 	"github.com/cameo-lang/cameo/src/lib/marshal"
 	nethttp "github.com/cameo-lang/cameo/src/lib/net/http"
 	openuri "github.com/cameo-lang/cameo/src/lib/open-uri"
+	"github.com/cameo-lang/cameo/src/lib/optparse"
 	"github.com/cameo-lang/cameo/src/lib/pathname"
 	"github.com/cameo-lang/cameo/src/lib/prime"
 	"github.com/cameo-lang/cameo/src/lib/securerandom"
@@ -55,6 +57,7 @@ var Libraries = map[string][]string{
 	"digest/sha1":                 {"digest"},
 	"digest/sha2":                 {"digest"},
 	"forwardable":                 nil,
+	"getoptlong":                  nil,
 	"ipaddr":                      nil,
 	"json":                        nil,
 	"logger":                      nil,
@@ -63,6 +66,7 @@ var Libraries = map[string][]string{
 	"net/https":                   {"net/http", "net/protocol"},
 	"net/protocol":                nil,
 	"open-uri":                    {"uri", "net/http", "net/protocol"},
+	"optparse":                    nil,
 	"pathname":                    nil,
 	"prime":                       nil,
 	"random/formatter":            {"securerandom"},
@@ -104,6 +108,8 @@ func Install() {
 	singleton.Install()
 	stringio.Install()
 	strscan.Install()
+	optparse.Install()
+	getoptlong.Install()
 	libtime.Install()
 	tsort.Install()
 	unicodenormalize.Install()

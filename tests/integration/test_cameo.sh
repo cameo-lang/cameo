@@ -15,6 +15,16 @@ test_version_prints_the_version() {
   assert_match '^[0-9]+\.[0-9]+\.[0-9]+' "$out"
 }
 
+test_script_arguments_are_in_argv() {
+  local script out
+  script="$(mktemp -d)/argv.cameo"
+  printf 'p ARGV\n' > "$script"
+  out=$("$CAMEO_BIN" "$script" a -b -- c)
+  assert_eq '["a", "-b", "--", "c"]' "$out"
+  out=$("$CAMEO_BIN" "$script")
+  assert_eq '[]' "$out"
+}
+
 test_version_flag_matches_the_command() {
   local flag cmd
   flag=$("$CAMEO_BIN" --version)
@@ -163,7 +173,8 @@ cameo: pausing before the next top-level statement'
 variables:
   p = Point(x: 1, y: 2)
 '
-  assert_contains "$out" $'constants: none
+  assert_contains "$out" $'constants:
+  ARGV = []
 promises: none'
   out=$("$CAMEO_BIN" resume "$dump" 2>&1)
   assert_eq "after 3" "$out"
