@@ -15,6 +15,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/marshal"
 	"github.com/cameo-lang/cameo/src/lib/pathname"
 	"github.com/cameo-lang/cameo/src/lib/securerandom"
+	"github.com/cameo-lang/cameo/src/lib/shellwords"
 	libtime "github.com/cameo-lang/cameo/src/lib/time"
 	"github.com/cameo-lang/cameo/src/lib/uri"
 )
@@ -41,6 +42,7 @@ var Libraries = map[string][]string{
 	"pathname":         nil,
 	"random/formatter": {"securerandom"},
 	"securerandom":     {"random/formatter"},
+	"shellwords":       nil,
 	"time":             nil,
 	"uri":              nil,
 }
@@ -58,6 +60,7 @@ func Install() {
 	marshal.Install()
 	pathname.Install()
 	securerandom.Install()
+	shellwords.Install()
 	libtime.Install()
 	uri.Install()
 }

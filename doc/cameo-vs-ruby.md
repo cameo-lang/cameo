@@ -92,7 +92,8 @@ mspec's own `before` blocks.
   `Process.clock_gettime`.
 - **Libraries**: `require` of `set`, `time`, `pp`, `pathname`, `cgi`,
   `json`, `benchmark`, `uri`, `date`, `digest`, `base64`,
-  `securerandom`, `csv` and `marshal`, which cameo builds in; [stdlib.md](stdlib.md)
+  `securerandom`, `csv`, `marshal` and `shellwords`, which cameo builds in;
+  [stdlib.md](stdlib.md)
   has every library of Ruby's standard library with its status, the ones
   to come and the ones left out. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
   do without I/O: `escape` and `unescape`, the URI-component pair,
@@ -183,6 +184,10 @@ mspec's own `before` blocks.
   Random, an Enumerator and an instance of a library's class such as a
   Date raise `TypeError`; a Symbol comes back as a String, as it crosses
   to a host. An IO to write to or read from is left out.
+  `shellwords` is Ruby 3.4's shellwords 0.2.2: `Shellwords.split`,
+  `escape` and `join`, `String#shellsplit` and `shellescape`,
+  `Array#shelljoin`, with Ruby's quoting rules and its message for an
+  unmatched quote.
 - **Output**: `puts`, `print`, `p`, `pp`, `warn`.
 
 ## Different in cameo
@@ -393,7 +398,7 @@ These are absent, and a script that uses one fails when it reaches it:
 - **Not there yet**: `at_exit`, `exit!`,
   `printf` (`format` exists), `__method__`, `Enumerator.new`,
   `Integer()` with a base, and `autoload`.
-- **Libraries**: `require` of any library but the sixteen above, such as
+- **Libraries**: `require` of any library but the seventeen above, such as
   `matrix`, raises a `LoadError`. [stdlib.md](stdlib.md) says which are
   planned and which are left out, and why.
 
