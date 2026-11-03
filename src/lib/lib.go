@@ -17,6 +17,7 @@ import (
 	nethttp "github.com/cameo-lang/cameo/src/lib/net/http"
 	openuri "github.com/cameo-lang/cameo/src/lib/open-uri"
 	"github.com/cameo-lang/cameo/src/lib/pathname"
+	"github.com/cameo-lang/cameo/src/lib/prime"
 	"github.com/cameo-lang/cameo/src/lib/securerandom"
 	"github.com/cameo-lang/cameo/src/lib/shellwords"
 	libtime "github.com/cameo-lang/cameo/src/lib/time"
@@ -50,6 +51,7 @@ var Libraries = map[string][]string{
 	"net/protocol":                nil,
 	"open-uri":                    {"uri", "net/http", "net/protocol"},
 	"pathname":                    nil,
+	"prime":                       nil,
 	"random/formatter":            {"securerandom"},
 	"securerandom":                {"random/formatter"},
 	"shellwords":                  nil,
@@ -74,6 +76,7 @@ func Install() {
 	marshal.Install()
 	nethttp.Install()
 	pathname.Install()
+	prime.Install()
 	securerandom.Install()
 	shellwords.Install()
 	libtime.Install()
