@@ -77,7 +77,8 @@ What asks for a library is measured, not guessed:
   formatting of floats. A library imports `stdlib` and `object`; `stdlib`
   imports no library.
 - **Pure Go.** No cgo, and a dependency only where Go's standard library
-  has nothing: a YAML parser for `yaml`, `golang.org/x/text` for
+  has nothing: `yaml` carries gopkg.in/yaml.v3's port of libyaml as a
+  package of its own, so its output is Ruby's, `golang.org/x/text` for
   `unicode_normalize`.
 
 ## Available
@@ -98,6 +99,7 @@ What asks for a library is measured, not guessed:
 | `digest` (`digest/md5`, `sha1`, `sha2`) | digest 3.2.0 | `Digest::MD5`, `SHA1`, `SHA256`, `SHA384`, `SHA512`, `SHA2`: `hexdigest`, `digest`, `base64digest` on the class and on an object, `update`, `<<`, `reset`, `digest_length`, `block_length`, `==`, `Digest.hexencode`, `Digest()`; `OpenSSL::HMAC.hexdigest`, `digest`, `base64digest`, `OpenSSL::Digest.new`, `hexdigest`, `OpenSSL::Digest::SHA256` and kin. An object is a value: `update` returns the copy. `RMD160` (no RIPEMD-160 in Go) and `file` are left out |
 | `base64` | base64 0.2.0 | `encode64`, `decode64`, `strict_encode64`, `strict_decode64`, `urlsafe_encode64` (`padding:`), `urlsafe_decode64`, with Ruby's line breaks, lenient decoder and errors |
 | `securerandom` (`random/formatter`) | securerandom 0.4.1 | `SecureRandom.hex`, `uuid`, `uuid_v4`, `uuid_v7`, `random_bytes`, `bytes`, `gen_random`, `random_number`, `rand`, `alphanumeric` (`chars:`), `base64`, `urlsafe_base64`, drawing from Go's `crypto/rand`; `Random::Formatter` gives the same methods to a `Random` and to `Random` itself, and a seeded `Random` draws CRuby's values |
+| `yaml` (`psych`) | psych 5.2.2 on libyaml 0.2.5 | `YAML.load`, `safe_load`, `unsafe_load`, `load_stream` with `permitted_classes:`, `permitted_symbols:`, `aliases:`, `symbolize_names:`, `fallback:`, `filename:`, `strict_integer:`; `dump`, `safe_dump`, `dump_stream`, `to_yaml` with `indentation:`, `line_width:`, `header:`; Psych's scalar rules (YAML 1.1 booleans, `:sym`, `1:30`, dates and times when their class is permitted), the merge key `<<`, `!!binary`, `!ruby/range`, `!ruby/regexp`, `!ruby/object:Set`, `!ruby/exception`, and an instance of a cameo class by its fields under `!ruby/object:Name`; `Psych::SyntaxError` with libyaml's message, line and column, `DisallowedClass`, `AliasesNotEnabled`, `AnchorNotDefined`. The parser and emitter are gopkg.in/yaml.v3's port of libyaml, carried in `src/lib/yaml/libyaml` under its MIT license with libyaml 0.2.5's emitter rules restored, so documents, quoting, folding and errors are Ruby's. `load_file` and the other file methods, `parse` and the node tree, `Psych::Set` (a Hash in cameo) and `Struct` are left out |
 | `debug` | debug 1.10.0 | `debugger` and `binding.break` stop in cameo's debugger, which takes rdbg's commands ([debugger.md](debugger.md)) |
 | `cameo/runner` | — | cameo's own: the library that gives CRuby `Cameo::Runner` is built in |
 
@@ -107,7 +109,6 @@ Each is one pull request, which also moves its row to *Available*.
 
 | Library | Ruby's version | What goes in | Why this order |
 |---|---|---|---|
-| `yaml` (`psych`) | psych 5.2.2 | `YAML.load`, `safe_load`, `load_stream`, `dump`, `to_yaml`, `YAML.load_file` **unsupported** (a file); plain data only: scalars, arrays, hashes, symbols (`:sym`), times and dates; a `!ruby/object` tag is a `Psych::DisallowedClass`; an instance of a cameo class dumps as a mapping of its fields, as JSON does | configuration and fixtures; the LoadError sample on the site today |
 | `csv` | csv 3.3.2 | `CSV.parse`, `parse_line`, `generate`, `generate_line`, `headers: true`, `CSV::Row` and `Table`, `converters: :numeric`, quoting and `col_sep`; `CSV.read`, `foreach`, `open` **unsupported** (files) | 42 spec files; data scripts |
 | `marshal` | — | `Marshal.dump` and `load` in **cameo's wire form**, not Ruby's: the bytes are the protobuf envelope every value crosses to a host in, so cameo reads them back and any protobuf reader with the `.proto` reads them too; a Proc, a Random and an Enumerator raise `TypeError`, as a Proc does in Ruby; a class is found by name and digest, as `from_proto` finds it | Ruby's format carries object identity and instance variables cameo has neither of; a round trip inside cameo is what a script wants |
 | `shellwords` | shellwords 0.2.2 | `split`, `escape`, `join`, `String#shellsplit`, `shellescape`, `Array#shelljoin` | small; what builds a command line for a host to run |
@@ -210,4 +211,5 @@ Pull requests, as they open and land:
 - [cameo-lang/cameo#182](https://github.com/cameo-lang/cameo/pull/182): time zones.
 - [cameo-lang/cameo#183](https://github.com/cameo-lang/cameo/pull/183): `digest`.
 - [cameo-lang/cameo#184](https://github.com/cameo-lang/cameo/pull/184): `base64`.
-- `securerandom`: available.
+- [cameo-lang/cameo#185](https://github.com/cameo-lang/cameo/pull/185): `securerandom`.
+- `yaml`: available.

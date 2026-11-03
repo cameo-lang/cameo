@@ -16,6 +16,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/securerandom"
 	libtime "github.com/cameo-lang/cameo/src/lib/time"
 	"github.com/cameo-lang/cameo/src/lib/uri"
+	"github.com/cameo-lang/cameo/src/lib/yaml"
 )
 
 // Libraries are the names require accepts, each with the libraries it
@@ -43,6 +44,8 @@ var Libraries = map[string][]string{
 	"securerandom":     {"random/formatter"},
 	"time":             nil,
 	"uri":              nil,
+	"yaml":             {"psych"},
+	"psych":            {"yaml"},
 }
 
 // Install defines every library. The evaluator calls it once, after
@@ -59,4 +62,5 @@ func Install() {
 	securerandom.Install()
 	libtime.Install()
 	uri.Install()
+	yaml.Install()
 }

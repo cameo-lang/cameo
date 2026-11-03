@@ -550,4 +550,7 @@ type Context interface {
 	// Rand returns the interpreter's generator, the one Kernel#rand draws
 	// from: an async process has its own.
 	Rand() *Random
+	// Const looks up a top-level constant the script or the host defined;
+	// the core's are in ObjectClass.Consts.
+	Const(name string) (Value, bool)
 }

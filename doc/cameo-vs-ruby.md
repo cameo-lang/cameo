@@ -92,7 +92,7 @@ mspec's own `before` blocks.
   `Process.clock_gettime`.
 - **Libraries**: `require` of `set`, `time`, `pp`, `pathname`, `cgi`,
   `json`, `benchmark`, `uri`, `date`, `net/http`, `digest`, `base64` and
-  `securerandom`, which cameo builds in; [stdlib.md](stdlib.md)
+  `securerandom` and `yaml`, which cameo builds in; [stdlib.md](stdlib.md)
   has every library of Ruby's standard library with its status, the ones
   to come and the ones left out. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
   do without I/O: `escape` and `unescape`, the URI-component pair,
@@ -190,6 +190,18 @@ mspec's own `before` blocks.
   `Random::Formatter`, which gives a `Random` the same methods, so a
   seeded `Random` draws the hex, the tokens and the numbers CRuby's
   draws.
+  `yaml` is Ruby 3.4's psych 5.2.2 on the libyaml it is built on: `load`,
+  `safe_load`, `unsafe_load` and `load_stream` with Psych's keywords,
+  `dump`, `safe_dump`, `dump_stream` and `to_yaml` with `indentation:`,
+  `line_width:` and `header:`, Psych's scalar rules, the merge key, and
+  Psych's tags for a Range, a Regexp, a Set, an exception and an object,
+  which is an instance of a cameo class by its fields. The parser and
+  emitter are gopkg.in/yaml.v3's port of libyaml, so a document loads,
+  dumps, quotes, folds and fails as it does in Ruby, with Ruby's error
+  message, line and column. `load_file` and the other file methods are
+  left out, as is `parse` with its node tree; `Psych::Set` loads as a
+  Hash; a Proc, a Random or a MatchData dumps as the empty object Psych
+  writes.
 - **Output**: `puts`, `print`, `p`, `pp`, `warn`.
 
 ## Different in cameo
@@ -400,8 +412,8 @@ These are absent, and a script that uses one fails when it reaches it:
 - **Not there yet**: `at_exit`, `exit!`,
   `printf` (`format` exists), `__method__`, `Enumerator.new`,
   `Integer()` with a base, and `autoload`.
-- **Libraries**: `require` of any library but the thirteen above, such as
-  `yaml`, raises a `LoadError`. [stdlib.md](stdlib.md) says which are
+- **Libraries**: `require` of any library but the fourteen above, such as
+  `csv`, raises a `LoadError`. [stdlib.md](stdlib.md) says which are
   planned and which are left out, and why.
 
 ## Only in cameo

@@ -1,0 +1,47 @@
+{"name" => "cameo", "version" => 1.2, "tags" => ["ruby", "go"], "limits" => {"retries" => 3, "timeout" => 5400}, "enabled" => true, "notes" => "one\ntwo\n"}
+5400
+true
+[15, 31, 1000, Infinity, :sym, "quoted", nil, false]
+{"a" => [1, 2], "b" => [1, 2]}
+{x: 1}
+#<Date: 2020-01-31 ((2458880j,0s,0n),+0s,-Infj)>
+2020-01-31 10:00:00 UTC
+Psych::DisallowedClass: Tried to load unspecified class: Date
+Psych::DisallowedClass: Tried to load unspecified class: Symbol
+Psych::AliasesNotEnabled: Alias parsing was not enabled. To enable it, pass `aliases: true` to `Psych::load` or `Psych::safe_load`.
+Psych::SyntaxError: (<unknown>): did not find expected ',' or ']' while parsing a flow sequence at line 1 column 4
+---
+name: cameo
+'yes': 'yes'
+:sym:
+- 1
+- 2.5
+-
+- true
+text: |
+  a
+  b
+empty: {}
+---
+- !ruby/range
+  begin: 1
+  end: 3
+  excl: false
+- !ruby/object:Set
+  hash:
+    1: true
+    2: true
+- 2020-01-31
+- 2020-01-31 10:00:00.000000000 Z
+--- 'word word word word word word word word word word word word word word word word
+  word word word word '
+---
+k: "word word word word word word
+  word word word word word word
+  word word word word word word
+  word word "
+---
+a: 1
+---
+- 2
+Tried to dump unspecified class: Symbol(:a)
