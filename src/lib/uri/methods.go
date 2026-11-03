@@ -1,7 +1,7 @@
 package uri
 
 import (
-	"fmt"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -1103,42 +1103,32 @@ func formPairs(ctx object.Context, v object.Value) ([][2]object.Value, error) {
 	return out, nil
 }
 
-// encodeComponent percent-encodes every byte but *-._ and the
-// alphanumerics; a space is + for a form and %20 for a URI component.
+// encodeComponent is Go's url.QueryEscape: a space is + for a form and
+// %20 for a URI component. Go keeps ~ and escapes *, where Ruby does the
+// opposite.
 func encodeComponent(s string, form bool) string {
-	var b strings.Builder
-	for i := 0; i < len(s); i++ {
-		c := s[i]
-		switch {
-		case c == '*' || c == '-' || c == '.' || c == '_' || c >= '0' && c <= '9' || c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z':
-			b.WriteByte(c)
-		case c == ' ' && form:
-			b.WriteByte('+')
-		default:
-			fmt.Fprintf(&b, "%%%02X", c)
-		}
+	e := url.QueryEscape(s)
+	if !form {
+		e = strings.ReplaceAll(e, "+", "%20")
 	}
-	return b.String()
+	return e
 }
 
-// decodeComponent reads %XX escapes, and + as a space for a form; a %
-// that no two hex digits follow stays as it is.
+// decodeComponent is Go's url.QueryUnescape, or PathUnescape when + is
+// not a space; a string Go cannot decode stays as it is, and the callers
+// check the escapes first.
 func decodeComponent(s string, form bool) string {
-	var b strings.Builder
-	for i := 0; i < len(s); i++ {
-		c := s[i]
-		switch {
-		case c == '+' && form:
-			b.WriteByte(' ')
-		case c == '%' && i+2 < len(s) && isHex(s[i+1]) && isHex(s[i+2]):
-			n, _ := strconv.ParseUint(s[i+1:i+3], 16, 8)
-			b.WriteByte(byte(n))
-			i += 2
-		default:
-			b.WriteByte(c)
-		}
+	var r string
+	var err error
+	if form {
+		r, err = url.QueryUnescape(s)
+	} else {
+		r, err = url.PathUnescape(s)
 	}
-	return b.String()
+	if err != nil {
+		return s
+	}
+	return r
 }
 
 // installParser gives URI::DEFAULT_PARSER the methods a script calls on
