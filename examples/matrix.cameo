@@ -1,0 +1,31 @@
+# Ruby's matrix library: Matrix and Vector are values with the arithmetic
+# of linear algebra. Each line prints what Ruby prints, but for the
+# inverse: cameo has no Rational, so an Integer matrix's inverse has
+# Floats, computed exactly first.
+require "matrix"
+
+m = Matrix[[1, 2], [3, 4]]
+p m, m.row_count, m.column_count, m[1, 0], m.row(0), m.column(1), m.transpose
+p m + m, m * m, m * 2, m ** 3, -m
+p m.determinant, m.rank, m.trace, m.square?, m.symmetric?, m.regular?
+p m.inverse, (m * m.inverse).round(10), m / 2
+
+v = Vector[1, 2, 3]
+w = Vector[0, 1, 0]
+p v + w, v * 2, v.inner_product(w), v.cross_product(w), v.norm, v.normalize.round(3)
+p m * Vector[1, 1], v.to_matrix, v.covector * v
+
+p Matrix.identity(2), Matrix.zero(2, 3), Matrix.diagonal(1, 2), Matrix.build(2, 3) { |r, c| r * 10 + c }
+p m.minor(0, 1, 0, 2), m.each(:diagonal).to_a, m.map { |x| x * x }, m.collect(&:to_s)
+p Matrix[[1, 2, 3], [4, 5, 6], [7, 8, 10]].det, Matrix[[1, 2, 3], [4, 5, 6], [7, 8, 9]].rank, Matrix[[1, 2], [2, 4]].singular?
+
+# A Matrix is a value: it is a Hash key, and == compares the elements.
+p({m => "m"}[Matrix[[1, 2], [3, 4]]], m == Matrix[[1.0, 2], [3, 4]], m.eql?(Matrix[[1.0, 2], [3, 4]]))
+
+[-> { m + Matrix[[1, 2, 3]] }, -> { Matrix[[1, 2], [2, 4]].inverse }, -> { m + 1 }, -> { Matrix[[1, 2], [3]] }, -> { Vector[0, 0].normalize }].each do |f|
+  begin
+    f.call
+  rescue StandardError => e
+    puts "#{e.class}: #{e.message}"
+  end
+end
