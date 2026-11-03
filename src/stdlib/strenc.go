@@ -24,7 +24,7 @@ import (
 // themselves, or do not depend on it.
 var ownEncoding = map[string]bool{
 	"encoding": true, "force_encoding": true, "b": true, "valid_encoding?": true, "scrub": true,
-	"encode": true, "unicode_normalize": true, "bytes": true, "bytesize": true, "byteindex": true,
+	"encode": true, "unicode_normalize": true, "unicode_normalized?": true, "bytes": true, "bytesize": true, "byteindex": true,
 	"unpack": true, "unpack1": true, "hash": true, "to_sym": true, "intern": true, "to_i": true,
 	"to_f": true, "hex": true, "oct": true, "==": true, "eql?": true, "===": true, "<=>": true,
 	"empty?": true, "ascii_only?": true, "frozen?": true, "-@": true, "+@": true, "dedup": true,

@@ -98,6 +98,7 @@ What asks for a library is measured, not guessed:
 | `csv` | csv 3.3.2 | `CSV.parse` (with a block too), `parse_line`, `generate`, `generate_line`, `generate_lines`, `String#parse_csv`, `Array#to_csv`; the options `col_sep:`, `row_sep:` (`:auto`), `quote_char:` (`nil` too), `headers:` (true, an Array, a String), `return_headers:`, `write_headers:`, `converters:` and `header_converters:` (Ruby's by name, or a Proc of one or two arguments with `CSV::FieldInfo`), `skip_blanks:`, `skip_lines:`, `liberal_parsing:`, `strip:`, `nil_value:`, `empty_value:`, `write_nil_value:`, `write_empty_value:`, `force_quotes:`, `quote_empty:`; `CSV::Row` and `CSV::Table` with their readers, `by_col`, `by_row`, `each`, `to_a`, `to_csv`, `==`, `inspect`; `CSV.new(string)` as a handle with `shift`, `read`, `each`, `lineno`, `line`, `headers`, `eof?`, `rewind`, `<<`, `string`; `CSV::MalformedCSVError` with Ruby's messages and `line_number`. A Row and a Table are values: `[]=`, `<<`, `push`, `delete` and `delete_if` return the changed copy, and `delete` returns the Row or Table without what it removed, not the removed part. `CSV.read`, `foreach`, `open`, `table` and the other file methods, `by_col!` and `by_row!` (bang methods), `CSV::Converters` and `HeaderConverters` as Hashes of Procs are left out |
 | `marshal` | — (cameo's wire form) | `Marshal.dump`, `load`, `restore`, `load(…, freeze:)`, with `dump`'s depth limit accepted; the bytes are the protobuf `cameo.Value` envelope every value crosses to a host in, what `to_value_proto` gives, so cameo reads them back and any protobuf reader with `cameo/value.proto` reads them too. An instance of a cameo class is found again by its class's name and digest. A Proc, a class, a Random and an Enumerator raise `TypeError`, as a Proc does in Ruby; so does an instance of a library's class, a Date or a URI, which the envelope does not carry; a Symbol comes back as a String, as it crosses to a host. Ruby's format, an IO to write to or read from, the `proc` argument of `load`, `MAJOR_VERSION` and `MINOR_VERSION` are left out |
 | `shellwords` | shellwords 0.2.2 | `Shellwords.split` (`shellsplit`, `shellwords`), `escape` (`shellescape`), `join` (`shelljoin`), `String#shellsplit`, `shellescape`, `Array#shelljoin`, with Ruby's quoting rules and its `ArgumentError` for an unmatched quote |
+| `unicode_normalize` | — (core) | `String#unicode_normalize` and `unicode_normalized?` with `:nfc`, `:nfd`, `:nfkc`, `:nfkd`, on `golang.org/x/text/unicode/norm`, there without a `require` as in Ruby; a binary String is `Encoding::CompatibilityError`; `unicode_normalize!` is a bang method |
 | `debug` | debug 1.10.0 | `debugger` and `binding.break` stop in cameo's debugger, which takes rdbg's commands ([debugger.md](debugger.md)) |
 | `cameo/runner` | — | cameo's own: the library that gives CRuby `Cameo::Runner` is built in |
 
@@ -108,7 +109,6 @@ Each is one pull request, which also moves its row to *Available*.
 | Library | Ruby's version | What goes in | Why this order |
 |---|---|---|---|
 
-| `unicode_normalize` | — (core) | `String#unicode_normalize`, `unicode_normalized?` with `:nfc`, `:nfd`, `:nfkc`, `:nfkd`, on `golang.org/x/text/unicode/norm` | the one core String method missing from text handling |
 | `ipaddr` | ipaddr 1.2.7 | `IPAddr.new`, `include?`, `===`, `to_s`, `to_string`, `mask`, `to_range`, `ipv4?`, `ipv6?`, `private?`, `loopback?`, `succ`, `<=>` | small; pure |
 | `zlib` | zlib 3.2.1 | `crc32`, `adler32`, `Zlib::Deflate.deflate`, `Zlib::Inflate.inflate`, `Zlib.gzip`, `Zlib.gunzip`; `GzipReader`/`GzipWriter` on an IO **unsupported** | 25 spec files; compressed payloads from `net/http` |
 | `open-uri` | open-uri 0.5.0 | `URI.open(url)` and `URI::HTTP#open` with a block or `read`, over `net/http`, returning the body as a String with `base_uri`, `content_type`, `charset`, `status` on it; no `File` for a `file:` URL | the one-liner that fetches a page |
@@ -211,4 +211,5 @@ Pull requests, as they open and land:
 - [cameo-lang/cameo#185](https://github.com/cameo-lang/cameo/pull/185): `securerandom`.
 - [cameo-lang/cameo#187](https://github.com/cameo-lang/cameo/pull/187): `csv`.
 - [cameo-lang/cameo#188](https://github.com/cameo-lang/cameo/pull/188): `marshal`.
-- `shellwords`: available.
+- [cameo-lang/cameo#189](https://github.com/cameo-lang/cameo/pull/189): `shellwords`.
+- `unicode_normalize`: available.
