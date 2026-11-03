@@ -104,6 +104,7 @@ What asks for a library is measured, not guessed:
 | `marshal` | — (cameo's wire form) | `Marshal.dump`, `load`, `restore`, `load(…, freeze:)`, with `dump`'s depth limit accepted; the bytes are the protobuf `cameo.Value` envelope every value crosses to a host in, what `to_value_proto` gives, so cameo reads them back and any protobuf reader with `cameo/value.proto` reads them too. An instance of a cameo class is found again by its class's name and digest. A Proc, a class, a Random and an Enumerator raise `TypeError`, as a Proc does in Ruby; so does an instance of a library's class, a Date or a URI, which the envelope does not carry; a Symbol comes back as a String, as it crosses to a host. Ruby's format, an IO to write to or read from, the `proc` argument of `load`, `MAJOR_VERSION` and `MINOR_VERSION` are left out |
 | `shellwords` | shellwords 0.2.2 | `Shellwords.split` (`shellsplit`, `shellwords`), `escape` (`shellescape`), `join` (`shelljoin`), `String#shellsplit`, `shellescape`, `Array#shelljoin`, with Ruby's quoting rules and its `ArgumentError` for an unmatched quote |
 | `unicode_normalize` | — (core) | `String#unicode_normalize` and `unicode_normalized?` with `:nfc`, `:nfd`, `:nfkc`, `:nfkd`, on `golang.org/x/text/unicode/norm`, there without a `require` as in Ruby; a binary String is `Encoding::CompatibilityError`; `unicode_normalize!` is a bang method |
+| `ipaddr` | ipaddr 1.2.7 | `IPAddr.new` from a string with a prefix length or a mask, or an Integer with its family, `to_s` compressed as Ruby compresses, `to_string`, `inspect`, `to_i`, `prefix`, `netmask`, `family`, `include?`, `===`, `==`, `eql?`, `<=>` and Comparable, `mask`, `to_range`, `succ` (so a Range of addresses iterates), `private?`, `loopback?`, `link_local?`, `ipv4?`, `ipv6?`, `ipv4_mapped?`, `ipv4_compat?`, `ipv4_mapped`, `ipv4_compat`, `native`, `\|`, `&`, `<<`, `>>`, `~`, `reverse`, `ip6_arpa`, `ip6_int`, `zone_id`, `hton`, `IPAddr.ntop`, the errors `IPAddr::Error`, `InvalidAddressError`, `InvalidPrefixError`, `AddressFamilyError`; `Socket::AF_INET`, `AF_INET6` and `AF_UNSPEC` are defined for the family argument. An IPAddr is a value with four fields, so it is a Hash key and a Set member; `mask!` and `set` are mutators, `mask` returns the copy; an error message names the address where ipaddr 1.2.6's left it out |
 | `debug` | debug 1.10.0 | `debugger` and `binding.break` stop in cameo's debugger, which takes rdbg's commands ([debugger.md](debugger.md)) |
 | `cameo/runner` | — | cameo's own: the library that gives CRuby `Cameo::Runner` is built in |
 
@@ -113,7 +114,6 @@ Each is one pull request, which also moves its row to *Available*.
 
 | Library | Ruby's version | What goes in | Why this order |
 |---|---|---|---|
-| `ipaddr` | ipaddr 1.2.7 | `IPAddr.new`, `include?`, `===`, `to_s`, `to_string`, `mask`, `to_range`, `ipv4?`, `ipv6?`, `private?`, `loopback?`, `succ`, `<=>` | small; pure |
 | `zlib` | zlib 3.2.1 | `crc32`, `adler32`, `Zlib::Deflate.deflate`, `Zlib::Inflate.inflate`, `Zlib.gzip`, `Zlib.gunzip`; `GzipReader`/`GzipWriter` on an IO **unsupported** | 25 spec files; compressed payloads from `net/http` |
 | `open-uri` | open-uri 0.5.0 | `URI.open(url)` and `URI::HTTP#open` with a block or `read`, over `net/http`, returning the body as a String with `base_uri`, `content_type`, `charset`, `status` on it; no `File` for a `file:` URL | the one-liner that fetches a page |
 | `prime` | prime 0.1.3 | `Prime.each`, `prime?`, `first`, `take`, `prime_division`, `int_from_prime_division`, `Integer#prime?`, `prime_division`, `Prime.each(n)` lazily | pure, small |
@@ -216,4 +216,5 @@ Pull requests, as they open and land:
 - [cameo-lang/cameo#187](https://github.com/cameo-lang/cameo/pull/187): `csv`.
 - [cameo-lang/cameo#188](https://github.com/cameo-lang/cameo/pull/188): `marshal`.
 - [cameo-lang/cameo#189](https://github.com/cameo-lang/cameo/pull/189): `shellwords`.
-- `unicode_normalize`: available.
+- [cameo-lang/cameo#190](https://github.com/cameo-lang/cameo/pull/190): `unicode_normalize`.
+- `ipaddr`: available.
