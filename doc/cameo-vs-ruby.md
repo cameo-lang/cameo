@@ -228,6 +228,9 @@ mspec's own `before` blocks.
   `escape` and `join`, `String#shellsplit` and `shellescape`,
   `Array#shelljoin`, with Ruby's quoting rules and its message for an
   unmatched quote.
+  `String#unicode_normalize` and `unicode_normalized?` take the four
+  forms, on Go's `golang.org/x/text`, and are there without a `require`,
+  as Ruby's are.
 - **Output**: `puts`, `print`, `p`, `pp`, `warn`.
 
 ## Different in cameo
