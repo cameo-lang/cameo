@@ -210,6 +210,10 @@ mspec's own `before` blocks.
   `<<`. A Row and a Table are values: `row["c"] = 3` rebinds `row` to the
   copy, and `tb = tb << fields` is the form, where Ruby changes them in
   place; `delete` returns the copy without the part, not the part. The
+  parser and the writer are Go's `encoding/csv`, so `quote_char:` is
+  always `"`, `col_sep:` is one character, `row_sep:` is a line feed with
+  or without a carriage return, `force_quotes:` is refused, an empty
+  String is written bare and a field with a leading space is quoted. The
   file methods, `read`, `foreach`, `open` and `table`, are left out.
 - **Output**: `puts`, `print`, `p`, `pp`, `warn`.
 
