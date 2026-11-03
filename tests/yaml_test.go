@@ -11,8 +11,8 @@ import (
 func TestYAMLLoadsScalarsAsPsychDoes(t *testing.T) {
 	out := runScript(t, `require "yaml"
 p YAML.load("- 1\n- -1\n- 1_000\n- 0x1f\n- 0o17\n- 017\n- 0b101\n- 08\n- 1.5\n- 1e3\n- .5\n- 1.\n- -.inf\n- .NaN\n- ~\n- null\n- ''\n- yes\n- Off\n- n\n- :a\n- :\"a b\"\n- '1'\n- !!str 1\n- !!int '1'\n- !!float 1\n- 1:30\n- 1:30.5\n- 1,000\n- 1.2.3\n- 1e+3\n- 190:20:30\n- 1:60")
-begin; YAML.load("a: b: c"); rescue Psych::SyntaxError => e; p e; end
-begin; YAML.load("x: 2020-01-01"); rescue Psych::DisallowedClass => e; p e; end
+begin; YAML.load("a: b: c"); rescue YAML::SyntaxError => e; p e; end
+begin; YAML.load("x: 2020-01-01"); rescue YAML::DisallowedClass => e; p e; end
 p YAML.load("2020-13-01"), YAML.load("1-1-1"), YAML.load("!!binary aGk="), YAML.load("!foo 1"), YAML.load("!!bool x")
 p YAML.load("x: 1\n<<: {y: 2}\n<<: [{z: 3}, {w: 4}]"), YAML.load("<<: 1\na: 2"), YAML.load("'<<': {a: 1}")
 p YAML.load("a: {b: 1, c: [{d: 2}]}", symbolize_names: true), YAML.load("1: a\n'1': b\n1.0: c")
@@ -24,8 +24,8 @@ p YAML.load("!ruby/object:Set\nhash:\n  1: true\n  2: true\n", permitted_classes
 p YAML.load("a: 1", strict_integer: true), YAML.load("1,000", strict_integer: true), YAML.load("\xEF\xBB\xBFa: 1\r\nb: 2\r\n"), YAML.load("a: \"\\x41\\u263A\\e\\N\\_\\/\\t\"")
 `)
 	assert.Equals(t, out, `[1, -1, 1000, 31, "0o17", 15, 5, "08", 1.5, "1e3", 0.5, 1.0, -Infinity, NaN, nil, nil, "", true, false, "n", :a, :"a b", "1", "1", 1, 1.0, 5400, 5430.0, 1000, "1.2.3", "1e+3", 685230, "1:60"]
-#<Psych::SyntaxError: (<unknown>): mapping values are not allowed in this context at line 1 column 5>
-#<Psych::DisallowedClass: Tried to load unspecified class: Date>
+#<YAML::SyntaxError: (<unknown>): mapping values are not allowed in this context at line 1 column 5>
+#<YAML::DisallowedClass: Tried to load unspecified class: Date>
 "2020-13-01"
 "1-1-1"
 "hi"
@@ -64,12 +64,12 @@ func TestYAMLRefusesWhatPsychRefuses(t *testing.T) {
 	out := runScript(t, `require "yaml"
 ["a: [", "a: b: c", "\tx", "- a\nb: 1", "'a", "a: @b", "%YAML 1.3\n--- a", "...", "a: 1\n b: 2"].each do |doc|
   YAML.load(doc, filename: "f.yml")
-rescue Psych::SyntaxError => e
+rescue YAML::SyntaxError => e
   p [e.message, e.file, e.line, e.column, e.problem, e.context]
 end
 [":a", "2020-01-01", "2020-01-01 10:00:00", "!ruby/object:Pt\nx: 1\n", "!ruby/range 1..3", "!!set\n? a", "!ruby/class 'String'"].each do |doc|
   YAML.safe_load(doc)
-rescue Psych::DisallowedClass => e
+rescue YAML::DisallowedClass => e
   puts e.message
 end
 begin; YAML.load("a: &x 1\nb: *x"); rescue => e; p e.class, e.message; end
@@ -79,7 +79,7 @@ begin; YAML.load(nil); rescue TypeError => e; p e.message; end
 begin; YAML.safe_load(":a", permitted_classes: [Symbol], permitted_symbols: [:b]); rescue => e; p e.message; end
 begin; YAML.load("!ruby/object:Nope\nx: 1\n", permitted_classes: ["Nope"]); rescue ArgumentError => e; p e.message; end
 begin; YAML.load("!!float x"); rescue ArgumentError => e; p e.message; end
-p Psych::SyntaxError.ancestors.take(4), Psych::AliasesNotEnabled.ancestors.take(4), Psych::VERSION, Psych::LIBYAML_VERSION, YAML == Psych
+p YAML::SyntaxError.ancestors.take(4), YAML::AliasesNotEnabled.ancestors.take(4), YAML::VERSION, YAML::LIBYAML_VERSION
 `)
 	assert.Equals(t, out, `["(f.yml): did not find expected node content while parsing a flow node at line 2 column 1", "f.yml", 2, 1, "did not find expected node content", "while parsing a flow node"]
 ["(f.yml): mapping values are not allowed in this context at line 1 column 5", "f.yml", 1, 5, "mapping values are not allowed in this context", nil]
@@ -95,22 +95,21 @@ Tried to load unspecified class: Date
 Tried to load unspecified class: Time
 Tried to load unspecified class: Pt
 Tried to load unspecified class: Range
-Tried to load unspecified class: Psych::Set
+Tried to load unspecified class: Set
 Tried to load unspecified class: String
-Psych::AliasesNotEnabled
-"Alias parsing was not enabled. To enable it, pass `+"`aliases: true`"+` to `+"`Psych::load`"+` or `+"`Psych::safe_load`"+`."
-Psych::AnchorNotDefined
+YAML::AliasesNotEnabled
+"Alias parsing was not enabled. To enable it, pass `+"`aliases: true`"+` to `+"`YAML::load`"+` or `+"`YAML::safe_load`"+`."
+YAML::AnchorNotDefined
 "An alias referenced an unknown anchor: x"
 "unknown keyword: :nope"
 "no implicit conversion of nil into String"
 "Tried to load unspecified class: Symbol"
 "undefined class/module Nope"
 "invalid value for Float(): \"x\""
-[Psych::SyntaxError, Psych::Exception, RuntimeError, StandardError]
-[Psych::AliasesNotEnabled, Psych::BadAlias, Psych::Exception, RuntimeError]
+[YAML::SyntaxError, YAML::Exception, RuntimeError, StandardError]
+[YAML::AliasesNotEnabled, YAML::BadAlias, YAML::Exception, RuntimeError]
 "5.2.2"
 "0.2.5"
-true
 `)
 }
 
@@ -138,7 +137,7 @@ p YAML.dump_stream(1, "x\ny\n\n", {"b" => 2}), YAML.dump("x\ny\n\n"), [1, "a", n
 p YAML.safe_dump({"a" => [1, "x", nil, true, 1.5]}), YAML.safe_dump({"a" => :b}, permitted_symbols: [:b]), YAML.safe_dump(Date.new(2020, 1, 1), permitted_classes: [Date])
 [[{a: 1}, {}], [Time.utc(2020), {}], [Pt.new(1, nil), {}], [1..2, {}], [{"a" => :b}, {permitted_symbols: ["b"]}]].each do |v, o|
   YAML.safe_dump(v, **o)
-rescue Psych::DisallowedClass => e
+rescue YAML::DisallowedClass => e
   puts e.message
 end
 begin; YAML.dump(1, line_width: -2); rescue ArgumentError => e; puts e.message; end

@@ -199,8 +199,9 @@ mspec's own `before` blocks.
   emitter are gopkg.in/yaml.v3's port of libyaml, so a document loads,
   dumps, quotes, folds and fails as it does in Ruby, with Ruby's error
   message, line and column. `load_file` and the other file methods are
-  left out, as is `parse` with its node tree; `Psych::Set` loads as a
-  Hash; a Proc, a Random or a MatchData dumps as the empty object Psych
+  left out, as is `parse` with its node tree; a `!set` loads as a
+  Hash; the module is `YAML` alone, with no `Psych` name, so the errors
+  are `YAML::SyntaxError` and kin; a Proc, a Random or a MatchData dumps as the empty object Psych
   writes.
 - **Output**: `puts`, `print`, `p`, `pp`, `warn`.
 

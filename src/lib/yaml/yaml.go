@@ -1,4 +1,4 @@
-// Package yaml is Ruby's yaml library, built into cameo: Psych, and YAML
+// Package yaml is Ruby's yaml library, built into cameo: the YAML module
 // as its other name.
 //
 // It follows psych 5.2.2, the version Ruby 3.4 ships, on the libyaml it is
@@ -24,7 +24,7 @@ import (
 )
 
 var (
-	module            = object.NewModule("Psych")
+	module            = object.NewModule("YAML")
 	exception         = object.NewClass("Exception", object.RuntimeError)
 	badAlias          = object.NewClass("BadAlias", exception)
 	aliasesNotEnabled = object.NewClass("AliasesNotEnabled", badAlias)
@@ -33,10 +33,11 @@ var (
 	syntaxError       = object.NewClass("SyntaxError", exception)
 )
 
-// Install defines Psych and YAML. lib.Install calls it once.
+// Install defines YAML. Ruby's YAML is an alias of its Psych module; cameo
+// has the one name, so the errors are YAML::SyntaxError and kin.
+// lib.Install calls it once.
 func Install() {
 	m := module
-	object.ObjectClass.Consts["Psych"] = object.ClassValue(m)
 	object.ObjectClass.Consts["YAML"] = object.ClassValue(m)
 	m.Consts["VERSION"] = object.String("5.2.2")
 	m.Consts["LIBYAML_VERSION"] = object.String("0.2.5")
