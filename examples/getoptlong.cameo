@@ -1,0 +1,15 @@
+# Ruby's getoptlong library: GetoptLong reads ARGV the way GNU getopt_long
+# does, each option with its canonical name. Ruby takes the options out of
+# ARGV; cameo leaves ARGV as it is and gives the operands in rest.
+require "getoptlong"
+
+opts = GetoptLong.new(
+  ["--help", "-h", GetoptLong::NO_ARGUMENT],
+  ["--name", "-n", GetoptLong::REQUIRED_ARGUMENT],
+  ["--level", "-l", GetoptLong::OPTIONAL_ARGUMENT]
+)
+opts.each do |opt, arg|
+  puts "#{opt} #{arg.inspect}"
+end
+p opts.rest, opts.terminated?, ARGV
+p GetoptLong::PERMUTE, GetoptLong::REQUIRE_ORDER, GetoptLong::RETURN_IN_ORDER, GetoptLong::Error.superclass
