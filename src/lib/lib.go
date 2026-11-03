@@ -19,6 +19,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/json"
 	"github.com/cameo-lang/cameo/src/lib/logger"
 	"github.com/cameo-lang/cameo/src/lib/marshal"
+	"github.com/cameo-lang/cameo/src/lib/matrix"
 	nethttp "github.com/cameo-lang/cameo/src/lib/net/http"
 	openuri "github.com/cameo-lang/cameo/src/lib/open-uri"
 	"github.com/cameo-lang/cameo/src/lib/optparse"
@@ -62,6 +63,7 @@ var Libraries = map[string][]string{
 	"json":                        nil,
 	"logger":                      nil,
 	"marshal":                     nil,
+	"matrix":                      nil,
 	"net/http":                    {"net/protocol"},
 	"net/https":                   {"net/http", "net/protocol"},
 	"net/protocol":                nil,
@@ -110,6 +112,7 @@ func Install() {
 	strscan.Install()
 	optparse.Install()
 	getoptlong.Install()
+	matrix.Install()
 	libtime.Install()
 	tsort.Install()
 	unicodenormalize.Install()
