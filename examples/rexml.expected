@@ -1,0 +1,26 @@
+"library"
+"town"
+2
+"1.0"
+"Dune"
+"Lem"
+1: Dune
+2: Solaris & more
+["Solaris & more"]
+["1"]
+2
+"Herbert"
+["Solaris &amp; more"]
+"<book id='2' lang='pl'><title>Solaris &amp; more</title><author>Lem</author><price currency='EUR'>7.50</price></book>"
+["2", "pl"]
+["title", "author", "price"]
+"<list n='2'><item>Dune</item><item>Solaris &amp; more</item></list>"
+<list n='2'>
+  <item>
+    Dune
+  </item>
+  <item>
+    Solaris &amp; more
+  </item>
+</list>
+Missing end tag for 'b' (got 'a')

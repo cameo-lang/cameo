@@ -94,8 +94,8 @@ mspec's own `before` blocks.
   `json`, `benchmark`, `uri`, `date`, `net/http`, `digest`, `base64` and
   `securerandom`, `yaml`, `csv`, `marshal`, `shellwords`, `ipaddr`, `zlib`,
   `open-uri`, `prime`, `tsort`, `abbrev`, `singleton`, `rbconfig`,
-  `forwardable`, `delegate`, `logger`, `stringio`, `strscan`, `optparse`
-  and `getoptlong`, which cameo builds in; [stdlib.md](stdlib.md)
+  `forwardable`, `delegate`, `logger`, `stringio`, `strscan`, `optparse`,
+  `getoptlong` and `rexml`, which cameo builds in; [stdlib.md](stdlib.md)
   has every library of Ruby's standard library with its status, the ones
   to come and the ones left out. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
   do without I/O: `escape` and `unescape`, the URI-component pair,
@@ -286,6 +286,15 @@ mspec's own `before` blocks.
   getoptlong 0.2.1: `GetoptLong` with `each`, `get`, `ordering`, `quiet`
   and its errors, printed as Ruby prints them; the operands are in `rest`
   rather than left in ARGV.
+  `rexml` is Ruby 3.4's rexml 3.4.0: `REXML::Document` and the tree of
+  Elements, Attributes, Texts, CData, Comments and declarations under it,
+  `XPath.first`, `match` and `each` with XPath 1.0, and `write` with the
+  Default and Pretty formatters to `$stdout`, a StringIO or an IO. The
+  nodes are handles, as in Ruby: `add_element` and `text=` change the tree
+  for every holder, and `==` is identity. A node-set holds each node once
+  in document order, a bad path raises `ParseException`, and a setter such
+  as `e.attributes["a"] = v` needs a local receiver, so `add_attribute`
+  and `replace_child` serve.
 - **Output**: `puts`, `print`, `p`, `pp`, `warn`.
 
 ## Different in cameo
@@ -496,8 +505,8 @@ These are absent, and a script that uses one fails when it reaches it:
 - **Not there yet**: `at_exit`, `exit!`,
   `printf` (`format` exists), `__method__`, `Enumerator.new`,
   `Integer()` with a base, and `autoload`.
-- **Libraries**: `require` of any library but the thirty-two above, such as
-  `matrix`, raises a `LoadError`. [stdlib.md](stdlib.md) says which are
+- **Libraries**: `require` of any library but the thirty-three above, such
+  as `matrix`, raises a `LoadError`. [stdlib.md](stdlib.md) says which are
   planned and which are left out, and why.
 
 ## Only in cameo

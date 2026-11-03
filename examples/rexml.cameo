@@ -1,0 +1,46 @@
+# Ruby's rexml library: a Document is a tree of Elements, Texts and
+# Attributes, XPath finds nodes in it, and it writes itself back out. The
+# nodes are handles: add_element and text= change the tree. Each line
+# prints what Ruby prints.
+require "rexml/document"
+
+doc = REXML::Document.new(<<~XML)
+  <?xml version="1.0"?>
+  <library name="town">
+    <book id="1"><title>Dune</title><author>Herbert</author><price currency="USD">9.99</price></book>
+    <book id="2"><title>Solaris &amp; more</title><author>Lem</author></book>
+  </library>
+XML
+
+root = doc.root
+p root.name, root.attributes["name"], root.elements.size, doc.version
+p root.elements["book/title"].text, root.elements["book[2]/author"].text
+root.each_element("book") { |b| puts "#{b.attributes["id"]}: #{b.elements["title"].text}" }
+
+p REXML::XPath.match(doc, "//book[@id='2']/title").map(&:text)
+p REXML::XPath.match(doc, "//book[price > 5]/@id").map(&:value)
+p REXML::XPath.first(doc, "count(//book)"), REXML::XPath.first(doc, "string(//author)")
+p REXML::XPath.match(doc, "//book[author='Lem']/title/text()").map(&:to_s)
+
+book = root.elements["book[2]"]
+price = book.add_element("price", {"currency" => "EUR"})
+price.text = "7.50"
+book.add_attribute("lang", "pl")
+p book.to_s
+p book.attributes.to_a.map(&:to_s), book.elements.to_a.map(&:name)
+
+out = REXML::Document.new
+out.add_element("list", {"n" => "2"})
+root.each_element("book/title") do |t|
+  item = out.root.add_element("item")
+  item.text = t.text
+end
+p out.to_s
+out.write(indent: 2)
+puts
+
+begin
+  REXML::Document.new("<a><b></a>")
+rescue REXML::ParseException => e
+  puts e.message.lines.first
+end
