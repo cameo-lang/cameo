@@ -109,6 +109,7 @@ What asks for a library is measured, not guessed:
 | `abbrev` | abbrev 0.1.2 | `Abbrev.abbrev(words, pattern = nil)` and `Array#abbrev`, with a String prefix or a Regexp as the pattern |
 | `singleton` | singleton 0.2.0 | `include Singleton`: `instance` is the one instance, made by `initialize` the first time, a subclass with one of its own; `new` and `allocate` are refused with Ruby's NoMethodError, `dup` and `clone` with its TypeError. The module uses a new hook, `Class.Included`, which the evaluator runs when a class includes a module |
 | `forwardable`, `delegate` | forwardable 1.3.3, delegate 0.4.0 | `extend Forwardable` with `def_delegator`, `def_delegators`, `def_instance_delegator(s)`, `delegate … => :accessor` and `instance_delegate`, the accessor a method or a field (`:@items` names the field), and `SingleForwardable` with `def_single_delegator(s)` and `single_delegate` on a class or module; `SimpleDelegator`, `Delegator` and `DelegateClass(klass)` forwarding what they lack to the wrapped object through `method_missing`, with `__getobj__`, `respond_to?`, `==`, `to_s`, `inspect` and the other Object methods forwarded. A delegator is a value: `__setobj__` returns the copy with the new object. An accessor given as an expression String is refused, since cameo evaluates no strings. The evaluator now dispatches to a library's native `method_missing` too |
+| `logger` | logger 1.6.4 | `Logger.new(STDOUT`, `STDERR` or `nil, level:, progname:, formatter:, datetime_format:)`, the levels as Integers, Symbols or Strings, `debug` to `unknown` with a message, a progname and a block, `add` and `log`, `<<`, the predicates, `level=`, `progname=`, `formatter=`, `datetime_format=`, `close`; `Logger::Formatter` with Ruby's line, `Logger::SEV_LABEL`, `Logger::Severity`, `Logger::Error`. A Logger is a handle: the setters change it for every holder, as in Ruby. A file name, log rotation and `Logger::LogDevice` are left out, since cameo writes no files |
 | `debug` | debug 1.10.0 | `debugger` and `binding.break` stop in cameo's debugger, which takes rdbg's commands ([debugger.md](debugger.md)) |
 | `cameo/runner` | — | cameo's own: the library that gives CRuby `Cameo::Runner` is built in |
 
@@ -118,7 +119,6 @@ Each is one pull request, which also moves its row to *Available*.
 
 | Library | Ruby's version | What goes in | Why this order |
 |---|---|---|---|
-| `logger` | logger 1.6.4 | `Logger.new($stderr)`, the levels and their predicates, `formatter`, `progname`, `datetime_format`, `Logger::Formatter`; a Logger is a handle on a stream, so `level=` changes it for every holder | the way a script reports progress |
 | `stringio` | stringio 3.1.2 | `StringIO.new`, `read`, `gets`, `each_line`, `readlines`, `getc`, `write`, `<<`, `puts`, `print`, `printf`, `string`, `pos`, `rewind`, `eof?`, `truncate`, `closed?`; a handle | 58 spec files; builds output and feeds text to code that reads an IO |
 | `strscan` | strscan 3.1.2 | `StringScanner.new`, `scan`, `scan_until`, `skip`, `skip_until`, `check`, `check_until`, `match?`, `matched`, `matched?`, `pre_match`, `post_match`, `[]`, `captures`, `pos`, `pos=`, `eos?`, `rest`, `peek`, `getch`, `unscan`, `reset`, `terminate`, `string`; a handle | 44 spec files; tokenisers |
 | `ARGV`, `optparse`, `getoptlong` | optparse 0.6.0, getoptlong 0.2.1 | `ARGV` from `cameo script.cameo -- args`, and from the host through a Load option, then `OptionParser` with `on`, `parse!` returning the rest (`parse!` rebinds nothing: it returns the operands and the options go through the block), `banner`, `help`, `OptionParser::InvalidOption`; `GetoptLong` the same way | a script run from the command line takes arguments |
@@ -221,4 +221,5 @@ Pull requests, as they open and land:
 - [cameo-lang/cameo#195](https://github.com/cameo-lang/cameo/pull/195): `tsort`.
 - [cameo-lang/cameo#196](https://github.com/cameo-lang/cameo/pull/196): `abbrev`.
 - [cameo-lang/cameo#197](https://github.com/cameo-lang/cameo/pull/197): `singleton`.
-- `forwardable`, `delegate`: available.
+- [cameo-lang/cameo#199](https://github.com/cameo-lang/cameo/pull/199): `forwardable`, `delegate`.
+- `logger`: available.
