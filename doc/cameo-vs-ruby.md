@@ -93,8 +93,8 @@ mspec's own `before` blocks.
 - **Libraries**: `require` of `set`, `time`, `pp`, `pathname`, `cgi`,
   `json`, `benchmark`, `uri`, `date`, `net/http`, `digest`, `base64`,
   `securerandom`, `csv`, `marshal`, `shellwords`, `ipaddr`, `zlib`,
-  `prime`, `tsort`, `abbrev`, `singleton`, `forwardable`, `delegate`,
-  `logger`, `stringio`, `strscan`, `matrix` and `bigdecimal`, which cameo builds in; [stdlib.md](stdlib.md)
+  `open-uri`, `prime`, `tsort`, `abbrev`, `singleton`, `forwardable`,
+  `delegate`, `logger`, `stringio`, `strscan`, `matrix` and `bigdecimal`, which cameo builds in; [stdlib.md](stdlib.md)
   has every library of Ruby's standard library with its status, the ones
   to come and the ones left out. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
   do without I/O: `escape` and `unescape`, the URI-component pair,
@@ -279,6 +279,13 @@ mspec's own `before` blocks.
   not applied: how certificates are verified is the host's client's
   business. `Net::HTTP::Proxy`, `body_stream`, a request body streamed
   from an IO and a response body read in pieces are left out.
+  `open-uri` is Ruby 3.4's open-uri 0.5.0 over `net/http`: `URI.open`
+  and `URI::HTTP#open` and `#read` with the header fields, redirect,
+  basic authentication, timeout and encoding options. What `open`
+  returns is an `OpenURI::Document` value with Ruby's `read`,
+  `base_uri`, `status`, `meta`, `content_type`, `charset` and
+  `last_modified`, where Ruby returns an IO with those methods mixed in.
+  A file name, a `file:` URL and a proxy are left out.
 - **Output**: `puts`, `print`, `p`, `pp`, `warn`.
 
 ## Different in cameo
@@ -489,7 +496,7 @@ These are absent, and a script that uses one fails when it reaches it:
 - **Not there yet**: `at_exit`, `exit!`,
   `printf` (`format` exists), `__method__`, `Enumerator.new`,
   `Integer()` with a base, and `autoload`.
-- **Libraries**: `require` of any library but the thirty-one above, such
+- **Libraries**: `require` of any library but the thirty-two above, such
   as `resolv`, raises a `LoadError`. [stdlib.md](stdlib.md) says which are
   planned and which are left out, and why.
 
