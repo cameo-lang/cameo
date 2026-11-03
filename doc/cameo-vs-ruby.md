@@ -92,8 +92,8 @@ mspec's own `before` blocks.
   `Process.clock_gettime`.
 - **Libraries**: `require` of `set`, `time`, `pp`, `pathname`, `cgi`,
   `json`, `benchmark`, `uri`, `date`, `net/http`, `digest`, `base64` and
-  `securerandom`, `yaml`, `csv`, `marshal`, `shellwords`, `ipaddr`, `zlib` and
-  `open-uri`, which cameo builds in; [stdlib.md](stdlib.md)
+  `securerandom`, `yaml`, `csv`, `marshal`, `shellwords`, `ipaddr`, `zlib`,
+  `open-uri` and `prime`, which cameo builds in; [stdlib.md](stdlib.md)
   has every library of Ruby's standard library with its status, the ones
   to come and the ones left out. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
   do without I/O: `escape` and `unescape`, the URI-component pair,
@@ -239,6 +239,11 @@ mspec's own `before` blocks.
   `base_uri`, `status`, `meta`, `content_type`, `charset` and
   `last_modified`, where Ruby returns an IO with those methods mixed in.
   A file name, a `file:` URL and a proxy are left out.
+  `prime` is Ruby 3.4's prime 0.1.3: `Prime.each`, `prime?`,
+  `prime_division`, `int_from_prime_division` and the Enumerable methods
+  on `Prime`, with `Integer#prime?` and `prime_division`. The test is
+  Miller-Rabin and the factorisation Pollard's rho, so a large number
+  answers where Ruby's trial division does not finish.
 - **Output**: `puts`, `print`, `p`, `pp`, `warn`.
 
 ## Different in cameo
@@ -449,7 +454,7 @@ These are absent, and a script that uses one fails when it reaches it:
 - **Not there yet**: `at_exit`, `exit!`,
   `printf` (`format` exists), `__method__`, `Enumerator.new`,
   `Integer()` with a base, and `autoload`.
-- **Libraries**: `require` of any library but the twenty above, such as
+- **Libraries**: `require` of any library but the twenty-one above, such as
   `matrix`, raises a `LoadError`. [stdlib.md](stdlib.md) says which are
   planned and which are left out, and why.
 
