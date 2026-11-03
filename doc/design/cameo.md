@@ -930,7 +930,8 @@ re-opened by accident:
     evaluator calls like any other.
   - `require` of a library cameo builds in (`set`, `time`, `cgi`,
     `cgi/escape`, `pp`, `pathname`, `json`, `benchmark`, `uri`, `date`,
-    `net/http`, `digest`, `base64`, `securerandom`, `yaml`, `csv`; the
+    `net/http`, `digest`, `base64`, `securerandom`, `yaml`, `csv`,
+    `marshal`; the
     list with each one's status is doc/stdlib.md) returns true the first
     time and false after, and any other is a LoadError: a script is one
     file. The libraries are there whether or not a script requires them;

@@ -1,0 +1,6 @@
+#<Encoding:BINARY (ASCII-8BIT)>
+100
+{"origin" => Point(x: 0, y: 0), "tags" => ["a", "b"], "at" => 2020-01-02 00:00:00 UTC}
+[1, 2.5, nil, true, 1..3, #<Set: {1}>]
+no _dump_data is defined for class Proc
+"sym"
