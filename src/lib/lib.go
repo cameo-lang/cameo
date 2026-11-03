@@ -16,6 +16,7 @@ import (
 	nethttp "github.com/cameo-lang/cameo/src/lib/net/http"
 	"github.com/cameo-lang/cameo/src/lib/pathname"
 	"github.com/cameo-lang/cameo/src/lib/securerandom"
+	"github.com/cameo-lang/cameo/src/lib/shellwords"
 	libtime "github.com/cameo-lang/cameo/src/lib/time"
 	"github.com/cameo-lang/cameo/src/lib/uri"
 	"github.com/cameo-lang/cameo/src/lib/yaml"
@@ -46,6 +47,7 @@ var Libraries = map[string][]string{
 	"pathname":         nil,
 	"random/formatter": {"securerandom"},
 	"securerandom":     {"random/formatter"},
+	"shellwords":       nil,
 	"time":             nil,
 	"uri":              nil,
 	"yaml":             nil,
@@ -65,6 +67,7 @@ func Install() {
 	nethttp.Install()
 	pathname.Install()
 	securerandom.Install()
+	shellwords.Install()
 	libtime.Install()
 	uri.Install()
 	yaml.Install()
