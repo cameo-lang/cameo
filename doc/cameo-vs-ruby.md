@@ -92,8 +92,8 @@ mspec's own `before` blocks.
   `Process.clock_gettime`.
 - **Libraries**: `require` of `set`, `time`, `pp`, `pathname`, `cgi`,
   `json`, `benchmark`, `uri`, `date`, `net/http`, `digest`, `base64` and
-  `securerandom`, `yaml`, `csv`, `marshal`, `shellwords` and `ipaddr`, which cameo
-  builds in; [stdlib.md](stdlib.md)
+  `securerandom`, `yaml`, `csv`, `marshal`, `shellwords`, `ipaddr` and `zlib`, which
+  cameo builds in; [stdlib.md](stdlib.md)
   has every library of Ruby's standard library with its status, the ones
   to come and the ones left out. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
   do without I/O: `escape` and `unescape`, the URI-component pair,
@@ -226,6 +226,12 @@ mspec's own `before` blocks.
   `mask`, `to_range`, `succ`, the predicates, the operators and the
   reverse names. An IPAddr is a value: `mask` returns the masked copy
   where Ruby's `mask!` changes the address in place.
+  `zlib` is Ruby 3.4's zlib 3.2.1 as module functions: `crc32`,
+  `adler32`, `Zlib::Deflate.deflate`, `Zlib::Inflate.inflate`, `gzip`
+  and `gunzip`, with zlib's constants, errors and messages. The
+  compressed bytes are Go's deflate's: they inflate in Ruby and Ruby's
+  inflate here, but are not identical to zlib's byte for byte. The
+  streaming objects and the gzip IO classes are left out.
 - **Output**: `puts`, `print`, `p`, `pp`, `warn`.
 
 ## Different in cameo
@@ -436,7 +442,7 @@ These are absent, and a script that uses one fails when it reaches it:
 - **Not there yet**: `at_exit`, `exit!`,
   `printf` (`format` exists), `__method__`, `Enumerator.new`,
   `Integer()` with a base, and `autoload`.
-- **Libraries**: `require` of any library but the eighteen above, such as
+- **Libraries**: `require` of any library but the nineteen above, such as
   `matrix`, raises a `LoadError`. [stdlib.md](stdlib.md) says which are
   planned and which are left out, and why.
 
