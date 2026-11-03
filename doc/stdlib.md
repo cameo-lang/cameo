@@ -144,6 +144,11 @@ given. `fileutils` 1.7.3, `tempfile` 0.3.1, `tmpdir` 0.3.1, `find` 0.2.0,
 `win32ole` 1.9.1, `fiddle` 1.1.6, `nkf` 0.2.0 (encodings beyond UTF-8,
 binary and US-ASCII do not exist), `english` 0.8.0 (global variables).
 
+**The build of a Ruby.** `rbconfig` describes how a C Ruby was built and
+where it was installed; a cameo script has no use for either, and the
+version and platform it might want are `RUBY_VERSION`, `RUBY_ENGINE` and
+`RUBY_PLATFORM`.
+
 **Threads and processes.** cameo has `async` and `await` in their place.
 `thread` (`Queue`, `Mutex`, `ConditionVariable`), `monitor`, `mutex_m`
 0.3.0, `timeout` 0.4.3 (`Timeout.timeout(s) { }` stops a running block
