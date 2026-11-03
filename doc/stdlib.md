@@ -128,6 +128,11 @@ What asks for a library is measured, not guessed:
 Each is one pull request, which also moves its row to *Available*.
 Every row of the plan has landed; the table is empty until the next one.
 
+`rexml` was a row of the plan, was built, and was withdrawn before it
+landed: XML belongs behind a proper XML parser, chosen on its own terms,
+and not in the standard library yet. It is neither planned nor refused;
+`require "rexml/document"` raises `LoadError` for now.
+
 | Library | Ruby's version | What goes in | Why this order |
 |---|---|---|---|
 
