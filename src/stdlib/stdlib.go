@@ -35,7 +35,6 @@ func Install() {
 	installStringPatterns()
 	installEnumerator()
 	installTimeParsing()
-	installBenchmark()
 	installEncodings()
 	installPack()
 	installPaths()

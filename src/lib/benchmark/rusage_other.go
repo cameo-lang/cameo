@@ -1,6 +1,6 @@
 //go:build !unix
 
-package stdlib
+package benchmark
 
 // readCPUTimes returns zero CPU times where there is no getrusage(2):
 // Benchmark then reports the real time alone.
