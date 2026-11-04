@@ -37,7 +37,7 @@ interpreter is built in the milestones listed there.
 [doc/cameo-vs-ruby.md](doc/cameo-vs-ruby.md) lists, for someone who knows
 Ruby, what is the same, what differs, and what cameo does not support.
 A script can `require` the libraries cameo builds in: `set`, `time`, `pp`,
-`pathname`, `cgi`, `json`, `benchmark`, `uri`, `date`,
+`pathname`, `cgi`, `json`, `benchmark`, `uri`, `date`, `net/http`,
 `digest`, `base64`, `securerandom`, `csv`, `marshal`,
 `shellwords`, `ipaddr`, `zlib`, `prime`, `tsort`, `abbrev`,
 `singleton`, `forwardable`, `delegate`, `logger`, `stringio`,

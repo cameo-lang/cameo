@@ -10,6 +10,7 @@ import (
 	"io"
 	"math/big"
 	"net"
+	"net/http"
 	"os"
 	"reflect"
 	"slices"
@@ -131,6 +132,13 @@ func (p *Program) IgnoreMutationErrors(ignore bool) { p.in.IgnoreMutationErrors 
 // "resolv" works and a lookup raises Resolv::ResolvError, so an embedding
 // program decides whether a script may look names up.
 func (p *Program) Resolver(resolver *net.Resolver) { p.in.DNS = resolver }
+
+// HTTPClient gives the program network access: net/http makes its requests
+// with client. Without one, require "net/http" works and a request raises
+// SocketError, so an embedding program decides whether a script may reach
+// the network. Redirects are not followed, as Ruby's Net::HTTP does not
+// follow them, whatever client.CheckRedirect says.
+func (p *Program) HTTPClient(client *http.Client) { p.in.HTTP = client }
 
 // File is the script's path, as Load was given it.
 func (p *Program) File() string { return p.file }

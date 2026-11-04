@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -43,6 +44,7 @@ func runScript(path string, argv []string, pause, ignoreMutations bool, stdout, 
 	}
 	prog.IgnoreMutationErrors(ignoreMutations)
 	prog.Resolver(net.DefaultResolver)
+	prog.HTTPClient(networkClient)
 	// A script that requires "debug" talks to the debugger on the
 	// terminal.
 	prog.Console(os.Stdin, stdout)
@@ -64,8 +66,14 @@ func resume(path string, pause, ignoreMutations bool, stdout, stderr io.Writer) 
 	}
 	prog.IgnoreMutationErrors(ignoreMutations)
 	prog.Resolver(net.DefaultResolver)
+	prog.HTTPClient(networkClient)
 	return runProgram(prog, pause, stderr)
 }
+
+// networkClient is what a script run by the command reaches the network
+// with: Go's default transport, with the timeouts the script's Net::HTTP
+// sets per request.
+var networkClient = &http.Client{}
 
 // inspect prints what the dump at path holds.
 func inspect(path string, out io.Writer) error {

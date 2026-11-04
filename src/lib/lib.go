@@ -22,6 +22,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/marshal"
 	"github.com/cameo-lang/cameo/src/lib/matrix"
 	"github.com/cameo-lang/cameo/src/lib/minispec"
+	nethttp "github.com/cameo-lang/cameo/src/lib/net/http"
 	"github.com/cameo-lang/cameo/src/lib/optparse"
 	"github.com/cameo-lang/cameo/src/lib/pathname"
 	"github.com/cameo-lang/cameo/src/lib/prime"
@@ -44,25 +45,22 @@ import (
 // exist before the require; require marks the name loaded and returns
 // true the first time and false after, as Ruby's does.
 var Libraries = map[string][]string{
-	"abbrev":          nil,
-	"base64":          nil,
-	"benchmark":       nil,
-	"bigdecimal":      {"bigdecimal/util", "bigdecimal/math"},
-	"bigdecimal/math": {"bigdecimal", "bigdecimal/util"},
-	"bigdecimal/util": {"bigdecimal", "bigdecimal/math"},
-	"cgi":             {"cgi/escape", "cgi/util"},
-	"cgi/escape":      nil,
-	"cgi/util":        {"cgi/escape"},
-	"csv":             nil,
-	"date":            nil,
-	"delegate":        nil,
-	"digest":          {"digest/md5", "digest/sha1", "digest/sha2"},
-	"digest/md5":      {"digest"},
-	"digest/sha1":     {"digest"},
-	"digest/sha2":     {"digest"},
-	// openssl is accepted for the OpenSSL::HMAC and OpenSSL::Digest names
-	// digest defines; a script written for openssl begins with it.
-	"openssl":                     {"digest"},
+	"abbrev":                      nil,
+	"base64":                      nil,
+	"benchmark":                   nil,
+	"bigdecimal":                  {"bigdecimal/util", "bigdecimal/math"},
+	"bigdecimal/math":             {"bigdecimal", "bigdecimal/util"},
+	"bigdecimal/util":             {"bigdecimal", "bigdecimal/math"},
+	"cgi":                         {"cgi/escape", "cgi/util"},
+	"cgi/escape":                  nil,
+	"cgi/util":                    {"cgi/escape"},
+	"csv":                         nil,
+	"date":                        nil,
+	"delegate":                    nil,
+	"digest":                      {"digest/md5", "digest/sha1", "digest/sha2"},
+	"digest/md5":                  {"digest"},
+	"digest/sha1":                 {"digest"},
+	"digest/sha2":                 {"digest"},
 	"forwardable":                 nil,
 	"getoptlong":                  nil,
 	"ipaddr":                      nil,
@@ -71,6 +69,10 @@ var Libraries = map[string][]string{
 	"marshal":                     nil,
 	"matrix":                      nil,
 	"minispec":                    nil,
+	"net/http":                    {"net/protocol"},
+	"net/https":                   {"net/http", "net/protocol"},
+	"net/protocol":                nil,
+	"openssl":                     {"digest"},
 	"optparse":                    nil,
 	"pathname":                    nil,
 	"prime":                       nil,
@@ -106,6 +108,7 @@ func Install() {
 	logger.Install()
 	minispec.Install()
 	marshal.Install()
+	nethttp.Install()
 	pathname.Install()
 	prime.Install()
 	securerandom.Install()
