@@ -1,0 +1,14 @@
+875849011
+2743732985
+222957957
+#<Encoding:BINARY (ASCII-8BIT)>
+[120, 156]
+true
+"hello hello hello hello world"
+"hello world"
+[31, 139, 8]
+"hello hello hello hello world"
+"hello hello hello hello world"
+Zlib::DataError: incorrect header check
+Zlib::BufError: buffer error
+not in gzip format
