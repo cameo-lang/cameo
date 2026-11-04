@@ -94,7 +94,7 @@ mspec's own `before` blocks.
   `json`, `benchmark`, `uri`, `date`, `digest`, `base64`,
   `securerandom`, `csv`, `marshal`, `shellwords`, `ipaddr`, `zlib`,
   `prime`, `tsort`, `abbrev`, `singleton`,
-  `forwardable`, `delegate` and `logger`, which cameo builds in;
+  `forwardable`, `delegate`, `logger` and `stringio`, which cameo builds in;
   [stdlib.md](stdlib.md)
   has every library of Ruby's standard library with its status, the ones
   to come and the ones left out. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
@@ -226,6 +226,10 @@ mspec's own `before` blocks.
   the levels, `add`, the predicates, `progname`, `formatter`,
   `datetime_format` and `Logger::Formatter`'s line. A Logger is a
   handle, so `level=` changes it for every holder; a file is left out.
+  `stringio` is Ruby 3.4's stringio 3.1.2: a String read and written as
+  an IO, with Ruby's reading methods, separators and limits, its writes
+  over the position, `seek`, `truncate` and its errors. A StringIO is a
+  handle; `string` returns the String as it is at that moment.
 - **Output**: `puts`, `print`, `p`, `pp`, `warn`.
 
 ## Different in cameo
@@ -436,7 +440,7 @@ These are absent, and a script that uses one fails when it reaches it:
 - **Not there yet**: `at_exit`, `exit!`,
   `printf` (`format` exists), `__method__`, `Enumerator.new`,
   `Integer()` with a base, and `autoload`.
-- **Libraries**: `require` of any library but the twenty-eight above, such as
+- **Libraries**: `require` of any library but the twenty-nine above, such as
   `matrix`, raises a `LoadError`. [stdlib.md](stdlib.md) says which are
   planned and which are left out, and why.
 
