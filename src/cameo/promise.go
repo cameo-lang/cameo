@@ -14,7 +14,7 @@ import (
 // is done. It is how a script waits for I/O, which cameo leaves to the
 // host:
 //
-//	web.Def("fetch", func(args []any, kwargs map[string]any) (any, error) {
+//	web.Def("fetch", func(args []any, kwargs map[string]any, block *cameo.Block) (any, error) {
 //		promise := prog.Promise()
 //		go func() {
 //			body, err := fetch(args[0].(string))

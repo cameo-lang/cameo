@@ -25,7 +25,7 @@ end
 	later := prog.Module("Later")
 	broken := later.Exception("Broken")
 	settled := make(chan error, 3)
-	later.Def("value", func(args []any, kwargs map[string]any) (any, error) {
+	later.Def("value", func(args []any, kwargs map[string]any, block *Block) (any, error) {
 		promise := prog.Promise()
 		go func() {
 			settled <- promise.Resolve(map[string]any{"n": args[0].(int64) + 1})
@@ -35,12 +35,12 @@ end
 		}()
 		return promise, nil
 	})
-	later.Def("broken", func(args []any, kwargs map[string]any) (any, error) {
+	later.Def("broken", func(args []any, kwargs map[string]any, block *Block) (any, error) {
 		promise := prog.Promise()
 		go func() { settled <- promise.Fail(broken.New("no %s", "luck")) }()
 		return promise, nil
 	})
-	later.Def("oops", func(args []any, kwargs map[string]any) (any, error) {
+	later.Def("oops", func(args []any, kwargs map[string]any, block *Block) (any, error) {
 		promise := prog.Promise()
 		go func() { settled <- promise.Fail(errors.New("oops")) }()
 		return promise, nil

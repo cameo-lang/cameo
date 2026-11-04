@@ -24,22 +24,22 @@ func init() {
 		return m.Descriptor().Fields().ByName(protoreflect.Name(name))
 	}
 	Register("Shapes::Point", dynamicpb.NewMessage(pointMD)).
-		DefineMethod("norm2", func(self *dynamicpb.Message, args []any, kwargs map[string]any) (any, error) {
+		DefineMethod("norm2", func(self *dynamicpb.Message, args []any, kwargs map[string]any, block *Block) (any, error) {
 			x, y := self.Get(field(self, "x")).Int(), self.Get(field(self, "y")).Int()
 			return x*x + y*y, nil
 		}).
-		DefineMethod("moved", func(self *dynamicpb.Message, args []any, kwargs map[string]any) (any, error) {
+		DefineMethod("moved", func(self *dynamicpb.Message, args []any, kwargs map[string]any, block *Block) (any, error) {
 			// Changing self changes the copy; the copy comes back as a new
 			// instance.
 			self.Set(field(self, "x"), protoreflect.ValueOfInt64(self.Get(field(self, "x")).Int()+args[0].(int64)))
 			return self, nil
 		}).
-		DefineClassMethod("origin", func(args []any, kwargs map[string]any) (any, error) {
+		DefineClassMethod("origin", func(args []any, kwargs map[string]any, block *Block) (any, error) {
 			return dynamicpb.NewMessage(pointMD), nil
 		})
 	Register("Shapes::Path", dynamicpb.NewMessage(pathMD))
 	Register("Google::Protobuf::Timestamp", &timestamppb.Timestamp{}).
-		DefineMethod("to_f", func(self *timestamppb.Timestamp, args []any, kwargs map[string]any) (any, error) {
+		DefineMethod("to_f", func(self *timestamppb.Timestamp, args []any, kwargs map[string]any, block *Block) (any, error) {
 			return float64(self.Seconds) + float64(self.Nanos)/1e9, nil
 		})
 }
@@ -198,7 +198,7 @@ func TestProgramModuleKeepsRegisteredClasses(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	prog.Module("Shapes").Def("hello", func(args []any, kwargs map[string]any) (any, error) { return "hi", nil })
+	prog.Module("Shapes").Def("hello", func(args []any, kwargs map[string]any, block *Block) (any, error) { return "hi", nil })
 	if err := prog.Run(); err != nil {
 		t.Fatal(err)
 	}

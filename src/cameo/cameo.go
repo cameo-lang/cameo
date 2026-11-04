@@ -305,6 +305,8 @@ func (c conv) toValue(v any) (object.Value, error) {
 		return object.Nil, nil
 	case object.Value:
 		return v, nil
+	case *Block:
+		return v.v, nil
 	case bool:
 		return object.Bool(v), nil
 	case int:
@@ -423,6 +425,8 @@ func (c conv) toValue(v any) (object.Value, error) {
 
 func (c conv) toGo(v object.Value) (any, error) {
 	switch v.Kind() {
+	case object.KindProc:
+		return &Block{c: c, v: v}, nil
 	case object.KindBool:
 		v := v.Bool()
 		return bool(v), nil
