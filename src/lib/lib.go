@@ -19,6 +19,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/prime"
 	"github.com/cameo-lang/cameo/src/lib/securerandom"
 	"github.com/cameo-lang/cameo/src/lib/shellwords"
+	"github.com/cameo-lang/cameo/src/lib/singleton"
 	libtime "github.com/cameo-lang/cameo/src/lib/time"
 	"github.com/cameo-lang/cameo/src/lib/tsort"
 	unicodenormalize "github.com/cameo-lang/cameo/src/lib/unicode_normalize"
@@ -55,6 +56,7 @@ var Libraries = map[string][]string{
 	"random/formatter":            {"securerandom"},
 	"securerandom":                {"random/formatter"},
 	"shellwords":                  nil,
+	"singleton":                   nil,
 	"time":                        nil,
 	"tsort":                       nil,
 	"unicode_normalize":           {"unicode_normalize/normalize"},
@@ -80,6 +82,7 @@ func Install() {
 	prime.Install()
 	securerandom.Install()
 	shellwords.Install()
+	singleton.Install()
 	libtime.Install()
 	tsort.Install()
 	unicodenormalize.Install()
