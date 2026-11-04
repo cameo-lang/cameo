@@ -253,25 +253,12 @@ const (
 	userinfo  = `(?:%` + hex + hex + `|[!$&-.0-9:;=A-Z_a-z~])*`
 	scheme    = `[A-Za-z][+\-.0-9A-Za-z]*`
 	// seg is a run of path characters, slashes included; segFirst one that
-	// is not a slash, where Ruby writes (?!/), and segNC one without a
-	// colon, the first of a relative path that is no scheme.
+	// is not a slash, where Ruby writes (?!/).
 	seg      = `(?:%` + hex + hex + `|[!$&-.0-9:;=@-Z_a-z~/])`
 	segFirst = `(?:%` + hex + hex + `|[!$&-.0-9:;=@-Z_a-z~])`
-	segNC    = `(?:%` + hex + hex + `|[!$&-.0-9;=@-Z_a-z~])`
-	fragment = `(?:%` + hex + hex + `|[!$&-.0-9:;=@-Z_a-z~/?])*`
-	query    = `[^#]*`
 )
 
 var (
-	// rfc3986URI matches an absolute URI; the groups are scheme, userinfo,
-	// host, port, path-abempty, path-absolute, path-rootless, query,
-	// fragment. path-empty is the absence of the other three.
-	rfc3986URI = regexp.MustCompile(`^(` + scheme + `):(?://(?:(` + userinfo + `)@)?(` + host + `)(?::(\d*))?(/` + seg + `*)?|(/(?:` + segFirst + seg + `*)?)|(` + segFirst + seg + `*)|)(?:\?(` + query + `))?(?:#(` + fragment + `))?$`)
-	// rfc3986Relative matches a relative reference; the groups are
-	// userinfo, host, port, path-abempty, path-absolute, path-noscheme,
-	// query, fragment.
-	rfc3986Relative = regexp.MustCompile(`^(?://(?:(` + userinfo + `)@)?(` + host + `)?(?::(\d*))?(/` + seg + `*)?|(/` + seg + `*)|(` + segNC + `+(?:/` + seg + `*)?)|)(?:\?(` + query + `))?(?:#(` + fragment + `))?$`)
-
 	// The component checks of new and build.
 	schemeRe   = regexp.MustCompile(`^` + scheme + `$`)
 	userinfoRe = regexp.MustCompile(`^` + userinfo + `$`)
