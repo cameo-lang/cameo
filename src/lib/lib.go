@@ -21,6 +21,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/logger"
 	"github.com/cameo-lang/cameo/src/lib/marshal"
 	"github.com/cameo-lang/cameo/src/lib/matrix"
+	"github.com/cameo-lang/cameo/src/lib/minispec"
 	"github.com/cameo-lang/cameo/src/lib/optparse"
 	"github.com/cameo-lang/cameo/src/lib/pathname"
 	"github.com/cameo-lang/cameo/src/lib/prime"
@@ -68,6 +69,7 @@ var Libraries = map[string][]string{
 	"logger":                      nil,
 	"marshal":                     nil,
 	"matrix":                      nil,
+	"minispec":                    nil,
 	"optparse":                    nil,
 	"pathname":                    nil,
 	"prime":                       nil,
@@ -100,6 +102,7 @@ func Install() {
 	ipaddr.Install()
 	json.Install()
 	logger.Install()
+	minispec.Install()
 	marshal.Install()
 	pathname.Install()
 	prime.Install()
