@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/cameo-lang/cameo/src/lib/benchmark"
+	"github.com/cameo-lang/cameo/src/lib/pathname"
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/stdlib"
 )
@@ -318,7 +319,7 @@ func (in *Interp) Compare(a, b object.Value) (int, error) {
 			return a.Time().Compare(b), nil
 		}
 	case object.KindInstance:
-		if r, ok := stdlib.ComparePathnames(a, b); ok {
+		if r, ok := pathname.Compare(a, b); ok {
 			return r, nil
 		}
 	case object.KindList:

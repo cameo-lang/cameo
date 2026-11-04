@@ -38,6 +38,9 @@ func NeedBlock(ctx object.Context, block object.Value, name string) error {
 // "" for n <= 0.
 func Padding(fill string, n int) string { return padding(fill, n) }
 
+// StringList is an Array of Strings.
+func StringList(ss []string) object.Value { return stringList(ss) }
+
 // EncodeCodepoint is UTF-8's encoding of r, a surrogate included, as
 // Ruby's unescapeHTML and JSON.parse write one.
 func EncodeCodepoint(r rune) string {
