@@ -99,6 +99,7 @@ What asks for a library is measured, not guessed:
 | `marshal` | — (cameo's wire form) | `Marshal.dump`, `load`, `restore`, `load(…, freeze:)`, with `dump`'s depth limit accepted; the bytes are the protobuf `cameo.Value` envelope every value crosses to a host in, what `to_value_proto` gives, so cameo reads them back and any protobuf reader with `cameo/value.proto` reads them too. An instance of a cameo class is found again by its class's name and digest. A Proc, a class, a Random and an Enumerator raise `TypeError`, as a Proc does in Ruby; so does an instance of a library's class, a Date or a URI, which the envelope does not carry; a Symbol comes back as a String, as it crosses to a host. Ruby's format, an IO to write to or read from, the `proc` argument of `load`, `MAJOR_VERSION` and `MINOR_VERSION` are left out |
 | `debug` | debug 1.10.0 | `debugger` and `binding.break` stop in cameo's debugger, which takes rdbg's commands ([debugger.md](debugger.md)) |
 | `cameo/runner` | — | cameo's own: the library that gives CRuby `Cameo::Runner` is built in |
+| `minispec` | — (cameo's own) | `describe`, `it`, `specify` and `skip`, minitest 5.25's `assert`, `assert_equal`, `assert_nil`, `assert_empty`, `assert_includes`, `assert_instance_of`, `assert_kind_of`, `assert_match`, `assert_respond_to`, `assert_predicate`, `assert_operator`, `assert_in_delta`, `assert_raises`, their `refute_*` negations, `flunk` and `pass`, with minitest's messages, and `Minispec::Assertion` and `Minispec::Skip`. An example runs when `it` is called and prints its mark; the report at the end of the script, through `at_exit`, lists every failure, error and skip with its line and counts them, and a failure or an error ends the script with status 1. No `before`, `after` or `let`: a local the describe block assigns is what its examples share. Ruby's minitest finds tests by method name and keeps state in instance variables, so it is left out (below) |
 
 ## Planned, in this order
 
@@ -165,8 +166,8 @@ document the data), `ostruct` 0.6.1 (an OpenStruct grows attributes at run time;
 class with typed fields or a Hash is cameo's form), `observer` 0.1.2 (a
 mutable list of observers on the observed value), `minitest` 5.25.4,
 `test-unit` 3.6.7 and `power_assert` 2.0.5 (test discovery by method
-name, assertions on instance variables; a test helper of cameo's own is the
-answer, not these), `rake` 13.2.1, `ruby2_keywords` 0.0.5 (cameo has no
+name, assertions on instance variables; `minispec`, under *Available*, is
+cameo's own test library in their place), `rake` 13.2.1, `ruby2_keywords` 0.0.5 (cameo has no
 legacy keyword passing to be compatible with).
 
 **Object identity and the VM.** Values have no identity and no address.

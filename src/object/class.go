@@ -553,4 +553,9 @@ type Context interface {
 	// AtExit keeps a block to run when the script ends, as Kernel#at_exit
 	// does.
 	AtExit(block Value)
+	// File is the script's file name, as its errors report it.
+	File() string
+	// State returns the Go value a library keeps for the run under name,
+	// made by init the first time; every async worker sees the same one.
+	State(name string, init func() any) any
 }
