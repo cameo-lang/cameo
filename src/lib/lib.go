@@ -8,6 +8,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/abbrev"
 	"github.com/cameo-lang/cameo/src/lib/base64"
 	"github.com/cameo-lang/cameo/src/lib/benchmark"
+	"github.com/cameo-lang/cameo/src/lib/bigdecimal"
 	"github.com/cameo-lang/cameo/src/lib/cgi"
 	"github.com/cameo-lang/cameo/src/lib/csv"
 	"github.com/cameo-lang/cameo/src/lib/date"
@@ -41,19 +42,22 @@ import (
 // exist before the require; require marks the name loaded and returns
 // true the first time and false after, as Ruby's does.
 var Libraries = map[string][]string{
-	"abbrev":      nil,
-	"base64":      nil,
-	"benchmark":   nil,
-	"cgi":         {"cgi/escape", "cgi/util"},
-	"cgi/escape":  nil,
-	"cgi/util":    {"cgi/escape"},
-	"csv":         nil,
-	"date":        nil,
-	"delegate":    nil,
-	"digest":      {"digest/md5", "digest/sha1", "digest/sha2"},
-	"digest/md5":  {"digest"},
-	"digest/sha1": {"digest"},
-	"digest/sha2": {"digest"},
+	"abbrev":          nil,
+	"base64":          nil,
+	"benchmark":       nil,
+	"bigdecimal":      {"bigdecimal/util", "bigdecimal/math"},
+	"bigdecimal/math": {"bigdecimal", "bigdecimal/util"},
+	"bigdecimal/util": {"bigdecimal", "bigdecimal/math"},
+	"cgi":             {"cgi/escape", "cgi/util"},
+	"cgi/escape":      nil,
+	"cgi/util":        {"cgi/escape"},
+	"csv":             nil,
+	"date":            nil,
+	"delegate":        nil,
+	"digest":          {"digest/md5", "digest/sha1", "digest/sha2"},
+	"digest/md5":      {"digest"},
+	"digest/sha1":     {"digest"},
+	"digest/sha2":     {"digest"},
 	// openssl is accepted for the OpenSSL::HMAC and OpenSSL::Digest names
 	// digest defines; a script written for openssl begins with it.
 	"openssl":                     {"digest"},
@@ -107,6 +111,7 @@ func Install() {
 	optparse.Install()
 	getoptlong.Install()
 	matrix.Install()
+	bigdecimal.Install()
 	libtime.Install()
 	tsort.Install()
 	unicodenormalize.Install()
