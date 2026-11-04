@@ -229,15 +229,13 @@ func hashProc(h object.Value) object.Value {
 }
 
 // builtinLibraries are what require loads without a file: the libraries
-// under src/lib (lib.Libraries), the ones the core still carries, and the
+// under src/lib (lib.Libraries), the two the core carries, and the
 // evaluator's own, each with the ones it loads along with it.
 var builtinLibraries = func() map[string][]string {
 	libs := map[string][]string{
-		"set":       nil,
-		"time":      nil,
-		"pp":        nil,
-		"pathname":  nil,
-		"benchmark": nil,
+		// set is core in Ruby 3.4; pp is p.
+		"set": nil,
+		"pp":  nil,
 		// debug switches the debugger on; see debug.go.
 		"debug": nil,
 		// cameo/runner is the Ruby library that gives CRuby Cameo::Runner;
