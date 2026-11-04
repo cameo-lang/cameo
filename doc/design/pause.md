@@ -41,6 +41,8 @@ A value the envelope cannot carry — a Proc, an Enumerator, a Hash with a
 default proc — has no value in the dump; its binding says why instead.
 `cameo` names each when it pauses, `cameo inspect` lists them, and a
 resumed run does not have them: reading such a variable raises `NameError`.
+The blocks `at_exit` registered are not in the dump either: a resumed run
+ends without running them.
 
 ## How a resumed run gets its classes back
 
