@@ -14,7 +14,10 @@ URI::Generic
 ["http", "u:p", "h", "1", nil, "/p", nil, "q", "f"]
 "[::1]"
 "::1"
-#<URI::HTTP https://u@x.com:444/b?q=1&r=a%20b>
+#<URI::HTTP http://x.com/b>
+#<URI::HTTP http://x.com/a?q=1&r=a%20b>
+#<URI::HTTP http://x.com:444/b?q=1&r=a%20b>
+undefined method 'path=' for an instance of URI::HTTP: a URI is parsed, joined, merged or built, not changed
 bad component(expected absolute path component): no-slash
 bad component(expected port component): "x"
 bad URI (is not URI?): "http://exa mple.com"

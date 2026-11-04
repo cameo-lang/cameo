@@ -1,6 +1,7 @@
 # Ruby's uri library: URI.parse, the components, merging and routing,
 # and the www-form encoders. Each line prints what Ruby 3.4 prints, but
-# the escaping, which is Go's: ~ stays and * is escaped.
+# the escaping, which is Go's (~ stays and * is escaped), and the refused
+# assignment, which Ruby performs.
 require "uri"
 
 u = URI.parse("https://user:pw@example.com:8443/a/b%20c/../d?x=1&y=two#frag")
@@ -16,22 +17,23 @@ p URI("file:///etc/hosts").path, URI("ws://x/y").class, URI("foo:bar").opaque, U
 p URI("/relative/path?q").class, URI.split("http://u:p@h:1/p?q#f")
 p URI("http://[::1]:80/").host, URI("http://[::1]:80/").hostname
 
-# A component is set on a copy: the variable is rebound, as every cameo
-# assignment does, and the value is checked as Ruby's setter checks it.
+# A URI has no setters: a different URI is parsed, joined, merged or
+# built, and an assignment to a component is refused, where Ruby changes
+# the URI in place.
 v = URI("http://x.com/a")
-v.path = "/b"
-v.query = "q=1&r=a b"
-v.port = "444"
-v.scheme = "https"
-v.user = "u"
-p v
+p v + "/b", v.merge("?q=1&r=a%20b"), URI::HTTP.build(host: "x.com", port: 444, path: "/b", query: "q=1&r=a%20b")
 begin
-  v.path = "no-slash"
+  v.path = "/b"
+rescue NoMethodError => e
+  puts e.message
+end
+begin
+  URI::HTTP.build(host: "x.com", path: "no-slash")
 rescue URI::InvalidComponentError => e
   puts e.message
 end
 begin
-  v.port = "x"
+  URI::HTTP.build(host: "x.com", port: "x")
 rescue URI::InvalidComponentError => e
   puts e.message
 end
