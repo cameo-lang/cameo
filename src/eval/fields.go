@@ -559,16 +559,22 @@ func (in *Interp) evalWith(n *syntax.With, env *Env, fr *Frame) (object.Value, e
 	if err != nil {
 		return object.Value{}, err
 	}
-	out, err := in.with(target, key, value)
+	out, err := in.with(target, key, value, n.Index)
 	return out, withLine(err, n.Line())
 }
 
 // with returns target with key set to value: a field on an instance, an
-// entry in a map, an element of a list.
-func (in *Interp) with(target, key, value object.Value) (object.Value, error) {
+// entry in a map, an element of a list. index is set for `target[key] =
+// value`, which a library class may take in a native []=.
+func (in *Interp) with(target, key, value object.Value, index bool) (object.Value, error) {
 	switch target.Kind() {
 	case object.KindInstance:
 		t := target.Instance()
+		if index {
+			if m := ownNative(target, "[]="); m != nil {
+				return m.Native(in, target, []object.Value{key, value}, nil, object.Value{})
+			}
+		}
 		name, ok := key.AsSymbol()
 		if !ok {
 			if s, isStr := key.AsString(); isStr {
@@ -679,7 +685,7 @@ func (in *Interp) withChanges(self object.Value, args []object.Value, kw *object
 	var err error
 	apply := func(m *object.Map) error {
 		for i, k := range m.Keys() {
-			if out, err = in.with(out, k, m.Values()[i]); err != nil {
+			if out, err = in.with(out, k, m.Values()[i], false); err != nil {
 				return err
 			}
 		}

@@ -1,0 +1,39 @@
+# Ruby's csv library: parsing with headers and converters, CSV::Row and
+# CSV::Table, and generating with Ruby's quoting. Each line prints what
+# Ruby 3.4 prints.
+require "csv"
+
+data = <<~CSV
+  name,qty,price
+  pen,3,1.5
+  "note, lined",10,2
+CSV
+p CSV.parse(data)
+p CSV.parse_line("a,\"b\"\"c\",,d\n"), "x;y".parse_csv(col_sep: ";")
+
+table = CSV.parse(data, headers: true, converters: :numeric)
+p table.headers, table.size, table["qty"], table[1]
+p table.map { |row| row["price"] * row["qty"] }
+p table.by_col["name"], table.first.to_h
+puts table.to_csv
+
+# A row is a value: []= and << return the changed copy for the variable
+# to take, where Ruby changes the row in place.
+row = CSV::Row.new(["a", "b"], [1, 2])
+row["c"] = 3
+row = row << ["d", 4]
+p row, row.fields, row.to_h
+
+# Generating quotes a field that holds the separator, a quote or a line
+# break; CSV.generate yields a writer that takes rows with <<.
+p CSV.generate_line(["a", nil, "", 1, "x,y", "q\"r", "l\nm"])
+puts CSV.generate(col_sep: ";") { |csv| csv << %w[a b]; csv << [1, nil] }
+puts CSV.generate(headers: ["id", "name"], write_headers: true) { |csv| csv << {"name" => "pen", "id" => 1} }
+p [1, "two", nil].to_csv
+
+# The errors are Ruby's, with the line.
+["a,b\"c\n", "\"abc\n", "a,\"b\" \n"].each do |text|
+  CSV.parse(text)
+rescue CSV::MalformedCSVError => e
+  puts e.message
+end

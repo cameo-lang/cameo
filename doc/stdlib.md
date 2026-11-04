@@ -95,6 +95,7 @@ What asks for a library is measured, not guessed:
 | `digest` (`digest/md5`, `sha1`, `sha2`) | digest 3.2.0 | `Digest::MD5`, `SHA1`, `SHA256`, `SHA384`, `SHA512`, `SHA2`: `hexdigest`, `digest`, `base64digest` on the class and on an object, `update`, `<<`, `reset`, `digest_length`, `block_length`, `==`, `Digest.hexencode`, `Digest()`; `require "openssl"` is accepted for the OpenSSL names; `OpenSSL::HMAC.hexdigest`, `digest`, `base64digest`, `OpenSSL::Digest.new`, `hexdigest`, `OpenSSL::Digest::SHA256` and kin. An object is a value: `update` returns the copy. `RMD160` (no RIPEMD-160 in Go) and `file` are left out |
 | `base64` | base64 0.2.0 | `encode64`, `decode64`, `strict_encode64`, `strict_decode64`, `urlsafe_encode64` (`padding:`), `urlsafe_decode64`, with Ruby's line breaks, lenient decoder and errors |
 | `securerandom` (`random/formatter`) | securerandom 0.4.1 | `SecureRandom.hex`, `uuid`, `uuid_v4`, `uuid_v7`, `random_bytes`, `bytes`, `gen_random`, `random_number`, `rand`, `alphanumeric` (`chars:`), `base64`, `urlsafe_base64`, drawing from Go's `crypto/rand`; `Random::Formatter` gives the same methods to a `Random` and to `Random` itself, and a seeded `Random` draws CRuby's values |
+| `csv` | csv 3.3.2 | `CSV.parse` (with a block too), `parse_line`, `generate`, `generate_line`, `generate_lines`, `String#parse_csv`, `Array#to_csv`; the options `col_sep:`, `row_sep:` (`:auto`), `quote_char:` (`nil` too), `headers:` (true, an Array, a String), `return_headers:`, `write_headers:`, `converters:` and `header_converters:` (Ruby's by name, or a Proc of one or two arguments with `CSV::FieldInfo`), `skip_blanks:`, `skip_lines:`, `liberal_parsing:`, `strip:`, `nil_value:`, `empty_value:`, `write_nil_value:`, `write_empty_value:`, `force_quotes:`, `quote_empty:`; `CSV::Row` and `CSV::Table` with their readers, `by_col`, `by_row`, `each`, `to_a`, `to_csv`, `==`, `inspect`; `CSV.new(string)` as a handle with `shift`, `read`, `each`, `lineno`, `line`, `headers`, `eof?`, `rewind`, `<<`, `string`; `CSV::MalformedCSVError` with Ruby's messages and `line_number`. A Row and a Table are values: `[]=`, `<<`, `push`, `delete` and `delete_if` return the changed copy, and `delete` returns the Row or Table without what it removed, not the removed part. `CSV.read`, `foreach`, `open`, `table` and the other file methods, `by_col!` and `by_row!` (bang methods), `CSV::Converters` and `HeaderConverters` as Hashes of Procs are left out |
 | `debug` | debug 1.10.0 | `debugger` and `binding.break` stop in cameo's debugger, which takes rdbg's commands ([debugger.md](debugger.md)) |
 | `cameo/runner` | — | cameo's own: the library that gives CRuby `Cameo::Runner` is built in |
 
@@ -105,7 +106,6 @@ Each is one pull request, which also moves its row to *Available*.
 | Library | Ruby's version | What goes in | Why this order |
 |---|---|---|---|
 
-| `csv` | csv 3.3.2 | `CSV.parse`, `parse_line`, `generate`, `generate_line`, `headers: true`, `CSV::Row` and `Table`, `converters: :numeric`, quoting and `col_sep`; `CSV.read`, `foreach`, `open` **unsupported** (files) | 42 spec files; data scripts |
 | `marshal` | — | `Marshal.dump` and `load` in **cameo's wire form**, not Ruby's: the bytes are the protobuf envelope every value crosses to a host in, so cameo reads them back and any protobuf reader with the `.proto` reads them too; a Proc, a Random and an Enumerator raise `TypeError`, as a Proc does in Ruby; a class is found by name and digest, as `from_proto` finds it | Ruby's format carries object identity and instance variables cameo has neither of; a round trip inside cameo is what a script wants |
 | `shellwords` | shellwords 0.2.2 | `split`, `escape`, `join`, `String#shellsplit`, `shellescape`, `Array#shelljoin` | small; what builds a command line for a host to run |
 | `unicode_normalize` | — (core) | `String#unicode_normalize`, `unicode_normalized?` with `:nfc`, `:nfd`, `:nfkc`, `:nfkd`, on `golang.org/x/text/unicode/norm` | the one core String method missing from text handling |
@@ -208,4 +208,5 @@ Pull requests, as they open and land:
 - [cameo-lang/cameo#214](https://github.com/cameo-lang/cameo/pull/214): time zones.
 - [cameo-lang/cameo#183](https://github.com/cameo-lang/cameo/pull/183): `digest`.
 - [cameo-lang/cameo#184](https://github.com/cameo-lang/cameo/pull/184): `base64`.
-- `securerandom`: available.
+- [cameo-lang/cameo#185](https://github.com/cameo-lang/cameo/pull/185): `securerandom`.
+- `csv`: available.
