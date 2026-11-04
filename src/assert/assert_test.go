@@ -235,3 +235,24 @@ func TestAssertNotContains(t *testing.T) {
 	NotContains(m, []string{"a", "b", "c"}, "b")
 	m.expectMockFailure(t, "assert.NotContains")
 }
+
+// matchesT records what Matches reports, as a testing.T would.
+type matchesT struct{ failed string }
+
+func (m *matchesT) Helper()                   {}
+func (m *matchesT) Fatal(args ...interface{}) { m.failed = fmt.Sprint(args...) }
+
+func TestMatchesChecksARegularExpression(t *testing.T) {
+	Matches(t, "GET /hi HTTP/1.1 200", `^GET /\w+ HTTP/1\.1 \d{3}$`)
+
+	var m matchesT
+	Matches(&m, "POST /hi", `^GET `)
+	if !strings.Contains(m.failed, `Should match: "^GET "`) {
+		t.Fatalf("a mismatch reported %q", m.failed)
+	}
+	m = matchesT{}
+	Matches(&m, "x", `(`)
+	if !strings.Contains(m.failed, "does not compile") {
+		t.Fatalf("a bad pattern reported %q", m.failed)
+	}
+}
