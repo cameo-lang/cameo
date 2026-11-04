@@ -113,14 +113,13 @@ mspec's own `before` blocks.
   `URI()`, `join`, `split`, `for`, `extract`, `scheme_list`, the
   www-form and URI-component encoders, and `URI::Generic` with `HTTP`,
   `HTTPS`, `FTP`, `File`, `WS`, `WSS`, `LDAP`, `LDAPS` and `MailTo`:
-  the components and their setters, `merge` and `+`, `route_from`,
-  `route_to`, `normalize`, `select`, `build`, `==`, and the error
-  classes, with Ruby's messages. A URI is an instance whose components
-  are typed fields, so `u.with(host: "x")` is a copy; `u.host = "x"` is
-  the same copy, checked as Ruby's setter checks it, bound to `u` where
-  Ruby changes the URI in place (another variable holding the URI keeps
-  it as it was). `merge!` and `normalize!` are bang methods, refused as
-  every bang method of Ruby's core is.
+  the components, `merge` and `+`, `route_from`, `route_to`,
+  `normalize`, `select`, `build`, `==`, and the error classes, with
+  Ruby's messages. A URI is an instance whose components are typed
+  fields, and it has no setters: `u.host = "x"` and `u.with(host: "x")`
+  raise `NoMethodError` where Ruby changes the URI in place; a different
+  URI is parsed, joined, merged or built. `merge!` and `normalize!` are
+  bang methods, refused as every bang method of Ruby's core is.
 - **Output**: `puts`, `print`, `p`, `pp`, `warn`.
 
 ## Different in cameo

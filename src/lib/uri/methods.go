@@ -173,7 +173,7 @@ func extract(ctx object.Context, self object.Value, args []object.Value, kw *obj
 }
 
 // installGeneric defines URI::Generic: new and build, the readers, the
-// setters, which return the changed copy, and the operations.
+// operations, and the refusal of with.
 func installGeneric() {
 	c := genericClass
 	c.DefineSingleton("new", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -331,193 +331,17 @@ func installGeneric() {
 		return object.Nil, nil
 	})
 
-	// The setters return the copy with the component changed; the
-	// evaluator rebinds the variable to it.
-	setter := func(name string, set func(ctx object.Context, p parts, cls *object.Class, v object.Value) (parts, error)) {
-		c.Define(name+"=", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-			p, err := set(ctx, read(self), self.Instance().Cls, args[0])
-			if err != nil {
-				return object.Value{}, err
-			}
-			return build(self.Instance().Cls, p), nil
-		})
-	}
-	optString := func(ctx object.Context, v object.Value) (*string, error) {
-		if v.IsNil() {
-			return nil, nil
-		}
-		s, err := stdlib.WantString(ctx, v)
-		if err != nil {
-			return nil, err
-		}
-		return str(s), nil
-	}
-	setter("scheme", func(ctx object.Context, p parts, cls *object.Class, v object.Value) (parts, error) {
-		s, err := optString(ctx, v)
-		if err != nil {
-			return p, err
-		}
-		if err := checkScheme(ctx, s); err != nil {
-			return p, err
-		}
-		if s != nil {
-			s = str(strings.ToLower(*s))
-		}
-		p.scheme = s
-		return p, nil
-	})
-	setter("userinfo", func(ctx object.Context, p parts, cls *object.Class, v object.Value) (parts, error) {
-		s, err := optString(ctx, v)
-		if err != nil {
-			return p, err
-		}
-		if err := checkUserinfo(ctx, p, s); err != nil {
-			return p, err
-		}
-		p.userinfo = s
-		return p, nil
-	})
-	setter("user", func(ctx object.Context, p parts, cls *object.Class, v object.Value) (parts, error) {
-		s, err := optString(ctx, v)
-		if err != nil {
-			return p, err
-		}
-		if s != nil && p.opaque != nil {
-			return p, ctx.Raise(invalidURI, "can not set user with opaque")
-		}
-		if s != nil && !userinfoRe.MatchString(*s) {
-			return p, ctx.Raise(invalidComp, "bad component(expected userinfo component): %s", *s)
-		}
-		_, pw := userPassword(p)
-		p.userinfo = joinUserinfo(s, pw)
-		return p, nil
-	})
-	setter("password", func(ctx object.Context, p parts, cls *object.Class, v object.Value) (parts, error) {
-		s, err := optString(ctx, v)
-		if err != nil {
-			return p, err
-		}
-		u, _ := userPassword(p)
-		if s != nil {
-			if p.opaque != nil {
-				return p, ctx.Raise(invalidURI, "can not set password with opaque")
-			}
-			if u == nil {
-				return p, ctx.Raise(invalidURI, "password component depends user component")
-			}
-			if !userinfoRe.MatchString(*s) {
-				return p, ctx.Raise(invalidComp, "bad component(expected user component): %s", *s)
+	// A URI has no setters. u.host = "x", which cameo reads as with, and
+	// with itself are refused: a different URI is parsed, joined, merged or
+	// built.
+	c.Define("with", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		name := "with"
+		if kw != nil && kw.Len() > 0 {
+			if sym, ok := kw.Keys()[0].AsSymbol(); ok {
+				name = string(sym) + "="
 			}
 		}
-		p.userinfo = joinUserinfo(u, s)
-		return p, nil
-	})
-	setter("host", func(ctx object.Context, p parts, cls *object.Class, v object.Value) (parts, error) {
-		s, err := optString(ctx, v)
-		if err != nil {
-			return p, err
-		}
-		if err := checkHost(ctx, p, s); err != nil {
-			return p, err
-		}
-		p.host = s
-		return p, nil
-	})
-	setter("hostname", func(ctx object.Context, p parts, cls *object.Class, v object.Value) (parts, error) {
-		s, err := optString(ctx, v)
-		if err != nil {
-			return p, err
-		}
-		if s != nil && strings.Contains(*s, ":") && !strings.HasPrefix(*s, "[") {
-			s = str("[" + *s + "]")
-		}
-		if err := checkHost(ctx, p, s); err != nil {
-			return p, err
-		}
-		p.host = s
-		return p, nil
-	})
-	setter("port", func(ctx object.Context, p parts, cls *object.Class, v object.Value) (parts, error) {
-		if v.IsNil() {
-			p.port = nil
-			return p, nil
-		}
-		if p.opaque != nil {
-			return p, ctx.Raise(invalidURI, "can not set port with registry or opaque")
-		}
-		if n, ok := v.AsInt(); ok {
-			p.port = &n
-			return p, nil
-		}
-		s, ok := v.AsString()
-		if !ok || !portRe.MatchString(s) {
-			shown, err := ctx.Inspect(v)
-			if err != nil {
-				return p, err
-			}
-			return p, ctx.Raise(invalidComp, "bad component(expected port component): %s", shown)
-		}
-		if strings.TrimSpace(s) == "" {
-			p.port = nil
-			return p, nil
-		}
-		n, _ := strconv.ParseInt(strings.TrimSpace(s), 10, 64)
-		p.port = &n
-		return p, nil
-	})
-	setter("path", func(ctx object.Context, p parts, cls *object.Class, v object.Value) (parts, error) {
-		s, err := optString(ctx, v)
-		if err != nil {
-			return p, err
-		}
-		if err := checkPath(ctx, p, s); err != nil {
-			return p, err
-		}
-		if cls.IsA(ftpClass) && s != nil {
-			s = str(ftpPath(*s))
-		}
-		p.path = s
-		return p, nil
-	})
-	setter("opaque", func(ctx object.Context, p parts, cls *object.Class, v object.Value) (parts, error) {
-		s, err := optString(ctx, v)
-		if err != nil {
-			return p, err
-		}
-		if err := checkOpaque(ctx, p, s); err != nil {
-			return p, err
-		}
-		p.opaque = s
-		return p, nil
-	})
-	setter("query", func(ctx object.Context, p parts, cls *object.Class, v object.Value) (parts, error) {
-		s, err := optString(ctx, v)
-		if err != nil {
-			return p, err
-		}
-		if s != nil {
-			if p.opaque != nil {
-				return p, ctx.Raise(invalidURI, "query conflicts with opaque")
-			}
-			q, err := escapeQuery(ctx, *s)
-			if err != nil {
-				return p, err
-			}
-			s = str(q)
-		}
-		p.query = s
-		return p, nil
-	})
-	setter("fragment", func(ctx object.Context, p parts, cls *object.Class, v object.Value) (parts, error) {
-		s, err := optString(ctx, v)
-		if err != nil {
-			return p, err
-		}
-		if s != nil {
-			s = str(escapeFragment(*s))
-		}
-		p.fragment = s
-		return p, nil
+		return object.Value{}, ctx.Raise(object.NoMethodError, "undefined method '%s' for an instance of %s: a URI is parsed, joined, merged or built, not changed", name, self.Instance().Cls.QualifiedName())
 	})
 }
 
@@ -574,8 +398,8 @@ func componentStrings(ctx object.Context, args []object.Value) ([]*string, error
 }
 
 // buildCall is Generic.build and its subclasses': the components as a Hash
-// by name or an Array in the class's component order, checked as the
-// setters check them.
+// by name or an Array in the class's component order, checked as new
+// checks them.
 func buildCall(ctx object.Context, cls *object.Class, arg object.Value) (object.Value, error) {
 	names := componentsOf(cls)
 	byName := map[string]object.Value{}
@@ -679,27 +503,6 @@ func installSubclasses() {
 		path, _ := ftpSplit(read(self))
 		return strOrNil(path), nil
 	})
-	f.Define("typecode=", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		p := read(self)
-		path, _ := ftpSplit(p)
-		if args[0].IsNil() {
-			p.path = path
-			return build(ftpClass, p), nil
-		}
-		tc, err := stdlib.WantString(ctx, args[0])
-		if err != nil {
-			return object.Value{}, err
-		}
-		if tc != "a" && tc != "i" && tc != "d" {
-			return object.Value{}, ctx.Raise(invalidComp, "bad typecode(expected a, i or d): %s", tc)
-		}
-		base := ""
-		if path != nil {
-			base = *path
-		}
-		p.path = str(base + ";type=" + tc)
-		return build(ftpClass, p), nil
-	})
 
 	l := ldapClass
 	ldapPart := func(name string, i int) {
@@ -719,25 +522,6 @@ func installSubclasses() {
 	mt.Define("headers", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		_, headers := mailto(self)
 		return headersValue(headers), nil
-	})
-	mt.Define("to=", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		to, err := stdlib.WantString(ctx, args[0])
-		if err != nil {
-			return object.Value{}, err
-		}
-		if !mailtoToRe.MatchString(to) {
-			return object.Value{}, ctx.Raise(invalidComp, "bad component(expected opaque component): %s", to)
-		}
-		_, headers := mailto(self)
-		return mailtoValue(self.Instance().Cls, read(self), to, headers), nil
-	})
-	mt.Define("headers=", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		headers, err := headersArg(ctx, args[0])
-		if err != nil {
-			return object.Value{}, err
-		}
-		to, _ := mailto(self)
-		return mailtoValue(self.Instance().Cls, read(self), to, headers), nil
 	})
 	mailtext := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		to, headers := mailto(self)

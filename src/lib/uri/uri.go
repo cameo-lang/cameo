@@ -6,8 +6,9 @@
 // URI, resolves a reference and escapes a component; the components land
 // in Ruby's places and the refusals carry Ruby's messages. A URI is an instance of its class
 // with the components as typed fields, so it is a protobuf message like
-// every cameo instance, with and == work on it, and u.host = "x" rebinds u
-// to a copy, checked as Ruby's setter checks the value.
+// every cameo instance, and == works on it. It has no setters: u.host = "x"
+// and with are refused, since a URI is parsed, joined, merged or built, not
+// changed.
 package uri
 
 import (
@@ -271,7 +272,7 @@ var (
 	// query, fragment.
 	rfc3986Relative = regexp.MustCompile(`^(?://(?:(` + userinfo + `)@)?(` + host + `)?(?::(\d*))?(/` + seg + `*)?|(/` + seg + `*)|(` + segNC + `+(?:/` + seg + `*)?)|)(?:\?(` + query + `))?(?:#(` + fragment + `))?$`)
 
-	// The component checks of the setters.
+	// The component checks of new and build.
 	schemeRe   = regexp.MustCompile(`^` + scheme + `$`)
 	userinfoRe = regexp.MustCompile(`^` + userinfo + `$`)
 	hostRe     = regexp.MustCompile(`^` + host + `$`)
@@ -398,9 +399,9 @@ func parse(ctx object.Context, v object.Value) (object.Value, error) {
 	return construct(ctx, classFor(c[0]), c, false)
 }
 
-// construct is URI::Generic#initialize: the nine components, checked as
-// the setters check them when argCheck is set, as new does from a
-// script, and taken as the parser read them otherwise.
+// construct is URI::Generic#initialize: the nine components, checked
+// when argCheck is set, as new does from a script, and taken as the
+// parser read them otherwise.
 func construct(ctx object.Context, cls *object.Class, c []*string, argCheck bool) (object.Value, error) {
 	var p parts
 	set := func(i int, v *string) error {
@@ -501,7 +502,7 @@ func construct(ctx object.Context, cls *object.Class, c []*string, argCheck bool
 	return build(cls, p), nil
 }
 
-// The setters' checks, with Ruby's messages.
+// The component checks, with Ruby's messages.
 
 func checkScheme(ctx object.Context, v *string) error {
 	if v != nil && !schemeRe.MatchString(*v) {

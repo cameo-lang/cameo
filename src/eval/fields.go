@@ -577,8 +577,13 @@ func (in *Interp) with(target, key, value object.Value) (object.Value, error) {
 				return object.Value{}, in.raise(object.TypeError, 0, "a field of %s is named by a symbol, not %s", t.Cls.QualifiedName(), typeName(key))
 			}
 		}
-		// A library class checks a component in a native setter, name=,
-		// which returns the copy: URI::Generic#port= refuses "x".
+		// A library class may define with for its own instances, to refuse
+		// it: a URI has no setters, so u.host = "x" raises there. Or it may
+		// define a native setter, name=, which an assignment reaches this
+		// way: a handle changes in place, a value returns its copy.
+		if m := ownNative(target, "with"); m != nil {
+			return m.Native(in, target, nil, object.NewMap().Put(object.Symbol(string(name)), value), object.Value{})
+		}
 		if m := ownNative(target, string(name)+"="); m != nil {
 			return m.Native(in, target, []object.Value{value}, nil, object.Value{})
 		}

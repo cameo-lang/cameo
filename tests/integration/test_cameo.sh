@@ -63,14 +63,17 @@ test_uri_parses_merges_and_refuses() {
 require "uri"
 u = URI("https://u:p@example.com:8443/a/b?x=1#f")
 puts u.host, u.port, u.request_uri, u.merge("../c?y"), URI.encode_www_form(q: "a b", n: [1, 2])
-u.path = "/z"
-puts u
+begin
+  u.path = "/z"
+rescue NoMethodError => e
+  puts e.message
+end
 URI.parse("http://exa mple.com")
 CAMEO
   local rc=0
   out=$("$CAMEO_BIN" "$script" 2>&1) || rc=$?
   assert_eq 1 "$rc" "an InvalidURIError does not fail the run"
-  assert_eq $'example.com\n8443\n/a/b?x=1\nhttps://u:p@example.com:8443/c?y\nq=a+b&n=1&n=2\nhttps://u:p@example.com:8443/z?x=1#f\n'"$script"$':6: bad URI (is not URI?): "http://exa mple.com" (URI::InvalidURIError)' "$out"
+  assert_eq $'example.com\n8443\n/a/b?x=1\nhttps://u:p@example.com:8443/c?y\nq=a+b&n=1&n=2\nundefined method \'path=\' for an instance of URI::HTTPS: a URI is parsed, joined, merged or built, not changed\n'"$script"$':9: bad URI (is not URI?): "http://exa mple.com" (URI::InvalidURIError)' "$out"
 }
 
 test_exit_ends_the_run_with_its_status() {

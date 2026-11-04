@@ -48,9 +48,7 @@ begin; URI(nil); rescue ArgumentError => e; puts e.message; end
 begin; URI.join("x", "y"); rescue URI::BadURIError => e; puts e.message; end
 begin; URI::HTTP.build(host: "x com", path: "/p"); rescue URI::InvalidComponentError => e; puts e.message; end
 begin; URI::HTTP.build(host: "x.com", path: "p"); rescue URI::InvalidComponentError => e; puts e.message; end
-v = URI("http://x.com/a")
-begin; v.scheme = "1x"; rescue URI::InvalidComponentError => e; puts e.message; end
-begin; v.host = "a b"; rescue URI::InvalidComponentError => e; puts e.message; end
+begin; URI::HTTP.build(host: "a b"); rescue URI::InvalidComponentError => e; puts e.message; end
 begin; URI("http://x.com/a").select(:nope); rescue ArgumentError => e; puts e.message; end
 `)
 	assert.Equals(t, out, `bad URI (is not URI?): "http://x.com:-1"
@@ -61,51 +59,40 @@ bad argument (expected URI object or URI string)
 both URI are relative
 bad component(expected host component): x com
 bad component(expected absolute path component): p
-bad component(expected scheme component): 1x
 bad component(expected host component): a b
 expected of components of URI::HTTP (scheme, userinfo, host, port, path, query, fragment)
 `)
 }
 
-// Where Ruby changes the URI in place, so that b would change with a,
-// cameo rebinds a to the copy and b keeps the URI as it was; with is
-// cameo's. Every other line prints what Ruby prints.
-func TestURISettersReturnACopyTheVariableIsReboundTo(t *testing.T) {
+// A URI has no setters. Ruby changes the URI in place; cameo refuses the
+// assignment, with itself, and the FTP and MailTo writers, and a different
+// URI is parsed, joined, merged or built. The last line prints what Ruby
+// prints.
+func TestURIHasNoSetters(t *testing.T) {
 	out := runScript(t, `require "uri"
 a = URI("http://x.com/a")
 b = a
-a.path = "/b"
-a.query = "a b#"
-a.fragment = "f g"
-a.port = nil
-a.hostname = "::1"
-p a, b, a.port, a.hostname, a.with(path: "/c")
-c = URI("http://x.com/x")
-c.port = 80
-p c.to_s, c.port
-w = URI("http://x.com")
-w.userinfo = "a:b"
-w.password = "z"
-p w, w.user, w.password
-f = URI("ftp://h/pub/f")
-p f.path, f.to_s
-f.typecode = "a"
-p f.to_s, f.typecode
+begin; a.path = "/b"; rescue NoMethodError => e; puts e.message; end
+begin; a.with(query: "q"); rescue NoMethodError => e; puts e.message; end
+begin; a.with { |x| { port: 80 } }; rescue NoMethodError => e; puts e.message; end
+f = URI("ftp://h/pub/f;type=a")
+begin; f.typecode = "i"; rescue NoMethodError => e; puts e.message; end
+m = URI("mailto:a@b.c")
+begin; m.to = "x@y.z"; rescue NoMethodError => e; puts e.message; end
+begin; m.headers = [["subject", "hi"]]; rescue NoMethodError => e; puts e.message; end
+p a == b, a + "/b", a.merge("?q=1"), URI.join(a, "c#f"), URI::HTTP.build(host: "x.com", port: 444, path: "/b", query: "q=1")
 `)
-	assert.Equals(t, out, `#<URI::HTTP http://[::1]/b?a%20b%23#f%20g>
-#<URI::HTTP http://x.com/a>
-nil
-"::1"
-#<URI::HTTP http://[::1]/c?a%20b%23#f%20g>
-"http://x.com/x"
-80
-#<URI::HTTP http://a:z@x.com>
-"a"
-"z"
-"pub/f"
-"ftp://h/pub/f"
-"ftp://h/pub/f;type=a"
-"a"
+	assert.Equals(t, out, `undefined method 'path=' for an instance of URI::HTTP: a URI is parsed, joined, merged or built, not changed
+undefined method 'query=' for an instance of URI::HTTP: a URI is parsed, joined, merged or built, not changed
+undefined method 'with' for an instance of URI::HTTP: a URI is parsed, joined, merged or built, not changed
+undefined method 'typecode=' for an instance of URI::FTP: a URI is parsed, joined, merged or built, not changed
+undefined method 'to=' for an instance of URI::MailTo: a URI is parsed, joined, merged or built, not changed
+undefined method 'headers=' for an instance of URI::MailTo: a URI is parsed, joined, merged or built, not changed
+true
+#<URI::HTTP http://x.com/b>
+#<URI::HTTP http://x.com/a?q=1>
+#<URI::HTTP http://x.com/c#f>
+#<URI::HTTP http://x.com:444/b?q=1>
 `)
 }
 
