@@ -98,6 +98,7 @@ var Libraries = map[string][]string{
 // start. A library listed here needs no entry in Libraries, and may have
 // one for what it loads along with it.
 var Sources = map[string]string{
+	"abbrev":  abbrev.Source,
 	"frankie": frankie.Source,
 }
 
