@@ -28,11 +28,13 @@ deps: prerequisites ## Resolve all dependencies
 build: prerequisites ## Build the cameo binary into bin/
 	go build -o $(BINARY) ./src/cmd/cameo
 
+# The Go tests run under TZ=UTC: the time and date tests hold cameo to what
+# Ruby prints in that zone, and a local zone would change the local times.
 tests: prerequisites ## Run the Go tests, and check formatting and go.mod
 	@unformatted=$$(gofmt -l src tests); if [ -n "$$unformatted" ]; then \
 	  echo "not gofmt-clean, run: gofmt -w $$unformatted" >&2; exit 1; fi
 	go mod tidy -diff
-	go test ./...
+	TZ=UTC go test ./...
 
 # The shell tests drive the built binary, which reaches them through CAMEO_BIN.
 integration-tests: prerequisites build ## Run the shell-based integration tests
