@@ -91,7 +91,7 @@ mspec's own `before` blocks.
   Ruby's numbers, `Integer()`, `Float()`, `String()` and `Array()`,
   `Process.clock_gettime`.
 - **Libraries**: `require` of `set`, `time`, `pp`, `pathname`, `cgi`,
-  `json` and `benchmark`, which cameo builds in; [stdlib.md](stdlib.md)
+  `json`, `benchmark` and `uri`, which cameo builds in; [stdlib.md](stdlib.md)
   has every library of Ruby's standard library with its status, the ones
   to come and the ones left out. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
   do without I/O: `escape` and `unescape`, the URI-component pair,
@@ -108,6 +108,18 @@ mspec's own `before` blocks.
   readers, `format`, `to_a`, `to_h`, arithmetic and `add`. The times are
   read inside the script, so the interpreter's start is not in them; the
   CPU times are the whole process's, the work of `async` calls included.
+  `uri` is Ruby 3.4's uri 1.0.2 on Go's `net/url`, which reads a URI,
+  resolves a reference and escapes a component: `URI.parse`,
+  `URI()`, `join`, `split`, `for`, `extract`, `scheme_list`, the
+  www-form and URI-component encoders, and `URI::Generic` with `HTTP`,
+  `HTTPS`, `FTP`, `File`, `WS`, `WSS`, `LDAP`, `LDAPS` and `MailTo`:
+  the components, `merge` and `+`, `route_from`, `route_to`,
+  `normalize`, `select`, `build`, `==`, and the error classes, with
+  Ruby's messages. A URI is an instance whose components are typed
+  fields, and it has no setters: `u.host = "x"` and `u.with(host: "x")`
+  raise `NoMethodError` where Ruby changes the URI in place; a different
+  URI is parsed, joined, merged or built. `merge!` and `normalize!` are
+  bang methods, refused as every bang method of Ruby's core is.
 - **Output**: `puts`, `print`, `p`, `pp`, `warn`.
 
 ## Different in cameo
@@ -316,7 +328,7 @@ These are absent, and a script that uses one fails when it reaches it:
 - **Not there yet**: `at_exit`, `exit!`,
   `printf` (`format` exists), `__method__`, `Enumerator.new`,
   `Integer()` with a base, and `autoload`.
-- **Libraries**: `require` of any library but the seven above, such as
+- **Libraries**: `require` of any library but the eight above, such as
   raises a `LoadError`. [stdlib.md](stdlib.md) says which are
   planned and which are left out, and why.
 
