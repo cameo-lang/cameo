@@ -14,10 +14,12 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/delegate"
 	"github.com/cameo-lang/cameo/src/lib/digest"
 	"github.com/cameo-lang/cameo/src/lib/forwardable"
+	"github.com/cameo-lang/cameo/src/lib/getoptlong"
 	"github.com/cameo-lang/cameo/src/lib/ipaddr"
 	"github.com/cameo-lang/cameo/src/lib/json"
 	"github.com/cameo-lang/cameo/src/lib/logger"
 	"github.com/cameo-lang/cameo/src/lib/marshal"
+	"github.com/cameo-lang/cameo/src/lib/optparse"
 	"github.com/cameo-lang/cameo/src/lib/pathname"
 	"github.com/cameo-lang/cameo/src/lib/prime"
 	"github.com/cameo-lang/cameo/src/lib/securerandom"
@@ -55,10 +57,12 @@ var Libraries = map[string][]string{
 	// digest defines; a script written for openssl begins with it.
 	"openssl":                     {"digest"},
 	"forwardable":                 nil,
+	"getoptlong":                  nil,
 	"ipaddr":                      nil,
 	"json":                        nil,
 	"logger":                      nil,
 	"marshal":                     nil,
+	"optparse":                    nil,
 	"pathname":                    nil,
 	"prime":                       nil,
 	"random/formatter":            {"securerandom"},
@@ -98,6 +102,8 @@ func Install() {
 	singleton.Install()
 	stringio.Install()
 	strscan.Install()
+	optparse.Install()
+	getoptlong.Install()
 	libtime.Install()
 	tsort.Install()
 	unicodenormalize.Install()

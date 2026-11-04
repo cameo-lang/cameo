@@ -105,7 +105,19 @@ func Load(file, src string, stdout, stderr io.Writer) (*Program, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Program{file: file, src: src, prog: prog, in: eval.New(stdout, stderr)}, nil
+	p := &Program{file: file, src: src, prog: prog, in: eval.New(stdout, stderr)}
+	p.Args(nil)
+	return p, nil
+}
+
+// Args sets ARGV, the script's arguments: what follows the script on the
+// cameo command line, or what the host gives it. It is empty by default.
+func (p *Program) Args(args []string) {
+	elems := make([]object.Value, len(args))
+	for i, a := range args {
+		elems[i] = object.String(a)
+	}
+	p.in.SetConst("ARGV", object.NewList(elems...))
 }
 
 // IgnoreMutationErrors sets whether a call of one of Ruby's mutators,

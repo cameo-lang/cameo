@@ -96,6 +96,9 @@ func (in *Interp) Const(name string) (object.Value, bool) {
 	return v, ok
 }
 
+// File is the script's path, as Run was given it; "" before Run.
+func (in *Interp) File() string { return in.file }
+
 // SetConst defines a top-level constant before the script runs: a module
 // the host gives it.
 func (in *Interp) SetConst(name string, v object.Value) {
