@@ -12,6 +12,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/date"
 	"github.com/cameo-lang/cameo/src/lib/digest"
 	"github.com/cameo-lang/cameo/src/lib/json"
+	"github.com/cameo-lang/cameo/src/lib/marshal"
 	"github.com/cameo-lang/cameo/src/lib/pathname"
 	"github.com/cameo-lang/cameo/src/lib/securerandom"
 	libtime "github.com/cameo-lang/cameo/src/lib/time"
@@ -39,6 +40,7 @@ var Libraries = map[string][]string{
 	// digest defines; a script written for openssl begins with it.
 	"openssl":          {"digest"},
 	"json":             nil,
+	"marshal":          nil,
 	"pathname":         nil,
 	"random/formatter": {"securerandom"},
 	"securerandom":     {"random/formatter"},
@@ -56,6 +58,7 @@ func Install() {
 	date.Install()
 	digest.Install()
 	json.Install()
+	marshal.Install()
 	pathname.Install()
 	securerandom.Install()
 	libtime.Install()

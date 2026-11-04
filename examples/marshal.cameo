@@ -1,0 +1,26 @@
+# Marshal in cameo's wire form: dump writes the protobuf envelope every
+# value crosses to a host in, and load reads it back. The bytes are not
+# Ruby's, so a protobuf reader with cameo/value.proto reads them too.
+require "marshal"
+
+class Point
+  int :x, :y
+  def initialize(x, y)
+    self.x = x
+    self.y = y
+  end
+end
+
+data = Marshal.dump({"origin" => Point.new(0, 0), "tags" => ["a", "b"], "at" => Time.utc(2020, 1, 2)})
+p data.encoding, data.bytesize
+p Marshal.load(data)
+p Marshal.load(Marshal.dump([1, 2.5, nil, true, 1..3, Set[1]]))
+
+# A Proc cannot be dumped, as in Ruby; nor can a Symbol stay one: the
+# envelope carries it as a String.
+begin
+  Marshal.dump(-> { 1 })
+rescue TypeError => e
+  puts e.message
+end
+p Marshal.load(Marshal.dump(:sym))
