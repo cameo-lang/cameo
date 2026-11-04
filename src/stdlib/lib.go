@@ -42,6 +42,20 @@ func Padding(fill string, n int) string { return padding(fill, n) }
 // Enumerator, as its elements, or fails with Ruby's TypeError.
 func ToList(ctx object.Context, v object.Value) ([]object.Value, error) { return toList(ctx, v) }
 
+// Module is the module bound to a top-level constant, made and bound when
+// there is none: what two libraries share, as digest and net/http share
+// OpenSSL.
+func Module(name string) *object.Class {
+	if v, ok := object.ObjectClass.Consts[name]; ok {
+		if c, isClass := v.AsClass(); isClass {
+			return c
+		}
+	}
+	m := object.NewModule(name)
+	object.ObjectClass.Consts[name] = object.ClassValue(m)
+	return m
+}
+
 // StringList is an Array of Strings.
 func StringList(ss []string) object.Value { return stringList(ss) }
 

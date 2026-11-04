@@ -91,7 +91,7 @@ mspec's own `before` blocks.
   Ruby's numbers, `Integer()`, `Float()`, `String()` and `Array()`,
   `Process.clock_gettime`.
 - **Libraries**: `require` of `set`, `time`, `pp`, `pathname`, `cgi`,
-  `json`, `benchmark`, `uri` and `date`, which cameo builds in; [stdlib.md](stdlib.md)
+  `json`, `benchmark`, `uri`, `date` and `digest`, which cameo builds in; [stdlib.md](stdlib.md)
   has every library of Ruby's standard library with its status, the ones
   to come and the ones left out. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
   do without I/O: `escape` and `unescape`, the URI-component pair,
@@ -140,6 +140,17 @@ mspec's own `before` blocks.
   not `(59/1)`; `ajd`, `day_fraction`, `sec_fraction` and `offset` are
   Floats. `Date::Infinity` and `marshal_dump` are left out, and a day
   number past 64 bits raises `RangeError`.
+  `digest` is Ruby 3.4's digest 3.2.0: `Digest::MD5`, `SHA1`, `SHA256`,
+  `SHA384`, `SHA512` and `SHA2` with `hexdigest`, `digest` and
+  `base64digest` on the class and on an object, `update` and `<<`,
+  `reset`, `digest_length`, `block_length`, `==`, `Digest.hexencode`,
+  `Digest(:SHA256)`; and, under the names openssl gives them,
+  `OpenSSL::HMAC.hexdigest`, `digest` and `base64digest`,
+  `OpenSSL::Digest.new("SHA256")`, `OpenSSL::Digest.hexdigest` and
+  `OpenSSL::Digest::SHA256`. A digest object is a value: `update` and
+  `<<` return the object with more fed, for the variable to take,
+  `d = d << "x"`, where Ruby feeds it in place. `RMD160` is left out
+  (Go has no RIPEMD-160), and `file` reads a file, which cameo does not.
 - **Output**: `puts`, `print`, `p`, `pp`, `warn`.
 
 ## Different in cameo
@@ -350,7 +361,7 @@ These are absent, and a script that uses one fails when it reaches it:
 - **Not there yet**: `at_exit`, `exit!`,
   `printf` (`format` exists), `__method__`, `Enumerator.new`,
   `Integer()` with a base, and `autoload`.
-- **Libraries**: `require` of any library but the nine above, such as
+- **Libraries**: `require` of any library but the eleven above, such as
   raises a `LoadError`. [stdlib.md](stdlib.md) says which are
   planned and which are left out, and why.
 
