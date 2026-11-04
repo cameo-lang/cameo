@@ -17,6 +17,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/securerandom"
 	"github.com/cameo-lang/cameo/src/lib/shellwords"
 	libtime "github.com/cameo-lang/cameo/src/lib/time"
+	unicodenormalize "github.com/cameo-lang/cameo/src/lib/unicode_normalize"
 	"github.com/cameo-lang/cameo/src/lib/uri"
 )
 
@@ -39,15 +40,17 @@ var Libraries = map[string][]string{
 	"digest/sha2": {"digest"},
 	// openssl is accepted for the OpenSSL::HMAC and OpenSSL::Digest names
 	// digest defines; a script written for openssl begins with it.
-	"openssl":          {"digest"},
-	"json":             nil,
-	"marshal":          nil,
-	"pathname":         nil,
-	"random/formatter": {"securerandom"},
-	"securerandom":     {"random/formatter"},
-	"shellwords":       nil,
-	"time":             nil,
-	"uri":              nil,
+	"openssl":                     {"digest"},
+	"json":                        nil,
+	"marshal":                     nil,
+	"pathname":                    nil,
+	"random/formatter":            {"securerandom"},
+	"securerandom":                {"random/formatter"},
+	"shellwords":                  nil,
+	"time":                        nil,
+	"unicode_normalize":           {"unicode_normalize/normalize"},
+	"unicode_normalize/normalize": nil,
+	"uri":                         nil,
 }
 
 // Install defines every library. The evaluator calls it once, after
@@ -65,5 +68,6 @@ func Install() {
 	securerandom.Install()
 	shellwords.Install()
 	libtime.Install()
+	unicodenormalize.Install()
 	uri.Install()
 }
