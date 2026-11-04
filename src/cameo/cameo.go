@@ -539,3 +539,10 @@ var builtinExceptions = sync.OnceValue(func() []*object.Class {
 	}
 	return out
 })
+
+// AllowIO lets the script do I/O through the libraries named, by their
+// require paths: AllowIO("io/httpd") lets HTTPD.serve listen on a socket,
+// which it refuses in a program that did not say so. The cameo command
+// and a program cameo build wrote allow every I/O library. Call it before
+// Run.
+func (p *Program) AllowIO(libs ...string) { p.in.AllowIO(libs...) }

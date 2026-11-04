@@ -559,6 +559,13 @@ type Context interface {
 	// AtExit keeps a block to run when the script ends, as Kernel#at_exit
 	// does.
 	AtExit(block Value)
+	// IOAllowed reports whether the host lets the script do I/O through the
+	// library named by its require path: io/httpd listens only when
+	// IOAllowed("io/httpd").
+	IOAllowed(lib string) bool
+	// Done is closed when the run is stopped from outside, so a host method
+	// that blocks can end.
+	Done() <-chan struct{}
 	// File is the script's file name, as its errors report it.
 	File() string
 	// State returns the Go value a library keeps for the run under name,

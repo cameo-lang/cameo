@@ -56,6 +56,9 @@ type Interp struct {
 	// exits are the blocks at_exit registered, shared with the workers; Run
 	// runs them when the script ends.
 	exits *exitHandlers
+	// allowIO are the libraries AllowIO enabled, by require path; see
+	// IOAllowed.
+	allowIO map[string]bool
 	// states are what libraries keep for the run, by name; see State.
 	states *libStates
 	// stop ends the run, and is shared with the workers; see Stop.
@@ -293,6 +296,23 @@ func (h *exitHandlers) pop() (object.Value, bool) {
 
 // AtExit implements object.Context.
 func (in *Interp) AtExit(block object.Value) { in.exits.push(block) }
+
+// AllowIO lets the script do I/O through the libraries named by their
+// require paths; see object.Context.IOAllowed. Call it before Run.
+func (in *Interp) AllowIO(libs ...string) {
+	if in.allowIO == nil {
+		in.allowIO = map[string]bool{}
+	}
+	for _, lib := range libs {
+		in.allowIO[lib] = true
+	}
+}
+
+// IOAllowed implements object.Context.
+func (in *Interp) IOAllowed(lib string) bool { return in.allowIO[lib] }
+
+// Done implements object.Context: the channel Stop closes.
+func (in *Interp) Done() <-chan struct{} { return in.stop.chs[0] }
 
 // runExitHandlers runs the blocks at_exit registered, the last first, once
 // the script ended with err, and returns the error the run ends with. The

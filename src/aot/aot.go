@@ -1175,7 +1175,12 @@ const mainFunc = `func main() {
 	if os.Getenv("GOMEMLIMIT") == "" {
 		debug.SetMemoryLimit(1 << 30)
 	}
-	if err := cameo.Run(file, script, os.Stdout, os.Stderr); err != nil {
+	prog, err := cameo.Load(file, script, os.Stdout, os.Stderr)
+	if err == nil {
+		prog.AllowIO("io/httpd") // a built program is the host, as the cameo command is
+		err = prog.Run()
+	}
+	if err != nil {
 		if status, ok := cameo.ExitStatus(err); ok {
 			os.Exit(status)
 		}
