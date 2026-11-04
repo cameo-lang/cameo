@@ -54,7 +54,7 @@ type Handler func(*Request) (Response, error)
 // calls it once.
 func Install() {
 	m := httpdModule
-	object.ObjectClass.Consts["HTTPD"] = object.ClassValue(m)
+	object.DefineNative("HTTPD", object.ClassValue(m))
 	for _, c := range []*object.Class{requestClass, errorClass} {
 		c.Lexical = m
 		m.Consts[c.Name] = object.ClassValue(c)

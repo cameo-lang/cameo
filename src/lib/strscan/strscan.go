@@ -193,7 +193,7 @@ func (sc *scanner) inspect() string {
 // Install defines StringScanner. lib.Install calls it once.
 func Install() {
 	c := class
-	object.ObjectClass.Consts["StringScanner"] = object.ClassValue(c)
+	object.DefineNative("StringScanner", object.ClassValue(c))
 	c.Consts["Version"] = object.String("3.1.2")
 	c.Consts["Id"] = object.String("$Id$")
 	errorClass.Lexical = c

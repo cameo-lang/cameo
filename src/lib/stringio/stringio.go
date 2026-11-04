@@ -226,7 +226,7 @@ func newSIO(ctx object.Context, args []object.Value) (*sio, error) {
 // Install defines StringIO. lib.Install calls it once.
 func Install() {
 	c := class
-	object.ObjectClass.Consts["StringIO"] = object.ClassValue(c)
+	object.DefineNative("StringIO", object.ClassValue(c))
 	c.Consts["VERSION"] = object.String("3.1.2")
 	c.Consts["MAX_LENGTH"] = object.Int(int64(1<<62 - 1))
 	c.Include(object.Enumerable)

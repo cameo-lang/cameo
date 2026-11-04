@@ -24,7 +24,7 @@ var (
 // Install defines Singleton. lib.Install calls it once.
 func Install() {
 	m := module
-	object.ObjectClass.Consts["Singleton"] = object.ClassValue(m)
+	object.DefineNative("Singleton", object.ClassValue(m))
 	m.Consts["VERSION"] = object.String("0.2.0")
 	m.Included = included
 	for _, name := range []string{"dup", "clone"} {

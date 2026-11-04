@@ -18,7 +18,7 @@ var module = object.NewModule("Shellwords")
 // calls it once.
 func Install() {
 	m := module
-	object.ObjectClass.Consts["Shellwords"] = object.ClassValue(m)
+	object.DefineNative("Shellwords", object.ClassValue(m))
 	m.Consts["VERSION"] = object.String("0.2.2")
 	split := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) != 1 {

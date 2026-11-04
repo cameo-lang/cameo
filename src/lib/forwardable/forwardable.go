@@ -123,8 +123,8 @@ func pairs(ctx object.Context, self object.Value, instance bool, args []object.V
 // Install defines Forwardable and SingleForwardable. lib.Install calls it
 // once.
 func Install() {
-	object.ObjectClass.Consts["Forwardable"] = object.ClassValue(module)
-	object.ObjectClass.Consts["SingleForwardable"] = object.ClassValue(single)
+	object.DefineNative("Forwardable", object.ClassValue(module))
+	object.DefineNative("SingleForwardable", object.ClassValue(single))
 	module.Consts["VERSION"] = object.String("1.3.3")
 	module.Consts["FORWARDABLE_VERSION"] = object.String("1.3.3")
 	one := func(instance bool) object.NativeFn {

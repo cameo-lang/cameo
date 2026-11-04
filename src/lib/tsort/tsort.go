@@ -201,7 +201,7 @@ func collect(run func(yield func(object.Value) error) error) (object.Value, erro
 // Install defines TSort. lib.Install calls it once.
 func Install() {
 	m := module
-	object.ObjectClass.Consts["TSort"] = object.ClassValue(m)
+	object.DefineNative("TSort", object.ClassValue(m))
 	m.Consts["VERSION"] = object.String("0.2.0")
 	cyclic.Lexical = m
 	m.Consts["Cyclic"] = object.ClassValue(cyclic)

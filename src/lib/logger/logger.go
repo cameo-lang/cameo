@@ -195,7 +195,7 @@ func streamOf(ctx object.Context, v object.Value) (int, error) {
 // Install defines Logger. lib.Install calls it once.
 func Install() {
 	c := class
-	object.ObjectClass.Consts["Logger"] = object.ClassValue(c)
+	object.DefineNative("Logger", object.ClassValue(c))
 	c.Consts["VERSION"] = object.String("1.6.4")
 	for i, name := range []string{"DEBUG", "INFO", "WARN", "ERROR", "FATAL", "UNKNOWN"} {
 		c.Consts[name] = object.Int(i)

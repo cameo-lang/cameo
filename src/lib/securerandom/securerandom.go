@@ -68,7 +68,7 @@ func (g generator) below(limit uint64) uint64 { return g.r.BelowInt(limit - 1) }
 // once.
 func Install() {
 	m := module
-	object.ObjectClass.Consts["SecureRandom"] = object.ClassValue(m)
+	object.DefineNative("SecureRandom", object.ClassValue(m))
 	m.Consts["VERSION"] = object.String("0.4.1")
 	define(func(name string, arity int, f method) {
 		m.DefineSingleton(name, arity, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {

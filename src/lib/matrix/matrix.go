@@ -600,9 +600,9 @@ func renderElem(ctx object.Context, v object.Value, inspect bool) (string, error
 // Install defines Matrix, Vector and their errors. lib.Install calls it
 // once.
 func Install() {
-	object.ObjectClass.Consts["Matrix"] = object.ClassValue(matrixClass)
-	object.ObjectClass.Consts["Vector"] = object.ClassValue(vectorClass)
-	object.ObjectClass.Consts["ExceptionForMatrix"] = object.ClassValue(errorsMod)
+	object.DefineNative("Matrix", object.ClassValue(matrixClass))
+	object.DefineNative("Vector", object.ClassValue(vectorClass))
+	object.DefineNative("ExceptionForMatrix", object.ClassValue(errorsMod))
 	for _, e := range []*object.Class{errDim, errRegular, errUndef, errUnimpl} {
 		e.Lexical = errorsMod
 		errorsMod.Consts[e.Name] = object.ClassValue(e)

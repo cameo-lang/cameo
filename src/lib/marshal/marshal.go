@@ -35,7 +35,7 @@ type envelope interface {
 // Install defines Marshal. lib.Install calls it once.
 func Install() {
 	m := module
-	object.ObjectClass.Consts["Marshal"] = object.ClassValue(m)
+	object.DefineNative("Marshal", object.ClassValue(m))
 	m.DefineSingleton("dump", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) < 1 || len(args) > 2 {
 			return object.Value{}, stdlib.ArgError(ctx, len(args), "1..2")

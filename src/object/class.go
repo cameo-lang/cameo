@@ -423,6 +423,11 @@ var (
 	// CameoModule is Cameo, which a script includes for async, await and
 	// the promises they settle.
 	CameoModule = NewModule("Cameo")
+	// NativeModule is Cameo::Native: every class and module the Go binary
+	// defines is bound there under its name as well as at the top level, so
+	// a library written in cameo can take the top-level name and keep the
+	// native one reachable. See DefineNative.
+	NativeModule = NewModule("Native")
 	// CameoRunnerModule is Cameo::Runner, which brings Cameo to the class
 	// that includes it: the name a class includes to run its work on cameo
 	// and, through the Ruby library of the same name, on CRuby.
@@ -506,6 +511,8 @@ func init() {
 	CameoRunnerModule.Lexical = CameoModule
 	CameoRunnerModule.Include(CameoModule)
 	CameoModule.Consts["Runner"] = ClassValue(CameoRunnerModule)
+	NativeModule.Lexical = CameoModule
+	CameoModule.Consts["Native"] = ClassValue(NativeModule)
 	NumericClass.Include(Comparable)
 	StringClass.Include(Comparable)
 	SymbolClass.Include(Comparable)
@@ -571,4 +578,28 @@ type Context interface {
 	// State returns the Go value a library keeps for the run under name,
 	// made by init the first time; every async worker sees the same one.
 	State(name string, init func() any) any
+}
+
+// DefineNative binds v, a class or a module the Go binary defines, at the
+// top level as name and as Cameo::Native::name. The class keeps name as
+// its own, so what a script sees of it does not change.
+func DefineNative(name string, v Value) {
+	ObjectClass.Consts[name] = v
+	RegisterNative(name, v)
+}
+
+// RegisterNative binds v as Cameo::Native::name only: the native part of
+// a library whose top-level name a library written in cameo defines.
+func RegisterNative(name string, v Value) {
+	NativeModule.Consts[name] = v
+}
+
+// MirrorNative binds every class and module bound at the top level so far
+// as Cameo::Native::name too: the core, before the libraries install.
+func MirrorNative() {
+	for name, v := range ObjectClass.Consts {
+		if cls, ok := v.AsClass(); ok && cls != NativeModule {
+			RegisterNative(name, v)
+		}
+	}
 }

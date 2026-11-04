@@ -85,7 +85,7 @@ var components = map[*object.Class][]string{
 // calls it once.
 func Install() {
 	m := uriModule
-	object.ObjectClass.Consts["URI"] = object.ClassValue(m)
+	object.DefineNative("URI", object.ClassValue(m))
 	m.Consts["VERSION"] = object.String("1.0.2")
 	for _, c := range []*object.Class{errorClass, invalidURI, invalidComp, badURI, genericClass, httpClass, httpsClass, ftpClass, fileClass, wsClass, wssClass, ldapClass, ldapsClass, mailtoClass, parserClass} {
 		c.Lexical = m

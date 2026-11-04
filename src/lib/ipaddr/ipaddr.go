@@ -564,7 +564,7 @@ func wantIPv4(a *ip) error {
 func Install() {
 	c := class
 	declareFields()
-	object.ObjectClass.Consts["IPAddr"] = object.ClassValue(c)
+	object.DefineNative("IPAddr", object.ClassValue(c))
 	c.Include(object.Comparable)
 	c.Consts["VERSION"] = object.String("1.2.7")
 	c.Consts["IN4MASK"] = object.BigInt(in4Mask)
@@ -578,7 +578,7 @@ func Install() {
 		socket.Consts["AF_UNSPEC"] = object.Int(afUnspec)
 		socket.Consts["AF_INET"] = object.Int(afInet)
 		socket.Consts["AF_INET6"] = object.Int(afInet6)
-		object.ObjectClass.Consts["Socket"] = object.ClassValue(socket)
+		object.DefineNative("Socket", object.ClassValue(socket))
 	}
 
 	c.DefineSingleton("new", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {

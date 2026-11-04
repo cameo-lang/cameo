@@ -74,7 +74,7 @@ func (st *state) startReport(ctx object.Context) {
 // lib.Install calls it once.
 func Install() {
 	m := minispecModule
-	object.ObjectClass.Consts["Minispec"] = object.ClassValue(m)
+	object.DefineNative("Minispec", object.ClassValue(m))
 	for _, c := range []*object.Class{assertionClass, skipClass} {
 		c.Lexical = m
 		m.Consts[c.Name] = object.ClassValue(c)

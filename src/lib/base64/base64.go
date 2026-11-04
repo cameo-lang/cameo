@@ -21,7 +21,7 @@ var module = object.NewModule("Base64")
 // Install defines Base64. lib.Install calls it once.
 func Install() {
 	m := module
-	object.ObjectClass.Consts["Base64"] = object.ClassValue(m)
+	object.DefineNative("Base64", object.ClassValue(m))
 	m.Consts["VERSION"] = object.String("0.2.0")
 	def := func(name string, arity int, f func(ctx object.Context, s string, kw *object.Map) (object.Value, error)) {
 		fn := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {

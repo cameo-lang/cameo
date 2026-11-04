@@ -250,13 +250,13 @@ func convert(ctx object.Context, args []object.Value, kw *object.Map) (object.Va
 // once.
 func Install() {
 	c := class
-	object.ObjectClass.Consts["BigDecimal"] = object.ClassValue(c)
-	object.ObjectClass.Consts["BigMath"] = object.ClassValue(bigMath)
+	object.DefineNative("BigDecimal", object.ClassValue(c))
+	object.DefineNative("BigMath", object.ClassValue(bigMath))
 	if v, ok := object.ObjectClass.Consts["FloatDomainError"]; ok {
 		floatDomainError, _ = v.AsClass()
 	} else {
 		floatDomainError = object.NewClass("FloatDomainError", object.RangeError)
-		object.ObjectClass.Consts["FloatDomainError"] = object.ClassValue(floatDomainError)
+		object.DefineNative("FloatDomainError", object.ClassValue(floatDomainError))
 	}
 	if m, ok := object.ObjectClass.Consts["Math"]; ok {
 		mc, _ := m.AsClass()

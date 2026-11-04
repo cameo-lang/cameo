@@ -292,7 +292,7 @@ func fromDivision(ctx object.Context, v object.Value) (object.Value, error) {
 // once.
 func Install() {
 	c := class
-	object.ObjectClass.Consts["Prime"] = object.ClassValue(c)
+	object.DefineNative("Prime", object.ClassValue(c))
 	c.Consts["VERSION"] = object.String("0.1.3")
 	c.Include(object.Enumerable)
 	eachFn := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
