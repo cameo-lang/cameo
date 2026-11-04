@@ -59,6 +59,17 @@ func stateOf(ctx object.Context) *state {
 	return ctx.State("minispec", func() any { return &state{} }).(*state)
 }
 
+// startReport registers the report with at_exit, once, on the first
+// describe or it; the caller holds st.mu. A script with a describe and no
+// example reports 0 runs, as minitest does.
+func (st *state) startReport(ctx object.Context) {
+	if st.reporting {
+		return
+	}
+	st.reporting = true
+	ctx.AtExit(ctx.Block(func([]object.Value) (object.Value, error) { return report(ctx) }))
+}
+
 // Install defines Minispec, describe, it, skip and the assertions.
 // lib.Install calls it once.
 func Install() {
@@ -78,8 +89,6 @@ func Install() {
 	installAssertions(o)
 }
 
-type fn = func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error)
-
 func argError(ctx object.Context, given int, expected string) error {
 	return ctx.Raise(object.ArgumentError, "wrong number of arguments (given %d, expected %s)", given, expected)
 }
@@ -97,6 +106,7 @@ func describe(ctx object.Context, self object.Value, args []object.Value, kw *ob
 	st := stateOf(ctx)
 	st.mu.Lock()
 	st.describes = append(st.describes, name)
+	st.startReport(ctx)
 	st.mu.Unlock()
 	defer func() {
 		st.mu.Lock()
@@ -134,10 +144,7 @@ func it(ctx object.Context, self object.Value, args []object.Value, kw *object.M
 	}
 	full += name
 	st.runs++
-	if !st.reporting {
-		st.reporting = true
-		ctx.AtExit(ctx.Block(func([]object.Value) (object.Value, error) { return report(ctx) }))
-	}
+	st.startReport(ctx)
 	st.mu.Unlock()
 	var err error
 	if block.IsZero() {
@@ -488,7 +495,7 @@ func installAssertions(o *object.Class) {
 
 // assertRaises runs its block and returns the exception it raised, of one
 // of the classes given (StandardError when none). An Assertion or a
-// SystemExit from the block is raised again.
+// SystemExit of another class is raised again.
 func assertRaises(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 	if block.IsZero() {
 		return object.Value{}, ctx.Raise(object.ArgumentError, "assert_raises requires a block to capture errors")
@@ -524,7 +531,7 @@ func assertRaises(ctx object.Context, self object.Value, args []object.Value, kw
 		return check(ctx, false, custom+expected+" expected but nothing was raised.", "")
 	}
 	exc, ok := err.(*object.Exception)
-	if !ok || exc.Cls.IsA(assertionClass) || exc.Cls.IsA(object.SystemExit) {
+	if !ok {
 		return object.Value{}, err
 	}
 	for _, c := range classes {
@@ -534,6 +541,12 @@ func assertRaises(ctx object.Context, self object.Value, args []object.Value, kw
 			}
 			return object.ExceptionValue(exc), nil
 		}
+	}
+	// An Assertion, a Skip or a SystemExit the caller did not expect is
+	// raised again, after the expected classes were tried, in the order of
+	// minitest's rescue clauses.
+	if exc.Cls.IsA(assertionClass) || exc.Cls.IsA(object.SystemExit) {
+		return object.Value{}, err
 	}
 	return check(ctx, false, fmt.Sprintf("%s%s exception expected, not\nClass: <%s>\nMessage: <%q>", custom, expected, exc.Cls.QualifiedName(), exc.Message), "")
 }

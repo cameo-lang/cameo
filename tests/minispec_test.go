@@ -206,3 +206,28 @@ await [async(s, :run, 1), async(s, :run, 2)]
 `)
 	assert.Equals(t, out, "..\n\n2 runs, 2 assertions, 0 failures, 0 errors, 0 skips\n")
 }
+
+func TestMinispecAssertRaisesCapturesAnExpectedAssertion(t *testing.T) {
+	out := runScript(t, `
+require "minispec"
+e = assert_raises(Minispec::Assertion) { assert_equal 1, 2 }
+puts e.message
+e = assert_raises(Minispec::Skip) { skip "later" }
+puts e.message
+begin
+  assert_raises(ArgumentError) { flunk "not expected" }
+rescue Minispec::Assertion => e
+  puts "raised again: #{e.message}"
+end
+`)
+	assert.Equals(t, out, "Expected: 1\n  Actual: 2\nlater\nraised again: not expected\n")
+}
+
+func TestMinispecReportsADescribeWithoutExamples(t *testing.T) {
+	out := runScript(t, `
+require "minispec"
+describe "nothing yet" do
+end
+`)
+	assert.Equals(t, out, "\n\n0 runs, 0 assertions, 0 failures, 0 errors, 0 skips\n")
+}
