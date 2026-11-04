@@ -1,0 +1,63 @@
+# Ruby's date library: Date and DateTime, their arithmetic, parsing and
+# formatting. Each line prints what Ruby 3.4 prints.
+require "date"
+
+d = Date.new(2024, 2, 29)
+p d, d.to_s, d.class
+p [d.year, d.month, d.day, d.yday, d.wday, d.cwday, d.cweek, d.cwyear, d.jd, d.mjd, d.leap?, d.thursday?]
+p [Date.leap?(1900), Date.valid_date?(2023, 2, 29), Date.valid_date?(2024, 2, 29), Date.valid_commercial?(2020, 53, 1)]
+
+# Formatting: to_s, the standards, and strftime with Ruby's flags.
+p [d.iso8601, d.rfc3339, d.rfc2822, d.httpdate, d.jisx0301, d.asctime]
+puts d.strftime("%Y-%m-%d %j %U %W %V %G %u %w %a %A %b %B %e %-d %y %C %x %F %D %c %s %Q %%")
+puts d.strftime("|%10A|%-10A|%^a|%#B|%010d|%_5m|%:z %z %Z %p %H %I %l %k %M %S %L %N %T %R %r %v %+|")
+
+# Arithmetic: days, months and years, with the end of the month kept.
+p [d + 1, d - 1, d >> 1, d << 1, d >> 12, d.next_month, d.prev_year, d.next_day(3), d.succ]
+p [Date.new(2024, 1, 31) >> 1, Date.new(2024, 3, 31) << 1, Date.new(2023, 1, 31).next_month(13)]
+p [Date.new(2024, -1, -1), Date.new(1582, 10, 4) + 1, Date.jd(2460370), Date.ordinal(2024, 60), Date.commercial(2024, 9, 4)]
+p [d <=> Date.new(2024, 3, 1), d == Date.new(2024, 2, 29), d == DateTime.new(2024, 2, 29), d === DateTime.new(2024, 2, 29, 12), d < Date.new(2024, 3, 1)]
+p [Date.new(2024, 3, 1), d].sort, [Date.new(2024, 3, 1), d].min, (d..Date.new(2024, 3, 2)).to_a.size, (d...Date.new(2024, 3, 2)).map(&:day)
+p d.step(Date.new(2024, 3, 10), 3).to_a, d.upto(Date.new(2024, 3, 2)).map(&:to_s), d.downto(Date.new(2024, 2, 27)).count
+["2024-02-30", "2024-13-01"].each do |y, m, dd|
+  Date.new(2024, 2, 30)
+rescue Date::Error => e
+  puts e.message
+end
+
+# Parsing: the forms Date.parse reads, the fixed formats, and strptime,
+# all through the layouts of Go's time package.
+["2024-02-29", "20240229", "2024/2/29", "Feb 29 2024", "29 Feb 2024", "Thu, 29 Feb 2024 10:00:00 GMT",
+ "Thursday, February 29, 2024", "2024-060", "H36.02.29", "29/2/2024",
+ "2024-02-29T10:11:12+09:00", "24-02-29", "February 2024", "99-1-1"].each do |s|
+  puts "#{s} -> #{Date.parse(s)}"
+end
+["", "x", "2/29/2024", "Feb 29", "2024", "10:11"].each do |s|
+  Date.parse(s)
+rescue Date::Error => e
+  puts "#{s.inspect}: #{e.message}"
+end
+p Date._parse("Thu, 29 Feb 2024 10:00:00 GMT"), Date._parse("2024-060"), Date._parse("2024-02-29 15:04")
+p [Date.iso8601("2024-060"), Date.rfc2822("Thu, 29 Feb 2024 10:00:00 +0900"), Date.httpdate("Thu, 29 Feb 2024 10:00:00 GMT"), Date.jisx0301("R06.02.29")]
+p [Date.strptime("29/02/24", "%d/%m/%y"), Date.strptime("060 2024", "%j %Y"), Date.strptime("1709164800", "%s")]
+p Date._strptime("2024-02-29", "%Y-%m-%d"), Date._strptime("x", "%Y")
+p [Date::MONTHNAMES[2], Date::ABBR_DAYNAMES, Date::ITALY, Date::JULIAN]
+
+# DateTime: a Date with a time of day and an offset.
+dt = DateTime.new(2001, 2, 3, 4, 5, 6, "+07:00")
+p dt, dt.to_s, [dt.hour, dt.min, dt.sec, dt.zone, dt.jd]
+p [dt.iso8601, dt.iso8601(3), dt.rfc2822, dt.httpdate, dt.jisx0301, dt.strftime("%F %T %z %s")]
+p [dt.new_offset(0), dt.new_offset("-05:00"), dt + 1, dt >> 1, dt.to_date]
+p [DateTime.new(2001, 2, 3, 24), DateTime.new(2001, 2, 3, -1, -1, -1), DateTime.jd(2451944, 4, 5, 6), DateTime.ordinal(2001, 34, 4, 5, 6, "+07:00")]
+p [DateTime.parse("2001-02-03T04:05:06+07:00"), DateTime.parse("Sat, 3 Feb 2001 04:05:06 +0700"), DateTime.iso8601("2001-02-03T04:05:06.5Z"), DateTime.strptime("2001-02-03T04:05:06+07:00", "%Y-%m-%dT%H:%M:%S%z")]
+p [dt == DateTime.new(2001, 2, 2, 21, 5, 6), dt <=> DateTime.new(2001, 2, 3, 4, 5, 6, "+06:00"), dt == Date.new(2001, 2, 3)]
+begin
+  DateTime.new(2001, 2, 3, 25)
+rescue Date::Error => e
+  puts e.message
+end
+
+# To and from Time.
+t = Time.utc(2024, 2, 29, 10, 11, 12)
+p [t.to_date, t.to_datetime, Time.new(2024, 2, 29, 10, 11, 12, "+09:00").to_datetime, d.to_time.class, dt.to_time.utc, dt.to_time.utc_offset]
+p d.deconstruct_keys([:year, :month, :day]), dt.deconstruct_keys(nil).keys
