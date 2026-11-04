@@ -1,6 +1,7 @@
 package eval
 
 import (
+	"github.com/cameo-lang/cameo/src/lib"
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/stdlib"
 	"github.com/cameo-lang/cameo/src/syntax"
@@ -9,10 +10,11 @@ import (
 )
 
 // installStdlib installs the standard library once per process: the Go
-// methods of the builtin classes, and the Proc methods, which know this
-// package's Proc.
+// methods of the builtin classes, the libraries under src/lib, and the
+// Proc methods, which know this package's Proc.
 func installStdlib() {
 	stdlib.Install()
+	lib.Install()
 	installRaise()
 	installCameo()
 	newException := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -226,24 +228,30 @@ func hashProc(h object.Value) object.Value {
 	return procValue(&Proc{Sym: "[]", Recv: h, Strict: true})
 }
 
-// builtinLibraries are what require loads without a file: libraries
-// cameo builds in, each with the ones it loads along with it.
-var builtinLibraries = map[string][]string{
-	"set":        nil,
-	"time":       nil,
-	"pp":         nil,
-	"pathname":   nil,
-	"cgi":        {"cgi/escape", "cgi/util"},
-	"cgi/escape": nil,
-	"cgi/util":   {"cgi/escape"},
-	"json":       nil,
-	"benchmark":  nil,
-	// debug switches the debugger on; see debug.go.
-	"debug": nil,
-	// cameo/runner is the Ruby library that gives CRuby Cameo::Runner;
-	// cameo has Cameo::Runner built in.
-	"cameo/runner": nil,
-}
+// builtinLibraries are what require loads without a file: the libraries
+// under src/lib (lib.Libraries), the ones the core still carries, and the
+// evaluator's own, each with the ones it loads along with it.
+var builtinLibraries = func() map[string][]string {
+	libs := map[string][]string{
+		"set":        nil,
+		"time":       nil,
+		"pp":         nil,
+		"pathname":   nil,
+		"cgi":        {"cgi/escape", "cgi/util"},
+		"cgi/escape": nil,
+		"cgi/util":   {"cgi/escape"},
+		"benchmark":  nil,
+		// debug switches the debugger on; see debug.go.
+		"debug": nil,
+		// cameo/runner is the Ruby library that gives CRuby Cameo::Runner;
+		// cameo has Cameo::Runner built in.
+		"cameo/runner": nil,
+	}
+	for name, also := range lib.Libraries {
+		libs[name] = also
+	}
+	return libs
+}()
 
 // require loads a library cameo builds in, true the first time and false
 // after, as Ruby's does; any other name is a LoadError, since a script is

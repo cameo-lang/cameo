@@ -1,4 +1,16 @@
-package stdlib
+// Package json is Ruby's json library, built into cameo: JSON.parse,
+// generate, pretty_generate, dump, JSON() and to_json on every value.
+//
+// It follows Ruby 3.4's json library, version 2.9.1: its output byte for
+// byte, its parser's grammar, and the messages of its errors, which name
+// the input from where its parser gave up. Ruby's generator passes a State
+// to a to_json a class defines; cameo passes a Hash of the same options,
+// depth included, which Ruby's to_json methods accept as well.
+//
+// An instance of a cameo class without its own to_json is a JSON object of
+// its fields, where Ruby writes the string of to_s; see
+// doc/cameo-vs-ruby.md.
+package json
 
 import (
 	"fmt"
@@ -9,17 +21,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/cameo-lang/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/stdlib"
 )
-
-// JSON follows Ruby 3.4's json library, version 2.9.1: its output byte for
-// byte, its parser's grammar, and the messages of its errors, which name
-// the input from where its parser gave up. Ruby's generator passes a State
-// to a to_json a class defines; cameo passes a Hash of the same options,
-// depth included, which Ruby's to_json methods accept as well.
-//
-// An instance of a cameo class without its own to_json is a JSON object of
-// its fields, where Ruby writes the string of to_s; see
-// doc/cameo-vs-ruby.md.
 
 var (
 	jsonModule       = object.NewModule("JSON")
@@ -31,7 +34,9 @@ var (
 	jsonToJSON *object.Method
 )
 
-func installJSON() {
+// Install defines the JSON module, its error classes, Kernel#JSON and
+// Object#to_json. lib.Install calls it once.
+func Install() {
 	m := jsonModule
 	object.ObjectClass.Consts["JSON"] = object.ClassValue(m)
 	m.Consts["VERSION"] = object.String("2.9.1")
@@ -62,7 +67,7 @@ func installJSON() {
 	// method; an Integer in io's place is the limit.
 	m.DefineSingleton("dump", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) == 0 || len(args) > 3 {
-			return object.Value{}, argError(ctx, len(args), "1..3")
+			return object.Value{}, stdlib.ArgError(ctx, len(args), "1..3")
 		}
 		g := jsonGenerator{allowNaN: true}
 		io, limit := object.Nil, object.Nil
@@ -76,7 +81,7 @@ func installJSON() {
 			io, limit = object.Nil, io
 		}
 		if !limit.IsNil() {
-			n, err := wantInt(ctx, limit, "")
+			n, err := stdlib.WantInt(ctx, limit, "")
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -97,7 +102,7 @@ func installJSON() {
 	// JSON[x] and JSON(x) parse a String and generate anything else.
 	either := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) == 0 {
-			return object.Value{}, argError(ctx, 0, "1..2")
+			return object.Value{}, stdlib.ArgError(ctx, 0, "1..2")
 		}
 		if args[0].IsString() {
 			return jsonParseCall(ctx, args, kw, jsonParser{maxNesting: 100})
@@ -105,11 +110,11 @@ func installJSON() {
 		return jsonGenerateCall(ctx, args, kw, jsonGenerator{maxNesting: 100})
 	}
 	m.DefineSingleton("[]", -1, either)
-	def(object.ObjectClass, "JSON", -1, either)
+	object.ObjectClass.Define("JSON", -1, either)
 
 	// One to_json on Object serves every class; a class that defines its
 	// own is called from the generator instead.
-	def(object.ObjectClass, "to_json", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	object.ObjectClass.Define("to_json", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return jsonGenerateCall(ctx, append([]object.Value{self}, args...), kw, jsonGenerator{maxNesting: 100})
 	})
 	jsonToJSON = object.ObjectClass.Methods["to_json"]
@@ -149,16 +154,16 @@ func jsonNesting(ctx object.Context, v object.Value) (int, error) {
 	if !v.Truthy() {
 		return 0, nil
 	}
-	n, err := wantInt(ctx, v, "")
+	n, err := stdlib.WantInt(ctx, v, "")
 	return int(n), err
 }
 
 func jsonParseCall(ctx object.Context, args []object.Value, kw *object.Map, p jsonParser) (object.Value, error) {
 	if len(args) == 0 || len(args) > 2 {
-		return object.Value{}, argError(ctx, len(args), "1..2")
+		return object.Value{}, stdlib.ArgError(ctx, len(args), "1..2")
 	}
 	if !args[0].IsString() {
-		return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into String", kindName(args[0]))
+		return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into String", stdlib.KindName(args[0]))
 	}
 	opts := jsonOptions(args[1:], kw)
 	if v, ok := jsonOption(opts, "symbolize_names"); ok {
@@ -180,12 +185,12 @@ func jsonParseCall(ctx object.Context, args []object.Value, kw *object.Map, p js
 
 func jsonGenerateCall(ctx object.Context, args []object.Value, kw *object.Map, g jsonGenerator) (object.Value, error) {
 	if len(args) == 0 || len(args) > 2 {
-		return object.Value{}, argError(ctx, len(args), "1..2")
+		return object.Value{}, stdlib.ArgError(ctx, len(args), "1..2")
 	}
 	opts := jsonOptions(args[1:], kw)
 	for name, field := range map[string]*string{"indent": &g.indent, "space": &g.space, "space_before": &g.spaceBefore, "object_nl": &g.objectNL, "array_nl": &g.arrayNL} {
 		if v, ok := jsonOption(opts, name); ok && !v.IsNil() {
-			s, err := wantString(ctx, v)
+			s, err := stdlib.WantString(ctx, v)
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -206,7 +211,7 @@ func jsonGenerateCall(ctx object.Context, args []object.Value, kw *object.Map, g
 	}
 	depth := 0
 	if v, ok := jsonOption(opts, "depth"); ok && !v.IsNil() {
-		n, err := wantInt(ctx, v, "")
+		n, err := stdlib.WantInt(ctx, v, "")
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -253,7 +258,7 @@ func (g *jsonGenerator) value(v object.Value, depth int) error {
 			return err
 		}
 		if !out.IsString() {
-			return g.ctx.Raise(object.TypeError, "wrong argument type %s (expected String)", kindName(out))
+			return g.ctx.Raise(object.TypeError, "wrong argument type %s (expected String)", stdlib.KindName(out))
 		}
 		g.b.WriteString(out.Str())
 		return nil
@@ -644,11 +649,11 @@ func (p *jsonParser) string(i int) (object.Value, int, error) {
 			if !ok {
 				return object.Value{}, 0, jsonFailed{}
 			}
-			b.WriteString(encodeCodepoint((r&0x3ff)<<10 | lo&0x3ff + 0x10000))
+			b.WriteString(stdlib.EncodeCodepoint((r&0x3ff)<<10 | lo&0x3ff + 0x10000))
 			j += 12
 			continue
 		}
-		b.WriteString(encodeCodepoint(r))
+		b.WriteString(stdlib.EncodeCodepoint(r))
 		j += 6
 	}
 	return object.Value{}, 0, jsonFailed{}
