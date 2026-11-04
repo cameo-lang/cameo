@@ -1,0 +1,10 @@
+# at_exit keeps a block to run when the script ends: the last registered
+# runs first, and one registered while they run goes next.
+at_exit { puts "goodbye" }
+at_exit do
+  puts "cleaning up"
+  at_exit { puts "cleaned up" }
+end
+handler = at_exit { puts "last in, first out" }
+puts handler.class
+puts "the script's last line"

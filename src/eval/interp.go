@@ -53,6 +53,9 @@ type Interp struct {
 	// loaded is the libraries require has loaded, which a second require
 	// of answers false.
 	loaded map[string]bool
+	// exits are the blocks at_exit registered, shared with the workers; Run
+	// runs them when the script ends.
+	exits *exitHandlers
 	// stop ends the run, and is shared with the workers; see Stop.
 	stop *stopper
 	// catches are the tags of the catch blocks running, innermost last.
@@ -169,6 +172,7 @@ func New(stdout, stderr io.Writer) *Interp {
 		promises:  newPromises(),
 		code:      &code{},
 		stop:      newStopper(),
+		exits:     &exitHandlers{},
 	}
 	in.rng = object.NewRandom(object.NewSeed())
 	return in
@@ -215,12 +219,17 @@ func (in *Interp) Run(file string, prog *syntax.Program) error {
 		err = in.waitStarted()
 	}
 	if c, ok := err.(*control); ok {
-		if c.kind == ctrlReturn {
-			return nil
+		err = nil
+		if c.kind != ctrlReturn {
+			err = in.raise(object.LocalJumpError, c.line, "%s from the top level", c.kind)
 		}
-		return in.raise(object.LocalJumpError, c.line, "%s from the top level", c.kind)
 	}
-	return err
+	// A run stopped from outside ends at once; any other runs the blocks
+	// at_exit registered.
+	if errors.Is(err, ErrStopped) {
+		return err
+	}
+	return in.runExitHandlers(err)
 }
 
 // topFrame is the frame the top-level statements run in.
@@ -251,4 +260,71 @@ func (in *Interp) FormatError(err error) string {
 		return fmt.Sprintf("%s: %s (%s)", where, exc.Message, exc.Cls.QualifiedName())
 	}
 	return err.Error()
+}
+
+// exitHandlers are the blocks at_exit registered, in registration order.
+// Workers register on the main interpreter's list.
+type exitHandlers struct {
+	mu     sync.Mutex
+	blocks []object.Value
+}
+
+func (h *exitHandlers) push(block object.Value) {
+	h.mu.Lock()
+	h.blocks = append(h.blocks, block)
+	h.mu.Unlock()
+}
+
+// pop removes and returns the last block registered, and false when there
+// is none.
+func (h *exitHandlers) pop() (object.Value, bool) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if len(h.blocks) == 0 {
+		return object.Value{}, false
+	}
+	block := h.blocks[len(h.blocks)-1]
+	h.blocks = h.blocks[:len(h.blocks)-1]
+	return block, true
+}
+
+// AtExit implements object.Context.
+func (in *Interp) AtExit(block object.Value) { in.exits.push(block) }
+
+// runExitHandlers runs the blocks at_exit registered, the last first, once
+// the script ended with err, and returns the error the run ends with. The
+// rules are Ruby's: a handler registered while they run goes next; a
+// handler's exit sets the status, and the script's own exception is still
+// reported; a handler's other exception is written to standard error, the
+// handlers after it still run, and a run that would otherwise have ended
+// cleanly, or by exit, ends with status 1.
+func (in *Interp) runExitHandlers(err error) error {
+	for {
+		block, ok := in.exits.pop()
+		if !ok {
+			return err
+		}
+		_, herr := in.Yield(block)
+		if herr == nil {
+			continue
+		}
+		if c, ok := herr.(*control); ok {
+			herr = in.raise(object.LocalJumpError, c.line, "%s from the top level", c.kind)
+		}
+		exc, ok := herr.(*object.Exception)
+		if !ok {
+			return herr
+		}
+		if exc.Cls.IsA(object.SystemExit) {
+			if scriptExc, ok := err.(*object.Exception); ok && !scriptExc.Cls.IsA(object.SystemExit) {
+				in.Write(true, in.FormatError(scriptExc)+"\n")
+			}
+			err = exc
+			continue
+		}
+		in.Write(true, in.FormatError(exc)+"\n")
+		if scriptExc, ok := err.(*object.Exception); err == nil || ok && scriptExc.Cls.IsA(object.SystemExit) {
+			err = &object.Exception{Cls: object.SystemExit, Message: "exit", Attrs: map[string]object.Value{"status": object.Int(1)}}
+		}
+	}
 }
