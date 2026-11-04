@@ -22,13 +22,13 @@ func host(t *testing.T, src string) (*Program, *bytes.Buffer, *[][]any) {
 	var calls [][]any
 	mod := prog.Module("Spicy")
 	toolError := mod.Exception("ToolError")
-	mod.Def("echo", func(args []any, kwargs map[string]any) (any, error) {
+	mod.Def("echo", func(args []any, kwargs map[string]any, block *Block) (any, error) {
 		mu.Lock()
 		defer mu.Unlock()
 		calls = append(calls, []any{args, kwargs})
 		return map[string]any{"args": args, "kwargs": kwargs}, nil
 	})
-	mod.Def("fail", func(args []any, kwargs map[string]any) (any, error) {
+	mod.Def("fail", func(args []any, kwargs map[string]any, block *Block) (any, error) {
 		if len(args) > 0 {
 			return nil, toolError.New("no %v", args[0])
 		}
@@ -104,5 +104,98 @@ p ps.map { |pr| await pr }`)
 	}
 	if out.String() != "[2, 4, 6]\n" || len(*calls) != 3 {
 		t.Errorf("output %q, %d calls", out.String(), len(*calls))
+	}
+}
+
+// TestHostMethodGetsItsBlock proves a host method gets the block of the
+// call as a *Block it can call with Go values, and nil without one.
+func TestHostMethodGetsItsBlock(t *testing.T) {
+	var out bytes.Buffer
+	prog, err := Load("t.cameo", `
+Spicy.twice(21) { |x| puts x * 2 }
+p Spicy.twice(1)
+`, &out, &out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	prog.Module("Spicy").Def("twice", func(args []any, kwargs map[string]any, block *Block) (any, error) {
+		if block == nil {
+			return "no block", nil
+		}
+		for i := 0; i < 2; i++ {
+			if _, err := block.Call(args[0]); err != nil {
+				return nil, err
+			}
+		}
+		return nil, nil
+	})
+	if err := prog.Run(); err != nil {
+		t.Fatal(err)
+	}
+	if out.String() != "42\n42\n\"no block\"\n" {
+		t.Errorf("output %q", out.String())
+	}
+}
+
+// TestProcArgumentIsABlockAndGoesBackAsAProc proves a Proc among the
+// arguments arrives as a *Block whose Call converts its result, and that
+// a *Block a host method returns is the Proc again.
+func TestProcArgumentIsABlockAndGoesBackAsAProc(t *testing.T) {
+	var out bytes.Buffer
+	prog, err := Load("t.cameo", `
+f = Spicy.keep(proc { |x| x + 1 })
+p f.call(41)
+p Spicy.run(2)
+`, &out, &out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var kept *Block
+	spicy := prog.Module("Spicy")
+	spicy.Def("keep", func(args []any, kwargs map[string]any, block *Block) (any, error) {
+		b, ok := args[0].(*Block)
+		if !ok {
+			return nil, errors.New("not a block")
+		}
+		kept = b
+		return b, nil
+	})
+	spicy.Def("run", func(args []any, kwargs map[string]any, block *Block) (any, error) {
+		return kept.Call(args[0])
+	})
+	if err := prog.Run(); err != nil {
+		t.Fatal(err)
+	}
+	if out.String() != "42\n3\n" {
+		t.Errorf("output %q", out.String())
+	}
+	v, err := kept.Call(int64(9))
+	if err != nil || v != int64(10) {
+		t.Errorf("Call from the host after the run: %v, %v", v, err)
+	}
+}
+
+// TestBlockCallReportsTheException proves an exception a block raises
+// comes back from Call as a RunError with the script's line.
+func TestBlockCallReportsTheException(t *testing.T) {
+	var out bytes.Buffer
+	prog, err := Load("t.cameo", `
+Spicy.later { |x| raise ArgumentError, "no #{x}" }
+`, &out, &out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var later *Block
+	prog.Module("Spicy").Def("later", func(args []any, kwargs map[string]any, block *Block) (any, error) {
+		later = block
+		return nil, nil
+	})
+	if err := prog.Run(); err != nil {
+		t.Fatal(err)
+	}
+	_, err = later.Call("luck")
+	var runErr *RunError
+	if !errors.As(err, &runErr) || err.Error() != "t.cameo:2: no luck (ArgumentError)" {
+		t.Errorf("Call: %v", err)
 	}
 }

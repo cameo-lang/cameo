@@ -558,15 +558,17 @@ before `Run`:
 ```go
 mod := prog.Module("Spicy")                       // the constant Spicy, at the top level
 toolError := mod.Exception("ToolError")           // Spicy::ToolError, a StandardError
-mod.Def("tools", func(args []any, kwargs map[string]any) (any, error) {
+mod.Def("tools", func(args []any, kwargs map[string]any, block *cameo.Block) (any, error) {
 	return nil, toolError.New("no tool %v", args[0]) // raises Spicy::ToolError
 })
 ```
 
 The script calls `Spicy.tools("search", query: "x")`. A host method gets
 its arguments as results come back, but with a symbol as a string, as
-everywhere a value leaves cameo, and a hash with string or symbol keys as
-a `map[string]any`; what it returns converts as `Call`'s arguments do. An
+everywhere a value leaves cameo, a hash with string or symbol keys as a
+`map[string]any`, and a Proc as a `*cameo.Block`; the block of the call is
+`block`, nil without one, and `block.Call(args...)` runs either with Go
+values. What it returns converts as `Call`'s arguments do. An
 error it returns raises an exception, of the class an `Exception` names or
 `RuntimeError`. A host module is a value like a builtin one: no script
 redefines or reopens it. Workers that `async` started reach it too, each on
@@ -589,14 +591,14 @@ message Point { int64 x = 1; int64 y = 2; }
 ```go
 func init() {
 	cameo.Register("Geo::Point", &geopb.Point{}).
-		DefineMethod("norm2", func(p *geopb.Point, args []any, kwargs map[string]any) (any, error) {
+		DefineMethod("norm2", func(p *geopb.Point, args []any, kwargs map[string]any, block *cameo.Block) (any, error) {
 			return p.X*p.X + p.Y*p.Y, nil
 		}).
-		DefineMethod("moved", func(p *geopb.Point, args []any, kwargs map[string]any) (any, error) {
+		DefineMethod("moved", func(p *geopb.Point, args []any, kwargs map[string]any, block *cameo.Block) (any, error) {
 			p.X += args[0].(int64) // p is a copy; the changed copy is the result
 			return p, nil
 		}).
-		DefineClassMethod("origin", func(args []any, kwargs map[string]any) (any, error) {
+		DefineClassMethod("origin", func(args []any, kwargs map[string]any, block *cameo.Block) (any, error) {
 			return &geopb.Point{}, nil
 		})
 }
