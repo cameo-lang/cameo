@@ -481,6 +481,10 @@ These are absent, and a script that uses one fails when it reaches it:
 
 ## Only in cameo
 
+- A `proc` field, `proc :handler`, holds a block, and reads as nil without
+  one; a class with a `proc` field is no message: it has no `.proto`, and
+  `to_proto`, `to_value_proto`, a host, `async` and the pause dump refuse its
+  instances, naming the field, as they refuse a Proc.
 - Typed fields, with every class a protobuf message: `to_proto`,
   `from_proto`, and `Point.proto` for its `.proto` text. Every exception is
   a message too, of its message, line, cause and fields, and crosses to

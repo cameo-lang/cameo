@@ -63,6 +63,9 @@ func (r *Registry) file(cls *object.Class) (protoreflect.FileDescriptor, error) 
 	if n := nativeOf(cls); n != nil {
 		return n.md.ParentFile(), nil
 	}
+	if err := NoMessage(cls); err != nil {
+		return nil, err
+	}
 	r.mu.Lock()
 	fd, ok := r.files[cls]
 	r.mu.Unlock()

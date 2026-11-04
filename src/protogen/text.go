@@ -61,6 +61,9 @@ func File(pkg string, classes []*object.Class) string {
 func Files(classes []*object.Class) map[string]string {
 	byPkg := map[string][]*object.Class{}
 	for _, cls := range classes {
+		if NoMessage(cls) != nil {
+			continue // a class with a proc field has no .proto
+		}
 		pkg := Package(cls)
 		byPkg[pkg] = append(byPkg[pkg], cls)
 	}
