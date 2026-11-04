@@ -556,4 +556,7 @@ type Context interface {
 	// Const looks up a top-level constant the script or the host defined;
 	// the core's are in ObjectClass.Consts.
 	Const(name string) (Value, bool)
+	// AtExit keeps a block to run when the script ends, as Kernel#at_exit
+	// does.
+	AtExit(block Value)
 }

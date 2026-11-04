@@ -116,6 +116,16 @@ test_exit_ends_the_run_with_its_status() {
   assert_eq "gone" "$out"
 }
 
+test_at_exit_runs_its_handlers_when_the_script_ends() {
+  local script out rc
+  script="$(mktemp -d)/at_exit.cameo"
+  printf 'at_exit { puts "handler" }\nat_exit { raise "in handler" }\nputs "body"\n' >"$script"
+  rc=0
+  out=$("$CAMEO_BIN" "$script" 2>&1) || rc=$?
+  assert_eq 1 "$rc" "a handler that raises ends the run with status 1"
+  assert_eq $'body\n'"$script"$':2: in handler (RuntimeError)\nhandler' "$out"
+}
+
 test_benchmark_reports_the_time_inside_the_script() {
   local script out
   script="$(mktemp -d)/bench.cameo"
