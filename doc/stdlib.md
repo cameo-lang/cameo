@@ -93,6 +93,7 @@ What asks for a library is measured, not guessed:
 | `date` | date 3.4.1 | `Date` and `DateTime`: `new`/`civil`, `jd`, `ordinal`, `commercial`, `today`, `now`, `parse` and `_parse` with Ruby's forms, `strptime`, `_strptime`, `iso8601`, `rfc3339`, `xmlschema`, `rfc2822`, `httpdate`, `jisx0301` and their `_` readers, `valid_*?`, `leap?`, the readers, `+`, `-`, `>>`, `<<`, `next_*`, `prev_*`, `step`, `upto`, `downto`, Ranges, `<=>`, `===`, `strftime` and the writers, `new_offset`, `deconstruct_keys`, `to_date`, `to_datetime`, `to_time`, `Time#to_date`, `to_datetime`, `Date::ITALY` and the other starts, the name constants, `Date::Error`; a Rational of Ruby's is an Integer when whole and a Float otherwise; `Date::Infinity` and `marshal_dump` are left out |
 | time zones | — | an IANA zone name wherever Ruby takes a UTC offset: `Time.new(…, in:)` and its seventh argument, `Time.at(…, in:)`, `Time.now(in:)`, `localtime`, `getlocal`, `DateTime.new`'s offset and `new_offset`; `Time#zone` is the abbreviation in force, `utc_offset` and `dst?` follow the date; Go's `time/tzdata` is compiled in. Ruby takes a zone object there, so this is cameo's extension; an abbreviation alone is refused as Ruby refuses it |
 | `digest` (`digest/md5`, `sha1`, `sha2`) | digest 3.2.0 | `Digest::MD5`, `SHA1`, `SHA256`, `SHA384`, `SHA512`, `SHA2`: `hexdigest`, `digest`, `base64digest` on the class and on an object, `update`, `<<`, `reset`, `digest_length`, `block_length`, `==`, `Digest.hexencode`, `Digest()`; `require "openssl"` is accepted for the OpenSSL names; `OpenSSL::HMAC.hexdigest`, `digest`, `base64digest`, `OpenSSL::Digest.new`, `hexdigest`, `OpenSSL::Digest::SHA256` and kin. An object is a value: `update` returns the copy. `RMD160` (no RIPEMD-160 in Go) and `file` are left out |
+| `base64` | base64 0.2.0 | `encode64`, `decode64`, `strict_encode64`, `strict_decode64`, `urlsafe_encode64` (`padding:`), `urlsafe_decode64`, with Ruby's line breaks, lenient decoder and errors |
 | `debug` | debug 1.10.0 | `debugger` and `binding.break` stop in cameo's debugger, which takes rdbg's commands ([debugger.md](debugger.md)) |
 | `cameo/runner` | — | cameo's own: the library that gives CRuby `Cameo::Runner` is built in |
 
@@ -103,7 +104,6 @@ Each is one pull request, which also moves its row to *Available*.
 | Library | Ruby's version | What goes in | Why this order |
 |---|---|---|---|
 
-| `base64` | base64 0.2.0 | `encode64`, `decode64`, `strict_*`, `urlsafe_*` | with `digest` |
 | `securerandom` (`random/formatter`) | securerandom 0.4.1 | `hex`, `uuid`, `uuid_v4`, `uuid_v7`, `random_bytes`, `random_number`, `alphanumeric`, `base64`, `urlsafe_base64`, `bytes`, `Random::Formatter` on `Random` too, drawing from Go's `crypto/rand` | tokens and ids; cheap |
 | `csv` | csv 3.3.2 | `CSV.parse`, `parse_line`, `generate`, `generate_line`, `headers: true`, `CSV::Row` and `Table`, `converters: :numeric`, quoting and `col_sep`; `CSV.read`, `foreach`, `open` **unsupported** (files) | 42 spec files; data scripts |
 | `marshal` | — | `Marshal.dump` and `load` in **cameo's wire form**, not Ruby's: the bytes are the protobuf envelope every value crosses to a host in, so cameo reads them back and any protobuf reader with the `.proto` reads them too; a Proc, a Random and an Enumerator raise `TypeError`, as a Proc does in Ruby; a class is found by name and digest, as `from_proto` finds it | Ruby's format carries object identity and instance variables cameo has neither of; a round trip inside cameo is what a script wants |
@@ -206,4 +206,5 @@ Pull requests, as they open and land:
 - [cameo-lang/cameo#179](https://github.com/cameo-lang/cameo/pull/179): `uri`.
 - [cameo-lang/cameo#180](https://github.com/cameo-lang/cameo/pull/180): `date`.
 - [cameo-lang/cameo#214](https://github.com/cameo-lang/cameo/pull/214): time zones.
-- `digest`: available.
+- [cameo-lang/cameo#183](https://github.com/cameo-lang/cameo/pull/183): `digest`.
+- `base64`: available.
