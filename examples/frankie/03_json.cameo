@@ -1,0 +1,67 @@
+# A JSON API: the body comes in as a String, and goes out as one, with
+# its content type.
+require "frankie"
+require "json"
+
+ITEMS = {"1" => {"name" => "espresso", "price" => 2.5}, "2" => {"name" => "cornetto", "price" => 1.8}}
+
+def json(status, value) = [status, {"Content-Type" => "application/json"}, JSON.generate(value)]
+
+app = Frankie.app
+
+app = app.get("/items") do
+  json(200, ITEMS.values)
+end
+
+app = app.get("/items/:id") do |req|
+  item = ITEMS[req.params["id"]]
+  item ? json(200, item) : json(404, {"error" => "no item #{req.params["id"]}"})
+end
+
+app = app.post("/orders") do |req|
+  order = JSON.parse(req.body)
+  items = order.fetch("items", []).map { |id| ITEMS.fetch(id.to_s) }
+  total = items.sum { |item| item["price"] }
+  json(201, {"items" => items.map { |item| item["name"] }, "total" => total})
+rescue JSON::ParserError => e
+  json(400, {"error" => e.message})
+end
+
+require "minispec"
+
+describe "GET /items" do
+  it "lists the items as JSON" do
+    res = app.request("GET", "/items")
+    assert_equal 200, res.status
+    assert_equal "application/json", res.headers["Content-Type"]
+    assert_equal ["espresso", "cornetto"], JSON.parse(res.body).map { |item| item["name"] }
+  end
+end
+
+describe "GET /items/:id" do
+  it "returns one item" do
+    assert_equal({"name" => "cornetto", "price" => 1.8}, JSON.parse(app.request("GET", "/items/2").body))
+  end
+
+  it "is 404 for an unknown id" do
+    res = app.request("GET", "/items/9")
+    assert_equal 404, res.status
+    assert_equal({"error" => "no item 9"}, JSON.parse(res.body))
+  end
+end
+
+describe "POST /orders" do
+  it "totals an order" do
+    res = app.request("POST", "/orders", body: JSON.generate({"items" => [1, 2, 1]}))
+    assert_equal 201, res.status
+    assert_equal({"items" => ["espresso", "cornetto", "espresso"], "total" => 6.8}, JSON.parse(res.body))
+  end
+
+  it "rejects a body that is not JSON" do
+    res = app.request("POST", "/orders", body: "{")
+    assert_equal 400, res.status
+    assert_match(/unexpected/, JSON.parse(res.body)["error"])
+  end
+end
+
+app.serve

@@ -42,7 +42,8 @@ A script can `require` the libraries cameo builds in: `set`, `time`, `pp`,
 `shellwords`, `ipaddr`, `zlib`, `prime`, `tsort`, `abbrev`,
 `singleton`, `forwardable`, `delegate`, `logger`, `stringio`,
 `strscan`, `optparse`, `getoptlong`, `matrix`, `bigdecimal`, `minispec`, its
-test library, and `io/httpd`, its HTTP server. [doc/stdlib.md](doc/stdlib.md)
+test library, `io/httpd`, its HTTP server, and `frankie`, a Sinatra-like web
+framework written in cameo. [doc/stdlib.md](doc/stdlib.md)
 lists every library of Ruby's standard library with its status in cameo:
 built in, planned, or left out and why.
 
@@ -57,6 +58,10 @@ Integer; `await` collects a promise's result or re-raises its exception,
 `promise`, `resolve` and `fail` make and settle a promise by hand. A Go host
 returns a promise from a method (`prog.Promise()`) and settles it when its
 I/O is done; [examples/webfetch](examples/webfetch) fetches web pages so.
+The other direction is [examples/frankie](examples/frankie): `require "frankie"`
+gives a script a Sinatra-like app, a value each verb adds a route to, served
+on `io/httpd`, and each example tests its routes in place with `minispec`;
+`cameo examples/frankie/01_hello.cameo` runs the specs and serves.
 [examples/async](examples/async) walks through the model, and
 [ruby/lib/cameo/runner.rb](ruby/lib/cameo/runner.rb) gives CRuby the same
 `Cameo::Runner` module, so a script whose classes include it runs on both:

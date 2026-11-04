@@ -15,6 +15,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/delegate"
 	"github.com/cameo-lang/cameo/src/lib/digest"
 	"github.com/cameo-lang/cameo/src/lib/forwardable"
+	"github.com/cameo-lang/cameo/src/lib/frankie"
 	"github.com/cameo-lang/cameo/src/lib/getoptlong"
 	"github.com/cameo-lang/cameo/src/lib/io/httpd"
 	"github.com/cameo-lang/cameo/src/lib/ipaddr"
@@ -96,7 +97,9 @@ var Libraries = map[string][]string{
 // methods are the script's from then on, as a Go library's are from the
 // start. A library listed here needs no entry in Libraries, and may have
 // one for what it loads along with it.
-var Sources = map[string]string{}
+var Sources = map[string]string{
+	"frankie": frankie.Source,
+}
 
 // Install defines every library. The evaluator calls it once, after
 // stdlib.Install.

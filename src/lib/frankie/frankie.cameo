@@ -1,0 +1,145 @@
+# frankie is a Sinatra-like web framework written in cameo. An app is a
+# value: each verb returns a new app with the route, so a script builds
+# one up and serves it at the end:
+#
+#   require "frankie"
+#   app = Frankie.app
+#   app = app.get("/hi/:name") { |req| "hi #{req.params["name"]}" }
+#   app.serve(port: 8888)
+#
+# A route's block gets a Frankie::Request and returns the body as a
+# String, a status as an Integer, [status, body] or [status, headers,
+# body], as a Sinatra route does. app.request(method, path, params:,
+# headers:, body:) answers a request without the network and returns a
+# Frankie::Response, for a spec. serve runs the app on io/httpd, the one
+# I/O frankie does, and only in a program that allows it.
+require "io/httpd"
+require "uri"
+
+module Frankie
+  CONTENT_TYPE = "text/html;charset=utf-8"
+
+  # Request is what a route's block gets: params holds the query string's
+  # and the path's captures (:name), as Strings.
+  class Request
+    string :method, :path, :query, :body
+    map :params, key: :string, value: :string
+    map :headers, key: :string, value: :string
+  end
+
+  # Response is what app.request returns.
+  class Response
+    int :status
+    map :headers, key: :string, value: :string
+    string :body
+  end
+
+  # Route is one verb and path pattern with its block; a segment ":name"
+  # of the pattern captures the request's segment.
+  class Route
+    string :method, :path
+    proc :handler
+
+    # match returns the parameters the pattern captures from path, and
+    # nil when the route does not match.
+    def match(method, path)
+      return nil unless self.method == method
+      mine = self.path.split("/").reject(&:empty?)
+      theirs = path.split("/").reject(&:empty?)
+      return nil unless mine.size == theirs.size
+      params = {}
+      mine.zip(theirs).each do |pattern, segment|
+        if pattern.start_with?(":")
+          params = params.merge(pattern[1..] => segment)
+        elsif pattern != segment
+          return nil
+        end
+      end
+      params
+    end
+  end
+
+  class App
+    list :routes, of: Route
+    int :port, default: 4567
+    string :bind, default: "127.0.0.1"
+    bool :quiet, default: false
+
+    def get(path, &handler) = route("GET", path, &handler)
+    def post(path, &handler) = route("POST", path, &handler)
+    def put(path, &handler) = route("PUT", path, &handler)
+    def patch(path, &handler) = route("PATCH", path, &handler)
+    def delete(path, &handler) = route("DELETE", path, &handler)
+
+    # route returns the app with a route for method and path added; the
+    # first route added that matches a request answers it.
+    def route(method, path, &handler)
+      with(routes: routes + [Route.new(method: method, path: path, handler: handler)])
+    end
+
+    # set returns the app with settings changed: set(port: 8888, quiet: true).
+    def set(**settings) = with(**settings)
+
+    # request answers one request without the network.
+    def request(method, path, params: {}, headers: {}, body: "")
+      status, response_headers, response_body = dispatch(method, path, "", params, headers, body)
+      Response.new(status: status, headers: response_headers, body: response_body)
+    end
+
+    # serve runs the app on io/httpd until the host stops the run, after
+    # applying the settings given. It returns false without serving where
+    # the program allows no I/O, saying so on standard error.
+    def serve(**settings)
+      app = set(**settings)
+      unless HTTPD.allowed?
+        warn "frankie does not serve: this program allows no I/O"
+        return false
+      end
+      puts "frankie serves on http://#{app.bind}:#{app.port}"
+      HTTPD.serve(port: app.port, bind: app.bind, quiet: app.quiet) do |req|
+        app.dispatch(req.method, req.path, req.query, {}, req.headers, req.body)
+      end
+      true
+    end
+
+    # dispatch answers a request as [status, headers, body]: the first
+    # matching route's block, given the Request, or a 404. An exception
+    # the block raises is the caller's: a spec sees it, and io/httpd
+    # answers 500 with it.
+    def dispatch(method, path, query, params, headers, body)
+      from_query = URI.decode_www_form(query).to_h
+      routes.each do |route|
+        captures = route.match(method, path)
+        next unless captures
+        request = Request.new(method: method, path: path, query: query, params: from_query.merge(params).merge(captures), headers: headers, body: body)
+        return Frankie.response(route.handler.call(request))
+      end
+      [404, {"Content-Type" => "text/plain;charset=utf-8"}, "Not Found"]
+    end
+  end
+
+  # app is a new app with no routes and the default settings.
+  def self.app = App.new
+
+  # response reads what a route returned, in Sinatra's forms, as [status,
+  # headers, body], with the content type text/html;charset=utf-8 unless
+  # the headers set one.
+  def self.response(value)
+    status, headers, body = case value
+      when String then [200, {}, value]
+      when Integer then [value, {}, ""]
+      when nil then [200, {}, ""]
+      when Array
+        if value.size == 2
+          [value[0], {}, value[1]]
+        elsif value.size == 3
+          value
+        else
+          raise TypeError, "a route returned an Array of #{value.size}, not [status, body] or [status, headers, body]"
+        end
+      else
+        raise TypeError, "a route returned #{value.inspect}, not a String, an Integer or an Array"
+      end
+    [status, {"Content-Type" => CONTENT_TYPE}.merge(headers), body.to_s]
+  end
+end
