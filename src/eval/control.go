@@ -2,7 +2,10 @@ package eval
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 
+	"github.com/cameo-lang/cameo/src/lib"
 	"github.com/cameo-lang/cameo/src/object"
 )
 
@@ -106,7 +109,24 @@ func (in *Interp) noMethod(recv object.Value, name string, args []object.Value, 
 	}
 	attrs["args"] = object.NewList(append([]object.Value{}, args...)...)
 	return &object.Exception{Cls: object.NoMethodError, Line: line, Attrs: attrs,
-		Message: fmt.Sprintf("undefined method '%s' for %s", name, typeName(recv))}
+		Message: fmt.Sprintf("undefined method '%s' for %s%s", name, typeName(recv), in.requireHint(name))}
+}
+
+// requireHint says which library to require for name, when a library the
+// script has not required brings a function of that name to the top level
+// (lib.TopLevel): `: require "minispec" first`, or "".
+func (in *Interp) requireHint(name string) string {
+	for _, l := range slices.Sorted(maps.Keys(lib.TopLevel)) {
+		if in.loaded[l] {
+			continue
+		}
+		for _, m := range lib.TopLevel[l] {
+			if m.Lookup(name) != nil {
+				return fmt.Sprintf(": require %q first", l)
+			}
+		}
+	}
+	return ""
 }
 
 // privateMethod is the NoMethodError for a function of Kernel called with
