@@ -255,10 +255,19 @@ func (in *Interp) RespondsTo(v object.Value, name string) bool {
 func (in *Interp) findMethod(recv object.Value, name string) *object.Method {
 	if cls, ok := recv.AsClass(); ok {
 		if m := cls.LookupSingleton(name); m != nil {
-			return m
+			return in.available(m)
 		}
 	}
-	return recv.Class().Lookup(name)
+	return in.available(recv.Class().Lookup(name))
+}
+
+// available returns m, or nil when m is a method of a module of I/O the
+// host does not allow (object.Class.IOKind): File.read without file I/O.
+func (in *Interp) available(m *object.Method) *object.Method {
+	if m != nil && m.Owner != nil && m.Owner.IOKind != "" && !in.IOAllowed(m.Owner.IOKind) {
+		return nil
+	}
+	return m
 }
 
 // call dispatches name on recv. selfCall marks a call written without a

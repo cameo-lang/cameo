@@ -82,10 +82,10 @@ func installObject() {
 		regular := len(args) == 0 || args[0].Truthy()
 		names := map[string]bool{}
 		if c, ok := self.AsClass(); ok {
-			names = singletonMethodNames(c, regular)
+			names = singletonMethodNames(ctx, c, regular)
 		}
 		if regular {
-			for n := range instanceMethodNames(self.Class(), true) {
+			for n := range instanceMethodNames(ctx, self.Class(), true) {
 				names[n] = true
 			}
 		}

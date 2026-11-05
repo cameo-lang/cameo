@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"runtime/debug"
 	"sort"
+	"strings"
 
 	"github.com/cameo-lang/cameo/src/aot"
 	"github.com/cameo-lang/cameo/src/cameo"
@@ -21,17 +22,18 @@ import (
 // usage instead of opening a file by that name.
 var commands = map[string]bool{"check": true, "proto": true, "build": true, "run": true, "resume": true, "inspect": true, "irb": true, "debug": true, "version": true, "--version": true, "--": true}
 
-const usage = `usage: cameo [--no-pause] <script.cameo> [args...]
+const usage = `usage: cameo [--no-pause] [--io] <script.cameo> [args...]
                                          run the script, with args in ARGV; ^C pauses it before its next
                                          top-level statement and writes its state to a temporary file,
-                                         or ends it with --no-pause
+                                         or ends it with --no-pause. A script does no I/O unless --io
+                                         allows every kind, or --io=network,file,popen the kinds named
        cameo [--no-pause] resume <dump>  continue the script a dump holds
        cameo --ignore-mutation-errors <script.cameo>
                                          run it, a call of Ruby's mutators such as push returning its
                                          result on a copy instead of raising; resume takes it too
        cameo inspect <dump>              show what a dump holds: where the script paused, its variables,
                                          constants and promises
-       cameo irb [script.cameo]          evaluate lines typed in, at the top level of the script when one is given
+       cameo [--io] irb [script.cameo]   evaluate lines typed in, at the top level of the script when one is given
        cameo [--no-pause] debug <script.cameo>
                                          run the script under the debugger, stopped before its first statement
        cameo check <script.cameo>        parse and check the script, report every error
@@ -67,13 +69,22 @@ func tuneGC() {
 // wrong.
 func run(args []string) int {
 	pause, ignoreMutations := true, false
+	var io []string
 flags:
 	for len(args) > 0 {
-		switch args[0] {
-		case "--no-pause":
+		switch {
+		case args[0] == "--no-pause":
 			pause = false
-		case "--ignore-mutation-errors":
+		case args[0] == "--ignore-mutation-errors":
 			ignoreMutations = true
+		case strings.HasPrefix(args[0], "--io"):
+			allow, rest, err := cameo.ParseIOFlags(args)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "cameo: %v\n%s\n", err, usage)
+				return 2
+			}
+			io, args = append(io, allow...), rest
+			continue
 		default:
 			break flags
 		}
@@ -115,18 +126,18 @@ flags:
 	case len(args) == 2 && args[0] == "run":
 		return runCompiled(args[1], os.Stdout, os.Stderr)
 	case len(args) == 2 && args[0] == "resume":
-		return resume(args[1], pause, ignoreMutations, os.Stdout, os.Stderr)
+		return resume(args[1], io, pause, ignoreMutations, os.Stdout, os.Stderr)
 	case (len(args) == 1 || len(args) == 2) && args[0] == "irb":
 		path := ""
 		if len(args) == 2 {
 			path = args[1]
 		}
 		if term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd())) {
-			return irbOnTerminal(path, os.Stdin, os.Stdout)
+			return irbOnTerminal(path, io, os.Stdin, os.Stdout)
 		}
-		return irb(path, os.Stdin, os.Stdout, os.Stderr)
+		return irb(path, io, os.Stdin, os.Stdout, os.Stderr)
 	case len(args) == 2 && args[0] == "debug":
-		return debugScript(args[1], pause, os.Stdin, os.Stdout, os.Stderr)
+		return debugScript(args[1], io, pause, os.Stdin, os.Stdout, os.Stderr)
 	case len(args) == 2 && args[0] == "inspect":
 		if err := inspect(args[1], os.Stdout); err != nil {
 			fmt.Fprintln(os.Stderr, err)
@@ -139,7 +150,7 @@ flags:
 		if len(argv) > 0 && argv[0] == "--" {
 			argv = argv[1:]
 		}
-		return runScript(args[0], argv, pause, ignoreMutations, os.Stdout, os.Stderr)
+		return runScript(args[0], argv, io, pause, ignoreMutations, os.Stdout, os.Stderr)
 	default:
 		fmt.Fprintln(os.Stderr, usage)
 		return 2
