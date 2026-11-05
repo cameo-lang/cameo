@@ -99,6 +99,7 @@ var Libraries = map[string][]string{
 // one for what it loads along with it.
 var Sources = map[string]string{
 	"abbrev":  abbrev.Source,
+	"tsort":   tsort.Source,
 	"frankie": frankie.Source,
 }
 
@@ -132,7 +133,6 @@ func Install() {
 	matrix.Install()
 	bigdecimal.Install()
 	libtime.Install()
-	tsort.Install()
 	unicodenormalize.Install()
 	uri.Install()
 	zlib.Install()

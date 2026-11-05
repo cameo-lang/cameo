@@ -413,6 +413,9 @@ sets the fields, and `p a` prints `Point(x: 1, y: 2)` where Ruby prints
   `JSON::State`; passing it on to `to_json` nests the same way.
 - `Benchmark::Tms#add!` does not exist: it changes its receiver. Use
   `t = t.add { ... }`. `p` of a `Benchmark::Tms` shows no address.
+- `tsort_each` and the `each_*` functions of `tsort`, which is written in
+  cameo, return the Array of what they would have yielded when called
+  without a block, where Ruby returns an Enumerator.
 - An iterating method called without a block returns an Enumerator, as
   Ruby's does: `map.with_index(1)`, `each_slice(2).to_a` and `3.times.size`
   work as in Ruby. An Enumerator has no `next`, `peek` or `rewind`, which

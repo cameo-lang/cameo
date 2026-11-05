@@ -1,0 +1,92 @@
+# Ruby's tsort library: topological sorting and strongly connected
+# components by Tarjan's algorithm, as module functions over two
+# callables, each_node and each_child, and as the methods of a class that
+# includes TSort and defines tsort_each_node and tsort_each_child. It
+# follows tsort 0.2.0, component for component in the same order. Without
+# a block, tsort_each and the each_* functions return the Array of what
+# they would have yielded, where Ruby returns an Enumerator.
+module TSort
+  VERSION = "0.2.0"
+
+  class Cyclic < StandardError
+  end
+
+  # A search is Tarjan's state, a Hash threaded through the calls since it
+  # is a value: ids maps each node seen to its index, done holds the nodes
+  # whose component is out, stack the nodes on the way.
+  def self.search = {ids: {}, done: {}, stack: []}
+
+  # from returns [search, components, minimum]: the search after node, the
+  # components found under it, children first, and the lowest index seen.
+  def self.from(search, node, each_child)
+    id = search[:ids].size
+    base = search[:stack].size
+    search = {ids: search[:ids].merge(node => id), done: search[:done], stack: search[:stack] + [node]}
+    minimum = id
+    components = []
+    each_child.call(node) do |child|
+      if search[:ids].key?(child)
+        seen = search[:ids][child]
+        minimum = seen if seen < minimum && !search[:done][child]
+      else
+        search, found, low = from(search, child, each_child)
+        components += found
+        minimum = low if low < minimum
+      end
+    end
+    if id == minimum
+      component = search[:stack][base..]
+      done = component.reduce(search[:done]) { |d, n| d.merge(n => true) }
+      search = {ids: search[:ids], done: done, stack: search[:stack][0...base]}
+      components += [component]
+    end
+    [search, components, minimum]
+  end
+
+  def self.strongly_connected_components(each_node, each_child)
+    search = TSort.search
+    all = []
+    each_node.call do |node|
+      next if search[:ids].key?(node)
+      search, found, _ = from(search, node, each_child)
+      all += found
+    end
+    all
+  end
+
+  def self.each_strongly_connected_component(each_node, each_child, &block)
+    found = strongly_connected_components(each_node, each_child)
+    return found unless block
+    found.each(&block)
+    nil
+  end
+
+  def self.each_strongly_connected_component_from(node, each_child, id_map = nil, stack = nil, &block)
+    _, found, _ = from(TSort.search, node, each_child)
+    return found unless block
+    found.each(&block)
+    nil
+  end
+
+  def self.tsort(each_node, each_child)
+    strongly_connected_components(each_node, each_child).map do |component|
+      raise Cyclic, "topological sort failed: #{component.inspect}" unless component.size == 1
+      component[0]
+    end
+  end
+
+  def self.tsort_each(each_node, each_child, &block)
+    sorted = tsort(each_node, each_child)
+    return sorted unless block
+    sorted.each(&block)
+    nil
+  end
+
+  # The methods of a class that includes TSort, over its tsort_each_node
+  # and tsort_each_child.
+  def tsort = TSort.tsort(->(&b) { tsort_each_node(&b) }, ->(n, &b) { tsort_each_child(n, &b) })
+  def tsort_each(&block) = TSort.tsort_each(->(&b) { tsort_each_node(&b) }, ->(n, &b) { tsort_each_child(n, &b) }, &block)
+  def strongly_connected_components = TSort.strongly_connected_components(->(&b) { tsort_each_node(&b) }, ->(n, &b) { tsort_each_child(n, &b) })
+  def each_strongly_connected_component(&block) = TSort.each_strongly_connected_component(->(&b) { tsort_each_node(&b) }, ->(n, &b) { tsort_each_child(n, &b) }, &block)
+  def each_strongly_connected_component_from(node, id_map = nil, stack = nil, &block) = TSort.each_strongly_connected_component_from(node, ->(n, &b) { tsort_each_child(n, &b) }, &block)
+end

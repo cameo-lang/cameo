@@ -14,7 +14,7 @@ func TestNativeBindsEveryGoClassUnderCameoNative(t *testing.T) {
 	out := runScript(t, `
 p Cameo::Native::JSON == JSON, Cameo::Native::String == String, Cameo::Native::Integer == Integer
 p Cameo::Native::JSON::ParserError, Cameo::Native::CSV::Row, Cameo::Native::Math::PI
-p Cameo::Native::TSort == TSort, Cameo::Native::HTTPD == HTTPD, Cameo::Native::Kernel == Kernel
+p Cameo::Native::Prime == Prime, Cameo::Native::HTTPD == HTTPD, Cameo::Native::Kernel == Kernel
 p Cameo::Native.class
 begin
   Cameo::Native::Frankie
