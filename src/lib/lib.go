@@ -20,6 +20,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/securerandom"
 	"github.com/cameo-lang/cameo/src/lib/shellwords"
 	"github.com/cameo-lang/cameo/src/lib/time"
+	"github.com/cameo-lang/cameo/src/lib/tsort"
 	unicodenormalize "github.com/cameo-lang/cameo/src/lib/unicode_normalize"
 	"github.com/cameo-lang/cameo/src/lib/uri"
 	"github.com/cameo-lang/cameo/src/lib/zlib"
@@ -73,6 +74,7 @@ var Libraries = map[string][]string{
 // one for what it loads along with it.
 var Sources = map[string]string{
 	"shellwords": shellwords.Source,
+	"tsort":      tsort.Source,
 }
 
 // Install defines every library. The evaluator calls it once, after
