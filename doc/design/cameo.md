@@ -954,10 +954,14 @@ re-opened by accident:
 - **Numeric** is a builtin class above Integer and Float, and includes
   Comparable for both, so the ancestors and the type checks
   (`is_a?(Numeric)`, `when Numeric`) are Ruby's. `step`, `+@` and
-  `nonzero?` are Numeric's, as in Ruby. A script cannot subclass it.
-  Integer and Float follow Ruby's `coerce` protocol for any value that
-  answers `coerce`, which `bigdecimal` brought in, so a number of a
-  script's own is an ordinary class that defines `coerce`.
+  `nonzero?` are Numeric's, as in Ruby. A script may subclass it, as
+  `bigdecimal`'s BigDecimal does in Go: Integer and Float follow Ruby's
+  `coerce` protocol for any value that answers `coerce`, which `bigdecimal`
+  brought in, and Numeric has Ruby's generic methods, each defined through
+  the instance's own operators as numeric.c defines them (`zero?` through
+  `==`, `abs` through `<=>`, `-@` through `coerce`, `floor` through
+  `to_f`), which Integer and Float override. The refusal that stood here
+  before `coerce` came in is lifted.
 - **BasicObject** is the root class, above Object, with `==`, `!=`, `!`,
   `__send__` and `method_missing`, so `ancestors`, `superclass` and
   `is_a?(BasicObject)` are Ruby's. A script cannot subclass it: a subclass

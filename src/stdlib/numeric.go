@@ -17,12 +17,8 @@ func installNumeric() {
 	})
 	// A big integer is never zero, so its approximation as a float is not
 	// either.
-	def(n, "nonzero?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if f, _ := self.AsNumber(); f == 0 {
-			return object.Nil, nil
-		}
-		return self, nil
-	})
+	def(n, "nonzero?", 0, numericNonzero)
+	installNumericGeneric()
 	installInteger()
 	installFloat()
 }
@@ -484,6 +480,9 @@ func numericStep(ctx object.Context, self object.Value, args []object.Value, kw 
 		if v, ok := kw.Get(object.Symbol("by")); ok {
 			by = v
 		}
+	}
+	if _, ok := self.AsNumber(); !ok {
+		return instanceStep(ctx, self, limit, by, args, kw, block)
 	}
 	for _, v := range []object.Value{by, limit} {
 		if _, ok := v.AsNumber(); !ok && !v.IsNil() {

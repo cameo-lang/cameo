@@ -1,0 +1,39 @@
+# A number class of a script's own: Money subclasses Numeric, as in Ruby, and
+# Numeric's methods, Comparable and the arithmetic of Integer work through
+# its own +, -, <=>, == and coerce.
+class Money < Numeric
+  int :cents
+
+  def initialize(cents)
+    self.cents = cents
+  end
+
+  def +(other) = Money.new(cents + other.cents)
+  def -(other) = Money.new(cents - other.cents)
+  def *(n) = Money.new(cents * n)
+  def /(o) = o.is_a?(Money) ? cents / o.cents : Money.new(cents / o)
+  def <=>(other) = other.is_a?(Money) ? cents <=> other.cents : cents <=> other * 100
+  def ==(other) = other.is_a?(Money) ? cents == other.cents : cents == other * 100
+  def coerce(n) = [Money.new(n * 100), self]
+  def to_f = cents / 100.0
+  def to_i = cents / 100
+  def to_s = format("$%.2f", to_f)
+  def inspect = "#<Money #{self}>"
+end
+
+a = Money.new(1250)
+b = Money.new(-300)
+p a.is_a?(Numeric), a.is_a?(Comparable), Money.ancestors.take(4)
+p a.zero?, Money.new(0).zero?, a.nonzero?, Money.new(0).nonzero?
+p a.positive?, b.negative?, b.abs, -a
+p a.integer?, a.real?, a.finite?, a.infinite?
+p a > b, [a, b].max, a.between?(b, a), b.clamp(Money.new(0), a)
+p a.floor, a.ceil, a.round(1), a.truncate, a.to_int
+p a.fdiv(2)
+p a.step(Money.new(1500), Money.new(100)).to_a
+a.step(Money.new(1450), Money.new(100)) { |m| print m, " " }
+puts
+p 1 + a, 3 - a, 2 > a
+case a
+when Numeric then puts "a Numeric"
+end
