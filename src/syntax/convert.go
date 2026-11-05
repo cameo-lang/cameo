@@ -804,7 +804,9 @@ var unsupported = map[string]string{
 // libraryFunctions are module functions of a library cameo builds in whose
 // names read as a mutating or unsupported call: JSON.parse! changes nothing,
 // and JSON.load reads a string, not a file.
-var libraryFunctions = map[string]map[string]bool{"JSON": {"parse!": true, "load": true}}
+var libraryFunctions = map[string]map[string]bool{
+	"JSON": {"parse!": true, "load": true},
+}
 
 // isLibraryFunction reports a call of one of libraryFunctions.
 func isLibraryFunction(n *ast.Call) bool {
@@ -1411,7 +1413,7 @@ func (c *converter) assignment(n *ast.Call) Node {
 // self in initialize. attr tells that key names an attribute, `.key`, rather
 // than an index, `[key]`.
 func (c *converter) update(recv ast.Node, key Node, attr bool, value Node, origin *ast.Call) Node {
-	with := func(target Node) Node { return &With{c.pos(), target, key, value} }
+	with := func(target Node) Node { return &With{c.pos(), target, key, value, !attr} }
 	switch r := recv.(type) {
 	case *ast.VarRef:
 		if slices.Contains(c.lent, r.Name) {

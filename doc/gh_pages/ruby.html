@@ -76,8 +76,8 @@ reaches it. The full list is
   <code>set</code>, <code>time</code>, <code>pp</code>,
   <code>pathname</code>, <code>cgi</code>, <code>json</code>,
   <code>benchmark</code>, <code>uri</code>, <code>date</code>,
-  <code>digest</code>, <code>base64</code> and
-  <code>securerandom</code>.</li>
+  <code>digest</code>, <code>base64</code>,
+  <code>securerandom</code> and <code>csv</code>.</li>
 </ul>
 
 <p>This script prints the same under <code>ruby</code> 3.3 and under
@@ -362,9 +362,9 @@ reaches it, mostly with <code>NameError</code> or
   <code>set</code>, <code>time</code>, <code>pp</code>,
   <code>pathname</code>, <code>cgi</code>, <code>json</code>,
   <code>benchmark</code>, <code>uri</code>, <code>date</code>,
-  <code>digest</code>, <code>base64</code> and
-  <code>securerandom</code>, such as
-  <code>yaml</code>.</li>
+  <code>digest</code>, <code>base64</code>,
+  <code>securerandom</code> and <code>csv</code>, such as
+  <code>matrix</code>.</li>
 </ul>
 
 <div class="pair">
@@ -391,11 +391,11 @@ p item.qty</code></pre>
 </div>
 
 <pre class="cameo"><code>begin
-  require "yaml"
+  require "matrix"
 rescue LoadError =&gt; e
   puts e.message
 end</code></pre>
-<pre class="output"><code>cannot load such file -- yaml</code></pre>
+<pre class="output"><code>cannot load such file -- matrix</code></pre>
 
 <p>Ruby's version constants describe cameo: <code>RUBY_ENGINE</code> is
 <code>"cameo"</code>, <code>RUBY_VERSION</code> is the Ruby cameo follows,
