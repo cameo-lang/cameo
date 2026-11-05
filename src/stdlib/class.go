@@ -155,3 +155,17 @@ func InheritFields(c *object.Class) {
 		c.Fields = append(c.Fields, f)
 	}
 }
+
+// Module is the module bound to a top-level constant, made and bound when
+// there is none: what two libraries may share, as OpenSSL, which digest
+// defines its HMAC and Digest under.
+func Module(name string) *object.Class {
+	if v, ok := object.ObjectClass.Consts[name]; ok {
+		if c, isClass := v.AsClass(); isClass {
+			return c
+		}
+	}
+	m := object.NewModule(name)
+	object.ObjectClass.Consts[name] = object.ClassValue(m)
+	return m
+}
