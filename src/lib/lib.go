@@ -18,6 +18,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/securerandom"
 	"github.com/cameo-lang/cameo/src/lib/shellwords"
 	"github.com/cameo-lang/cameo/src/lib/time"
+	unicodenormalize "github.com/cameo-lang/cameo/src/lib/unicode_normalize"
 	"github.com/cameo-lang/cameo/src/lib/uri"
 )
 
@@ -45,14 +46,16 @@ var Libraries = map[string][]string{
 	"minispec":    nil,
 	// openssl is accepted for the OpenSSL::HMAC and OpenSSL::Digest names
 	// digest defines; a script written for openssl begins with it.
-	"openssl":          {"digest"},
-	"pathname":         nil,
-	"pp":               nil,
-	"random/formatter": nil,
-	"securerandom":     {"random/formatter"},
-	"set":              nil,
-	"time":             nil,
-	"uri":              nil,
+	"openssl":                     {"digest"},
+	"pathname":                    nil,
+	"pp":                          nil,
+	"random/formatter":            nil,
+	"securerandom":                {"random/formatter"},
+	"set":                         nil,
+	"time":                        nil,
+	"unicode_normalize":           {"unicode_normalize/normalize"},
+	"unicode_normalize/normalize": nil,
+	"uri":                         nil,
 }
 
 // Sources are the libraries written in cameo, by the name require
@@ -83,4 +86,5 @@ func Install() {
 	uri.Install()
 	securerandom.Install()
 	shellwords.Install()
+	unicodenormalize.Install()
 }

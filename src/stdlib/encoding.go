@@ -398,10 +398,4 @@ func installEncodings() {
 		}
 		return object.StringOf(to, out), nil
 	})
-	def(s, "unicode_normalize", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if self.Kind() != object.KindString {
-			return object.Value{}, ctx.Raise(object.CompatibilityError, "Unicode Normalization not appropriate for %s", encodingName(self.Kind()))
-		}
-		return self, nil
-	})
 }
