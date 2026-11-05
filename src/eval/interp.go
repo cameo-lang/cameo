@@ -6,10 +6,12 @@ package eval
 import (
 	"errors"
 	"fmt"
+	"github.com/spf13/afero"
 	"io"
 	"sync"
 	"sync/atomic"
 
+	"github.com/cameo-lang/cameo/src/lib"
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/protogen"
 	"github.com/cameo-lang/cameo/src/syntax"
@@ -59,6 +61,13 @@ type Interp struct {
 	// exits are the blocks at_exit registered, shared with the workers; Run
 	// runs them when the script ends.
 	exits *exitHandlers
+	// allowIO is what AllowIO enabled: kinds of I/O, "all", or libraries
+	// by require path; see IOAllowed.
+	allowIO map[string]bool
+	// fsys is the file system the host gave the script, and fsDir the
+	// directory in it relative paths start at (FileSystem).
+	fsys  afero.Fs
+	fsDir string
 	// states are what libraries keep for the run, by name; see State.
 	states *libStates
 	// stop ends the run, and is shared with the workers; see Stop.
@@ -320,6 +329,46 @@ func (h *exitHandlers) pop() (object.Value, bool) {
 
 // AtExit implements object.Context.
 func (in *Interp) AtExit(block object.Value) { in.exits.push(block) }
+
+// AllowIO lets the script do I/O: each of what is a kind of I/O,
+// "network", "file" or "popen", "all" for every kind, or a library's
+// require path; see object.Context.IOAllowed. Nothing is allowed unless
+// AllowIO said so. Call it before Run.
+func (in *Interp) AllowIO(what ...string) {
+	if in.allowIO == nil {
+		in.allowIO = map[string]bool{}
+	}
+	for _, w := range what {
+		in.allowIO[w] = true
+	}
+}
+
+// IOAllowed implements object.Context: the library is allowed by name,
+// by its kind of I/O (lib.IOKinds), or because every kind is. File I/O
+// needs a file system too (SetFileSystem): allowing it gives none.
+func (in *Interp) IOAllowed(library string) bool {
+	kind := lib.IOKinds[library]
+	if kind == "" {
+		kind = library
+	}
+	if kind == "file" && in.fsys == nil {
+		return false
+	}
+	return in.allowIO["all"] || in.allowIO[library] || in.allowIO[kind]
+}
+
+// SetFileSystem gives the script fsys to read and write files in, with
+// relative paths starting at dir, an absolute path in fsys ("" for its
+// root). It does so only where AllowIO allows file I/O too. Call it before Run.
+func (in *Interp) SetFileSystem(fsys afero.Fs, dir string) {
+	if dir == "" {
+		dir = "/"
+	}
+	in.fsys, in.fsDir = fsys, dir
+}
+
+// FileSystem implements object.Context.
+func (in *Interp) FileSystem() (afero.Fs, string) { return in.fsys, in.fsDir }
 
 // runExitHandlers runs the blocks at_exit registered, the last first, once
 // the script ended with err, and returns the error the run ends with. The
