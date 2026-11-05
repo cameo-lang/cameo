@@ -587,6 +587,16 @@ func (in *Interp) with(target, key, value object.Value) (object.Value, error) {
 				return object.Value{}, in.raise(object.TypeError, 0, "a field of %s is named by a symbol, not %s", t.Cls.QualifiedName(), typeName(key))
 			}
 		}
+		// A class may define with for its own instances, a library's to
+		// refuse it: a URI has no setters, so u.host = "x" raises there.
+		// An assignment reaches that with, a script's through its body.
+		if m := userMethod(target, "with"); m != nil {
+			kw := object.NewMap().Put(object.Symbol(string(name)), value)
+			if m.Native != nil {
+				return m.Native(in, target, nil, kw, object.Value{})
+			}
+			return in.invoke(m, target, nil, kw, object.Value{}, 0)
+		}
 		idx, ok := t.Cls.FieldIndex[string(name)]
 		if !ok {
 			return object.Value{}, in.raise(object.NameError, 0, "%s has no field %s", t.Cls.QualifiedName(), name)

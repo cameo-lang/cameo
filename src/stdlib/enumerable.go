@@ -17,7 +17,7 @@ func installEnumerable() {
 	e := object.Enumerable
 	each := func(name string, f func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error)) {
 		def(e, name, -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-			elems, err := toList(ctx, self)
+			elems, err := ToList(ctx, self)
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -32,7 +32,7 @@ func installEnumerable() {
 			if block.IsZero() {
 				return blockless(self, name, args, sized), nil
 			}
-			elems, err := toList(ctx, self)
+			elems, err := ToList(ctx, self)
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -43,7 +43,7 @@ func installEnumerable() {
 	// kinds they hold too.
 	compared := func(name string, f func(ctx object.Context, elems []object.Value, kinds object.Kinds, args []object.Value, block object.Value) (object.Value, error)) {
 		def(e, name, -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-			elems, err := toList(ctx, self)
+			elems, err := ToList(ctx, self)
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -65,7 +65,7 @@ func installEnumerable() {
 		if block.IsZero() {
 			return withMemo(blockless(self, "each_with_object", args, true), self, args[0]), nil
 		}
-		elems, err := toList(ctx, self)
+		elems, err := ToList(ctx, self)
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -98,7 +98,7 @@ func installEnumerable() {
 					return s, err
 				}), nil
 			}
-			elems, err := toList(ctx, self)
+			elems, err := ToList(ctx, self)
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -236,7 +236,7 @@ func installEnumerable() {
 		if len(args) == 0 && block.IsZero() {
 			return blockless(self, "find_index", nil, false), nil
 		}
-		elems, err := toList(ctx, self)
+		elems, err := ToList(ctx, self)
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -442,7 +442,7 @@ func installEnumerable() {
 	each("zip", func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		others := make([][]object.Value, len(args))
 		for i, a := range args {
-			l, err := toList(ctx, a)
+			l, err := ToList(ctx, a)
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -621,7 +621,7 @@ func installEnumerable() {
 		if block.IsZero() {
 			return blockless(self, "reverse_each", nil, true), nil
 		}
-		elems, err := toList(ctx, self)
+		elems, err := ToList(ctx, self)
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -682,7 +682,7 @@ func installEnumerable() {
 				return object.Int(k * int64(n)), nil
 			}), nil
 		}
-		elems, err := toList(ctx, self)
+		elems, err := ToList(ctx, self)
 		if err != nil {
 			return object.Value{}, err
 		}

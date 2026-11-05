@@ -151,7 +151,7 @@ func installKernel() {
 		if args[0].IsNil() {
 			return object.NewList(), nil
 		}
-		elems, err := toList(ctx, args[0])
+		elems, err := ToList(ctx, args[0])
 		if err != nil {
 			return object.NewList(args[0]), nil
 		}

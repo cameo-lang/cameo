@@ -293,10 +293,10 @@ func setSubset(a, b *object.Set) bool {
 func setElems(ctx object.Context, v object.Value) ([]object.Value, error) {
 	switch v.Kind() {
 	case object.KindList, object.KindSet, object.KindMap, object.KindRange, object.KindEnumerator:
-		return toList(ctx, v)
+		return ToList(ctx, v)
 	}
 	if v.Kind() == object.KindInstance && ctx.RespondsTo(v, "each") {
-		return toList(ctx, v)
+		return ToList(ctx, v)
 	}
 	return nil, ctx.Raise(object.ArgumentError, "value must be enumerable")
 }
