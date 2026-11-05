@@ -91,8 +91,10 @@ mspec's own `before` blocks.
   `rand` and `srand` on Ruby's Mersenne Twister, so a seeded script draws
   Ruby's numbers, `Integer()`, `Float()`, `String()` and `Array()`,
   `Process.clock_gettime`.
-- **Libraries**: `require` of `set`, `time`, `pp`, `pathname`, `cgi`,
-  `json` and `benchmark`, which cameo builds in. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
+- **Libraries**: `require` of the libraries cameo builds in, which
+  [stdlib.md](stdlib.md) lists in its *Available* table, with every
+  other library of Ruby's standard library and its status, the ones to
+  come and the ones left out. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
   do without I/O: `escape` and `unescape`, the URI-component pair,
   `escapeHTML` and `unescapeHTML`, `escapeElement` and `unescapeElement`,
   `rfc1123_date` and `pretty`, with their snake_case names. A Symbol
@@ -335,8 +337,10 @@ These are absent, and a script that uses one fails when it reaches it:
 - **Not there yet**: `exit!`,
   `printf` (`format` exists), `__method__`, `Enumerator.new`,
   `Integer()` with a base, and `autoload`.
-- **Libraries**: `require` of any library but the seven above, such as
-  `yaml`, raises a `LoadError`.
+- **Libraries**: `require` of any library but the ones
+  [stdlib.md](stdlib.md) lists as available, such as `yaml`, raises a
+  `LoadError`. That page says which are planned and which are left out,
+  and why.
 
 ## Only in cameo
 
