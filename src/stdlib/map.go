@@ -217,7 +217,7 @@ func installMap() {
 			return blockless(self, "transform_keys", nil, true), nil
 		}
 		if mapping == nil {
-			if err := needBlock(ctx, block, "transform_keys"); err != nil {
+			if err := NeedBlock(ctx, block, "transform_keys"); err != nil {
 				return object.Value{}, err
 			}
 		}

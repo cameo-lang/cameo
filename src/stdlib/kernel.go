@@ -107,7 +107,7 @@ func installKernel() {
 	})
 	def(o, "sprintf", -1, o.Methods["format"].Native)
 	def(o, "loop", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if err := needBlock(ctx, block, "loop"); err != nil {
+		if err := NeedBlock(ctx, block, "loop"); err != nil {
 			return object.Value{}, err
 		}
 		for {

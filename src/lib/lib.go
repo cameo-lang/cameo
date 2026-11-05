@@ -5,6 +5,7 @@
 package lib
 
 import (
+	"github.com/cameo-lang/cameo/src/lib/benchmark"
 	"github.com/cameo-lang/cameo/src/lib/cgi"
 	"github.com/cameo-lang/cameo/src/lib/json"
 )
@@ -31,6 +32,7 @@ var Libraries = map[string][]string{
 // Install defines every library. The evaluator calls it once, after
 // stdlib.Install.
 func Install() {
+	benchmark.Install()
 	cgi.Install()
 	json.Install()
 }
