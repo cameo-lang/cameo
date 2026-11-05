@@ -1,0 +1,101 @@
+# Ruby's shellwords library: a line split into words by the Bourne shell's
+# rules, and words escaped and joined back into one. It follows shellwords
+# 0.2.2, whose pattern this is, without the \G anchor and the atomic group
+# cameo's regexps lack: scan starts each match where the last one ended,
+# so the anchor is not needed, and no alternative here backtracks into
+# another.
+module Shellwords
+  VERSION = "0.2.2"
+  WORD = /\s*(?:([^\0\s\\'"]+)|'([^\0']*)'|"((?:[^\0"\\]|\\[^\0])*)"|(\\[^\0]?)|(\S))(\s|\z)?/m
+
+  def self.shellsplit(line)
+    raise NoMethodError, "undefined method 'scan' for #{line.nil? ? "nil" : "an instance of #{line.class.name}"}" unless line.is_a?(String)
+    matches = line.scan(WORD)
+    words = []
+    field = ""
+    i = 0
+    while i < matches.size
+      word, single, double, escaped, garbage, separator = matches[i]
+      raise ArgumentError, garbage_message(line, i) if garbage
+      field += word || single || (double && double.gsub(/\\([$`"\\\n])/, '\1')) || escaped.gsub(/\\(.)/, '\1')
+      if separator
+        words = words << field
+        field = ""
+      end
+      i += 1
+    end
+    words
+  end
+
+  # garbage_message is Ruby's message for the index-th match, a NUL or an
+  # unmatched quote: the match is found again for its position.
+  def self.garbage_message(line, index)
+    pos = 0
+    m = nil
+    n = 0
+    while n <= index
+      m = WORD.match(line, pos)
+      pos = m.end(0)
+      n += 1
+    end
+    text = m.begin(0) > 0 ? "..." + m[0] : m[0]
+    "#{m[5] == "\0" ? "Nul character" : "Unmatched quote"} at #{m.begin(0)}: #{text}"
+  end
+
+  def self.shellescape(str)
+    str = str.to_s
+    return "''" if str.empty?
+    raise ArgumentError, "NUL character" if str.index("\0")
+    str.gsub(/[^A-Za-z0-9_\-.,:+\/@\n]/) { |c| "\\" + c }.gsub("\n", "'\n'")
+  end
+
+  def self.shelljoin(array)
+    array.map { |word| shellescape(word) }.join(" ")
+  end
+
+  def self.split(line)
+    shellsplit(line)
+  end
+
+  def self.shellwords(line)
+    shellsplit(line)
+  end
+
+  def self.escape(str)
+    shellescape(str)
+  end
+
+  def self.join(array)
+    shelljoin(array)
+  end
+
+  # The same methods on an object that includes the module. Ruby's are
+  # private there; cameo has no private methods.
+  def shellsplit(line)
+    Shellwords.shellsplit(line)
+  end
+
+  def shellwords(line)
+    Shellwords.shellsplit(line)
+  end
+
+  def split(line)
+    Shellwords.shellsplit(line)
+  end
+
+  def shellescape(str)
+    Shellwords.shellescape(str)
+  end
+
+  def escape(str)
+    Shellwords.shellescape(str)
+  end
+
+  def shelljoin(array)
+    Shellwords.shelljoin(array)
+  end
+
+  def join(array)
+    Shellwords.shelljoin(array)
+  end
+end

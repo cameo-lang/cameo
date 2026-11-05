@@ -193,6 +193,10 @@ type Frame struct {
 	// DefTarget is the class or module a def inside this frame defines on:
 	// the class whose body is being evaluated, or Object at the top level.
 	DefTarget *object.Class
+	// File is the source the frame's code is from when it is not the
+	// script's: a library written in cameo. A def in the frame gives its
+	// method the file, and an error the code raises is reported with it.
+	File string
 	// Reopened is the class DefTarget is a copy of while a body reopens
 	// it, whose fields the body may declare again with the same type.
 	Reopened *object.Class

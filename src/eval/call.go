@@ -355,6 +355,7 @@ func (in *Interp) invoke(m *object.Method, recv object.Value, args []object.Valu
 		Kw:      kw,
 		Block:   block,
 		Lexical: m.Lexical,
+		File:    m.File,
 	}}
 	fr, env := &act.frame, &act.env
 	if len(m.Lexical) > 0 {
@@ -391,9 +392,24 @@ func (in *Interp) invoke(m *object.Method, recv object.Value, args []object.Valu
 				return c.value, nil
 			}
 		}
-		return object.Value{}, err
+		return object.Value{}, in.inFile(err, fr)
 	}
 	return v, nil
+}
+
+// inFile records the source file an exception was raised in, once, at the
+// boundary of the code that raised it: a method's or a block's frame says
+// which file its code is from, so the innermost boundary the exception
+// crosses names the file, and an exception a script's block raises inside
+// a library's method is the script's.
+func (in *Interp) inFile(err error, fr *Frame) error {
+	if exc, ok := err.(*object.Exception); ok && exc.File == "" && exc.Line > 0 {
+		exc.File = fr.File
+		if exc.File == "" {
+			exc.File = in.file
+		}
+	}
+	return err
 }
 
 // bindParams binds arguments to parameters in env. strict is a method or
@@ -624,7 +640,7 @@ func (in *Interp) callBlock(block object.Value, args []object.Value, kw *object.
 				return c.value, nil
 			}
 		}
-		return object.Value{}, err
+		return object.Value{}, in.inFile(err, fr)
 	}
 	return v, nil
 }
