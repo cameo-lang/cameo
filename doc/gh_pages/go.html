@@ -45,12 +45,13 @@ ways.</p>
 module's <code>go</code> line to that. In the module that will import the
 package:</p>
 
-<pre class="sh"><code>go get github.com/cameo-lang/cameo@v0.2.2
+<pre class="sh"><code>go get github.com/cameo-lang/cameo@v0.4.2
 go mod tidy</code></pre>
 
 <p><code>go mod tidy</code> adds cameo's own dependencies,
-<code>google.golang.org/protobuf</code> and
-<code>github.com/go-ruby-parser/parser</code>, to <code>go.sum</code>;
+<code>google.golang.org/protobuf</code>,
+<code>github.com/go-ruby-parser/parser</code> and
+<code>golang.org/x/text</code>, to <code>go.sum</code>;
 without it the build fails with "missing go.sum entry". Neither needs cgo.</p>
 
 <h2 id="run">Load, Run and RunContext</h2>
@@ -527,7 +528,7 @@ func main() {
     https://raw.githubusercontent.com/cameo-lang/cameo/main/README.md \
     https://raw.githubusercontent.com/cameo-lang/cameo/main/LICENSE \
     https://raw.githubusercontent.com/cameo-lang/cameo/main/MISSING.md
-https://raw.githubusercontent.com/cameo-lang/cameo/main/README.md: 6089 bytes, 139 lines
+https://raw.githubusercontent.com/cameo-lang/cameo/main/README.md: 8781 bytes, 177 lines
 https://raw.githubusercontent.com/cameo-lang/cameo/main/LICENSE: 1465 bytes, 28 lines
 https://raw.githubusercontent.com/cameo-lang/cameo/main/MISSING.md: 404 Not Found</code></pre>
 

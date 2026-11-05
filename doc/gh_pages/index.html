@@ -62,8 +62,8 @@ instance in the script.</p>
 
 <ul>
   <li><strong>It starts in microseconds.</strong> Loading, checking and
-  running a five-line script with a class takes about 20&nbsp;µs in a Go
-  process (<code>cameo.Run</code> in a loop of 1000, on a four-core Linux
+  running a five-line script with a class takes about 80&nbsp;µs in a Go
+  process (<code>cameo.Run</code> in a loop of 2000, on a four-core Linux
   machine).</li>
   <li><strong>It needs no cgo.</strong> The interpreter and its parser,
   <a href="https://github.com/go-ruby-parser/parser">go-ruby-parser</a>,
@@ -72,10 +72,10 @@ instance in the script.</p>
   package compiles with <code>CGO_ENABLED=0</code> for ios/arm64,
   android/arm64, darwin/arm64, windows/amd64, js/wasm and wasip1/wasm.</li>
   <li><strong>A script reads no file and starts no process.</strong> It
-  has no <code>IO</code>, <code>ENV</code>, sockets or <code>system</code>,
-  and <code>File</code> only joins and splits paths. Its I/O is standard
-  output and standard error; anything else the host gives it as a module
-  of Go methods.</li>
+  has no <code>ENV</code>, sockets or <code>system</code>,
+  <code>File</code> only handles paths, and its only <code>IO</code> is
+  <code>STDOUT</code> and <code>STDERR</code>. Anything else the host
+  gives it as a module of Go methods.</li>
 </ul>
 
 <p>A script runs in its own interpreter, and <code>RunContext</code> stops
@@ -83,19 +83,19 @@ it, with every worker it started, when the host's context ends.</p>
 
 <h2>How fast it is</h2>
 
-<p>cameo runs the 824 cases of CRuby's own benchmark suite that use only
+<p>cameo runs the 852 cases of CRuby's own benchmark suite that use only
 what cameo supports, every one with Ruby's output. From
 <a href="https://github.com/cameo-lang/cameo/blob/main/benchmarks/compare/README.md">benchmarks/compare</a>,
-measured on 2026-10-18 against CRuby 3.3.6 (mri):</p>
+measured on 2026-10-19 against CRuby 3.4.11 (mri) on a 16-core server:</p>
 
-<blockquote class="callout">cameo takes about two and a half times MRI's
-time on the typical case, a geometric mean of 265% over the 783 cases both
-run, and is faster in 185 of them.</blockquote>
+<blockquote class="callout">cameo takes a little under three times MRI's
+time on the typical case, a geometric mean of 281% over the 843 cases both
+run, and is faster in 174 of them.</blockquote>
 
 <p>Its slowest cases are small hashes built in a loop, deep recursion
 through method calls, hash lookups and sorting with a block. The same
 comparison has two Rubies that also run inside a Go program: CRuby compiled
-to WebAssembly (708% of MRI's time) and go-embedded-ruby (1019%).</p>
+to WebAssembly (732% of MRI's time) and go-embedded-ruby (994%).</p>
 
 <h2>Read on</h2>
 
@@ -104,6 +104,9 @@ to WebAssembly (708% of MRI's time) and go-embedded-ruby (1019%).</p>
     <span>What works as in Ruby, and the differences: immutability, typed
     fields, what the checker rejects, missing builtins, what only cameo
     has.</span></a>
+  <a href="async.html"><strong>Async</strong>
+    <span>The concurrency model: async, await and promises, on one core
+    and on many, with I/O done by the host.</span></a>
   <a href="go.html"><strong>Embedding in Go</strong>
     <span>Load, run and call a script; convert values; pass protobuf
     messages; handle errors; run workers.</span></a>
@@ -115,7 +118,7 @@ to WebAssembly (708% of MRI's time) and go-embedded-ruby (1019%).</p>
 
 <p>The interpreter is complete to its
 <a href="https://github.com/cameo-lang/cameo/blob/main/doc/design/cameo.md">design</a>.
-The current release is v0.2.2, under the MIT licence.</p>
+The current release is v0.4.2, under the MIT licence.</p>
 </main>
 
 <footer class="site"><div class="inner">
