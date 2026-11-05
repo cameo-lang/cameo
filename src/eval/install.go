@@ -261,11 +261,33 @@ func (in *Interp) require(name object.Value) (object.Value, error) {
 		return object.Value{}, in.raise(object.TypeError, 0, "no implicit conversion of %s into String", typeName(name))
 	}
 	also, builtin := libraryAlso(s)
-	if !builtin {
+	source, written := lib.Sources[s]
+	if !builtin && !written {
 		return object.Value{}, in.raise(object.LoadError, 0, "cannot load such file -- %s", s)
 	}
 	if in.loaded[s] {
 		return object.False, nil
+	}
+	if written {
+		// A library written in cameo runs at the top level of the script,
+		// once, so that its classes are the script's: a worker's top level
+		// is a snapshot every worker shares, so a worker cannot load one.
+		if in.isWorker {
+			return object.Value{}, in.raise(object.LoadError, 0, "cannot load %s from an async call: a library written in cameo is required at the top level", s)
+		}
+		file := s + ".cameo"
+		prog, err := syntax.Parse(file, source)
+		if err != nil {
+			return object.Value{}, in.raise(object.SyntaxError, 0, "%v", err)
+		}
+		if _, err := in.runStatements(prog.Body, in.top, in.topFrame()); err != nil {
+			// The library's error, with the library's file and line,
+			// which the script's own report would misname.
+			if exc, ok := err.(*object.Exception); ok {
+				return object.Value{}, in.raise(object.LoadError, 0, "cannot load %s: %s:%d: %s (%s)", s, file, exc.Line, exc.Message, exc.Cls.QualifiedName())
+			}
+			return object.Value{}, err
+		}
 	}
 	if in.loaded == nil {
 		in.loaded = map[string]bool{}

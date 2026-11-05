@@ -53,6 +53,9 @@ type Interp struct {
 	// loaded is the libraries require has loaded, which a second require
 	// of answers false.
 	loaded map[string]bool
+	// isWorker marks an interpreter async made to run one call: its top
+	// level is a snapshot of the script's, shared by every worker.
+	isWorker bool
 	// exits are the blocks at_exit registered, shared with the workers; Run
 	// runs them when the script ends.
 	exits *exitHandlers
