@@ -39,7 +39,8 @@ import (
 // beyond 64 bits travels as big_value, its decimal digits. A map's
 // default value travels with it; a map with a default proc cannot travel. A time is
 // its instant, its UTC offset in seconds, and a zone of "UTC" for a UTC
-// time, "local" for the local zone, or none for a fixed offset.
+// time, "local" for the local zone, the IANA name of a named zone such
+// as "Europe/Berlin", or none for a fixed offset.
 var (
 	envelopeOnce sync.Once
 	envelopeFile protoreflect.FileDescriptor
@@ -309,11 +310,15 @@ func (e *Encoder) message(fd protoreflect.FileDescriptor, v object.Value) (*dyna
 		m := dynamicpb.NewMessage(timeMd)
 		_, off := t.Zone()
 		zone := ""
-		switch t.Location() {
+		switch loc := t.Location(); loc {
 		case time.UTC:
 			zone = "UTC"
 		case time.Local:
 			zone = "local"
+		default:
+			// A named zone travels by its name, so that the time keeps
+			// its daylight saving; a fixed offset has none.
+			zone = loc.String()
 		}
 		m.Set(timeMd.Fields().ByName("seconds"), protoreflect.ValueOfInt64(t.Unix()))
 		m.Set(timeMd.Fields().ByName("nanos"), protoreflect.ValueOfInt32(int32(t.Nanosecond())))
@@ -505,13 +510,21 @@ func (d *Decoder) value(msg protoreflect.Message) (object.Value, error) {
 		m := pv.Message()
 		fields := m.Descriptor().Fields()
 		t := time.Unix(m.Get(fields.ByName("seconds")).Int(), m.Get(fields.ByName("nanos")).Int())
-		switch m.Get(fields.ByName("zone")).String() {
+		switch zone := m.Get(fields.ByName("zone")).String(); zone {
 		case "UTC":
 			t = t.UTC()
 		case "local":
 			t = t.Local()
-		default:
+		case "":
 			t = t.In(time.FixedZone("", int(m.Get(fields.ByName("offset")).Int())))
+		default:
+			// A name this binary cannot resolve keeps the offset the
+			// sender had, as a fixed zone.
+			if loc, err := time.LoadLocation(zone); err == nil {
+				t = t.In(loc)
+			} else {
+				t = t.In(time.FixedZone("", int(m.Get(fields.ByName("offset")).Int())))
+			}
 		}
 		return object.TimeValue(t), nil
 	case "regexp":
