@@ -19,9 +19,8 @@ class Vec
 end
 
 def walk(n)
-  v = Vec.new(0.0, 0.0)
   step = Vec.new(0.5, -0.25)
-  n.times { |i| v = v.plus(step.scaled(i % 3)) }
+  v = n.times.reduce(Vec.new(0.0, 0.0)) { |v, i| v.plus(step.scaled(i % 3)) }
   v.norm2
 end
 

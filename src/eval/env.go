@@ -12,6 +12,14 @@ import (
 // it was written in as parent and sees its variables; a method body starts
 // a scope with no parent.
 //
+// A block captures values, not variables: when a block is written, the
+// variables it sees are copied into a captured scope (snapshot), and that
+// is the scope its calls run in. A rebinding in the enclosing scope after
+// that is invisible to the block, and a rebinding inside the block lands
+// in the call's own scope, so it is gone when the call returns. Nothing
+// observes a variable from outside its scope, which is what an immutable
+// value needs.
+//
 // The first few variables live in the scope itself, so a scope of a method
 // with a handful of locals costs no allocation beyond its own; more spill
 // into a map.
@@ -21,6 +29,11 @@ type Env struct {
 	n      int
 	more   map[string]object.Value
 	parent *Env
+	// captured marks a scope a block captured: Set never rebinds in it.
+	captured bool
+	// scope is, for a captured scope, the method scope it was copied
+	// from, where the promises of a block's async calls belong.
+	scope *Env
 	// promises are the ones async started in this scope, which `await
 	// :all` collects.
 	promises []*Promise
@@ -95,15 +108,62 @@ func (e *Env) Get(name string) (object.Value, bool) {
 }
 
 // Set rebinds a variable where it is bound, or binds it in this scope when
-// it is new: a block's new variable is the block's own.
+// it is new or captured: a block's new variable is the block's own, and so
+// is its rebinding of a captured one.
 func (e *Env) Set(name string, v object.Value) {
-	for s := e; s != nil; s = s.parent {
+	for s := e; s != nil && !s.captured; s = s.parent {
 		if _, ok := s.lookup(name); ok {
 			s.bind(name, v)
 			return
 		}
 	}
 	e.bind(name, v)
+}
+
+// blockEnv is the scope a block closes over: a snapshot of env, or env
+// itself for the body of a for loop.
+func blockEnv(b *syntax.Block, env *Env) *Env {
+	if b.Shared {
+		return env
+	}
+	return env.snapshot()
+}
+
+// snapshot copies every variable the scope sees into a captured scope, the
+// values they have now, an inner binding shadowing an outer one. A block
+// closes over the snapshot, not the scope.
+func (e *Env) snapshot() *Env {
+	s := &Env{captured: true, scope: methodScope(e)}
+	e.copyInto(s)
+	return s
+}
+
+// copyInto binds the variables of this scope and its parents in s, the
+// outermost first so that an inner binding wins.
+func (e *Env) copyInto(s *Env) {
+	if e.parent != nil {
+		e.parent.copyInto(s)
+	}
+	for i := 0; i < e.n; i++ {
+		s.bind(e.names[i], e.values[i])
+	}
+	for name, v := range e.more {
+		s.bind(name, v)
+	}
+}
+
+// methodScope is the scope a promise belongs to: the method body's, or the
+// top level's, that the current block scope sits in. A block is part of
+// the method that runs it, so a method that fans out in a loop and then
+// waits sees every promise.
+func methodScope(env *Env) *Env {
+	for env.parent != nil {
+		env = env.parent
+	}
+	if env.scope != nil {
+		return env.scope
+	}
+	return env
 }
 
 // Define binds a variable in this scope, shadowing an outer one: what a

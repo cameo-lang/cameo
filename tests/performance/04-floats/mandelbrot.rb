@@ -7,10 +7,9 @@ def now
 end
 
 def mandelbrot(size)
-  inside = 0
-  size.times do |y|
+  size.times.sum do |y|
     ci = 2.0 * y / size - 1.0
-    size.times do |x|
+    size.times.count do |x|
       cr = 2.0 * x / size - 1.5
       zr = 0.0
       zi = 0.0
@@ -22,10 +21,9 @@ def mandelbrot(size)
         zr = t
         i += 1
       end
-      inside += 1 if i == 50
+      i == 50
     end
   end
-  inside
 end
 
 t0 = now

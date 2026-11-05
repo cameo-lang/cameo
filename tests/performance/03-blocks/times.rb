@@ -6,9 +6,7 @@ def now
 end
 
 def sum(n)
-  s = 0
-  n.times { |i| s += i }
-  s
+  n.times.reduce(0) { |s, i| s + i }
 end
 
 t0 = now

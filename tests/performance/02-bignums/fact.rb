@@ -14,6 +14,5 @@ def fact(n)
 end
 
 t0 = now
-r = 0
-100.times { r = fact(5000) }
+r = 100.times.reduce(0) { fact(5000) }
 puts "#{r.to_s.size} #{now - t0}"

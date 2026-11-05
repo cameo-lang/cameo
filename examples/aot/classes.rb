@@ -47,9 +47,7 @@ class Pair
   end
 
   def energy(n)
-    s = 0.0
-    n.times { |i| s += a.dot(b) * weight / (i + 1) }
-    s
+    n.times.reduce(0.0) { |s, i| s + a.dot(b) * weight / (i + 1) }
   end
 
   def sign = flipped ? -weight : weight
@@ -66,9 +64,7 @@ class Counter
   end
 
   def sum(n)
-    s = start
-    n.times { |i| s += i }
-    s
+    n.times.reduce(start) { |s, i| s + i }
   end
 
   def beyond = huge + start

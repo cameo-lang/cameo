@@ -381,3 +381,51 @@ func TestOnlyABeginBeforeWhileTestsAfterThePass(t *testing.T) {
 		}
 	}
 }
+
+// TestABlockCannotRebindACapturedVariable holds the checker to the rule
+// that a block captures the values of its variables: an assignment inside
+// a block to a variable bound around it is refused, whatever its form,
+// while a block's own variables, a for loop's, a rescue's and the lambda
+// assigned to a name it reads are not.
+func TestABlockCannotRebindACapturedVariable(t *testing.T) {
+	const why = "a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while"
+	for _, c := range []struct{ src, where, name string }{
+		{"total = 0\n[1, 2].each { |x| total += x }\n", "test.cameo:2", "total"},
+		{"i = 0\nloop do\n  i += 1\n  break if i > 3\nend\n", "test.cameo:3", "i"},
+		{"v = 1\nl = -> { v += 1 }\n", "test.cameo:2", "v"},
+		{"seen = []\n[1].each { |x| seen = seen + [x] }\n", "test.cameo:2", "seen"},
+		{"a = 1\n[1].each { a, b = 2, 3 }\n", "test.cameo:2", "a"},
+		{"h = {}\n[1].each { |x| h[x] = x }\n", "test.cameo:2", "h"},
+		{"p = nil\n[1].each { |x| p.x = x }\n", "test.cameo:2", "p"},
+		{"n = 0\n[1].each { n ||= 1 }\n", "test.cameo:2", "n"},
+		{"n = 0\n[[1]].each { |l| l.each { |x| n = x } }\n", "test.cameo:2", "n"},
+		{"n = 0\n[1].each { |l| [1].each { |x| n = x } }\n", "test.cameo:2", "n"},
+		{"n = 0\n[1].each { for x in [1] do n = x end }\n", "test.cameo:2", "n"},
+		{"m = 0\n[1].each { |x| case x in Integer => m then m end }\n", "test.cameo:2", "m"},
+		{"n = []\n[[1, 2]].each { |l| case l in [*n] then n end }\n", "test.cameo:2", "n"},
+		{"a = 0\n[{a: 5}].each { |m| case m in {a:} then a end }\n", "test.cameo:2", "a"},
+		{"rest = {}\n[{a: 5}].each { |m| case m in {a: Integer, **rest} then rest end }\n", "test.cameo:2", "rest"},
+		{"pre = 0\n[[1, 2, 3]].each { |l| case l in [*pre, 2, *post] then pre end }\n", "test.cameo:2", "pre"},
+		{"post = 0\n[[1, 2, 3]].each { |l| case l in [*pre, 2, *post] then post end }\n", "test.cameo:2", "post"},
+		{"x = 0\nK = Class.new do\n  x += 1\nend\n", "test.cameo:3", "x"},
+		{"def f\n  s = 0\n  3.times { |i| s += i }\n  s\nend\n", "test.cameo:3", "s"},
+	} {
+		rejects(t, c.src, c.where+": a block cannot rebind "+c.name+", a variable of the scope around it: "+why)
+	}
+	for _, src := range []string{
+		"[1].each { |x| y = x; y += 1 }\n",
+		"[1].each { |x| x += 1 }\n",
+		"total = 0\nfor x in [1, 2] do total += x end\n",
+		"e = 1\n[1].each do\n  raise \"x\"\nrescue => e\n  e\nend\n",
+		"fact = ->(n) { n < 2 ? 1 : n * fact.(n - 1) }\n",
+		"walk = ->(n) { n == 0 ? [] : [n] + [n - 1].flat_map { |c| walk.(c) } }\n",
+		"fact = ->(n) { for i in [1] do fact end; n < 2 ? 1 : n * fact.(n - 1) }\n",
+		"x = 1\n[1].each { |i| y = x + i }\nx = 2\n",
+		"def f(s)\n  3.times { |i| g(s + i) }\nend\n",
+	} {
+		if _, err := Parse("test.cameo", src); err != nil {
+			t.Errorf("%q: %v", src, err)
+		}
+	}
+	rejects(t, "f = [1].map { ->(n) { f.(n) } }\n", "test.cameo:1: f is read in a block made before f is bound: a block captures the values its variables have when it is made, and only the lambda or proc assigned to f may read it")
+}
