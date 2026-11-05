@@ -160,13 +160,17 @@ func TestEnvelopeRoundTrip(t *testing.T) {
 	}
 }
 
-// A time keeps its instant and how it shows: UTC, the local zone, or its
-// fixed offset.
+// A time keeps its instant and how it shows: UTC, the local zone, a named
+// zone with its daylight saving, or its fixed offset.
 func TestEnvelopeTime(t *testing.T) {
 	reg := NewRegistry()
 	enc, dec := NewEncoder(reg), NewDecoder(reg, nil)
 	at := time.Unix(1629590400, 500)
-	for _, want := range []time.Time{at.UTC(), at.Local(), at.In(time.FixedZone("", 9*3600))} {
+	berlin, err := time.LoadLocation("Europe/Berlin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []time.Time{at.UTC(), at.Local(), at.In(berlin), at.In(time.FixedZone("", 9*3600))} {
 		data, err := enc.Encode(object.TimeValue(want))
 		if err != nil {
 			t.Fatal(err)
@@ -179,9 +183,16 @@ func TestEnvelopeTime(t *testing.T) {
 		_, wantOff := want.Zone()
 		_, gotOff := got.Zone()
 		sameZone := (got.Location() == time.UTC) == (want.Location() == time.UTC) &&
-			(got.Location() == time.Local) == (want.Location() == time.Local)
+			(got.Location() == time.Local) == (want.Location() == time.Local) &&
+			got.Location().String() == want.Location().String()
 		if !got.Equal(want) || gotOff != wantOff || !sameZone {
 			t.Fatalf("round trip changed %v into %v", want, got)
+		}
+		// Six months on, a named zone's offset has changed and a fixed one's has not.
+		_, wantLater := want.AddDate(0, 6, 0).Zone()
+		_, gotLater := got.AddDate(0, 6, 0).Zone()
+		if gotLater != wantLater {
+			t.Fatalf("round trip changed the zone of %v: six months on, offset %d, not %d", want, gotLater, wantLater)
 		}
 	}
 }

@@ -275,8 +275,9 @@ func ClassValue(c *Class) Value         { return Value{kind: KindClass, p: unsaf
 func ExceptionValue(e *Exception) Value { return Value{kind: KindException, p: unsafe.Pointer(e)} }
 
 // TimeValue makes a time value. Its location says how it shows: time.UTC
-// for a UTC time, time.Local for the local zone, and a fixed zone for an
-// offset.
+// for a UTC time, time.Local for the local zone, a fixed zone for an
+// offset, and a loaded IANA zone, whose offset follows the date, for a
+// zone named by a script.
 func TimeValue(t time.Time) Value { return Value{kind: KindTime, p: unsafe.Pointer(&t)} }
 
 // RegexpValue and MatchValue wrap a regexp and a match.
