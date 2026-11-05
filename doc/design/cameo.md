@@ -826,6 +826,19 @@ passing for what it covers. Milestones 0 to 6 have landed; 7 is not built.
 Choices with real trade-offs, decided with the human so they are not
 re-opened by accident:
 
+- **File I/O is a module the program grants.** `File.read` and
+  `File.open` are the methods of `Cameo::IO::FileIO`, in `Cameo::IO`,
+  which holds cameo's I/O, and `File` extends it. A program answers them
+  only where it allows file I/O and was given a file system, an
+  `afero.Fs` (`Program.FileSystem`), so a host chooses the disk, one
+  directory of it (`afero.NewBasePathFs`), or memory; with either missing they are undefined, not
+  methods that raise, so `respond_to?`, `methods` and irb's Tab tell a
+  script what it may do. The method tables are the process's, so a module
+  carries its kind of I/O (`IOKind`) and each program asks at lookup.
+  Files are read only for now: FileIO has no method that writes, though
+  an `afero.Fs` could take writes. A path is never a command: there is no pipe form, unlike the `open` and `IO.read` of
+  older Rubies. The cameo command gives the machine's file system, from
+  the working directory, for `--io=file`.
 - **Kernel's functions are private, and nothing else is.** `puts`,
   `require`, `raise`, `Integer()` and the other functions are private
   methods of Kernel, as Ruby's `module_function` makes them, so a call
@@ -1113,7 +1126,8 @@ re-opened by accident:
     an immutable path whose `+`, `join`, `cleanpath`, `parent` and
     `relative_path_from` follow Ruby's pathname.rb. `expand_path` reads the
     working directory and `$HOME` to resolve a relative path or `~`;
-    nothing reads a file. `__FILE__` is the script's path and `__dir__`
+    nothing reads a file but `File.read` and `File.open` (*Decisions
+    taken*). `__FILE__` is the script's path and `__dir__`
     its directory.
   - `with` makes the copy with changes, from keywords (Ruby's
     `Data#with`) or from the hash its block returns; `tap` is Ruby's,
@@ -1130,7 +1144,7 @@ re-opened by accident:
     keeps Go's defaults.
   - Kept out: `GC`, `ENV`, metaprogramming (`define_method`, `eval`,
     `instance_variable_set`; `send` came in later, see above), setters and untyped fields, fibers
-    and threads, and anything that touches the file system.
+    and threads, and anything else that touches the file system.
   - Maps and sets are versions of an append-only table (`object/table.go`),
     so a copy with one more key costs O(1) and building a map key by key
     is linear, not quadratic.

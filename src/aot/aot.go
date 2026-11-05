@@ -1319,7 +1319,7 @@ const mainFunc = `func main() {
 	}
 	prog, err := cameo.Load(file, script, os.Stdout, os.Stderr)
 	if err == nil {
-		prog.AllowIO(allowIO...)
+		prog.AllowHostIO(allowIO...)
 		prog.Args(args)
 		err = prog.Run()
 	}

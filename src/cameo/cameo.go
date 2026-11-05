@@ -17,6 +17,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/spf13/afero"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
@@ -570,6 +571,33 @@ var builtinExceptions = sync.OnceValue(func() []*object.Class {
 // cameo command and a program cameo build wrote allow what their --io
 // flag names. Call it before Run.
 func (p *Program) AllowIO(what ...string) { p.in.AllowIO(what...) }
+
+// FileSystem gives the script fsys to read files from, through File.read
+// and File.open, with a relative path starting at dir, an absolute path
+// in fsys ("" for its root); an absolute path is fsys's own, and ".."
+// stops at its root. The script reads only where AllowIO allows file I/O
+// too: without both, File has no read or open. The script only reads, but
+// a host that shares part of a disk confines it there itself, with
+// afero.NewBasePathFs, and may make it afero.NewReadOnlyFs. Call it before
+// Run.
+func (p *Program) FileSystem(fsys afero.Fs, dir string) { p.in.SetFileSystem(fsys, dir) }
+
+// AllowHostIO allows what AllowIO does, and gives file I/O, when what
+// allows it, the machine's file system, with relative paths from the
+// working directory: what the cameo command and a program cameo build
+// wrote do with their --io flags. A program that embeds cameo calls
+// AllowIO and FileSystem instead, with the files it means to share.
+func (p *Program) AllowHostIO(what ...string) {
+	p.AllowIO(what...)
+	if !slices.Contains(what, "all") && !slices.Contains(what, "file") {
+		return
+	}
+	dir, err := os.Getwd()
+	if err != nil {
+		dir = "/"
+	}
+	p.FileSystem(afero.NewOsFs(), dir)
+}
 
 // IOKinds are the kinds of I/O --io= and AllowIO name.
 var IOKinds = []string{"network", "file", "popen"}

@@ -17,6 +17,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/forwardable"
 	"github.com/cameo-lang/cameo/src/lib/frankie"
 	"github.com/cameo-lang/cameo/src/lib/getoptlong"
+	"github.com/cameo-lang/cameo/src/lib/io/fileio"
 	"github.com/cameo-lang/cameo/src/lib/io/httpd"
 	"github.com/cameo-lang/cameo/src/lib/ipaddr"
 	"github.com/cameo-lang/cameo/src/lib/json"
@@ -148,6 +149,7 @@ func Install() {
 	prime.Install()
 	singleton.Install()
 	stringio.Install()
+	fileio.Install()
 	strscan.Install()
 	optparse.Install()
 	getoptlong.Install()

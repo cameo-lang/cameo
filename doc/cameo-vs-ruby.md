@@ -356,12 +356,30 @@ These are absent, and a script that uses one fails when it reaches it:
   fields; see above for Data), `Rational` and `Complex`, `ObjectSpace`, `GC`, `ENV`, `Module.new`,
   refinements, `binding` beyond the debugger's `binding.break`, `method`
   and `Proc#curry`.
-- **No I/O beyond standard output and error**: `File` beyond its path
-  methods, `IO` beyond `STDOUT` and `STDERR` (and `$stdout` and
-  `$stderr`, which are them), `Dir`, `gets`, `STDIN`. A library that does
-  I/O, `io/httpd`, acts only where the program allowed its kind: `cameo
-  --io` or `--io=network,file,popen`, or `AllowIO` in a program that
-  embeds cameo, which allows nothing by default.
+- **No I/O beyond standard output and error**: `IO` beyond `STDOUT` and
+  `STDERR` (and `$stdout` and `$stderr`, which are them), `Dir`, `gets`,
+  `STDIN`, and of `File` all but its path methods and reading. What does
+  I/O, `io/httpd` and `File.read`, acts only where the program allowed
+  its kind: `cameo --io` or `--io=network,file,popen`, or `AllowIO` in a
+  program that embeds cameo, which allows nothing by default.
+- **Reading files**: `File.read(path, length = nil, offset = nil)` and
+  `File.open(path, mode = "r")`, with or without a block, are the methods
+  of `Cameo::IO::FileIO`, which `File` extends; a File handle reads as a
+  `StringIO` does (`gets`, `read`, `each_line`, `readlines`, `eof?`,
+  `close`), with `path`. They exist only where the program allows file
+  I/O and gave a file system: `cameo --io=file`, which gives the
+  machine's, relative paths from the working directory, or
+  `AllowIO("file")` and `FileSystem(fsys, dir)` in a program that embeds
+  cameo, an `afero.Fs` (`github.com/spf13/afero`) whose paths the script
+  sees as they are, `..` stopping at its root; a host shares one directory
+  with `afero.NewBasePathFs`. Elsewhere `File.read` is an undefined method, as is
+  `respond_to?(:read)` false. Unlike Ruby: files are read only, so a mode
+  that writes raises `Errno::EROFS`; `File.open` of a directory raises
+  `Errno::EISDIR` at once, where Ruby's raises at the first read; and
+  **no pipe**: `"|cmd"` names a file, in `File.read` as in Ruby 3.4's,
+  and no form runs a command, unlike `open` and `IO.read` in older
+  Rubies. `File.write`, `File.exist?`, `Dir` and the rest of the file system
+  are not there yet.
 - **No threads or processes**: `Thread`, `Fiber`, `Mutex`, `sleep`,
   `system`, `exec`, `spawn`; cameo has `async` and `await` instead.
 - **Not there yet**: `exit!`,

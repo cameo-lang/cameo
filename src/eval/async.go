@@ -520,6 +520,8 @@ func (in *Interp) worker() *Interp {
 		code:                 in.code,
 		stop:                 in.stop,
 		allowIO:              in.allowIO,
+		fsys:                 in.fsys,
+		fsDir:                in.fsDir,
 		exits:                in.exits,
 		states:               in.states,
 		snap:                 top,

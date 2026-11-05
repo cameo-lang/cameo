@@ -1,6 +1,7 @@
 package object
 
 import (
+	"github.com/spf13/afero"
 	"maps"
 	"slices"
 	"sort"
@@ -30,6 +31,11 @@ type Class struct {
 	// Consts are the constants defined inside the class body: nested classes
 	// and modules, and plain constants.
 	Consts map[string]Value
+	// IOKind is the kind of I/O a module's methods do, "file" for
+	// Cameo::IO::FileIO: a class that extends or includes it answers them
+	// only in a program whose host allows that kind (Context.IOAllowed).
+	// The method tables are the process's, so the program asks at lookup.
+	IOKind string
 	// Includes are the modules included, in inclusion order; Extends those
 	// extended.
 	Includes []*Class
@@ -611,6 +617,11 @@ type Context interface {
 	// library named by its require path, by the name, by the library's
 	// kind of I/O, or because every kind is allowed.
 	IOAllowed(lib string) bool
+	// FileSystem is the file system the host gave the script, nil for
+	// none, and the absolute directory in it a relative path is read
+	// from: what Cameo::IO::FileIO reads, where IOAllowed("file") says it
+	// may.
+	FileSystem() (fsys afero.Fs, dir string)
 	// Stopped is the error that ends the run once the host stopped it, nil
 	// while it runs: what a host method that blocks returns when Done is
 	// closed, so the script ends as it would at its next statement.

@@ -18,8 +18,8 @@ import (
 // script runs first and the lines see what it defined. A line that is not
 // a whole expression yet waits for the next. exit, quit or the end of the
 // input ends it. It returns the process exit status.
-func irb(path string, stdin io.Reader, stdout, stderr io.Writer) int {
-	prog, status, ok := loadIRB(path, stdout, stderr)
+func irb(path string, allowIO []string, stdin io.Reader, stdout, stderr io.Writer) int {
+	prog, status, ok := loadIRB(path, allowIO, stdout, stderr)
 	if !ok {
 		return status
 	}
@@ -58,11 +58,11 @@ func finishIRB(prog *cameo.Program, stderr io.Writer) int {
 // irbOnTerminal is irb on the terminal of stdin and stdout, which it puts in
 // raw mode for the line editor (package irb): arrow keys, history and
 // Ctrl-C, which drops the line.
-func irbOnTerminal(path string, stdin, stdout *os.File) int {
+func irbOnTerminal(path string, allowIO []string, stdin, stdout *os.File) int {
 	fd := int(stdin.Fd())
 	state, err := term.MakeRaw(fd)
 	if err != nil {
-		return irb(path, stdin, stdout, os.Stderr)
+		return irb(path, allowIO, stdin, stdout, os.Stderr)
 	}
 	defer term.Restore(fd, state)
 	t := cirb.NewTerminal(struct {
@@ -72,7 +72,7 @@ func irbOnTerminal(path string, stdin, stdout *os.File) int {
 	if cols, rows, err := term.GetSize(int(stdout.Fd())); err == nil {
 		t.SetSize(cols, rows)
 	}
-	prog, status, ok := loadIRB(path, t, t)
+	prog, status, ok := loadIRB(path, allowIO, t, t)
 	if !ok {
 		return status
 	}
@@ -84,9 +84,9 @@ func irbOnTerminal(path string, stdin, stdout *os.File) int {
 }
 
 // loadIRB loads an empty program, or the script at path and runs it, for
-// irb. ok is false when the session does not start: the script did not
+// irb, allowing the I/O allowIO names, as --io does for a script. ok is false when the session does not start: the script did not
 // load, or it exited; status is then the process exit status.
-func loadIRB(path string, stdout, stderr io.Writer) (prog *cameo.Program, status int, ok bool) {
+func loadIRB(path string, allowIO []string, stdout, stderr io.Writer) (prog *cameo.Program, status int, ok bool) {
 	src := ""
 	file := "(irb)"
 	if path != "" {
@@ -107,6 +107,7 @@ func loadIRB(path string, stdout, stderr io.Writer) (prog *cameo.Program, status
 		fmt.Fprintln(stderr, err)
 		return nil, 1, false
 	}
+	prog.AllowHostIO(allowIO...)
 	if path != "" {
 		if err := prog.Run(); err != nil {
 			// The script's exit ends the session with its status, as

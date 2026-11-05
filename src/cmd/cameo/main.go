@@ -33,7 +33,7 @@ const usage = `usage: cameo [--no-pause] [--io] <script.cameo> [args...]
                                          result on a copy instead of raising; resume takes it too
        cameo inspect <dump>              show what a dump holds: where the script paused, its variables,
                                          constants and promises
-       cameo irb [script.cameo]          evaluate lines typed in, at the top level of the script when one is given
+       cameo [--io] irb [script.cameo]   evaluate lines typed in, at the top level of the script when one is given
        cameo [--no-pause] debug <script.cameo>
                                          run the script under the debugger, stopped before its first statement
        cameo check <script.cameo>        parse and check the script, report every error
@@ -133,9 +133,9 @@ flags:
 			path = args[1]
 		}
 		if term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd())) {
-			return irbOnTerminal(path, os.Stdin, os.Stdout)
+			return irbOnTerminal(path, io, os.Stdin, os.Stdout)
 		}
-		return irb(path, os.Stdin, os.Stdout, os.Stderr)
+		return irb(path, io, os.Stdin, os.Stdout, os.Stderr)
 	case len(args) == 2 && args[0] == "debug":
 		return debugScript(args[1], io, pause, os.Stdin, os.Stdout, os.Stderr)
 	case len(args) == 2 && args[0] == "inspect":

@@ -86,7 +86,7 @@ func inspect(path string, out io.Writer) error {
 // ends the process as it does any other.
 func runProgram(prog *cameo.Program, allowIO []string, pause bool, stderr io.Writer) int {
 	// The command is the host: a script it runs may do the I/O --io named.
-	prog.AllowIO(allowIO...)
+	prog.AllowHostIO(allowIO...)
 	if pause {
 		interrupts := make(chan os.Signal, 2)
 		signal.Notify(interrupts, os.Interrupt)

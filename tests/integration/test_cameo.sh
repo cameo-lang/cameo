@@ -40,6 +40,21 @@ test_io_flag_allows_the_kinds_named() {
   if "$CAMEO_BIN" --io=bogus "$script" 2>/dev/null; then fail "--io=bogus was accepted"; fi
 }
 
+test_io_file_reads_files_from_the_working_directory() {
+  local dir out
+  dir="$(mktemp -d)"
+  printf 'hello\n' > "$dir/note.txt"
+  printf 'p File.respond_to?(:read)\np File.read("note.txt") if File.respond_to?(:read)\n' > "$dir/read.cameo"
+  out=$(cd "$dir" && "$CAMEO_BIN" read.cameo)
+  assert_eq 'false' "$out"
+  out=$(cd "$dir" && "$CAMEO_BIN" --io=file read.cameo)
+  assert_eq $'true\n"hello\\n"' "$out"
+  out=$(cd "$dir" && "$CAMEO_BIN" --io=network read.cameo)
+  assert_eq 'false' "$out"
+  out=$(cd "$dir" && printf 'File.read("note.txt")\n' | "$CAMEO_BIN" --io=file irb)
+  assert_contains "$out" '=> "hello\n"'
+}
+
 test_version_flag_matches_the_command() {
   local flag cmd
   flag=$("$CAMEO_BIN" --version)

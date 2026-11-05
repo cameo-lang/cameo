@@ -6,6 +6,7 @@ package eval
 import (
 	"errors"
 	"fmt"
+	"github.com/spf13/afero"
 	"io"
 	"sync"
 	"sync/atomic"
@@ -63,6 +64,10 @@ type Interp struct {
 	// allowIO is what AllowIO enabled: kinds of I/O, "all", or libraries
 	// by require path; see IOAllowed.
 	allowIO map[string]bool
+	// fsys is the file system the host gave the script, and fsDir the
+	// directory in it relative paths start at (FileSystem).
+	fsys  afero.Fs
+	fsDir string
 	// states are what libraries keep for the run, by name; see State.
 	states *libStates
 	// stop ends the run, and is shared with the workers; see Stop.
@@ -346,10 +351,31 @@ func (in *Interp) AllowIO(what ...string) {
 }
 
 // IOAllowed implements object.Context: the library is allowed by name,
-// by its kind of I/O (lib.IOKinds), or because every kind is.
+// by its kind of I/O (lib.IOKinds), or because every kind is. File I/O
+// needs a file system too (SetFileSystem): allowing it gives none.
 func (in *Interp) IOAllowed(library string) bool {
-	return in.allowIO["all"] || in.allowIO[library] || in.allowIO[lib.IOKinds[library]]
+	kind := lib.IOKinds[library]
+	if kind == "" {
+		kind = library
+	}
+	if kind == "file" && in.fsys == nil {
+		return false
+	}
+	return in.allowIO["all"] || in.allowIO[library] || in.allowIO[kind]
 }
+
+// SetFileSystem gives the script fsys to read files from, with relative
+// paths starting at dir, an absolute path in fsys ("" for its root). It
+// reads only where AllowIO allows file I/O too. Call it before Run.
+func (in *Interp) SetFileSystem(fsys afero.Fs, dir string) {
+	if dir == "" {
+		dir = "/"
+	}
+	in.fsys, in.fsDir = fsys, dir
+}
+
+// FileSystem implements object.Context.
+func (in *Interp) FileSystem() (afero.Fs, string) { return in.fsys, in.fsDir }
 
 // Done implements object.Context: the channel Stop closes.
 func (in *Interp) Done() <-chan struct{} { return in.stop.done }

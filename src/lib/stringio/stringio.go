@@ -41,6 +41,8 @@ type sio struct {
 	appends  bool
 	closedR  bool
 	closedW  bool
+	// path is the file a File handle reads (NewReader), "" for a StringIO.
+	path string
 }
 
 func sioOf(v object.Value) *sio { return v.Instance().Message.(*sio) }
@@ -875,4 +877,37 @@ func Install() {
 	def("inspect", 0, func(ctx object.Context, s *sio, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.String(fmt.Sprintf("#<StringIO pos:%d size:%d>", s.pos, len(s.buf))), nil
 	})
+}
+
+// NewReader returns a handle of class cls that reads data as a StringIO
+// opened with mode "r" does, the file at path: what File.open returns.
+// kind is the String kind it reads, KindBytes for a binary mode.
+func NewReader(cls *object.Class, path string, data []byte, kind object.Kind) object.Value {
+	return object.InstanceValue(&object.Instance{Cls: cls, Message: &sio{buf: data, readable: true, kind: kind, path: path}})
+}
+
+// ReaderInfo returns the path and whether it is closed of a handle
+// NewReader made.
+func ReaderInfo(v object.Value) (path string, closed bool) {
+	s := sioOf(v)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.path, s.closedR
+}
+
+// notOnReaders are StringIO's methods a File handle has not: the String a
+// StringIO holds, and what replaces or cuts it.
+var notOnReaders = map[string]bool{"string": true, "string=": true, "reopen": true, "truncate": true, "inspect": true}
+
+// DefineReading gives c, the class of the handles NewReader makes, the
+// methods of a StringIO: reading, the position, lineno, eof? and close.
+// The writing ones raise IOError, "not opened for writing", as a File
+// opened for reading does in Ruby. Call it after Install.
+func DefineReading(c *object.Class) {
+	for name, m := range class.Methods {
+		if !notOnReaders[name] {
+			c.SetMethod(&object.Method{Name: name, Owner: c, Native: m.Native, Arity: m.Arity})
+		}
+	}
+	c.Include(object.Enumerable)
 }

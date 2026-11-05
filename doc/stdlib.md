@@ -46,6 +46,18 @@ and a program `cameo build` wrote allow what `--io` names, every kind, or
 `--io=network,file,popen` the kinds listed. `HTTPD.serve` raises
 `HTTPD::Error` where network I/O is not allowed.
 
+Reading files is the second: `File.read` and `File.open` are the methods
+of `Cameo::IO::FileIO`, in `Cameo::IO`, the module cameo's I/O is to live
+in, and `File` extends it. They need two things from the program, both:
+file I/O allowed, and a file system to read, an `afero.Fs`
+(`github.com/spf13/afero`) given with `Program.FileSystem(fsys, dir)`, which
+may be the disk, a directory of it (`afero.NewBasePathFs`) or memory; without either, `File` has no `read` or
+`open`, and `respond_to?`, `methods` and Tab in irb say so. `cameo --io`
+and `--io=file` give the machine's files, from the working directory,
+and so does `cameo --io=file irb`. Files are read only, and a path is
+only a path: `"|cmd"` runs nothing. See
+[cameo-vs-ruby.md](cameo-vs-ruby.md) for what differs from Ruby.
+
 What asks for a library is measured, not guessed:
 
 - **ruby/spec** ([specs/](../specs)): of the 1006 spec files that
@@ -179,8 +191,8 @@ the decisions in [cameo-vs-ruby.md](cameo-vs-ruby.md) or
 [design/cameo.md](design/cameo.md).
 
 **The file system and the process.** cameo does no I/O beyond the standard
-streams and the network: a script is one file, and what it reads it is
-given. `fileutils` 1.7.3, `tempfile` 0.3.1, `tmpdir` 0.3.1, `find` 0.2.0,
+streams, the network and reading the files the program gives: a script is
+one file, and what it reads it is given. `fileutils` 1.7.3, `tempfile` 0.3.1, `tmpdir` 0.3.1, `find` 0.2.0,
 `pathname`'s I/O half (`exist?`, `read`, `children`, `glob`), `pstore`
 0.1.4, `yaml/store`, `io/console` 0.8.0, `io/nonblock` 0.3.1, `io/wait`
 0.3.1, `fcntl` 1.2.0, `etc` 1.4.5, `open3` 0.2.1, `pty`, `expect`,
