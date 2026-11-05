@@ -131,7 +131,7 @@ func installRegexp() {
 		return object.Bool(re(self).Options&object.RegexpIgnoreCase != 0), nil
 	})
 	def(c, "names", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return stringList(re(self).UniqueNames()), nil
+		return StringList(re(self).UniqueNames()), nil
 	})
 	def(c, "named_captures", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		b := object.NewMapBuilder()
@@ -227,14 +227,6 @@ func RegexpFailure(ctx object.Context, err error, source string) error {
 		return ctx.Raise(object.NotImplementedErr, "%s", unsupported.Error())
 	}
 	return ctx.Raise(object.RegexpError, "%s: /%s/", err.Error(), source)
-}
-
-func stringList(ss []string) object.Value {
-	out := make([]object.Value, len(ss))
-	for i, s := range ss {
-		out[i] = object.String(s)
-	}
-	return object.NewList(out...)
 }
 
 // regexpEscape is Regexp.escape: the characters special in a pattern,
@@ -457,7 +449,7 @@ func installMatchData() {
 		return b.Value(), nil
 	})
 	def(c, "names", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return stringList(md(self).Re.UniqueNames()), nil
+		return StringList(md(self).Re.UniqueNames()), nil
 	})
 	def(c, "values_at", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		m := md(self)

@@ -163,3 +163,12 @@ func yielded(args []object.Value) object.Value {
 	}
 	return object.NewList(args...)
 }
+
+// StringList returns an Array of the strings.
+func StringList(ss []string) object.Value {
+	out := make([]object.Value, len(ss))
+	for i, s := range ss {
+		out[i] = object.String(s)
+	}
+	return object.NewList(out...)
+}
