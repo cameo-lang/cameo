@@ -131,7 +131,7 @@ the envelope, `cameo` the host API (`cameo.Load`, `cameo.Run`, `cameo.Register`)
 
 ```sh
 make build      # the cameo binary and the packages
-make tests      # go test ./...
+make tests      # go test ./..., in UTC
 make install    # puts `cameo` into GOBIN
 ```
 

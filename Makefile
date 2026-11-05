@@ -7,6 +7,12 @@ BINARY := bin/cameo
 
 .PHONY: default help prerequisites deps build tests integration-tests lint check conformance ruby-spec spec-status clean install
 
+
+# Every test runs in UTC, the Go tests and the shell tests alike: a test
+# that holds cameo to what Ruby prints for a local time must not depend on
+# the machine's zone. tests/main_test.go pins the zone for a direct
+# `go test ./tests` as well.
+export TZ = UTC
 default: build
 	@echo "Build succeeded. Run tests via 'make tests'. Show help via 'make help'."
 
