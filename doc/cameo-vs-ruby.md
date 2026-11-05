@@ -82,7 +82,8 @@ mspec's own `before` blocks.
   `raise`, a bare `raise` in a rescue clause, `retry`, `cause` and `raise
   ..., cause:`, an exception class's own `initialize` with `super(msg)`,
   `exit` and `abort`, which raise SystemExit and end the command with its
-  status, and the exception classes of Ruby's core.
+  status, `at_exit`, whose blocks run when the script ends, the last
+  registered first, and the exception classes of Ruby's core.
 - **Core classes**: BasicObject, Numeric, Integer, Float, String, Symbol, Array, Hash, Set (as in
   3.4, without `require`), Range, Regexp and MatchData, Time, Math,
   Enumerator and `lazy`, Comparable and Enumerable, with most of their
@@ -331,7 +332,7 @@ These are absent, and a script that uses one fails when it reaches it:
   `gets`, `STDIN`, `STDOUT`, `STDERR`, `$stdout`.
 - **No threads or processes**: `Thread`, `Fiber`, `Mutex`, `sleep`,
   `system`, `exec`, `spawn`; cameo has `async` and `await` instead.
-- **Not there yet**: `at_exit`, `exit!`,
+- **Not there yet**: `exit!`,
   `printf` (`format` exists), `__method__`, `Enumerator.new`,
   `Integer()` with a base, and `autoload`.
 - **Libraries**: `require` of any library but the seven above, such as

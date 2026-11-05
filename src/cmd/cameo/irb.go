@@ -30,14 +30,29 @@ func irb(path string, stdin io.Reader, stdout, stderr io.Writer) int {
 		fmt.Fprint(stdout, s.Prompt())
 		if !in.Scan() {
 			fmt.Fprintln(stdout)
-			return 0
+			return finishIRB(prog, stderr)
 		}
 		output, done := s.Eval(in.Text())
 		if done {
-			return 0
+			return finishIRB(prog, stderr)
 		}
 		fmt.Fprint(stdout, output)
 	}
+}
+
+// finishIRB runs the at_exit blocks the session's lines registered, as the
+// end of a script runs the script's, and returns the exit status: a
+// handler's exit, 1 when a handler raised, 0 otherwise.
+func finishIRB(prog *cameo.Program, stderr io.Writer) int {
+	err := prog.Finish()
+	if err == nil {
+		return 0
+	}
+	if status, ok := cameo.ExitStatus(err); ok {
+		return status
+	}
+	fmt.Fprintln(stderr, err)
+	return 1
 }
 
 // irbOnTerminal is irb on the terminal of stdin and stdout, which it puts in
@@ -65,7 +80,7 @@ func irbOnTerminal(path string, stdin, stdout *os.File) int {
 		fmt.Fprintln(t, err)
 		return 1
 	}
-	return 0
+	return finishIRB(prog, t)
 }
 
 // loadIRB loads an empty program, or the script at path and runs it, for
