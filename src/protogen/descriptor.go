@@ -75,7 +75,8 @@ func (r *Registry) file(cls *object.Class) (protoreflect.FileDescriptor, error) 
 	}
 	exception := exceptionParts(cls) != nil
 	if cls.Digest == "" && !exception || cls.IsModule {
-		return nil, fmt.Errorf("%s is not a class with fields", cls.QualifiedName())
+		// A library's class: its instances have no message to cross in.
+		return nil, &NotSerialisable{Kind: article(cls.QualifiedName()), Class: cls.QualifiedName(), Why: cls.QualifiedName() + " is not a class with fields"}
 	}
 	fdp := &descriptorpb.FileDescriptorProto{
 		Name:    strPtr(FileName(cls)),

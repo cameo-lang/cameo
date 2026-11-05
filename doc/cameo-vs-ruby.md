@@ -327,8 +327,7 @@ The checker rejects these by name, with the line:
 These are absent, and a script that uses one fails when it reaches it:
 
 - **Left out by design**: `Struct` and `Data` (classes declare typed
-  fields; see above for Data), `Rational` and `Complex`, `Marshal` (instances are protobuf
-  messages), `ObjectSpace`, `GC`, `ENV`, `Module.new`,
+  fields; see above for Data), `Rational` and `Complex`, `ObjectSpace`, `GC`, `ENV`, `Module.new`,
   refinements, `binding`, `method` and `Proc#curry`.
 - **No I/O beyond standard output and error**: `File`, `IO`, `Dir`,
   `gets`, `STDIN`, `STDOUT`, `STDERR`, `$stdout`.

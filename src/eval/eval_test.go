@@ -444,7 +444,7 @@ p await(Echo.new, :go, nil, true, 7, 2**70, 1.5, "s", "\xff".b, :sym, [1, [2, "t
 `, "[nil, true, 7, 1180591620717411303424, 1.5, \"s\", \"\\xFF\", \"sym\", [1, [2, \"t\"], \"u\"], {\"a\" => 1}, Point(x: 1, tag: nil), Echo()]\n")
 	expectError(t, "include Cameo\nclass Echo\n  def go(x) = x\nend\nawait Echo.new, :go, Echo\n", "a Class cannot be passed to async (TypeError)")
 	expectError(t, "include Cameo\nanon = Class.new { def go = 1 }\nawait anon.new, :go\n", "has an invalid nested name")
-	expectError(t, "include Cameo\nclass Echo\n  def go(x) = x\nend\nawait Echo.new, :go, Object.new\n", "Object is not a class with fields (TypeError)")
+	expectError(t, "include Cameo\nclass Echo\n  def go(x) = x\nend\nawait Echo.new, :go, Object.new\n", "an Object cannot be passed to async (TypeError)")
 }
 
 func TestAsyncRejectsWhatTheEnvelopeRejects(t *testing.T) {
