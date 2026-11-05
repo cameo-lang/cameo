@@ -143,6 +143,10 @@ type Method struct {
 	// Lexical is the chain of classes and modules enclosing a user method's
 	// definition, innermost last, which constant lookup walks.
 	Lexical []*Class
+	// Private marks a function of Kernel, as Ruby's module_function makes
+	// one: called without a receiver from any method, refused with one,
+	// and left out of methods and instance_methods (DefineFunction).
+	Private bool
 	// File is the source a user method was defined in when it is not the
 	// script's: a library written in cameo, so an error in its body is
 	// reported with the library's file. "" is the script.
@@ -257,6 +261,15 @@ func (c *Class) Define(name string, arity int, fn NativeFn) {
 }
 
 // DefineSingleton adds a native class method.
+// DefineFunction defines name as a function of Kernel, as Ruby's
+// module_function does: a private instance method, which a call without
+// a receiver reaches from any method, since Object includes Kernel, and
+// a call with one is refused (File.puts), and Kernel.name, public.
+func DefineFunction(name string, arity int, fn NativeFn) {
+	Kernel.SetMethod(&Method{Name: name, Owner: Kernel, Native: fn, Arity: arity, Private: true})
+	Kernel.SetSingletonMethod(&Method{Name: name, Owner: Kernel, Native: fn, Arity: arity})
+}
+
 func (c *Class) DefineSingleton(name string, arity int, fn NativeFn) {
 	c.SetSingletonMethod(&Method{Name: name, Owner: c, Native: fn, Arity: arity})
 }

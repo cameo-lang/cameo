@@ -6,14 +6,14 @@ import (
 	"github.com/cameo-lang/cameo/src/object"
 )
 
-// installKernel defines puts, print, p, warn, raise, exit, at_exit and
-// format on every value, as Ruby's Kernel does.
+// installKernel defines puts, print, p, warn, raise, exit, at_exit, format
+// and the other functions of Kernel, as Ruby's Kernel does: private, so a
+// call without a receiver reaches them from any method (DefineFunction).
 func installKernel() {
-	o := object.ObjectClass
-	def(o, "puts", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	object.DefineFunction("puts", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Nil, puts(ctx, false, args)
 	})
-	def(o, "print", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	object.DefineFunction("print", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		for _, a := range args {
 			s, err := ctx.ToS(a)
 			if err != nil {
@@ -25,7 +25,7 @@ func installKernel() {
 		}
 		return object.Nil, nil
 	})
-	def(o, "p", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	object.DefineFunction("p", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		for _, a := range args {
 			s, err := ctx.Inspect(a)
 			if err != nil {
@@ -43,17 +43,17 @@ func installKernel() {
 		}
 		return object.NewList(args...), nil
 	})
-	def(o, "pp", -1, o.Methods["p"].Native)
-	def(o, "warn", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	object.DefineFunction("pp", -1, object.Kernel.Methods["p"].Native)
+	object.DefineFunction("warn", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Nil, puts(ctx, true, args)
 	})
-	def(o, "raise", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	object.DefineFunction("raise", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Value{}, raise(ctx, args)
 	})
-	def(o, "fail", -1, o.Methods["raise"].Native)
+	object.DefineFunction("fail", -1, object.Kernel.Methods["raise"].Native)
 	// exit raises SystemExit, which ensure clauses see and a rescue may
 	// catch; the command ends with its status when nothing does.
-	def(o, "exit", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	object.DefineFunction("exit", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) > 1 {
 			return object.Value{}, ArgError(ctx, len(args), "0..1")
 		}
@@ -69,7 +69,7 @@ func installKernel() {
 	})
 	// abort writes its message to standard error and raises SystemExit
 	// with status 1.
-	def(o, "abort", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	object.DefineFunction("abort", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) > 1 {
 			return object.Value{}, ArgError(ctx, len(args), "0..1")
 		}
@@ -87,14 +87,14 @@ func installKernel() {
 	})
 	// at_exit keeps a block to run when the script ends; eval runs them, last
 	// registered first, and says what happens when one raises.
-	def(o, "at_exit", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	object.DefineFunction("at_exit", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if block.IsZero() {
 			return object.Value{}, ctx.Raise(object.ArgumentError, "called without a block")
 		}
 		ctx.AtExit(block)
 		return block, nil
 	})
-	def(o, "format", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	object.DefineFunction("format", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) == 0 {
 			return object.Value{}, ArgError(ctx, 0, "1+")
 		}
@@ -105,8 +105,8 @@ func installKernel() {
 		s, err := format(ctx, f, args[1:])
 		return object.String(s), err
 	})
-	def(o, "sprintf", -1, o.Methods["format"].Native)
-	def(o, "loop", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	object.DefineFunction("sprintf", -1, object.Kernel.Methods["format"].Native)
+	object.DefineFunction("loop", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if err := NeedBlock(ctx, block, "loop"); err != nil {
 			return object.Value{}, err
 		}
@@ -119,12 +119,12 @@ func installKernel() {
 			}
 		}
 	})
-	def(o, "block_given?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	object.DefineFunction("block_given?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		// The evaluator handles this for user methods; a native call site has
 		// no enclosing method.
 		return object.False, nil
 	})
-	def(o, "Integer", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	object.DefineFunction("Integer", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		switch args[0].Kind() {
 		case object.KindInt, object.KindBig:
 			return args[0], nil
@@ -145,14 +145,14 @@ func installKernel() {
 		}
 		return object.Value{}, ctx.Raise(object.TypeError, "can't convert %s into Integer", KindName(args[0]))
 	})
-	def(o, "Float", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	object.DefineFunction("Float", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return toFloat(ctx, args[0])
 	})
-	def(o, "String", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	object.DefineFunction("String", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		s, err := ctx.ToS(args[0])
 		return object.String(s), err
 	})
-	def(o, "Array", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	object.DefineFunction("Array", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if args[0].IsNil() {
 			return object.NewList(), nil
 		}

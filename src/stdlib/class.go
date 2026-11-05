@@ -72,6 +72,9 @@ func installClass() {
 	def(m, "instance_methods", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		names := []object.Value{}
 		for _, n := range cls(self).MethodNames() {
+			if cls(self).Methods[n].Private {
+				continue
+			}
 			names = append(names, object.Symbol(n))
 		}
 		return object.NewList(names...), nil
@@ -81,7 +84,8 @@ func installClass() {
 		if err != nil {
 			return object.Value{}, err
 		}
-		return object.Bool(cls(self).Lookup(name) != nil), nil
+		m := cls(self).Lookup(name)
+		return object.Bool(m != nil && !m.Private), nil
 	})
 	def(m, "const_get", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		name, err := WantString(ctx, args[0])

@@ -2,6 +2,7 @@ package tests
 
 import (
 	"io"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -176,4 +177,18 @@ func TestIRBTerminalKeepsTheKeysAfterACtrlC(t *testing.T) {
 	st.shows(t, "cameo(main):001> ")
 	st.typing.Write([]byte("drop me\x036 * 7\r"))
 	st.shows(t, "=> 42")
+}
+
+// TestIRBCompletesKernelFunctionsOnlyWithoutAReceiver proves Tab offers
+// the functions of Kernel where a call reaches them, without a receiver,
+// and not after a dot, where they are refused.
+func TestIRBCompletesKernelFunctionsOnlyWithoutAReceiver(t *testing.T) {
+	s := newIRBSession(t, io.Discard)
+	_, names := s.Complete("pu")
+	assert.Equals(t, names, []string{"public_send", "puts"})
+	_, names = s.Complete("File.")
+	assert.Equals(t, slices.Contains(names, "puts"), false)
+	assert.Equals(t, slices.Contains(names, "basename"), true)
+	_, names = s.Complete("1.")
+	assert.Equals(t, slices.Contains(names, "format"), false)
 }

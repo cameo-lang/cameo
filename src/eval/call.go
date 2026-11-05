@@ -48,7 +48,7 @@ func (in *Interp) evalCall(n *syntax.Call, env *Env, fr *Frame) (object.Value, e
 			return v, err
 		}
 	}
-	v, err := in.dispatch(fr, recv, n.Name, args, kw, block, selfCall, n.VCall, n.Line())
+	v, err := in.dispatch(fr, recv, n.Name, args, kw, block, selfCall, n.VCall, selfCall || isSelf(n.Recv), n.Line())
 	if err == nil && !selfCall && n.Dropped {
 		err = in.dropped(recv, n.Name, n.Line())
 	}
@@ -246,7 +246,8 @@ func (in *Interp) CallWith(recv object.Value, name string, args []object.Value, 
 
 // RespondsTo implements object.Context.
 func (in *Interp) RespondsTo(v object.Value, name string) bool {
-	return in.findMethod(v, name) != nil
+	m := in.findMethod(v, name)
+	return m != nil && !m.Private
 }
 
 // findMethod resolves name on a receiver: class methods for a class, then
@@ -263,11 +264,14 @@ func (in *Interp) findMethod(recv object.Value, name string) *object.Method {
 // call dispatches name on recv. selfCall marks a call written without a
 // receiver, which may reach a top-level method from anywhere.
 func (in *Interp) call(fr *Frame, recv object.Value, name string, args []object.Value, kw *object.Map, block object.Value, selfCall bool, line int) (object.Value, error) {
-	return in.dispatch(fr, recv, name, args, kw, block, selfCall, false, line)
+	return in.dispatch(fr, recv, name, args, kw, block, selfCall, false, true, line)
 }
 
-// dispatch is call, with vcall marking a bare name (see syntax.Call).
-func (in *Interp) dispatch(fr *Frame, recv object.Value, name string, args []object.Value, kw *object.Map, block object.Value, selfCall, vcall bool, line int) (object.Value, error) {
+// dispatch is call, with vcall marking a bare name (see syntax.Call), and
+// private whether the call reaches a function of Kernel: one the script
+// wrote without a receiver or on self, as in Ruby, and send's and the
+// host's (call).
+func (in *Interp) dispatch(fr *Frame, recv object.Value, name string, args []object.Value, kw *object.Map, block object.Value, selfCall, vcall, private bool, line int) (object.Value, error) {
 	m := in.findMethod(recv, name)
 	if m == nil && selfCall {
 		m = in.mainClass.Methods[name]
@@ -275,6 +279,11 @@ func (in *Interp) dispatch(fr *Frame, recv object.Value, name string, args []obj
 		if m == nil && in.cameoTop {
 			m = object.CameoModule.Lookup(name)
 		}
+	}
+	// A call on a receiver other than self is refused a function of
+	// Kernel, as Ruby refuses a private method.
+	if m != nil && m.Private && !private {
+		return object.Value{}, in.privateMethod(recv, name, line)
 	}
 	if m == nil {
 		if name == "initialize" {
@@ -712,4 +721,11 @@ func blockTarget(block object.Value) any {
 		return p
 	}
 	return nil
+}
+
+// isSelf reports whether recv is self written out: a call on it reaches a
+// function of Kernel, as a call on self reaches a private method in Ruby.
+func isSelf(recv syntax.Node) bool {
+	_, ok := recv.(*syntax.Self)
+	return ok
 }

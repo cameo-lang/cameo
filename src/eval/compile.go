@@ -438,6 +438,7 @@ func (c *code) compileCall(n *syntax.Call) thunk {
 	checkMutation := !selfCall && mayMutate(name)
 	recvName := syntax.RecvName(n.Recv)
 	dropped := !selfCall && n.Dropped
+	private := selfCall || isSelf(n.Recv)
 	rebinds := n.Rebinds
 	return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 		r := fr.Self
@@ -464,7 +465,7 @@ func (c *code) compileCall(n *syntax.Call) thunk {
 				return v, err
 			}
 		}
-		v, err := in.dispatch(fr, r, name, values, nil, blk, selfCall, vcall, line)
+		v, err := in.dispatch(fr, r, name, values, nil, blk, selfCall, vcall, private, line)
 		if err != nil {
 			return object.Value{}, withLine(err, line)
 		}

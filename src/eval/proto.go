@@ -165,7 +165,7 @@ func init() {
 		}
 		return object.Bytes(data), nil
 	})
-	object.ObjectClass.Define("from_value_proto", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	object.DefineFunction("from_value_proto", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		data, ok := args[0].AsBytes()
 		if !ok {
 			return object.Value{}, ctx.Raise(object.TypeError, "from_value_proto takes bytes, not %s", typeName(args[0]))

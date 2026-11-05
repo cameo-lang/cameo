@@ -304,7 +304,7 @@ func installClasses() {
 		return object.String(hex.EncodeToString([]byte(s))), nil
 	})
 	// Digest(:SHA256) is the class.
-	object.ObjectClass.Define("Digest", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	object.DefineFunction("Digest", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		name, err := stdlib.WantString(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err

@@ -82,6 +82,15 @@ each of the others, and which of those are bugs.
   `__send__`, which refuse a mutating method as a call
   does; `Class.new(Base) { … }`;
   `def self.x` in a class body.
+- **Kernel's functions are private**, as in Ruby: `puts`, `p`, `print`,
+  `require`, `raise`, `format`, `rand`, `loop`, `catch`, `exit`, the
+  conversions `Integer()`, `Array()` and the rest are Kernel's, which
+  Object includes, so a call without a receiver or on `self` reaches them
+  from any method and `Kernel.puts` works, while `File.puts` and
+  `public_send(:puts)` raise Ruby's "private method 'puts' called for
+  class File", and `respond_to?(:puts)` is false. `send` reaches them, as
+  in Ruby. They are the only private methods: a script cannot declare
+  one (below).
 - **Exceptions**: `begin`/`rescue`/`else`/`ensure`, `rescue => e`,
   `raise`, a bare `raise` in a rescue clause, `retry`, `cause` and `raise
   ..., cause:`, an exception class's own `initialize` with `super(msg)`,
@@ -317,7 +326,7 @@ The checker rejects these by name, with the line:
 | instance variables, `@x` | `self.x = v` in `initialize`; read `x` or `self.x` |
 | class variables, `@@x`; global variables, `$x`, including `$!` and `$~` | a constant, a field or a local; `rescue => e`; the MatchData of `match`. `$stdout` and `$stderr` exist: they are `STDOUT` and `STDERR`, with `puts`, `print`, `write`, `flush` and `sync` |
 | setters, `def x=(v)`; `attr_reader`, `attr_writer`, `attr_accessor` | field declarations, which define readers, and `with` |
-| `private`, `protected`, `public`, `module_function` | none: every method is public |
+| `private`, `protected`, `public`, `module_function` | none: every method a script defines is public; only Kernel's functions are private |
 | `eval`, `instance_eval`, `class_eval`, `define_method`, `instance_variable_get` and `_set`, `undef` | a direct call or a `def` |
 | `def obj.x`, `class << self` | `def self.x` in a class body |
 | a subclass of Numeric or BasicObject, `class X < Numeric` | an ordinary class that defines `coerce` for Numeric; `method_missing` in an ordinary class for BasicObject. Inside a module, and with `Class.new(Numeric)`, the refusal is a `CameoError` when the definition runs |

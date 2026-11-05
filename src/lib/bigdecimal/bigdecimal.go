@@ -299,7 +299,7 @@ func Install() {
 	c.Consts["VERSION"] = object.String("3.1.8")
 	c.Consts["INFINITY"] = build(decInf(false))
 	c.Consts["NAN"] = build(decNaN())
-	object.ObjectClass.Define("BigDecimal", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	object.DefineFunction("BigDecimal", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return convert(ctx, args, kw)
 	})
 	installClassMethods()
