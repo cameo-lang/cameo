@@ -16,9 +16,7 @@ class Fetcher
   end
 
   def slow(n)
-    total = 0
-    n.times { |i| total += i }
-    total
+    n.times.reduce(0) { |total, i| total + i }
   end
 
   def boom = raise(KeyError, "missing")

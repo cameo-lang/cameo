@@ -15,9 +15,9 @@ class Point
   int :x, :y
 end
 
-total = 0
-[1, 2].each do |i|
-  total += fib(i)
+base = 0
+total = [1, 2].reduce(base) do |t, i|
+  t + fib(i)
 end
 pt = Point.new(x: total, y: 5)
 puts pt.x + pt.y
@@ -68,7 +68,7 @@ func TestDebuggerStopsStepsAndContinues(t *testing.T) {
 // their arguments, info lists the locals, p evaluates in the frame, and up
 // moves to the caller.
 func TestDebuggerBreaksInAMethodAndShowsItsFrame(t *testing.T) {
-	console, output, err := debugRun(t, debugScript, "b fib\nc\nbt\ninfo\np n * 100\nup\np total\np i\nfinish\nc\n")
+	console, output, err := debugRun(t, debugScript, "b fib\nc\nbt\ninfo\np n * 100\nup\np t\np i\nfinish\nc\n")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +79,7 @@ func TestDebuggerBreaksInAMethodAndShowsItsFrame(t *testing.T) {
 		"  #2\t<main> at t.cameo:11",
 		"n = 1\n",
 		"=> 100\n",
-		"=> 0\n", // total, in the block frame
+		"=> 0\n", // t, in the block frame
 		"=> 1\n", // i
 	} {
 		if !strings.Contains(console, want) {
@@ -104,7 +104,7 @@ func TestDebuggerBreaksOnALineAndListsAround(t *testing.T) {
 	if strings.Count(console, "=>#0\tblock in <main> at t.cameo:12") != 2 {
 		t.Fatalf("the line stopped %d times:\n%s", strings.Count(console, "at t.cameo:12"), console)
 	}
-	for _, want := range []string{"[8, 15] in t.cameo", "=>   12|   total += fib(i)", "i = 1\ntotal = 0\n", "i = 2\ntotal = 1\n", "deleted breakpoint #1"} {
+	for _, want := range []string{"[8, 15] in t.cameo", "=>   12|   t + fib(i)", "i = 1\nt = 0\n", "i = 2\nt = 1\n", "deleted breakpoint #1"} {
 		if !strings.Contains(console, want) {
 			t.Errorf("console lacks %q:\n%s", want, console)
 		}

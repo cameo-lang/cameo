@@ -1,64 +1,49 @@
 # Blocks that cameo build compiles to Go loops: times, upto and downto on
 # an Integer, each on a Range of Integers, with break, next, return, a
-# local of the block's own, and a parameter the body sets. Every line
+# local of the block's own, and a parameter the body sets. A block
+# captures the values of its variables, so a sum is a reduce, a count a
+# count, which compile to the same loops with an accumulator. Every line
 # prints what Ruby prints.
 
 def sum(n)
-  s = 0
-  n.times { |i| s += i }
-  s
+  n.times.reduce(0) { |s, i| s + i }
 end
 
 def triangle(n)
-  t = 0
-  1.upto(n) { |i| t += i }
-  t
+  1.upto(n).reduce(0) { |t, i| t + i }
 end
 
 def countdown(n)
-  c = 0
-  n.downto(1) { |i| c = c * 10 + i }
-  c
+  n.downto(1).reduce(0) { |c, i| c * 10 + i }
 end
 
 def squares(lo, hi)
-  s = 0
-  (lo..hi).each { |i| s += i * i }
-  s
+  (lo..hi).reduce(0) { |s, i| s + i * i }
 end
 
 def below(lo, hi)
-  c = 0
-  (lo...hi).each { c += 1 }
-  c
+  (lo...hi).reduce(0) { |c, _| c + 1 }
 end
 
 def first_multiple(n, of)
-  found = 0
-  1.upto(n) do |i|
-    next if i % of != 0
-    found = i
-    break
+  0.upto(n) do |i|
+    next if i == 0 || i % of != 0
+    break i
   end
-  found
 end
 
 def own(n)
-  s = 0
-  n.times do |i|
+  n.times.reduce(0) do |s, i|
     sq = i * i
-    s += sq
+    s + sq
   end
-  s
 end
 
 def moved(n)
-  s = 0
-  n.times do |i|
+  n.times.reduce(0) do |s, i|
     i = i * 100
-    s += i
+    s + i
   end
-  s
 end
 
 def early(n)
@@ -75,9 +60,7 @@ def receiver(n)
 end
 
 def wide(n)
-  c = 0
-  (n - 2).upto(n + 1) { |i| c += 1 if i > n }
-  c
+  (n - 2).upto(n + 1).count { |i| i > n }
 end
 
 puts sum(100), triangle(100), countdown(5)

@@ -123,10 +123,10 @@ collection that Ruby would change in place returns a copy: `list.append(x)`,
 ## Variables rebind, objects do not change
 
 `a = 1; a = 2` is allowed: assignment binds a name to a value, and binding it
-again is the only mutation in the language. Blocks close over their lexical
-scope exactly as in Ruby, so a block that assigns an outer variable rebinds it
-for the enclosing scope. Nothing else in the program can observe the old
-value, since no value refers to a variable.
+again is the only mutation in the language. Nothing else in the program can
+observe the old value, since no value refers to a variable: a block, which
+in Ruby would, captures the values its variables have when it is made (see
+*Blocks capture values* below).
 
 Only assignment rebinds: `x = …`, `x += …`, `h[k] = v` and `x.a = v`. A
 call never does. A call that changes its receiver in Ruby -- `x << y`,
@@ -317,10 +317,59 @@ modules. `Module#included` and the other hooks do not exist.
 
 ## Blocks, lambdas and control flow
 
-Blocks and lambdas are Ruby's: a block is a closure, `yield` calls it,
-`&block` captures it as a Proc, `proc.call` and `proc.()` invoke it. `return`
+Blocks and lambdas are written as Ruby's: `yield` calls a block, `&block`
+captures it as a Proc, `proc.call` and `proc.()` invoke it. `return`
 inside a block returns from the enclosing method; `break` and `next` behave as
 in Ruby. Procs are values but not serialisable, so they cannot cross `async`.
+
+### Blocks capture values
+
+In Ruby a block is a closure over variables: it reads them when it runs,
+and an assignment inside it rebinds them for the scope around it. That is
+a reference to something that changes, the one thing cameo has no other
+way to express, so cameo's blocks close over values instead. **When a block
+is made, it copies the values its variables have at that moment**, and
+that copy is what its calls read:
+
+```ruby
+a = 3
+l = proc { a }
+a = 4
+l.call                      # 3, where Ruby gives 4
+```
+
+Every block captures this way: a `proc` or `->`, and a block written on a
+call such as `each`, `map` or `app.get`. The consequences:
+
+- **A block cannot rebind a variable of the scope around it.** With a
+  copy, `total += x` inside `list.each { |x| … }` could change nothing
+  outside, so the checker refuses it before the script runs, naming the
+  variable: a Ruby idiom that silently did nothing, or with
+  `loop do i += 1 … end` never ended, fails loudly instead. The value
+  comes out of a block through its result, and the method that calls the
+  block keeps it: `list.reduce(0) { |total, x| total + x }`,
+  `list.each_with_object({}) { |x, h| … }`, `map`, `sum`, `count`. A loop
+  that counts keeps its counter in a `while`, which is no block. A
+  variable the block binds first is the block's own, as in Ruby, and so
+  is a rebinding of its parameter.
+- **A lambda may call itself by the name it is assigned to.** In
+  `fact = ->(n) { n <= 1 ? 1 : n * fact.(n - 1) }` the name is unbound
+  when the lambda copies its surroundings, so the assignment fills it in
+  once it is bound. Only the lambda or proc that is the assigned value may
+  read the name early; any other block that reads a name bound after it
+  is refused by the checker.
+- **A `for` loop is Ruby's**: its body is not a block but part of the
+  scope around it, so `for x in list do total += x end` rebinds `total`
+  and leaves `x` bound after the loop.
+- **`rescue => e` inside a block binds the block's own `e`**, whatever is
+  bound around it.
+- **Procs are values.** Calling one twice gives the same answer, keeping
+  it in a field, a Hash or a route table changes nothing, and `async`
+  started inside a block still belongs to the method around it, which
+  `await :all` collects.
+
+The copy costs one pass over the visible variables per block made, not per
+call.
 
 Exceptions are Ruby's: `raise "msg"`, `raise ErrorClass, "msg"`,
 `rescue Class => e`, `ensure`, `retry`, `cause`. `StandardError`, `ArgumentError`,
@@ -752,6 +801,15 @@ re-opened by accident:
   other: it returns its result, rebinds nothing, and may be called on any
   receiver. The checker learns the names from the script's `def`s, so a
   bang method the script does not define is one of Ruby's and refused.
+- **A block captures values, not variables.** Ruby's shared binding is a
+  reference to state that changes, which nothing else in cameo is. A
+  block copies the values of its variables when it is made, and the
+  checker refuses a rebinding of a captured variable inside a block, so
+  the accumulation idiom fails before the script runs instead of doing
+  nothing or looping forever. The alternative, capturing values in `proc`
+  and `->` alone and sharing the scope with a block on a call, kept the
+  idiom but made two kinds of block that look the same. The lambda
+  assigned to a name may read that name, so it can recurse.
 - **No call changes or rebinds its receiver.** Only assignment rebinds a
   local. A call of one of Ruby's mutators raises, naming the
   non-mutating form, unless the run ignores mutation errors, when it

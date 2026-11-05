@@ -42,7 +42,7 @@ class Naturals
   include Enumerable
   def each
     n = 0
-    loop do
+    while true
       yield n
       n += 1
     end

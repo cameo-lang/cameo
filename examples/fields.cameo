@@ -87,7 +87,6 @@ check { ann.with(1) }
 check { 5.with(x: 1) }
 
 # tap is Ruby's: it yields the receiver and returns it unchanged.
-seen = nil
-same = ann.tap { |p| seen = p.name }
-puts seen, same == ann
-puts [3, 1, 2].tap { |l| seen = l.size }.inspect, seen
+same = ann.tap { |p| puts p.name }
+puts same == ann
+puts [3, 1, 2].tap { |l| puts l.size }.inspect

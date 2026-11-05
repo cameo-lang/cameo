@@ -38,5 +38,5 @@ ArgumentError: with takes the changes as keywords or from its block, not positio
 TypeError: with copies an instance, an exception, a map or a list, not an instance of Integer
 ann
 true
-[3, 1, 2]
 3
+[3, 1, 2]

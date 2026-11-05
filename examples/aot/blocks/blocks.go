@@ -17,65 +17,50 @@ const File = "blocks.rb"
 // only for a program parsed from it.
 const Script = `# Blocks that cameo build compiles to Go loops: times, upto and downto on
 # an Integer, each on a Range of Integers, with break, next, return, a
-# local of the block's own, and a parameter the body sets. Every line
+# local of the block's own, and a parameter the body sets. A block
+# captures the values of its variables, so a sum is a reduce, a count a
+# count, which compile to the same loops with an accumulator. Every line
 # prints what Ruby prints.
 
 def sum(n)
-  s = 0
-  n.times { |i| s += i }
-  s
+  n.times.reduce(0) { |s, i| s + i }
 end
 
 def triangle(n)
-  t = 0
-  1.upto(n) { |i| t += i }
-  t
+  1.upto(n).reduce(0) { |t, i| t + i }
 end
 
 def countdown(n)
-  c = 0
-  n.downto(1) { |i| c = c * 10 + i }
-  c
+  n.downto(1).reduce(0) { |c, i| c * 10 + i }
 end
 
 def squares(lo, hi)
-  s = 0
-  (lo..hi).each { |i| s += i * i }
-  s
+  (lo..hi).reduce(0) { |s, i| s + i * i }
 end
 
 def below(lo, hi)
-  c = 0
-  (lo...hi).each { c += 1 }
-  c
+  (lo...hi).reduce(0) { |c, _| c + 1 }
 end
 
 def first_multiple(n, of)
-  found = 0
-  1.upto(n) do |i|
-    next if i % of != 0
-    found = i
-    break
+  0.upto(n) do |i|
+    next if i == 0 || i % of != 0
+    break i
   end
-  found
 end
 
 def own(n)
-  s = 0
-  n.times do |i|
+  n.times.reduce(0) do |s, i|
     sq = i * i
-    s += sq
+    s + sq
   end
-  s
 end
 
 def moved(n)
-  s = 0
-  n.times do |i|
+  n.times.reduce(0) do |s, i|
     i = i * 100
-    s += i
+    s + i
   end
-  s
 end
 
 def early(n)
@@ -92,9 +77,7 @@ def receiver(n)
 end
 
 def wide(n)
-  c = 0
-  (n - 2).upto(n + 1) { |i| c += 1 if i > n }
-  c
+  (n - 2).upto(n + 1).count { |i| i > n }
 end
 
 puts sum(100), triangle(100), countdown(5)
@@ -105,21 +88,20 @@ puts receiver(4), wide(2**64)
 `
 
 // digest identifies the program: syntax.Digest of Script, parsed.
-const digest = "22c1a25ecd9dc62a"
+const digest = "feb8c44edc23de03"
 
 func init() {
 	eval.RegisterCompiled(digest, eval.Compiled{
-		"below":          call_below,
-		"countdown":      call_countdown,
-		"early":          call_early,
-		"first_multiple": call_first_multiple,
-		"moved":          call_moved,
-		"own":            call_own,
-		"receiver":       call_receiver,
-		"squares":        call_squares,
-		"sum":            call_sum,
-		"triangle":       call_triangle,
-		"wide":           call_wide,
+		"below":     call_below,
+		"countdown": call_countdown,
+		"early":     call_early,
+		"moved":     call_moved,
+		"own":       call_own,
+		"receiver":  call_receiver,
+		"squares":   call_squares,
+		"sum":       call_sum,
+		"triangle":  call_triangle,
+		"wide":      call_wide,
 	})
 }
 
@@ -162,43 +144,47 @@ func fn_below(s *state, v_lo int64, v_hi int64) (int64, error) {
 	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
-	var v_c int64
-	_ = v_c
-	v_c = 0
 	t1 := v_lo
 	t2 := v_hi
-	t4 := s.stop
-	for t3 := t1; t3 < t2; t3++ {
-		if t4.Load() {
+	t3 := int64(0)
+	t5 := s.stop
+	for t4 := t1; t4 < t2; t4++ {
+		if t5.Load() {
 			return 0, eval.ErrStopped
 		}
-		t5, err := add(v_c, 1)
+		v_c := t3
+		_ = v_c
+		v__ := t4
+		_ = v__
+		t6, err := add(v_c, 1)
 		if err != nil {
 			return 0, err
 		}
-		v_c = t5
+		t3 = t6
 	}
-	return v_c, nil
+	return t3, nil
 }
 
 func big_below(s *state, v_lo *big.Int, v_hi *big.Int) (*big.Int, error) {
 	if s.stop.Load() {
 		return nil, eval.ErrStopped
 	}
-	var v_c *big.Int
-	_ = v_c
-	v_c = big_0
 	t1 := v_lo
 	t2 := v_hi
-	t4 := s.stop
-	for t3 := new(big.Int).Set(t1); t3.Cmp(t2) < 0; t3 = new(big.Int).Add(t3, big_1) {
-		if t4.Load() {
+	t3 := big_0
+	t5 := s.stop
+	for t4 := new(big.Int).Set(t1); t4.Cmp(t2) < 0; t4 = new(big.Int).Add(t4, big_1) {
+		if t5.Load() {
 			return nil, eval.ErrStopped
 		}
-		t5 := new(big.Int).Add(v_c, big_1)
-		v_c = t5
+		v_c := t3
+		_ = v_c
+		v__ := t4
+		_ = v__
+		t6 := new(big.Int).Add(v_c, big_1)
+		t3 = t6
 	}
-	return v_c, nil
+	return t3, nil
 }
 
 // call_below is below as a method: it runs with the arguments it takes and no
@@ -240,55 +226,55 @@ func fn_countdown(s *state, v_n int64) (int64, error) {
 	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
-	var v_c int64
-	_ = v_c
-	v_c = 0
 	t1 := v_n
 	t2 := int64(1)
-	t4 := s.stop
+	t3 := int64(0)
+	t5 := s.stop
 	if t2 == -1<<63 {
 		return 0, eval.ErrDeopt
 	}
-	for t3 := t1; t3 >= t2; t3-- {
-		if t4.Load() {
+	for t4 := t1; t4 >= t2; t4-- {
+		if t5.Load() {
 			return 0, eval.ErrStopped
 		}
-		v_i := t3
+		v_c := t3
+		_ = v_c
+		v_i := t4
 		_ = v_i
-		t5, err := mul(v_c, 10)
+		t6, err := mul(v_c, 10)
 		if err != nil {
 			return 0, err
 		}
-		t6, err := add(t5, v_i)
+		t7, err := add(t6, v_i)
 		if err != nil {
 			return 0, err
 		}
-		v_c = t6
+		t3 = t7
 	}
-	return v_c, nil
+	return t3, nil
 }
 
 func big_countdown(s *state, v_n *big.Int) (*big.Int, error) {
 	if s.stop.Load() {
 		return nil, eval.ErrStopped
 	}
-	var v_c *big.Int
-	_ = v_c
-	v_c = big_0
 	t1 := v_n
 	t2 := big_1
-	t4 := s.stop
-	for t3 := new(big.Int).Set(t1); t3.Cmp(t2) >= 0; t3 = new(big.Int).Sub(t3, big_1) {
-		if t4.Load() {
+	t3 := big_0
+	t5 := s.stop
+	for t4 := new(big.Int).Set(t1); t4.Cmp(t2) >= 0; t4 = new(big.Int).Sub(t4, big_1) {
+		if t5.Load() {
 			return nil, eval.ErrStopped
 		}
-		v_i := t3
+		v_c := t3
+		_ = v_c
+		v_i := t4
 		_ = v_i
-		t5 := new(big.Int).Mul(v_c, big_10)
-		t6 := new(big.Int).Add(t5, v_i)
-		v_c = t6
+		t6 := new(big.Int).Mul(v_c, big_10)
+		t7 := new(big.Int).Add(t6, v_i)
+		t3 = t7
 	}
-	return v_c, nil
+	return t3, nil
 }
 
 // call_countdown is countdown as a method: it runs with the arguments it takes and no
@@ -394,152 +380,56 @@ func call_early(ctx object.Context, self object.Value, args []object.Value, kw *
 	return object.BigInt(r), nil
 }
 
-func fn_first_multiple(s *state, v_n int64, v_of int64) (int64, error) {
-	if s.stop.Load() {
-		return 0, eval.ErrStopped
-	}
-	var v_found int64
-	_ = v_found
-	v_found = 0
-	t1 := int64(1)
-	t2 := v_n
-	t4 := s.stop
-	if t2 == 1<<63-1 {
-		return 0, eval.ErrDeopt
-	}
-	for t3 := t1; t3 <= t2; t3++ {
-		if t4.Load() {
-			return 0, eval.ErrStopped
-		}
-		v_i := t3
-		_ = v_i
-		t5, err := mod(v_i, v_of)
-		if err != nil {
-			return 0, err
-		}
-		if t5 != 0 {
-			continue
-		}
-		v_found = v_i
-		break
-	}
-	return v_found, nil
-}
-
-func big_first_multiple(s *state, v_n *big.Int, v_of *big.Int) (*big.Int, error) {
-	if s.stop.Load() {
-		return nil, eval.ErrStopped
-	}
-	var v_found *big.Int
-	_ = v_found
-	v_found = big_0
-	t1 := big_1
-	t2 := v_n
-	t4 := s.stop
-	for t3 := new(big.Int).Set(t1); t3.Cmp(t2) <= 0; t3 = new(big.Int).Add(t3, big_1) {
-		if t4.Load() {
-			return nil, eval.ErrStopped
-		}
-		v_i := t3
-		_ = v_i
-		t5, err := bigMod(v_i, v_of)
-		if err != nil {
-			return nil, err
-		}
-		if t5.Cmp(big_0) != 0 {
-			continue
-		}
-		v_found = v_i
-		break
-	}
-	return v_found, nil
-}
-
-// call_first_multiple is first_multiple as a method: it runs with the arguments it takes and no
-// block, on int64 while the Integers fit and on *big.Int once one does not,
-// and leaves every other call to the interpreter.
-func call_first_multiple(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-	if len(args) != 2 || kw != nil || !(block.IsZero() || block.IsNil()) {
-		return object.Value{}, eval.ErrDeopt
-	}
-	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
-	_ = self
-	a0, ok0 := args[0].AsInt()
-	a1, ok1 := args[1].AsInt()
-	if ok0 && ok1 {
-		r, err := fn_first_multiple(s, a0, a1)
-		if err != eval.ErrDeopt {
-			if err != nil {
-				return object.Value{}, err
-			}
-			return object.Int(r), nil
-		}
-	}
-	b0, ok := args[0].AsBigInt()
-	if !ok {
-		return object.Value{}, eval.ErrDeopt
-	}
-	b1, ok := args[1].AsBigInt()
-	if !ok {
-		return object.Value{}, eval.ErrDeopt
-	}
-	r, err := big_first_multiple(s, b0, b1)
-	if err != nil {
-		return object.Value{}, err
-	}
-	return object.BigInt(r), nil
-}
-
 func fn_moved(s *state, v_n int64) (int64, error) {
 	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
-	var v_s int64
-	_ = v_s
-	v_s = 0
 	t1 := v_n
-	t3 := s.stop
-	for t2 := int64(0); t2 < t1; t2++ {
-		if t3.Load() {
+	t2 := int64(0)
+	t4 := s.stop
+	for t3 := int64(0); t3 < t1; t3++ {
+		if t4.Load() {
 			return 0, eval.ErrStopped
 		}
-		v_i := t2
+		v_s := t2
+		_ = v_s
+		v_i := t3
 		_ = v_i
-		t4, err := mul(v_i, 100)
+		t5, err := mul(v_i, 100)
 		if err != nil {
 			return 0, err
 		}
-		v_i = t4
-		t5, err := add(v_s, v_i)
+		v_i = t5
+		t6, err := add(v_s, v_i)
 		if err != nil {
 			return 0, err
 		}
-		v_s = t5
+		t2 = t6
 	}
-	return v_s, nil
+	return t2, nil
 }
 
 func big_moved(s *state, v_n *big.Int) (*big.Int, error) {
 	if s.stop.Load() {
 		return nil, eval.ErrStopped
 	}
-	var v_s *big.Int
-	_ = v_s
-	v_s = big_0
 	t1 := v_n
-	t3 := s.stop
-	for t2 := new(big.Int); t2.Cmp(t1) < 0; t2 = new(big.Int).Add(t2, big_1) {
-		if t3.Load() {
+	t2 := big_0
+	t4 := s.stop
+	for t3 := new(big.Int); t3.Cmp(t1) < 0; t3 = new(big.Int).Add(t3, big_1) {
+		if t4.Load() {
 			return nil, eval.ErrStopped
 		}
-		v_i := t2
+		v_s := t2
+		_ = v_s
+		v_i := t3
 		_ = v_i
-		t4 := new(big.Int).Mul(v_i, big_100)
-		v_i = t4
-		t5 := new(big.Int).Add(v_s, v_i)
-		v_s = t5
+		t5 := new(big.Int).Mul(v_i, big_100)
+		v_i = t5
+		t6 := new(big.Int).Add(v_s, v_i)
+		t2 = t6
 	}
-	return v_s, nil
+	return t2, nil
 }
 
 // call_moved is moved as a method: it runs with the arguments it takes and no
@@ -576,56 +466,56 @@ func fn_own(s *state, v_n int64) (int64, error) {
 	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
-	var v_s int64
-	_ = v_s
-	v_s = 0
 	t1 := v_n
-	t3 := s.stop
-	for t2 := int64(0); t2 < t1; t2++ {
-		if t3.Load() {
+	t2 := int64(0)
+	t4 := s.stop
+	for t3 := int64(0); t3 < t1; t3++ {
+		if t4.Load() {
 			return 0, eval.ErrStopped
 		}
-		v_i := t2
+		v_s := t2
+		_ = v_s
+		v_i := t3
 		_ = v_i
-		t4, err := mul(v_i, v_i)
+		t5, err := mul(v_i, v_i)
 		if err != nil {
 			return 0, err
 		}
 		var v_sq int64
 		_ = v_sq
-		v_sq = t4
-		t5, err := add(v_s, v_sq)
+		v_sq = t5
+		t6, err := add(v_s, v_sq)
 		if err != nil {
 			return 0, err
 		}
-		v_s = t5
+		t2 = t6
 	}
-	return v_s, nil
+	return t2, nil
 }
 
 func big_own(s *state, v_n *big.Int) (*big.Int, error) {
 	if s.stop.Load() {
 		return nil, eval.ErrStopped
 	}
-	var v_s *big.Int
-	_ = v_s
-	v_s = big_0
 	t1 := v_n
-	t3 := s.stop
-	for t2 := new(big.Int); t2.Cmp(t1) < 0; t2 = new(big.Int).Add(t2, big_1) {
-		if t3.Load() {
+	t2 := big_0
+	t4 := s.stop
+	for t3 := new(big.Int); t3.Cmp(t1) < 0; t3 = new(big.Int).Add(t3, big_1) {
+		if t4.Load() {
 			return nil, eval.ErrStopped
 		}
-		v_i := t2
+		v_s := t2
+		_ = v_s
+		v_i := t3
 		_ = v_i
-		t4 := new(big.Int).Mul(v_i, v_i)
+		t5 := new(big.Int).Mul(v_i, v_i)
 		var v_sq *big.Int
 		_ = v_sq
-		v_sq = t4
-		t5 := new(big.Int).Add(v_s, v_sq)
-		v_s = t5
+		v_sq = t5
+		t6 := new(big.Int).Add(v_s, v_sq)
+		t2 = t6
 	}
-	return v_s, nil
+	return t2, nil
 }
 
 // call_own is own as a method: it runs with the arguments it takes and no
@@ -756,55 +646,55 @@ func fn_squares(s *state, v_lo int64, v_hi int64) (int64, error) {
 	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
-	var v_s int64
-	_ = v_s
-	v_s = 0
 	t1 := v_lo
 	t2 := v_hi
-	t4 := s.stop
+	t3 := int64(0)
+	t5 := s.stop
 	if t2 == 1<<63-1 {
 		return 0, eval.ErrDeopt
 	}
-	for t3 := t1; t3 <= t2; t3++ {
-		if t4.Load() {
+	for t4 := t1; t4 <= t2; t4++ {
+		if t5.Load() {
 			return 0, eval.ErrStopped
 		}
-		v_i := t3
+		v_s := t3
+		_ = v_s
+		v_i := t4
 		_ = v_i
-		t5, err := mul(v_i, v_i)
+		t6, err := mul(v_i, v_i)
 		if err != nil {
 			return 0, err
 		}
-		t6, err := add(v_s, t5)
+		t7, err := add(v_s, t6)
 		if err != nil {
 			return 0, err
 		}
-		v_s = t6
+		t3 = t7
 	}
-	return v_s, nil
+	return t3, nil
 }
 
 func big_squares(s *state, v_lo *big.Int, v_hi *big.Int) (*big.Int, error) {
 	if s.stop.Load() {
 		return nil, eval.ErrStopped
 	}
-	var v_s *big.Int
-	_ = v_s
-	v_s = big_0
 	t1 := v_lo
 	t2 := v_hi
-	t4 := s.stop
-	for t3 := new(big.Int).Set(t1); t3.Cmp(t2) <= 0; t3 = new(big.Int).Add(t3, big_1) {
-		if t4.Load() {
+	t3 := big_0
+	t5 := s.stop
+	for t4 := new(big.Int).Set(t1); t4.Cmp(t2) <= 0; t4 = new(big.Int).Add(t4, big_1) {
+		if t5.Load() {
 			return nil, eval.ErrStopped
 		}
-		v_i := t3
+		v_s := t3
+		_ = v_s
+		v_i := t4
 		_ = v_i
-		t5 := new(big.Int).Mul(v_i, v_i)
-		t6 := new(big.Int).Add(v_s, t5)
-		v_s = t6
+		t6 := new(big.Int).Mul(v_i, v_i)
+		t7 := new(big.Int).Add(v_s, t6)
+		t3 = t7
 	}
-	return v_s, nil
+	return t3, nil
 }
 
 // call_squares is squares as a method: it runs with the arguments it takes and no
@@ -846,45 +736,45 @@ func fn_sum(s *state, v_n int64) (int64, error) {
 	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
-	var v_s int64
-	_ = v_s
-	v_s = 0
 	t1 := v_n
-	t3 := s.stop
-	for t2 := int64(0); t2 < t1; t2++ {
-		if t3.Load() {
+	t2 := int64(0)
+	t4 := s.stop
+	for t3 := int64(0); t3 < t1; t3++ {
+		if t4.Load() {
 			return 0, eval.ErrStopped
 		}
-		v_i := t2
+		v_s := t2
+		_ = v_s
+		v_i := t3
 		_ = v_i
-		t4, err := add(v_s, v_i)
+		t5, err := add(v_s, v_i)
 		if err != nil {
 			return 0, err
 		}
-		v_s = t4
+		t2 = t5
 	}
-	return v_s, nil
+	return t2, nil
 }
 
 func big_sum(s *state, v_n *big.Int) (*big.Int, error) {
 	if s.stop.Load() {
 		return nil, eval.ErrStopped
 	}
-	var v_s *big.Int
-	_ = v_s
-	v_s = big_0
 	t1 := v_n
-	t3 := s.stop
-	for t2 := new(big.Int); t2.Cmp(t1) < 0; t2 = new(big.Int).Add(t2, big_1) {
-		if t3.Load() {
+	t2 := big_0
+	t4 := s.stop
+	for t3 := new(big.Int); t3.Cmp(t1) < 0; t3 = new(big.Int).Add(t3, big_1) {
+		if t4.Load() {
 			return nil, eval.ErrStopped
 		}
-		v_i := t2
+		v_s := t2
+		_ = v_s
+		v_i := t3
 		_ = v_i
-		t4 := new(big.Int).Add(v_s, v_i)
-		v_s = t4
+		t5 := new(big.Int).Add(v_s, v_i)
+		t2 = t5
 	}
-	return v_s, nil
+	return t2, nil
 }
 
 // call_sum is sum as a method: it runs with the arguments it takes and no
@@ -921,50 +811,50 @@ func fn_triangle(s *state, v_n int64) (int64, error) {
 	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
-	var v_t int64
-	_ = v_t
-	v_t = 0
 	t1 := int64(1)
 	t2 := v_n
-	t4 := s.stop
+	t3 := int64(0)
+	t5 := s.stop
 	if t2 == 1<<63-1 {
 		return 0, eval.ErrDeopt
 	}
-	for t3 := t1; t3 <= t2; t3++ {
-		if t4.Load() {
+	for t4 := t1; t4 <= t2; t4++ {
+		if t5.Load() {
 			return 0, eval.ErrStopped
 		}
-		v_i := t3
+		v_t := t3
+		_ = v_t
+		v_i := t4
 		_ = v_i
-		t5, err := add(v_t, v_i)
+		t6, err := add(v_t, v_i)
 		if err != nil {
 			return 0, err
 		}
-		v_t = t5
+		t3 = t6
 	}
-	return v_t, nil
+	return t3, nil
 }
 
 func big_triangle(s *state, v_n *big.Int) (*big.Int, error) {
 	if s.stop.Load() {
 		return nil, eval.ErrStopped
 	}
-	var v_t *big.Int
-	_ = v_t
-	v_t = big_0
 	t1 := big_1
 	t2 := v_n
-	t4 := s.stop
-	for t3 := new(big.Int).Set(t1); t3.Cmp(t2) <= 0; t3 = new(big.Int).Add(t3, big_1) {
-		if t4.Load() {
+	t3 := big_0
+	t5 := s.stop
+	for t4 := new(big.Int).Set(t1); t4.Cmp(t2) <= 0; t4 = new(big.Int).Add(t4, big_1) {
+		if t5.Load() {
 			return nil, eval.ErrStopped
 		}
-		v_i := t3
+		v_t := t3
+		_ = v_t
+		v_i := t4
 		_ = v_i
-		t5 := new(big.Int).Add(v_t, v_i)
-		v_t = t5
+		t6 := new(big.Int).Add(v_t, v_i)
+		t3 = t6
 	}
-	return v_t, nil
+	return t3, nil
 }
 
 // call_triangle is triangle as a method: it runs with the arguments it takes and no
@@ -1001,9 +891,6 @@ func fn_wide(s *state, v_n int64) (int64, error) {
 	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
-	var v_c int64
-	_ = v_c
-	v_c = 0
 	t2, err := sub(v_n, 2)
 	if err != nil {
 		return 0, err
@@ -1014,51 +901,45 @@ func fn_wide(s *state, v_n int64) (int64, error) {
 		return 0, err
 	}
 	t3 := t4
-	t6 := s.stop
+	t5 := int64(0)
+	t7 := s.stop
 	if t3 == 1<<63-1 {
 		return 0, eval.ErrDeopt
 	}
-	for t5 := t1; t5 <= t3; t5++ {
-		if t6.Load() {
+	for t6 := t1; t6 <= t3; t6++ {
+		if t7.Load() {
 			return 0, eval.ErrStopped
 		}
-		v_i := t5
+		v_i := t6
 		_ = v_i
 		if v_i > v_n {
-			t7, err := add(v_c, 1)
-			if err != nil {
-				return 0, err
-			}
-			v_c = t7
+			t5++
 		}
 	}
-	return v_c, nil
+	return t5, nil
 }
 
 func big_wide(s *state, v_n *big.Int) (*big.Int, error) {
 	if s.stop.Load() {
 		return nil, eval.ErrStopped
 	}
-	var v_c *big.Int
-	_ = v_c
-	v_c = big_0
 	t2 := new(big.Int).Sub(v_n, big_2)
 	t1 := t2
 	t4 := new(big.Int).Add(v_n, big_1)
 	t3 := t4
-	t6 := s.stop
-	for t5 := new(big.Int).Set(t1); t5.Cmp(t3) <= 0; t5 = new(big.Int).Add(t5, big_1) {
-		if t6.Load() {
+	t5 := new(big.Int)
+	t7 := s.stop
+	for t6 := new(big.Int).Set(t1); t6.Cmp(t3) <= 0; t6 = new(big.Int).Add(t6, big_1) {
+		if t7.Load() {
 			return nil, eval.ErrStopped
 		}
-		v_i := t5
+		v_i := t6
 		_ = v_i
 		if v_i.Cmp(v_n) > 0 {
-			t7 := new(big.Int).Add(v_c, big_1)
-			v_c = t7
+			t5 = new(big.Int).Add(t5, big_1)
 		}
 	}
-	return v_c, nil
+	return t5, nil
 }
 
 // call_wide is wide as a method: it runs with the arguments it takes and no
@@ -1097,28 +978,6 @@ func add(a, b int64) (int64, error) {
 		return 0, eval.ErrDeopt
 	}
 	return c, nil
-}
-
-func bigMod(a, b *big.Int) (*big.Int, error) {
-	if b.Sign() == 0 {
-		return nil, eval.ErrDeopt
-	}
-	m := new(big.Int).Rem(a, b)
-	if m.Sign() != 0 && (m.Sign() < 0) != (b.Sign() < 0) {
-		m.Add(m, b)
-	}
-	return m, nil
-}
-
-func mod(a, b int64) (int64, error) {
-	if b == 0 {
-		return 0, eval.ErrDeopt
-	}
-	r := a % b
-	if r != 0 && (r < 0) != (b < 0) {
-		r += b
-	}
-	return r, nil
 }
 
 func mul(a, b int64) (int64, error) {
