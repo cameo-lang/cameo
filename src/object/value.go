@@ -757,3 +757,9 @@ func (v Value) Cls() *Class {
 	v.must(KindClass)
 	return (*Class)(v.p)
 }
+
+// NewSystemExit returns the exception exit raises: a SystemExit with the
+// status the command ends with, which cameo.ExitStatus reads.
+func NewSystemExit(status int64, msg string) *Exception {
+	return &Exception{Cls: SystemExit, Message: msg, Attrs: map[string]Value{"status": Int(status)}}
+}

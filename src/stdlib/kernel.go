@@ -6,8 +6,8 @@ import (
 	"github.com/cameo-lang/cameo/src/object"
 )
 
-// installKernel defines puts, print, p, warn, raise and format on every
-// value, as Ruby's Kernel does.
+// installKernel defines puts, print, p, warn, raise, exit, at_exit and
+// format on every value, as Ruby's Kernel does.
 func installKernel() {
 	o := object.ObjectClass
 	def(o, "puts", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -84,6 +84,15 @@ func installKernel() {
 			return object.Value{}, err
 		}
 		return object.Value{}, systemExit(1, msg)
+	})
+	// at_exit keeps a block to run when the script ends; eval runs them, last
+	// registered first, and says what happens when one raises.
+	def(o, "at_exit", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if block.IsZero() {
+			return object.Value{}, ctx.Raise(object.ArgumentError, "called without a block")
+		}
+		ctx.AtExit(block)
+		return block, nil
 	})
 	def(o, "format", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) == 0 {
@@ -252,9 +261,7 @@ func plainException(cls *object.Class) bool {
 }
 
 // systemExit makes the SystemExit for exit and abort.
-func systemExit(status int64, msg string) error {
-	return &object.Exception{Cls: object.SystemExit, Message: msg, Attrs: map[string]object.Value{"status": object.Int(status)}}
-}
+func systemExit(status int64, msg string) error { return object.NewSystemExit(status, msg) }
 
 // toFloat is Kernel#Float of one value: a number as a float, or a string
 // parsed as one.

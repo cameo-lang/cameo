@@ -564,4 +564,7 @@ type Context interface {
 	// Rand returns the interpreter's generator, the one Kernel#rand draws
 	// from: an async process has its own.
 	Rand() *Random
+	// AtExit keeps a block to run when the script ends, as Kernel#at_exit
+	// does.
+	AtExit(block Value)
 }
