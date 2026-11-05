@@ -177,3 +177,27 @@ func TestIRBTerminalKeepsTheKeysAfterACtrlC(t *testing.T) {
 	st.typing.Write([]byte("drop me\x036 * 7\r"))
 	st.shows(t, "=> 42")
 }
+
+// TestIRBTerminalTakesAltChords proves the Alt chords a terminal sends as
+// an Esc and a key edit the line, where x/term would take them for an
+// escape sequence and swallow the keys after them: Alt-Backspace, which
+// Option-Backspace or Cmd-Backspace sends, deletes the word before the
+// cursor, Alt-B moves back a word, a chord with no meaning does nothing,
+// and an Esc split from its key across two reads is still a chord.
+func TestIRBTerminalTakesAltChords(t *testing.T) {
+	st := newStream()
+	term := irb.NewTerminal(st)
+	term.SetSize(80, 24)
+	prog, err := cameo.Load("(irb)", "", term, term)
+	assert.NoError(t, err)
+	go term.Run(irb.NewSession(prog))
+
+	st.shows(t, "cameo(main):001> ")
+	st.typing.Write([]byte("File.open\x1b\x7f40 + 2\r"))
+	st.shows(t, "=> 42\r\ncameo(main):002> ")
+	st.typing.Write([]byte("2 * 3\x1bb1\x1bx\r"))
+	st.shows(t, "=> 26\r\ncameo(main):003> ")
+	st.typing.Write([]byte("8 \x1b"))
+	st.typing.Write([]byte("\x7f9\x1b\r"))
+	st.shows(t, "=> 9\r\ncameo(main):004> ")
+}
