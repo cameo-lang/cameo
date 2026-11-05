@@ -118,6 +118,9 @@ func Register[T proto.Message](name string, prototype T) *Class[T] {
 	protogen.RegisterNative(cls, prototype)
 	consts[clsName] = object.ClassValue(cls)
 	registered[cls.QualifiedName()] = cls
+	// A host's class is the Go binary's too: its top-level name, the
+	// class's or its namespace's, is Cameo::Native::Name as well.
+	object.BindUnderNative(parts[0], object.ObjectClass.Consts[parts[0]])
 	return &Class[T]{cls: cls, prototype: prototype}
 }
 

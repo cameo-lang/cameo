@@ -434,6 +434,12 @@ var (
 	// CameoModule is Cameo, which a script includes for async, await and
 	// the promises they settle.
 	CameoModule = NewModule("Cameo")
+	// NativeModule is Cameo::Native: every class and module the Go binary
+	// binds at the top level, the core's, a Go library's and a host's, is
+	// bound there under its name as well, so a library written in cameo
+	// can take the top-level name and keep the Go one reachable. See
+	// MirrorNative.
+	NativeModule = NewModule("Native")
 	// CameoRunnerModule is Cameo::Runner, which brings Cameo to the class
 	// that includes it: the name a class includes to run its work on cameo
 	// and, through the Ruby library of the same name, on CRuby.
@@ -517,6 +523,8 @@ func init() {
 	CameoRunnerModule.Lexical = CameoModule
 	CameoRunnerModule.Include(CameoModule)
 	CameoModule.Consts["Runner"] = ClassValue(CameoRunnerModule)
+	NativeModule.Lexical = CameoModule
+	CameoModule.Consts["Native"] = ClassValue(NativeModule)
 	NumericClass.Include(Comparable)
 	StringClass.Include(Comparable)
 	SymbolClass.Include(Comparable)
@@ -567,4 +575,32 @@ type Context interface {
 	// AtExit keeps a block to run when the script ends, as Kernel#at_exit
 	// does.
 	AtExit(block Value)
+}
+
+// DefineNative binds v, a class or a module the Go binary defines, at the
+// top level as name and as Cameo::Native::name. The class keeps name as
+// its own, so what a script sees of it does not change.
+func DefineNative(name string, v Value) {
+	ObjectClass.Consts[name] = v
+	BindUnderNative(name, v)
+}
+
+// BindUnderNative binds v as Cameo::Native::name alone: what MirrorNative
+// does for every top-level class once the binary's are bound, and what a
+// host does for a class it registers after that.
+func BindUnderNative(name string, v Value) {
+	NativeModule.Consts[name] = v
+}
+
+// MirrorNative binds every class and module bound at the top level as
+// Cameo::Native::name too, Cameo itself aside, which would hold its own
+// mirror. The evaluator calls it once, after the core and the libraries
+// installed; a class bound after that is a host's, which binds it there
+// itself.
+func MirrorNative() {
+	for name, v := range ObjectClass.Consts {
+		if cls, ok := v.AsClass(); ok && cls != CameoModule && cls != NativeModule {
+			BindUnderNative(name, v)
+		}
+	}
 }

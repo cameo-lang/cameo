@@ -38,7 +38,7 @@ var (
 // Object#to_json. lib.Install calls it once.
 func Install() {
 	m := jsonModule
-	object.ObjectClass.Consts["JSON"] = object.ClassValue(m)
+	object.DefineNative("JSON", object.ClassValue(m))
 	m.Consts["VERSION"] = object.String("2.9.1")
 	for _, c := range []*object.Class{jsonError, jsonParserError, jsonNestingError, jsonGeneratorErr} {
 		c.Lexical = m

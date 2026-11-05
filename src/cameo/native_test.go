@@ -248,3 +248,20 @@ func TestRegisterChecksNamesAndMessages(t *testing.T) {
 		}()
 	}
 }
+
+// TestARegisteredClassIsUnderCameoNative proves a class a host registers
+// is Cameo::Native::Name too, by its top-level namespace, like every
+// class the Go binary binds.
+func TestARegisteredClassIsUnderCameoNative(t *testing.T) {
+	var out bytes.Buffer
+	prog, err := Load("t.cameo", "p Cameo::Native::Shapes::Point == Shapes::Point, Cameo::Native::Shapes == Shapes\n", &out, &out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := prog.Run(); err != nil {
+		t.Fatal(err)
+	}
+	if out.String() != "true\ntrue\n" {
+		t.Fatalf("output %q", out.String())
+	}
+}
