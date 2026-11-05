@@ -5,6 +5,7 @@
 package lib
 
 import (
+	"github.com/cameo-lang/cameo/src/lib/abbrev"
 	"github.com/cameo-lang/cameo/src/lib/base64"
 	"github.com/cameo-lang/cameo/src/lib/benchmark"
 	"github.com/cameo-lang/cameo/src/lib/cgi"
@@ -73,6 +74,7 @@ var Libraries = map[string][]string{
 // start. A library listed here needs no entry in Libraries, and may have
 // one for what it loads along with it.
 var Sources = map[string]string{
+	"abbrev":     abbrev.Source,
 	"shellwords": shellwords.Source,
 	"tsort":      tsort.Source,
 }
@@ -80,6 +82,7 @@ var Sources = map[string]string{
 // Install defines every library. The evaluator calls it once, after
 // stdlib.Install.
 func Install() {
+	abbrev.Install()
 	base64.Install()
 	benchmark.Install()
 	cgi.Install()

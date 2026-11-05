@@ -1,0 +1,54 @@
+# Ruby's abbrev library: the unambiguous abbreviations of a set of words.
+# Every prefix of a word that no other word shares maps to the word, the
+# word itself included, and a pattern, a Regexp or a String prefix, keeps
+# only the abbreviations that match it. It follows abbrev 0.1.2.
+module Abbrev
+  VERSION = "0.1.2"
+
+  def self.abbrev(words, pattern = nil)
+    pattern = Regexp.new("\\A" + Regexp.escape(pattern)) if pattern.is_a?(String)
+    # Each prefix of each word, longest first, is seen once for the word
+    # that owns it, twice when another word shares it, and no shorter
+    # prefix of a word is looked at once one is shared three times. The
+    # counts and the table are rebound, not mutated.
+    seen = Hash.new(0)
+    table = {}
+    i = 0
+    while i < words.size
+      word = words[i]
+      length = word.size
+      while length > 0
+        abbreviation = word[0...length]
+        if pattern.nil? || matches?(pattern, abbreviation)
+          count = seen[abbreviation] + 1
+          seen = seen.merge(abbreviation => count)
+          case count
+          when 1 then table = table.merge(abbreviation => word)
+          when 2 then table = table.except(abbreviation)
+          else break
+          end
+        end
+        length -= 1
+      end
+      i += 1
+    end
+    words.reduce(table) do |t, word|
+      pattern && !matches?(pattern, word) ? t : t.merge(word => word)
+    end
+  end
+
+  # matches? is Ruby's pattern =~ text: a Regexp matches, and anything
+  # else, a pattern a String or a Regexp is not, raises as Ruby's =~ does
+  # when it is first used.
+  def self.matches?(pattern, text)
+    unless pattern.is_a?(Regexp)
+      raise NoMethodError, "undefined method '=~' for an instance of #{pattern.class.name}"
+    end
+    pattern.match?(text)
+  end
+
+  # The method of a class that includes Abbrev.
+  def abbrev(words, pattern = nil)
+    Abbrev.abbrev(words, pattern)
+  end
+end
