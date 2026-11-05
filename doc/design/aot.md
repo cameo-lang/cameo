@@ -8,7 +8,8 @@ stays one static file on every platform Go supports.
 
 This is step one, methods over Integers, the step that took them past 64
 bits, the one that gave them blocks, the one that gave them Floats, the one
-that gave them classes, and the one that gave them construction. The
+that gave them classes, the one that gave them construction, and the one
+that gave them folds. The
 interpreter still runs everything else in the script, and the rest of this
 note keeps the order the steps would land in.
 
@@ -31,6 +32,8 @@ compiles when:
   - `times`, `upto` and `downto` on an Integer and `each` on a Range of
     Integers, with a block of one parameter at most, whose body is a
     statement over the same, with `break` and `next`;
+  - `reduce` with an initial value, and `sum` and `count` with a block,
+    over `times`, `upto`, `downto` or a Range of Integers;
   - reads of `int`, `float`, `bool` and `ref` fields, of `self` and of
     instances the method holds, and `self` itself;
   - calls of other compiled methods, directly, on `self` and on instances
@@ -196,8 +199,9 @@ construction itself, with its checks, is now what the loops cost.
    build time where the types already agree.
 3. Strings, and Arrays of a known element type, which use the runtime's
    own values where Go has no type of its own for them.
-4. Blocks that compute a value, `map`, `sum` and `select` on a Range, and
-   `loop` with `break` and its value.
+4. Blocks that compute a collection, `map` and `select` on a Range; folds
+   over an Array, `reduce` without an initial value and `sum` of Floats;
+   and `loop` with `break` and its value.
 5. Calls from compiled code into the interpreter for what stays dynamic,
    such as `send` and values read from JSON, so that one construct the
    compiler lacks leaves only itself to the interpreter.

@@ -11,7 +11,7 @@ accepts parses as Ruby. Where cameo differs it does so in one of three ways:
   script reaches it (`Proc#curry` raises `NotImplementedError`, and
   `Integer()` with a base `ArgumentError`).
 
-This page lists each, as of v0.1. The [design document](design/cameo.md)
+This page lists each, as of v0.4. The [design document](design/cameo.md)
 says why; its *Decisions taken* records the choices made explicitly.
 
 ## How compatible, measured
@@ -174,7 +174,9 @@ variables have at that moment, and reads that copy when it runs:
 `r.rand`, `r.bytes` and `r.random_number` advance the generator `r` names,
 so each call returns the next number, and every holder of `r` (another
 variable, an array, a hash, a block, a method's argument) draws from the
-same generator. It is the one value whose calls change something. A copy
+same generator. It was the first value whose calls change something; the
+libraries' handles, `StringIO`, `StringScanner`, `Logger` and `CSV.new`,
+are the same kind ([stdlib.md](stdlib.md)). A copy
 would draw the numbers its original draws next, so a Random is not copied:
 `dup` and `clone` raise a `TypeError` ("a Random cannot be copied"), and so
 do passing one to `async`, returning one from an `async` call and storing
@@ -221,11 +223,13 @@ q = p.with(x: 3)            # a copy; p is unchanged
   class and rebinds `X` to it. Instances made before, and classes that
   inherit from it, keep the class as it was and do not see what the
   reopening adds, as they do in Ruby. A builtin class cannot be reopened.
-- Numeric and BasicObject cannot be subclassed. A Numeric of a script's
-  own would need Integer's and Float's arithmetic to `coerce` it, which it
-  does not; a BasicObject subclass is a blank-slate object without
-  Object's methods, which cameo does not make. `method_missing` in an
-  ordinary class does what a BasicObject proxy does in Ruby.
+- Numeric and BasicObject cannot be subclassed. Integer and Float follow
+  Ruby's `coerce` protocol for any value that answers `coerce`, so a number
+  class of a script's own is an ordinary class that defines `coerce`:
+  `1 + money` and `1 < money` then work as in Ruby. A BasicObject subclass
+  is a blank-slate object without Object's methods, which cameo does not
+  make; `method_missing` in an ordinary class does what a BasicObject proxy
+  does in Ruby.
 
 `Data` is left out: a class with typed fields is cameo's Data, and `with`
 is Data's `with`. Ruby's
@@ -297,11 +301,11 @@ sets the fields, and `p a` prints `Point(x: 1, y: 2)` where Ruby prints
   | `RUBY_PLATFORM` | Ruby's name for the platform, as `x86_64-linux`, `aarch64-linux`, `arm64-darwin` or `x64-mingw-ucrt`, without the OS version CRuby appends on macOS |
   | `RUBY_RELEASE_DATE` | the date of the commit cameo was built from, or `"unknown"` |
   | `RUBY_REVISION` | the hash of that commit, or `"unknown"` |
-  | `RUBY_DESCRIPTION` | the build in CRuby's form: `cameo 0.2.3 (2026-10-20 revision 0123456789) +ruby 3.4.0 [x86_64-linux]` |
+  | `RUBY_DESCRIPTION` | the build in CRuby's form: `cameo 0.4.2 (2026-11-04 revision 0123456789) +ruby 3.4.0 [x86_64-linux]` |
   | `RUBY_COPYRIGHT` | `"cameo - Copyright (C) 2026 the cameo authors (MIT License)"` |
 
   The commit is known when the binary was built with `go build` in a git
-  checkout; a binary from `go install ...@v0.2.3` knows its version but no
+  checkout; a binary from `go install ...@v0.4.2` knows its version but no
   commit.
 
 ## Rejected before the script runs
@@ -316,7 +320,7 @@ The checker rejects these by name, with the line:
 | `private`, `protected`, `public`, `module_function` | none: every method is public |
 | `eval`, `instance_eval`, `class_eval`, `define_method`, `instance_variable_get` and `_set`, `undef` | a direct call or a `def` |
 | `def obj.x`, `class << self` | `def self.x` in a class body |
-| a subclass of Numeric or BasicObject, `class X < Numeric` | none for Numeric; `method_missing` in an ordinary class for BasicObject. Inside a module, and with `Class.new(Numeric)`, the refusal is a `CameoError` when the definition runs |
+| a subclass of Numeric or BasicObject, `class X < Numeric` | an ordinary class that defines `coerce` for Numeric; `method_missing` in an ordinary class for BasicObject. Inside a module, and with `Class.new(Numeric)`, the refusal is a `CameoError` when the definition runs |
 | a bang method of Ruby's core, such as `a.sort!` | the copying form, assigned: `a = a.sort` |
 | nested multiple assignment, `a, (b, c) = …` | separate assignments |
 | an assignment inside a block to a variable of the scope around it, `list.each { \|x\| total += x }` | `reduce`, `each_with_object`, `map`, `sum`, `count`, or a `while` loop; a block captures values |

@@ -2,9 +2,10 @@
 
 `cameo debug script.cameo` runs a script under the debugger, stopped before
 its first statement. A script run with `cameo script.cameo` that requires
-`"debug"` stops at `debugger`, `binding.break` and `binding.b`, as a Ruby
-script with the debug library does. Without the library those three are
-undefined, as in Ruby. From Go, `Program.Debug` switches the debugger on and
+`"debug"` stops at `debugger`, `binding.break`, `binding.b` and
+`binding.irb`, as a Ruby script with the debug library does. Without the
+library those four raise `NoMethodError`, which says to require `"debug"`
+first. From Go, `Program.Debug` switches the debugger on and
 `Program.Console` names where a debugger the script switches on talks;
 without a console, its stops do nothing.
 
