@@ -8,6 +8,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/benchmark"
 	"github.com/cameo-lang/cameo/src/lib/cgi"
 	"github.com/cameo-lang/cameo/src/lib/json"
+	"github.com/cameo-lang/cameo/src/lib/pathname"
 )
 
 // Libraries are the names require accepts, each with the libraries it
@@ -35,4 +36,5 @@ func Install() {
 	benchmark.Install()
 	cgi.Install()
 	json.Install()
+	pathname.Install()
 }

@@ -330,10 +330,6 @@ func (in *Interp) Compare(a, b object.Value) (int, error) {
 		if b, ok := b.AsTime(); ok {
 			return a.Time().Compare(b), nil
 		}
-	case object.KindInstance:
-		if r, ok := stdlib.ComparePathnames(a, b); ok {
-			return r, nil
-		}
 	case object.KindList:
 		a := a.List()
 		if bl, ok := b.AsList(); ok {
