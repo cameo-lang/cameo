@@ -19,6 +19,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/json"
 	"github.com/cameo-lang/cameo/src/lib/logger"
 	"github.com/cameo-lang/cameo/src/lib/marshal"
+	"github.com/cameo-lang/cameo/src/lib/matrix"
 	"github.com/cameo-lang/cameo/src/lib/minispec"
 	"github.com/cameo-lang/cameo/src/lib/optparse"
 	"github.com/cameo-lang/cameo/src/lib/pathname"
@@ -60,6 +61,7 @@ var Libraries = map[string][]string{
 	"json":        nil,
 	"logger":      nil,
 	"marshal":     nil,
+	"matrix":      nil,
 	"minispec":    nil,
 	// openssl is accepted for the OpenSSL::HMAC and OpenSSL::Digest names
 	// digest defines; a script written for openssl begins with it.
@@ -125,4 +127,5 @@ func Install() {
 	strscan.Install()
 	optparse.Install()
 	getoptlong.Install()
+	matrix.Install()
 }
