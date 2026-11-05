@@ -91,7 +91,7 @@ func Construct(ctx object.Context, cls *object.Class, values []object.Value) (*o
 	for i, f := range cls.Fields {
 		inst.Fields[i] = f.Default
 		if f.Default.IsZero() {
-			inst.Fields[i] = emptyFor(f.Type)
+			inst.Fields[i] = object.Empty(f.Type)
 		}
 		if i >= len(values) || values[i].IsZero() {
 			continue

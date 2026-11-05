@@ -74,7 +74,7 @@ func defaultFields(cls *object.Class) []object.Value {
 	for i, f := range cls.Fields {
 		fields[i] = f.Default
 		if f.Default.IsZero() {
-			fields[i] = emptyFor(f.Type)
+			fields[i] = object.Empty(f.Type)
 		}
 	}
 	return fields
