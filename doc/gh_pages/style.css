@@ -1,4 +1,6 @@
-/* cameo's site: one stylesheet, system fonts, light and dark. */
+/* cameo's site: one stylesheet, Source Sans and IBM Plex Mono, light and dark. */
+
+@import url("https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap");
 
 :root {
   --bg: #fdfcf9;
@@ -36,7 +38,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
-  font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font: 18px/1.6 "Source Sans 3", "Source Sans Pro", -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
 a { color: var(--accent); }
@@ -104,7 +106,7 @@ h4 { font-size: 13px; margin: 0 0 6px; text-transform: uppercase; letter-spacing
 .lead { font-size: 20px; color: var(--muted); margin-top: 0; }
 
 code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, "Liberation Mono", monospace;
   font-size: 0.88em;
 }
 
@@ -142,7 +144,7 @@ pre.output {
 pre.output::before {
   content: "output";
   display: block;
-  font: 600 11px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font: 600 11px/1.6 "Source Sans 3", "Source Sans Pro", -apple-system, "Segoe UI", sans-serif;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--muted);
