@@ -20,6 +20,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/prime"
 	"github.com/cameo-lang/cameo/src/lib/securerandom"
 	"github.com/cameo-lang/cameo/src/lib/shellwords"
+	"github.com/cameo-lang/cameo/src/lib/singleton"
 	"github.com/cameo-lang/cameo/src/lib/time"
 	"github.com/cameo-lang/cameo/src/lib/tsort"
 	unicodenormalize "github.com/cameo-lang/cameo/src/lib/unicode_normalize"
@@ -59,6 +60,7 @@ var Libraries = map[string][]string{
 	"random/formatter":            nil,
 	"securerandom":                {"random/formatter"},
 	"set":                         nil,
+	"singleton":                   nil,
 	"time":                        nil,
 	"unicode_normalize":           {"unicode_normalize/normalize"},
 	"unicode_normalize/normalize": nil,
@@ -101,4 +103,5 @@ func Install() {
 	unicodenormalize.Install()
 	zlib.Install()
 	prime.Install()
+	singleton.Install()
 }
