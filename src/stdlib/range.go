@@ -1,6 +1,7 @@
 package stdlib
 
 import (
+	"errors"
 	"iter"
 	"math"
 	"math/big"
@@ -46,6 +47,23 @@ func installRange() {
 						break
 					}
 					out = append(out, strValue(s, sym))
+				}
+				return object.NewList(out...), nil
+			}
+			if r(self).Lo.Kind() == object.KindInstance {
+				// Dates and kin: by succ, n times.
+				if n == 0 {
+					return object.NewList(), nil
+				}
+				err := eachBySucc(ctx, r(self), func(v object.Value) error {
+					out = append(out, v)
+					if int64(len(out)) == n {
+						return errEnough
+					}
+					return nil
+				})
+				if err != nil && err != errEnough {
+					return object.Value{}, err
 				}
 				return object.NewList(out...), nil
 			}
@@ -224,6 +242,13 @@ func installRange() {
 				}
 			}
 			return self, nil
+		}
+		if r(self).Lo.Kind() == object.KindInstance {
+			err := eachBySucc(ctx, r(self), func(v object.Value) error {
+				_, err := ctx.Yield(block, v)
+				return err
+			})
+			return self, err
 		}
 		if !r(self).Lo.IsInteger() {
 			return object.Value{}, ctx.Raise(object.TypeError, "can't iterate from %s", KindName(object.OrNil(r(self).Lo)))
@@ -532,6 +557,17 @@ func RangeElems(ctx object.Context, r *object.Range) ([]object.Value, error) {
 		}
 		return out, nil
 	}
+	if r.Lo.Kind() == object.KindInstance {
+		if r.Hi.IsZero() {
+			return nil, ctx.Raise(object.RangeError, "cannot convert endless range to a list")
+		}
+		out := []object.Value{}
+		err := eachBySucc(ctx, r, func(v object.Value) error {
+			out = append(out, v)
+			return nil
+		})
+		return out, err
+	}
 	lo, hi, ok := intEnds(r)
 	if !ok {
 		if r.Hi.IsZero() && r.Lo.IsInteger() {
@@ -553,6 +589,43 @@ func RangeElems(ctx object.Context, r *object.Range) ([]object.Value, error) {
 		return nil
 	})
 	return out, err
+}
+
+// errEnough stops eachBySucc once a caller has what it wanted.
+var errEnough = errors.New("enough")
+
+// eachBySucc walks a range whose ends are instances of a class with succ
+// and <=>, such as Dates, as Ruby's Range#each does: from the first, by
+// succ, while the element does not pass the last.
+func eachBySucc(ctx object.Context, r *object.Range, yield func(object.Value) error) error {
+	if !ctx.RespondsTo(r.Lo, "succ") {
+		return ctx.Raise(object.TypeError, "can't iterate from %s", KindName(r.Lo))
+	}
+	// An endless range goes on until the block breaks, as Ruby's does;
+	// the callers that need every element refuse one themselves.
+	for cur := r.Lo; ; {
+		if !r.Hi.IsZero() {
+			c, err := ctx.Compare(cur, r.Hi)
+			if err != nil {
+				return err
+			}
+			if c > 0 || c == 0 && r.Exclusive {
+				return nil
+			}
+		}
+		if err := yield(cur); err != nil {
+			return err
+		}
+		next, err := ctx.Call(cur, "succ")
+		if err != nil {
+			return err
+		}
+		// A succ that does not advance would loop forever.
+		if c, err := ctx.Compare(next, cur); err != nil || c <= 0 {
+			return err
+		}
+		cur = next
+	}
 }
 
 // intEnds reads a range of integers as its first and last, the end less
