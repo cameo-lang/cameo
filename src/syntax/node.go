@@ -550,6 +550,9 @@ type With struct {
 	Target Node
 	Key    Node
 	Value  Node
+	// Index is set for `target[key] = value`; an attribute assignment,
+	// `target.key = value`, leaves it unset.
+	Index bool
 }
 
 // Async is `async recv, :method, *args`: it starts recv.method(*args) on

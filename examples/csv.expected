@@ -1,0 +1,25 @@
+[["name", "qty", "price"], ["pen", "3", "1.5"], ["note, lined", "10", "2"]]
+["a", "b\"c", nil, "d"]
+["x", "y"]
+["name", "qty", "price"]
+2
+[3, 10]
+#<CSV::Row "name":"note, lined" "qty":10 "price":2>
+[4.5, 20]
+["pen", "note, lined"]
+{"name" => "pen", "qty" => 3, "price" => 1.5}
+name,qty,price
+pen,3,1.5
+"note, lined",10,2
+#<CSV::Row "a":1 "b":2 "c":3 "d":4>
+[1, 2, 3, 4]
+{"a" => 1, "b" => 2, "c" => 3, "d" => 4}
+"a,,,1,\"x,y\",\"q\"\"r\",\"l\nm\"\n"
+a;b
+1;
+id,name
+1,pen
+"1,two,\n"
+Illegal quoting in line 1.
+Unclosed quoted field in line 1.
+Any value after quoted field isn't allowed in line 1.

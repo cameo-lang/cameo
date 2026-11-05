@@ -8,6 +8,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/base64"
 	"github.com/cameo-lang/cameo/src/lib/benchmark"
 	"github.com/cameo-lang/cameo/src/lib/cgi"
+	"github.com/cameo-lang/cameo/src/lib/csv"
 	"github.com/cameo-lang/cameo/src/lib/date"
 	"github.com/cameo-lang/cameo/src/lib/digest"
 	"github.com/cameo-lang/cameo/src/lib/json"
@@ -31,6 +32,7 @@ var Libraries = map[string][]string{
 	"cgi":         {"cgi/escape", "cgi/util"},
 	"cgi/escape":  nil,
 	"cgi/util":    {"cgi/escape"},
+	"csv":         nil,
 	"date":        nil,
 	"digest":      {"digest/md5", "digest/sha1", "digest/sha2"},
 	"digest/md5":  {"digest"},
@@ -65,6 +67,7 @@ func Install() {
 	base64.Install()
 	benchmark.Install()
 	cgi.Install()
+	csv.Install()
 	date.Install()
 	digest.Install()
 	json.Install()

@@ -129,8 +129,11 @@ func init() {
 		if name == "initialize" {
 			return object.Value{}, ctx.Raise(object.CameoError, "send(:initialize): initialize runs only in new")
 		}
-		// A bang method a class defines is a call like any other.
-		defined := strings.HasSuffix(name, "!") && self.Class().Lookup(name) != nil
+		// A bang method a class defines is a call like any other, and so
+		// is the []= of a class that defines one, which copies, as
+		// assignment reaches it.
+		defined := strings.HasSuffix(name, "!") && self.Class().Lookup(name) != nil ||
+			name == "[]=" && userMethod(self, "[]=") != nil
 		if msg, refused := syntax.Refused(name); (refused || name == "[]=") && !defined {
 			if !refused {
 				msg = "[]= is not supported; use assignment, which copies"
