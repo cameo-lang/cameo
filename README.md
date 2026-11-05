@@ -37,7 +37,9 @@ Ruby, what is the same, what differs, and what cameo does not support.
 A script can `require` the libraries cameo builds in, which
 [doc/stdlib.md](doc/stdlib.md) lists, with every other library of Ruby's
 standard library and its status in cameo: built in, planned, or left out
-and why.
+and why. [doc/coverage.md](doc/coverage.md) measures the first: which of
+ruby/spec's examples pass, what stops the others, and which of those are
+bugs.
 
 ## Status
 

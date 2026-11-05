@@ -1,0 +1,59 @@
+# Task: blocks capture values; class attributes; option parsing in that world
+
+**Started:** 2026-11-05 12:00:00
+**Ended:** 2026-11-05 14:00:00
+**Strategy:** Feature (TDD)
+**Status:** Completed
+**Complexity:** Complex
+**Used Models:** Fable 5.1
+**Token usage (Estimated):** 400k input, 60k output
+
+## Objective
+A test that a proc reads its surrounding binding (#237) made the human
+ask for the opposite: in an immutable language a block binds values, not
+references, so `a = 3; l = proc { a }; a = 4; l.call` must return 3. The
+decisions, taken example by example with the human: every block copies
+the values of its variables when it is written; a block rebinding a
+captured variable is refused by the checker (the Ruby idiom
+`list.each { |x| total += x }` hung `loop do i += 1 … end` forever when it
+silently did nothing); a lambda may call itself by the name it is
+assigned to; any other block reading a name bound after it is refused.
+
+The option parsers were built on handler blocks writing into outer
+variables, so they need a value-returning form. The human wants a class
+body to declare its switches, `on("--verbose") { |o, _| o.with(verbose:
+true) }`, which needs a place on the class to record them: class
+attributes, set with `self.name = v` while the class body runs, the way
+initialize sets fields. The human asked for the docs to be explicit that
+this makes a class deliberately unlike an instance.
+
+## Plan: a stack on top of #236
+1. Class attributes: `attribute :name, default:` in a class body,
+   `self.name = v` from the body or a class method it calls, sealed after.
+2. GetoptLong includes Enumerable and gains `GetoptLong::Options`, written
+   in cameo, with `on` and `parse`; OptionParser's `on` without a block
+   records into `options`.
+3. Blocks capture values, with the checker rule and the forward reference;
+   every test and example rewritten.
+
+## Progress
+- [x] Measured on main: capturing in proc/lambda literals only breaks 4 tests; in every block, 12, plus the loop hang
+- [x] aot folds: reduce, sum and count with a block over times, upto, downto and a Range compile to a loop with an accumulator, so the benchmark scripts, written as folds now, still compile
+- [x] Blocks capture values: Env.snapshot at every block made, Set stops at a captured scope, promises still reach the method scope; the checker refuses a rebinding of a captured variable (frames track their locals; a for body and a group parameter are the frame's own; rescue binds the block's own); Assign.Forward fills a self-recursive lambda; every example, library, test and benchmark script rewritten to reduce, sum, count, each_with_object or while; docs
+- [x] Option libraries (#241): GetoptLong includes Enumerable and takes args:; Getopt::Options in cameo with on and parse (it cannot nest in GetoptLong: a builtin class is shared by every program in the process); OptionParser#options records what a parse saw
+- [x] Class attributes (#240): converter (`attribute`, `self.x = v` in class bodies and class methods), object.Class.Attrs and Open, evalAttrDecl, writeAttr, inheritance, reopening, Class.new; tests; docs
+
+## Outcome
+Blocks capture values (#243), class attributes (#240), the option
+parsers as values with Getopt::Options (#241) and the tests rewritten for
+the rule (#242) landed as a stack. The replay on v0.4.2 put the capture
+of values third, right after the build prerequisite and the AOT folds, so
+every library above it is written for it from the start; it also found
+that the ruby/spec harness's prelude rebound a captured variable, which
+no test had run since.
+
+## Insights
+A rule that refuses what used to be silent (a block writing into its
+surroundings) finds its violations only where something runs: the spec
+harness was not run after the change and broke unseen. A change to the
+checker should run every harness that goes through it.

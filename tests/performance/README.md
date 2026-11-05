@@ -50,3 +50,32 @@ different results.
 Every script compiles at least one method; `tests/performance_test.go`
 holds that, so that a change to the compiler cannot turn a table into the
 interpreter timed twice.
+
+## Results
+
+Mac mini (Apple M4, 10 cores), Go 1.26.4, CRuby 3.4.1, on 2026-11-05, at the
+head of the stack that replayed the work since v0.4.2 (#293). Seconds,
+best of three:
+
+| script | cameo interp | ruby 3.4.1 (100%) | Δ | cameo compiled | ruby 3.4.1 yjit (100%) | Δ |
+|---|---|---|---|---|---|---|
+| 01-ints/fib | 1.125 | 0.188 | 🔴 +500% | 0.011 | 0.029 | 🟢 -62% |
+| 01-ints/tak | 1.996 | 0.282 | 🔴 +607% | 0.018 | 0.046 | 🟢 -61% |
+| 01-ints/tarai | 1.569 | 0.226 | 🔴 +596% | 0.013 | 0.034 | 🟢 -62% |
+| 02-bignums/fact | 0.355 | 0.379 | 🟡 -6% | 0.151 | 0.371 | 🟢 -59% |
+| 03-blocks/times | 3.401 | 1.103 | 🔴 +208% | 0.016 | 0.939 | 🟢 -98% |
+| 03-blocks/triples | 1.217 | 0.351 | 🔴 +247% | 0.019 | 0.241 | 🟢 -92% |
+| 04-floats/mandelbrot | 1.740 | 0.544 | 🔴 +220% | 0.013 | 0.192 | 🟢 -93% |
+| 04-floats/pi | 1.603 | 0.788 | 🔴 +103% | 0.010 | 0.379 | 🟢 -97% |
+| 05-classes/mandelbrot | 1.925 | - | - | 0.013 | - | - |
+| 05-classes/pairs | 7.838 | - | - | 0.074 | - | - |
+| 06-construction/bodies | 2.760 | - | - | 0.527 | - | - |
+| 06-construction/vectors | 1.772 | - | - | 0.173 | - | - |
+
+Compiled, every script is faster than YJIT: the Integer recursions and
+the factorial, which is bignum multiplication in Go's `math/big` either
+way, take two fifths of its time, and the loops over blocks and Floats a
+twelfth to a sixtieth. The interpreter takes from CRuby's own time without
+YJIT, on the factorial, to seven times it, on the Integer recursions.
+Each directory's README holds the table of the run that landed its step,
+on the Mac of that day; this one is the whole suite on one day.

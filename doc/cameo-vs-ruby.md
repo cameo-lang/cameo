@@ -45,10 +45,14 @@ each:
 
 **ruby/spec.** [specs](../specs) sorts all 3841 spec files of
 [ruby/spec](https://github.com/ruby/spec) by what cameo's checker accepts:
-1403 are accepted. None has been run, so this counts the constructs a spec
-uses, not whether its examples pass. Most of the rest require a library cameo
+1403 are accepted. Most of the rest require a library cameo
 does not build in (1006), or use an instance variable (852), mostly in
-mspec's own `before` blocks.
+mspec's own `before` blocks. [specs/run.rb](../specs/run.rb) runs
+`language/` and `core/` under cameo and under CRuby, after rewriting
+mspec's idioms into calls of its prelude, which is why it accepts more
+files than the sort does: of the 2134 examples both Rubies ran, CRuby
+passes all and cameo 1045, and [coverage.md](coverage.md) says what stops
+each of the others, and which of those are bugs.
 
 ## The same as in Ruby
 
