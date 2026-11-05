@@ -20,7 +20,7 @@ func pausedDump(t *testing.T) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	prog.Module("Test").Def("pause", func([]any, map[string]any) (any, error) {
+	prog.Module("Test").Def("pause", func([]any, map[string]any, *cameo.Block) (any, error) {
 		prog.Pause()
 		return nil, nil
 	})

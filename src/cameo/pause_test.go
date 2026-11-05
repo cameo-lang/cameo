@@ -18,7 +18,7 @@ func pausing(t *testing.T, src string) (*Program, *bytes.Buffer) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	prog.Module("Test").Def("pause", func([]any, map[string]any) (any, error) {
+	prog.Module("Test").Def("pause", func([]any, map[string]any, *Block) (any, error) {
 		prog.Pause()
 		return nil, nil
 	})
