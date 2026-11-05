@@ -47,12 +47,16 @@ for the script:</p>
   it.</li>
   <li><code>mod.Def(name, fn)</code> defines the method the script calls
   as <code>Name.name(args)</code>. <code>fn</code> is a
-  <code>cameo.Func</code>, <code>func(args []any, kwargs map[string]any)
-  (any, error)</code>: it gets the positional and keyword arguments as Go
-  values, as <code>ToGo</code> converts them, except that a Symbol is a
-  <code>string</code> and a Hash with String or Symbol keys is a
-  <code>map[string]any</code>. What it returns converts as
-  <code>Call</code>'s arguments do.</li>
+  <code>cameo.Func</code>, <code>func(args []any, kwargs map[string]any,
+  block *cameo.Block) (any, error)</code>: it gets the positional and
+  keyword arguments as Go values, as <code>ToGo</code> converts them,
+  except that a Symbol is a <code>string</code> and a Hash with String or
+  Symbol keys is a <code>map[string]any</code>, and the block of the call
+  as <code>block</code>, nil without one. A Proc among the arguments is a
+  <code>*cameo.Block</code> too; <code>block.Call(args...)</code> runs
+  either with Go values and returns the result as <code>Call</code> does.
+  What <code>fn</code> returns converts as <code>Call</code>'s arguments
+  do, a <code>*cameo.Block</code> back into its Proc.</li>
   <li><code>mod.Exception(name)</code> defines the exception class
   <code>Name::name</code>, a <code>StandardError</code>. Its
   <code>New(format, args...)</code> returns the error that raises it when
@@ -86,7 +90,7 @@ func main() {
 	}
 	text := prog.Module(&quot;Text&quot;)
 	invalid := text.Exception(&quot;Invalid&quot;)
-	text.Def(&quot;shout&quot;, func(args []any, kwargs map[string]any) (any, error) {
+	text.Def(&quot;shout&quot;, func(args []any, kwargs map[string]any, block *cameo.Block) (any, error) {
 		s, ok := args[0].(string)
 		if !ok {
 			return nil, invalid.New(&quot;shout takes a String, not %T&quot;, args[0])
@@ -178,14 +182,14 @@ import (
 
 func init() {
 	cameo.Register(&quot;Geo::Point&quot;, &amp;geopb.Point{}).
-		DefineMethod(&quot;norm2&quot;, func(p *geopb.Point, args []any, kwargs map[string]any) (any, error) {
+		DefineMethod(&quot;norm2&quot;, func(p *geopb.Point, args []any, kwargs map[string]any, block *cameo.Block) (any, error) {
 			return p.X*p.X + p.Y*p.Y, nil
 		}).
-		DefineMethod(&quot;moved&quot;, func(p *geopb.Point, args []any, kwargs map[string]any) (any, error) {
+		DefineMethod(&quot;moved&quot;, func(p *geopb.Point, args []any, kwargs map[string]any, block *cameo.Block) (any, error) {
 			p.X += args[0].(int64) // p is a copy; the changed copy is the result
 			return p, nil
 		}).
-		DefineClassMethod(&quot;origin&quot;, func(args []any, kwargs map[string]any) (any, error) {
+		DefineClassMethod(&quot;origin&quot;, func(args []any, kwargs map[string]any, block *cameo.Block) (any, error) {
 			return &amp;geopb.Point{}, nil
 		})
 }
@@ -289,7 +293,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	prog.Module(&quot;Users&quot;).Def(&quot;find&quot;, func(args []any, kwargs map[string]any) (any, error) {
+	prog.Module(&quot;Users&quot;).Def(&quot;find&quot;, func(args []any, kwargs map[string]any, block *cameo.Block) (any, error) {
 		// The script declares User; Go builds one from its descriptor.
 		desc, err := prog.Descriptor(&quot;User&quot;)
 		if err != nil {

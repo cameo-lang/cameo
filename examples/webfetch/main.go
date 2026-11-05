@@ -47,7 +47,7 @@ func fetchAll(client *http.Client, urls []string) ([]any, error) {
 	}
 	web := prog.Module("Web")
 	fetchError := web.Exception("FetchError")
-	web.Def("fetch", func(args []any, kwargs map[string]any) (any, error) {
+	web.Def("fetch", func(args []any, kwargs map[string]any, block *cameo.Block) (any, error) {
 		url, ok := args[0].(string)
 		if !ok {
 			return nil, fmt.Errorf("Web.fetch takes a URL, not %v", args[0])

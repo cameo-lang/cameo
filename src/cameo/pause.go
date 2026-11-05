@@ -66,7 +66,7 @@ func Resume(data []byte, stdout, stderr io.Writer) (*Program, error) {
 		return nil, err
 	}
 	if err := prog.in.Resume(prog.prog, d); err != nil {
-		return nil, &RunError{Err: err, Message: prog.in.FormatError(err), proto: prog.in.Proto()}
+		return nil, conv{prog.in}.runError(err)
 	}
 	return prog, nil
 }

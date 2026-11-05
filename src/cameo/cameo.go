@@ -124,7 +124,26 @@ func (p *Program) Run() error {
 	if err == nil || errors.Is(err, ErrPaused) {
 		return err
 	}
-	return &RunError{Err: err, Message: p.in.FormatError(err), proto: p.in.Proto()}
+	return conv{p.in}.runError(err)
+}
+
+// runError wraps an error of the interpreter for a Go caller, with the
+// message the cameo binary would print.
+func (c conv) runError(err error) *RunError {
+	return &RunError{Err: err, Message: c.in.FormatError(err), proto: c.in.Proto()}
+}
+
+// toValues converts the arguments of a call from Go.
+func (c conv) toValues(args []any) ([]object.Value, error) {
+	values := make([]object.Value, len(args))
+	for i, a := range args {
+		v, err := c.toValue(a)
+		if err != nil {
+			return nil, err
+		}
+		values[i] = v
+	}
+	return values, nil
 }
 
 // LastValue returns the script's last top-level expression as p shows it,
@@ -168,16 +187,11 @@ func (p *Program) Call(recv any, method string, args ...any) (any, error) {
 			return nil, err
 		}
 	}
-	values := make([]object.Value, len(args))
-	for i, a := range args {
-		v, err := p.ToValue(a)
-		if err != nil {
-			return nil, err
-		}
-		values[i] = v
+	values, err := conv{p.in}.toValues(args)
+	if err != nil {
+		return nil, err
 	}
 	var out object.Value
-	var err error
 	if recv == nil {
 		// A nil receiver is the script's top level, where its own methods
 		// are called without a receiver.
@@ -195,7 +209,7 @@ func (p *Program) Call(recv any, method string, args ...any) (any, error) {
 		out, err = p.in.Call(r, method, values...)
 	}
 	if err != nil {
-		return nil, &RunError{Err: err, Message: p.in.FormatError(err), proto: p.in.Proto()}
+		return nil, conv{p.in}.runError(err)
 	}
 	return p.ToGo(out)
 }
@@ -267,7 +281,8 @@ func (p *Program) Decode(data []byte) (any, error) {
 // ToValue converts a Go value to a cameo value: nil, bool, integers (a
 // *big.Int among them),
 // floats, string, []byte, time.Time, []any, map[string]any or
-// map[any]any, an object.Value as it is, or a proto.Message whose descriptor full name is a
+// map[any]any, an object.Value as it is, a *Block as the Proc it came
+// from, or a proto.Message whose descriptor full name is a
 // loaded class's or an exception class of Ruby's, which becomes an
 // instance or an exception.
 func (p *Program) ToValue(v any) (object.Value, error) { return conv{p.in}.toValue(v) }
@@ -277,7 +292,8 @@ func (p *Program) ToValue(v any) (object.Value, error) { return conv{p.in}.toVal
 // string, []byte, time.Time, []any, map[any]any (with a Symbol key as a
 // string), a proto.Message for an instance (a value of the registered Go
 // type for a native class, a dynamic message otherwise, either a copy) or
-// an exception (a dynamic message, as RunError.Exception gives),
+// an exception (a dynamic message, as RunError.Exception gives), a *Block
+// for a Proc, which Block.Call runs,
 // and the object.Value itself for everything else (symbols, ranges,
 // classes). A Hash with a key that is not comparable in Go, or with two
 // keys that are one in Go, such as :a and "a", is an error.
@@ -293,6 +309,12 @@ func (c conv) toValue(v any) (object.Value, error) {
 		return object.Nil, nil
 	case object.Value:
 		return v, nil
+	case *Block:
+		if v == nil {
+			// The block a host method got without one, given back.
+			return object.Nil, nil
+		}
+		return v.v, nil
 	case bool:
 		return object.Bool(v), nil
 	case int:
@@ -411,6 +433,8 @@ func (c conv) toValue(v any) (object.Value, error) {
 
 func (c conv) toGo(v object.Value) (any, error) {
 	switch v.Kind() {
+	case object.KindProc:
+		return &Block{c: c, v: v}, nil
 	case object.KindBool:
 		v := v.Bool()
 		return bool(v), nil
