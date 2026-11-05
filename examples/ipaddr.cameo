@@ -1,0 +1,20 @@
+# Ruby's ipaddr library: an address with its mask, as a value. Each line
+# prints what Ruby prints.
+require "ipaddr"
+
+net = IPAddr.new("192.168.1.0/24")
+host = IPAddr.new("192.168.1.10")
+p net, host.to_s, net.to_s, net.prefix, net.netmask, host.to_i
+p net.include?(host), net === "192.168.2.1", host.mask(16).to_s, host.succ.to_s, net.to_range.first.to_s, net.to_range.last.to_s
+p IPAddr.new("10.0.0.0/30").to_range.map(&:to_s), [IPAddr.new("10.0.0.2"), IPAddr.new("10.0.0.1")].sort.map(&:to_s)
+p host.private?, IPAddr.new("127.0.0.1").loopback?, IPAddr.new("8.8.8.8").private?, host.reverse
+
+v6 = IPAddr.new("2001:db8::1")
+p v6.to_s, v6.to_string, v6.ipv6?, IPAddr.new("2001:db8::/32").include?(v6), v6.mask(64).to_s
+p IPAddr.new("::ffff:192.168.1.1").native.to_s, host.ipv4_mapped.to_s, IPAddr.new("fe80::1%eth0").zone_id
+
+["256.1.1.1", "1.2.3.4/33", "01.2.3.4"].each do |s|
+  IPAddr.new(s)
+rescue IPAddr::Error => e
+  puts e.class
+end
