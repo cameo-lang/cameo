@@ -26,7 +26,7 @@ only — go in `tests/`.
 
 ```sh
 make deps build        # resolve modules, build bin/cameo
-make tests             # gofmt check, go mod tidy check, go test ./...
+make tests             # gofmt check, go mod tidy check, go test ./... in UTC
 make integration-tests # build, then run tests/integration/test_*.sh
 make lint              # go vet ./...
 make check             # lint, tests and integration tests: what CI runs
