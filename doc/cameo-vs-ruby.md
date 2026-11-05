@@ -243,11 +243,15 @@ mspec's own `before` blocks.
   and `ParseError` with its kinds. `ARGV` holds the script's arguments,
   `cameo script.cameo a -b` (`Program.Args` from Go), and `parse!` with no
   argument reads it. An Array is a value, so `parse!` returns the operands
-  and leaves its argument as it is; the options go through the blocks, or
-  `getopts` returns them as a Hash; `into:` is refused. `getoptlong` is
-  getoptlong 0.2.1: `GetoptLong` with `each`, `get`, `ordering`, `quiet`
-  and its errors, printed as Ruby prints them; the operands are in `rest`
-  rather than left in ARGV.
+  and leaves its argument as it is; `options` holds what the parse saw,
+  by the key `into:` would give each switch, or `getopts` returns them as
+  a Hash; `into:` is refused. `getoptlong` is getoptlong 0.2.1:
+  `GetoptLong` with `each`, `get`, `ordering`, `quiet` and its errors,
+  printed as Ruby prints them; the operands are in `rest` rather than left
+  in ARGV, `args:` gives the arguments to read instead of ARGV, and it
+  includes `Enumerable`. `Getopt::Options`, written in cameo, is a base
+  class whose body declares switches with `on` and whose `parse` folds the
+  command line into an instance; Ruby has nothing like it.
   `matrix` is Ruby 3.4's matrix 0.4.2: `Matrix` and `Vector` with their
   construction, arithmetic, `determinant`, `inverse`, `rank`, `trace`,
   `minor`, the predicates, `inner_product`, `cross_product`, `norm` and

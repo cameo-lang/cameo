@@ -84,6 +84,19 @@ type parser struct {
 	hasHelp     bool
 	hasVersion  bool
 	defaultArgv object.Value
+	// options holds what the last parse saw, by the key Ruby's into:
+	// gives a switch: the first long name as a symbol, the short one
+	// without one. A block cannot write into its surroundings, so parse
+	// records every switch here, and calls the block as well.
+	options *object.Map
+}
+
+// key is the name options records a switch under.
+func (s *sw) key() object.Value {
+	if len(s.longs) > 0 {
+		return object.Symbol(s.longs[0])
+	}
+	return object.Symbol(s.shorts[0])
 }
 
 func parserOf(v object.Value) *parser { return v.Instance().Message.(*parser) }
@@ -521,6 +534,9 @@ func (p *parser) parse(ctx object.Context, argv []object.Value, order bool, stor
 		if store != nil {
 			store(s, v)
 		}
+		if p.options != nil {
+			p.options = p.options.Put(s.key(), v)
+		}
 		if !s.block.IsZero() && !s.block.IsNil() {
 			_, err := ctx.Yield(s.block, v)
 			return err
@@ -828,7 +844,7 @@ func Install() {
 		return func(ctx object.Context, p *parser, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			if kw != nil {
 				if _, ok := kw.Get(object.Symbol("into")); ok {
-					return object.Value{}, ctx.Raise(object.ArgumentError, "into: fills a Hash in place, which a value cannot be; take the options from the blocks, or use getopts, which returns the Hash")
+					return object.Value{}, ctx.Raise(object.ArgumentError, "into: fills a Hash in place, which a value cannot be; read options after the parse, or use getopts, which returns the Hash")
 				}
 			}
 			var argv []object.Value
@@ -847,6 +863,7 @@ func Install() {
 			default:
 				argv = args
 			}
+			p.options = object.NewMap()
 			rest, err := p.parse(ctx, argv, order, nil)
 			if err != nil {
 				return object.Value{}, err
@@ -854,6 +871,12 @@ func Install() {
 			return object.NewList(rest...), nil
 		}
 	}
+	def("options", 0, func(ctx object.Context, p *parser, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if p.options == nil {
+			return object.MapValue(object.NewMap()), nil
+		}
+		return object.MapValue(p.options), nil
+	})
 	for _, name := range []string{"parse", "parse!", "permute", "permute!"} {
 		def(name, -1, parseWith(false))
 	}

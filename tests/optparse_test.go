@@ -227,6 +227,31 @@ p OptionParser.new.getopts(%w[-v --name=Bob x], "v", "name:")`, "-n", "Ann", "fi
 	assert.Equals(t, out, "[\"file\"]\n\"Bob\"\n[\"-n\", \"Ann\", \"file\", \"--name=Bob\"]\n{\"v\" => true, \"name\" => \"Bob\"}\n")
 }
 
+func TestOptionParserRecordsWhatItParsedInOptions(t *testing.T) {
+	out := runScript(t, `require "optparse"
+o = OptionParser.new do |op|
+  op.on("-v", "--[no-]verbose")
+  op.on("-n", "--name NAME")
+  op.on("-c", "--count N", Integer)
+  op.on("-x")
+  op.on("--level LEVEL", [:low, :high]) { |v| puts "level #{v}" }
+end
+p o.options
+p o.parse(%w[-v --name=Ann -c 3 -x --level high file]), o.options
+p o.parse(%w[--no-verbose]), o.options
+p o.options[:name], o.options.fetch(:count, 1)
+`)
+	assert.Equals(t, out, `{}
+level high
+["file"]
+{verbose: true, name: "Ann", count: 3, x: true, level: :high}
+[]
+{verbose: false}
+nil
+1
+`)
+}
+
 func TestOptionParserRefusesInto(t *testing.T) {
 	out := runScript(t, `require "optparse"
 begin
@@ -234,7 +259,7 @@ begin
 rescue ArgumentError => e
   puts e.message
 end`)
-	assert.Equals(t, out, "into: fills a Hash in place, which a value cannot be; take the options from the blocks, or use getopts, which returns the Hash\n")
+	assert.Equals(t, out, "into: fills a Hash in place, which a value cannot be; read options after the parse, or use getopts, which returns the Hash\n")
 }
 
 func TestOptionParserHelpAndVersionExit(t *testing.T) {

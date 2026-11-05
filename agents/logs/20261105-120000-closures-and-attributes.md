@@ -38,4 +38,5 @@ this makes a class deliberately unlike an instance.
 
 ## Progress
 - [x] Measured on main: capturing in proc/lambda literals only breaks 4 tests; in every block, 12, plus the loop hang
-- [x] Class attributes: converter (`attribute`, `self.x = v` in class bodies and class methods), object.Class.Attrs and Open, evalAttrDecl, writeAttr, inheritance, reopening, Class.new; tests; docs
+- [x] Option libraries (#241): GetoptLong includes Enumerable and takes args:; Getopt::Options in cameo with on and parse (it cannot nest in GetoptLong: a builtin class is shared by every program in the process); OptionParser#options records what a parse saw
+- [x] Class attributes (#240): converter (`attribute`, `self.x = v` in class bodies and class methods), object.Class.Attrs and Open, evalAttrDecl, writeAttr, inheritance, reopening, Class.new; tests; docs

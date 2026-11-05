@@ -9,6 +9,7 @@
 package getoptlong
 
 import (
+	_ "embed"
 	"strings"
 
 	"github.com/cameo-lang/cameo/src/object"
@@ -200,10 +201,21 @@ func strings2(ss []string) object.Value {
 	return object.NewList(out...)
 }
 
+// Source is Getopt::Options and Getopt::Switch, written in cameo: a class
+// body declares its switches with on, and parse folds the command line
+// into an instance. require runs it at the top level.
+//
+//go:embed getoptlong.cameo
+var Source string
+
 // Install defines GetoptLong. lib.Install calls it once.
 func Install() {
 	c := class
 	object.DefineNative("GetoptLong", object.ClassValue(c))
+	// each yields [option, argument] pairs, so reduce, map and to_a fold
+	// the command line into a value; a block cannot write into its
+	// surroundings.
+	c.Include(object.Enumerable)
 	c.Consts["VERSION"] = object.String("0.2.1")
 	c.Consts["NO_ARGUMENT"] = object.Int(noArgument)
 	c.Consts["REQUIRED_ARGUMENT"] = object.Int(requiredArgument)
@@ -262,9 +274,26 @@ func Install() {
 			}
 			g.options = append(g.options, o)
 		}
-		if v, ok := ctx.Const("ARGV"); ok {
-			for _, e := range v.List().Elems {
-				g.args = append(g.args, e.Str())
+		// args: gives the arguments to read instead of ARGV, which Ruby's
+		// has no way to say, since it takes them out of ARGV itself.
+		argv, given := object.Value{}, false
+		if kw != nil {
+			argv, given = kw.Get(object.Symbol("args"))
+		}
+		if !given {
+			argv, given = ctx.Const("ARGV")
+		}
+		if given {
+			list, err := stdlib.ToList(ctx, argv)
+			if err != nil {
+				return object.Value{}, err
+			}
+			for _, e := range list {
+				s, err := stdlib.WantString(ctx, e)
+				if err != nil {
+					return object.Value{}, err
+				}
+				g.args = append(g.args, s)
 			}
 		}
 		return object.InstanceValue(&object.Instance{Cls: c, Message: g}), nil

@@ -140,3 +140,49 @@ rescue RuntimeError => e
 end`)
 	assert.Equals(t, out, "0\n1\n2\n1\n0\n2\nGetoptLong::Error\nStandardError\n\"0.2.1\"\noption redefined `--help'\nan invalid option `help'\nno argument-flag\nno argument-flag\nnil\ntrue\n1\nfalse\ninvoke ordering=, but option processing has already started\n")
 }
+
+func TestGetoptLongIsEnumerableAndTakesItsArguments(t *testing.T) {
+	out := runScript(t, `require "getoptlong"
+opts = GetoptLong.new(["--name", "-n", GetoptLong::REQUIRED_ARGUMENT], ["--verbose", GetoptLong::NO_ARGUMENT], args: %w[-n Ann --verbose f1 f2])
+p opts.reduce([]) { |acc, (opt, arg)| acc + [[opt, arg]] }, opts.rest, opts.to_a
+p GetoptLong.new(["--x", GetoptLong::NO_ARGUMENT], args: %w[--x a]).map { |opt, _| opt }
+p GetoptLong.new(["--x", GetoptLong::NO_ARGUMENT]).to_a, ARGV
+`)
+	assert.Equals(t, out, "[[\"--name\", \"Ann\"], [\"--verbose\", \"\"]]\n[\"f1\", \"f2\"]\n[]\n[\"--x\"]\n[]\n[]\n")
+}
+
+const getoptOptionsScript = `require "getoptlong"
+class Options < Getopt::Options
+  bool :verbose, default: false
+  string :name, default: "world"
+  int :count, default: 1
+  string :level, default: "none"
+
+  on("--verbose", "-v") { |o, _| o.with(verbose: true) }
+  on("--name", "-n", arg: true) { |o, arg| o.with(name: arg) }
+  on("--count", "-c", arg: true) { |o, arg| o.with(count: Integer(arg)) }
+  on("--level", "-l", arg: :optional) { |o, arg| o.with(level: arg.empty? ? "some" : arg) }
+end
+`
+
+func TestGetoptOptionsDeclaresSwitchesInAClassBody(t *testing.T) {
+	out := runScript(t, getoptOptionsScript+`
+options, files = Options.parse(%w[-v --name=Ann -c 2 a.txt -l --level=high -- -x])
+p options, files
+p Options.switches.map(&:names), Getopt::Options.switches
+begin
+  Options.parse(%w[--bogus], quiet: true)
+rescue GetoptLong::InvalidOption => e
+  puts e.message
+end
+`)
+	assert.Equals(t, out, `Options(verbose: true, name: "Ann", count: 2, level: "high")
+["a.txt", "-x"]
+[["--verbose", "-v"], ["--name", "-n"], ["--count", "-c"], ["--level", "-l"]]
+[]
+unrecognized option `+"`"+`--bogus'
+`)
+	out, stderr := runArgs(t, getoptOptionsScript+"p Options.parse\n", "-n", "Bob", "file")
+	assert.Equals(t, out, "[Options(verbose: false, name: \"Bob\", count: 1, level: \"none\"), [\"file\"]]\n")
+	assert.Equals(t, stderr, "")
+}
