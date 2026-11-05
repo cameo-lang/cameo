@@ -8,6 +8,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/benchmark"
 	"github.com/cameo-lang/cameo/src/lib/cgi"
 	"github.com/cameo-lang/cameo/src/lib/date"
+	"github.com/cameo-lang/cameo/src/lib/digest"
 	"github.com/cameo-lang/cameo/src/lib/json"
 	"github.com/cameo-lang/cameo/src/lib/minispec"
 	"github.com/cameo-lang/cameo/src/lib/pathname"
@@ -23,18 +24,25 @@ import (
 // core installs, under src/stdlib, is registered here as well; the
 // evaluator's own, debug and cameo/runner, are its.
 var Libraries = map[string][]string{
-	"benchmark":  nil,
-	"cgi":        {"cgi/escape", "cgi/util"},
-	"cgi/escape": nil,
-	"cgi/util":   {"cgi/escape"},
-	"date":       nil,
-	"json":       nil,
-	"minispec":   nil,
-	"pathname":   nil,
-	"pp":         nil,
-	"set":        nil,
-	"time":       nil,
-	"uri":        nil,
+	"benchmark":   nil,
+	"cgi":         {"cgi/escape", "cgi/util"},
+	"cgi/escape":  nil,
+	"cgi/util":    {"cgi/escape"},
+	"date":        nil,
+	"digest":      {"digest/md5", "digest/sha1", "digest/sha2"},
+	"digest/md5":  {"digest"},
+	"digest/sha1": {"digest"},
+	"digest/sha2": {"digest"},
+	"json":        nil,
+	"minispec":    nil,
+	// openssl is accepted for the OpenSSL::HMAC and OpenSSL::Digest names
+	// digest defines; a script written for openssl begins with it.
+	"openssl":  {"digest"},
+	"pathname": nil,
+	"pp":       nil,
+	"set":      nil,
+	"time":     nil,
+	"uri":      nil,
 }
 
 // Sources are the libraries written in cameo, by the name require
@@ -52,6 +60,7 @@ func Install() {
 	benchmark.Install()
 	cgi.Install()
 	date.Install()
+	digest.Install()
 	json.Install()
 	pathname.Install()
 	time.Install()
