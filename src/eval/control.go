@@ -109,7 +109,25 @@ func (in *Interp) noMethod(recv object.Value, name string, args []object.Value, 
 	}
 	attrs["args"] = object.NewList(append([]object.Value{}, args...)...)
 	return &object.Exception{Cls: object.NoMethodError, Line: line, Attrs: attrs,
-		Message: fmt.Sprintf("undefined method '%s' for %s%s", name, typeName(recv), in.requireHint(name))}
+		Message: fmt.Sprintf("undefined method '%s' for %s%s%s", name, typeName(recv), in.requireHint(name), ioHint(recv, name))}
+}
+
+// ioHint says how to allow the I/O a class method of a module of I/O
+// needs, when recv extends one that defines name: File.read without file
+// I/O. "" otherwise.
+func ioHint(recv object.Value, name string) string {
+	cls, ok := recv.AsClass()
+	if !ok {
+		return ""
+	}
+	for k := cls; k != nil; k = k.Super {
+		for _, e := range k.Extends {
+			if e.IOKind != "" && e.Lookup(name) != nil {
+				return fmt.Sprintf(": the host allows no %s I/O; run the script with cameo --io=%s, or let the program say AllowIO(%q)%s", e.IOKind, e.IOKind, e.IOKind, map[bool]string{true: " and give it a file system with FileSystem"}[e.IOKind == "file"])
+			}
+		}
+	}
+	return ""
 }
 
 // requireHint says which library to require for name, when a library the
