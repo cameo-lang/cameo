@@ -11,6 +11,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/minispec"
 	"github.com/cameo-lang/cameo/src/lib/pathname"
 	"github.com/cameo-lang/cameo/src/lib/time"
+	"github.com/cameo-lang/cameo/src/lib/uri"
 )
 
 // Libraries are the names require accepts, each with the libraries it
@@ -31,6 +32,7 @@ var Libraries = map[string][]string{
 	"pp":         nil,
 	"set":        nil,
 	"time":       nil,
+	"uri":        nil,
 }
 
 // Sources are the libraries written in cameo, by the name require
@@ -51,4 +53,5 @@ func Install() {
 	pathname.Install()
 	time.Install()
 	minispec.Install()
+	uri.Install()
 }

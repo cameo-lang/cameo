@@ -10,8 +10,9 @@ import (
 
 // userMethod finds the method name that v's own class gives it: one a
 // script defined, with a body, or, on an instance, a native one a library
-// defines on its class, which to_s, inspect and <=> reach as a script's.
-// Object's own natives are the defaults the evaluator renders itself.
+// defines on its class, which to_s, inspect, == and <=> reach as a
+// script's. Object's own natives are the defaults the evaluator renders
+// itself, and a module's, Comparable's ==, is not a class's own.
 func userMethod(v object.Value, name string) *object.Method {
 	m := v.Class().Lookup(name)
 	if m == nil {
@@ -20,7 +21,7 @@ func userMethod(v object.Value, name string) *object.Method {
 	if m.Body != nil {
 		return m
 	}
-	if v.Kind() == object.KindInstance && m.Native != nil && m.Owner != object.ObjectClass && m.Owner != object.BasicObjectClass {
+	if v.Kind() == object.KindInstance && m.Native != nil && !m.Owner.IsModule && m.Owner != object.ObjectClass && m.Owner != object.BasicObjectClass {
 		return m
 	}
 	return nil

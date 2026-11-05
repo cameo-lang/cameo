@@ -110,7 +110,7 @@ func NeedBlock(ctx object.Context, block object.Value, name string) error {
 }
 
 // toList reads an iterable argument as a list of elements.
-func toList(ctx object.Context, v object.Value) ([]object.Value, error) {
+func ToList(ctx object.Context, v object.Value) ([]object.Value, error) {
 	switch v.Kind() {
 	case object.KindList:
 		v := v.List()

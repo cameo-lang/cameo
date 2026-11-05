@@ -1,0 +1,53 @@
+#<URI::HTTPS https://user:pw@example.com:8443/a/b%20c/../d?x=1&y=two#frag>
+URI::HTTPS
+["https", "user:pw", "user", "pw", "example.com", 8443, "/a/b%20c/../d", "x=1&y=two", "frag", nil]
+["example.com", 443, true, false, "/a/b%20c/../d?x=1&y=two", "example.com:8443", "https://example.com:8443"]
+#<URI::HTTP http://example.com/>
+"/"
+URI::MailTo
+"i"
+"/etc/hosts"
+URI::WS
+"bar"
+"example.com"
+URI::Generic
+["http", "u:p", "h", "1", nil, "/p", nil, "q", "f"]
+"[::1]"
+"::1"
+#<URI::HTTP http://x.com/b>
+#<URI::HTTP http://x.com/a?q=1&r=a%20b>
+#<URI::HTTP http://x.com:444/b?q=1&r=a%20b>
+undefined method 'path=' for an instance of URI::HTTP: a URI is parsed, joined, merged or built, not changed
+bad component(expected absolute path component): no-slash
+bad component(expected port component): "x"
+bad URI (is not URI?): "http://exa mple.com"
+bad URI (is not URI?): ":"
+bad URI (is not URI?): "http://[::1"
+URI must be ascii only "http://x.com/\u00FC"
+#<URI::HTTP http://a/b/g>
+#<URI::HTTP http://a/b/c/g?y#s>
+#<URI::HTTP http://a/b/y>
+#<URI::Generic ../x/y>
+#<URI::Generic ../c/d>
+"http://x.com/c"
+"http://x.com/a/b/"
+both URI are relative
+false
+true
+true
+"http://example.com/"
+"http://example.com/p?a=1"
+"https://example.com:8443/p#f"
+"mailto:joe@example.com?subject=hi"
+[["body", "x"]]
+[:scheme, :userinfo, :host, :port, :registry, :path, :opaque, :query, :fragment]
+80
+["FILE", "FTP", "HTTP", "HTTPS", "LDAP", "LDAPS", "MAILTO", "WS", "WSS"]
+"a=1&b=x+y%26z&c=1&c=2&d&e=%C3%BC"
+[["a", "1"], ["b", "x y&z"], ["c", "1"], ["c", "2"], ["d", ""], ["e", "ü"]]
+"a+b%26c%3Dd%2F%C3%A9~%2A-._%21"
+"a b&c"
+"a%20b%2Bc"
+"a b+c"
+["http://a.com/x", "https://b.org/y?z=1,", "mailto:me@x.org."]
+invalid %-encoding (%ZZ)

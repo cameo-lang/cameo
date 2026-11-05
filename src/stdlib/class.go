@@ -1,6 +1,9 @@
 package stdlib
 
-import "github.com/cameo-lang/cameo/src/object"
+import (
+	"github.com/cameo-lang/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/protogen"
+)
 
 // installClass defines the methods of classes and modules themselves.
 func installClass() {
@@ -119,4 +122,36 @@ func installClass() {
 		}
 		return object.NewList(names...), nil
 	})
+}
+
+// FieldDecl is a field a class the Go binary defines declares: its name
+// and its scalar type.
+type FieldDecl struct{ Name, Type string }
+
+// DeclareFields gives a class the Go binary defines its fields, numbered
+// as a script's declaration numbers them, so its values cross to a host
+// as a script's class's do.
+func DeclareFields(c *object.Class, fields ...FieldDecl) {
+	taken := func(number int64) bool {
+		for _, f := range c.Fields {
+			if f.Number == number {
+				return true
+			}
+		}
+		return false
+	}
+	for _, d := range fields {
+		f := &object.Field{Name: d.Name, Number: protogen.FieldNumber(d.Name, taken), Type: object.ScalarField(d.Type), Owner: c}
+		c.FieldIndex[d.Name] = len(c.Fields)
+		c.Fields = append(c.Fields, f)
+	}
+}
+
+// InheritFields gives a subclass the Go binary defines its superclass's
+// fields.
+func InheritFields(c *object.Class) {
+	for _, f := range c.Super.Fields {
+		c.FieldIndex[f.Name] = len(c.Fields)
+		c.Fields = append(c.Fields, f)
+	}
 }
