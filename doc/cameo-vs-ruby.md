@@ -82,6 +82,15 @@ each of the others, and which of those are bugs.
   `__send__`, which refuse a mutating method as a call
   does; `Class.new(Base) { … }`;
   `def self.x` in a class body.
+- **Asking what a value answers**: `methods`, a class's
+  `singleton_methods` and `instance_methods`, each with Ruby's argument to
+  leave out what is inherited (`File.singleton_methods` lists what `File`
+  can do), and `respond_to?`. Unlike Ruby's, the lists are sorted. They
+  leave out the functions of Kernel (below) and, by name, the four methods
+  Ruby keeps private that a script's class may define, `initialize`,
+  `initialize_copy`, `method_missing` and `respond_to_missing?`, though
+  `respond_to?` says true for those; in irb, Tab after a dot lists the
+  same names.
 - **Kernel's functions are private**, as in Ruby: `puts`, `p`, `print`,
   `require`, `raise`, `format`, `rand`, `loop`, `catch`, `exit`, the
   conversions `Integer()`, `Array()` and the rest are Kernel's, which
