@@ -4,11 +4,6 @@ A small language with Ruby's syntax, run by an interpreter written in Go.
 Every value is immutable, every object is a protobuf message, and a script
 hands work to goroutines with `async` and collects it with `await`.
 
-cameo was called amber up to v0.1.1. What [doc/history](doc/history) and
-[agents/logs](agents/logs) say was written under that name, and their paths
-are the old ones: `src/amber` is now `src/cameo`, a `.arb` script a
-`.cameo` one.
-
 ```ruby
 class Point
   int :x, :y
@@ -30,7 +25,10 @@ job = async a, :+, b                      # a.+(b) on another goroutine; job is 
 puts await job                            # Point(x: 20, y: 12)
 ```
 
-The language, its differences from Ruby, the object model, the async model
+The documentation is on the site, [cameo-lang.github.io](https://cameo-lang.github.io):
+the language for someone who knows Ruby, the async model, a Go program
+embedding the interpreter, and native methods. In the repository, the
+language, its differences from Ruby, the object model, the async model
 and the protobuf representation are in
 [doc/design/cameo.md](doc/design/cameo.md), which is also the plan: the
 interpreter is built in the milestones listed there.
