@@ -1,0 +1,146 @@
+# frankie is a Sinatra-like web framework written in cameo. An app is a
+# value: each verb returns a new app with the route, so a script builds
+# one up and serves it at the end:
+#
+#   require "frankie"
+#   app = Frankie.app
+#   app = app.get("/hi/:name") { |req| "hi #{req.params["name"]}" }
+#   app.serve(port: 8888)
+#
+# A route's block gets a Frankie::Request and returns the body as a
+# String, a status as an Integer, [status, body] or [status, headers,
+# body], as a Sinatra route does; HTTPD.response reads the forms, for a
+# spec as for the server. app.request(method, path, params:, headers:,
+# body:) returns the Frankie::Response of one request without the
+# network, for a spec. serve runs the app on io/httpd, the one I/O
+# frankie does, and only in a program that allows network I/O.
+require "io/httpd"
+require "uri"
+
+module Frankie
+  # Request is what a route's block gets: params holds the query string's
+  # and the path's captures (:name), as Strings.
+  class Request
+    string :method, :path, :query, :body
+    map :params, key: :string, value: :string
+    map :headers, key: :string, value: :string
+  end
+
+  # Response is what app.request returns.
+  class Response
+    int :status
+    map :headers, key: :string, value: :string
+    string :body
+  end
+
+  # Route is one verb and path pattern with its block; a segment ":name"
+  # of the pattern captures the request's segment.
+  class Route
+    string :method, :path
+    proc :handler
+
+    # match returns the parameters the pattern captures from path, and
+    # nil when the route does not match: segment for segment, a trailing
+    # or a doubled slash included, as Sinatra matches.
+    def match(method, path)
+      return nil unless self.method == method
+      mine = self.path.split("/", -1)
+      theirs = path.split("/", -1)
+      return nil unless mine.size == theirs.size
+      pairs = mine.zip(theirs)
+      return nil if pairs.any? { |pattern, segment| !pattern.start_with?(":") && pattern != segment }
+      pairs.select { |pattern, _| pattern.start_with?(":") }.to_h { |pattern, segment| [pattern[1..], segment] }
+    end
+  end
+
+  class App
+    list :routes, of: Route
+    int :port, default: 4567
+    string :bind, default: "127.0.0.1"
+    bool :quiet, default: false
+
+    def get(path, &handler)
+      route("GET", path, &handler)
+    end
+
+    def post(path, &handler)
+      route("POST", path, &handler)
+    end
+
+    def put(path, &handler)
+      route("PUT", path, &handler)
+    end
+
+    def patch(path, &handler)
+      route("PATCH", path, &handler)
+    end
+
+    def delete(path, &handler)
+      route("DELETE", path, &handler)
+    end
+
+    # route returns the app with a route for method and path added; the
+    # first route added that matches a request handles it.
+    def route(method, path, &handler)
+      raise ArgumentError, "#{method.downcase}(#{path.inspect}) takes a block that returns the response" unless handler
+      with(routes: routes + [Route.new(method: method, path: path, handler: handler)])
+    end
+
+    # set returns the app with settings changed: set(port: 8888, quiet: true).
+    def set(port: self.port, bind: self.bind, quiet: self.quiet)
+      with(port: port, bind: bind, quiet: quiet)
+    end
+
+    # request returns the Response of one request without the network.
+    # The path is percent-decoded, as the server's is before it reaches
+    # the app, so a spec sees what the wire sees.
+    def request(method, path, params: {}, headers: {}, body: "")
+      decoded = path.split("/", -1).map { |segment| URI.decode_uri_component(segment) }.join("/")
+      status, response_headers, response_body = dispatch(method, decoded, "", params, headers, body)
+      Response.new(status: status, headers: response_headers, body: response_body)
+    end
+
+    # serve runs the app on io/httpd until the host stops the run, after
+    # applying the settings given, and says where it serves once the
+    # socket is open. It returns false without serving where the program
+    # allows no network I/O, saying so on standard error.
+    def serve(**settings)
+      app = set(**settings)
+      unless HTTPD.allowed?
+        warn "frankie does not serve: this program allows no network I/O; run it with cameo --io=network"
+        return false
+      end
+      HTTPD.serve(port: app.port, bind: app.bind, quiet: app.quiet, listening: ->(url) { puts "frankie serves on #{url}" }) do |req|
+        app.dispatch(req.method, req.path, req.query, {}, req.headers, req.body)
+      end
+      true
+    end
+
+    # dispatch returns [status, headers, body] for a request: the first
+    # matching route's block, given the Request, through HTTPD.response, or
+    # a 404; a HEAD is its GET with an empty body, and a query string that
+    # is not one is a 400. An exception the block raises is the caller's:
+    # a spec sees it, and io/httpd answers 500 with it.
+    def dispatch(method, path, query, params, headers, body)
+      verb = method == "HEAD" ? "GET" : method
+      begin
+        from_query = URI.decode_www_form(query).to_h
+      rescue ArgumentError
+        return [400, {"Content-Type" => "text/plain;charset=utf-8"}, "Bad Request"]
+      end
+      routes.each do |route|
+        captures = route.match(verb, path)
+        next unless captures
+        request = Request.new(method: method, path: path, query: query, params: from_query.merge(params).merge(captures), headers: headers, body: body)
+        status, response_headers, response_body = HTTPD.response(route.handler.call(request))
+        return [status, response_headers, method == "HEAD" ? "" : response_body]
+      end
+      [404, {"Content-Type" => "text/plain;charset=utf-8"}, "Not Found"]
+    end
+  end
+
+  # app is a new app with no routes and the default settings.
+  def self.app
+    App.new
+  end
+end

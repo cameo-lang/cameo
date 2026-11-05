@@ -1,0 +1,70 @@
+# What a route returns: a String is the body with status 200, an Integer
+# a status with an empty body, [status, body] and [status, headers, body]
+# as in Sinatra. A route's params are its path captures and the query
+# string, as Strings; its headers the request's.
+require "frankie"
+
+app = Frankie.app
+
+app = app.get("/users/:id") do |req|
+  id = req.params["id"].to_i
+  if id > 100
+    [404, "no user #{id}"]
+  else
+    [200, {"Content-Type" => "text/plain", "X-User" => id.to_s}, "user #{id}"]
+  end
+end
+
+app = app.get("/search") do |req|
+  "#{req.params["q"]} in #{req.params.fetch("scope", "everything")}"
+end
+
+app = app.delete("/users/:id") do
+  204
+end
+
+app = app.get("/agent") do |req|
+  req.headers.fetch("User-Agent", "unknown")
+end
+
+require "minispec"
+
+describe "GET /users/:id" do
+  it "sets the status, the headers and the body" do
+    res = app.request("GET", "/users/7")
+    assert_equal 200, res.status
+    assert_equal "text/plain", res.headers["Content-Type"]
+    assert_equal "7", res.headers["X-User"]
+    assert_equal "user 7", res.body
+  end
+
+  it "sets the status and the body" do
+    res = app.request("GET", "/users/101")
+    assert_equal [404, "no user 101"], [res.status, res.body]
+    assert_equal "text/html;charset=utf-8", res.headers["Content-Type"]
+  end
+end
+
+describe "GET /search" do
+  it "reads the query string" do
+    assert_equal "ruby in everything", app.request("GET", "/search", params: {"q" => "ruby"}).body
+    assert_equal "ruby in gems", app.request("GET", "/search", params: {"q" => "ruby", "scope" => "gems"}).body
+  end
+end
+
+describe "DELETE /users/:id" do
+  it "returns a status alone" do
+    res = app.request("DELETE", "/users/7")
+    assert_equal 204, res.status
+    assert_empty res.body
+  end
+end
+
+describe "GET /agent" do
+  it "reads a header" do
+    assert_equal "curl", app.request("GET", "/agent", headers: {"User-Agent" => "curl"}).body
+    assert_equal "unknown", app.request("GET", "/agent").body
+  end
+end
+
+app.serve

@@ -15,6 +15,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/delegate"
 	"github.com/cameo-lang/cameo/src/lib/digest"
 	"github.com/cameo-lang/cameo/src/lib/forwardable"
+	"github.com/cameo-lang/cameo/src/lib/frankie"
 	"github.com/cameo-lang/cameo/src/lib/getoptlong"
 	"github.com/cameo-lang/cameo/src/lib/io/httpd"
 	"github.com/cameo-lang/cameo/src/lib/ipaddr"
@@ -103,6 +104,7 @@ var IOKinds = map[string]string{"io/httpd": "network"}
 // start. A library listed here needs no entry in Libraries, and may have
 // one for what it loads along with it.
 var Sources = map[string]string{
+	"frankie":    frankie.Source,
 	"getoptlong": getoptlong.Source,
 	"abbrev":     abbrev.Source,
 	"shellwords": shellwords.Source,
