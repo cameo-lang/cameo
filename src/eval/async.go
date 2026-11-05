@@ -519,6 +519,7 @@ func (in *Interp) worker() *Interp {
 		cameoTop:             top.cameoTop,
 		code:                 in.code,
 		stop:                 in.stop,
+		allowIO:              in.allowIO,
 		exits:                in.exits,
 		states:               in.states,
 		snap:                 top,

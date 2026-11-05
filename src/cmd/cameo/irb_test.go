@@ -68,7 +68,7 @@ func TestDebugCommandStopsFirstAndQuits(t *testing.T) {
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
-	if status := debugScript(script, false, strings.NewReader("n\nq\n"), &stdout, &stderr); status != 0 {
+	if status := debugScript(script, nil, false, strings.NewReader("n\nq\n"), &stdout, &stderr); status != 0 {
 		t.Fatalf("exit status %d, stderr:\n%s", status, stderr.String())
 	}
 	if !strings.Contains(stdout.String(), "=>#0\t<main> at "+script+":1") || !strings.Contains(stdout.String(), "(rdbg) 1\n") || strings.Contains(stdout.String(), "(rdbg) 2\n") {

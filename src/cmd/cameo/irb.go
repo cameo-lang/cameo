@@ -124,7 +124,7 @@ func loadIRB(path string, stdout, stderr io.Writer) (prog *cameo.Program, status
 // its first statement and talks on stdin and stdout; see doc/debugger.md.
 // It returns the process exit status: the script's, or 0 when the user
 // quit the debugger.
-func debugScript(path string, pause bool, stdin io.Reader, stdout, stderr io.Writer) int {
+func debugScript(path string, allowIO []string, pause bool, stdin io.Reader, stdout, stderr io.Writer) int {
 	src, err := os.ReadFile(path)
 	if err != nil {
 		fmt.Fprintln(stderr, err)
@@ -141,5 +141,5 @@ func debugScript(path string, pause bool, stdin io.Reader, stdout, stderr io.Wri
 		return 1
 	}
 	prog.Debug(stdin, stdout)
-	return runProgram(prog, pause, stderr)
+	return runProgram(prog, allowIO, pause, stderr)
 }
