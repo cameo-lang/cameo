@@ -201,7 +201,7 @@ func stringsUpto(lo, hi string, exclusive, endless bool) iter.Seq[string] {
 			e, err2 := strconv.ParseInt(hi, 10, 64)
 			if err1 == nil && (endless || err2 == nil) {
 				for ; endless || b < e || !exclusive && b == e; b++ {
-					if !yield(padDigits(b, len(lo))) {
+					if !yield(PadDigits(b, len(lo))) {
 						return
 					}
 				}
@@ -254,8 +254,9 @@ func allDigits(s string) bool {
 	return true
 }
 
-// padDigits formats n with at least width digits, as C's "%.*d" does.
-func padDigits(n int64, width int) string {
+// PadDigits returns n in decimal with at least width digits, zero-padded,
+// as C's "%.*d" does.
+func PadDigits(n int64, width int) string {
 	s := strconv.FormatInt(n, 10)
 	if len(s) < width {
 		s = strings.Repeat("0", width-len(s)) + s
