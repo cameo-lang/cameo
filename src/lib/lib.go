@@ -25,6 +25,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/shellwords"
 	"github.com/cameo-lang/cameo/src/lib/singleton"
 	"github.com/cameo-lang/cameo/src/lib/stringio"
+	"github.com/cameo-lang/cameo/src/lib/strscan"
 	"github.com/cameo-lang/cameo/src/lib/time"
 	"github.com/cameo-lang/cameo/src/lib/tsort"
 	unicodenormalize "github.com/cameo-lang/cameo/src/lib/unicode_normalize"
@@ -69,6 +70,7 @@ var Libraries = map[string][]string{
 	"set":                         nil,
 	"singleton":                   nil,
 	"stringio":                    nil,
+	"strscan":                     nil,
 	"time":                        nil,
 	"unicode_normalize":           {"unicode_normalize/normalize"},
 	"unicode_normalize/normalize": nil,
@@ -116,4 +118,5 @@ func Install() {
 	prime.Install()
 	singleton.Install()
 	stringio.Install()
+	strscan.Install()
 }

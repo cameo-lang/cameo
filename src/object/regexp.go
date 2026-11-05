@@ -4,6 +4,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"unicode/utf8"
 
 	"github.com/cameo-lang/cameo/src/rx"
@@ -31,8 +32,13 @@ type Regexp struct {
 	// Names are the names of the named groups, one per group in the order
 	// they appear; groups may share a name.
 	Names    []string
+	pattern  string
 	re       *regexp.Regexp
 	anchored *regexp.Regexp
+	// context holds the programs of MatchInString, compiled on first use.
+	context     sync.Once
+	contextHere *regexp.Regexp
+	contextFrom *regexp.Regexp
 }
 
 // NewRegexp compiles source with the options. A pattern Go's regexp
@@ -50,7 +56,7 @@ func NewRegexp(source string, options int) (*Regexp, error) {
 	if options&RegexpNoEncoding == 0 && fixedEncoding(source) {
 		options |= RegexpFixedEncoding
 	}
-	return &Regexp{Source: source, Options: options, Names: names, re: re, anchored: anchored}, nil
+	return &Regexp{Source: source, Options: options, Names: names, pattern: pattern, re: re, anchored: anchored}, nil
 }
 
 // view is the text the program reads for s: s itself, or for a pattern
@@ -162,6 +168,41 @@ func (r *Regexp) MatchHere(s string, pos int) *Match {
 	v, at, back := r.view(s)
 	p := at(pos)
 	return r.match(s, r.anchored.FindStringSubmatchIndex(v[p:]), p, back)
+}
+
+// MatchInString is MatchAt, or MatchHere when here is set, with the
+// anchors holding at the string's start, not at the position: the
+// leftmost match at or after byte offset pos, or the one starting there,
+// as a StringScanner with fixed_anchor finds it. The program reads one
+// character of context before the position, so \A, ^ and \b see what is
+// there; group 1 of the program is the pattern's own match.
+func (r *Regexp) MatchInString(s string, pos int, here bool) *Match {
+	if pos == 0 {
+		if here {
+			return r.MatchHere(s, 0)
+		}
+		return r.MatchAt(s, 0)
+	}
+	r.context.Do(func() {
+		r.contextHere = regexp.MustCompile(`\A(?s:.)(` + r.pattern + `)`)
+		r.contextFrom = regexp.MustCompile(`\A(?s:.)(?s:.*?)(` + r.pattern + `)`)
+	})
+	v, at, back := r.view(s)
+	p := at(pos)
+	if p > len(v) {
+		return nil
+	}
+	_, size := utf8.DecodeLastRuneInString(v[:p])
+	start := p - size
+	program := r.contextFrom
+	if here {
+		program = r.contextHere
+	}
+	idx := program.FindStringSubmatchIndex(v[start:])
+	if idx == nil {
+		return nil
+	}
+	return r.match(s, idx[2:], start, back)
 }
 
 // FindAll is every match left to right, at most limit of them for a
