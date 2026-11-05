@@ -10,8 +10,9 @@ import (
 
 // userMethod finds the method name that v's own class gives it: one a
 // script defined, with a body, or, on an instance, a native one a library
-// defines on its class, which to_s, inspect and <=> reach as a script's.
-// Object's own natives are the defaults the evaluator renders itself.
+// defines on its class, which to_s, inspect, == and <=> reach as a
+// script's. Object's own natives are the defaults the evaluator renders
+// itself, and a module's, Comparable's ==, is not a class's own.
 func userMethod(v object.Value, name string) *object.Method {
 	m := v.Class().Lookup(name)
 	if m == nil {
@@ -20,7 +21,7 @@ func userMethod(v object.Value, name string) *object.Method {
 	if m.Body != nil {
 		return m
 	}
-	if v.Kind() == object.KindInstance && m.Native != nil && m.Owner != object.ObjectClass && m.Owner != object.BasicObjectClass {
+	if v.Kind() == object.KindInstance && m.Native != nil && !m.Owner.IsModule && m.Owner != object.ObjectClass && m.Owner != object.BasicObjectClass {
 		return m
 	}
 	return nil
@@ -84,7 +85,7 @@ func (in *Interp) ToS(v object.Value) (string, error) {
 			return "main", nil
 		case object.ObjectClass:
 			return "#<Object>", nil
-		case object.EncodingClass, object.PathnameClass:
+		case object.EncodingClass:
 			return v.Instance().Fields[0].Str(), nil
 		}
 	}
@@ -209,8 +210,6 @@ func (in *Interp) inspectBuiltin(v object.Value) (string, error) {
 				return "#<Encoding:BINARY (ASCII-8BIT)>", nil
 			}
 			return "#<Encoding:" + v.Fields[0].Str() + ">", nil
-		case object.PathnameClass:
-			return "#<Pathname:" + v.Fields[0].Str() + ">", nil
 		}
 		parts := make([]string, len(v.Cls.Fields))
 		for i, f := range v.Cls.Fields {

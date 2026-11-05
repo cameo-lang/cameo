@@ -98,7 +98,7 @@ func eachOf(ctx object.Context, v object.Value) (each, error) {
 			}, nil
 		}
 	}
-	elems, err := toList(ctx, v)
+	elems, err := ToList(ctx, v)
 	if err != nil {
 		return nil, err
 	}

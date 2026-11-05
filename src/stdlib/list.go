@@ -172,7 +172,7 @@ func installList() {
 		return object.ListValue(concat(args, elems(self))), nil
 	})
 	def(c, "-", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		o, err := toList(ctx, args[0])
+		o, err := ToList(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -223,7 +223,7 @@ func installList() {
 		return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into Integer", KindName(args[0]))
 	})
 	def(c, "&", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		o, err := toList(ctx, args[0])
+		o, err := ToList(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -251,7 +251,7 @@ func installList() {
 		return out, nil
 	})
 	def(c, "|", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		o, err := toList(ctx, args[0])
+		o, err := ToList(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -260,7 +260,7 @@ func installList() {
 	def(c, "union", 1, c.Methods["|"].Native)
 	def(c, "difference", 1, c.Methods["-"].Native)
 	def(c, "intersect?", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		o, err := toList(ctx, args[0])
+		o, err := ToList(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -372,7 +372,7 @@ func installList() {
 			tuples = append(tuples, []object.Value{e})
 		}
 		for _, a := range args {
-			other, err := toList(ctx, a)
+			other, err := ToList(ctx, a)
 			if err != nil {
 				return object.Value{}, err
 			}

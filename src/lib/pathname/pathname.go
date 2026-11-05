@@ -44,6 +44,7 @@ func Install() {
 		})
 	}
 	unary("to_s", func(p string) object.Value { return object.String(p) })
+	unary("inspect", func(p string) object.Value { return object.String("#<Pathname:" + p + ">") })
 	unary("to_path", func(p string) object.Value { return object.String(p) })
 	unary("absolute?", func(p string) object.Value { return object.Bool(strings.HasPrefix(p, "/")) })
 	unary("relative?", func(p string) object.Value { return object.Bool(!strings.HasPrefix(p, "/")) })
