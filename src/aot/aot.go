@@ -707,6 +707,13 @@ func isConversion(name string) bool {
 // Integer, each on a Range of Integers.
 var loops = map[string]bool{"times": true, "upto": true, "downto": true, "each": true}
 
+// folds are the block methods that compile to a loop with an accumulator,
+// over times, upto, downto or a Range: reduce with its initial value, sum
+// of Integers, and count of a condition. A block captures the values of
+// its variables, so a sum is written as a fold, not as a block that adds
+// to a local.
+var folds = map[string]bool{"reduce": true, "inject": true, "sum": true, "count": true}
+
 // target is what a call reaches: a field of a class, read from an
 // instance, or a candidate method, called directly.
 type target struct {
@@ -758,7 +765,12 @@ func (b *builder) call(n *syntax.Call, sc *scope, value bool) (typ, error) {
 		}
 	}
 	if n.Block != nil {
-		if n.Recv == nil || !loops[n.Name] {
+		switch {
+		case n.Recv == nil:
+			return 0, fmt.Errorf("line %d: the block of %s is not compiled yet", n.Line(), n.Name)
+		case folds[n.Name]:
+			return b.fold(n, sc, value)
+		case !loops[n.Name]:
 			return 0, fmt.Errorf("line %d: the block of %s is not compiled yet", n.Line(), n.Name)
 		}
 		return b.loop(n, sc, value)
@@ -1057,6 +1069,106 @@ func (b *builder) loop(n *syntax.Call, sc *scope, value bool) (typ, error) {
 		return 0, err
 	}
 	return tInt, nil
+}
+
+// fold checks reduce, sum or count with a block over times, upto, downto
+// or a Range: the accumulator has the initial value's type, a number or
+// an instance, and the block's value must fit it; sum adds Integers, and
+// count counts a condition. break and next are refused, since the block's
+// value is what the loop keeps.
+func (b *builder) fold(n *syntax.Call, sc *scope, value bool) (typ, error) {
+	notYet := fmt.Errorf("line %d: the block of %s is not compiled yet", n.Line(), n.Name)
+	bounds, err := b.foldBounds(n.Recv)
+	if err != nil {
+		return 0, notYet
+	}
+	p := n.Block.Params
+	most := 1
+	if n.Name != "sum" && n.Name != "count" {
+		most = 2
+	}
+	if len(p.Keywords) > 0 || p.KwRest != "" || p.BlockParam != "" || len(p.Positional) > most {
+		return 0, fmt.Errorf("line %d: the block of %s takes more than %d plain parameters", n.Line(), n.Name, most)
+	}
+	for _, param := range p.Positional {
+		if param.Splat || param.Default != nil || !goName(param.Name) {
+			return 0, fmt.Errorf("line %d: the block of %s takes more than %d plain parameters", n.Line(), n.Name, most)
+		}
+	}
+	for _, bound := range bounds {
+		if _, err := b.want(bound, sc, tInt, "a bound of "+n.Name); err != nil {
+			return 0, err
+		}
+	}
+	acc := tInt
+	switch {
+	case n.Name == "sum" || n.Name == "count":
+		if len(n.Args) != 0 {
+			return 0, notYet
+		}
+	case len(n.Args) != 1:
+		return 0, notYet
+	default:
+		acc, err = b.expr(n.Args[0], sc, true)
+		if err != nil {
+			return 0, err
+		}
+		if !numeric(acc) && acc < tClass {
+			return 0, fmt.Errorf("line %d: the initial value of %s is %s, not a number or an instance", n.Line(), n.Name, b.name(acc))
+		}
+	}
+	child := sc.block("")
+	child.loops = sc.loops
+	names := make([]string, 0, 2)
+	for _, param := range p.Positional {
+		names = append(names, param.Name)
+	}
+	if most == 2 {
+		if len(names) > 0 {
+			child.vars[names[0]] = acc
+		}
+		if len(names) > 1 {
+			child.vars[names[1]] = tInt
+		}
+	} else if len(names) > 0 {
+		child.vars[names[0]] = tInt
+	}
+	t, err := b.body(n.Block.Body, child, true)
+	if err != nil {
+		return 0, err
+	}
+	switch n.Name {
+	case "sum":
+		if t != tInt && t != tUnknown && t != tNever {
+			return 0, fmt.Errorf("line %d: a sum of %s is not compiled yet", n.Line(), b.name(t))
+		}
+	case "count":
+		if t != tBool && t != tUnknown && t != tNever {
+			return 0, fmt.Errorf("line %d: the block of count gives %s, not true or false", n.Line(), b.name(t))
+		}
+	default:
+		if !b.assignable(t, acc) {
+			return 0, fmt.Errorf("line %d: the block of %s gives %s, not %s", n.Line(), n.Name, b.name(t), b.name(acc))
+		}
+	}
+	return acc, nil
+}
+
+// foldBounds is the loop a fold runs over: times, upto or downto without
+// a block, or a Range.
+func (b *builder) foldBounds(recv syntax.Node) ([]syntax.Node, error) {
+	switch s := recv.(type) {
+	case *syntax.Range:
+		return []syntax.Node{s.Lo, s.Hi}, nil
+	case *syntax.Call:
+		if s.Recv == nil || s.Block != nil || s.BlockArg != nil || s.Safe || len(s.KwArgs) > 0 || !loops[s.Name] || s.Name == "each" {
+			break
+		}
+		if s.Name == "times" && len(s.Args) == 0 || s.Name != "times" && len(s.Args) == 1 {
+			return append([]syntax.Node{s.Recv}, s.Args...), nil
+		}
+	}
+	return nil, fmt.Errorf("no loop")
 }
 
 // describe names a node for a message: "a String" for a Str.

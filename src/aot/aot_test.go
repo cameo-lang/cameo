@@ -137,6 +137,57 @@ end
 	}
 }
 
+// TestBuildWritesFolds holds the Go of reduce, sum and count over times,
+// upto, downto and a Range to loops with an accumulator: reduce starts it
+// at the initial value, typed by it, and sets it to the block's value;
+// sum adds the block's Integer; count adds one when the condition holds.
+// A fold whose loop or accumulator the compiler cannot type is left to
+// the interpreter, and so is a block that breaks, since its value is what
+// the loop keeps.
+func TestBuildWritesFolds(t *testing.T) {
+	res := build(t, `
+def f(n)
+  s = n.times.reduce(0) { |acc, i| acc + i }
+  t = (1..n).reduce(s) { |acc, i| acc + i * i }
+  c = n.downto(1).count { |i| i > 2 }
+  u = 1.upto(n).sum { |i| i * 2 }
+  s + t + c + u
+end
+def g(n) = n.times.reduce(0.0) { |a, i| a + i.to_f }
+def h(n) = (0...n).reduce(1) { 2 }
+`)
+	if got := strings.Join(res.Compiled, " "); got != "f g h" {
+		t.Fatalf("compiled %q, want f g h; left: %v", got, res.Left)
+	}
+	for _, want := range []string{
+		"t1 := int64(0)", "for t3 := int64(0); t3 < t2; t3++ {", "v_acc := t1", "v_i := t3", "t5, err := add(v_acc, v_i)", "t1 = t5",
+		"for t16 := t14; t16 >= t15; t16-- {", "t13++",
+		"t24, err := add(t18, t23)", "t18 = t24", "t1 := 0.0", "t1 = float64(v_a + float64(v_i))",
+	} {
+		if !strings.Contains(string(res.Go), want) {
+			t.Errorf("the Go lacks %q:\n%s", want, res.Go)
+		}
+	}
+	for _, c := range []struct{ src, name, reason string }{
+		{"def f(n) = [1, 2].reduce(0) { |a, x| a + x }", "f", "the block of reduce is not compiled yet"},
+		{"def f(n) = n.times.reduce { |a, x| a + x }", "f", "the block of reduce is not compiled yet"},
+		{"def f(n) = n.times.sum { |i| i.to_f }", "f", "a sum of Float is not compiled yet"},
+		{"def f(n) = n.times.count { |i| i }", "f", "the block of count gives Integer, not true or false"},
+		{"def f(n) = n.times.reduce(0) { |a, i| break if i > 2; a + i }", "f", "break outside a loop or a block"},
+		{"def f(n) = n.times.reduce(0) { |a, i| i.to_f }", "f", "the block of reduce gives Float, not Integer"},
+	} {
+		res := build(t, c.src)
+		reason, ok := res.Left[c.name]
+		if !ok {
+			t.Errorf("%q: %s compiled, want it left to the interpreter", c.src, c.name)
+			continue
+		}
+		if !strings.Contains(reason, c.reason) {
+			t.Errorf("%q: the reason is %q, want %q", c.src, reason, c.reason)
+		}
+	}
+}
+
 // TestBuildTypesFloats holds that a method's Float result is found through
 // its recursion and through the methods it calls, that mixed arithmetic
 // converts the Integer, and that Integer against Float compares exactly.

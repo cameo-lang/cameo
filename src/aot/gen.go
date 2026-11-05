@@ -275,6 +275,9 @@ var bigHelperOf = map[string]string{"/": "bigDiv", "%": "bigMod"}
 
 func (f *fn) call(n *syntax.Call, value bool) string {
 	if n.Block != nil {
+		if folds[n.Name] {
+			return f.fold(n, value)
+		}
 		return f.loop(n, value)
 	}
 	if n.Recv == nil {
@@ -478,52 +481,7 @@ func (f *fn) toInt(v string) string {
 // are. On int64 a loop up to the largest Integer, or down to the smallest,
 // is left to the twin on *big.Int, where the counter cannot wrap.
 func (f *fn) loop(n *syntax.Call, value bool) string {
-	var from, to syntax.Node
-	cmp, step, edge := "<=", "Add", "1<<63 - 1"
-	switch n.Name {
-	case "times":
-		from, to, cmp = nil, n.Recv, "<"
-	case "upto":
-		from, to = n.Recv, n.Args[0]
-	case "downto":
-		from, to, cmp, step, edge = n.Recv, n.Args[0], ">=", "Sub", "-1 << 63"
-	case "each":
-		r := n.Recv.(*syntax.Range)
-		from, to = r.Lo, r.Hi
-		if r.Exclusive {
-			cmp = "<"
-		}
-	}
-	lo := "int64(0)"
-	if f.big {
-		lo = "new(big.Int)"
-	}
-	if from != nil {
-		lo = f.temp()
-		f.line("%s := %s", lo, f.typed(f.expr(from, true)))
-	}
-	hi := f.temp()
-	f.line("%s := %s", hi, f.typed(f.expr(to, true)))
-	i := f.temp()
-	stop := f.stopFlag()
-	if f.big {
-		f.g.constant(1)
-		if from != nil {
-			lo = fmt.Sprintf("new(big.Int).Set(%s)", lo)
-		}
-		f.line("for %s := %s; %s.Cmp(%s) %s 0; %s = new(big.Int).%s(%s, big_1) {", i, lo, i, hi, cmp, i, step, i)
-	} else {
-		if cmp != "<" {
-			f.line("if %s == %s {", hi, edge)
-			f.line("\treturn 0, eval.ErrDeopt")
-			f.line("}")
-		}
-		next := "++"
-		if step == "Sub" {
-			next = "--"
-		}
-		f.line("for %s := %s; %s %s %s; %s%s {", i, lo, i, cmp, hi, i, next)
-	}
+	i, lo, hi, stop := f.openLoop(n.Name, n.Recv, n.Args)
 	f.depth++
 	f.pass(stop)
 	outer := f.vars
@@ -548,6 +506,128 @@ func (f *fn) loop(n *syntax.Call, value bool) string {
 		return hi
 	}
 	return lo
+}
+
+// fold writes reduce, sum or count with a block over times, upto, downto
+// or a Range as a loop that keeps an accumulator: reduce starts it at the
+// initial value and sets it to the block's value on every pass, sum adds
+// the block's Integer, and count adds one when the block's condition
+// holds. The accumulator is the fold's value.
+func (f *fn) fold(n *syntax.Call, value bool) string {
+	name, recv, args := "each", n.Recv, []syntax.Node(nil)
+	if c, ok := n.Recv.(*syntax.Call); ok {
+		name, recv, args = c.Name, c.Recv, c.Args
+	}
+	acc := f.temp()
+	switch n.Name {
+	case "sum", "count":
+		if f.big {
+			f.line("%s := new(big.Int)", acc)
+		} else {
+			f.line("%s := int64(0)", acc)
+		}
+	default:
+		f.line("%s := %s", acc, f.typed(f.expr(n.Args[0], true)))
+	}
+	i, _, _, stop := f.openLoop(name, recv, args)
+	f.depth++
+	f.pass(stop)
+	outer := f.vars
+	f.vars = make(map[string]typ, len(outer)+2)
+	for k, v := range outer {
+		f.vars[k] = v
+	}
+	p := n.Block.Params.Positional
+	counter := -1
+	switch {
+	case n.Name == "sum" || n.Name == "count":
+		counter = 0
+	default:
+		counter = 1
+		if len(p) > 0 {
+			f.vars[p[0].Name] = f.typeOf(n)
+			f.line("v_%s := %s", p[0].Name, acc)
+			f.line("_ = v_%s", p[0].Name)
+		}
+	}
+	if len(p) > counter {
+		f.vars[p[counter].Name] = tInt
+		f.line("v_%s := %s", p[counter].Name, i)
+		f.line("_ = v_%s", p[counter].Name)
+	}
+	if v := f.body(n.Block.Body, true); v != "" {
+		switch n.Name {
+		case "sum":
+			f.line("%s = %s", acc, f.arith("+", acc, v))
+		case "count":
+			f.line("if %s {", v)
+			if f.big {
+				f.line("\t%s = new(big.Int).Add(%s, %s)", acc, acc, f.g.constant(1))
+			} else {
+				f.line("\t%s++", acc)
+			}
+			f.line("}")
+		default:
+			f.line("%s = %s", acc, v)
+		}
+	}
+	f.vars = outer
+	f.depth--
+	f.line("}")
+	return acc
+}
+
+// openLoop writes the bounds and the for line of a loop of name (times,
+// upto, downto, or each over a Range) over recv and args, and returns the
+// counter, the bounds, and the local that holds the stop flag.
+func (f *fn) openLoop(name string, recv syntax.Node, args []syntax.Node) (i, lo, hi, stop string) {
+	var from, to syntax.Node
+	cmp, step, edge := "<=", "Add", "1<<63 - 1"
+	switch name {
+	case "times":
+		from, to, cmp = nil, recv, "<"
+	case "upto":
+		from, to = recv, args[0]
+	case "downto":
+		from, to, cmp, step, edge = recv, args[0], ">=", "Sub", "-1 << 63"
+	case "each":
+		r := recv.(*syntax.Range)
+		from, to = r.Lo, r.Hi
+		if r.Exclusive {
+			cmp = "<"
+		}
+	}
+	lo = "int64(0)"
+	if f.big {
+		lo = "new(big.Int)"
+	}
+	if from != nil {
+		lo = f.temp()
+		f.line("%s := %s", lo, f.typed(f.expr(from, true)))
+	}
+	hi = f.temp()
+	f.line("%s := %s", hi, f.typed(f.expr(to, true)))
+	i = f.temp()
+	stop = f.stopFlag()
+	if f.big {
+		f.g.constant(1)
+		if from != nil {
+			lo = fmt.Sprintf("new(big.Int).Set(%s)", lo)
+		}
+		f.line("for %s := %s; %s.Cmp(%s) %s 0; %s = new(big.Int).%s(%s, big_1) {", i, lo, i, hi, cmp, i, step, i)
+	} else {
+		if cmp != "<" {
+			f.line("if %s == %s {", hi, edge)
+			f.line("\treturn 0, eval.ErrDeopt")
+			f.line("}")
+		}
+		next := "++"
+		if step == "Sub" {
+			next = "--"
+		}
+		f.line("for %s := %s; %s %s %s; %s%s {", i, lo, i, cmp, hi, i, next)
+	}
+	return i, lo, hi, stop
 }
 
 // stopFlag declares a local that holds the run's stop flag for a loop, so
