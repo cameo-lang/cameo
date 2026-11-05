@@ -37,6 +37,10 @@ Network I/O is the one exception to "no I/O". `net/http` is in, because a
 script that fetches data is what cameo is for; it reaches the network only
 through a client the Go host gives the program, so an embedding program
 decides whether a script may make requests at all (see *net/http* below).
+`io/httpd`, cameo's HTTP server, is the other direction and is gated the
+same way: `HTTPD.serve` listens only in a program that said
+`AllowIO("io/httpd")`, which the `cameo` command and a program `cameo
+build` wrote do, and raises `HTTPD::Error` elsewhere.
 
 What asks for a library is measured, not guessed:
 
@@ -120,6 +124,7 @@ What asks for a library is measured, not guessed:
 | `debug` | debug 1.10.0 | `debugger` and `binding.break` stop in cameo's debugger, which takes rdbg's commands ([debugger.md](debugger.md)) |
 | `cameo/runner` | — | cameo's own: the library that gives CRuby `Cameo::Runner` is built in |
 | `minispec` | — (cameo's own) | `describe`, `it`, `specify` and `skip`, minitest 5.25's `assert`, `assert_equal`, `assert_nil`, `assert_empty`, `assert_includes`, `assert_instance_of`, `assert_kind_of`, `assert_match`, `assert_respond_to`, `assert_predicate`, `assert_operator`, `assert_in_delta`, `assert_raises`, their `refute_*` negations, `flunk` and `pass`, with minitest's messages, and `Minispec::Assertion` and `Minispec::Skip`. An example runs when `it` is called and prints its mark; the report at the end of the script, through `at_exit`, lists every failure, error and skip with its line and counts them, and a failure or an error ends the script with status 1. No `before`, `after` or `let`: a local the describe block assigns is what its examples share. Ruby's minitest finds tests by method name and keeps state in instance variables, so it is left out (below) |
+| `io/httpd` | — (cameo's own) | `HTTPD.serve(port: 4567, bind: "127.0.0.1", quiet: false) { |request| … }`: listens, and calls the block with an `HTTPD::Request` (`method`, `path`, `query`, `headers`, `body`) for each request, on the goroutine that called `serve`, one request at a time, until the host stops the run; the block returns the body as a String, a status as an Integer from 100 to 999, `[status, body]` or `[status, headers, body]`, as a Sinatra route does, and an exception is a 500 with its text, also on standard error; each request is logged on standard error in Rack's common log form with the seconds it took, unless `quiet`. The one library that opens a socket: it serves only where the host allowed it (above), `HTTPD::Error` otherwise |
 
 ## Planned, in this order
 

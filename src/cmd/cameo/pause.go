@@ -85,6 +85,8 @@ func inspect(path string, out io.Writer) error {
 // ^C, while the statement still runs, ends the process. Without it, ^C
 // ends the process as it does any other.
 func runProgram(prog *cameo.Program, pause bool, stderr io.Writer) int {
+	// The command is the host: a script it runs may do I/O.
+	prog.AllowIO("io/httpd")
 	if pause {
 		interrupts := make(chan os.Signal, 2)
 		signal.Notify(interrupts, os.Interrupt)

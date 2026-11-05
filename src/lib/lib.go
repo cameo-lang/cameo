@@ -16,6 +16,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/digest"
 	"github.com/cameo-lang/cameo/src/lib/forwardable"
 	"github.com/cameo-lang/cameo/src/lib/getoptlong"
+	"github.com/cameo-lang/cameo/src/lib/io/httpd"
 	"github.com/cameo-lang/cameo/src/lib/ipaddr"
 	"github.com/cameo-lang/cameo/src/lib/json"
 	"github.com/cameo-lang/cameo/src/lib/logger"
@@ -65,6 +66,7 @@ var Libraries = map[string][]string{
 	"forwardable":                 nil,
 	"getoptlong":                  nil,
 	"ipaddr":                      nil,
+	"io/httpd":                    nil,
 	"json":                        nil,
 	"logger":                      nil,
 	"marshal":                     nil,
@@ -109,6 +111,7 @@ func Install() {
 	digest.Install()
 	forwardable.Install()
 	ipaddr.Install()
+	httpd.Install()
 	json.Install()
 	logger.Install()
 	minispec.Install()
