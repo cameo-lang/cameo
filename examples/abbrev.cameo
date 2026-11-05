@@ -1,0 +1,9 @@
+# Ruby's abbrev library: the unambiguous abbreviations of a set of words,
+# as a command line might take them. Each line prints what Ruby prints.
+require "abbrev"
+
+commands = %w[start status stop]
+table = commands.abbrev
+p table
+p table["sta"], table["sto"], table["st"]
+p Abbrev.abbrev(commands, "sto")
