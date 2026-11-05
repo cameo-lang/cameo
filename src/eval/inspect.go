@@ -247,6 +247,16 @@ func (in *Interp) Equal(a, b object.Value) (bool, error) {
 		return r.Truthy(), nil
 	}
 	switch a.Kind() {
+	case object.KindInt, object.KindBig, object.KindFloat:
+		// A number against a value of a class with its own ==, a
+		// BigDecimal: the value answers, as Ruby's num_equal asks it.
+		if m := userMethod(b, "=="); m != nil && b.Kind() == object.KindInstance {
+			r, err := in.callOwn(m, b, []object.Value{a})
+			if err != nil {
+				return false, err
+			}
+			return r.Truthy(), nil
+		}
 	case object.KindList:
 		a := a.List()
 		bl, ok := b.AsList()
@@ -294,6 +304,17 @@ func (in *Interp) Equal(a, b object.Value) (bool, error) {
 	return object.Equal(a, b), nil
 }
 
+// compareReversed orders a number against a value that is not one, a
+// BigDecimal, through the value's coerce, as Ruby's rb_num_coerce_cmp
+// does; ok is false when the two do not compare.
+func (in *Interp) compareReversed(a, b object.Value) (int, bool, error) {
+	switch a.Kind() {
+	case object.KindInt, object.KindBig, object.KindFloat:
+		return stdlib.CoerceCompare(in, a, b)
+	}
+	return 0, false, nil
+}
+
 // Compare implements object.Context: <=>, through a user-defined one where a
 // class has it. It fails with an ArgumentError when the values do not
 // compare.
@@ -316,9 +337,15 @@ func (in *Interp) Compare(a, b object.Value) (int, error) {
 		if r, ok := object.CompareNumbers(a, b); ok {
 			return r, nil
 		}
+		if r, ok, err := in.compareReversed(a, b); ok || err != nil {
+			return r, err
+		}
 	case object.KindBig, object.KindFloat:
 		if r, ok := object.CompareNumbers(a, b); ok {
 			return r, nil
+		}
+		if r, ok, err := in.compareReversed(a, b); ok || err != nil {
+			return r, err
 		}
 	case object.KindString, object.KindBytes, object.KindASCII:
 		a := a.Str()

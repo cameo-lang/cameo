@@ -8,6 +8,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/abbrev"
 	"github.com/cameo-lang/cameo/src/lib/base64"
 	"github.com/cameo-lang/cameo/src/lib/benchmark"
+	"github.com/cameo-lang/cameo/src/lib/bigdecimal"
 	"github.com/cameo-lang/cameo/src/lib/cgi"
 	"github.com/cameo-lang/cameo/src/lib/csv"
 	"github.com/cameo-lang/cameo/src/lib/date"
@@ -44,25 +45,28 @@ import (
 // core installs, under src/stdlib, is registered here as well; the
 // evaluator's own, debug and cameo/runner, are its.
 var Libraries = map[string][]string{
-	"base64":      nil,
-	"benchmark":   nil,
-	"cgi":         {"cgi/escape", "cgi/util"},
-	"cgi/escape":  nil,
-	"cgi/util":    {"cgi/escape"},
-	"csv":         nil,
-	"date":        nil,
-	"delegate":    nil,
-	"digest":      {"digest/md5", "digest/sha1", "digest/sha2"},
-	"digest/md5":  {"digest"},
-	"digest/sha1": {"digest"},
-	"digest/sha2": {"digest"},
-	"forwardable": nil,
-	"ipaddr":      nil,
-	"json":        nil,
-	"logger":      nil,
-	"marshal":     nil,
-	"matrix":      nil,
-	"minispec":    nil,
+	"base64":          nil,
+	"benchmark":       nil,
+	"bigdecimal":      {"bigdecimal/util", "bigdecimal/math"},
+	"bigdecimal/math": {"bigdecimal", "bigdecimal/util"},
+	"bigdecimal/util": {"bigdecimal", "bigdecimal/math"},
+	"cgi":             {"cgi/escape", "cgi/util"},
+	"cgi/escape":      nil,
+	"cgi/util":        {"cgi/escape"},
+	"csv":             nil,
+	"date":            nil,
+	"delegate":        nil,
+	"digest":          {"digest/md5", "digest/sha1", "digest/sha2"},
+	"digest/md5":      {"digest"},
+	"digest/sha1":     {"digest"},
+	"digest/sha2":     {"digest"},
+	"forwardable":     nil,
+	"ipaddr":          nil,
+	"json":            nil,
+	"logger":          nil,
+	"marshal":         nil,
+	"matrix":          nil,
+	"minispec":        nil,
 	// openssl is accepted for the OpenSSL::HMAC and OpenSSL::Digest names
 	// digest defines; a script written for openssl begins with it.
 	"openssl":                     {"digest"},
@@ -128,4 +132,5 @@ func Install() {
 	optparse.Install()
 	getoptlong.Install()
 	matrix.Install()
+	bigdecimal.Install()
 }

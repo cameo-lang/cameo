@@ -34,7 +34,71 @@ func compareNumber(ctx object.Context, self object.Value, args []object.Value, k
 	if r, ok := object.CompareNumbers(self, args[0]); ok {
 		return object.Int(r), nil
 	}
-	return object.Nil, nil
+	r, ok, err := CoerceCompare(ctx, self, args[0])
+	if err != nil || !ok {
+		return object.Nil, err
+	}
+	return object.Int(r), nil
+}
+
+// CoerceCompare is Ruby's rb_num_coerce_cmp: a number against a value
+// that is not one is compared through the value's coerce, which turns
+// both into its own kind, and the pair's <=>. A value without coerce, or
+// a pair that does not compare, is incomparable, and ok is false.
+func CoerceCompare(ctx object.Context, self, other object.Value) (int, bool, error) {
+	if other.Kind() != object.KindInstance || !ctx.RespondsTo(other, "coerce") {
+		return 0, false, nil
+	}
+	pair, err := ctx.Call(other, "coerce", self)
+	if err != nil {
+		return 0, false, err
+	}
+	list, ok := pair.AsList()
+	if !ok || len(list.Elems) != 2 {
+		return 0, false, ctx.Raise(object.TypeError, "coerce must return [x, y]")
+	}
+	r, err := ctx.Call(list.Elems[0], "<=>", list.Elems[1])
+	if err != nil {
+		return 0, false, err
+	}
+	if n, ok := r.AsInt(); ok {
+		return int(n), true, nil
+	}
+	return 0, false, nil
+}
+
+// coerceOther is Ruby's coerce protocol for a number on the left of an
+// operator and a value of another numeric class, such as a BigDecimal, on
+// the right: the other side turns both into its own kind, and the
+// operator runs on those. done is false when the other side is not such
+// a value.
+func coerceOther(ctx object.Context, self, other object.Value, op string) (object.Value, bool, error) {
+	if other.Kind() != object.KindInstance || !ctx.RespondsTo(other, "coerce") {
+		return object.Value{}, false, nil
+	}
+	pair, err := ctx.Call(other, "coerce", self)
+	if err != nil {
+		return object.Value{}, true, err
+	}
+	list, ok := pair.AsList()
+	if !ok || len(list.Elems) != 2 {
+		return object.Value{}, true, ctx.Raise(object.TypeError, "coerce must return [x, y]")
+	}
+	r, err := ctx.Call(list.Elems[0], op, list.Elems[1])
+	return r, true, err
+}
+
+// equalNumber is Integer#== and Float#==, Ruby's num_equal: a value that
+// is not a number answers for itself, other == self.
+func equalNumber(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	if other := args[0]; other.Kind() == object.KindInstance {
+		r, err := ctx.Call(other, "==", self)
+		if err != nil {
+			return object.Value{}, err
+		}
+		return object.Bool(r.Truthy()), nil
+	}
+	return object.Bool(object.Equal(self, args[0])), nil
 }
 
 func installInteger() {
@@ -60,6 +124,9 @@ func installInteger() {
 					return object.Value{}, ctx.Raise(object.ZeroDivisionError, "divided by 0")
 				}
 				return object.BigInt(large(bigOf(self), bigOf(other))), nil
+			}
+			if r, done, err := coerceOther(ctx, self, other, name); done {
+				return r, err
 			}
 			a, b, _, err := numArgs(ctx, self, other, name)
 			if err != nil {
@@ -89,6 +156,9 @@ func installInteger() {
 		if args[0].IsInteger() {
 			return c.Methods["/"].Native(ctx, self, args, kw, block)
 		}
+		if r, done, err := coerceOther(ctx, self, args[0], "div"); done {
+			return r, err
+		}
 		a, b, _, err := numArgs(ctx, self, args[0], "div")
 		if err != nil {
 			return object.Value{}, err
@@ -104,6 +174,9 @@ func installInteger() {
 		if args[0].IsInteger() && bigOf(args[0]).Sign() != 0 && (exceeds53(self) || exceeds53(args[0])) {
 			f, _ := new(big.Rat).SetFrac(bigOf(self), bigOf(args[0])).Float64()
 			return object.Float(f), nil
+		}
+		if r, done, err := coerceOther(ctx, self, args[0], "fdiv"); done {
+			return r, err
 		}
 		a, b, _, err := numArgs(ctx, self, args[0], "fdiv")
 		if err != nil {
@@ -122,6 +195,9 @@ func installInteger() {
 				return object.Value{}, err
 			}
 			return object.NewList(q, m), nil
+		}
+		if r, done, err := coerceOther(ctx, self, args[0], "divmod"); done {
+			return r, err
 		}
 		a, b, _, err := numArgs(ctx, self, args[0], "divmod")
 		if err != nil {
@@ -145,6 +221,9 @@ func installInteger() {
 			if x := bigOf(self); int64(x.BitLen()) <= bigPowBits/e || x.BitLen() <= 1 {
 				return object.BigInt(new(big.Int).Exp(x, big.NewInt(e), nil)), nil
 			}
+		}
+		if r, done, err := coerceOther(ctx, self, args[0], "**"); done {
+			return r, err
 		}
 		a, b, _, err := numArgs(ctx, self, args[0], "**")
 		if err != nil {
@@ -275,9 +354,7 @@ func installInteger() {
 		return object.Int(bigOf(self).Bit(int(i))), nil
 	})
 	def(c, "<=>", 1, compareNumber)
-	def(c, "==", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Bool(object.Equal(self, args[0])), nil
-	})
+	def(c, "==", 1, equalNumber)
 	pred := func(name string, f func(sign int, odd bool) bool) {
 		def(c, name, 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			if x, ok := self.AsInt(); ok {
@@ -504,6 +581,9 @@ func installInteger() {
 				return object.Value{}, ctx.Raise(object.ZeroDivisionError, "divided by 0")
 			}
 			return object.BigInt(new(big.Int).Rem(bigOf(self), bigOf(other))), nil
+		}
+		if r, done, err := coerceOther(ctx, self, other, "remainder"); done {
+			return r, err
 		}
 		y, ok := other.AsNumber()
 		if !ok {

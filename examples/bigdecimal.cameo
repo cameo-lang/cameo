@@ -1,0 +1,29 @@
+# Ruby's bigdecimal library: BigDecimal is an arbitrary-precision decimal
+# number, exact where Float rounds. Each line prints what Ruby prints.
+require "bigdecimal"
+require "bigdecimal/util"
+
+price = BigDecimal("19.99")
+rate = BigDecimal("0.075")
+tax = (price * rate).round(2)
+p price, rate, tax, price + tax, (price + tax).to_s("F"), (price + tax).to_f
+p 0.1 + 0.2, BigDecimal("0.1") + BigDecimal("0.2"), "0.1".to_d + "0.2".to_d == BigDecimal("0.3")
+
+third = BigDecimal("1") / 3
+p third, third * 3, BigDecimal("1").div(3, 5), BigDecimal("2").sqrt(10).round(10)
+p BigDecimal("2.5").round, BigDecimal("2.5").round(0, :half_even), BigDecimal("-2.5").round, BigDecimal("1234.5678").round(2), BigDecimal("1234.5678").floor(-2)
+p BigDecimal("123.456").precision, BigDecimal("123.456").scale, BigDecimal("123.456").exponent, BigDecimal("123.456").split, BigDecimal("1e20").to_s("F")
+
+# A BigDecimal is a Numeric: an Integer or Float on the left coerces.
+p 1 + price, 2 * rate, price > 19, [price, 20, 19.5].max, price.to_i, price.to_d.class
+
+big = BigDecimal("123456789012345678901234567890.5")
+p big * 2, big.to_i, big.to_s("3F"), BigDecimal("1e-3") / BigDecimal("3")
+
+[-> { BigDecimal("abc") }, -> { BigDecimal(1.5) }, -> { BigDecimal("1") / 0 }, -> { BigDecimal("NaN").to_i }, -> { BigDecimal("-4").sqrt(5) }].each do |f|
+  begin
+    p f.call
+  rescue StandardError => e
+    puts "#{e.class}: #{e.message}"
+  end
+end
