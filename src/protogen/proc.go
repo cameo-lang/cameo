@@ -65,7 +65,8 @@ func NoMessage(cls *object.Class) error {
 		via = fmt.Sprintf(" through %s", owner.QualifiedName())
 	}
 	return &NotSerialisable{
-		Kind: article(cls.QualifiedName()) + " with a proc field",
-		Why:  fmt.Sprintf("%s is no message: its field %s%s is a proc, which cannot be serialised, so it has no .proto and its instances cannot cross to a host, to async or into a dump", cls.QualifiedName(), field, via),
+		Kind:  article(cls.QualifiedName()) + " with a proc field",
+		Class: cls.QualifiedName(),
+		Why:   fmt.Sprintf("%s is no message: its field %s%s is a proc, which cannot be serialised, so it has no .proto and its instances cannot cross to a host, to async or into a dump", cls.QualifiedName(), field, via),
 	}
 }
