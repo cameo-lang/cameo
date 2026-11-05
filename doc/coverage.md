@@ -56,7 +56,7 @@ once; an example that ran counts once.
 | 264 | mutation: `<<`, `[]=`, `push`, setters; every value is immutable, a call returns a copy |
 | 197 | `Rational`, `Complex`, rational and imaginary literals, `to_r`, `to_c`, `Numeric#i` |
 | 183 | visibility: `private`, `protected`, `module_function`, and the method lists by visibility; every method is public |
-| 167 | the process: `Process`, `Signal`, `ENV`, `GC`, `ObjectSpace`, `fork`, `system`, backticks, `at_exit` |
+| 167 | the process: `Process`, `Signal`, `ENV`, `GC`, `ObjectSpace`, `fork`, `system`, backticks |
 | 119 | encodings beyond UTF-8, binary and US-ASCII, and `force_encoding` |
 | 97 | I/O: `IO`, `File`, `Dir`, `ARGF`, the standard streams as objects |
 | 88 | `attr_accessor`, `attr_writer`, `attr`: a field declaration defines its reader, and there are no setters |
@@ -112,7 +112,7 @@ prelude does not have. They say nothing about cameo.
 [stdlib.md](stdlib.md) is the measure, not this page: its *Available*
 table lists the 34 libraries cameo builds in, each with the Ruby version it follows and,
 in its row, what of it works, what is left out and why, and what its
-review found. *Planned* lists the 6 next in order, and *Unsupported*
+review found. *Planned* lists the 4 next in order, and *Unsupported*
 every other library of Ruby's standard library with the decision that
 leaves it out.
 
