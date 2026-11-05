@@ -12,6 +12,9 @@ import (
 type Class struct {
 	Name     string
 	IsModule bool
+	// Included, on a module, runs when a class includes it: Ruby's
+	// included hook, for a module that gives the class methods of its own.
+	Included func(ctx Context, into *Class) error
 	Super    *Class // nil for a module, and for BasicObject
 	// Digest identifies a user definition by its body; "" for a builtin class.
 	Digest string
@@ -550,4 +553,15 @@ type Context interface {
 	// Rand returns the interpreter's generator, the one Kernel#rand draws
 	// from: an async process has its own.
 	Rand() *Random
+	// Const looks up a top-level constant the script or the host defined;
+	// the core's are in ObjectClass.Consts.
+	Const(name string) (Value, bool)
+	// AtExit keeps a block to run when the script ends, as Kernel#at_exit
+	// does.
+	AtExit(block Value)
+	// File is the script's file name, as its errors report it.
+	File() string
+	// State returns the Go value a library keeps for the run under name,
+	// made by init the first time; every async worker sees the same one.
+	State(name string, init func() any) any
 }

@@ -1,0 +1,19 @@
+# Ruby's digest library: MD5, SHA1, SHA256, SHA384 and SHA512, as hex,
+# bytes and base64. Each line prints what Ruby 3.4 prints.
+require "digest"
+
+p Digest::MD5.hexdigest("abc"), Digest::SHA1.hexdigest("abc")
+p Digest::SHA256.hexdigest("abc"), Digest::SHA384.hexdigest("abc")[0, 16], Digest::SHA512.hexdigest("abc")[0, 16]
+p Digest::SHA256.digest("abc").bytesize, Digest::SHA256.base64digest("abc"), Digest::MD5.base64digest("")
+p Digest::SHA256.hexdigest("héllo"), Digest::SHA256.hexdigest(""), Digest.hexencode("\x01\xff".b)
+
+# A digest object holds what it was fed; in cameo, update and << return
+# the object with more fed, for the variable to take.
+d = Digest::SHA256.new
+d = d.update("a")
+d = d << "bc"
+p d.hexdigest, d.to_s == Digest::SHA256.hexdigest("abc"), d.digest_length, d.block_length, d.size
+p d, d == Digest::SHA256.hexdigest("abc"), d == Digest::SHA256.new.update("abc")
+p d.reset.hexdigest == Digest::SHA256.hexdigest("")
+p Digest::SHA2.new(384).hexdigest("abc")[0, 16], Digest::SHA2.hexdigest("abc") == Digest::SHA256.hexdigest("abc")
+p Digest(:SHA256).hexdigest("abc") == Digest::SHA256.hexdigest("abc"), Digest::SHA256.ancestors.take(4)

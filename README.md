@@ -37,7 +37,14 @@ interpreter is built in the milestones listed there.
 [doc/cameo-vs-ruby.md](doc/cameo-vs-ruby.md) lists, for someone who knows
 Ruby, what is the same, what differs, and what cameo does not support.
 A script can `require` the libraries cameo builds in: `set`, `time`, `pp`,
-`pathname`, `cgi`, `json` and `benchmark`.
+`pathname`, `cgi`, `json`, `benchmark`, `uri`, `date`,
+`digest`, `base64`, `securerandom`, `csv`, `marshal`,
+`shellwords`, `ipaddr`, `zlib`, `prime`, `tsort`, `abbrev`,
+`singleton`, `forwardable`, `delegate`, `logger`, `stringio`,
+`strscan`, `optparse`, `getoptlong`, `matrix`, `bigdecimal`, `resolv` and `minispec`,
+its test library. [doc/stdlib.md](doc/stdlib.md)
+lists every library of Ruby's standard library with its status in cameo:
+built in, planned, or left out and why.
 
 ## Status
 
@@ -59,6 +66,7 @@ I/O is done; [examples/webfetch](examples/webfetch) fetches web pages so.
 
 ```sh
 cameo script.cameo            # run; an uncaught exception prints script:line: message (Class)
+cameo script.cameo a -b c     # run with ARGV = ["a", "-b", "c"]
 cameo check script.cameo      # parse and check only, report every error with its line
 cameo proto script.cameo      # the .proto files of the script's classes, one per package
 cameo proto script.cameo out/ # the same, written into out/
@@ -123,8 +131,9 @@ out; its `run.rb` checks that the working ones keep working.
 
 The packages under `src/`: `syntax` is the front end (`syntax.Parse`),
 `object` the value model, `eval` the evaluator and the async scheduler,
-`stdlib` the builtin methods, `protogen` the descriptors, `.proto` text and
-the envelope, `cameo` the host API (`cameo.Load`, `cameo.Run`, `cameo.Register`), and
+`stdlib` the builtin methods of the core classes, `lib` the libraries a
+script requires, one package each (`lib/json` is `json`), `protogen` the
+descriptors, `.proto` text and the envelope, `cameo` the host API (`cameo.Load`, `cameo.Run`, `cameo.Register`), and
 `cmd/cameo` the binary.
 
 ## Building

@@ -1,0 +1,12 @@
+# String#unicode_normalize and unicode_normalized?, Ruby's unicode_normalize
+# library, with the four forms. Each line prints what Ruby 3.4 prints.
+composed = "é"      # é as one code point
+decomposed = "é"   # e and a combining acute accent
+p composed == decomposed, composed.unicode_normalize(:nfd) == decomposed, decomposed.unicode_normalize == composed
+p decomposed.unicode_normalized?, decomposed.unicode_normalized?(:nfd), composed.length, composed.unicode_normalize(:nfd).length
+p "ﬁ①".unicode_normalize(:nfkc), "Å".unicode_normalize(:nfd).codepoints.map { |c| c.to_s(16) }
+begin
+  "\xff".b.unicode_normalize
+rescue Encoding::CompatibilityError => e
+  puts e.message
+end

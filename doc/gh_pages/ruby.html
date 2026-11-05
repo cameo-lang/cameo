@@ -74,8 +74,17 @@ reaches it. The full list is
   <code>pack</code>, <code>rand</code> and <code>Random</code>.</li>
   <li><strong>The built-in libraries</strong>: <code>require</code> of
   <code>set</code>, <code>time</code>, <code>pp</code>,
-  <code>pathname</code>, <code>cgi</code>, <code>json</code> and
-  <code>benchmark</code>.</li>
+  <code>pathname</code>, <code>cgi</code>, <code>json</code>,
+  <code>benchmark</code>, <code>uri</code>, <code>date</code>,
+  <code>digest</code>, <code>base64</code>,
+  <code>securerandom</code>, <code>csv</code>,
+  <code>marshal</code>, <code>shellwords</code>, <code>ipaddr</code>,
+  <code>zlib</code>, <code>prime</code>,
+  <code>tsort</code>, <code>abbrev</code>, <code>singleton</code>,
+  <code>forwardable</code>, <code>delegate</code>,
+  <code>logger</code>, <code>stringio</code>, <code>strscan</code>,
+  <code>optparse</code>, <code>getoptlong</code>, <code>matrix</code>,
+  <code>bigdecimal</code> and <code>resolv</code>.</li>
 </ul>
 
 <p>This script prints the same under <code>ruby</code> 3.3 and under
@@ -358,9 +367,18 @@ reaches it, mostly with <code>NameError</code> or
   <code>autoload</code>.</li>
   <li><strong>Libraries</strong>: <code>require</code> of anything but
   <code>set</code>, <code>time</code>, <code>pp</code>,
-  <code>pathname</code>, <code>cgi</code>, <code>json</code> and
-  <code>benchmark</code>, such as
-  <code>yaml</code>.</li>
+  <code>pathname</code>, <code>cgi</code>, <code>json</code>,
+  <code>benchmark</code>, <code>uri</code>, <code>date</code>,
+  <code>digest</code>, <code>base64</code>,
+  <code>securerandom</code>, <code>csv</code>,
+  <code>marshal</code>, <code>shellwords</code>, <code>ipaddr</code>,
+  <code>zlib</code>, <code>prime</code>,
+  <code>tsort</code>, <code>abbrev</code>, <code>singleton</code>,
+  <code>forwardable</code>, <code>delegate</code>,
+  <code>logger</code>, <code>stringio</code>, <code>strscan</code>,
+  <code>optparse</code>, <code>getoptlong</code>, <code>matrix</code>,
+  <code>bigdecimal</code> and <code>resolv</code>, such as
+  <code>socket</code>.</li>
 </ul>
 
 <div class="pair">
@@ -387,11 +405,11 @@ p item.qty</code></pre>
 </div>
 
 <pre class="cameo"><code>begin
-  require "yaml"
+  require "socket"
 rescue LoadError =&gt; e
   puts e.message
 end</code></pre>
-<pre class="output"><code>cannot load such file -- yaml</code></pre>
+<pre class="output"><code>cannot load such file -- socket</code></pre>
 
 <p>Ruby's version constants describe cameo: <code>RUBY_ENGINE</code> is
 <code>"cameo"</code>, <code>RUBY_VERSION</code> is the Ruby cameo follows,
@@ -430,6 +448,25 @@ p({ a: 1 }.with(b: 2))</code></pre>
 Point(x: 1, y: 10)
 Point(x: 1, y: 2)
 {a: 1, b: 2}</code></pre>
+
+<h3>Time zones by name</h3>
+
+<p>An IANA zone name is accepted wherever Ruby takes a UTC offset:
+<code>Time.new(…, in:)</code>, <code>Time.at(…, in:)</code>,
+<code>localtime</code>, <code>getlocal</code> and <code>DateTime</code>'s
+offset. The time carries the zone, so its abbreviation, offset and
+daylight saving follow the date. Ruby takes a zone object there; the
+database is compiled in, so a name resolves on any machine.</p>
+
+<pre class="cameo"><code>t = Time.at(1719835200, in: "Europe/Berlin")
+p t, t.zone, t.utc_offset
+p Time.new(2024, 1, 15, 12, 0, 0, in: "America/New_York").strftime("%H:%M %Z %:z")
+p Time.utc(2024, 7, 1, 12).localtime("Asia/Tokyo")</code></pre>
+<pre class="output"><code>2024-07-01 14:00:00 +0200
+"CEST"
+7200
+"12:00 EST -05:00"
+2024-07-01 21:00:00 +0900</code></pre>
 
 <h3 id="async"><code>async</code>, <code>await</code> and promises</h3>
 

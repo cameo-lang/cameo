@@ -15,6 +15,16 @@ test_version_prints_the_version() {
   assert_match '^[0-9]+\.[0-9]+\.[0-9]+' "$out"
 }
 
+test_script_arguments_are_in_argv() {
+  local script out
+  script="$(mktemp -d)/argv.cameo"
+  printf 'p ARGV\n' > "$script"
+  out=$("$CAMEO_BIN" "$script" a -b -- c)
+  assert_eq '["a", "-b", "--", "c"]' "$out"
+  out=$("$CAMEO_BIN" "$script")
+  assert_eq '[]' "$out"
+}
+
 test_version_flag_matches_the_command() {
   local flag cmd
   flag=$("$CAMEO_BIN" --version)
@@ -56,6 +66,41 @@ CAMEO
   assert_eq $'{"a":[1,2.5,null],"b":{"c":"é"}}\n{\n  "c": "é"\n}\n'"$script"$':4: unexpected token at \']\' (JSON::ParserError)' "$out"
 }
 
+test_uri_parses_merges_and_refuses() {
+  local script out
+  script="$(mktemp -d)/uri.cameo"
+  cat >"$script" <<'CAMEO'
+require "uri"
+u = URI("https://u:p@example.com:8443/a/b?x=1#f")
+puts u.host, u.port, u.request_uri, u.merge("../c?y"), URI.encode_www_form(q: "a b", n: [1, 2])
+begin
+  u.path = "/z"
+rescue NoMethodError => e
+  puts e.message
+end
+URI.parse("http://exa mple.com")
+CAMEO
+  local rc=0
+  out=$("$CAMEO_BIN" "$script" 2>&1) || rc=$?
+  assert_eq 1 "$rc" "an InvalidURIError does not fail the run"
+  assert_eq $'example.com\n8443\n/a/b?x=1\nhttps://u:p@example.com:8443/c?y\nq=a+b&n=1&n=2\nundefined method \'path=\' for an instance of URI::HTTPS: a URI is parsed, joined, merged or built, not changed\n'"$script"$':9: bad URI (is not URI?): "http://exa mple.com" (URI::InvalidURIError)' "$out"
+}
+
+test_date_parses_counts_and_formats() {
+  local script out
+  script="$(mktemp -d)/date.cameo"
+  cat >"$script" <<'CAMEO'
+require "date"
+d = Date.parse("Thu, 29 Feb 2024 10:00:00 GMT")
+puts d, d >> 12, d.strftime("%A %-d %B %Y, week %V"), (d - Date.new(2024, 1, 1)), DateTime.new(2001, 2, 3, 4, 5, 6, "+07:00").new_offset(0)
+Date.new(2024, 2, 30)
+CAMEO
+  local rc=0
+  out=$("$CAMEO_BIN" "$script" 2>&1) || rc=$?
+  assert_eq 1 "$rc" "a Date::Error does not fail the run"
+  assert_eq $'2024-02-29\n2025-02-28\nThursday 29 February 2024, week 09\n59\n2001-02-02T21:05:06+00:00\n'"$script"$':4: invalid date (Date::Error)' "$out"
+}
+
 test_exit_ends_the_run_with_its_status() {
   local dir out rc
   dir="$(mktemp -d)"
@@ -69,6 +114,36 @@ test_exit_ends_the_run_with_its_status() {
   out=$("$CAMEO_BIN" "$dir/abort.cameo" 2>&1) || rc=$?
   assert_eq 1 "$rc" "abort exits 1"
   assert_eq "gone" "$out"
+}
+
+test_at_exit_runs_its_handlers_when_the_script_ends() {
+  local script out rc
+  script="$(mktemp -d)/at_exit.cameo"
+  printf 'at_exit { puts "handler" }\nat_exit { raise "in handler" }\nputs "body"\n' >"$script"
+  rc=0
+  out=$("$CAMEO_BIN" "$script" 2>&1) || rc=$?
+  assert_eq 1 "$rc" "a handler that raises ends the run with status 1"
+  assert_eq $'body\n'"$script"$':2: in handler (RuntimeError)\nhandler' "$out"
+}
+
+test_minispec_reports_a_failure_and_exits_1() {
+  local script out rc
+  script="$(mktemp -d)/spec.cameo"
+  cat >"$script" <<'CAMEO'
+require "minispec"
+describe "Math" do
+  it "adds" do
+    assert_equal 2, 1 + 1
+  end
+  it "fails" do
+    assert_equal 3, 1 + 1, "arithmetic"
+  end
+end
+CAMEO
+  rc=0
+  out=$("$CAMEO_BIN" "$script" 2>&1) || rc=$?
+  assert_eq 1 "$rc" "a failing example ends the run with status 1"
+  assert_eq $'.F\n\n  1) Failure:\nMath#fails ['"$script"$':7]:\narithmetic.\nExpected: 3\n  Actual: 2\n\n2 runs, 2 assertions, 1 failures, 0 errors, 0 skips' "$out"
 }
 
 test_benchmark_reports_the_time_inside_the_script() {
@@ -131,7 +206,8 @@ cameo: pausing before the next top-level statement'
 variables:
   p = Point(x: 1, y: 2)
 '
-  assert_contains "$out" $'constants: none
+  assert_contains "$out" $'constants:
+  ARGV = []
 promises: none'
   out=$("$CAMEO_BIN" resume "$dump" 2>&1)
   assert_eq "after 3" "$out"

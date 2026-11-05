@@ -540,6 +540,11 @@ func (in *Interp) evalInclude(n *syntax.Include, env *Env, fr *Frame) (object.Va
 		cls.Extend(mod)
 	} else {
 		cls.Include(mod)
+		if mod.Included != nil {
+			if err := mod.Included(in, cls); err != nil {
+				return object.Value{}, withLine(err, n.Line())
+			}
+		}
 	}
 	return object.ClassValue(cls), nil
 }
@@ -559,16 +564,22 @@ func (in *Interp) evalWith(n *syntax.With, env *Env, fr *Frame) (object.Value, e
 	if err != nil {
 		return object.Value{}, err
 	}
-	out, err := in.with(target, key, value)
+	out, err := in.with(target, key, value, n.Index)
 	return out, withLine(err, n.Line())
 }
 
 // with returns target with key set to value: a field on an instance, an
-// entry in a map, an element of a list.
-func (in *Interp) with(target, key, value object.Value) (object.Value, error) {
+// entry in a map, an element of a list. index is set for `target[key] =
+// value`, which a library class may take in a native []=.
+func (in *Interp) with(target, key, value object.Value, index bool) (object.Value, error) {
 	switch target.Kind() {
 	case object.KindInstance:
 		t := target.Instance()
+		if index {
+			if m := ownNative(target, "[]="); m != nil {
+				return m.Native(in, target, []object.Value{key, value}, nil, object.Value{})
+			}
+		}
 		name, ok := key.AsSymbol()
 		if !ok {
 			if s, isStr := key.AsString(); isStr {
@@ -576,6 +587,16 @@ func (in *Interp) with(target, key, value object.Value) (object.Value, error) {
 			} else {
 				return object.Value{}, in.raise(object.TypeError, 0, "a field of %s is named by a symbol, not %s", t.Cls.QualifiedName(), typeName(key))
 			}
+		}
+		// A library class may define with for its own instances, to refuse
+		// it: a URI has no setters, so u.host = "x" raises there. Or it may
+		// define a native setter, name=, which an assignment reaches this
+		// way: a handle changes in place, a value returns its copy.
+		if m := ownNative(target, "with"); m != nil {
+			return m.Native(in, target, nil, object.NewMap().Put(object.Symbol(string(name)), value), object.Value{})
+		}
+		if m := ownNative(target, string(name)+"="); m != nil {
+			return m.Native(in, target, []object.Value{value}, nil, object.Value{})
 		}
 		idx, ok := t.Cls.FieldIndex[string(name)]
 		if !ok {
@@ -669,7 +690,7 @@ func (in *Interp) withChanges(self object.Value, args []object.Value, kw *object
 	var err error
 	apply := func(m *object.Map) error {
 		for i, k := range m.Keys() {
-			if out, err = in.with(out, k, m.Values()[i]); err != nil {
+			if out, err = in.with(out, k, m.Values()[i], false); err != nil {
 				return err
 			}
 		}

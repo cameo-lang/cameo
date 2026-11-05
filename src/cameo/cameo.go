@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"math/big"
+	"net"
 	"os"
 	"reflect"
 	"slices"
@@ -105,13 +106,31 @@ func Load(file, src string, stdout, stderr io.Writer) (*Program, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Program{file: file, src: src, prog: prog, in: eval.New(stdout, stderr)}, nil
+	p := &Program{file: file, src: src, prog: prog, in: eval.New(stdout, stderr)}
+	p.Args(nil)
+	return p, nil
+}
+
+// Args sets ARGV, the script's arguments: what follows the script on the
+// cameo command line, or what the host gives it. It is empty by default.
+func (p *Program) Args(args []string) {
+	elems := make([]object.Value, len(args))
+	for i, a := range args {
+		elems[i] = object.String(a)
+	}
+	p.in.SetConst("ARGV", object.NewList(elems...))
 }
 
 // IgnoreMutationErrors sets whether a call of one of Ruby's mutators,
 // such as a.push(1), returns its result on a copy instead of raising. The
 // receiver never changes either way.
 func (p *Program) IgnoreMutationErrors(ignore bool) { p.in.IgnoreMutationErrors = ignore }
+
+// Resolver gives the program name lookups: resolv looks names up with
+// resolver, net.DefaultResolver for the system's. Without one, require
+// "resolv" works and a lookup raises Resolv::ResolvError, so an embedding
+// program decides whether a script may look names up.
+func (p *Program) Resolver(resolver *net.Resolver) { p.in.DNS = resolver }
 
 // File is the script's path, as Load was given it.
 func (p *Program) File() string { return p.file }
@@ -293,6 +312,8 @@ func (c conv) toValue(v any) (object.Value, error) {
 		return object.Nil, nil
 	case object.Value:
 		return v, nil
+	case *Block:
+		return v.v, nil
 	case bool:
 		return object.Bool(v), nil
 	case int:
@@ -411,6 +432,8 @@ func (c conv) toValue(v any) (object.Value, error) {
 
 func (c conv) toGo(v object.Value) (any, error) {
 	switch v.Kind() {
+	case object.KindProc:
+		return &Block{c: c, v: v}, nil
 	case object.KindBool:
 		v := v.Bool()
 		return bool(v), nil

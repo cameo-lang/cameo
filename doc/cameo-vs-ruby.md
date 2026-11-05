@@ -82,7 +82,8 @@ mspec's own `before` blocks.
   `raise`, a bare `raise` in a rescue clause, `retry`, `cause` and `raise
   ..., cause:`, an exception class's own `initialize` with `super(msg)`,
   `exit` and `abort`, which raise SystemExit and end the command with its
-  status, and the exception classes of Ruby's core.
+  status, `at_exit`, whose blocks run when the script ends, the last
+  registered first, and the exception classes of Ruby's core.
 - **Core classes**: BasicObject, Numeric, Integer, Float, String, Symbol, Array, Hash, Set (as in
   3.4, without `require`), Range, Regexp and MatchData, Time, Math,
   Enumerator and `lazy`, Comparable and Enumerable, with most of their
@@ -91,7 +92,14 @@ mspec's own `before` blocks.
   Ruby's numbers, `Integer()`, `Float()`, `String()` and `Array()`,
   `Process.clock_gettime`.
 - **Libraries**: `require` of `set`, `time`, `pp`, `pathname`, `cgi`,
-  `json` and `benchmark`, which cameo builds in. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
+  `json`, `benchmark`, `uri`, `date`, `digest`, `base64`,
+  `securerandom`, `csv`, `marshal`, `shellwords`, `ipaddr`, `zlib`,
+  `prime`, `tsort`, `abbrev`, `singleton`,
+  `forwardable`, `delegate`, `logger`, `stringio`, `strscan`, `optparse`,
+  `getoptlong`, `matrix`, `bigdecimal`, `resolv` and `minispec`, which cameo builds in;
+  [stdlib.md](stdlib.md)
+  has every library of Ruby's standard library with its status, the ones
+  to come and the ones left out. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
   do without I/O: `escape` and `unescape`, the URI-component pair,
   `escapeHTML` and `unescapeHTML`, `escapeElement` and `unescapeElement`,
   `rfc1123_date` and `pretty`, with their snake_case names. A Symbol
@@ -106,6 +114,166 @@ mspec's own `before` blocks.
   readers, `format`, `to_a`, `to_h`, arithmetic and `add`. The times are
   read inside the script, so the interpreter's start is not in them; the
   CPU times are the whole process's, the work of `async` calls included.
+  `uri` is Ruby 3.4's uri 1.0.2 on Go's `net/url`, which reads a URI,
+  resolves a reference and escapes a component: `URI.parse`,
+  `URI()`, `join`, `split`, `for`, `extract`, `scheme_list`, the
+  www-form and URI-component encoders, and `URI::Generic` with `HTTP`,
+  `HTTPS`, `FTP`, `File`, `WS`, `WSS`, `LDAP`, `LDAPS` and `MailTo`:
+  the components, `merge` and `+`, `route_from`, `route_to`,
+  `normalize`, `select`, `build`, `==`, and the error classes, with
+  Ruby's messages. A URI is an instance whose components are typed
+  fields, and it has no setters: `u.host = "x"` and `u.with(host: "x")`
+  raise `NoMethodError` where Ruby changes the URI in place; a different
+  URI is parsed, joined, merged or built. `merge!` and `normalize!` are
+  bang methods, refused as every bang method of Ruby's core is.
+  `date` is Ruby 3.4's date 3.4.1: `Date` and `DateTime` with Ruby's
+  calendar (the Julian Day Number, the start of the Gregorian calendar,
+  Dates are read through Go's time package: `Date.parse` tries a fixed
+  list of forms, `strptime` goes through a Go layout, and what the layouts
+  cannot say, a week date, an ordinal suffix, an era word or a directive
+  such as `%V`, is not read.
+  `Date::ITALY`, `ENGLAND`, `JULIAN` and `GREGORIAN`), `new`/`civil`,
+  `jd`, `ordinal`, `commercial`, `today`, `now`, `valid_date?` and kin,
+  the readers, `+`, `-`, `>>`, `<<`, `next_*` and `prev_*`, `step`,
+  `upto`, `downto`, a Range of dates, `<=>`, `==`, `===`, `strftime`,
+  `to_s`, `inspect`, `iso8601`, `rfc3339`, `xmlschema`, `rfc2822`,
+  `httpdate`, `jisx0301`, `asctime`, `deconstruct_keys`, `Date.parse`
+  and `_parse` with the forms Ruby reads, `strptime` and `_strptime`,
+  the fixed formats and their underscored readers, `new_offset`,
+  `to_date`, `to_datetime`, `to_time`, and `Time#to_date` and
+  `to_datetime`. Where Ruby returns a Rational, cameo returns an Integer
+  when the value is whole and a Float otherwise: `Date - Date` is `59`,
+  not `(59/1)`; `ajd`, `day_fraction`, `sec_fraction` and `offset` are
+  Floats. `Date::Infinity` and `marshal_dump` are left out, and a day
+  number past 64 bits raises `RangeError`.
+  `digest` is Ruby 3.4's digest 3.2.0: `Digest::MD5`, `SHA1`, `SHA256`,
+  `SHA384`, `SHA512` and `SHA2` with `hexdigest`, `digest` and
+  `base64digest` on the class and on an object, `update` and `<<`,
+  `reset`, `digest_length`, `block_length`, `==`, `Digest.hexencode`,
+  `Digest(:SHA256)`; and, under the names openssl gives them,
+  `OpenSSL::HMAC.hexdigest`, `digest` and `base64digest`,
+  `OpenSSL::Digest.new("SHA256")`, `OpenSSL::Digest.hexdigest` and
+  `OpenSSL::Digest::SHA256`. A digest object is a value: `update` and
+  `<<` return the object with more fed, for the variable to take,
+  `d = d << "x"`, where Ruby feeds it in place. `RMD160` is left out
+  (Go has no RIPEMD-160), and `file` reads a file, which cameo does not.
+  `base64` is Ruby 3.4's base64 0.2.0: `encode64`, `decode64`,
+  `strict_encode64`, `strict_decode64`, `urlsafe_encode64` with
+  `padding:` and `urlsafe_decode64`, with Ruby's line breaks, its lenient
+  decoder and its `ArgumentError`.
+  `securerandom` is Ruby 3.4's securerandom 0.4.1: `SecureRandom.hex`,
+  `uuid`, `uuid_v4`, `uuid_v7`, `random_bytes`, `random_number`,
+  `alphanumeric` with `chars:`, `base64` and `urlsafe_base64`, drawing
+  from the operating system through Go's `crypto/rand`; and
+  `Random::Formatter`, which gives a `Random` the same methods, so a
+  seeded `Random` draws the hex, the tokens and the numbers CRuby's
+  draws.
+  `csv` is Ruby 3.4's csv 3.3.2: `CSV.parse`, `parse_line`, `generate`,
+  `generate_line`, `String#parse_csv` and `Array#to_csv` with csv's
+  options, headers and converters, `CSV::Row`, `CSV::Table`, and
+  `CSV.new(string)` as a handle read with `shift` or `each`, written with
+  `<<`. A Row and a Table are values: `row["c"] = 3` rebinds `row` to the
+  copy, and `tb = tb << fields` is the form, where Ruby changes them in
+  place; `delete` returns the copy without the part, not the part. The
+  parser and the writer are Go's `encoding/csv`, so `quote_char:` is
+  always `"`, `col_sep:` is one character, `row_sep:` is a line feed with
+  or without a carriage return, `force_quotes:` is refused, an empty
+  String is written bare and a field with a leading space is quoted. The
+  file methods, `read`, `foreach`, `open` and `table`, are left out.
+  `marshal` is `Marshal.dump`, `load` and `restore` in cameo's own wire
+  form, not Ruby's: the bytes are the protobuf `cameo.Value` envelope a
+  value crosses to a host in, so cameo reads them back and any protobuf
+  reader with `cameo/value.proto` reads them too. An instance of a cameo
+  class comes back by its class's name and digest. A Proc, a class, a
+  Random, an Enumerator and an instance of a library's class such as a
+  Date raise `TypeError`; a Symbol comes back as a String, as it crosses
+  to a host. An IO to write to or read from is left out.
+  `shellwords` is Ruby 3.4's shellwords 0.2.2: `Shellwords.split`,
+  `escape` and `join`, `String#shellsplit` and `shellescape`,
+  `Array#shelljoin`, with Ruby's quoting rules and its message for an
+  unmatched quote.
+  `String#unicode_normalize` and `unicode_normalized?` take the four
+  forms, on Go's `golang.org/x/text`, and are there without a `require`,
+  as Ruby's are.
+  `ipaddr` is Ruby 3.4's ipaddr 1.2.7: `IPAddr.new` with a prefix or a
+  mask, Ruby's compressed `to_s` and full `to_string`, `include?`,
+  `mask`, `to_range`, `succ`, the predicates, the operators and the
+  reverse names. An IPAddr is a value: `mask` returns the masked copy
+  where Ruby's `mask!` changes the address in place.
+  `zlib` is Ruby 3.4's zlib 3.2.1 as module functions: `crc32`,
+  `adler32`, `Zlib::Deflate.deflate`, `Zlib::Inflate.inflate`, `gzip`
+  and `gunzip`, with zlib's constants, errors and messages. The
+  compressed bytes are Go's deflate's: they inflate in Ruby and Ruby's
+  inflate here, but are not identical to zlib's byte for byte. The
+  streaming objects and the gzip IO classes are left out.
+  `prime` is Ruby 3.4's prime 0.1.3: `Prime.each`, `prime?`,
+  `prime_division`, `int_from_prime_division` and the Enumerable methods
+  on `Prime`, with `Integer#prime?` and `prime_division`. The test is
+  Miller-Rabin and the factorisation Pollard's rho, so a large number
+  answers where Ruby's trial division does not finish.
+  `tsort` is Ruby 3.4's tsort 0.2.0: the module functions over two
+  callables, `->(&b) { graph.each_key(&b) }` and
+  `->(n, &b) { graph[n].each(&b) }`, and the methods of a class that
+  includes `TSort`, component for component in Ruby's order.
+  `abbrev` is Ruby 3.4's abbrev 0.1.2: `Abbrev.abbrev` and
+  `Array#abbrev`, with a prefix or a Regexp as the pattern.
+  `singleton` is Ruby 3.4's singleton 0.2.0: `include Singleton` gives
+  the class `instance`, the one value, and takes `new` away.
+  `forwardable` and `delegate` are Ruby 3.4's: `extend Forwardable` with
+  `def_delegator`, `def_delegators` and `delegate`, where `:@items`
+  names the field, and `SimpleDelegator` and `DelegateClass` forwarding
+  what they lack to the wrapped object. A delegator is a value:
+  `__setobj__` returns the copy.
+  `logger` is Ruby 3.4's logger 1.6.4 on `STDOUT`, `STDERR` or `nil`:
+  the levels, `add`, the predicates, `progname`, `formatter`,
+  `datetime_format` and `Logger::Formatter`'s line. A Logger is a
+  handle, so `level=` changes it for every holder; a file is left out.
+  `stringio` is Ruby 3.4's stringio 3.1.2: a String read and written as
+  an IO, with Ruby's reading methods, separators and limits, its writes
+  over the position, `seek`, `truncate` and its errors. A StringIO is a
+  handle; `string` returns the String as it is at that moment.
+  `strscan` is Ruby 3.4's strscan 3.1.2: `StringScanner` with `scan`,
+  `scan_until`, `skip`, `check`, `match?`, the match record, `getch`,
+  `peek`, `unscan` and the rest, a Regexp or a String as the pattern. A
+  StringScanner is a handle.
+  `optparse` is Ruby 3.4's optparse 0.6.0: `OptionParser` with `on`,
+  `on_tail`, `separator`, `banner`, `version`, `help`, `parse`, `order`,
+  `permute`, `getopts`, the switch forms, argument types and completions,
+  and `ParseError` with its kinds. `ARGV` holds the script's arguments,
+  `cameo script.cameo a -b` (`Program.Args` from Go), and `parse!` with no
+  argument reads it. An Array is a value, so `parse!` returns the operands
+  and leaves its argument as it is; the options go through the blocks, or
+  `getopts` returns them as a Hash; `into:` is refused. `getoptlong` is
+  getoptlong 0.2.1: `GetoptLong` with `each`, `get`, `ordering`, `quiet`
+  and its errors, printed as Ruby prints them; the operands are in `rest`
+  rather than left in ARGV.
+  `matrix` is Ruby 3.4's matrix 0.4.2: `Matrix` and `Vector` with their
+  construction, arithmetic, `determinant`, `inverse`, `rank`, `trace`,
+  `minor`, the predicates, `inner_product`, `cross_product`, `norm` and
+  the errors. Both are values: Hash keys, compared by their elements, and
+  `v[0] = x` returns the copy. cameo has no Rational, so an Integer
+  matrix's inverse has Floats, computed exactly first; `Matrix ** Float`
+  and the eigensystem are left out, and `2 * m` is a TypeError, so write
+  `m * 2`.
+  `bigdecimal` is bigdecimal 3.1, which Ruby 3.4 ships as a bundled gem:
+  `BigDecimal()` with Ruby's syntax and errors, exact `+`, `-` and `*`,
+  `/` to the digits bigdecimal computes, the rounding modes, `limit` and
+  `mode`, `to_s` in its forms, `precision`, `scale`, `split`, the
+  predicates, `to_d` from `bigdecimal/util` and `BigMath`. A BigDecimal
+  is a value with its digits as fields, a Hash key and a Set member; it
+  is a Numeric, and an Integer or Float on the left of an operator
+  coerces to it, as Ruby's `coerce` protocol does. `sqrt` and `BigMath`
+  give the digits asked for, correctly rounded, where Ruby pads them with
+  its own extra digits; `to_r` is left out, since cameo has no Rational.
+  `resolv` is Ruby 3.4's resolv 0.6.0: `Resolv.getaddress`, `getname` and
+  kin, `Resolv::Hosts` on `/etc/hosts`, `Resolv::DNS` with `getresources`
+  for A, AAAA, MX, TXT, CNAME, NS, PTR and SRV, `Resolv::IPv4`, `IPv6` and
+  `DNS::Name`. The lookups go through the resolver the host gives the
+  program (`Program.Resolver`), as `net/http` goes through its client;
+  the `cameo` command gives the system's, and without one a lookup raises
+  `Resolv::ResolvError`. Go's resolver reads `/etc/hosts` for
+  `Resolv::DNS` too and gives no time to live, so `ttl` is nil; SOA is
+  left out.
 - **Output**: `puts`, `print`, `p`, `pp`, `warn`.
 
 ## Different in cameo
@@ -237,6 +405,8 @@ sets the fields, and `p a` prints `Point(x: 1, y: 2)` where Ruby prints
 - A `throw` ends the `catch` whose tag is equal to its own, where Ruby
   wants the same object: `catch("a") { throw "a" }` returns nil. The
   Object a `catch` without a tag makes is still a tag of its own.
+- `Time` takes an IANA zone name, `"Europe/Berlin"`, wherever Ruby
+  takes a UTC offset; see *Only in cameo*.
 - `Time` is immutable: `utc` and `localtime` return a new time, and
   `subsec` is a Float, since `Rational` is left out.
 - A String is UTF-8, ASCII-8BIT (binary) or US-ASCII; other encodings do not
@@ -311,11 +481,12 @@ These are absent, and a script that uses one fails when it reaches it:
   `gets`, `STDIN`, `STDOUT`, `STDERR`, `$stdout`.
 - **No threads or processes**: `Thread`, `Fiber`, `Mutex`, `sleep`,
   `system`, `exec`, `spawn`; cameo has `async` and `await` instead.
-- **Not there yet**: `at_exit`, `exit!`,
+- **Not there yet**: `exit!`,
   `printf` (`format` exists), `__method__`, `Enumerator.new`,
   `Integer()` with a base, and `autoload`.
-- **Libraries**: `require` of any library but the seven above, such as
-  `yaml`, raises a `LoadError`.
+- **Libraries**: `require` of any library but the thirty-five above, such
+  as `socket`, raises a `LoadError`. [stdlib.md](stdlib.md) says which are
+  planned and which are left out, and why.
 
 ## Only in cameo
 
@@ -324,6 +495,17 @@ These are absent, and a script that uses one fails when it reaches it:
   a message too, of its message, line, cause and fields, and crosses to
   `await` and to a Go host with them.
 - `with`, which returns a copy with some fields changed.
+- Time zones by name. An IANA name such as `"Europe/Berlin"` or
+  `"America/New_York"` is accepted wherever Ruby takes a UTC offset:
+  `Time.new(…, in:)` and its seventh argument, `Time.at(…, in:)`,
+  `Time.now(in:)`, `localtime`, `getlocal`, `DateTime.new`'s offset and
+  `new_offset`. The time then carries the zone: `zone` is the
+  abbreviation in force, `"CEST"`, `utc_offset` and `dst?` follow the
+  date, and adding an hour across a change of clocks lands where the
+  clocks did. Ruby takes a zone object there and has no zone database;
+  cameo compiles Go's in (`time/tzdata`), so a name resolves on any
+  machine. A name it does not know is an `ArgumentError`; an
+  abbreviation alone, `"CET"`, is refused as Ruby refuses it.
 - The Cameo module, which a script includes: `async receiver, :method,
   args…` runs a method concurrently and returns its promise, an
   Integer; `await` collects a promise's result, or a list's, and `await

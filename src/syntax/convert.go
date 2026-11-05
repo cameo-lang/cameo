@@ -672,8 +672,16 @@ var unsupported = map[string]string{
 
 // libraryFunctions are module functions of a library cameo builds in whose
 // names read as a mutating or unsupported call: JSON.parse! changes nothing,
-// and JSON.load reads a string, not a file.
-var libraryFunctions = map[string]map[string]bool{"JSON": {"parse!": true, "load": true}}
+// and JSON.load and Marshal.load read a string, not a file.
+var libraryFunctions = map[string]map[string]bool{
+	"JSON":    {"parse!": true, "load": true},
+	"Marshal": {"load": true},
+}
+
+// nonMutatingBangs are bang methods of a library that change nothing in
+// cameo whatever the receiver: OptionParser#parse! and kin return the
+// operands and leave the arguments as they are.
+var nonMutatingBangs = map[string]bool{"parse!": true, "order!": true, "permute!": true}
 
 // isLibraryFunction reports a call of one of libraryFunctions.
 func isLibraryFunction(n *ast.Call) bool {
@@ -761,7 +769,7 @@ func (c *converter) call(n *ast.Call) Node {
 			}
 		}
 	}
-	lib := isLibraryFunction(n)
+	lib := isLibraryFunction(n) || nonMutatingBangs[name]
 	if IsBang(name) && !lib && !c.bangs[name] {
 		c.fail("%s", BangMessage(receiverName(n.Recv), name))
 		return nil
@@ -1187,7 +1195,7 @@ func (c *converter) assignment(n *ast.Call) Node {
 // self in initialize. attr tells that key names an attribute, `.key`, rather
 // than an index, `[key]`.
 func (c *converter) update(recv ast.Node, key Node, attr bool, value Node, origin *ast.Call) Node {
-	with := func(target Node) Node { return &With{c.pos(), target, key, value} }
+	with := func(target Node) Node { return &With{c.pos(), target, key, value, !attr} }
 	switch r := recv.(type) {
 	case *ast.VarRef:
 		if slices.Contains(c.lent, r.Name) {

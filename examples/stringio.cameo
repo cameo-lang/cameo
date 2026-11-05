@@ -1,0 +1,25 @@
+# Ruby's stringio library: a String read and written as an IO, for code
+# that takes one. A StringIO is a handle, so what one holder writes the
+# other reads. Each line prints what Ruby prints.
+require "stringio"
+
+input = StringIO.new("alpha\nbeta\ngamma\n")
+p input.gets, input.read(4), input.gets(chomp: true), input.eof?, input.readlines
+input.rewind
+p input.each_line.map(&:chomp), input.lineno
+
+out = StringIO.new
+out.puts "report"
+out.printf("%-6s %3d\n", "lines", 3)
+out << "done" << "\n"
+p out.string, out.pos, out.size
+
+buf = StringIO.new("hello world")
+buf.seek(6)
+buf.write("there")
+p buf.string, buf.pos
+begin
+  StringIO.new("read only", "r").write("x")
+rescue IOError => e
+  puts e.message
+end

@@ -1,0 +1,6 @@
+["log", "lib", "app", "test"]
+[["log"], ["lib"], ["app"], ["test"]]
+[[4], [2, 3], [1]]
+topological sort failed: [2, 3]
+["log", "lib", "app", "test"]
+[["log"], ["lib"], ["app"]]

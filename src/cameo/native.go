@@ -28,7 +28,7 @@ type Class[T proto.Message] struct {
 // a method that "changes" it returns the changed copy, which comes back as
 // a new instance. Arguments, keywords, the result and errors convert as a
 // host method's do; see Func.
-type Method[T proto.Message] func(self T, args []any, kwargs map[string]any) (any, error)
+type Method[T proto.Message] func(self T, args []any, kwargs map[string]any, block *Block) (any, error)
 
 var (
 	// loaded is set by the first Load: from then on scripts read the
@@ -133,8 +133,8 @@ func (c *Class[T]) DefineMethod(name string, fn Method[T]) *Class[T] {
 		if err != nil {
 			return object.Value{}, ctx.Raise(object.TypeError, "%s#%s: %s", c.cls.QualifiedName(), name, err)
 		}
-		return hostCall(ctx, cv, args, kw, func(args []any, kwargs map[string]any) (any, error) {
-			return fn(msg.(T), args, kwargs)
+		return hostCall(ctx, cv, args, kw, block, func(args []any, kwargs map[string]any, block *Block) (any, error) {
+			return fn(msg.(T), args, kwargs, block)
 		})
 	})
 	return c
@@ -144,7 +144,7 @@ func (c *Class[T]) DefineMethod(name string, fn Method[T]) *Class[T] {
 // constructor other than new is one: it returns a T.
 func (c *Class[T]) DefineClassMethod(name string, fn Func) *Class[T] {
 	c.cls.DefineSingleton(name, -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return hostCall(ctx, conv{ctx.(*eval.Interp)}, args, kw, fn)
+		return hostCall(ctx, conv{ctx.(*eval.Interp)}, args, kw, block, fn)
 	})
 	return c
 }

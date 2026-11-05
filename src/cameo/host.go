@@ -17,16 +17,18 @@ type Module struct {
 
 // Func is a host method. It gets the call's positional arguments and its
 // keyword arguments as plain Go values: what ToGo gives, but a Symbol is a
-// String, as everywhere a value leaves cameo, and a Hash whose keys are all
-// Strings or Symbols is a map[string]any. What it returns comes back
-// through ToValue. An error raises an exception: an *Exception's class, or
-// a RuntimeError with the error's text.
+// String, as everywhere a value leaves cameo, a Hash whose keys are all
+// Strings or Symbols is a map[string]any, and a Proc is a *Block. block is
+// the block the call gave, or nil. What it returns comes back through
+// ToValue, a *Block as the Proc it came from. An error raises an
+// exception: an *Exception's class, or a RuntimeError with the error's
+// text.
 //
 // Workers that async started call host methods on goroutines of their
 // own, so a Func may run on several at once. RunContext stops the script
 // only once a host method returns: one that blocks watches the context
 // the host runs the script with.
-type Func func(args []any, kwargs map[string]any) (any, error)
+type Func func(args []any, kwargs map[string]any, block *Block) (any, error)
 
 // Module defines the module name for the script, or returns it when it is
 // defined already. Define modules after Load and before Run.
@@ -56,14 +58,18 @@ func (p *Program) Module(name string) *Module {
 // Module.name(args).
 func (m *Module) Def(name string, fn Func) {
 	m.cls.DefineSingleton(name, -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return hostCall(ctx, conv{ctx.(*eval.Interp)}, args, kw, fn)
+		return hostCall(ctx, conv{ctx.(*eval.Interp)}, args, kw, block, fn)
 	})
 }
 
 // hostCall calls a host method with a call's arguments and keywords as
 // plain Go values, and turns what it returns into a value or an exception;
 // see Func.
-func hostCall(ctx object.Context, c conv, args []object.Value, kw *object.Map, fn Func) (object.Value, error) {
+func hostCall(ctx object.Context, c conv, args []object.Value, kw *object.Map, block object.Value, fn Func) (object.Value, error) {
+	var b *Block
+	if !block.IsZero() {
+		b = &Block{c: c, v: block}
+	}
 	in := make([]any, len(args))
 	for i, a := range args {
 		g, err := c.toHost(a)
@@ -82,7 +88,7 @@ func hostCall(ctx object.Context, c conv, args []object.Value, kw *object.Map, f
 			kwargs[k.Str()] = g
 		}
 	}
-	out, err := fn(in, kwargs)
+	out, err := fn(in, kwargs, b)
 	if err != nil {
 		var exc *Exception
 		if errors.As(err, &exc) {
@@ -191,4 +197,33 @@ func (c conv) toHost(v object.Value) (any, error) {
 		return out, nil
 	}
 	return c.toGo(v)
+}
+
+// Block is a block or a Proc a script gave a host method: the block of
+// the call, or a Proc among its arguments. A host keeps it and calls it
+// when it likes, with the care Program.Call takes: the interpreter runs
+// one call at a time. Given back to the script, as an argument or a
+// result, it is the Proc it came from.
+type Block struct {
+	c conv
+	v object.Value
+}
+
+// Call runs the block with args, converting Go values in and the result
+// out as Program.Call does. An exception the block raises is the error, a
+// *RunError.
+func (b *Block) Call(args ...any) (any, error) {
+	values := make([]object.Value, len(args))
+	for i, a := range args {
+		v, err := b.c.toValue(a)
+		if err != nil {
+			return nil, err
+		}
+		values[i] = v
+	}
+	out, err := b.c.in.Yield(b.v, values...)
+	if err != nil {
+		return nil, &RunError{Err: err, Message: b.c.in.FormatError(err), proto: b.c.in.Proto()}
+	}
+	return b.c.toGo(out)
 }

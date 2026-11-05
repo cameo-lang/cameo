@@ -225,6 +225,13 @@ func installRange() {
 			}
 			return self, nil
 		}
+		if r(self).Lo.Kind() == object.KindInstance {
+			err := eachBySucc(ctx, r(self), func(v object.Value) error {
+				_, err := ctx.Yield(block, v)
+				return err
+			})
+			return self, err
+		}
 		if !r(self).Lo.IsInteger() {
 			return object.Value{}, ctx.Raise(object.TypeError, "can't iterate from %s", kindName(object.OrNil(r(self).Lo)))
 		}
@@ -532,6 +539,14 @@ func RangeElems(ctx object.Context, r *object.Range) ([]object.Value, error) {
 		}
 		return out, nil
 	}
+	if r.Lo.Kind() == object.KindInstance {
+		out := []object.Value{}
+		err := eachBySucc(ctx, r, func(v object.Value) error {
+			out = append(out, v)
+			return nil
+		})
+		return out, err
+	}
 	lo, hi, ok := intEnds(r)
 	if !ok {
 		if r.Hi.IsZero() && r.Lo.IsInteger() {
@@ -553,6 +568,39 @@ func RangeElems(ctx object.Context, r *object.Range) ([]object.Value, error) {
 		return nil
 	})
 	return out, err
+}
+
+// eachBySucc walks a range whose ends are instances of a class with succ
+// and <=>, such as Dates, as Ruby's Range#each does: from the first, by
+// succ, while the element does not pass the last.
+func eachBySucc(ctx object.Context, r *object.Range, yield func(object.Value) error) error {
+	if !ctx.RespondsTo(r.Lo, "succ") {
+		return ctx.Raise(object.TypeError, "can't iterate from %s", kindName(r.Lo))
+	}
+	if r.Hi.IsZero() {
+		return ctx.Raise(object.RangeError, "cannot convert endless range to a list")
+	}
+	for cur := r.Lo; ; {
+		c, err := ctx.Compare(cur, r.Hi)
+		if err != nil {
+			return err
+		}
+		if c > 0 || c == 0 && r.Exclusive {
+			return nil
+		}
+		if err := yield(cur); err != nil {
+			return err
+		}
+		next, err := ctx.Call(cur, "succ")
+		if err != nil {
+			return err
+		}
+		// A succ that does not advance would loop forever.
+		if c, err := ctx.Compare(next, cur); err != nil || c <= 0 {
+			return err
+		}
+		cur = next
+	}
 }
 
 // intEnds reads a range of integers as its first and last, the end less

@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/cameo-lang/cameo/src/lib/pathname"
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/stdlib"
 )
@@ -17,10 +18,36 @@ func userMethod(v object.Value, name string) *object.Method {
 	return nil
 }
 
+// ownNative finds a native method a library's class defines for its own
+// instances, such as URI::Generic#inspect or Net::HTTPHeader#[]=, on an
+// instance. The core's own, Object's, BasicObject's, Comparable's and
+// Enumerable's, are not such: the core's fallbacks stand for those.
+func ownNative(v object.Value, name string) *object.Method {
+	if v.Kind() != object.KindInstance {
+		return nil
+	}
+	m := v.Class().Lookup(name)
+	if m == nil || m.Native == nil || m.Body != nil {
+		return nil
+	}
+	switch m.Owner {
+	case object.ObjectClass, object.BasicObjectClass, object.Comparable, object.Enumerable:
+		return nil
+	}
+	return m
+}
+
 // Inspect implements object.Context: a value's inspect, as p prints it.
 func (in *Interp) Inspect(v object.Value) (string, error) {
 	if m := userMethod(v, "inspect"); m != nil {
 		r, err := in.invoke(m, v, nil, nil, object.Value{}, 0)
+		if err != nil {
+			return "", err
+		}
+		return in.ToS(r)
+	}
+	if m := ownNative(v, "inspect"); m != nil {
+		r, err := m.Native(in, v, nil, nil, object.Value{})
 		if err != nil {
 			return "", err
 		}
@@ -33,6 +60,16 @@ func (in *Interp) Inspect(v object.Value) (string, error) {
 func (in *Interp) ToS(v object.Value) (string, error) {
 	if m := userMethod(v, "to_s"); m != nil {
 		r, err := in.invoke(m, v, nil, nil, object.Value{}, 0)
+		if err != nil {
+			return "", err
+		}
+		if s, ok := r.AsString(); ok {
+			return string(s), nil
+		}
+		return in.inspectBuiltin(r)
+	}
+	if m := ownNative(v, "to_s"); m != nil {
+		r, err := m.Native(in, v, nil, nil, object.Value{})
 		if err != nil {
 			return "", err
 		}
@@ -68,8 +105,6 @@ func (in *Interp) ToS(v object.Value) (string, error) {
 			return "#<Object>", nil
 		case object.EncodingClass, object.PathnameClass:
 			return v.Instance().Fields[0].Str(), nil
-		case stdlib.BenchmarkTmsClass:
-			return stdlib.BenchmarkTmsToS(in, v)
 		}
 	}
 	if v.IsNil() {
@@ -195,8 +230,6 @@ func (in *Interp) inspectBuiltin(v object.Value) (string, error) {
 			return "#<Encoding:" + v.Fields[0].Str() + ">", nil
 		case object.PathnameClass:
 			return "#<Pathname:" + v.Fields[0].Str() + ">", nil
-		case stdlib.BenchmarkTmsClass:
-			return stdlib.BenchmarkTmsInspect(in, object.InstanceValue(v))
 		}
 		parts := make([]string, len(v.Cls.Fields))
 		for i, f := range v.Cls.Fields {
@@ -223,6 +256,13 @@ func itoa(i int64) string { return strconv.FormatInt(i, 10) }
 func (in *Interp) Equal(a, b object.Value) (bool, error) {
 	if m := userMethod(a, "=="); m != nil {
 		r, err := in.invoke(m, a, []object.Value{b}, nil, object.Value{}, 0)
+		if err != nil {
+			return false, err
+		}
+		return r.Truthy(), nil
+	}
+	if m := ownNative(a, "=="); m != nil {
+		r, err := m.Native(in, a, []object.Value{b}, nil, object.Value{})
 		if err != nil {
 			return false, err
 		}
@@ -279,9 +319,40 @@ func (in *Interp) Equal(a, b object.Value) (bool, error) {
 // Compare implements object.Context: <=>, through a user-defined one where a
 // class has it. It fails with an ArgumentError when the values do not
 // compare.
+// compareReversed orders a number against a value of a library's numeric
+// class, such as a BigDecimal, by asking that value and turning the
+// answer round.
+func (in *Interp) compareReversed(a, b object.Value) (int, bool, error) {
+	if b.Kind() != object.KindInstance || ownNative(b, "coerce") == nil {
+		return 0, false, nil
+	}
+	m := ownNative(b, "<=>")
+	if m == nil {
+		return 0, false, nil
+	}
+	r, err := m.Native(in, b, []object.Value{a}, nil, object.Value{})
+	if err != nil {
+		return 0, true, err
+	}
+	if i, ok := r.AsInt(); ok {
+		return -int(i), true, nil
+	}
+	return 0, false, nil
+}
+
 func (in *Interp) Compare(a, b object.Value) (int, error) {
 	if m := userMethod(a, "<=>"); m != nil {
 		r, err := in.invoke(m, a, []object.Value{b}, nil, object.Value{}, 0)
+		if err != nil {
+			return 0, err
+		}
+		if i, ok := r.AsInt(); ok {
+			return int(i), nil
+		}
+		return 0, in.incomparable(a, b)
+	}
+	if m := ownNative(a, "<=>"); m != nil {
+		r, err := m.Native(in, a, []object.Value{b}, nil, object.Value{})
 		if err != nil {
 			return 0, err
 		}
@@ -298,9 +369,15 @@ func (in *Interp) Compare(a, b object.Value) (int, error) {
 		if r, ok := object.CompareNumbers(a, b); ok {
 			return r, nil
 		}
+		if r, ok, err := in.compareReversed(a, b); ok || err != nil {
+			return r, err
+		}
 	case object.KindBig, object.KindFloat:
 		if r, ok := object.CompareNumbers(a, b); ok {
 			return r, nil
+		}
+		if r, ok, err := in.compareReversed(a, b); ok || err != nil {
+			return r, err
 		}
 	case object.KindString, object.KindBytes, object.KindASCII:
 		a := a.Str()
@@ -317,7 +394,7 @@ func (in *Interp) Compare(a, b object.Value) (int, error) {
 			return a.Time().Compare(b), nil
 		}
 	case object.KindInstance:
-		if r, ok := stdlib.ComparePathnames(a, b); ok {
+		if r, ok := pathname.Compare(a, b); ok {
 			return r, nil
 		}
 	case object.KindList:

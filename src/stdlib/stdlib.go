@@ -1,6 +1,8 @@
-// Package stdlib is cameo's standard library: the methods of the builtin
-// classes, implemented in Go against the object package. Everything returns
-// a new value; nothing changes its receiver.
+// Package stdlib is cameo's core: the methods of the builtin classes,
+// implemented in Go against the object package. Everything returns a new
+// value; nothing changes its receiver. The libraries a script requires are
+// under src/lib, one package each, and take what they share with the core
+// from lib.go.
 package stdlib
 
 import (
@@ -32,10 +34,6 @@ func Install() {
 	installRegexp()
 	installStringPatterns()
 	installEnumerator()
-	installTimeParsing()
-	installCGI()
-	installJSON()
-	installBenchmark()
 	installEncodings()
 	installPack()
 	installPaths()

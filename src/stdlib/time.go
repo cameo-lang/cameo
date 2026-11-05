@@ -1,12 +1,15 @@
 package stdlib
 
 import (
+	// The IANA time zone database, for a zone named in a script on a
+	// machine without one.
 	"math"
 	"math/big"
 	"slices"
 	"strconv"
 	"strings"
 	"time"
+	_ "time/tzdata"
 
 	"github.com/cameo-lang/cameo/src/object"
 )
@@ -369,7 +372,7 @@ func TimeInspect(t time.Time) string {
 
 // zoneName is Time#zone: "UTC" for a UTC time, the local zone's name, and
 // none for a fixed offset.
-func zoneName(t time.Time) string {
+func zoneName(t Clockwork) string {
 	name, _ := t.Zone()
 	return name
 }
@@ -397,7 +400,10 @@ func inKeyword(ctx object.Context, kw *object.Map, loc *time.Location) (*time.Lo
 
 // zoneArg reads a UTC offset as Ruby takes one: seconds, "+HH:MM" and its
 // variants ("+HH", "+HHMM", "+HH:MM:SS"), "UTC", "Z", or a military zone
-// letter. "-00:00" is UTC.
+// letter. "-00:00" is UTC. A name of the IANA time zone database, such as
+// "Europe/Berlin", is cameo's own: Ruby takes a zone object there. The
+// database is compiled in (time/tzdata), so a name resolves on a machine
+// without one.
 func zoneArg(ctx object.Context, v object.Value) (*time.Location, error) {
 	if n, ok := v.AsInt(); ok {
 		if n <= -86400 || n >= 86400 {
@@ -408,6 +414,13 @@ func zoneArg(ctx object.Context, v object.Value) (*time.Location, error) {
 	s, ok := v.AsString()
 	if !ok {
 		return nil, ctx.Raise(object.TypeError, "can't convert %s into an exact number", kindName(v))
+	}
+	if strings.Contains(s, "/") {
+		loc, err := time.LoadLocation(s)
+		if err != nil {
+			return nil, ctx.Raise(object.ArgumentError, "unknown time zone %s: an IANA name such as Europe/Berlin, or an offset such as +01:00, expected for utc_offset", s)
+		}
+		return loc, nil
 	}
 	bad := func() error {
 		return ctx.Raise(object.ArgumentError, `"+HH:MM", "-HH:MM", "UTC" or "A".."I","K".."Z" expected for utc_offset: %s`, s)
@@ -583,11 +596,29 @@ func floorScaled(x float64, scale int64) int64 {
 	return new(big.Int).Div(r.Num(), r.Denom()).Int64()
 }
 
+// Clockwork is what Strftime reads of a moment: the methods of time.Time it
+// uses, so that a Date, whose calendar is not Go's proleptic Gregorian one,
+// formats the same way with its own fields.
+type Clockwork interface {
+	Year() int
+	Month() time.Month
+	Day() int
+	YearDay() int
+	Hour() int
+	Minute() int
+	Second() int
+	Nanosecond() int
+	Weekday() time.Weekday
+	ISOWeek() (year, week int)
+	Zone() (name string, offset int)
+	Unix() int64
+}
+
 // Strftime formats t as Ruby's Time#strftime does, with its flags ("-" no
 // padding, "_" spaces, "0" zeros, "^" upper case, "#" swapped case), a
 // width, and colons for %z. A directive it does not know is copied as it
 // is.
-func Strftime(t time.Time, f string) string {
+func Strftime(t Clockwork, f string) string {
 	var b strings.Builder
 	for i := 0; i < len(f); i++ {
 		if f[i] != '%' {
