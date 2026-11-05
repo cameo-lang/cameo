@@ -183,6 +183,13 @@ func (r *Random) Float(inclusive bool) float64 {
 	r.mu.Lock()
 	a, b := r.genrand(), r.genrand()
 	r.mu.Unlock()
+	return PairToReal(a, b, inclusive)
+}
+
+// PairToReal is a float in [0, 1), or in [0, 1] when inclusive, from two
+// 32-bit draws, as CRuby's int_pair_to_real makes it: what a generator
+// draws, or what a source of bytes gives.
+func PairToReal(a, b uint32, inclusive bool) float64 {
 	if !inclusive {
 		return (float64(a>>5)*67108864 + float64(b>>6)) * (1.0 / 9007199254740992.0)
 	}

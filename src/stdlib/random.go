@@ -66,17 +66,17 @@ func installRandom() {
 		return randomRand(ctx, ctx.Rand(), args)
 	})
 	c.DefineSingleton("random_number", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return randomNumber(ctx, ctx.Rand(), args)
+		return RandomNumber(ctx, ctx.Rand(), args)
 	})
 	c.DefineSingleton("bytes", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		n, err := byteCount(ctx, args[0])
+		n, err := ByteCount(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
 		return object.Bytes(ctx.Rand().Bytes(n)), nil
 	})
 	c.DefineSingleton("urandom", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		n, err := byteCount(ctx, args[0])
+		n, err := ByteCount(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -89,10 +89,10 @@ func installRandom() {
 		return randomRand(ctx, self.Random(), args)
 	})
 	def(c, "random_number", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return randomNumber(ctx, self.Random(), args)
+		return RandomNumber(ctx, self.Random(), args)
 	})
 	def(c, "bytes", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		n, err := byteCount(ctx, args[0])
+		n, err := ByteCount(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -140,7 +140,7 @@ func kernelRand(ctx object.Context, args []object.Value) (object.Value, error) {
 // check_random_number of CRuby: like Kernel#rand, but a negative or zero
 // limit or an empty range is an ArgumentError, and a Float limit is not
 // truncated.
-func randomRand(ctx object.Context, r *object.Random, args []object.Value) (object.Value, error) {
+func randomRand(ctx object.Context, r Source, args []object.Value) (object.Value, error) {
 	v, ok, err := randomDraw(ctx, r, args)
 	if err != nil {
 		return object.Value{}, err
@@ -151,20 +151,31 @@ func randomRand(ctx object.Context, r *object.Random, args []object.Value) (obje
 		}
 	}
 	if v.IsNil() {
-		return object.Value{}, invalidArgument(ctx, args[0])
+		return object.Value{}, InvalidArgument(ctx, args[0])
 	}
 	return v, nil
 }
 
-// randomNumber is Random#random_number: Random#rand, with a float in
-// [0, 1) where rand fails for nil, zero or a negative limit.
-func randomNumber(ctx object.Context, r *object.Random, args []object.Value) (object.Value, error) {
+// Source is what a draw comes from: a Random's generator, or what
+// SecureRandom and a class that includes Random::Formatter make of their
+// bytes. Below's limit is inclusive, as CRuby's limited_rand's is.
+type Source interface {
+	Float(inclusive bool) float64
+	Below(limit *big.Int) *big.Int
+	BelowInt(limit uint64) uint64
+}
+
+// RandomNumber is Random#random_number, and Random::Formatter's: Random#rand,
+// with a float in [0, 1) where rand fails for nil, zero or a negative
+// limit, and the ArgumentError Ruby's raises for what is not a number or a
+// range of numbers.
+func RandomNumber(ctx object.Context, r Source, args []object.Value) (object.Value, error) {
 	v, ok, err := randomDraw(ctx, r, args)
 	if err != nil {
 		return object.Value{}, err
 	}
 	if !ok {
-		return object.Value{}, invalidArgument(ctx, args[0])
+		return object.Value{}, InvalidArgument(ctx, args[0])
 	}
 	if v.IsNil() {
 		return object.Float(r.Float(false)), nil
@@ -175,7 +186,7 @@ func randomNumber(ctx object.Context, r *object.Random, args []object.Value) (ob
 // randomDraw is rand_random of CRuby: the draw for Random#rand's
 // argument, nil for a limit it refuses, and ok false for an argument that
 // is neither a number nor a range of numbers.
-func randomDraw(ctx object.Context, r *object.Random, args []object.Value) (v object.Value, ok bool, err error) {
+func randomDraw(ctx object.Context, r Source, args []object.Value) (v object.Value, ok bool, err error) {
 	if len(args) > 1 {
 		return object.Value{}, true, ArgError(ctx, len(args), "0..1")
 	}
@@ -211,7 +222,7 @@ func randomDraw(ctx object.Context, r *object.Random, args []object.Value) (v ob
 // randInt is rand_int of CRuby: an integer in [0, max), nil for a zero
 // max, and for a negative one nil when restrictive and an integer below
 // its magnitude otherwise.
-func randInt(r *object.Random, max object.Value, restrictive bool) object.Value {
+func randInt(r Source, max object.Value, restrictive bool) object.Value {
 	if i, ok := max.AsInt(); ok && i != math.MinInt64 {
 		if i == 0 || i < 0 && restrictive {
 			return object.Nil
@@ -232,7 +243,7 @@ func randInt(r *object.Random, max object.Value, restrictive bool) object.Value 
 // randRange is rand_range of CRuby: a number within the range vmax, nil
 // for an empty one, and isRange false when vmax is not a range whose end
 // answers -. An endless or beginless range is outside the domain.
-func randRange(ctx object.Context, r *object.Random, vmax object.Value) (v object.Value, isRange bool, err error) {
+func randRange(ctx object.Context, r Source, vmax object.Value) (v object.Value, isRange bool, err error) {
 	rg, ok := vmax.AsRange()
 	if !ok {
 		return object.Value{}, false, nil
@@ -379,8 +390,9 @@ func toInt(ctx object.Context, v object.Value) (object.Value, error) {
 	return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into Integer", KindName(v))
 }
 
-// byteCount reads the length bytes takes.
-func byteCount(ctx object.Context, v object.Value) (int, error) {
+// ByteCount reads the length bytes takes: Random#bytes's, and
+// Random::Formatter's.
+func ByteCount(ctx object.Context, v object.Value) (int, error) {
 	n, err := WantInt(ctx, v, "")
 	if err != nil {
 		return 0, err
@@ -391,7 +403,9 @@ func byteCount(ctx object.Context, v object.Value) (int, error) {
 	return int(n), nil
 }
 
-func invalidArgument(ctx object.Context, v object.Value) error {
+// InvalidArgument is the ArgumentError a draw raises for a limit it cannot
+// read, in Ruby's words: the argument's to_s.
+func InvalidArgument(ctx object.Context, v object.Value) error {
 	s, err := ctx.ToS(v)
 	if err != nil {
 		return err
