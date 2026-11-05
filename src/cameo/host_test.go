@@ -262,3 +262,19 @@ func TestABlocksErrorEndsTheHostCallAsTheScriptsOwn(t *testing.T) {
 	assert.True(t, errors.Is(err, eval.ErrStopped), "Run returned %v, want ErrStopped", err)
 	assert.Equals(t, stopped.String(), "")
 }
+
+// ParseIOFlags takes --io and --io= with the kinds, leaves the rest, and
+// refuses a kind it does not know; the cameo command and a built program
+// share it.
+func TestParseIOFlagsReadsTheKinds(t *testing.T) {
+	allow, rest, err := ParseIOFlags([]string{"--io=network,file", "--io", "x", "--io=popen"})
+	if err != nil || len(allow) != 3 || allow[0] != "network" || allow[1] != "file" || allow[2] != "all" || len(rest) != 2 || rest[0] != "x" {
+		t.Fatalf("got %v %v %v", allow, rest, err)
+	}
+	if _, _, err := ParseIOFlags([]string{"--io=bogus"}); err == nil || err.Error() != `--io takes network, file, popen, not "bogus"` {
+		t.Fatalf("got %v", err)
+	}
+	if allow, rest, err := ParseIOFlags([]string{"a"}); err != nil || allow != nil || len(rest) != 1 {
+		t.Fatalf("got %v %v %v", allow, rest, err)
+	}
+}

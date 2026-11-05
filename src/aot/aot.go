@@ -1301,7 +1301,7 @@ func sortedKeys(m map[string]bool) []string {
 }
 
 // mainFunc runs the script as the cameo command does, with the same
-// collector settings.
+// collector settings, the same --io flags and its arguments in ARGV.
 const mainFunc = `func main() {
 	if os.Getenv("GOGC") == "" {
 		debug.SetGCPercent(400)
@@ -1309,7 +1309,21 @@ const mainFunc = `func main() {
 	if os.Getenv("GOMEMLIMIT") == "" {
 		debug.SetMemoryLimit(1 << 30)
 	}
-	if err := cameo.Run(file, script, os.Stdout, os.Stderr); err != nil {
+	// The built program is the host, as the cameo command is: --io allows
+	// every kind of I/O, --io=network,file,popen the kinds named, and what
+	// follows is the script's ARGV.
+	allowIO, args, err := cameo.ParseIOFlags(os.Args[1:])
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+	prog, err := cameo.Load(file, script, os.Stdout, os.Stderr)
+	if err == nil {
+		prog.AllowIO(allowIO...)
+		prog.Args(args)
+		err = prog.Run()
+	}
+	if err != nil {
 		if status, ok := cameo.ExitStatus(err); ok {
 			os.Exit(status)
 		}

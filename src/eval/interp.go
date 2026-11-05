@@ -10,6 +10,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/cameo-lang/cameo/src/lib"
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/protogen"
 	"github.com/cameo-lang/cameo/src/syntax"
@@ -59,6 +60,9 @@ type Interp struct {
 	// exits are the blocks at_exit registered, shared with the workers; Run
 	// runs them when the script ends.
 	exits *exitHandlers
+	// allowIO is what AllowIO enabled: kinds of I/O, "all", or libraries
+	// by require path; see IOAllowed.
+	allowIO map[string]bool
 	// states are what libraries keep for the run, by name; see State.
 	states *libStates
 	// stop ends the run, and is shared with the workers; see Stop.
@@ -133,6 +137,9 @@ func (in *Interp) stopped() error {
 	return nil
 }
 
+// Stopped implements object.Context.
+func (in *Interp) Stopped() error { return in.stopped() }
+
 // stopper is a run's stop: a flag the loops read, and channels that wake
 // whatever awaits a promise. Stop closes them all. A waiter selects on the
 // one its promise's id picks: a select locks every channel it waits on, so
@@ -141,10 +148,13 @@ type stopper struct {
 	flag atomic.Bool
 	once sync.Once
 	chs  [shards]chan struct{}
+	// done is the channel a host method that blocks watches (Context.Done),
+	// apart from the waiters' so the two do not contend for one.
+	done chan struct{}
 }
 
 func newStopper() *stopper {
-	s := &stopper{}
+	s := &stopper{done: make(chan struct{})}
 	for i := range s.chs {
 		s.chs[i] = make(chan struct{})
 	}
@@ -157,6 +167,7 @@ func (s *stopper) stop() {
 		for _, ch := range s.chs {
 			close(ch)
 		}
+		close(s.done)
 	})
 }
 
@@ -320,6 +331,28 @@ func (h *exitHandlers) pop() (object.Value, bool) {
 
 // AtExit implements object.Context.
 func (in *Interp) AtExit(block object.Value) { in.exits.push(block) }
+
+// AllowIO lets the script do I/O: each of what is a kind of I/O,
+// "network", "file" or "popen", "all" for every kind, or a library's
+// require path; see object.Context.IOAllowed. Nothing is allowed unless
+// AllowIO said so. Call it before Run.
+func (in *Interp) AllowIO(what ...string) {
+	if in.allowIO == nil {
+		in.allowIO = map[string]bool{}
+	}
+	for _, w := range what {
+		in.allowIO[w] = true
+	}
+}
+
+// IOAllowed implements object.Context: the library is allowed by name,
+// by its kind of I/O (lib.IOKinds), or because every kind is.
+func (in *Interp) IOAllowed(library string) bool {
+	return in.allowIO["all"] || in.allowIO[library] || in.allowIO[lib.IOKinds[library]]
+}
+
+// Done implements object.Context: the channel Stop closes.
+func (in *Interp) Done() <-chan struct{} { return in.stop.done }
 
 // runExitHandlers runs the blocks at_exit registered, the last first, once
 // the script ended with err, and returns the error the run ends with. The

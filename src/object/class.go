@@ -594,6 +594,20 @@ type Context interface {
 	// AtExit keeps a block to run when the script ends, as Kernel#at_exit
 	// does.
 	AtExit(block Value)
+	// IOAllowed reports whether the host lets the script do I/O through the
+	// library named by its require path, by the name, by the library's
+	// kind of I/O, or because every kind is allowed.
+	IOAllowed(lib string) bool
+	// Stopped is the error that ends the run once the host stopped it, nil
+	// while it runs: what a host method that blocks returns when Done is
+	// closed, so the script ends as it would at its next statement.
+	Stopped() error
+	// FormatError renders an error as the cameo command reports an
+	// uncaught one: the file, the line, the message and the class.
+	FormatError(err error) string
+	// Done is closed when the run is stopped from outside, so a host method
+	// that blocks can end.
+	Done() <-chan struct{}
 	// File is the script's file name, as its errors report it.
 	File() string
 	// Required reports whether the script required the library name:

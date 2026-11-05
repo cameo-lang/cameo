@@ -340,7 +340,10 @@ These are absent, and a script that uses one fails when it reaches it:
   and `Proc#curry`.
 - **No I/O beyond standard output and error**: `File` beyond its path
   methods, `IO` beyond `STDOUT` and `STDERR` (and `$stdout` and
-  `$stderr`, which are them), `Dir`, `gets`, `STDIN`.
+  `$stderr`, which are them), `Dir`, `gets`, `STDIN`. A library that does
+  I/O, `io/httpd`, acts only where the program allowed its kind: `cameo
+  --io` or `--io=network,file,popen`, or `AllowIO` in a program that
+  embeds cameo, which allows nothing by default.
 - **No threads or processes**: `Thread`, `Fiber`, `Mutex`, `sleep`,
   `system`, `exec`, `spawn`; cameo has `async` and `await` instead.
 - **Not there yet**: `exit!`,
