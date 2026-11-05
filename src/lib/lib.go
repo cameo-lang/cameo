@@ -31,6 +31,15 @@ var Libraries = map[string][]string{
 	"time":       nil,
 }
 
+// Sources are the libraries written in cameo, by the name require
+// accepts: the source of each, which a library's Go package embeds and
+// registers here. require parses it and runs it at the top level of the
+// script the first time, after marking the name loaded; its classes and
+// methods are the script's from then on, as a Go library's are from the
+// start. A library listed here needs no entry in Libraries, and may have
+// one for what it loads along with it.
+var Sources = map[string]string{}
+
 // Install defines every library. The evaluator calls it once, after
 // stdlib.Install.
 func Install() {
