@@ -34,7 +34,6 @@ categories:
       - "!examples/aot/*/*.go"
       - "!examples/aot/*.expected"
       - "!doc/gh_pages/**/*"
-      - "!doc/pages_redirect/**/*"
   - name: Interpreter
     patterns:
       - "/src/eval/**/*"
@@ -87,7 +86,6 @@ categories:
   - name: Site
     patterns:
       - "/doc/gh_pages/**/*"
-      - "/doc/pages_redirect/**/*"
   - name: Agent guidance & skills
     patterns:
       - "/agents/**/*"
