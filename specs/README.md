@@ -2,8 +2,9 @@
 
 All of [ruby/spec](https://github.com/ruby/spec), the specification of the
 Ruby language and its core and standard libraries, sorted by `cameo check`
-alone. **No spec has been run.** A file in `supported/` is one the checker
-accepts; whether its examples pass is for a run to find out.
+alone. A file in `supported/` is one the checker accepts; whether its
+examples pass is what [run.rb](run.rb) finds out, and
+[status.tsv](status.tsv) records.
 
 | Directory | Holds |
 |---|---|

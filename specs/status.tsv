@@ -8,7 +8,7 @@ core/argf/closed_spec.rb	*	expected	instance-variables	@file1_name = …: cameo 
 core/argf/each_byte_spec.rb	*	expected	instance-variables	@file1_name = …: cameo has no instance variables; initialize sets a field with self.file1_name = …
 core/argf/each_char_spec.rb	*	expected	instance-variables	@file1_name = …: cameo has no instance variables; initialize sets a field with self.file1_name = …
 core/argf/each_codepoint_spec.rb	*	expected	instance-variables	@filenames = …: cameo has no instance variables; initialize sets a field with self.filenames = …
-core/argf/each_line_spec.rb	*	expected	instance-variables	@file1_name = …: cameo has no instance variables; initialize sets a field with self.file1_name = …
+core/argf/each_line_spec.rb	*	expected	attr-accessor	attr_reader is not supported: a field declaration defines its reader, and there are no setters
 core/argf/each_spec.rb	ARGF.each is an alias of ARGF.each_line	expected	io	uninitialized constant ARGF (NameError)
 core/argf/eof_spec.rb	*	expected	instance-variables	@file1 = …: cameo has no instance variables; initialize sets a field with self.file1 = …
 core/argf/file_spec.rb	*	expected	instance-variables	@file1 = …: cameo has no instance variables; initialize sets a field with self.file1 = …
@@ -24,7 +24,7 @@ core/argf/read_nonblock_spec.rb	*	expected	instance-variables	@file1_name = …:
 core/argf/read_spec.rb	*	expected	instance-variables	@file1_name = …: cameo has no instance variables; initialize sets a field with self.file1_name = …
 core/argf/readchar_spec.rb	*	expected	instance-variables	@file1 = …: cameo has no instance variables; initialize sets a field with self.file1 = …
 core/argf/readline_spec.rb	*	expected	instance-variables	@file1_name = …: cameo has no instance variables; initialize sets a field with self.file1_name = …
-core/argf/readlines_spec.rb	*	expected	instance-variables	@file1 = …: cameo has no instance variables; initialize sets a field with self.file1 = …
+core/argf/readlines_spec.rb	*	expected	attr-accessor	attr_reader is not supported: a field declaration defines its reader, and there are no setters
 core/argf/readpartial_spec.rb	*	expected	instance-variables	@file1_name = …: cameo has no instance variables; initialize sets a field with self.file1_name = …
 core/argf/rewind_spec.rb	*	expected	instance-variables	@file1_name = …: cameo has no instance variables; initialize sets a field with self.file1_name = …
 core/argf/seek_spec.rb	*	expected	instance-variables	@file1_name = …: cameo has no instance variables; initialize sets a field with self.file1_name = …
@@ -190,12 +190,12 @@ core/basicobject/__send___spec.rb	*	expected	instance-variables	@method: cameo h
 core/basicobject/basicobject_spec.rb	*	expected	instance-variables	@meta = …: cameo has no instance variables; initialize sets a field with self.meta = …
 core/basicobject/equal_spec.rb	BasicObject#equal? is an alias of BasicObject#==	expected	metaprogramming	undefined method 'instance_method' for class BasicObject (NoMethodError)
 core/basicobject/equal_value_spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
-core/basicobject/initialize_spec.rb	BasicObject#initialize is a private instance method	bug		undefined method 'private_instance_methods' for class BasicObject (NoMethodError)
+core/basicobject/initialize_spec.rb	BasicObject#initialize is a private instance method	expected	visibility	undefined method 'private_instance_methods' for class BasicObject (NoMethodError)
 core/basicobject/initialize_spec.rb	BasicObject#initialize does not accept arguments	expected	literal-only	undefined method 'new' for class BasicObject: use a literal (NoMethodError)
 core/basicobject/instance_eval_spec.rb	*	expected	instance-variables	@secret = …: cameo has no instance variables; initialize sets a field with self.secret = …
 core/basicobject/instance_exec_spec.rb	*	expected	instance-variables	@secret = …: cameo has no instance variables; initialize sets a field with self.secret = …
 core/basicobject/method_missing_spec.rb	*	expected	metaprogramming	class << self is not supported: define class methods with def self.name
-core/basicobject/not_equal_spec.rb	BasicObject#!= is a public instance method	bug		undefined method 'public_instance_methods' for class BasicObject (NoMethodError)
+core/basicobject/not_equal_spec.rb	BasicObject#!= is a public instance method	expected	visibility	undefined method 'public_instance_methods' for class BasicObject (NoMethodError)
 core/basicobject/not_equal_spec.rb	BasicObject#!= returns true if other is not identical to self	expected	literal-only	undefined method 'new' for class BasicObject: use a literal (NoMethodError)
 core/basicobject/not_equal_spec.rb	BasicObject#!= returns true if other is an Object	expected	literal-only	undefined method 'new' for class BasicObject: use a literal (NoMethodError)
 core/basicobject/not_equal_spec.rb	BasicObject#!= returns false if other is identical to self	expected	literal-only	undefined method 'new' for class BasicObject: use a literal (NoMethodError)
@@ -203,7 +203,7 @@ core/basicobject/not_equal_spec.rb	BasicObject#!= dispatches to #==	harness	fail
 core/basicobject/not_equal_spec.rb	BasicObject#!= when invoked using Kernel#send returns true if other is not identical to self	bug		Expected false == true to be truthy but was false
 core/basicobject/not_equal_spec.rb	BasicObject#!= when invoked using Kernel#send returns false if other is identical to self	pass		
 core/basicobject/not_equal_spec.rb	BasicObject#!= when invoked using Kernel#send dispatches to #==	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
-core/basicobject/not_spec.rb	BasicObject#! is a public instance method	bug		undefined method 'public_instance_methods' for class BasicObject (NoMethodError)
+core/basicobject/not_spec.rb	BasicObject#! is a public instance method	expected	visibility	undefined method 'public_instance_methods' for class BasicObject (NoMethodError)
 core/basicobject/not_spec.rb	BasicObject#! returns false	expected	literal-only	undefined method 'new' for class BasicObject: use a literal (NoMethodError)
 core/basicobject/singleton_method_added_spec.rb	*	expected	metaprogramming	def singleton_method_added on an object: methods belong to classes
 core/basicobject/singleton_method_removed_spec.rb	*	expected	metaprogramming	def singleton_method_removed on an object: methods belong to classes
@@ -288,12 +288,12 @@ core/complex/exponent_spec.rb	Complex#** with Integer returns self raised to the
 core/complex/exponent_spec.rb	Complex#** with Rational returns self raised to the given power	expected	rational-complex	undefined method 'Complex' for main (NoMethodError)
 core/complex/exponent_spec.rb	Complex#** with Object tries to coerce self into other	harness	fails under Ruby too	undefined method 'Complex' for main (NoMethodError)
 core/complex/fdiv_spec.rb	*	expected	instance-variables	@numbers = …: cameo has no instance variables; initialize sets a field with self.numbers = …
-core/complex/finite_spec.rb	*	bug		imaginary literals are not supported
+core/complex/finite_spec.rb	*	expected	rational-complex	imaginary literals are not supported
 core/complex/hash_spec.rb	Complex#hash is static	expected	rational-complex	undefined method 'Complex' for main (NoMethodError)
 core/complex/hash_spec.rb	Complex#hash is different for different instances	expected	rational-complex	undefined method 'Complex' for main (NoMethodError)
 core/complex/imag_spec.rb	Complex#imag is an alias of Complex#imaginary	expected	rational-complex	uninitialized constant Complex (NameError)
 core/complex/imaginary_spec.rb	Complex#imaginary returns the imaginary part of self	expected	rational-complex	undefined method 'Complex' for main (NoMethodError)
-core/complex/infinite_spec.rb	*	bug		imaginary literals are not supported
+core/complex/infinite_spec.rb	*	expected	rational-complex	imaginary literals are not supported
 core/complex/inspect_spec.rb	*	expected	numeric-subclass	class Comparison < Numeric: a subclass of Numeric is not supported; Integer and Float do not coerce other numbers in their arithmetic (CameoError)
 core/complex/integer_spec.rb	Complex#integer? returns false for a Complex with no imaginary part	expected	rational-complex	undefined method 'Complex' for main (NoMethodError)
 core/complex/integer_spec.rb	Complex#integer? returns false for a Complex with an imaginary part	expected	rational-complex	undefined method 'Complex' for main (NoMethodError)
@@ -318,7 +318,7 @@ core/complex/plus_spec.rb	Complex#+ with Integer adds the real number to the rea
 core/complex/plus_spec.rb	Complex#+ with Object tries to coerce self into other	harness	fails under Ruby too	undefined method 'Complex' for main (NoMethodError)
 core/complex/plus_spec.rb	Complex#+ passed Numeric which responds to #real? with true coerces the passed argument to the type of the real part and adds the resulting elements	harness	fails under Ruby too	undefined method 'mock_numeric' for main (NoMethodError)
 core/complex/plus_spec.rb	Complex#+ passed Numeric which responds to #real? with false coerces the passed argument to Complex and adds the resulting elements	harness	fails under Ruby too	undefined method 'mock_numeric' for main (NoMethodError)
-core/complex/polar_spec.rb	*	bug		imaginary literals are not supported
+core/complex/polar_spec.rb	*	expected	rational-complex	imaginary literals are not supported
 core/complex/positive_spec.rb	Complex#positive? is undefined	expected	rational-complex	undefined method 'Complex' for main (NoMethodError)
 core/complex/quo_spec.rb	Complex#quo is an alias of Complex#/	expected	rational-complex	uninitialized constant Complex (NameError)
 core/complex/rationalize_spec.rb	Complex#rationalize raises RangeError if self has non-zero imaginary part	expected	rational-complex	undefined method 'Complex' for main (NoMethodError)
@@ -347,14 +347,13 @@ core/complex/to_i_spec.rb	Complex#to_i when the imaginary part is Rational 0 ret
 core/complex/to_i_spec.rb	Complex#to_i when the imaginary part responds to #== 0 with true returns the result of sending #to_i to the real part	harness	fails under Ruby too	undefined method 'mock_numeric' for main (NoMethodError)
 core/complex/to_i_spec.rb	Complex#to_i when the imaginary part is non-zero raises RangeError	expected	rational-complex	undefined method 'Complex' for main (NoMethodError)
 core/complex/to_i_spec.rb	Complex#to_i when the imaginary part is Float 0.0 raises RangeError	expected	rational-complex	undefined method 'Complex' for main (NoMethodError)
-core/complex/to_r_spec.rb	*	bug		rational literals are not supported
+core/complex/to_r_spec.rb	*	expected	rational-complex	rational literals are not supported
 core/complex/to_s_spec.rb	*	expected	numeric-subclass	class Comparison < Numeric: a subclass of Numeric is not supported; Integer and Float do not coerce other numbers in their arithmetic (CameoError)
 core/complex/uminus_spec.rb	Complex#-@ sends #-@ to the real and imaginary parts and returns a Complex with the resulting respective parts	harness	fails under Ruby too	undefined method 'mock_numeric' for main (NoMethodError)
 core/conditionvariable/broadcast_spec.rb	ConditionVariable#broadcast releases all threads waiting in line for this resource	expected	threads	uninitialized constant Mutex (NameError)
 core/conditionvariable/marshal_dump_spec.rb	ConditionVariable#marshal_dump raises a TypeError	expected	threads	uninitialized constant ConditionVariable (NameError)
-core/conditionvariable/signal_spec.rb	ConditionVariable#signal releases the first thread waiting in line for this resource	expected	threads	uninitialized constant Mutex (NameError)
-core/conditionvariable/signal_spec.rb	ConditionVariable#signal allows control to be passed between a pair of threads	expected	threads	uninitialized constant Mutex (NameError)
-core/conditionvariable/wait_spec.rb	*	expected	globals	global variables are not supported
+core/conditionvariable/signal_spec.rb	*	expected	block-captures-values	a block cannot rebind in_synchronize, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while
+core/conditionvariable/wait_spec.rb	*	expected	block-captures-values	a block cannot rebind in_synchronize, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while
 core/data/constants_spec.rb	Data is a new constant	expected	data	uninitialized constant Data (NameError)
 core/data/constants_spec.rb	Data is not deprecated	harness	fails under Ruby too	undefined local variable or method 'complain' for main (NameError)
 core/data/deconstruct_keys_spec.rb	*	expected	data	uninitialized constant Data (NameError)
@@ -456,17 +455,7 @@ core/encoding/converter/convpath_spec.rb	Encoding::Converter#convpath indicates 
 core/encoding/converter/destination_encoding_spec.rb	Encoding::Converter#destination_encoding returns the destination encoding as an Encoding object	expected	encodings	uninitialized constant Encoding::Converter (NameError)
 core/encoding/converter/finish_spec.rb	*	expected	instance-variables	@ec = …: cameo has no instance variables; initialize sets a field with self.ec = …
 core/encoding/converter/inspect_spec.rb	Encoding::Converter#inspect includes the source and destination encodings in the return value	expected	encodings	uninitialized constant Encoding::UTF_16LE (NameError)
-core/encoding/converter/last_error_spec.rb	Encoding::Converter#last_error returns nil when the no conversion has been attempted	expected	encodings	uninitialized constant Encoding::Converter (NameError)
-core/encoding/converter/last_error_spec.rb	Encoding::Converter#last_error returns nil when the last conversion did not produce an error	expected	encodings	uninitialized constant Encoding::Converter (NameError)
-core/encoding/converter/last_error_spec.rb	Encoding::Converter#last_error returns nil when #primitive_convert last returned :destination_buffer_full	expected	encodings	uninitialized constant Encoding::Converter (NameError)
-core/encoding/converter/last_error_spec.rb	Encoding::Converter#last_error returns nil when #primitive_convert last returned :finished	expected	encodings	uninitialized constant Encoding::Converter (NameError)
-core/encoding/converter/last_error_spec.rb	Encoding::Converter#last_error returns nil if the last conversion succeeded but the penultimate failed	expected	encodings	uninitialized constant Encoding::Converter (NameError)
-core/encoding/converter/last_error_spec.rb	Encoding::Converter#last_error returns an Encoding::InvalidByteSequenceError when #primitive_convert last returned :invalid_byte_sequence	expected	encodings	uninitialized constant Encoding::Converter (NameError)
-core/encoding/converter/last_error_spec.rb	Encoding::Converter#last_error returns an Encoding::UndefinedConversionError when #primitive_convert last returned :undefined_conversion	expected	encodings	uninitialized constant Encoding::Converter (NameError)
-core/encoding/converter/last_error_spec.rb	Encoding::Converter#last_error returns an Encoding::InvalidByteSequenceError when #primitive_convert last returned :incomplete_input	expected	encodings	uninitialized constant Encoding::Converter (NameError)
-core/encoding/converter/last_error_spec.rb	Encoding::Converter#last_error returns an Encoding::InvalidByteSequenceError when the last call to #convert produced one	expected	encodings	uninitialized constant Encoding::Converter (NameError)
-core/encoding/converter/last_error_spec.rb	Encoding::Converter#last_error returns an Encoding::UndefinedConversionError when the last call to #convert produced one	expected	encodings	uninitialized constant Encoding::Converter (NameError)
-core/encoding/converter/last_error_spec.rb	Encoding::Converter#last_error returns the last error of #convert with a message showing the transcoding path	expected	encodings	uninitialized constant Encoding::Converter (NameError)
+core/encoding/converter/last_error_spec.rb	*	expected	block-captures-values	a block cannot rebind exception, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while
 core/encoding/converter/new_spec.rb	Encoding::Converter.new accepts a String for the source encoding	expected	encodings	uninitialized constant Encoding::Converter (NameError)
 core/encoding/converter/new_spec.rb	Encoding::Converter.new accepts a String for the destination encoding	expected	encodings	uninitialized constant Encoding::Converter (NameError)
 core/encoding/converter/new_spec.rb	Encoding::Converter.new accepts an Encoding object for the source encoding	expected	encodings	uninitialized constant Encoding::Converter (NameError)
@@ -498,15 +487,7 @@ core/encoding/converter/primitive_errinfo_spec.rb	Encoding::Converter#primitive_
 core/encoding/converter/primitive_errinfo_spec.rb	Encoding::Converter#primitive_errinfo returns the state, source encoding, target encoding, erroneous bytes, and the read-again bytes when #convert last raised InvalidByteSequenceError	harness	fails under Ruby too	uninitialized constant Encoding::Converter (NameError)
 core/encoding/converter/primitive_errinfo_spec.rb	Encoding::Converter#primitive_errinfo returns the state, source encoding, target encoding, erroneous bytes, and the read-again bytes when #finish last raised InvalidByteSequenceError	harness	fails under Ruby too	uninitialized constant Encoding::Converter (NameError)
 core/encoding/converter/putback_spec.rb	*	expected	instance-variables	@ec = …: cameo has no instance variables; initialize sets a field with self.ec = …
-core/encoding/converter/replacement_spec.rb	Encoding::Converter#replacement returns '?' in US-ASCII when the destination encoding is not UTF-8	expected	encodings	uninitialized constant Encoding::Converter (NameError)
-core/encoding/converter/replacement_spec.rb	Encoding::Converter#replacement returns \uFFFD when the destination encoding is UTF-8	expected	encodings	uninitialized constant Encoding::Converter (NameError)
-core/encoding/converter/replacement_spec.rb	Encoding::Converter#replacement= accepts a String argument	expected	encodings	uninitialized constant Encoding::Converter (NameError)
-core/encoding/converter/replacement_spec.rb	Encoding::Converter#replacement= accepts a String argument of arbitrary length	expected	encodings	uninitialized constant Encoding::Converter (NameError)
-core/encoding/converter/replacement_spec.rb	Encoding::Converter#replacement= raises a TypeError if assigned a non-String argument	expected	encodings	uninitialized constant Encoding::Converter (NameError)
-core/encoding/converter/replacement_spec.rb	Encoding::Converter#replacement= sets #replacement	expected	encodings	uninitialized constant Encoding::Converter (NameError)
-core/encoding/converter/replacement_spec.rb	Encoding::Converter#replacement= raises an UndefinedConversionError is the argument cannot be converted into the destination encoding	expected	encodings	uninitialized constant Encoding::Converter (NameError)
-core/encoding/converter/replacement_spec.rb	Encoding::Converter#replacement= does not change the replacement character if the argument cannot be converted into the destination encoding	expected	encodings	uninitialized constant Encoding::Converter (NameError)
-core/encoding/converter/replacement_spec.rb	Encoding::Converter#replacement= uses the replacement character	expected	encodings	uninitialized constant Encoding::Converter (NameError)
+core/encoding/converter/replacement_spec.rb	*	expected	block-captures-values	a block cannot rebind ec, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while
 core/encoding/converter/search_convpath_spec.rb	Encoding::Converter.search_convpath returns an Array with a single element if there is a direct converter	expected	encodings	uninitialized constant Encoding::Converter (NameError)
 core/encoding/converter/search_convpath_spec.rb	Encoding::Converter.search_convpath returns multiple encoding pairs when direct conversion is impossible	expected	encodings	uninitialized constant Encoding::Converter (NameError)
 core/encoding/converter/search_convpath_spec.rb	Encoding::Converter.search_convpath indicates if crlf_newline conversion would occur	expected	encodings	uninitialized constant Encoding::Converter (NameError)
@@ -660,10 +641,7 @@ core/enumerator/lazy/chunk_while_spec.rb	Enumerator::Lazy#chunk_while works with
 core/enumerator/lazy/chunk_while_spec.rb	Enumerator::Lazy#chunk_while should return a lazy enumerator	pass		
 core/enumerator/lazy/collect_concat_spec.rb	Enumerator::Lazy#collect_concat is an alias of Enumerator::Lazy#flat_map	expected	metaprogramming	undefined method 'instance_method' for class Enumerator::Lazy (NoMethodError)
 core/enumerator/lazy/collect_spec.rb	Enumerator::Lazy#collect is an alias of Enumerator::Lazy#map	expected	metaprogramming	undefined method 'instance_method' for class Enumerator::Lazy (NoMethodError)
-core/enumerator/lazy/compact_spec.rb	Enumerator::Lazy#compact value packing of source yields packs a multi-argument source yield into an Array	expected	literal-only	undefined method 'new' for class Enumerator: use a literal (NoMethodError)
-core/enumerator/lazy/compact_spec.rb	Enumerator::Lazy#compact value packing of source yields removes a zero-argument source yield like nil	expected	literal-only	undefined method 'new' for class Enumerator: use a literal (NoMethodError)
-core/enumerator/lazy/compact_spec.rb	Enumerator::Lazy#compact returns array without nil elements	pass		
-core/enumerator/lazy/compact_spec.rb	Enumerator::Lazy#compact sets #size to nil	expected	literal-only	undefined method 'new' for class Enumerator::Lazy: use a literal (NoMethodError)
+core/enumerator/lazy/compact_spec.rb	*	expected	block-captures-values	a block cannot rebind args, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while
 core/enumerator/lazy/drop_spec.rb	*	expected	instance-variables	@take: cameo has no instance variables; a field is read with its reader, take or self.take
 core/enumerator/lazy/drop_while_spec.rb	*	expected	instance-variables	@take: cameo has no instance variables; a field is read with its reader, take or self.take
 core/enumerator/lazy/eager_spec.rb	Enumerator::Lazy#eager returns a non-lazy Enumerator converted from the lazy enumerator	pass		
@@ -694,30 +672,9 @@ core/enumerator/lazy/take_spec.rb	*	expected	instance-variables	@take: cameo has
 core/enumerator/lazy/take_while_spec.rb	*	expected	instance-variables	@take: cameo has no instance variables; a field is read with its reader, take or self.take
 core/enumerator/lazy/to_enum_spec.rb	*	expected	instance-variables	@infinite = …: cameo has no instance variables; initialize sets a field with self.infinite = …
 core/enumerator/lazy/uniq_spec.rb	*	expected	instance-variables	@take: cameo has no instance variables; a field is read with its reader, take or self.take
-core/enumerator/lazy/with_index_spec.rb	Enumerator::Lazy#with_index value packing of source yields pairs a packed Array with the index for a multi-argument source yield	expected	literal-only	undefined method 'new' for class Enumerator: use a literal (NoMethodError)
-core/enumerator/lazy/with_index_spec.rb	Enumerator::Lazy#with_index value packing of source yields pairs nil with the index for a zero-argument source yield	expected	literal-only	undefined method 'new' for class Enumerator: use a literal (NoMethodError)
-core/enumerator/lazy/with_index_spec.rb	Enumerator::Lazy#with_index value packing of source yields calls the block with the packed value and the index	expected	literal-only	undefined method 'new' for class Enumerator: use a literal (NoMethodError)
-core/enumerator/lazy/with_index_spec.rb	Enumerator::Lazy#with_index enumerates with an index	pass		
-core/enumerator/lazy/with_index_spec.rb	Enumerator::Lazy#with_index enumerates with an index starting at a given offset	pass		
-core/enumerator/lazy/with_index_spec.rb	Enumerator::Lazy#with_index enumerates with an index starting at 0 when offset is nil	pass		
-core/enumerator/lazy/with_index_spec.rb	Enumerator::Lazy#with_index raises TypeError when offset does not convert to Integer	bug		Expected TypeError but no exception was raised ([0, 1, 2] was returned)
-core/enumerator/lazy/with_index_spec.rb	Enumerator::Lazy#with_index enumerates with a given block	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
-core/enumerator/lazy/with_index_spec.rb	Enumerator::Lazy#with_index resets after a new call to each	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+core/enumerator/lazy/with_index_spec.rb	*	expected	block-captures-values	a block cannot rebind args, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while
 core/enumerator/lazy/zip_spec.rb	*	expected	instance-variables	@yieldsmixed = …: cameo has no instance variables; initialize sets a field with self.yieldsmixed = …
-core/enumerator/new_spec.rb	Enumerator.new no block given raises	expected	literal-only	undefined method 'new' for class Enumerator: use a literal (NoMethodError)
-core/enumerator/new_spec.rb	Enumerator.new when passed a block defines iteration with block, yielder argument and calling << method	expected	literal-only	undefined method 'new' for class Enumerator: use a literal (NoMethodError)
-core/enumerator/new_spec.rb	Enumerator.new when passed a block defines iteration with block, yielder argument and calling yield method	expected	literal-only	undefined method 'new' for class Enumerator: use a literal (NoMethodError)
-core/enumerator/new_spec.rb	Enumerator.new when passed a block defines iteration with block, yielder argument and treating it as a proc	expected	literal-only	undefined method 'new' for class Enumerator: use a literal (NoMethodError)
-core/enumerator/new_spec.rb	Enumerator.new when passed a block #yield accepts a single argument	expected	literal-only	undefined method 'new' for class Enumerator: use a literal (NoMethodError)
-core/enumerator/new_spec.rb	Enumerator.new when passed a block #yield accepts multiple arguments	expected	literal-only	undefined method 'new' for class Enumerator: use a literal (NoMethodError)
-core/enumerator/new_spec.rb	Enumerator.new when passed a block #yield doesn't double-wrap arrays	expected	literal-only	undefined method 'new' for class Enumerator: use a literal (NoMethodError)
-core/enumerator/new_spec.rb	Enumerator.new when passed a block #yield returns nil	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
-core/enumerator/new_spec.rb	Enumerator.new when passed a block #yield accepts keyword arguments and treats them as a positional hash	expected	literal-only	undefined method 'new' for class Enumerator: use a literal (NoMethodError)
-core/enumerator/new_spec.rb	Enumerator.new when passed a block #<< accepts a single argument	expected	literal-only	undefined method 'new' for class Enumerator: use a literal (NoMethodError)
-core/enumerator/new_spec.rb	Enumerator.new when passed a block #<< doesn't double-wrap arrays	expected	literal-only	undefined method 'new' for class Enumerator: use a literal (NoMethodError)
-core/enumerator/new_spec.rb	Enumerator.new when passed a block #<< accepts keyword arguments and treats them as a positional hash	expected	literal-only	undefined method 'new' for class Enumerator: use a literal (NoMethodError)
-core/enumerator/new_spec.rb	Enumerator.new when passed a block #<< can be chained	expected	literal-only	undefined method 'new' for class Enumerator: use a literal (NoMethodError)
-core/enumerator/new_spec.rb	Enumerator.new when passed a block #<< raises ArgumentError when given more than one argument	expected	literal-only	undefined method 'new' for class Enumerator: use a literal (NoMethodError)
+core/enumerator/new_spec.rb	*	expected	block-captures-values	a block cannot rebind a, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while
 core/enumerator/next_spec.rb	*	expected	instance-variables	@enum = …: cameo has no instance variables; initialize sets a field with self.enum = …
 core/enumerator/next_values_spec.rb	*	expected	metaprogramming	def each on an object: methods belong to classes
 core/enumerator/peek_spec.rb	*	expected	instance-variables	@e = …: cameo has no instance variables; initialize sets a field with self.e = …
@@ -734,7 +691,7 @@ core/enumerator/produce_spec.rb	Enumerator.produce accepts keyword arguments as 
 core/enumerator/product/each_spec.rb	*	expected	instance-variables	@object: cameo has no instance variables; a field is read with its reader, object or self.object
 core/enumerator/product/initialize_copy_spec.rb	Enumerator::Product#initialize_copy replaces content of the receiver with content of the other object	expected	metaprogramming	undefined method 'initialize_copy' for an instance of Enumerator::Product (NoMethodError)
 core/enumerator/product/initialize_copy_spec.rb	Enumerator::Product#initialize_copy returns self	expected	metaprogramming	undefined method 'initialize_copy' for an instance of Enumerator::Product (NoMethodError)
-core/enumerator/product/initialize_copy_spec.rb	Enumerator::Product#initialize_copy is a private method	bug		undefined method 'private_instance_methods' for class Enumerator::Product (NoMethodError)
+core/enumerator/product/initialize_copy_spec.rb	Enumerator::Product#initialize_copy is a private method	expected	visibility	undefined method 'private_instance_methods' for class Enumerator::Product (NoMethodError)
 core/enumerator/product/initialize_copy_spec.rb	Enumerator::Product#initialize_copy does nothing if the argument is the same as the receiver	expected	metaprogramming	undefined method 'initialize_copy' for an instance of Enumerator::Product (NoMethodError)
 core/enumerator/product/initialize_copy_spec.rb	Enumerator::Product#initialize_copy raises FrozenError if the receiver is frozen	expected	metaprogramming	undefined method 'initialize_copy' for an instance of Enumerator::Product (NoMethodError)
 core/enumerator/product/initialize_copy_spec.rb	Enumerator::Product#initialize_copy raises TypeError if the objects are of different class	expected	metaprogramming	undefined method 'initialize_copy' for an instance of Enumerator::Product (NoMethodError)
@@ -755,7 +712,7 @@ core/enumerator/size_spec.rb	Enumerator#size returns the result from size.call i
 core/enumerator/with_index_spec.rb	*	expected	instance-variables	@list = …: cameo has no instance variables; initialize sets a field with self.list = …
 core/enumerator/with_object_spec.rb	Enumerator#with_object is an alias of Enumerator#each_with_object	expected	metaprogramming	undefined method 'instance_method' for class Enumerator (NoMethodError)
 core/env/assoc_spec.rb	*	expected	instance-variables	@foo = …: cameo has no instance variables; initialize sets a field with self.foo = …
-core/env/clear_spec.rb	ENV.clear deletes all environment variables	expected	process	uninitialized constant ENV (NameError)
+core/env/clear_spec.rb	*	expected	mutation	…[…] = …: the left side of an assignment must start with a local variable, so the copy has somewhere to go
 core/env/clone_spec.rb	ENV#clone raises ArgumentError when keyword argument 'freeze' is neither nil nor boolean	expected	process	uninitialized constant ENV (NameError)
 core/env/clone_spec.rb	ENV#clone raises ArgumentError when keyword argument is not 'freeze'	expected	process	uninitialized constant ENV (NameError)
 core/env/clone_spec.rb	ENV#clone raises TypeError	expected	process	uninitialized constant ENV (NameError)
@@ -820,16 +777,16 @@ core/exception/errno_spec.rb	*	expected	attr-accessor	attr_reader is not support
 core/exception/exception_spec.rb	*	expected	attr-accessor	attr_reader is not supported: a field declaration defines its reader, and there are no setters
 core/exception/exit_value_spec.rb	LocalJumpError#exit_value returns the value given to return	expected	literal-only	undefined method 'new' for class Proc: use a literal (NoMethodError)
 core/exception/frozen_error_spec.rb	*	expected	metaprogramming	def x on an object: methods belong to classes
-core/exception/full_message_spec.rb	*	expected	metaprogramming	def to_str on an object: methods belong to classes
+core/exception/full_message_spec.rb	*	expected	block-captures-values	a block cannot rebind options_passed, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while
 core/exception/hierarchy_spec.rb	Exception has the right class hierarchy	pass		
 core/exception/inspect_spec.rb	*	expected	attr-accessor	attr_reader is not supported: a field declaration defines its reader, and there are no setters
 core/exception/interrupt_spec.rb	*	expected	instance-variables	@original_sigint_proc = …: cameo has no instance variables; initialize sets a field with self.original_sigint_proc = …
-core/exception/io_error_spec.rb	IO::EAGAINWaitReadable combines Errno::EAGAIN and IO::WaitReadable	expected	io	uninitialized constant IO (NameError)
+core/exception/io_error_spec.rb	IO::EAGAINWaitReadable combines Errno::EAGAIN and IO::WaitReadable	expected	io	uninitialized constant IO::EAGAINWaitReadable (NameError)
 core/exception/io_error_spec.rb	IO::EAGAINWaitReadable is the same as IO::EWOULDBLOCKWaitReadable if Errno::EAGAIN is the same as Errno::EWOULDBLOCK	expected	io	uninitialized constant Errno::EAGAIN (NameError)
-core/exception/io_error_spec.rb	IO::EWOULDBLOCKWaitReadable combines Errno::EWOULDBLOCK and IO::WaitReadable	expected	io	uninitialized constant IO (NameError)
-core/exception/io_error_spec.rb	IO::EAGAINWaitWritable combines Errno::EAGAIN and IO::WaitWritable	expected	io	uninitialized constant IO (NameError)
+core/exception/io_error_spec.rb	IO::EWOULDBLOCKWaitReadable combines Errno::EWOULDBLOCK and IO::WaitReadable	expected	io	uninitialized constant IO::EWOULDBLOCKWaitReadable (NameError)
+core/exception/io_error_spec.rb	IO::EAGAINWaitWritable combines Errno::EAGAIN and IO::WaitWritable	expected	io	uninitialized constant IO::EAGAINWaitWritable (NameError)
 core/exception/io_error_spec.rb	IO::EAGAINWaitWritable is the same as IO::EWOULDBLOCKWaitWritable if Errno::EAGAIN is the same as Errno::EWOULDBLOCK	expected	io	uninitialized constant Errno::EAGAIN (NameError)
-core/exception/io_error_spec.rb	IO::EWOULDBLOCKWaitWritable combines Errno::EWOULDBLOCK and IO::WaitWritable	expected	io	uninitialized constant IO (NameError)
+core/exception/io_error_spec.rb	IO::EWOULDBLOCKWaitWritable combines Errno::EWOULDBLOCK and IO::WaitWritable	expected	io	uninitialized constant IO::EWOULDBLOCKWaitWritable (NameError)
 core/exception/key_error_spec.rb	KeyError accepts :receiver and :key options	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
 core/exception/load_error_spec.rb	*	expected	instance-variables	@le = …: cameo has no instance variables; initialize sets a field with self.le = …
 core/exception/message_spec.rb	*	expected	attr-accessor	attr_reader is not supported: a field declaration defines its reader, and there are no setters
@@ -871,17 +828,10 @@ core/false/to_s_spec.rb	FalseClass#to_s returns the string 'false'	pass
 core/false/to_s_spec.rb	FalseClass#to_s returns a frozen string	pass		
 core/false/to_s_spec.rb	FalseClass#to_s always returns the same string	expected	identity-and-freezing	undefined method 'equal?' for an instance of String (NoMethodError)
 core/false/xor_spec.rb	FalseClass#^ is an alias of FalseClass#|	expected	metaprogramming	undefined method 'method' for false (NoMethodError)
-core/fiber/alive_spec.rb	Fiber#alive? returns true for a Fiber that hasn't had #resume called	expected	threads	uninitialized constant Fiber (NameError)
-core/fiber/alive_spec.rb	Fiber#alive? returns true for a Fiber that's yielded to the caller	expected	threads	uninitialized constant Fiber (NameError)
-core/fiber/alive_spec.rb	Fiber#alive? returns true when called from its Fiber	expected	threads	uninitialized constant Fiber (NameError)
-core/fiber/alive_spec.rb	Fiber#alive? doesn't invoke the block associated with the Fiber	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
-core/fiber/alive_spec.rb	Fiber#alive? returns false for a Fiber that's dead	expected	threads	uninitialized constant Fiber (NameError)
-core/fiber/alive_spec.rb	Fiber#alive? always returns false for a dead Fiber	expected	threads	uninitialized constant Fiber (NameError)
+core/fiber/alive_spec.rb	*	expected	block-captures-values	fiber is read in a block made before fiber is bound: a block captures the values its variables have when it is made, and only the lambda or proc assigned to fiber may read it
 core/fiber/blocking_spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
 core/fiber/current_scheduler_spec.rb	*	expected	attr-accessor	attr_reader is not supported: a field declaration defines its reader, and there are no setters
-core/fiber/current_spec.rb	Fiber.current returns the root Fiber when called outside of a Fiber	expected	threads	uninitialized constant Fiber (NameError)
-core/fiber/current_spec.rb	Fiber.current returns the current Fiber when called from a Fiber	expected	threads	uninitialized constant Fiber (NameError)
-core/fiber/current_spec.rb	Fiber.current returns the current Fiber when called from a Fiber that transferred to another	expected	threads	uninitialized constant Fiber (NameError)
+core/fiber/current_spec.rb	*	expected	block-captures-values	fiber is read in a block made before fiber is bound: a block captures the values its variables have when it is made, and only the lambda or proc assigned to fiber may read it
 core/fiber/inspect_spec.rb	Fiber#inspect status is resumed for the root Fiber of a Thread	expected	threads	uninitialized constant Thread (NameError)
 core/fiber/inspect_spec.rb	Fiber#inspect status is created for a Fiber which did not run yet	expected	threads	uninitialized constant Fiber (NameError)
 core/fiber/inspect_spec.rb	Fiber#inspect status is resumed for a Fiber which was resumed	expected	threads	uninitialized constant Fiber (NameError)
@@ -889,19 +839,14 @@ core/fiber/inspect_spec.rb	Fiber#inspect status is resumed for a Fiber which was
 core/fiber/inspect_spec.rb	Fiber#inspect status is suspended for a Fiber which was resumed and yielded	expected	threads	uninitialized constant Fiber (NameError)
 core/fiber/inspect_spec.rb	Fiber#inspect status is terminated for a Fiber which has terminated	expected	threads	uninitialized constant Fiber (NameError)
 core/fiber/kill_spec.rb	*	expected	instance-variables	@object: cameo has no instance variables; a field is read with its reader, object or self.object
-core/fiber/new_spec.rb	*	expected	metaprogramming	def f on an object: methods belong to classes
+core/fiber/new_spec.rb	*	expected	block-captures-values	a block cannot rebind invoked, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while
 core/fiber/raise_spec.rb	*	expected	instance-variables	@object: cameo has no instance variables; a field is read with its reader, object or self.object
 core/fiber/resume_spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
 core/fiber/schedule_spec.rb	*	expected	attr-accessor	attr_reader is not supported: a field declaration defines its reader, and there are no setters
 core/fiber/set_scheduler_spec.rb	*	expected	require	cannot load such file -- fiber (LoadError)
 core/fiber/storage_spec.rb	*	expected	mutation	…[…] = …: the left side of an assignment must start with a local variable, so the copy has somewhere to go
 core/fiber/transfer_spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
-core/fiber/yield_spec.rb	Fiber.yield passes control to the Fiber's caller	expected	threads	uninitialized constant Fiber (NameError)
-core/fiber/yield_spec.rb	Fiber.yield returns its arguments to the caller	expected	threads	uninitialized constant Fiber (NameError)
-core/fiber/yield_spec.rb	Fiber.yield returns nil to the caller if given no arguments	expected	threads	uninitialized constant Fiber (NameError)
-core/fiber/yield_spec.rb	Fiber.yield returns to the Fiber the value of the #resume call that invoked it	expected	threads	uninitialized constant Fiber (NameError)
-core/fiber/yield_spec.rb	Fiber.yield does not propagate or reraise a rescued exception	expected	threads	uninitialized constant Fiber (NameError)
-core/fiber/yield_spec.rb	Fiber.yield raises a FiberError if called from the root Fiber	expected	threads	uninitialized constant Fiber (NameError)
+core/fiber/yield_spec.rb	*	expected	block-captures-values	a block cannot rebind step, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while
 core/file/absolute_path_spec.rb	*	expected	instance-variables	@abs = …: cameo has no instance variables; initialize sets a field with self.abs = …
 core/file/atime_spec.rb	*	expected	instance-variables	@file = …: cameo has no instance variables; initialize sets a field with self.file = …
 core/file/basename_spec.rb	File.basename returns the basename of a path (basic cases)	pass		
@@ -1031,7 +976,7 @@ core/file/fnmatch_spec.rb	File.fnmatch does not raise a TypeError if the third a
 core/file/fnmatch_spec.rb	File.fnmatch matches multibyte characters	expected	io	undefined method 'fnmatch' for class File (NoMethodError)
 core/file/fnmatch_spec.rb	File.fnmatch? is an alias of File.fnmatch	expected	metaprogramming	undefined method 'method' for class File (NoMethodError)
 core/file/ftype_spec.rb	*	expected	instance-variables	@configured: cameo has no instance variables; a field is read with its reader, configured or self.configured
-core/file/grpowned_spec.rb	*	expected	instance-variables	@ruby = …: cameo has no instance variables; initialize sets a field with self.ruby = …
+core/file/grpowned_spec.rb	*	expected	process	backtick commands are not supported: cameo has no shell
 core/file/identical_spec.rb	*	expected	instance-variables	@file1 = …: cameo has no instance variables; initialize sets a field with self.file1 = …
 core/file/initialize_spec.rb	*	expected	instance-variables	@io: cameo has no instance variables; a field is read with its reader, io or self.io
 core/file/join_spec.rb	File.join changes only boundaries separators	pass		
@@ -1098,7 +1043,7 @@ core/file/stat/executable_spec.rb	*	expected	instance-variables	@file1 = …: ca
 core/file/stat/file_spec.rb	*	expected	instance-variables	@null = …: cameo has no instance variables; initialize sets a field with self.null = …
 core/file/stat/ftype_spec.rb	*	expected	instance-variables	@configured: cameo has no instance variables; a field is read with its reader, configured or self.configured
 core/file/stat/gid_spec.rb	*	expected	instance-variables	@file = …: cameo has no instance variables; initialize sets a field with self.file = …
-core/file/stat/grpowned_spec.rb	*	expected	instance-variables	@ruby = …: cameo has no instance variables; initialize sets a field with self.ruby = …
+core/file/stat/grpowned_spec.rb	*	expected	process	backtick commands are not supported: cameo has no shell
 core/file/stat/ino_spec.rb	*	expected	instance-variables	@file = …: cameo has no instance variables; initialize sets a field with self.file = …
 core/file/stat/inspect_spec.rb	*	expected	instance-variables	@file = …: cameo has no instance variables; initialize sets a field with self.file = …
 core/file/stat/mode_spec.rb	*	expected	instance-variables	@file = …: cameo has no instance variables; initialize sets a field with self.file = …
@@ -1145,7 +1090,7 @@ core/filetest/executable_real_spec.rb	*	expected	instance-variables	@file1 = …
 core/filetest/executable_spec.rb	*	expected	instance-variables	@file1 = …: cameo has no instance variables; initialize sets a field with self.file1 = …
 core/filetest/exist_spec.rb	*	expected	instance-variables	@object: cameo has no instance variables; a field is read with its reader, object or self.object
 core/filetest/file_spec.rb	*	expected	instance-variables	@null = …: cameo has no instance variables; initialize sets a field with self.null = …
-core/filetest/grpowned_spec.rb	*	expected	instance-variables	@ruby = …: cameo has no instance variables; initialize sets a field with self.ruby = …
+core/filetest/grpowned_spec.rb	*	expected	process	backtick commands are not supported: cameo has no shell
 core/filetest/identical_spec.rb	*	expected	instance-variables	@file1 = …: cameo has no instance variables; initialize sets a field with self.file1 = …
 core/filetest/owned_spec.rb	*	expected	instance-variables	@object: cameo has no instance variables; a field is read with its reader, object or self.object
 core/filetest/pipe_spec.rb	*	expected	instance-variables	@object: cameo has no instance variables; a field is read with its reader, object or self.object
@@ -1458,7 +1403,7 @@ core/integer/bit_or_spec.rb	*	expected	instance-variables	@bignum = …: cameo h
 core/integer/bit_xor_spec.rb	*	expected	instance-variables	@bignum = …: cameo has no instance variables; initialize sets a field with self.bignum = …
 core/integer/case_compare_spec.rb	Integer#=== is an alias of Integer#==	expected	metaprogramming	undefined method 'instance_method' for class Integer (NoMethodError)
 core/integer/ceil_spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
-core/integer/ceildiv_spec.rb	*	bug		rational literals are not supported
+core/integer/ceildiv_spec.rb	*	expected	rational-complex	rational literals are not supported
 core/integer/chr_spec.rb	*	expected	instance-variables	@default_internal = …: cameo has no instance variables; initialize sets a field with self.default_internal = …
 core/integer/coerce_spec.rb	Integer#coerce fixnum when given a Fixnum returns an array containing two Fixnums	pass		
 core/integer/coerce_spec.rb	Integer#coerce fixnum when given a String raises an ArgumentError when trying to coerce with a non-number String	pass		
@@ -1615,15 +1560,7 @@ core/integer/succ_spec.rb	Integer#succ returns the next larger positive Bignum	p
 core/integer/succ_spec.rb	Integer#succ returns the next larger negative Bignum	pass		
 core/integer/succ_spec.rb	Integer#succ overflows a Fixnum to a Bignum	pass		
 core/integer/succ_spec.rb	Integer#succ underflows a Bignum to a Fixnum	pass		
-core/integer/times_spec.rb	Integer#times returns self	pass		
-core/integer/times_spec.rb	Integer#times yields each value from 0 to self - 1	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
-core/integer/times_spec.rb	Integer#times skips the current iteration when encountering 'next'	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
-core/integer/times_spec.rb	Integer#times skips all iterations when encountering 'break'	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
-core/integer/times_spec.rb	Integer#times skips all iterations when encountering break with an argument and returns that argument	pass		
-core/integer/times_spec.rb	Integer#times executes a nested while loop containing a break expression	expected	mutation	cameo does not support mutating calls without rebinding; use first and drop (CameoError)
-core/integer/times_spec.rb	Integer#times executes a nested #times	pass		
-core/integer/times_spec.rb	Integer#times returns an Enumerator	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
-core/integer/times_spec.rb	Integer#times when no block is given returned Enumerator size returns self	pass		
+core/integer/times_spec.rb	*	expected	block-captures-values	a block cannot rebind a, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while
 core/integer/to_f_spec.rb	Integer#to_f fixnum returns self converted to a Float	pass		
 core/integer/to_f_spec.rb	Integer#to_f bignum returns self converted to a Float	pass		
 core/integer/to_f_spec.rb	Integer#to_f bignum converts number close to Float::MAX without exceeding MAX or producing NaN	pass		
@@ -1656,21 +1593,22 @@ core/io/autoclose_spec.rb	*	expected	mutation	def from=: setters are not support
 core/io/binmode_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
 core/io/binread_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
 core/io/binwrite_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
+core/io/buffer/advance_spec.rb	*	expected	instance-variables	@buffer: cameo has no instance variables; a field is read with its reader, buffer or self.buffer
 core/io/buffer/and_spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
 core/io/buffer/empty_spec.rb	*	expected	instance-variables	@buffer = …: cameo has no instance variables; initialize sets a field with self.buffer = …
 core/io/buffer/external_spec.rb	*	expected	instance-variables	@buffer: cameo has no instance variables; a field is read with its reader, buffer or self.buffer
 core/io/buffer/for_spec.rb	*	expected	instance-variables	@string = …: cameo has no instance variables; initialize sets a field with self.string = …
-core/io/buffer/free_spec.rb	IO::Buffer#free with a buffer created with .new frees internal memory and nullifies the buffer	expected	io	uninitialized constant IO (NameError)
-core/io/buffer/free_spec.rb	IO::Buffer#free with a buffer created with .new frees mapped memory and nullifies the buffer	expected	io	uninitialized constant IO (NameError)
+core/io/buffer/free_spec.rb	IO::Buffer#free with a buffer created with .new frees internal memory and nullifies the buffer	expected	io	uninitialized constant IO::Buffer (NameError)
+core/io/buffer/free_spec.rb	IO::Buffer#free with a buffer created with .new frees mapped memory and nullifies the buffer	expected	io	uninitialized constant IO::Buffer (NameError)
 core/io/buffer/free_spec.rb	IO::Buffer#free with a file-backed buffer created with .map frees mapped memory and nullifies the buffer	expected	io	undefined method 'open' for class File (NoMethodError)
-core/io/buffer/free_spec.rb	IO::Buffer#free with a String-backed buffer created with .for without a block disassociates the buffer from the string and nullifies the buffer	expected	io	uninitialized constant IO (NameError)
-core/io/buffer/free_spec.rb	IO::Buffer#free with a String-backed buffer created with .for with a block disassociates the buffer from the string and nullifies the buffer	expected	io	uninitialized constant IO (NameError)
-core/io/buffer/free_spec.rb	IO::Buffer#free with a String-backed buffer created with .string disassociates the buffer from the string and nullifies the buffer	expected	io	uninitialized constant IO (NameError)
-core/io/buffer/free_spec.rb	IO::Buffer#free can be called repeatedly without an error	expected	io	uninitialized constant IO (NameError)
-core/io/buffer/free_spec.rb	IO::Buffer#free resets the buffer to a valid empty state	expected	io	uninitialized constant IO (NameError)
-core/io/buffer/free_spec.rb	IO::Buffer#free is disallowed while locked, raising IO::Buffer::LockedError	expected	io	uninitialized constant IO (NameError)
-core/io/buffer/free_spec.rb	IO::Buffer#free with a slice of a buffer nullifies the slice, not touching the buffer	expected	io	uninitialized constant IO (NameError)
-core/io/buffer/free_spec.rb	IO::Buffer#free with a slice of a buffer nullifies buffer, invalidating the slice	expected	io	uninitialized constant IO (NameError)
+core/io/buffer/free_spec.rb	IO::Buffer#free with a String-backed buffer created with .for without a block disassociates the buffer from the string and nullifies the buffer	expected	io	uninitialized constant IO::Buffer (NameError)
+core/io/buffer/free_spec.rb	IO::Buffer#free with a String-backed buffer created with .for with a block disassociates the buffer from the string and nullifies the buffer	expected	io	uninitialized constant IO::Buffer (NameError)
+core/io/buffer/free_spec.rb	IO::Buffer#free with a String-backed buffer created with .string disassociates the buffer from the string and nullifies the buffer	expected	io	uninitialized constant IO::Buffer (NameError)
+core/io/buffer/free_spec.rb	IO::Buffer#free can be called repeatedly without an error	expected	io	uninitialized constant IO::Buffer (NameError)
+core/io/buffer/free_spec.rb	IO::Buffer#free resets the buffer to a valid empty state	expected	io	uninitialized constant IO::Buffer (NameError)
+core/io/buffer/free_spec.rb	IO::Buffer#free is disallowed while locked, raising IO::Buffer::LockedError	expected	io	uninitialized constant IO::Buffer (NameError)
+core/io/buffer/free_spec.rb	IO::Buffer#free with a slice of a buffer nullifies the slice, not touching the buffer	expected	io	uninitialized constant IO::Buffer (NameError)
+core/io/buffer/free_spec.rb	IO::Buffer#free with a slice of a buffer nullifies buffer, invalidating the slice	expected	io	uninitialized constant IO::Buffer (NameError)
 core/io/buffer/initialize_spec.rb	*	expected	instance-variables	@buffer: cameo has no instance variables; a field is read with its reader, buffer or self.buffer
 core/io/buffer/internal_spec.rb	*	expected	instance-variables	@buffer: cameo has no instance variables; a field is read with its reader, buffer or self.buffer
 core/io/buffer/locked_spec.rb	*	expected	instance-variables	@buffer: cameo has no instance variables; a field is read with its reader, buffer or self.buffer
@@ -1679,13 +1617,17 @@ core/io/buffer/mapped_spec.rb	*	expected	instance-variables	@buffer: cameo has n
 core/io/buffer/not_spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
 core/io/buffer/null_spec.rb	*	expected	instance-variables	@buffer = …: cameo has no instance variables; initialize sets a field with self.buffer = …
 core/io/buffer/or_spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
+core/io/buffer/overlap_spec.rb	*	expected	instance-variables	@buffer = …: cameo has no instance variables; initialize sets a field with self.buffer = …
 core/io/buffer/private_spec.rb	*	expected	instance-variables	@buffer: cameo has no instance variables; a field is read with its reader, buffer or self.buffer
 core/io/buffer/readonly_spec.rb	*	expected	instance-variables	@buffer: cameo has no instance variables; a field is read with its reader, buffer or self.buffer
 core/io/buffer/resize_spec.rb	*	expected	instance-variables	@buffer: cameo has no instance variables; a field is read with its reader, buffer or self.buffer
 core/io/buffer/shared_spec.rb	*	expected	instance-variables	@buffer: cameo has no instance variables; a field is read with its reader, buffer or self.buffer
+core/io/buffer/slice_spec.rb	*	expected	instance-variables	@buffer = …: cameo has no instance variables; initialize sets a field with self.buffer = …
+core/io/buffer/source_spec.rb	*	expected	instance-variables	@buffer: cameo has no instance variables; a field is read with its reader, buffer or self.buffer
 core/io/buffer/string_spec.rb	*	expected	instance-variables	@buffer = …: cameo has no instance variables; initialize sets a field with self.buffer = …
 core/io/buffer/transfer_spec.rb	*	expected	instance-variables	@buffer: cameo has no instance variables; a field is read with its reader, buffer or self.buffer
 core/io/buffer/valid_spec.rb	*	expected	instance-variables	@buffer: cameo has no instance variables; a field is read with its reader, buffer or self.buffer
+core/io/buffer/view_spec.rb	*	expected	instance-variables	@storage = …: cameo has no instance variables; initialize sets a field with self.storage = …
 core/io/buffer/write_spec.rb	*	expected	instance-variables	@path = …: cameo has no instance variables; initialize sets a field with self.path = …
 core/io/buffer/xor_spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
 core/io/close_on_exec_spec.rb	*	expected	instance-variables	@name = …: cameo has no instance variables; initialize sets a field with self.name = …
@@ -1693,16 +1635,16 @@ core/io/close_read_spec.rb	*	expected	mutation	def from=: setters are not suppor
 core/io/close_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
 core/io/close_write_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
 core/io/closed_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
-core/io/constants_spec.rb	IO::SEEK_SET is defined	expected	io	uninitialized constant IO (NameError)
-core/io/constants_spec.rb	IO::SEEK_CUR is defined	expected	io	uninitialized constant IO (NameError)
-core/io/constants_spec.rb	IO::SEEK_END is defined	expected	io	uninitialized constant IO (NameError)
+core/io/constants_spec.rb	IO::SEEK_SET is defined	expected	io	undefined method 'const_defined?' for class IO (NoMethodError)
+core/io/constants_spec.rb	IO::SEEK_CUR is defined	expected	io	undefined method 'const_defined?' for class IO (NoMethodError)
+core/io/constants_spec.rb	IO::SEEK_END is defined	expected	io	undefined method 'const_defined?' for class IO (NoMethodError)
 core/io/copy_stream_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
 core/io/dup_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
 core/io/each_byte_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
 core/io/each_char_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
 core/io/each_codepoint_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
 core/io/each_line_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
-core/io/each_spec.rb	IO#each is an alias of IO#each_line	expected	io	uninitialized constant IO (NameError)
+core/io/each_spec.rb	IO#each is an alias of IO#each_line	expected	metaprogramming	undefined method 'instance_method' for class IO (NoMethodError)
 core/io/eof_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
 core/io/external_encoding_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
 core/io/fcntl_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
@@ -1717,15 +1659,15 @@ core/io/gets_spec.rb	*	expected	mutation	def from=: setters are not supported; a
 core/io/initialize_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
 core/io/inspect_spec.rb	*	expected	instance-variables	@path = …: cameo has no instance variables; initialize sets a field with self.path = …
 core/io/internal_encoding_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
-core/io/io_spec.rb	IO includes File::Constants	expected	io	uninitialized constant IO (NameError)
-core/io/io_spec.rb	IO includes Enumerable	expected	io	uninitialized constant IO (NameError)
+core/io/io_spec.rb	IO includes File::Constants	expected	io	uninitialized constant File::Constants (NameError)
+core/io/io_spec.rb	IO includes Enumerable	bug		Expected false == true to be truthy but was false
 core/io/ioctl_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
-core/io/isatty_spec.rb	IO#isatty is an alias of IO#tty?	expected	io	uninitialized constant IO (NameError)
+core/io/isatty_spec.rb	IO#isatty is an alias of IO#tty?	expected	metaprogramming	undefined method 'instance_method' for class IO (NoMethodError)
 core/io/lineno_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
 core/io/new_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
 core/io/nonblock_spec.rb	IO#nonblock? before	harness	IO#nonblock? before	
 core/io/nonblock_spec.rb	IO#nonblock? returns false for a file by default	harness	fails under Ruby too	undefined method 'open' for class File (NoMethodError)
-core/io/nonblock_spec.rb	IO#nonblock? returns true for pipe by default	harness	fails under Ruby too	uninitialized constant IO (NameError)
+core/io/nonblock_spec.rb	IO#nonblock? returns true for pipe by default	harness	fails under Ruby too	undefined method 'pipe' for class IO (NoMethodError)
 core/io/nonblock_spec.rb	IO#nonblock? returns true for socket by default	harness	fails under Ruby too	cannot load such file -- socket (LoadError)
 core/io/nonblock_spec.rb	IO#nonblock= before	harness	IO#nonblock= before	
 core/io/nonblock_spec.rb	IO#nonblock= changes the IO to non-blocking mode	harness	fails under Ruby too	undefined method 'open' for class File (NoMethodError)
@@ -1733,8 +1675,8 @@ core/io/open_spec.rb	*	expected	mutation	def from=: setters are not supported; a
 core/io/output_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
 core/io/path_spec.rb	IO#path returns the path of the file associated with the IO object	harness	fails under Ruby too	undefined method 'unlink' for class File (NoMethodError)
 core/io/path_spec.rb	IO#path is set for STDIN	expected	io	uninitialized constant STDIN (NameError)
-core/io/path_spec.rb	IO#path is set for STDOUT	expected	io	uninitialized constant STDOUT (NameError)
-core/io/path_spec.rb	IO#path is set for STDERR	expected	io	uninitialized constant STDERR (NameError)
+core/io/path_spec.rb	IO#path is set for STDOUT	bug		undefined method 'path' for an instance of IO (NoMethodError)
+core/io/path_spec.rb	IO#path is set for STDERR	bug		undefined method 'path' for an instance of IO (NoMethodError)
 core/io/pid_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
 core/io/pipe_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
 core/io/popen_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
@@ -1764,10 +1706,10 @@ core/io/sysopen_spec.rb	*	expected	instance-variables	@filename = …: cameo has
 core/io/sysread_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
 core/io/sysseek_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
 core/io/syswrite_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
-core/io/tell_spec.rb	IO#tell is an alias of IO#pos	expected	io	uninitialized constant IO (NameError)
-core/io/to_i_spec.rb	IO#to_i is an alias of IO#fileno	expected	io	uninitialized constant IO (NameError)
+core/io/tell_spec.rb	IO#tell is an alias of IO#pos	expected	metaprogramming	undefined method 'instance_method' for class IO (NoMethodError)
+core/io/to_i_spec.rb	IO#to_i is an alias of IO#fileno	expected	metaprogramming	undefined method 'instance_method' for class IO (NoMethodError)
 core/io/to_io_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
-core/io/to_path_spec.rb	IO#to_path is an alias of IO#path	expected	io	uninitialized constant IO (NameError)
+core/io/to_path_spec.rb	IO#to_path is an alias of IO#path	expected	metaprogramming	undefined method 'instance_method' for class IO (NoMethodError)
 core/io/try_convert_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
 core/io/tty_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
 core/io/ungetbyte_spec.rb	*	expected	instance-variables	@name = …: cameo has no instance variables; initialize sets a field with self.name = …
@@ -1788,7 +1730,7 @@ core/kernel/abort_spec.rb	*	expected	visibility	public is not supported: every m
 core/kernel/at_exit_spec.rb	*	expected	visibility	public is not supported: every method is public
 core/kernel/autoload_relative_spec.rb	*	expected	visibility	public is not supported: every method is public
 core/kernel/autoload_spec.rb	*	expected	visibility	public is not supported: every method is public
-core/kernel/backtick_spec.rb	*	bug	parse-error	parse error at line 817: unexpected token "end" (end)
+core/kernel/backtick_spec.rb	*	bug	parse-error	parse error at line 820: unexpected token "end" (end)
 core/kernel/binding_spec.rb	*	expected	visibility	public is not supported: every method is public
 core/kernel/block_given_spec.rb	*	expected	visibility	public is not supported: every method is public
 core/kernel/caller_locations_spec.rb	*	expected	metaprogramming	eval is not supported; use nothing
@@ -1824,7 +1766,7 @@ core/kernel/frozen_spec.rb	*	expected	visibility	public is not supported: every 
 core/kernel/gets_spec.rb	*	expected	visibility	public is not supported: every method is public
 core/kernel/global_variables_spec.rb	*	expected	visibility	public is not supported: every method is public
 core/kernel/gsub_spec.rb	*	expected	visibility	public is not supported: every method is public
-core/kernel/initialize_clone_spec.rb	Kernel#initialize_clone is a private instance method	bug		undefined method 'private_instance_methods' for module Kernel (NoMethodError)
+core/kernel/initialize_clone_spec.rb	Kernel#initialize_clone is a private instance method	expected	visibility	undefined method 'private_instance_methods' for module Kernel (NoMethodError)
 core/kernel/initialize_clone_spec.rb	Kernel#initialize_clone returns the receiver	expected	metaprogramming	undefined method 'initialize_clone' for an instance of Object (NoMethodError)
 core/kernel/initialize_clone_spec.rb	Kernel#initialize_clone calls #initialize_copy	harness	fails under Ruby too	undefined method 'should_receive' for an instance of Object (NoMethodError)
 core/kernel/initialize_clone_spec.rb	Kernel#initialize_clone accepts a :freeze keyword argument for obj.clone(freeze: value)	expected	metaprogramming	undefined method 'initialize_clone' for an instance of Object (NoMethodError)
@@ -1832,7 +1774,7 @@ core/kernel/initialize_copy_spec.rb	Kernel#initialize_copy returns self	expected
 core/kernel/initialize_copy_spec.rb	Kernel#initialize_copy does nothing if the argument is the same as the receiver	expected	metaprogramming	undefined method 'initialize_copy' for an instance of Object (NoMethodError)
 core/kernel/initialize_copy_spec.rb	Kernel#initialize_copy raises FrozenError if the receiver is frozen	expected	metaprogramming	undefined method 'initialize_copy' for an instance of Object (NoMethodError)
 core/kernel/initialize_copy_spec.rb	Kernel#initialize_copy raises TypeError if the objects are of different class	expected	metaprogramming	undefined method 'initialize_copy' for an instance of #<Class> (NoMethodError)
-core/kernel/initialize_dup_spec.rb	Kernel#initialize_dup is a private instance method	bug		undefined method 'private_instance_methods' for module Kernel (NoMethodError)
+core/kernel/initialize_dup_spec.rb	Kernel#initialize_dup is a private instance method	expected	visibility	undefined method 'private_instance_methods' for module Kernel (NoMethodError)
 core/kernel/initialize_dup_spec.rb	Kernel#initialize_dup returns the receiver	expected	metaprogramming	undefined method 'initialize_dup' for an instance of Object (NoMethodError)
 core/kernel/initialize_dup_spec.rb	Kernel#initialize_dup calls #initialize_copy	harness	fails under Ruby too	undefined method 'should_receive' for an instance of Object (NoMethodError)
 core/kernel/inspect_spec.rb	*	expected	visibility	public is not supported: every method is public
@@ -1867,7 +1809,7 @@ core/kernel/public_methods_spec.rb	*	expected	visibility	public is not supported
 core/kernel/public_send_spec.rb	*	expected	visibility	public is not supported: every method is public
 core/kernel/putc_spec.rb	*	expected	visibility	public is not supported: every method is public
 core/kernel/puts_spec.rb	*	expected	visibility	public is not supported: every method is public
-core/kernel/raise_spec.rb	*	bug	parse-error	parse error at line 1261: unexpected token "rescue" (rescue)
+core/kernel/raise_spec.rb	*	bug	parse-error	parse error at line 1272: unexpected token "rescue" (rescue)
 core/kernel/rand_spec.rb	*	expected	visibility	public is not supported: every method is public
 core/kernel/readline_spec.rb	*	expected	visibility	public is not supported: every method is public
 core/kernel/readlines_spec.rb	*	expected	visibility	public is not supported: every method is public
@@ -1898,8 +1840,8 @@ core/kernel/throw_spec.rb	*	expected	visibility	public is not supported: every m
 core/kernel/to_enum_spec.rb	*	expected	globals	global variables are not supported
 core/kernel/to_s_spec.rb	*	expected	visibility	public is not supported: every method is public
 core/kernel/trace_var_spec.rb	*	expected	visibility	public is not supported: every method is public
-core/kernel/trap_spec.rb	Kernel#trap is a private method	bug		undefined method 'private_instance_methods' for module Kernel (NoMethodError)
-core/kernel/trap_spec.rb	Kernel.trap is a public method	bug		undefined method 'public_methods' for module Kernel (NoMethodError)
+core/kernel/trap_spec.rb	Kernel#trap is a private method	expected	visibility	undefined method 'private_instance_methods' for module Kernel (NoMethodError)
+core/kernel/trap_spec.rb	Kernel.trap is a public method	expected	visibility	undefined method 'public_methods' for module Kernel (NoMethodError)
 core/kernel/trust_spec.rb	*	expected	visibility	public is not supported: every method is public
 core/kernel/untaint_spec.rb	*	expected	visibility	public is not supported: every method is public
 core/kernel/untrace_var_spec.rb	*	expected	visibility	public is not supported: every method is public
@@ -1915,11 +1857,28 @@ core/main/ruby2_keywords_spec.rb	*	expected	visibility	public is not supported: 
 core/main/to_s_spec.rb	*	expected	metaprogramming	eval is not supported; use nothing
 core/main/using_spec.rb	*	expected	visibility	public is not supported: every method is public
 core/marshal/dump_spec.rb	*	expected	attr-accessor	attr_reader is not supported: a field declaration defines its reader, and there are no setters
-core/marshal/float_spec.rb	*	expected	require	load is not supported; use nothing: a script is one file
+core/marshal/float_spec.rb	Marshal.dump with Float represents NaN	expected	marshal	Expected "\x19\x00\x00\x00\x00\x00\x00\xF8\x7F" == "\u0004\bf\bnan" to be truthy but was false
+core/marshal/float_spec.rb	Marshal.dump with Float represents +Infinity	expected	marshal	Expected "\x19\x00\x00\x00\x00\x00\x00\xF0\x7F" == "\u0004\bf\binf" to be truthy but was false
+core/marshal/float_spec.rb	Marshal.dump with Float represents -Infinity	expected	marshal	Expected "\x19\x00\x00\x00\x00\x00\x00\xF0\xFF" == "\u0004\bf\t-inf" to be truthy but was false
+core/marshal/float_spec.rb	Marshal.dump with Float represents zero	expected	marshal	Expected "\x19\x00\x00\x00\x00\x00\x00\x00\x00" == "\u0004\bf\u00060" to be truthy but was false
+core/marshal/float_spec.rb	Marshal.dump with Float represents a Float less than 1	expected	marshal	Expected "\x19u%\x83UUU\xE5?" == "\u0004\bf\u00100.666666667" to be truthy but was false
+core/marshal/float_spec.rb	Marshal.dump with Float represents a Float much less than 1	expected	marshal	Expected "\x19\xCFN\xBE<A6\x15>" == "\u0004\bf\u00101.234697e-9" to be truthy but was false
+core/marshal/float_spec.rb	Marshal.dump with Float represents a Float greater than 1	expected	marshal	Expected "\x19\x96\fVUUUE@" == "\u0004\bf\u001142.666666667" to be truthy but was false
+core/marshal/float_spec.rb	Marshal.dump with Float represents a Float much greater than 1	expected	marshal	Expected "\x19\xC0x\x0E\xB9\xA1s\xD6B" == "\u0004\bf\u001398743561239011" to be truthy but was false
+core/marshal/float_spec.rb	Marshal.dump with Float represents a Float much greater than 1 with a very small fractional part	expected	marshal	Expected "\x19\x00`\xA4\xD9\x97CgB" == "\u0004\bf\u0011799346183459" to be truthy but was false
+core/marshal/float_spec.rb	Marshal.load with Float loads NaN	expected	marshal	incompatible marshal data: proto: cannot parse invalid wire-format data (ArgumentError)
+core/marshal/float_spec.rb	Marshal.load with Float loads +Infinity	expected	marshal	incompatible marshal data: proto: cannot parse invalid wire-format data (ArgumentError)
+core/marshal/float_spec.rb	Marshal.load with Float loads -Infinity	expected	marshal	incompatible marshal data: proto: cannot parse invalid wire-format data (ArgumentError)
+core/marshal/float_spec.rb	Marshal.load with Float loads zero	expected	marshal	incompatible marshal data: proto: cannot parse invalid wire-format data (ArgumentError)
+core/marshal/float_spec.rb	Marshal.load with Float loads a Float less than 1	expected	marshal	incompatible marshal data: proto: cannot parse invalid wire-format data (ArgumentError)
+core/marshal/float_spec.rb	Marshal.load with Float loads a Float much less than 1	expected	marshal	incompatible marshal data: proto: cannot parse invalid wire-format data (ArgumentError)
+core/marshal/float_spec.rb	Marshal.load with Float loads a Float greater than 1	expected	marshal	incompatible marshal data: proto: cannot parse invalid wire-format data (ArgumentError)
+core/marshal/float_spec.rb	Marshal.load with Float loads a Float much greater than 1	expected	marshal	incompatible marshal data: proto: cannot parse invalid wire-format data (ArgumentError)
+core/marshal/float_spec.rb	Marshal.load with Float loads a Float much greater than 1 with a very small fractional part	expected	marshal	incompatible marshal data: proto: cannot parse invalid wire-format data (ArgumentError)
 core/marshal/load_spec.rb	*	expected	attr-accessor	attr_reader is not supported: a field declaration defines its reader, and there are no setters
-core/marshal/major_version_spec.rb	Marshal::MAJOR_VERSION is 4	expected	marshal	uninitialized constant Marshal (NameError)
-core/marshal/minor_version_spec.rb	Marshal::MINOR_VERSION is 8	expected	marshal	uninitialized constant Marshal (NameError)
-core/marshal/restore_spec.rb	Marshal.restore is an alias of Marshal.load	expected	marshal	uninitialized constant Marshal (NameError)
+core/marshal/major_version_spec.rb	Marshal::MAJOR_VERSION is 4	expected	marshal	uninitialized constant Marshal::MAJOR_VERSION (NameError)
+core/marshal/minor_version_spec.rb	Marshal::MINOR_VERSION is 8	expected	marshal	uninitialized constant Marshal::MINOR_VERSION (NameError)
+core/marshal/restore_spec.rb	Marshal.restore is an alias of Marshal.load	expected	metaprogramming	undefined method 'method' for module Marshal (NoMethodError)
 core/matchdata/allocate_spec.rb	MatchData.allocate is undefined	pass		
 core/matchdata/begin_spec.rb	MatchData#begin when passed an integer argument returns the character offset of the start of the nth element	pass		
 core/matchdata/begin_spec.rb	MatchData#begin when passed an integer argument returns nil when the nth match isn't found	pass		
@@ -2086,19 +2045,7 @@ core/math/erfc_spec.rb	*	expected	instance-variables	@value = …: cameo has no 
 core/math/exp_spec.rb	*	expected	instance-variables	@value = …: cameo has no instance variables; initialize sets a field with self.value = …
 core/math/expm1_spec.rb	*	expected	instance-variables	@value = …: cameo has no instance variables; initialize sets a field with self.value = …
 core/math/frexp_spec.rb	*	expected	instance-variables	@value = …: cameo has no instance variables; initialize sets a field with self.value = …
-core/math/gamma_spec.rb	Math.gamma returns +infinity given 0	pass		
-core/math/gamma_spec.rb	Math.gamma returns -infinity given -0.0	pass		
-core/math/gamma_spec.rb	Math.gamma returns Math.sqrt(Math::PI) given 0.5	pass		
-core/math/gamma_spec.rb	Math.gamma returns exactly (n-1)! given n for n between 2 and 23	pass		
-core/math/gamma_spec.rb	Math.gamma returns approximately (n-1)! given n for n between 24 and 30	pass		
-core/math/gamma_spec.rb	Math.gamma returns good numerical approximation for gamma(3.2)	pass		
-core/math/gamma_spec.rb	Math.gamma returns good numerical approximation for gamma(-2.15)	pass		
-core/math/gamma_spec.rb	Math.gamma returns good numerical approximation for gamma(0.00001)	pass		
-core/math/gamma_spec.rb	Math.gamma returns good numerical approximation for gamma(-0.00001)	pass		
-core/math/gamma_spec.rb	Math.gamma raises Math::DomainError given -1	pass		
-core/math/gamma_spec.rb	Math.gamma returns +infinity given +infinity	pass		
-core/math/gamma_spec.rb	Math.gamma raises Math::DomainError given negative infinity	pass		
-core/math/gamma_spec.rb	Math.gamma returns NaN given NaN	pass		
+core/math/gamma_spec.rb	*	expected	block-captures-values	a block cannot rebind fact, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while
 core/math/hypot_spec.rb	*	expected	instance-variables	@value = …: cameo has no instance variables; initialize sets a field with self.value = …
 core/math/ldexp_spec.rb	*	expected	instance-variables	@value = …: cameo has no instance variables; initialize sets a field with self.value = …
 core/math/lgamma_spec.rb	Math.lgamma returns [Infinity, 1] when passed 0	pass		
@@ -2224,7 +2171,7 @@ core/module/public_instance_method_spec.rb	*	expected	visibility	private is not 
 core/module/public_instance_methods_spec.rb	*	expected	visibility	private is not supported: every method is public
 core/module/public_method_defined_spec.rb	*	expected	visibility	private is not supported: every method is public
 core/module/public_spec.rb	*	expected	visibility	private is not supported: every method is public
-core/module/refine_spec.rb	*	expected	instance-variables	@items = …: cameo has no instance variables; initialize sets a field with self.items = …
+core/module/refine_spec.rb	*	expected	block-captures-values	a block cannot rebind inner_self, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while
 core/module/refinements_spec.rb	Module#refinements returns refinements defined in a module	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
 core/module/refinements_spec.rb	Module#refinements does not return refinements defined in the included module	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
 core/module/refinements_spec.rb	Module#refinements returns an empty array if no refinements defined in a module	expected	literal-only	undefined method 'new' for class Module: use a literal (NoMethodError)
@@ -2241,36 +2188,13 @@ core/module/singleton_class_spec.rb	Module#singleton_class? with singleton value
 core/module/to_s_spec.rb	*	expected	visibility	private is not supported: every method is public
 core/module/undef_method_spec.rb	*	expected	visibility	private is not supported: every method is public
 core/module/undefined_instance_methods_spec.rb	*	expected	visibility	private is not supported: every method is public
-core/module/used_refinements_spec.rb	Module.used_refinements returns list of all refinements imported in the current scope	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
-core/module/used_refinements_spec.rb	Module.used_refinements returns empty array if does not have any refinements imported	expected	literal-only	undefined method 'new' for class Module: use a literal (NoMethodError)
-core/module/used_refinements_spec.rb	Module.used_refinements ignores refinements imported in a module that is included into the current one	expected	literal-only	undefined method 'new' for class Module: use a literal (NoMethodError)
-core/module/used_refinements_spec.rb	Module.used_refinements returns refinements even not defined directly in a module refinements are imported from	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
-core/module/using_spec.rb	*	bug		def self.foo outside a class body
-core/mutex/lock_spec.rb	Mutex#lock returns self	expected	threads	uninitialized constant Mutex (NameError)
-core/mutex/lock_spec.rb	Mutex#lock blocks the caller if already locked	harness	fails under Ruby too	uninitialized constant Mutex (NameError)
-core/mutex/lock_spec.rb	Mutex#lock does not block the caller if not locked	harness	fails under Ruby too	uninitialized constant Mutex (NameError)
-core/mutex/lock_spec.rb	Mutex#lock raises a deadlock ThreadError when used recursively	expected	threads	uninitialized constant Mutex (NameError)
-core/mutex/lock_spec.rb	Mutex#lock raises a deadlock ThreadError when multiple fibers from the same thread try to lock	expected	threads	uninitialized constant Mutex (NameError)
-core/mutex/lock_spec.rb	Mutex#lock does not raise deadlock if a fiber's attempt to lock was interrupted	bug		undefined method 'join' for nil (NoMethodError)
-core/mutex/locked_spec.rb	Mutex#locked? returns true if locked	expected	threads	uninitialized constant Mutex (NameError)
-core/mutex/locked_spec.rb	Mutex#locked? returns false if unlocked	expected	threads	uninitialized constant Mutex (NameError)
-core/mutex/locked_spec.rb	Mutex#locked? returns the status of the lock	expected	threads	uninitialized constant Mutex (NameError)
+core/module/used_refinements_spec.rb	*	expected	block-captures-values	a block cannot rebind refinement_int, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while
+core/module/using_spec.rb	*	expected	block-captures-values	a block cannot rebind result, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while
+core/mutex/lock_spec.rb	*	expected	attr-accessor	attr_reader is not supported: a field declaration defines its reader, and there are no setters
+core/mutex/locked_spec.rb	*	expected	block-captures-values	a block cannot rebind m1_locked, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while
 core/mutex/owned_spec.rb	*	expected	instance-variables	@checked = …: cameo has no instance variables; initialize sets a field with self.checked = …
-core/mutex/sleep_spec.rb	Mutex#sleep when not locked by the current thread raises a ThreadError	expected	threads	uninitialized constant Mutex (NameError)
-core/mutex/sleep_spec.rb	Mutex#sleep when not locked by the current thread raises an ArgumentError if passed a negative duration	expected	threads	uninitialized constant Mutex (NameError)
-core/mutex/sleep_spec.rb	Mutex#sleep raises an ArgumentError if passed a negative duration	expected	threads	uninitialized constant Mutex (NameError)
-core/mutex/sleep_spec.rb	Mutex#sleep pauses execution for approximately the duration requested	expected	threads	uninitialized constant Mutex (NameError)
-core/mutex/sleep_spec.rb	Mutex#sleep unlocks the mutex while sleeping	expected	threads	uninitialized constant Mutex (NameError)
-core/mutex/sleep_spec.rb	Mutex#sleep relocks the mutex when woken	expected	threads	uninitialized constant Mutex (NameError)
-core/mutex/sleep_spec.rb	Mutex#sleep relocks the mutex when woken by an exception being raised	expected	threads	uninitialized constant Mutex (NameError)
-core/mutex/sleep_spec.rb	Mutex#sleep returns the rounded number of seconds asleep	expected	threads	uninitialized constant Mutex (NameError)
-core/mutex/sleep_spec.rb	Mutex#sleep accepts nil as a sleep duration	harness	fails under Ruby too	uninitialized constant Mutex (NameError)
-core/mutex/sleep_spec.rb	Mutex#sleep wakes up when requesting sleep times near or equal to zero	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
-core/mutex/synchronize_spec.rb	Mutex#synchronize wraps the lock/unlock pair in an ensure	expected	threads	uninitialized constant Mutex (NameError)
-core/mutex/synchronize_spec.rb	Mutex#synchronize blocks the caller if already locked	harness	fails under Ruby too	uninitialized constant Mutex (NameError)
-core/mutex/synchronize_spec.rb	Mutex#synchronize does not block the caller if not locked	harness	fails under Ruby too	uninitialized constant Mutex (NameError)
-core/mutex/synchronize_spec.rb	Mutex#synchronize blocks the caller if another thread is also in the synchronize block	harness	fails under Ruby too	uninitialized constant Mutex (NameError)
-core/mutex/synchronize_spec.rb	Mutex#synchronize is not recursive	expected	threads	uninitialized constant Mutex (NameError)
+core/mutex/sleep_spec.rb	*	expected	attr-accessor	attr_reader is not supported: a field declaration defines its reader, and there are no setters
+core/mutex/synchronize_spec.rb	*	expected	block-captures-values	a block cannot rebind synchronized, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while
 core/mutex/try_lock_spec.rb	Mutex#try_lock when unlocked returns true	expected	threads	uninitialized constant Mutex (NameError)
 core/mutex/try_lock_spec.rb	Mutex#try_lock when unlocked locks the mutex	expected	threads	uninitialized constant Mutex (NameError)
 core/mutex/try_lock_spec.rb	Mutex#try_lock when locked by the current thread returns false	expected	threads	uninitialized constant Mutex (NameError)
@@ -2294,7 +2218,7 @@ core/nil/rationalize_spec.rb	NilClass#rationalize ignores a single argument	expe
 core/nil/rationalize_spec.rb	NilClass#rationalize raises ArgumentError when passed more than one argument	expected	rational-complex	undefined method 'rationalize' for nil (NoMethodError)
 core/nil/singleton_method_spec.rb	*	expected	metaprogramming	def foo on an object: methods belong to classes
 core/nil/to_a_spec.rb	NilClass#to_a returns an empty array	pass		
-core/nil/to_c_spec.rb	NilClass#to_c returns Complex(0, 0)	bug		undefined method 'to_c' for nil (NoMethodError)
+core/nil/to_c_spec.rb	NilClass#to_c returns Complex(0, 0)	expected	rational-complex	undefined method 'to_c' for nil (NoMethodError)
 core/nil/to_f_spec.rb	NilClass#to_f returns 0.0	pass		
 core/nil/to_f_spec.rb	NilClass#to_f does not cause NilClass to be coerced to Float	pass		
 core/nil/to_h_spec.rb	NilClass#to_h returns an empty hash	pass		
@@ -2333,9 +2257,9 @@ core/numeric/fdiv_spec.rb	Numeric#fdiv returns Infinity if other is 0	pass
 core/numeric/fdiv_spec.rb	Numeric#fdiv returns NaN if other is NaN	pass		
 core/numeric/finite_spec.rb	Numeric#finite? returns true by default	harness	fails under Ruby too	undefined method 'mock_numeric' for main (NoMethodError)
 core/numeric/floor_spec.rb	*	expected	instance-variables	@obj = …: cameo has no instance variables; initialize sets a field with self.obj = …
-core/numeric/i_spec.rb	Numeric#i returns a Complex object	bug		undefined method 'i' for an instance of Integer (NoMethodError)
-core/numeric/i_spec.rb	Numeric#i sets the real part to 0	bug		undefined method 'i' for an instance of Integer (NoMethodError)
-core/numeric/i_spec.rb	Numeric#i sets the imaginary part to self	bug		undefined method 'i' for an instance of Float (NoMethodError)
+core/numeric/i_spec.rb	Numeric#i returns a Complex object	expected	rational-complex	undefined method 'i' for an instance of Integer (NoMethodError)
+core/numeric/i_spec.rb	Numeric#i sets the real part to 0	expected	rational-complex	undefined method 'i' for an instance of Integer (NoMethodError)
+core/numeric/i_spec.rb	Numeric#i sets the imaginary part to self	expected	rational-complex	undefined method 'i' for an instance of Float (NoMethodError)
 core/numeric/imag_spec.rb	Numeric#imag is an alias of Numeric#imaginary	expected	metaprogramming	undefined method 'instance_method' for class Numeric (NoMethodError)
 core/numeric/imaginary_spec.rb	*	expected	instance-variables	@numbers = …: cameo has no instance variables; initialize sets a field with self.numbers = …
 core/numeric/infinite_spec.rb	Numeric#infinite? returns nil by default	harness	fails under Ruby too	undefined method 'mock_numeric' for main (NoMethodError)
@@ -2380,9 +2304,9 @@ core/objectspace/_id2ref_spec.rb	ObjectSpace._id2ref retrieves an Encoding by ob
 core/objectspace/_id2ref_spec.rb	ObjectSpace._id2ref raises RangeError when an object could not be found	expected	process	uninitialized constant ObjectSpace (NameError)
 core/objectspace/define_finalizer_spec.rb	*	expected	instance-variables	@garbage_objid = …: cameo has no instance variables; initialize sets a field with self.garbage_objid = …
 core/objectspace/each_object_spec.rb	*	expected	instance-variables	@garbage_objid = …: cameo has no instance variables; initialize sets a field with self.garbage_objid = …
-core/objectspace/garbage_collect_spec.rb	ObjectSpace.garbage_collect can be invoked without any exceptions	bug		Expected to not get Exception 
+core/objectspace/garbage_collect_spec.rb	ObjectSpace.garbage_collect can be invoked without any exceptions	expected	process	Expected to not get Exception 
 core/objectspace/garbage_collect_spec.rb	ObjectSpace.garbage_collect accepts keyword arguments	expected	process	uninitialized constant ObjectSpace (NameError)
-core/objectspace/garbage_collect_spec.rb	ObjectSpace.garbage_collect ignores the supplied block	bug		Expected to not get Exception 
+core/objectspace/garbage_collect_spec.rb	ObjectSpace.garbage_collect ignores the supplied block	expected	process	Expected to not get Exception 
 core/objectspace/garbage_collect_spec.rb	ObjectSpace.garbage_collect always returns nil	expected	process	uninitialized constant ObjectSpace (NameError)
 core/objectspace/undefine_finalizer_spec.rb	ObjectSpace.undefine_finalizer removes finalizers for an object	harness	fails under Ruby too	undefined method 'ruby_exe' for main (NoMethodError)
 core/objectspace/undefine_finalizer_spec.rb	ObjectSpace.undefine_finalizer should not remove finalizers for a frozen object	harness	fails under Ruby too	undefined method 'ruby_exe' for main (NoMethodError)
@@ -2395,16 +2319,7 @@ core/objectspace/weakkeymap/delete_spec.rb	ObjectSpace::WeakKeyMap#delete calls 
 core/objectspace/weakkeymap/delete_spec.rb	ObjectSpace::WeakKeyMap#delete returns nil if the key is not found when no block is given	expected	process	uninitialized constant ObjectSpace (NameError)
 core/objectspace/weakkeymap/delete_spec.rb	ObjectSpace::WeakKeyMap#delete returns nil when a key cannot be garbage collected	expected	process	uninitialized constant ObjectSpace (NameError)
 core/objectspace/weakkeymap/element_reference_spec.rb	*	expected	visibility	private is not supported: every method is public
-core/objectspace/weakkeymap/element_set_spec.rb	ObjectSpace::WeakKeyMap#[]= is correct	expected	process	uninitialized constant ObjectSpace (NameError)
-core/objectspace/weakkeymap/element_set_spec.rb	ObjectSpace::WeakKeyMap#[]= requires the keys to implement #hash	expected	process	uninitialized constant ObjectSpace (NameError)
-core/objectspace/weakkeymap/element_set_spec.rb	ObjectSpace::WeakKeyMap#[]= accepts frozen keys or values	expected	process	uninitialized constant ObjectSpace (NameError)
-core/objectspace/weakkeymap/element_set_spec.rb	ObjectSpace::WeakKeyMap#[]= does not duplicate and freeze String keys (like Hash#[]= does)	expected	process	uninitialized constant ObjectSpace (NameError)
-core/objectspace/weakkeymap/element_set_spec.rb	ObjectSpace::WeakKeyMap#[]= a key cannot be garbage collected raises ArgumentError when Integer is used as a key	expected	process	uninitialized constant ObjectSpace (NameError)
-core/objectspace/weakkeymap/element_set_spec.rb	ObjectSpace::WeakKeyMap#[]= a key cannot be garbage collected raises ArgumentError when Float is used as a key	expected	process	uninitialized constant ObjectSpace (NameError)
-core/objectspace/weakkeymap/element_set_spec.rb	ObjectSpace::WeakKeyMap#[]= a key cannot be garbage collected raises ArgumentError when Symbol is used as a key	expected	process	uninitialized constant ObjectSpace (NameError)
-core/objectspace/weakkeymap/element_set_spec.rb	ObjectSpace::WeakKeyMap#[]= a key cannot be garbage collected raises ArgumentError when true is used as a key	expected	process	uninitialized constant ObjectSpace (NameError)
-core/objectspace/weakkeymap/element_set_spec.rb	ObjectSpace::WeakKeyMap#[]= a key cannot be garbage collected raises ArgumentError when false is used as a key	expected	process	uninitialized constant ObjectSpace (NameError)
-core/objectspace/weakkeymap/element_set_spec.rb	ObjectSpace::WeakKeyMap#[]= a key cannot be garbage collected raises ArgumentError when nil is used as a key	expected	process	uninitialized constant ObjectSpace (NameError)
+core/objectspace/weakkeymap/element_set_spec.rb	*	expected	block-captures-values	a block cannot rebind map, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while
 core/objectspace/weakkeymap/getkey_spec.rb	ObjectSpace::WeakKeyMap#getkey returns the existing equal key	expected	process	uninitialized constant ObjectSpace (NameError)
 core/objectspace/weakkeymap/getkey_spec.rb	ObjectSpace::WeakKeyMap#getkey returns nil when a key cannot be garbage collected	expected	process	uninitialized constant ObjectSpace (NameError)
 core/objectspace/weakkeymap/inspect_spec.rb	ObjectSpace::WeakKeyMap#inspect only displays size in output	expected	process	uninitialized constant ObjectSpace (NameError)
@@ -2455,7 +2370,7 @@ core/proc/inspect_spec.rb	Proc#inspect is an alias of Proc#to_s	expected	metapro
 core/proc/lambda_spec.rb	*	expected	instance-variables	@first = …: cameo has no instance variables; initialize sets a field with self.first = …
 core/proc/new_spec.rb	*	expected	instance-variables	@first = …: cameo has no instance variables; initialize sets a field with self.first = …
 core/proc/parameters_spec.rb	*	expected	metaprogramming	eval is not supported; use nothing
-core/proc/refined_spec.rb	*	expected	metaprogramming	def tag on an object: methods belong to classes
+core/proc/refined_spec.rb	*	expected	block-captures-values	a block cannot rebind counter, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while
 core/proc/ruby2_keywords_spec.rb	Proc#ruby2_keywords marks the final hash argument as keyword hash	expected	ruby2_keywords	undefined method 'ruby2_keywords' for an instance of Proc (NoMethodError)
 core/proc/ruby2_keywords_spec.rb	Proc#ruby2_keywords applies to the underlying method and applies across duplication	expected	ruby2_keywords	undefined method 'ruby2_keywords' for an instance of Proc (NoMethodError)
 core/proc/ruby2_keywords_spec.rb	Proc#ruby2_keywords returns self	expected	ruby2_keywords	undefined method 'ruby2_keywords' for an instance of Proc (NoMethodError)
@@ -2468,16 +2383,16 @@ core/proc/syntax_tree_spec.rb	*	expected	mutation	….keep_script_lines = …: t
 core/proc/to_proc_spec.rb	Proc#to_proc returns self	expected	literal-only	undefined method 'new' for class Proc: use a literal (NoMethodError)
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with Proc.new returns a description including file and line number	expected	literal-only	undefined method 'new' for class Proc: use a literal (NoMethodError)
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with Proc.new has a binary encoding	expected	literal-only	undefined method 'new' for class Proc: use a literal (NoMethodError)
-core/proc/to_s_spec.rb	Proc#to_s for a proc created with lambda returns a description including '(lambda)' and including file and line number	bug		Expected "<tmp>/to_s_spec.rb:263 (lambda)>" =~ /^#<Proc:([^ ]*?) <tmp>\/to_s_spec\.rb:263 \(lambda\)>$/ to be truthy but was nil
+core/proc/to_s_spec.rb	Proc#to_s for a proc created with lambda returns a description including '(lambda)' and including file and line number	bug		Expected "#<Proc:/private/tmp/claude-501/-Users-eno-projects-cameo/6c8e9e9e-f5ba-46e6-9c99-0155edcb71cc/scratchpad/specout/programs/core/proc/to_s_spec.rb:266 (lambda)>" =~ /^#<Proc:([^ ]*?) \/private\/tmp\/claude\-501\/\-Users\-eno\-projec
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with lambda has a binary encoding	pass		
-core/proc/to_s_spec.rb	Proc#to_s for a proc created with proc returns a description including file and line number	bug		Expected "<tmp>/to_s_spec.rb:273>" =~ /^#<Proc:([^ ]*?) <tmp>\/to_s_spec\.rb:273>$/ to be truthy but was nil
+core/proc/to_s_spec.rb	Proc#to_s for a proc created with proc returns a description including file and line number	bug		Expected "#<Proc:/private/tmp/claude-501/-Users-eno-projects-cameo/6c8e9e9e-f5ba-46e6-9c99-0155edcb71cc/scratchpad/specout/programs/core/proc/to_s_spec.rb:276>" =~ /^#<Proc:([^ ]*?) \/private\/tmp\/claude\-501\/\-Users\-eno\-projects\-cameo
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with proc has a binary encoding	pass		
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with UnboundMethod#to_proc returns a description including '(lambda)' and optionally including file and line number	expected	metaprogramming	undefined method 'method' for main (NoMethodError)
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with UnboundMethod#to_proc has a binary encoding	expected	metaprogramming	undefined method 'method' for main (NoMethodError)
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with Symbol#to_proc returns a description including '(&:symbol)'	pass		
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with Symbol#to_proc has a binary encoding	pass		
 core/proc/yield_spec.rb	Proc#yield is an alias of Proc#call	expected	metaprogramming	undefined method 'instance_method' for class Proc (NoMethodError)
-core/process/_fork_spec.rb	*	bug		fork is not supported; use async
+core/process/_fork_spec.rb	*	expected	process	fork is not supported; use async
 core/process/abort_spec.rb	*	expected	mutation	multiple assignment binds local variables only
 core/process/argv0_spec.rb	Process.argv0 returns a String	expected	process	undefined method 'argv0' for module Process (NoMethodError)
 core/process/argv0_spec.rb	Process.argv0 is the path given as the main script and the same as __FILE__	harness	fails under Ruby too	uninitialized constant Dir (NameError)
@@ -2488,14 +2403,7 @@ core/process/clock_getres_spec.rb	Process.clock_getres with :TIME_BASED_CLOCK_RE
 core/process/clock_getres_spec.rb	Process.clock_getres with :GETRUSAGE_BASED_CLOCK_PROCESS_CPUTIME_ID reports 1 microsecond	expected	process	undefined method 'clock_getres' for module Process (NoMethodError)
 core/process/clock_getres_spec.rb	Process.clock_getres with Process::CLOCK_REALTIME reports at least 10 millisecond	expected	process	undefined method 'clock_getres' for module Process (NoMethodError)
 core/process/clock_getres_spec.rb	Process.clock_getres with Process::CLOCK_MONOTONIC reports at least 10 millisecond	expected	process	undefined method 'clock_getres' for module Process (NoMethodError)
-core/process/clock_gettime_spec.rb	Process.clock_gettime can be called with Process::CLOCK_MONOTONIC	pass		
-core/process/clock_gettime_spec.rb	Process.clock_gettime can be called with Process::CLOCK_REALTIME	pass		
-core/process/clock_gettime_spec.rb	Process.clock_gettime time units handles a fixed set of time units	pass		
-core/process/clock_gettime_spec.rb	Process.clock_gettime time units raises an ArgumentError for an invalid time unit	pass		
-core/process/clock_gettime_spec.rb	Process.clock_gettime time units defaults to :float_second	pass		
-core/process/clock_gettime_spec.rb	Process.clock_gettime time units uses the default time unit (:float_second) when passed nil	pass		
-core/process/clock_gettime_spec.rb	Process.clock_gettime supports the platform clocks mentioned in the documentation CLOCK_REALTIME	pass		
-core/process/clock_gettime_spec.rb	Process.clock_gettime supports the platform clocks mentioned in the documentation CLOCK_MONOTONIC	pass		
+core/process/clock_gettime_spec.rb	*	expected	block-captures-values	a block cannot rebind clocks, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while
 core/process/constants_spec.rb	Process::Constants on BSD-like systems defines WNOHANG	expected	process	undefined method 'const_defined?' for module Process (NoMethodError)
 core/process/constants_spec.rb	Process::Constants on BSD-like systems defines WUNTRACED	expected	process	undefined method 'const_defined?' for module Process (NoMethodError)
 core/process/constants_spec.rb	Process::Constants on BSD-like systems defines PRIO_PROCESS	expected	process	undefined method 'const_defined?' for module Process (NoMethodError)
@@ -2514,11 +2422,11 @@ core/process/constants_spec.rb	Process::Constants on BSD-like systems defines RL
 core/process/constants_spec.rb	Process::Constants on Darwin defines RLIM_SAVED_MAX	expected	process	undefined method 'const_defined?' for module Process (NoMethodError)
 core/process/constants_spec.rb	Process::Constants on Darwin defines RLIM_SAVED_CUR	expected	process	undefined method 'const_defined?' for module Process (NoMethodError)
 core/process/constants_spec.rb	Process::Constants on Darwin defines RLIMIT_AS	expected	process	undefined method 'const_defined?' for module Process (NoMethodError)
-core/process/daemon_spec.rb	*	expected	instance-variables	@ruby = …: cameo has no instance variables; initialize sets a field with self.ruby = …
-core/process/detach_spec.rb	*	expected	instance-variables	@ruby = …: cameo has no instance variables; initialize sets a field with self.ruby = …
-core/process/egid_spec.rb	*	expected	instance-variables	@ruby = …: cameo has no instance variables; initialize sets a field with self.ruby = …
-core/process/euid_spec.rb	*	expected	instance-variables	@ruby = …: cameo has no instance variables; initialize sets a field with self.ruby = …
-core/process/exec_spec.rb	*	expected	instance-variables	@dir = …: cameo has no instance variables; initialize sets a field with self.dir = …
+core/process/daemon_spec.rb	*	expected	process	backtick commands are not supported: cameo has no shell
+core/process/detach_spec.rb	*	expected	process	backtick commands are not supported: cameo has no shell
+core/process/egid_spec.rb	*	expected	process	backtick commands are not supported: cameo has no shell
+core/process/euid_spec.rb	*	expected	process	backtick commands are not supported: cameo has no shell
+core/process/exec_spec.rb	*	expected	process	backtick commands are not supported: cameo has no shell
 core/process/exit_spec.rb	*	expected	instance-variables	@object: cameo has no instance variables; a field is read with its reader, object or self.object
 core/process/fork_spec.rb	*	expected	instance-variables	@object: cameo has no instance variables; a field is read with its reader, object or self.object
 core/process/getpgid_spec.rb	Process.getpgid coerces the argument to an Integer	harness	fails under Ruby too	undefined method 'pid' for module Process (NoMethodError)
@@ -2532,20 +2440,20 @@ core/process/getrlimit_spec.rb	*	expected	instance-variables	@resource = …: ca
 core/process/gid_spec.rb	*	expected	process	backtick commands are not supported: cameo has no shell
 core/process/groups_spec.rb	*	expected	process	backtick commands are not supported: cameo has no shell
 core/process/initgroups_spec.rb	*	expected	process	backtick commands are not supported: cameo has no shell
-core/process/kill_spec.rb	*	expected	instance-variables	@ruby = …: cameo has no instance variables; initialize sets a field with self.ruby = …
+core/process/kill_spec.rb	*	expected	process	backtick commands are not supported: cameo has no shell
 core/process/last_status_spec.rb	Process#last_status returns the status of the last executed child process in the current thread	expected	process	undefined method 'spawn' for module Process (NoMethodError)
 core/process/last_status_spec.rb	Process#last_status returns nil if no child process has been ever executed in the current thread	expected	threads	uninitialized constant Thread (NameError)
 core/process/last_status_spec.rb	Process#last_status raises an ArgumentError if any arguments are provided	expected	process	undefined method 'last_status' for module Process (NoMethodError)
 core/process/maxgroups_spec.rb	*	expected	mutation	….maxgroups = …: the left side of an assignment must start with a local variable, so the copy has somewhere to go
 core/process/pid_spec.rb	Process.pid returns the process id of this process	expected	process	undefined method 'pid' for module Process (NoMethodError)
 core/process/ppid_spec.rb	Process.ppid returns the process id of the parent of this process	harness	fails under Ruby too	undefined method 'ruby_exe' for main (NoMethodError)
-core/process/set_proctitle_spec.rb	*	expected	instance-variables	@old_title = …: cameo has no instance variables; initialize sets a field with self.old_title = …
-core/process/setpgid_spec.rb	*	bug		fork is not supported; use async
-core/process/setpgrp_spec.rb	*	bug		fork is not supported; use async
+core/process/set_proctitle_spec.rb	*	expected	process	backtick commands are not supported: cameo has no shell
+core/process/setpgid_spec.rb	*	expected	process	fork is not supported; use async
+core/process/setpgrp_spec.rb	*	expected	process	fork is not supported; use async
 core/process/setpriority_spec.rb	Process.setpriority sets the scheduling priority for a specified process	harness	fails under Ruby too	uninitialized constant Process::PRIO_PROCESS (NameError)
 core/process/setrlimit_spec.rb	*	expected	instance-variables	@resource = …: cameo has no instance variables; initialize sets a field with self.resource = …
 core/process/setsid_spec.rb	Process.setsid establishes this process as a new session and process group leader	harness	fails under Ruby too	undefined method 'getsid' for module Process (NoMethodError)
-core/process/spawn_spec.rb	*	expected	instance-variables	@ruby = …: cameo has no instance variables; initialize sets a field with self.ruby = …
+core/process/spawn_spec.rb	*	expected	process	backtick commands are not supported: cameo has no shell
 core/process/status/bit_and_spec.rb	*	expected	globals	global variables are not supported
 core/process/status/equal_value_spec.rb	*	expected	globals	global variables are not supported
 core/process/status/exited_spec.rb	*	expected	globals	global variables are not supported
@@ -2556,7 +2464,7 @@ core/process/status/signaled_spec.rb	*	expected	globals	global variables are not
 core/process/status/success_spec.rb	*	expected	globals	global variables are not supported
 core/process/status/termsig_spec.rb	*	expected	globals	global variables are not supported
 core/process/status/to_i_spec.rb	*	expected	globals	global variables are not supported
-core/process/status/wait_spec.rb	*	expected	instance-variables	@ruby = …: cameo has no instance variables; initialize sets a field with self.ruby = …
+core/process/status/wait_spec.rb	*	expected	process	backtick commands are not supported: cameo has no shell
 core/process/times_spec.rb	Process.times returns a Process::Tms	expected	process	undefined method 'times' for module Process (NoMethodError)
 core/process/times_spec.rb	Process.times returns current cpu times	expected	process	undefined method 'times' for module Process (NoMethodError)
 core/process/tms/cstime_spec.rb	Process::Tms#cstime returns cstime attribute	expected	process	uninitialized constant Process::Tms (NameError)
@@ -2567,10 +2475,10 @@ core/process/tms/stime_spec.rb	Process::Tms#stime returns stime attribute	expect
 core/process/tms/stime_spec.rb	Process::Tms#stime= assigns a value to the stime attribute	expected	process	uninitialized constant Process::Tms (NameError)
 core/process/tms/utime_spec.rb	Process::Tms#utime returns utime attribute	expected	process	uninitialized constant Process::Tms (NameError)
 core/process/tms/utime_spec.rb	Process::Tms#utime= assigns a value to the ctime attribute	expected	process	uninitialized constant Process::Tms (NameError)
-core/process/uid_spec.rb	*	expected	instance-variables	@ruby = …: cameo has no instance variables; initialize sets a field with self.ruby = …
-core/process/wait2_spec.rb	*	expected	instance-variables	@ruby = …: cameo has no instance variables; initialize sets a field with self.ruby = …
-core/process/wait_spec.rb	*	expected	instance-variables	@ruby = …: cameo has no instance variables; initialize sets a field with self.ruby = …
-core/process/waitall_spec.rb	*	expected	instance-variables	@ruby = …: cameo has no instance variables; initialize sets a field with self.ruby = …
+core/process/uid_spec.rb	*	expected	process	backtick commands are not supported: cameo has no shell
+core/process/wait2_spec.rb	*	expected	process	backtick commands are not supported: cameo has no shell
+core/process/wait_spec.rb	*	expected	process	backtick commands are not supported: cameo has no shell
+core/process/waitall_spec.rb	*	expected	process	backtick commands are not supported: cameo has no shell
 core/process/waitpid2_spec.rb	Process.waitpid2 is an alias of Process.wait2	expected	metaprogramming	undefined method 'method' for module Process (NoMethodError)
 core/process/waitpid_spec.rb	Process.waitpid is an alias of Process.wait	expected	metaprogramming	undefined method 'method' for module Process (NoMethodError)
 core/process/warmup_spec.rb	Process.warmup is implemented	expected	process	undefined method 'warmup' for module Process (NoMethodError)
@@ -2868,8 +2776,8 @@ core/refinement/import_methods_spec.rb	*	bug		include takes one module
 core/refinement/include_spec.rb	Refinement#include raises a TypeError	expected	literal-only	undefined method 'new' for class Module: use a literal (NoMethodError)
 core/refinement/prepend_features_spec.rb	*	expected	metaprogramming	define_method is not supported; use def
 core/refinement/prepend_spec.rb	Refinement#prepend raises a TypeError	expected	literal-only	undefined method 'new' for class Module: use a literal (NoMethodError)
-core/refinement/refined_class_spec.rb	Refinement#refined_class has been removed	expected	literal-only	undefined method 'new' for class Module: use a literal (NoMethodError)
-core/refinement/target_spec.rb	Refinement#target returns the class refined by the receiver	expected	literal-only	undefined method 'new' for class Module: use a literal (NoMethodError)
+core/refinement/refined_class_spec.rb	*	expected	block-captures-values	a block cannot rebind refinement_int, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while
+core/refinement/target_spec.rb	*	expected	block-captures-values	a block cannot rebind refinement_int, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while
 core/regexp/case_compare_spec.rb	Regexp#=== is true if there is a match	pass		
 core/regexp/case_compare_spec.rb	Regexp#=== is false if there is no match	pass		
 core/regexp/case_compare_spec.rb	Regexp#=== returns true if it matches a Symbol	pass		
@@ -2897,10 +2805,10 @@ core/regexp/fixed_encoding_spec.rb	Regexp#fixed_encoding? returns true if the Re
 core/regexp/hash_spec.rb	Regexp#hash is provided	pass		
 core/regexp/hash_spec.rb	Regexp#hash is based on the text and options of Regexp	pass		
 core/regexp/hash_spec.rb	Regexp#hash returns the same value for two Regexps differing only in the /n option	pass		
-core/regexp/initialize_spec.rb	Regexp#initialize is a private method	bug		undefined method 'private_instance_methods' for class Regexp (NoMethodError)
-core/regexp/initialize_spec.rb	Regexp#initialize raises a FrozenError on a Regexp literal	bug		send(:initialize): initialize runs only in new (CameoError)
-core/regexp/initialize_spec.rb	Regexp#initialize raises a TypeError on an initialized non-literal Regexp	bug		send(:initialize): initialize runs only in new (CameoError)
-core/regexp/initialize_spec.rb	Regexp#initialize raises a TypeError on an initialized non-literal Regexp subclass	bug		send(:initialize): initialize runs only in new (CameoError)
+core/regexp/initialize_spec.rb	Regexp#initialize is a private method	expected	visibility	undefined method 'private_instance_methods' for class Regexp (NoMethodError)
+core/regexp/initialize_spec.rb	Regexp#initialize raises a FrozenError on a Regexp literal	expected	metaprogramming	send(:initialize): initialize runs only in new (CameoError)
+core/regexp/initialize_spec.rb	Regexp#initialize raises a TypeError on an initialized non-literal Regexp	expected	metaprogramming	send(:initialize): initialize runs only in new (CameoError)
+core/regexp/initialize_spec.rb	Regexp#initialize raises a TypeError on an initialized non-literal Regexp subclass	expected	metaprogramming	send(:initialize): initialize runs only in new (CameoError)
 core/regexp/inspect_spec.rb	Regexp#inspect returns a formatted string that would eval to the same regexp	pass		
 core/regexp/inspect_spec.rb	Regexp#inspect returns options in the order 'mixn'	pass		
 core/regexp/inspect_spec.rb	Regexp#inspect does not include the 'o' option	pass		
@@ -2998,7 +2906,7 @@ core/set/eql_spec.rb	Set#eql? returns true when the passed argument is a Set and
 core/set/equal_value_spec.rb	*	expected	instance-variables	@entries = …: cameo has no instance variables; initialize sets a field with self.entries = …
 core/set/exclusion_spec.rb	*	expected	instance-variables	@set = …: cameo has no instance variables; initialize sets a field with self.set = …
 core/set/filter_spec.rb	Set#filter! is an alias of Set#select!	expected	metaprogramming	undefined method 'instance_method' for class Set (NoMethodError)
-core/set/flatten_merge_spec.rb	Set#flatten_merge is protected	bug		undefined method 'protected_instance_methods' for class Set (NoMethodError)
+core/set/flatten_merge_spec.rb	Set#flatten_merge is protected	expected	visibility	undefined method 'protected_instance_methods' for class Set (NoMethodError)
 core/set/flatten_merge_spec.rb	Set#flatten_merge flattens the passed Set and merges it into self	pass		
 core/set/flatten_merge_spec.rb	Set#flatten_merge raises an ArgumentError when trying to flatten a recursive Set	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
 core/set/flatten_spec.rb	*	expected	instance-variables	@entries = …: cameo has no instance variables; initialize sets a field with self.entries = …
@@ -3008,7 +2916,7 @@ core/set/hash_spec.rb	Set#hash is static	pass
 core/set/hash_spec.rb	Set#hash is equal to nil.hash for an uninitialized Set	expected	metaprogramming	allocate is not supported: use new (NoMethodError)
 core/set/include_spec.rb	*	expected	metaprogramming	def hash on an object: methods belong to classes
 core/set/initialize_clone_spec.rb	Set#initialize_clone does not freeze the new Set when called from clone(freeze: false)	bug		Expected true == false to be truthy but was false
-core/set/initialize_spec.rb	Set#initialize is private	bug		undefined method 'private_instance_methods' for class Set (NoMethodError)
+core/set/initialize_spec.rb	Set#initialize is private	expected	visibility	undefined method 'private_instance_methods' for class Set (NoMethodError)
 core/set/initialize_spec.rb	Set#initialize adds all elements of the passed Enumerable to self	pass		
 core/set/initialize_spec.rb	Set#initialize uses #each_entry on the provided Enumerable	harness	fails under Ruby too	uninitialized constant MockObject (NameError)
 core/set/initialize_spec.rb	Set#initialize uses #each on the provided Enumerable if it does not respond to #each_entry	harness	fails under Ruby too	uninitialized constant MockObject (NameError)
@@ -3082,7 +2990,7 @@ core/sizedqueue/max_spec.rb	*	expected	instance-variables	@object: cameo has no 
 core/sizedqueue/new_spec.rb	*	expected	instance-variables	@object: cameo has no instance variables; a field is read with its reader, object or self.object
 core/sizedqueue/num_waiting_spec.rb	*	expected	instance-variables	@object: cameo has no instance variables; a field is read with its reader, object or self.object
 core/sizedqueue/pop_spec.rb	*	expected	instance-variables	@object: cameo has no instance variables; a field is read with its reader, object or self.object
-core/sizedqueue/push_spec.rb	SizedQueue#push is an alias of SizedQueue#<<	expected	threads	uninitialized constant SizedQueue (NameError)
+core/sizedqueue/push_spec.rb	*	expected	attr-accessor	attr_reader is not supported: a field declaration defines its reader, and there are no setters
 core/sizedqueue/shift_spec.rb	SizedQueue#shift is an alias of SizedQueue#pop	expected	threads	uninitialized constant SizedQueue (NameError)
 core/sizedqueue/size_spec.rb	*	expected	instance-variables	@object: cameo has no instance variables; a field is read with its reader, object or self.object
 core/string/allocate_spec.rb	String.allocate returns an instance of String	expected	metaprogramming	allocate is not supported: use new (NoMethodError)
@@ -3552,12 +3460,7 @@ core/thread/backtrace_spec.rb	Thread#backtrace returns nil if omitting more loca
 core/thread/backtrace_spec.rb	Thread#backtrace returns [] if omitting exactly the number of locations available	expected	threads	uninitialized constant Thread (NameError)
 core/thread/backtrace_spec.rb	Thread#backtrace coerces the arguments to integers	expected	threads	uninitialized constant Thread (NameError)
 core/thread/current_spec.rb	*	expected	mutation	….report_on_exception = …: the left side of an assignment must start with a local variable, so the copy has somewhere to go
-core/thread/each_caller_location_spec.rb	Thread.each_caller_location iterates through the current execution stack and matches caller_locations content and type	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
-core/thread/each_caller_location_spec.rb	Thread.each_caller_location returns subset of 'Thread.to_enum(:each_caller_location)' locations	expected	threads	uninitialized constant Thread (NameError)
-core/thread/each_caller_location_spec.rb	Thread.each_caller_location stops the backtrace iteration if 'break' occurs	expected	threads	uninitialized constant Thread (NameError)
-core/thread/each_caller_location_spec.rb	Thread.each_caller_location returns nil	expected	threads	uninitialized constant Thread (NameError)
-core/thread/each_caller_location_spec.rb	Thread.each_caller_location raises LocalJumpError when called without a block	expected	threads	uninitialized constant Thread (NameError)
-core/thread/each_caller_location_spec.rb	Thread.each_caller_location doesn't accept keyword arguments	expected	threads	uninitialized constant Thread (NameError)
+core/thread/each_caller_location_spec.rb	*	expected	block-captures-values	a block cannot rebind i, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while
 core/thread/element_reference_spec.rb	*	expected	mutation	….report_on_exception = …: the left side of an assignment must start with a local variable, so the copy has somewhere to go
 core/thread/element_set_spec.rb	*	expected	mutation	….report_on_exception = …: the left side of an assignment must start with a local variable, so the copy has somewhere to go
 core/thread/exit_spec.rb	*	expected	mutation	….report_on_exception = …: the left side of an assignment must start with a local variable, so the copy has somewhere to go
@@ -3565,14 +3468,7 @@ core/thread/fetch_spec.rb	*	expected	mutation	…[…] = …: the left side of a
 core/thread/fork_spec.rb	Thread.fork is an alias of Thread.start	expected	threads	uninitialized constant Thread (NameError)
 core/thread/group_spec.rb	Thread#group returns the default thread group for the main thread	expected	threads	uninitialized constant Thread (NameError)
 core/thread/group_spec.rb	Thread#group returns the thread group explicitly set for this thread	expected	threads	uninitialized constant Thread (NameError)
-core/thread/handle_interrupt_spec.rb	Thread.handle_interrupt before	harness	Thread.handle_interrupt before	
-core/thread/handle_interrupt_spec.rb	Thread.handle_interrupt with :never defers interrupts until exiting the handle_interrupt block	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
-core/thread/handle_interrupt_spec.rb	Thread.handle_interrupt with :on_blocking defers interrupts until the next blocking call	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
-core/thread/handle_interrupt_spec.rb	Thread.handle_interrupt with :immediate handles interrupts immediately	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
-core/thread/handle_interrupt_spec.rb	Thread.handle_interrupt with :immediate immediately runs pending interrupts, before the block	expected	threads	uninitialized constant Thread (NameError)
-core/thread/handle_interrupt_spec.rb	Thread.handle_interrupt also works with suspended Fibers and does not duplicate interrupts	expected	threads	uninitialized constant Fiber (NameError)
-core/thread/handle_interrupt_spec.rb	Thread.handle_interrupt runs pending interrupts at the end of the block, even if there was an exception raised in the block	expected	threads	uninitialized constant Thread (NameError)
-core/thread/handle_interrupt_spec.rb	Thread.handle_interrupt supports multiple pairs in the Hash	harness	fails under Ruby too	uninitialized constant ScratchPad (NameError)
+core/thread/handle_interrupt_spec.rb	*	expected	block-captures-values	a block cannot rebind executed, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while
 core/thread/ignore_deadlock_spec.rb	*	expected	mutation	….ignore_deadlock = …: the left side of an assignment must start with a local variable, so the copy has somewhere to go
 core/thread/initialize_spec.rb	*	expected	mutation	….report_on_exception = …: the left side of an assignment must start with a local variable, so the copy has somewhere to go
 core/thread/inspect_spec.rb	Thread#inspect is an alias of Thread#to_s	expected	threads	uninitialized constant Thread (NameError)
@@ -3588,18 +3484,12 @@ core/thread/native_thread_id_spec.rb	Thread#native_thread_id returns nil when th
 core/thread/native_thread_id_spec.rb	Thread#native_thread_id each thread has different native thread id	expected	threads	uninitialized constant Thread (NameError)
 core/thread/new_spec.rb	*	expected	mutation	….report_on_exception = …: the left side of an assignment must start with a local variable, so the copy has somewhere to go
 core/thread/pass_spec.rb	*	expected	mutation	….report_on_exception = …: the left side of an assignment must start with a local variable, so the copy has somewhere to go
-core/thread/pending_interrupt_spec.rb	Thread.pending_interrupt? returns false if there are no pending interrupts, e.g., outside any Thread.handle_interrupt block	expected	threads	uninitialized constant Thread (NameError)
-core/thread/pending_interrupt_spec.rb	Thread.pending_interrupt? returns true if there are pending interrupts, e.g., Thread#raise inside Thread.handle_interrupt	expected	threads	uninitialized constant Thread (NameError)
-core/thread/pending_interrupt_spec.rb	Thread#pending_interrupt? returns whether the given threads has pending interrupts	expected	threads	uninitialized constant Thread (NameError)
+core/thread/pending_interrupt_spec.rb	*	expected	block-captures-values	a block cannot rebind executed, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while
 core/thread/priority_spec.rb	*	expected	mutation	….report_on_exception = …: the left side of an assignment must start with a local variable, so the copy has somewhere to go
 core/thread/raise_spec.rb	*	expected	mutation	….report_on_exception = …: the left side of an assignment must start with a local variable, so the copy has somewhere to go
 core/thread/report_on_exception_spec.rb	*	expected	instance-variables	@report_on_exception = …: cameo has no instance variables; initialize sets a field with self.report_on_exception = …
 core/thread/run_spec.rb	*	expected	mutation	….report_on_exception = …: the left side of an assignment must start with a local variable, so the copy has somewhere to go
-core/thread/start_spec.rb	Thread.start before	harness	Thread.start before	
-core/thread/start_spec.rb	Thread.start raises an ArgumentError if not passed a block	expected	threads	uninitialized constant Thread (NameError)
-core/thread/start_spec.rb	Thread.start spawns a new Thread running the block	expected	threads	uninitialized constant Thread (NameError)
-core/thread/start_spec.rb	Thread.start respects Thread subclasses	expected	threads	uninitialized constant Thread (NameError)
-core/thread/start_spec.rb	Thread.start does not call #initialize	harness	fails under Ruby too	uninitialized constant Thread (NameError)
+core/thread/start_spec.rb	*	expected	block-captures-values	a block cannot rebind run, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while
 core/thread/status_spec.rb	*	expected	mutation	….report_on_exception = …: the left side of an assignment must start with a local variable, so the copy has somewhere to go
 core/thread/stop_spec.rb	*	expected	mutation	….report_on_exception = …: the left side of an assignment must start with a local variable, so the copy has somewhere to go
 core/thread/terminate_spec.rb	Thread#terminate is an alias of Thread#kill	expected	threads	uninitialized constant Thread (NameError)
@@ -3618,7 +3508,11 @@ core/threadgroup/enclosed_spec.rb	ThreadGroup#enclosed? returns false when a Thr
 core/threadgroup/enclosed_spec.rb	ThreadGroup#enclosed? returns true when a ThreadGroup is enclosed	expected	threads	uninitialized constant ThreadGroup (NameError)
 core/threadgroup/list_spec.rb	ThreadGroup#list returns the list of threads in the group	expected	threads	uninitialized constant Queue (NameError)
 core/time/_dump_spec.rb	*	expected	instance-variables	@local = …: cameo has no instance variables; initialize sets a field with self.local = …
-core/time/_load_spec.rb	*	expected	require	load is not supported; use nothing: a script is one file
+core/time/_load_spec.rb	Time._load is a private method	expected	visibility	undefined method 'private_methods' for class Time (NoMethodError)
+core/time/_load_spec.rb	Time._load loads a time object in the new format	bug		undefined method '_load' for class Time (NoMethodError)
+core/time/_load_spec.rb	Time._load loads a time object in the old UNIX timestamp based format	bug		undefined method '_load' for class Time (NoMethodError)
+core/time/_load_spec.rb	Time._load loads MRI's marshaled time format	expected	marshal	incompatible marshal data: proto: cannot parse invalid wire-format data (ArgumentError)
+core/time/_load_spec.rb	Time._load treats the data as binary data	expected	marshal	incompatible marshal data: proto: cannot parse invalid wire-format data (ArgumentError)
 core/time/asctime_spec.rb	Time#asctime returns a canonical string representation of time	pass		
 core/time/at_spec.rb	*	expected	metaprogramming	class << self is not supported: define class methods with def self.name
 core/time/ceil_spec.rb	*	expected	instance-variables	@time = …: cameo has no instance variables; initialize sets a field with self.time = …
@@ -3784,6 +3678,7 @@ core/tracepoint/enable_spec.rb	*	expected	instance-variables	@thread = …: came
 core/tracepoint/enabled_spec.rb	*	expected	instance-variables	@thread = …: cameo has no instance variables; initialize sets a field with self.thread = …
 core/tracepoint/eval_script_spec.rb	*	expected	instance-variables	@thread = …: cameo has no instance variables; initialize sets a field with self.thread = …
 core/tracepoint/event_spec.rb	*	expected	instance-variables	@thread = …: cameo has no instance variables; initialize sets a field with self.thread = …
+core/tracepoint/events/class_spec.rb	*	expected	instance-variables	@thread = …: cameo has no instance variables; initialize sets a field with self.thread = …
 core/tracepoint/inspect_spec.rb	*	expected	instance-variables	@thread = …: cameo has no instance variables; initialize sets a field with self.thread = …
 core/tracepoint/lineno_spec.rb	*	expected	instance-variables	@thread = …: cameo has no instance variables; initialize sets a field with self.thread = …
 core/tracepoint/method_id_spec.rb	*	expected	instance-variables	@thread = …: cameo has no instance variables; initialize sets a field with self.thread = …
@@ -3837,7 +3732,7 @@ core/warning/performance_warning_spec.rb	Performance warnings when redefined opt
 core/warning/warn_spec.rb	*	expected	globals	global variables are not supported
 language/BEGIN_spec.rb	*	expected	metaprogramming	eval is not supported; use nothing
 language/END_spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
-language/alias_spec.rb	*	bug		attr is not supported: a field declaration defines its reader, and there are no setters
+language/alias_spec.rb	*	expected	attr-accessor	attr is not supported: a field declaration defines its reader, and there are no setters
 language/and_spec.rb	The '&&' statement short-circuits evaluation at the first condition to be false	pass		
 language/and_spec.rb	The '&&' statement evaluates to the first condition not to be true	pass		
 language/and_spec.rb	The '&&' statement evaluates to the last condition if all are true	pass		
@@ -3872,19 +3767,13 @@ language/it_parameter_spec.rb	*	expected	metaprogramming	eval is not supported; 
 language/keyword_arguments_spec.rb	*	expected	metaprogramming	instance_eval is not supported; use nothing
 language/lambda_spec.rb	*	expected	mutation	….desc = …: the left side of an assignment must start with a local variable, so the copy has somewhere to go
 language/line_spec.rb	*	expected	instance-variables	@rubygems = …: cameo has no instance variables; initialize sets a field with self.rubygems = …
-language/loop_spec.rb	The loop expression repeats the given block until a break is called	pass		
-language/loop_spec.rb	The loop expression executes code in its own scope	pass		
-language/loop_spec.rb	The loop expression returns the value passed to break if interrupted by break	pass		
-language/loop_spec.rb	The loop expression returns nil if interrupted by break with no arguments	pass		
-language/loop_spec.rb	The loop expression skips to end of body with next	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
-language/loop_spec.rb	The loop expression restarts the current iteration with redo	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
-language/loop_spec.rb	The loop expression uses a spaghetti nightmare of redo, next and break	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+language/loop_spec.rb	*	expected	block-captures-values	a block cannot rebind outer_loop, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while
 language/magic_comment_spec.rb	*	expected	instance-variables	@default = …: cameo has no instance variables; initialize sets a field with self.default = …
 language/match_spec.rb	*	expected	instance-variables	@obj = …: cameo has no instance variables; initialize sets a field with self.obj = …
 language/metaclass_spec.rb	*	expected	metaprogramming	eval is not supported; use nothing
 language/method_spec.rb	*	expected	instance-variables	@o = …: cameo has no instance variables; initialize sets a field with self.o = …
 language/module_spec.rb	*	expected	scoped-constants	assignment to a scoped constant is not supported: define it inside its module
-language/next_spec.rb	*	expected	metaprogramming	eval is not supported; use nothing
+language/next_spec.rb	*	expected	block-captures-values	a block cannot rebind x, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while
 language/not_spec.rb	The not keyword negates a `true' value	pass		
 language/not_spec.rb	The not keyword negates a `false' value	pass		
 language/not_spec.rb	The not keyword accepts an argument	pass		
@@ -3900,7 +3789,7 @@ language/numbers_spec.rb	*	expected	metaprogramming	eval is not supported; use n
 language/optional_assignments_spec.rb	*	expected	metaprogramming	class << self is not supported: define class methods with def self.name
 language/or_spec.rb	*	expected	metaprogramming	eval is not supported; use nothing
 language/order_spec.rb	*	expected	instance-variables	@obj = …: cameo has no instance variables; initialize sets a field with self.obj = …
-language/pattern_matching_spec.rb	*	expected	mutation	multiple assignment binds local variables only
+language/pattern_matching_spec.rb	*	expected	block-captures-values	a block cannot rebind a, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while
 language/precedence_spec.rb	*	expected	metaprogramming	eval is not supported; use nothing
 language/predefined/data_spec.rb	The DATA constant exists when the main script contains __END__	harness	fails under Ruby too	undefined method 'fixture' for main (NoMethodError)
 language/predefined/data_spec.rb	The DATA constant does not exist when the main script contains no __END__	harness	fails under Ruby too	undefined method 'ruby_exe' for main (NoMethodError)
@@ -3953,7 +3842,7 @@ language/source_encoding_spec.rb	Source files encoded in UTF-16 BE with a BOM ar
 language/string_spec.rb	*	expected	class-variables	class variables are not supported
 language/super_spec.rb	*	expected	metaprogramming	define_method is not supported; use def
 language/symbol_spec.rb	*	expected	metaprogramming	eval is not supported; use nothing
-language/throw_spec.rb	*	expected	globals	global variables are not supported
+language/throw_spec.rb	*	expected	block-captures-values	a block cannot rebind i, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while
 language/undef_spec.rb	*	expected	instance-variables	@undef_class = …: cameo has no instance variables; initialize sets a field with self.undef_class = …
 language/unless_spec.rb	The unless expression evaluates the unless body when the expression is false	pass		
 language/unless_spec.rb	The unless expression returns the last statement in the body	pass		
