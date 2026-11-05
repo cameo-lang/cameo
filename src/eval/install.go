@@ -257,7 +257,8 @@ func (in *Interp) require(name object.Value) (object.Value, error) {
 		return object.Value{}, in.raise(object.TypeError, 0, "no implicit conversion of %s into String", typeName(name))
 	}
 	also, builtin := builtinLibraries[s]
-	if !builtin {
+	source, written := lib.Sources[s]
+	if !builtin && !written {
 		return object.Value{}, in.raise(object.LoadError, 0, "cannot load such file -- %s", s)
 	}
 	if in.loaded[s] {
@@ -272,6 +273,17 @@ func (in *Interp) require(name object.Value) (object.Value, error) {
 	}
 	if s == "debug" && in.console != nil {
 		in.Debug(in.console, in.consoleOut, in.source, false)
+	}
+	if written {
+		// A library written in cameo runs at the top level now, once. An
+		// error in it names the script's file with the library's line.
+		prog, err := syntax.Parse(s+".cameo", source)
+		if err != nil {
+			return object.Value{}, in.raise(object.LoadError, 0, "cannot load %s: %v", s, err)
+		}
+		if _, err := in.runStatements(prog.Body, in.top, in.topFrame()); err != nil {
+			return object.Value{}, err
+		}
 	}
 	return object.True, nil
 }
