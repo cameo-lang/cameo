@@ -20,7 +20,7 @@
 # a time, so calls that compute take turns on one core, where cameo spreads
 # them over the cores; a call that waits for I/O lets the others run on
 # both. Results, failures, promise ids and error messages are cameo's. See
-# https://cameo-lang.github.io/async.html.
+# https://cameo-lang.github.io/cameo/async.html.
 module Cameo
   module Runner
     # Promise is one result to come, which the script holds by its id.
