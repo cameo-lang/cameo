@@ -194,7 +194,7 @@ q = p.with(x: 3)            # a copy; p is unchanged
 - A field's type is one of proto3's scalar types (`int32`, `uint64`,
   `double`, `bool`, `string`, `bytes` and the rest), `int` and `float` for
   Ruby's Integer and Float, `bignum` for an Integer of any size, or `list`,
-  `set`, `map`, `ref` and `enum`. A value outside its type raises a
+  `set`, `map`, `ref`, `enum` and `proc`. A value outside its type raises a
   `TypeError` or a `RangeError`.
 - `initialize` sets a field with `self.x = v`; a method reads it with `x`
   or `self.x`. There are no instance variables and no setters: `with` makes
@@ -339,6 +339,10 @@ These are absent, and a script that uses one fails when it reaches it:
 
 ## Only in cameo
 
+- A `proc` field, `proc :handler`, holds a block, and reads as nil without
+  one; a class with a `proc` field is no message: it has no `.proto`, and
+  `to_proto`, `to_value_proto`, a host, `async` and the pause dump refuse its
+  instances, naming the field, as they refuse a Proc.
 - Typed fields, with every class a protobuf message: `to_proto`,
   `from_proto`, and `Point.proto` for its `.proto` text. Every exception is
   a message too, of its message, line, cause and fields, and crosses to
