@@ -1,0 +1,33 @@
+# Ruby's getoptlong library: GetoptLong reads ARGV the way GNU getopt_long
+# does, each option with its canonical name. Ruby takes the options out of
+# ARGV; cameo leaves ARGV as it is and gives the operands in rest.
+require "getoptlong"
+
+opts = GetoptLong.new(
+  ["--help", "-h", GetoptLong::NO_ARGUMENT],
+  ["--name", "-n", GetoptLong::REQUIRED_ARGUMENT],
+  ["--level", "-l", GetoptLong::OPTIONAL_ARGUMENT]
+)
+opts.each do |opt, arg|
+  puts "#{opt} #{arg.inspect}"
+end
+p opts.rest, opts.terminated?, ARGV
+p GetoptLong::PERMUTE, GetoptLong::REQUIRE_ORDER, GetoptLong::RETURN_IN_ORDER, GetoptLong::Error.superclass
+
+# A block cannot write into its surroundings, so GetoptLong includes
+# Enumerable: reduce folds the pairs into a value, and args: gives the
+# arguments to read. Getopt::Options, written in cameo, does the folding:
+# a class body declares its switches, each with the step from the options
+# so far to the next, and parse returns the options and the operands.
+class Options < Getopt::Options
+  bool :verbose, default: false
+  string :name, default: "world"
+  int :count, default: 1
+
+  on("--verbose", "-v") { |o, _| o.with(verbose: true) }
+  on("--name", "-n", arg: true) { |o, arg| o.with(name: arg) }
+  on("--count", "-c", arg: true) { |o, arg| o.with(count: Integer(arg)) }
+end
+options, files = Options.parse(%w[-v --name=Ann -c 2 a.txt -- -x])
+p options, files
+options.count.times { puts "hello #{options.name}" }

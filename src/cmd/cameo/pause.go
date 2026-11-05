@@ -21,13 +21,16 @@ const statusPaused = 3
 // With pause set, ^C pauses the script and writes its dump; see
 // runProgram. With ignoreMutations set, a call of one of Ruby's mutators
 // returns its result on a copy instead of raising.
-func runScript(path string, pause, ignoreMutations bool, stdout, stderr io.Writer) int {
+func runScript(path string, argv []string, pause, ignoreMutations bool, stdout, stderr io.Writer) int {
 	src, err := os.ReadFile(path)
 	if err != nil {
 		fmt.Fprintln(stderr, err)
 		return 1
 	}
 	prog, err := cameo.Load(path, string(src), stdout, stderr)
+	if err == nil {
+		prog.Args(argv)
+	}
 	if err != nil {
 		var errs syntax.ErrorList
 		if errors.As(err, &errs) {

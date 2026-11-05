@@ -108,6 +108,7 @@ variables:
   job = 1
   failed = 2
 constants:
+  ARGV = []
   Alias = Point
   LIMIT = 3
 promises:
