@@ -177,7 +177,7 @@ func (in *Interp) newClass(args []object.Value, block object.Value) (object.Valu
 		env.Define(p.Block.Params.Positional[0].Name, object.ClassValue(cls))
 	}
 	lexical := append(append([]*object.Class{}, p.Frame.Lexical...), cls)
-	bodyFrame := &Frame{Self: object.ClassValue(cls), Lexical: lexical, DefTarget: cls}
+	bodyFrame := &Frame{Self: object.ClassValue(cls), Lexical: lexical, DefTarget: cls, File: p.Frame.File}
 	cls.Open = true
 	_, err := in.evalBody(p.Block.Body, env, bodyFrame)
 	cls.Open = false
@@ -230,7 +230,7 @@ func (in *Interp) evalDef(n *syntax.Def, fr *Frame) (object.Value, error) {
 		}
 		return object.Value{}, in.raise(object.CameoError, n.Line(), "cannot replace the builtin method %s of %s", n.Name, target.Name)
 	}
-	m := &object.Method{Name: n.Name, Owner: target, Body: &compiledDef{def: n, body: in.code.body(n, n.Body)}, Arity: -1, Lexical: fr.Lexical}
+	m := &object.Method{Name: n.Name, Owner: target, Body: &compiledDef{def: n, body: in.code.body(n, n.Body)}, Arity: -1, Lexical: fr.Lexical, File: fr.File}
 	// A method `cameo build` compiled runs as Go, and keeps its body for
 	// the calls the Go code leaves to the interpreter: a top-level method
 	// by its name, a class's as Class#name.
@@ -397,7 +397,7 @@ func hostDefined(v object.Value) bool {
 // reopened is the class cls is a copy of, or nil.
 func (in *Interp) evalClassBody(cls, reopened *object.Class, body []syntax.Node, env *Env, fr *Frame) error {
 	lexical := append(append([]*object.Class{}, fr.Lexical...), cls)
-	bodyFrame := &Frame{Self: object.ClassValue(cls), Lexical: lexical, DefTarget: cls, Reopened: reopened}
+	bodyFrame := &Frame{Self: object.ClassValue(cls), Lexical: lexical, DefTarget: cls, Reopened: reopened, File: fr.File}
 	bodyEnv := NewEnv(nil)
 	cls.Open = true
 	defer func() { cls.Open = false }()

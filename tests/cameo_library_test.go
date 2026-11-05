@@ -81,3 +81,19 @@ p await async(W.new, :again)
 `)
 	assert.Equals(t, out, "cannot load greeting from an async call: a library written in cameo is required at the top level\n[false, \"hello\"]\n")
 }
+
+// An error a library's method raises at run time is reported with the
+// library's file and line, and one a script's block raises inside the
+// library's method with the script's: the innermost method or block an
+// exception leaves names the file.
+func TestAnErrorInALibraryWrittenInCameoNamesItsFile(t *testing.T) {
+	lib.Sources["lib"] = "module Lib\n  def self.go\n    raise ArgumentError, \"no\"\n  end\n\n  def self.each\n    yield 1\n  end\nend\n"
+	defer delete(lib.Sources, "lib")
+	var stdout, stderr bytes.Buffer
+	err := cameo.Run("t.cameo", "require \"lib\"\nLib.go\n", &stdout, &stderr)
+	assert.NotNil(t, err)
+	assert.Equals(t, err.Error(), "lib.cameo:3: no (ArgumentError)")
+	err = cameo.Run("t.cameo", "require \"lib\"\nLib.each { |x| raise \"mine\" }\n", &stdout, &stderr)
+	assert.NotNil(t, err)
+	assert.Equals(t, err.Error(), "t.cameo:2: mine (RuntimeError)")
+}

@@ -169,3 +169,17 @@ func Module(name string) *object.Class {
 	object.ObjectClass.Consts[name] = object.ClassValue(m)
 	return m
 }
+
+// Forward is a method of a core class that a library written in cameo
+// gives it, String#shellsplit for one: it calls the library module's
+// function name with the receiver and the arguments, and, while the
+// module is not defined, says to require the library.
+func Forward(module, name, library string) object.NativeFn {
+	return func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		m, ok := ctx.Const(module)
+		if !ok {
+			return object.Value{}, ctx.Raise(object.NoMethodError, "undefined method '%s' for an instance of %s: require \"%s\" first", name, self.Class().QualifiedName(), library)
+		}
+		return ctx.CallWith(m, name, append([]object.Value{self}, args...), kw, block)
+	}
+}

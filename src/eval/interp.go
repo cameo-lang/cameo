@@ -281,7 +281,11 @@ func (in *Interp) FormatError(err error) string {
 	if exc, ok := err.(*object.Exception); ok {
 		where := in.file
 		if exc.Line > 0 {
-			where = fmt.Sprintf("%s:%d", in.file, exc.Line)
+			file := exc.File
+			if file == "" {
+				file = in.file
+			}
+			where = fmt.Sprintf("%s:%d", file, exc.Line)
 		}
 		return fmt.Sprintf("%s: %s (%s)", where, exc.Message, exc.Cls.QualifiedName())
 	}

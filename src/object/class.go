@@ -135,6 +135,10 @@ type Method struct {
 	// Lexical is the chain of classes and modules enclosing a user method's
 	// definition, innermost last, which constant lookup walks.
 	Lexical []*Class
+	// File is the source a user method was defined in when it is not the
+	// script's: a library written in cameo, so an error in its body is
+	// reported with the library's file. "" is the script.
+	File string
 }
 
 // NativeFn implements a method in Go. kw is nil when no keyword arguments
@@ -572,6 +576,10 @@ type Context interface {
 	// Rand returns the interpreter's generator, the one Kernel#rand draws
 	// from: an async process has its own.
 	Rand() *Random
+	// Const looks up a top-level constant the script or the host defined;
+	// the core's are in ObjectClass.Consts. A Go library whose module a
+	// cameo source defines finds the module through it.
+	Const(name string) (Value, bool)
 	// AtExit keeps a block to run when the script ends, as Kernel#at_exit
 	// does.
 	AtExit(block Value)

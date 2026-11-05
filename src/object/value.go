@@ -568,6 +568,9 @@ type Exception struct {
 	Message string
 	// Line is the source line the exception was raised on, or 0.
 	Line int
+	// File is the source the line is in when it is not the script's: a
+	// library written in cameo. "" is the script, or not yet known.
+	File string
 	// Attrs holds what an exception of Ruby's core carries besides its
 	// message, by the name of the method that reads it: a NameError's name
 	// and receiver, a NoMethodError's args, a KeyError's key and receiver,

@@ -16,6 +16,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/minispec"
 	"github.com/cameo-lang/cameo/src/lib/pathname"
 	"github.com/cameo-lang/cameo/src/lib/securerandom"
+	"github.com/cameo-lang/cameo/src/lib/shellwords"
 	"github.com/cameo-lang/cameo/src/lib/time"
 	"github.com/cameo-lang/cameo/src/lib/uri"
 )
@@ -61,7 +62,9 @@ var Libraries = map[string][]string{
 // methods are the script's from then on, as a Go library's are from the
 // start. A library listed here needs no entry in Libraries, and may have
 // one for what it loads along with it.
-var Sources = map[string]string{}
+var Sources = map[string]string{
+	"shellwords": shellwords.Source,
+}
 
 // Install defines every library. The evaluator calls it once, after
 // stdlib.Install.
@@ -79,4 +82,5 @@ func Install() {
 	minispec.Install()
 	uri.Install()
 	securerandom.Install()
+	shellwords.Install()
 }
