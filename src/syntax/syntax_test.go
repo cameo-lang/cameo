@@ -200,7 +200,13 @@ func TestSugarParses(t *testing.T) {
 func TestJSONFunctionsWithMutatingNamesAreCalls(t *testing.T) {
 	parse(t, "JSON.parse!(\"[NaN]\")\nJSON.load(\"[1]\")\n")
 	rejects(t, "load(\"x.rb\")\n", "load is not supported")
-	rejects(t, "A = {}\nA.parse!\n", "This is not supported, use A = A.parse instead")
+	rejects(t, "A = {}\nA.merge!({})\n", "This is not supported, use A = A.merge instead")
+}
+
+// OptionParser's parse!, order! and permute! change nothing in cameo: they
+// return the operands and leave their argument as it is.
+func TestOptionParsersBangMethodsAreCalls(t *testing.T) {
+	parse(t, "o = OptionParser.new\nrest = o.parse!(ARGV)\no.order!\nOptionParser.new.permute!(%w[a])\n")
 }
 
 func TestBangMethodsTheScriptDefinesAreCalls(t *testing.T) {

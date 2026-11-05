@@ -809,6 +809,11 @@ var libraryFunctions = map[string]map[string]bool{
 	"Marshal": {"load": true},
 }
 
+// nonMutatingBangs are bang methods of a library that change nothing in
+// cameo whatever the receiver: OptionParser#parse! and kin return the
+// operands and leave the arguments as they are.
+var nonMutatingBangs = map[string]bool{"parse!": true, "order!": true, "permute!": true}
+
 // isLibraryFunction reports a call of one of libraryFunctions.
 func isLibraryFunction(n *ast.Call) bool {
 	r, isConst := n.Recv.(*ast.ConstRef)
@@ -921,7 +926,7 @@ func (c *converter) call(n *ast.Call) Node {
 			}
 		}
 	}
-	lib := isLibraryFunction(n)
+	lib := isLibraryFunction(n) || nonMutatingBangs[name]
 	if IsBang(name) && !lib && !c.bangs[name] {
 		c.fail("%s", BangMessage(receiverName(n.Recv), name))
 		return nil

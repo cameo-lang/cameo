@@ -14,11 +14,13 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/delegate"
 	"github.com/cameo-lang/cameo/src/lib/digest"
 	"github.com/cameo-lang/cameo/src/lib/forwardable"
+	"github.com/cameo-lang/cameo/src/lib/getoptlong"
 	"github.com/cameo-lang/cameo/src/lib/ipaddr"
 	"github.com/cameo-lang/cameo/src/lib/json"
 	"github.com/cameo-lang/cameo/src/lib/logger"
 	"github.com/cameo-lang/cameo/src/lib/marshal"
 	"github.com/cameo-lang/cameo/src/lib/minispec"
+	"github.com/cameo-lang/cameo/src/lib/optparse"
 	"github.com/cameo-lang/cameo/src/lib/pathname"
 	"github.com/cameo-lang/cameo/src/lib/prime"
 	"github.com/cameo-lang/cameo/src/lib/securerandom"
@@ -62,6 +64,7 @@ var Libraries = map[string][]string{
 	// openssl is accepted for the OpenSSL::HMAC and OpenSSL::Digest names
 	// digest defines; a script written for openssl begins with it.
 	"openssl":                     {"digest"},
+	"optparse":                    nil,
 	"pathname":                    nil,
 	"pp":                          nil,
 	"prime":                       nil,
@@ -86,6 +89,7 @@ var Libraries = map[string][]string{
 // start. A library listed here needs no entry in Libraries, and may have
 // one for what it loads along with it.
 var Sources = map[string]string{
+	"getoptlong": getoptlong.Source,
 	"abbrev":     abbrev.Source,
 	"shellwords": shellwords.Source,
 	"tsort":      tsort.Source,
@@ -119,4 +123,6 @@ func Install() {
 	singleton.Install()
 	stringio.Install()
 	strscan.Install()
+	optparse.Install()
+	getoptlong.Install()
 }

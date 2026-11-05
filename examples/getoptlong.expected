@@ -1,0 +1,11 @@
+[]
+true
+[]
+1
+0
+2
+StandardError
+Options(verbose: true, name: "Ann", count: 2)
+["a.txt", "-x"]
+hello Ann
+hello Ann
