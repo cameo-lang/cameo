@@ -56,7 +56,7 @@ def reason(msg)
   when /\Aglobal variables are not supported/ then "globals"
   when /\Aclass variables are not supported/ then "class-variables"
   when /\Amultiple assignment binds local variables only/ then "multiple-assignment"
-  when /changes its receiver|a bang method changes its receiver|the left side of an assignment must start with a local variable|\Aindex assignment takes one index|cannot store into its hash|\Aself\.\w+ = …: a field is set in initialize only|\Aself\[…\] = …: cameo has no setters/
+  when /changes its receiver|a bang method changes its receiver|the left side of an assignment must start with a local variable|\Aindex assignment takes one index|cannot store into its hash|\Aself\.\w+ = …: a field is set in initialize|\Aself\[…\] = …: cameo has no setters/
     "mutation"
   when /\Aclass << self is not supported|\Adef \S+ on an object|\Adef self\.\S+ outside a class body/ then "singleton-methods"
   when /\A(send|public_send|__send__|eval|class_eval|module_eval|instance_eval|instance_exec|class_exec|define_method|undef|method|binding) is not supported/

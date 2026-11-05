@@ -736,7 +736,60 @@ func (in *Interp) inheritFields(cls, super *object.Class) error {
 	}
 	cls.ReservedNumbers = append(cls.ReservedNumbers, super.ReservedNumbers...)
 	cls.ReservedNames = append(cls.ReservedNames, super.ReservedNames...)
+	for name, v := range super.Attrs {
+		cls.Attrs[name] = v
+	}
 	return nil
+}
+
+// evalAttrDecl declares attributes of the class a body builds, each
+// holding its default, nil without one, and gives the class a reader for
+// each. A body reopening the class may declare an attribute it has again,
+// which keeps its value.
+func (in *Interp) evalAttrDecl(n *syntax.AttrDecl, env *Env, fr *Frame) (object.Value, error) {
+	cls := fr.DefTarget
+	if cls == nil || cls.IsModule || !isClassValue(fr.Self, cls) {
+		return object.Value{}, in.raise(object.CameoError, n.Line(), "attribute :%s: an attribute belongs to a class body", n.Names[0])
+	}
+	def := object.Nil
+	if n.Default != nil {
+		v, err := in.eval(n.Default, env, fr)
+		if err != nil {
+			return object.Value{}, err
+		}
+		def = v
+	}
+	for _, name := range n.Names {
+		if _, exists := cls.Attrs[name]; exists {
+			if fr.Reopened != nil {
+				if _, before := fr.Reopened.Attrs[name]; before {
+					continue
+				}
+			}
+			return object.Value{}, in.raise(object.CameoError, n.Line(), "attribute %s is already declared in %s", name, cls.QualifiedName())
+		}
+		if m := cls.LookupSingleton(name); m != nil && m.Owner == cls {
+			return object.Value{}, in.raise(object.CameoError, n.Line(), "attribute %s: %s already defines a class method %s", name, cls.QualifiedName(), name)
+		}
+		cls.Attrs[name] = def
+		cls.DefineSingleton(name, 0, attrReader(name))
+	}
+	return object.Nil, nil
+}
+
+// attrReader reads an attribute of the class the method is called on: a
+// subclass reads its own copy.
+func attrReader(name string) object.NativeFn {
+	return func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		cls, ok := self.AsClass()
+		if !ok {
+			return object.Nil, nil
+		}
+		if v, ok := cls.Attrs[name]; ok {
+			return v, nil
+		}
+		return object.Nil, nil
+	}
 }
 
 // exceptionNumber reports whether number is one an exception class keeps

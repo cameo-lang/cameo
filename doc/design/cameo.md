@@ -274,6 +274,46 @@ and becomes the instance.
 body cannot set a field; the checker rejects `self.x = v` outside
 `initialize` at load time, and `with` makes the changed copy instead.
 
+**Attributes** belong to the class itself, not to its instances, and this
+is where a class is deliberately unlike an instance. An instance is built
+inside `initialize`, where `self.x = v` sets its fields, and it is sealed
+when `initialize` returns. A class is built inside its body, where `self.x
+= v` sets its attributes, and it is sealed when the body ends. The
+difference is where the building happens: an instance's `initialize` is a
+method, so only that method sets fields; a class's body is the class
+statement itself, and it calls class methods, so a class method called
+from the body sets attributes too. That is what lets a class body declare
+things in a library's words:
+
+```ruby
+class Switches
+  attribute :switches, default: []
+
+  def self.on(name, &step)
+    self.switches += [Switch.new(name: name, step: step)]
+  end
+end
+
+class Options < Switches
+  on("--verbose") { |o, _| o.with(verbose: true) }
+end
+Options.switches      # the one switch; Switches.switches is still []
+```
+
+`attribute :name, default: expr` declares an attribute in a class body,
+untyped, holding its default or nil, with a class method of its name that
+reads it. `self.name = v` in the body, or in a class method the body calls,
+sets it; `self.name += v` and the other chained forms work as on a field. A
+subclass starts with a copy of its parent's attributes and sets its own,
+so `Options.on` records on `Options` and leaves `Switches` as it was. Once
+the body ends the class is sealed: `Options.on(…)` afterwards raises a
+`CameoError`, a name no `attribute` declared raises a `NameError`, and
+`self.x = v` in an instance method is rejected at load time as before.
+Reopening a class sets attributes on the copy the reopening makes, and a
+reopening body may declare an attribute the class has again, which keeps
+its value. An attribute is part of the class, not of any message: it is
+not in the `.proto`, and holds a Proc as readily as a number.
+
 **A class is a value, and `class X … end` binds the name `X` to it**, the
 way `x = …` binds a variable. The name is bound before the body runs, so
 the body can call the class's methods by its name, as in Ruby.
@@ -754,6 +794,14 @@ re-opened by accident:
   other: it returns its result, rebinds nothing, and may be called on any
   receiver. The checker learns the names from the script's `def`s, so a
   bang method the script does not define is one of Ruby's and refused.
+- **A class is built in its body, an instance in `initialize`.** Both
+  are sealed when that ends, but a class body calls class methods, so a
+  class method called from the body may set a class attribute while an
+  instance method never sets a field. This asymmetry is deliberate: it is
+  what lets a library give a class body declarations of its own, such as
+  `on("--verbose") { … }`, without metaprogramming. The alternative, a
+  class with no state of its own, left such a declaration nowhere to go
+  but a constant the body assembles by hand.
 - **No call changes or rebinds its receiver.** Only assignment rebinds a
   local. A call of one of Ruby's mutators raises, naming the
   non-mutating form, unless the run ignores mutation errors, when it

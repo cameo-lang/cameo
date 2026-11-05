@@ -103,8 +103,8 @@ func TestIndexAssignmentRewrites(t *testing.T) {
 
 func TestFieldAssignmentInsideInitializeOnly(t *testing.T) {
 	parse(t, "class P\n int :x\n def initialize(x)\n  self.x = x\n  self.x.y = 1\n  self.x += 1\n end\nend\n")
-	rejects(t, "class P\n def set(x)\n  self.x = x\n end\nend\n", "test.cameo:3: self.x = …: a field is set in initialize only")
-	rejects(t, "self.x = 1\n", "a field is set in initialize only")
+	rejects(t, "class P\n def set(x)\n  self.x = x\n end\nend\n", "test.cameo:3: self.x = …: a field is set in initialize, and a class attribute in a class body or a class method; elsewhere use with")
+	rejects(t, "self.x = 1\n", "a field is set in initialize, and a class attribute")
 	rejects(t, "class P\n def initialize\n  self[:x] = 1\n end\nend\n", "self[…] = …: cameo has no setters")
 }
 

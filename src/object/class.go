@@ -38,6 +38,12 @@ type Class struct {
 	// Reserved holds the reserved field numbers and names.
 	ReservedNumbers []int64
 	ReservedNames   []string
+	// Attrs are the class's own attributes, declared in its body with
+	// `attribute :name`, which the body sets while it runs; a subclass
+	// starts with a copy of its superclass's. Open is set while the body
+	// runs, the only time an attribute may be set.
+	Attrs map[string]Value
+	Open  bool
 	// lookup caches the ancestors and the resolved methods; see cache.
 	lookup atomic.Pointer[lookupCache]
 }
@@ -143,6 +149,7 @@ func NewClass(name string, super *Class) *Class {
 		SingletonMethods: map[string]*Method{},
 		Consts:           map[string]Value{},
 		FieldIndex:       map[string]int{},
+		Attrs:            map[string]Value{},
 	}
 }
 
@@ -174,6 +181,7 @@ func (c *Class) Copy() *Class {
 		FieldIndex:       maps.Clone(c.FieldIndex),
 		ReservedNumbers:  slices.Clone(c.ReservedNumbers),
 		ReservedNames:    slices.Clone(c.ReservedNames),
+		Attrs:            maps.Clone(c.Attrs),
 	}
 	moved := func(m *Method) *Method {
 		if m.Owner != c {
