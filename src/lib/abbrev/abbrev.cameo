@@ -1,0 +1,36 @@
+# Ruby's abbrev library: the unambiguous abbreviations of a set of words.
+# Every prefix of a word that no other word shares maps to the word, the
+# word itself included, and a pattern, a Regexp or a String prefix, keeps
+# only the abbreviations that match it. It follows abbrev 0.1.2.
+module Abbrev
+  VERSION = "0.1.2"
+
+  def self.abbrev(words, pattern = nil)
+    pattern = Regexp.new("\\A" + Regexp.escape(pattern)) if pattern.is_a?(String)
+    unless pattern.nil? || pattern.is_a?(Regexp)
+      raise TypeError, "the pattern is a String or a Regexp, not #{pattern.class}"
+    end
+    table = {}
+    seen = Hash.new(0)
+    words.each do |word|
+      next if word.empty?
+      word.size.downto(1) do |length|
+        abbreviation = word[0...length]
+        next if pattern && !pattern.match?(abbreviation)
+        seen = seen.merge(abbreviation => seen[abbreviation] + 1)
+        case seen[abbreviation]
+        when 1 then table = table.merge(abbreviation => word)
+        when 2 then table = table.except(abbreviation)
+        else break
+        end
+      end
+    end
+    words.each do |word|
+      next if pattern && !pattern.match?(word)
+      table = table.merge(word => word)
+    end
+    table
+  end
+
+  def abbrev(words, pattern = nil) = Abbrev.abbrev(words, pattern)
+end
