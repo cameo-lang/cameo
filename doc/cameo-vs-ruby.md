@@ -96,7 +96,8 @@ mspec's own `before` blocks.
   `securerandom`, `csv`, `marshal`, `shellwords`, `ipaddr`, `zlib`,
   `prime`, `tsort`, `abbrev`, `singleton`,
   `forwardable`, `delegate`, `logger`, `stringio`, `strscan`, `optparse`,
-  `getoptlong`, `matrix`, `bigdecimal`, `minispec` and `io/httpd`, which cameo builds in;
+  `getoptlong`, `matrix`, `bigdecimal`, `minispec`, `io/httpd` and `frankie`, which
+  cameo builds in;
   [stdlib.md](stdlib.md)
   has every library of Ruby's standard library with its status, the ones
   to come and the ones left out. `cgi` has what Ruby's `cgi/escape` and `cgi/util`
@@ -475,7 +476,7 @@ These are absent, and a script that uses one fails when it reaches it:
 - **Not there yet**: `exit!`,
   `printf` (`format` exists), `__method__`, `Enumerator.new`,
   `Integer()` with a base, and `autoload`.
-- **Libraries**: `require` of any library but the thirty-six above, such
+- **Libraries**: `require` of any library but the thirty-seven above, such
   as `resolv`, raises a `LoadError`. [stdlib.md](stdlib.md) says which are
   planned and which are left out, and why.
 
