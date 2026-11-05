@@ -25,7 +25,7 @@ job = async a, :+, b                      # a.+(b) on another goroutine; job is 
 puts await job                            # Point(x: 20, y: 12)
 ```
 
-The documentation is on the site, [cameo-lang.github.io](https://cameo-lang.github.io):
+The documentation is on the site, [cameo-lang.github.io/cameo](https://cameo-lang.github.io/cameo/):
 the language for someone who knows Ruby, the async model, a Go program
 embedding the interpreter, and native methods. In the repository, the
 language, its differences from Ruby, the object model, the async model
@@ -59,7 +59,7 @@ I/O is done; [examples/webfetch](examples/webfetch) fetches web pages so.
 [ruby/lib/cameo/runner.rb](ruby/lib/cameo/runner.rb) gives CRuby the same
 `Cameo::Runner` module, so a script whose classes include it runs on both:
 `ruby -I ruby/lib examples/async/02_fan_out.rb`. The site's
-[async guide](https://cameo-lang.github.io/async.html) explains it all. The Ruby adapter
+[async guide](https://cameo-lang.github.io/cameo/async.html) explains it all. The Ruby adapter
 (milestone 7) is not built.
 
 ```sh
@@ -147,14 +147,12 @@ No cgo, no Ruby installation, no code generation.
 
 ## Site
 
-[cameo-lang.github.io](https://cameo-lang.github.io) is the static site in
-[doc/gh_pages](doc/gh_pages). The Pages workflow
-([.github/workflows/pages.yml](.github/workflows/pages.yml)) publishes it on
-every change: GitHub serves an organisation's root site from the repository
-named after it, so the workflow pushes the pages to
-`cameo-lang/cameo-lang.github.io`, and keeps the old address under `/cameo/`
-redirecting to the new one. `go test ./tests` runs every sample on the site
-against its output.
+[cameo-lang.github.io/cameo](https://cameo-lang.github.io/cameo/) is the
+static site in [doc/gh_pages](doc/gh_pages), served by this repository's
+GitHub Pages. The Pages workflow
+([.github/workflows/pages.yml](.github/workflows/pages.yml)) deploys it on
+every change to the directory. `go test ./tests` runs every sample on the
+site against its output.
 
 ## Releasing
 
