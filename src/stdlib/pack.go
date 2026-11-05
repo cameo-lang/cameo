@@ -322,15 +322,7 @@ func packText(d directive, s string) []byte {
 		if d.explicit && d.count >= 3 {
 			width = d.count / 3 * 4
 		}
-		var b strings.Builder
-		for len(enc) > width {
-			b.WriteString(enc[:width] + "\n")
-			enc = enc[width:]
-		}
-		if enc != "" {
-			b.WriteString(enc + "\n")
-		}
-		return []byte(b.String())
+		return []byte(Base64Lines(enc, width))
 	}
 	return nil
 }
@@ -414,27 +406,14 @@ func unpack(ctx object.Context, data []byte, format string, start int) ([]object
 			at += (n + 7) / 8
 			out = append(out, object.StringOf(object.KindASCII, string(bits)))
 		case d.letter == 'm' && d.explicit && d.count == 0:
-			// m0 is strict RFC 4648 base64.
-			// Go's decoder skips line breaks, which RFC 4648 does not allow.
-			text := string(data[at:])
-			dec, err := base64.StdEncoding.Strict().DecodeString(text)
-			if err != nil || strings.ContainsAny(text, "\r\n") {
+			dec, ok := DecodeBase64Strict(string(data[at:]))
+			if !ok {
 				return nil, ctx.Raise(object.ArgumentError, "invalid base64")
 			}
 			out = append(out, object.Bytes(dec))
 			at = len(data)
 		case d.letter == 'm':
-			text := strings.Map(func(r rune) rune {
-				if r == '\n' || r == '\r' {
-					return -1
-				}
-				return r
-			}, string(data[at:]))
-			dec, err := base64.StdEncoding.DecodeString(text)
-			if err != nil {
-				dec, _ = base64.RawStdEncoding.DecodeString(strings.TrimRight(text, "="))
-			}
-			out = append(out, object.Bytes(dec))
+			out = append(out, object.Bytes(DecodeBase64(string(data[at:]))))
 			at = len(data)
 		case d.letter == 'H' || d.letter == 'h':
 			rest := data[at:]
@@ -599,4 +578,85 @@ func keywordArg(ctx object.Context, kw *object.Map, name string) (object.Value, 
 	}
 	v, _ := kw.Get(object.Symbol(name))
 	return v, nil
+}
+
+// Base64Lines is pack("m")'s output, which Base64.encode64 is too: the
+// encoding in lines of width characters, each ending in a newline, and a
+// newline after the last; nothing for nothing.
+func Base64Lines(enc string, width int) string {
+	var b strings.Builder
+	for len(enc) > width {
+		b.WriteString(enc[:width])
+		b.WriteByte('\n')
+		enc = enc[width:]
+	}
+	if enc != "" {
+		b.WriteString(enc)
+		b.WriteByte('\n')
+	}
+	return b.String()
+}
+
+// DecodeBase64Strict is unpack1("m0"), which Base64.strict_decode64 is
+// too: RFC 4648 base64, padded, with no line break or other character
+// outside the alphabet. Go's strict decoder still skips line breaks, so
+// they are refused here.
+func DecodeBase64Strict(s string) ([]byte, bool) {
+	dec, err := base64.StdEncoding.Strict().DecodeString(s)
+	if err != nil || strings.ContainsAny(s, "\r\n") {
+		return nil, false
+	}
+	return dec, true
+}
+
+// DecodeBase64 is unpack1("m"), which Base64.decode64 is too: every
+// base64 character counts, in groups of four, and anything else, a line
+// break or a stray character, is skipped. A padding character after two
+// or three characters of a group ends the group, with the bytes it holds,
+// and the decoding: what follows it is dropped. One elsewhere is skipped
+// like a stray character. A group the end cuts short yields the bytes it
+// holds.
+func DecodeBase64(s string) []byte {
+	var out []byte
+	var acc uint32
+	n := 0
+	flush := func() []byte {
+		switch n {
+		case 2:
+			return append(out, byte(acc>>4))
+		case 3:
+			return append(out, byte(acc>>10), byte(acc>>2))
+		}
+		return out
+	}
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		var v byte
+		switch {
+		case c >= 'A' && c <= 'Z':
+			v = c - 'A'
+		case c >= 'a' && c <= 'z':
+			v = c - 'a' + 26
+		case c >= '0' && c <= '9':
+			v = c - '0' + 52
+		case c == '+':
+			v = 62
+		case c == '/':
+			v = 63
+		case c == '=':
+			if n >= 2 {
+				return flush()
+			}
+			continue
+		default:
+			continue
+		}
+		acc = acc<<6 | uint32(v)
+		n++
+		if n == 4 {
+			out = append(out, byte(acc>>16), byte(acc>>8), byte(acc))
+			acc, n = 0, 0
+		}
+	}
+	return flush()
 }

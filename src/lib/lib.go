@@ -5,6 +5,7 @@
 package lib
 
 import (
+	"github.com/cameo-lang/cameo/src/lib/base64"
 	"github.com/cameo-lang/cameo/src/lib/benchmark"
 	"github.com/cameo-lang/cameo/src/lib/cgi"
 	"github.com/cameo-lang/cameo/src/lib/date"
@@ -24,6 +25,7 @@ import (
 // core installs, under src/stdlib, is registered here as well; the
 // evaluator's own, debug and cameo/runner, are its.
 var Libraries = map[string][]string{
+	"base64":      nil,
 	"benchmark":   nil,
 	"cgi":         {"cgi/escape", "cgi/util"},
 	"cgi/escape":  nil,
@@ -57,6 +59,7 @@ var Sources = map[string]string{}
 // Install defines every library. The evaluator calls it once, after
 // stdlib.Install.
 func Install() {
+	base64.Install()
 	benchmark.Install()
 	cgi.Install()
 	date.Install()
