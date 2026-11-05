@@ -49,7 +49,7 @@ func raise(cls *object.Class, msg string) error { return &object.Exception{Cls: 
 // Install defines Zlib. lib.Install calls it once.
 func Install() {
 	m := module
-	object.ObjectClass.Consts["Zlib"] = object.ClassValue(m)
+	object.DefineNative("Zlib", object.ClassValue(m))
 	m.Consts["VERSION"] = object.String("3.2.1")
 	m.Consts["ZLIB_VERSION"] = object.String("1.3.1")
 	for name, v := range map[string]int64{

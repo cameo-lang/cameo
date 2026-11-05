@@ -102,7 +102,7 @@ func inherit(c *object.Class) {
 // OpenSSL::Digest. lib.Install calls it once.
 func Install() {
 	m := digestModule
-	object.ObjectClass.Consts["Digest"] = object.ClassValue(m)
+	object.DefineNative("Digest", object.ClassValue(m))
 	for _, c := range []*object.Class{instanceMod, classClass, baseClass, sha2Class} {
 		c.Lexical = m
 		m.Consts[c.Name] = object.ClassValue(c)

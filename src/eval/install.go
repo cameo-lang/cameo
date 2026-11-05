@@ -14,6 +14,9 @@ import (
 // Proc methods, which know this package's Proc.
 func installStdlib() {
 	stdlib.Install()
+	// The core is native too: bind it under Cameo::Native before the
+	// libraries bind themselves there.
+	object.MirrorNative()
 	lib.Install()
 	installRaise()
 	installCameo()

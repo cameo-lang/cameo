@@ -33,7 +33,7 @@ func Install() {
 	// CSV is a class in Ruby; here the class carries the module functions
 	// as singleton methods, and holds Row, Table and the errors.
 	c := csvClass
-	object.ObjectClass.Consts["CSV"] = object.ClassValue(c)
+	object.DefineNative("CSV", object.ClassValue(c))
 	c.Consts["VERSION"] = object.String("3.3.2")
 	malformedError.Lexical = c
 	c.Consts["MalformedCSVError"] = object.ClassValue(malformedError)

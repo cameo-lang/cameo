@@ -683,7 +683,7 @@ func (p *parser) builtin(ctx object.Context, name string) (object.Value, bool, e
 // Install defines OptionParser. lib.Install calls it once.
 func Install() {
 	c := class
-	object.ObjectClass.Consts["OptionParser"] = object.ClassValue(c)
+	object.DefineNative("OptionParser", object.ClassValue(c))
 	c.Consts["Version"] = object.String("0.6.0")
 	for _, e := range []*object.Class{parseError, invalidOpt, missingArg, invalidArg, needlessArg, ambiguousOpt, ambiguousArg} {
 		e.Lexical = c

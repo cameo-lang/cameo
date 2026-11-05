@@ -18,7 +18,7 @@ var module = object.NewModule("Abbrev")
 // Install defines Abbrev and Array#abbrev. lib.Install calls it once.
 func Install() {
 	m := module
-	object.ObjectClass.Consts["Abbrev"] = object.ClassValue(m)
+	object.DefineNative("Abbrev", object.ClassValue(m))
 	m.Consts["VERSION"] = object.String("0.1.2")
 	abbrev := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) < 1 || len(args) > 2 {

@@ -203,7 +203,7 @@ func strings2(ss []string) object.Value {
 // Install defines GetoptLong. lib.Install calls it once.
 func Install() {
 	c := class
-	object.ObjectClass.Consts["GetoptLong"] = object.ClassValue(c)
+	object.DefineNative("GetoptLong", object.ClassValue(c))
 	c.Consts["VERSION"] = object.String("0.2.1")
 	c.Consts["NO_ARGUMENT"] = object.Int(noArgument)
 	c.Consts["REQUIRED_ARGUMENT"] = object.Int(requiredArgument)

@@ -65,8 +65,8 @@ func build(ctx object.Context, cls *object.Class, args []object.Value, kw *objec
 // lib.Install calls it once.
 func Install() {
 	d := delegatorClass
-	object.ObjectClass.Consts["Delegator"] = object.ClassValue(d)
-	object.ObjectClass.Consts["SimpleDelegator"] = object.ClassValue(simpleClass)
+	object.DefineNative("Delegator", object.ClassValue(d))
+	object.DefineNative("SimpleDelegator", object.ClassValue(simpleClass))
 	d.Consts["VERSION"] = object.String("0.4.0")
 	d.DefineSingleton("new", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		cls := self.Cls()
