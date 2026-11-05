@@ -21,6 +21,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/time"
 	unicodenormalize "github.com/cameo-lang/cameo/src/lib/unicode_normalize"
 	"github.com/cameo-lang/cameo/src/lib/uri"
+	"github.com/cameo-lang/cameo/src/lib/zlib"
 )
 
 // Libraries are the names require accepts, each with the libraries it
@@ -58,6 +59,7 @@ var Libraries = map[string][]string{
 	"unicode_normalize":           {"unicode_normalize/normalize"},
 	"unicode_normalize/normalize": nil,
 	"uri":                         nil,
+	"zlib":                        nil,
 }
 
 // Sources are the libraries written in cameo, by the name require
@@ -90,4 +92,5 @@ func Install() {
 	securerandom.Install()
 	shellwords.Install()
 	unicodenormalize.Install()
+	zlib.Install()
 }
