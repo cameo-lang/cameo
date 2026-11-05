@@ -11,6 +11,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/csv"
 	"github.com/cameo-lang/cameo/src/lib/date"
 	"github.com/cameo-lang/cameo/src/lib/digest"
+	"github.com/cameo-lang/cameo/src/lib/ipaddr"
 	"github.com/cameo-lang/cameo/src/lib/json"
 	"github.com/cameo-lang/cameo/src/lib/marshal"
 	"github.com/cameo-lang/cameo/src/lib/minispec"
@@ -41,6 +42,7 @@ var Libraries = map[string][]string{
 	"digest/md5":  {"digest"},
 	"digest/sha1": {"digest"},
 	"digest/sha2": {"digest"},
+	"ipaddr":      nil,
 	"json":        nil,
 	"marshal":     nil,
 	"minispec":    nil,
@@ -78,6 +80,7 @@ func Install() {
 	csv.Install()
 	date.Install()
 	digest.Install()
+	ipaddr.Install()
 	json.Install()
 	marshal.Install()
 	pathname.Install()
