@@ -547,9 +547,19 @@ func (in *Interp) evalInclude(n *syntax.Include, env *Env, fr *Frame) (object.Va
 		return object.Value{}, in.raise(object.ArgumentError, n.Line(), "cyclic include detected")
 	}
 	if n.Extend {
+		if mod.Extended != nil {
+			if err := mod.Extended(in, cls); err != nil {
+				return object.Value{}, withLine(err, n.Line())
+			}
+		}
 		cls.Extend(mod)
 	} else {
 		cls.Include(mod)
+		if mod.Included != nil {
+			if err := mod.Included(in, cls); err != nil {
+				return object.Value{}, withLine(err, n.Line())
+			}
+		}
 	}
 	return object.ClassValue(cls), nil
 }

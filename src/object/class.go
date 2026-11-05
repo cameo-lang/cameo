@@ -12,7 +12,15 @@ import (
 type Class struct {
 	Name     string
 	IsModule bool
-	Super    *Class // nil for a module, and for BasicObject
+	// Included, on a module, runs when a class includes it: Ruby's
+	// included hook, for a module that gives the class methods of its own.
+	// Extended runs when a class extends it, for a module that refuses that.
+	Included func(ctx Context, into *Class) error
+	Extended func(ctx Context, into *Class) error
+	// Library is what a library keeps on a class, by the library's name:
+	// Singleton's one instance. A reopened class, a copy, shares it.
+	Library map[string]any
+	Super   *Class // nil for a module, and for BasicObject
 	// Digest identifies a user definition by its body; "" for a builtin class.
 	Digest string
 	// Methods are instance methods; SingletonMethods the class methods
@@ -189,6 +197,9 @@ func (c *Class) Copy() *Class {
 		ReservedNames:    slices.Clone(c.ReservedNames),
 		Attrs:            maps.Clone(c.Attrs),
 		AttrDefaults:     maps.Clone(c.AttrDefaults),
+		Included:         c.Included,
+		Extended:         c.Extended,
+		Library:          c.Library,
 	}
 	moved := func(m *Method) *Method {
 		if m.Owner != c {
