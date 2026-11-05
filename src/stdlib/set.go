@@ -114,7 +114,7 @@ func installSet() {
 		sep := ""
 		if len(args) == 1 && !args[0].IsNil() {
 			var err error
-			if sep, err = wantString(ctx, args[0]); err != nil {
+			if sep, err = WantString(ctx, args[0]); err != nil {
 				return object.Value{}, err
 			}
 		}
@@ -254,7 +254,7 @@ func installSet() {
 	})
 	object.SetClass.DefineSingleton("new", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) > 1 {
-			return object.Value{}, argError(ctx, len(args), "0..1")
+			return object.Value{}, ArgError(ctx, len(args), "0..1")
 		}
 		if len(args) == 0 || args[0].IsNil() {
 			return object.SetValue(object.NewSet()), nil

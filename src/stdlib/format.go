@@ -91,7 +91,7 @@ func formatOne(ctx object.Context, spec string, verb byte, arg object.Value) (st
 		if arg.Kind() == object.KindBig {
 			return fmt.Sprintf("%"+spec+"d", arg.Big()), nil
 		}
-		i, err := wantInt(ctx, arg, "")
+		i, err := WantInt(ctx, arg, "")
 		if err != nil {
 			return "", err
 		}
@@ -104,7 +104,7 @@ func formatOne(ctx object.Context, spec string, verb byte, arg object.Value) (st
 		if arg.Kind() == object.KindBig {
 			return fmt.Sprintf("%"+spec+string(v), arg.Big()), nil
 		}
-		i, err := wantInt(ctx, arg, "")
+		i, err := WantInt(ctx, arg, "")
 		if err != nil {
 			return "", err
 		}
@@ -125,7 +125,7 @@ func formatOne(ctx object.Context, spec string, verb byte, arg object.Value) (st
 			}
 			x = p
 		default:
-			return "", ctx.Raise(object.TypeError, "can't convert %s into Float", kindName(arg))
+			return "", ctx.Raise(object.TypeError, "can't convert %s into Float", KindName(arg))
 		}
 		if verb == 'f' && !strings.Contains(spec, ".") {
 			spec += ".6"

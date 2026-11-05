@@ -71,7 +71,7 @@ func installSymbol() {
 	})
 	strArg := func(name string, f func(s, a string) bool) {
 		def(c, name, 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-			a, err := wantString(ctx, args[0])
+			a, err := WantString(ctx, args[0])
 			if err != nil {
 				return object.Value{}, err
 			}

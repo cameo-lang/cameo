@@ -33,7 +33,7 @@ func numArgs(ctx object.Context, self, other object.Value, op string) (a, b floa
 	a, _ = self.AsNumber()
 	b, ok := other.AsNumber()
 	if !ok {
-		return 0, 0, false, ctx.Raise(object.TypeError, "%s can't be coerced into %s", kindName(other), self.Class().Name)
+		return 0, 0, false, ctx.Raise(object.TypeError, "%s can't be coerced into %s", KindName(other), self.Class().Name)
 	}
 	return a, b, self.IsInteger() && other.IsInteger(), nil
 }
@@ -137,7 +137,7 @@ func installFloat() {
 				}
 				return object.FloatToInteger(f(x)), nil
 			}
-			digits, err := wantInt(ctx, args[0], "")
+			digits, err := WantInt(ctx, args[0], "")
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -318,11 +318,11 @@ func roundingMode(ctx object.Context, kw *object.Map) (string, error) {
 // error in x * 10**ndigits does not move the result; more round exactly.
 func floatRound(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 	if len(args) > 1 {
-		return object.Value{}, argError(ctx, len(args), "0..1")
+		return object.Value{}, ArgError(ctx, len(args), "0..1")
 	}
 	var ndigits int64
 	if len(args) == 1 {
-		n, err := wantInt(ctx, args[0], "")
+		n, err := WantInt(ctx, args[0], "")
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -455,7 +455,7 @@ func roundFloatExactly(x float64, ndigits int64, mode string) float64 {
 // without a block returns the sequence.
 func numericStep(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 	if len(args) > 2 {
-		return object.Value{}, argError(ctx, len(args), "0..2")
+		return object.Value{}, ArgError(ctx, len(args), "0..2")
 	}
 	limit, by := object.Nil, object.Int(1)
 	if len(args) > 0 {
@@ -474,7 +474,7 @@ func numericStep(ctx object.Context, self object.Value, args []object.Value, kw 
 	}
 	for _, v := range []object.Value{by, limit} {
 		if _, ok := v.AsNumber(); !ok && !v.IsNil() {
-			return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into Integer", kindName(v))
+			return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into Integer", KindName(v))
 		}
 	}
 	if by.IsNil() {

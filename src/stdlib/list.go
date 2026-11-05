@@ -12,7 +12,7 @@ func installList() {
 	// index, or a copy of another array.
 	c.DefineSingleton("new", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) > 2 {
-			return object.Value{}, argError(ctx, len(args), "0..2")
+			return object.Value{}, ArgError(ctx, len(args), "0..2")
 		}
 		if len(args) == 0 {
 			return object.NewList(), nil
@@ -20,7 +20,7 @@ func installList() {
 		if l, ok := args[0].AsList(); ok && len(args) == 1 {
 			return object.NewList(append([]object.Value{}, l.Elems...)...), nil
 		}
-		n, err := wantInt(ctx, args[0], "")
+		n, err := WantInt(ctx, args[0], "")
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -92,9 +92,9 @@ func installList() {
 	})
 	def(c, "fetch", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) < 1 || len(args) > 2 {
-			return object.Value{}, argError(ctx, len(args), "1..2")
+			return object.Value{}, ArgError(ctx, len(args), "1..2")
 		}
-		i, err := wantInt(ctx, args[0], "")
+		i, err := WantInt(ctx, args[0], "")
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -161,7 +161,7 @@ func installList() {
 	def(c, "+", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		o, ok := args[0].AsList()
 		if !ok {
-			return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into List", kindName(args[0]))
+			return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into List", KindName(args[0]))
 		}
 		return object.ListValue(concat(elems(self), o.Elems)), nil
 	})
@@ -185,7 +185,7 @@ func installList() {
 		drop := map[int]bool{}
 		n := list(self).Len()
 		for _, a := range args {
-			i, err := wantInt(ctx, a, "")
+			i, err := WantInt(ctx, a, "")
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -220,7 +220,7 @@ func installList() {
 			a := args[0].Str()
 			return join(ctx, elems(self), string(a))
 		}
-		return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into Integer", kindName(args[0]))
+		return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into Integer", KindName(args[0]))
 	})
 	def(c, "&", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		o, err := toList(ctx, args[0])
@@ -299,7 +299,7 @@ func installList() {
 		k := int64(1)
 		if len(args) == 1 {
 			var err error
-			if k, err = wantInt(ctx, args[0], ""); err != nil {
+			if k, err = WantInt(ctx, args[0], ""); err != nil {
 				return object.Value{}, err
 			}
 		}
@@ -310,7 +310,7 @@ func installList() {
 		depth := int64(-1)
 		if len(args) == 1 {
 			var err error
-			if depth, err = wantInt(ctx, args[0], ""); err != nil {
+			if depth, err = WantInt(ctx, args[0], ""); err != nil {
 				return object.Value{}, err
 			}
 		}
@@ -328,7 +328,7 @@ func installList() {
 	def(c, "join", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		sep := ""
 		if len(args) == 1 && !args[0].IsNil() {
-			s, err := wantString(ctx, args[0])
+			s, err := WantString(ctx, args[0])
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -399,7 +399,7 @@ func installList() {
 		for _, r := range rows {
 			l, ok := r.AsList()
 			if !ok {
-				return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into List", kindName(r))
+				return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into List", KindName(r))
 			}
 			if width >= 0 && l.Len() != width {
 				return object.Value{}, ctx.Raise(object.IndexError, "element size differs (%d should be %d)", l.Len(), width)
@@ -448,9 +448,9 @@ func installList() {
 			return es[i], nil
 		}
 		if len(args) > 1 {
-			return object.Value{}, argError(ctx, len(args), "0..1")
+			return object.Value{}, ArgError(ctx, len(args), "0..1")
 		}
-		n, err := wantInt(ctx, args[0], "")
+		n, err := WantInt(ctx, args[0], "")
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -487,7 +487,7 @@ func installList() {
 		return object.Nil, nil
 	})
 	def(c, "combination", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		k, err := wantInt(ctx, args[0], "")
+		k, err := WantInt(ctx, args[0], "")
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -592,7 +592,7 @@ func equalOrBlock(ctx object.Context, el object.Value, args []object.Value, bloc
 // dig follows a path of indices and keys through nested lists and maps.
 func dig(ctx object.Context, v object.Value, path []object.Value) (object.Value, error) {
 	if len(path) == 0 {
-		return object.Value{}, argError(ctx, 0, "1+")
+		return object.Value{}, ArgError(ctx, 0, "1+")
 	}
 	for _, p := range path {
 		switch v.Kind() {
@@ -613,7 +613,7 @@ func dig(ctx object.Context, v object.Value, path []object.Value) (object.Value,
 			cur := v.Instance()
 			name, ok := p.AsSymbol()
 			if !ok {
-				return object.Value{}, ctx.Raise(object.TypeError, "%s does not have #dig method", kindName(v))
+				return object.Value{}, ctx.Raise(object.TypeError, "%s does not have #dig method", KindName(v))
 			}
 			f, ok := cur.Field(string(name))
 			if !ok {
@@ -627,7 +627,7 @@ func dig(ctx object.Context, v object.Value, path []object.Value) (object.Value,
 			if v.IsNil() {
 				return object.Nil, nil
 			}
-			return object.Value{}, ctx.Raise(object.TypeError, "%s does not have #dig method", kindName(v))
+			return object.Value{}, ctx.Raise(object.TypeError, "%s does not have #dig method", KindName(v))
 		}
 	}
 	return v, nil
@@ -659,13 +659,13 @@ func listIndex(ctx object.Context, l *object.List, args []object.Value) (object.
 			}
 			return object.NewList(append([]object.Value{}, l.Elems[start:start+length]...)...), nil
 		}
-		return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into Integer", kindName(args[0]))
+		return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into Integer", KindName(args[0]))
 	case 2:
-		start, err := wantInt(ctx, args[0], "")
+		start, err := WantInt(ctx, args[0], "")
 		if err != nil {
 			return object.Value{}, err
 		}
-		length, err := wantInt(ctx, args[1], "")
+		length, err := WantInt(ctx, args[1], "")
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -681,7 +681,7 @@ func listIndex(ctx object.Context, l *object.List, args []object.Value) (object.
 		}
 		return object.NewList(append([]object.Value{}, l.Elems[start:end]...)...), nil
 	}
-	return object.Value{}, argError(ctx, len(args), "1..2")
+	return object.Value{}, ArgError(ctx, len(args), "1..2")
 }
 
 // valuesAtBounds resolves an integer range against a list of n elements, as
@@ -691,13 +691,13 @@ func listIndex(ctx object.Context, l *object.List, args []object.Value) (object.
 func valuesAtBounds(ctx object.Context, r *object.Range, n int64) (lo, hi int64, err error) {
 	lov, hiv := object.OrNil(r.Lo), object.OrNil(r.Hi)
 	if !lov.IsNil() {
-		if lo, err = wantInt(ctx, lov, ""); err != nil {
+		if lo, err = WantInt(ctx, lov, ""); err != nil {
 			return 0, 0, err
 		}
 	}
 	hi = n - 1
 	if !hiv.IsNil() {
-		if hi, err = wantInt(ctx, hiv, ""); err != nil {
+		if hi, err = WantInt(ctx, hiv, ""); err != nil {
 			return 0, 0, err
 		}
 		if hi < 0 {

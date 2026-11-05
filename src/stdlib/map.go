@@ -18,9 +18,9 @@ func installMap() {
 		}
 		switch {
 		case len(args) > 1:
-			return object.Value{}, argError(ctx, len(args), "0..1")
+			return object.Value{}, ArgError(ctx, len(args), "0..1")
 		case len(args) == 1 && !block.IsZero():
-			return object.Value{}, argError(ctx, 1, "0")
+			return object.Value{}, ArgError(ctx, 1, "0")
 		case !block.IsZero():
 			return object.MapValue(object.NewMap().WithDefault(object.Value{}, block)), nil
 		case len(args) == 1:
@@ -54,7 +54,7 @@ func installMap() {
 	})
 	def(c, "fetch", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) < 1 || len(args) > 2 {
-			return object.Value{}, argError(ctx, len(args), "1..2")
+			return object.Value{}, ArgError(ctx, len(args), "1..2")
 		}
 		if v, ok := m(self).Get(args[0]); ok {
 			return v, nil
@@ -134,7 +134,7 @@ func installMap() {
 		for _, a := range args {
 			other, ok := a.AsMap()
 			if !ok {
-				return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into Map", kindName(a))
+				return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into Map", KindName(a))
 			}
 			if block.IsZero() {
 				out = out.Merge(other)
@@ -250,11 +250,11 @@ func installMap() {
 	def(c, "flatten", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		depth := int64(1)
 		if len(args) > 1 {
-			return object.Value{}, argError(ctx, len(args), "0..1")
+			return object.Value{}, ArgError(ctx, len(args), "0..1")
 		}
 		if len(args) == 1 {
 			var err error
-			if depth, err = wantInt(ctx, args[0], ""); err != nil {
+			if depth, err = WantInt(ctx, args[0], ""); err != nil {
 				return object.Value{}, err
 			}
 		}
@@ -395,7 +395,7 @@ func installMap() {
 		case 1:
 			return mapDefault(ctx, self, args[0])
 		}
-		return object.Value{}, argError(ctx, len(args), "0..1")
+		return object.Value{}, ArgError(ctx, len(args), "0..1")
 	})
 	def(c, "default_proc", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		_, proc := m(self).Default()

@@ -51,7 +51,7 @@ func encodingArg(ctx object.Context, v object.Value) (object.Kind, error) {
 	if inst, ok := v.AsInstance(); ok && inst.Cls == object.EncodingClass {
 		return encodings[inst.Fields[0].Str()], nil
 	}
-	s, err := wantString(ctx, v)
+	s, err := WantString(ctx, v)
 	if err != nil {
 		return 0, err
 	}
@@ -344,7 +344,7 @@ func installEncodings() {
 		}
 		if len(args) > 0 && !args[0].IsNil() {
 			var err error
-			if repl, err = wantString(ctx, args[0]); err != nil {
+			if repl, err = WantString(ctx, args[0]); err != nil {
 				return object.Value{}, err
 			}
 		}
@@ -356,7 +356,7 @@ func installEncodings() {
 			if err != nil {
 				return "", err
 			}
-			return wantString(ctx, v)
+			return WantString(ctx, v)
 		})
 		return object.StringOf(k, out), err
 	})
@@ -386,7 +386,7 @@ func installEncodings() {
 		replace, hasReplace := "", false
 		if kw != nil {
 			if v, ok := kw.Get(object.Symbol("replace")); ok {
-				if replace, err = wantString(ctx, v); err != nil {
+				if replace, err = WantString(ctx, v); err != nil {
 					return object.Value{}, err
 				}
 				hasReplace = true

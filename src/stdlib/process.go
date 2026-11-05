@@ -26,9 +26,9 @@ func installProcess() {
 	p.Consts["CLOCK_MONOTONIC"] = object.Int(clockMonotonic)
 	p.DefineSingleton("clock_gettime", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) < 1 || len(args) > 2 {
-			return object.Value{}, argError(ctx, len(args), "1..2")
+			return object.Value{}, ArgError(ctx, len(args), "1..2")
 		}
-		id, err := wantInt(ctx, args[0], "")
+		id, err := WantInt(ctx, args[0], "")
 		if err != nil {
 			return object.Value{}, err
 		}

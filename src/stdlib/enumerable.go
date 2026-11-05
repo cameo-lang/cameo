@@ -60,7 +60,7 @@ func installEnumerable() {
 	})
 	def(e, "each_with_object", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) != 1 {
-			return object.Value{}, argError(ctx, len(args), "1")
+			return object.Value{}, ArgError(ctx, len(args), "1")
 		}
 		if block.IsZero() {
 			return withMemo(blockless(self, "each_with_object", args, true), self, args[0]), nil
@@ -294,7 +294,7 @@ func installEnumerable() {
 		compared(name, func(ctx object.Context, elems []object.Value, kinds object.Kinds, args []object.Value, block object.Value) (object.Value, error) {
 			n := -1
 			if len(args) == 1 {
-				k, err := wantInt(ctx, args[0], "")
+				k, err := WantInt(ctx, args[0], "")
 				if err != nil {
 					return object.Value{}, err
 				}
@@ -334,7 +334,7 @@ func installEnumerable() {
 				return object.Nil, nil
 			}
 			if len(args) == 1 {
-				n, err := wantInt(ctx, args[0], "")
+				n, err := WantInt(ctx, args[0], "")
 				if err != nil {
 					return object.Value{}, err
 				}
@@ -523,7 +523,7 @@ func installEnumerable() {
 	})
 	include := func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		if len(args) != 1 {
-			return object.Value{}, argError(ctx, len(args), "1")
+			return object.Value{}, ArgError(ctx, len(args), "1")
 		}
 		for _, el := range elems {
 			eq, err := ctx.Equal(el, args[0])
@@ -589,7 +589,7 @@ func installEnumerable() {
 			}
 			l, ok := pair.AsList()
 			if !ok || len(l.Elems) != 2 {
-				return object.Value{}, ctx.Raise(object.TypeError, "wrong element type %s (expected a [key, value] pair)", kindName(pair))
+				return object.Value{}, ctx.Raise(object.TypeError, "wrong element type %s (expected a [key, value] pair)", KindName(pair))
 			}
 			b.Set(l.Elems[0], l.Elems[1])
 		}
@@ -739,13 +739,13 @@ func inject(ctx object.Context, elems []object.Value, args []object.Value, block
 	switch {
 	case len(args) == 2:
 		acc = args[0]
-		s, err := wantString(ctx, args[1])
+		s, err := WantString(ctx, args[1])
 		if err != nil {
 			return object.Value{}, err
 		}
 		op = s
 	case len(args) == 1 && block.IsZero():
-		s, err := wantString(ctx, args[0])
+		s, err := WantString(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -812,9 +812,9 @@ func yieldEach(ctx object.Context, elems []object.Value, block object.Value) (ob
 
 func sizeArg(ctx object.Context, args []object.Value) (int, error) {
 	if len(args) != 1 {
-		return 0, argError(ctx, len(args), "1")
+		return 0, ArgError(ctx, len(args), "1")
 	}
-	n, err := wantInt(ctx, args[0], "")
+	n, err := WantInt(ctx, args[0], "")
 	if err != nil {
 		return 0, err
 	}
@@ -830,9 +830,9 @@ func countArg(ctx object.Context, args []object.Value, max int) (int, error) {
 		return max, nil
 	}
 	if len(args) != 1 {
-		return 0, argError(ctx, len(args), "1")
+		return 0, ArgError(ctx, len(args), "1")
 	}
-	n, err := wantInt(ctx, args[0], "")
+	n, err := WantInt(ctx, args[0], "")
 	if err != nil {
 		return 0, err
 	}
@@ -885,7 +885,7 @@ func sortValues(ctx object.Context, elems []object.Value, kinds object.Kinds, bl
 			}
 			ci, ok := r.AsInt()
 			if !ok {
-				sortErr = ctx.Raise(object.ArgumentError, "comparison of %s with %s failed", kindName(out[i]), kindName(out[j]))
+				sortErr = ctx.Raise(object.ArgumentError, "comparison of %s with %s failed", KindName(out[i]), KindName(out[j]))
 				return false
 			}
 			c = int(ci)
@@ -944,7 +944,7 @@ func sortBy(ctx object.Context, elems []object.Value, block object.Value) ([]obj
 
 func grepElems(ctx object.Context, elems []object.Value, args []object.Value, block object.Value, keep bool) (object.Value, error) {
 	if len(args) != 1 {
-		return object.Value{}, argError(ctx, len(args), "1")
+		return object.Value{}, ArgError(ctx, len(args), "1")
 	}
 	out := []object.Value{}
 	for _, el := range elems {
@@ -1048,7 +1048,7 @@ func compareWith(ctx object.Context, block, a, b object.Value) (int, error) {
 	}
 	c, ok := r.AsInt()
 	if !ok {
-		return 0, ctx.Raise(object.ArgumentError, "comparison of %s with %s failed", kindName(a), kindName(b))
+		return 0, ctx.Raise(object.ArgumentError, "comparison of %s with %s failed", KindName(a), KindName(b))
 	}
 	return int(c), nil
 }
@@ -1138,11 +1138,11 @@ func slicer(ctx object.Context, name string, args []object.Value, block object.V
 	case "slice_before", "slice_after":
 		switch {
 		case len(args) == 0 && block.IsZero():
-			return nil, argError(ctx, 0, "1")
+			return nil, ArgError(ctx, 0, "1")
 		case len(args) > 0 && !block.IsZero():
-			return nil, argError(ctx, len(args), "0")
+			return nil, ArgError(ctx, len(args), "0")
 		case len(args) > 1:
-			return nil, argError(ctx, len(args), "1")
+			return nil, ArgError(ctx, len(args), "1")
 		}
 		match := func(v object.Value) (bool, error) {
 			var r object.Value
@@ -1180,7 +1180,7 @@ func slicer(ctx object.Context, name string, args []object.Value, block object.V
 			return nil, ctx.Raise(object.ArgumentError, "tried to create Proc object without a block")
 		}
 		if len(args) > 0 {
-			return nil, argError(ctx, len(args), "0")
+			return nil, ArgError(ctx, len(args), "0")
 		}
 		together := name == "chunk_while"
 		cut = func(prev, v object.Value) (bool, error) {

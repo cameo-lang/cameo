@@ -18,7 +18,7 @@ func installCGI() {
 	object.ObjectClass.Consts["CGI"] = object.ClassValue(m)
 	str := func(f func(string) string) object.NativeFn {
 		return func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-			s, err := wantString(ctx, args[0])
+			s, err := WantString(ctx, args[0])
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -42,9 +42,9 @@ func installCGI() {
 	elementFn := func(f func(s string, elements []string) string) object.NativeFn {
 		return func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			if len(args) == 0 {
-				return object.Value{}, argError(ctx, 0, "1+")
+				return object.Value{}, ArgError(ctx, 0, "1+")
 			}
-			s, err := wantString(ctx, args[0])
+			s, err := WantString(ctx, args[0])
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -54,7 +54,7 @@ func installCGI() {
 			}
 			elements := make([]string, len(rest))
 			for i, el := range rest {
-				if elements[i], err = wantString(ctx, el); err != nil {
+				if elements[i], err = WantString(ctx, el); err != nil {
 					return object.Value{}, err
 				}
 			}
@@ -70,21 +70,21 @@ func installCGI() {
 	m.DefineSingleton("rfc1123_date", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		t, ok := args[0].AsTime()
 		if !ok {
-			return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into Time", kindName(args[0]))
+			return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into Time", KindName(args[0]))
 		}
 		return object.String(t.UTC().Format("Mon, 02 Jan 2006 15:04:05 GMT")), nil
 	})
 	m.DefineSingleton("pretty", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) < 1 || len(args) > 2 {
-			return object.Value{}, argError(ctx, len(args), "1..2")
+			return object.Value{}, ArgError(ctx, len(args), "1..2")
 		}
-		s, err := wantString(ctx, args[0])
+		s, err := WantString(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
 		shift := "  "
 		if len(args) == 2 {
-			if shift, err = wantString(ctx, args[1]); err != nil {
+			if shift, err = WantString(ctx, args[1]); err != nil {
 				return object.Value{}, err
 			}
 		}
@@ -189,25 +189,11 @@ func htmlEntity(s string) (string, int) {
 	if err != nil || code >= 0x10ffff {
 		return s[:n], n
 	}
-	return encodeCodepoint(rune(code)), n
+	return EncodeCodepoint(rune(code)), n
 }
 
 func isDigit(c byte, base int) bool {
 	return c >= '0' && c <= '9' || base == 16 && (c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F')
-}
-
-// encodeCodepoint is UTF-8's encoding of r, a surrogate included, as
-// Ruby's unescapeHTML writes it.
-func encodeCodepoint(r rune) string {
-	switch {
-	case r < 0x80:
-		return string([]byte{byte(r)})
-	case r < 0x800:
-		return string([]byte{0xc0 | byte(r>>6), 0x80 | byte(r)&0x3f})
-	case r < 0x10000:
-		return string([]byte{0xe0 | byte(r>>12), 0x80 | byte(r>>6)&0x3f, 0x80 | byte(r)&0x3f})
-	}
-	return string([]byte{0xf0 | byte(r>>18), 0x80 | byte(r>>12)&0x3f, 0x80 | byte(r>>6)&0x3f, 0x80 | byte(r)&0x3f})
 }
 
 // escapeElement escapes the HTML of each tag of the named elements, what

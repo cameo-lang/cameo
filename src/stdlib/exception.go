@@ -61,7 +61,7 @@ func installException() {
 			return object.Value{}, err
 		}
 		if len(args) > 1 {
-			return object.Value{}, argError(ctx, len(args), "0..1")
+			return object.Value{}, ArgError(ctx, len(args), "0..1")
 		}
 		if err := keywords(ctx, e, kw); err != nil {
 			return object.Value{}, err
@@ -159,9 +159,9 @@ func installExceptionAttrs() {
 		}
 		switch {
 		case e.Cls.IsA(object.NoMethodError) && len(args) > 3:
-			return object.Value{}, argError(ctx, len(args), "0..3")
+			return object.Value{}, ArgError(ctx, len(args), "0..3")
 		case !e.Cls.IsA(object.NoMethodError) && len(args) > 2:
-			return object.Value{}, argError(ctx, len(args), "0..2")
+			return object.Value{}, ArgError(ctx, len(args), "0..2")
 		}
 		if e.Message, err = message(ctx, e.Cls, args, 0); err != nil {
 			return object.Value{}, err
@@ -185,7 +185,7 @@ func installExceptionAttrs() {
 			return object.Value{}, err
 		}
 		if len(args) > 1 {
-			return object.Value{}, argError(ctx, len(args), "0..1")
+			return object.Value{}, ArgError(ctx, len(args), "0..1")
 		}
 		if e.Message, err = message(ctx, e.Cls, args, 0); err != nil {
 			return object.Value{}, err
@@ -203,7 +203,7 @@ func installExceptionAttrs() {
 			return object.Value{}, err
 		}
 		if len(args) > 2 {
-			return object.Value{}, argError(ctx, len(args), "0..2")
+			return object.Value{}, ArgError(ctx, len(args), "0..2")
 		}
 		status := int64(0)
 		if len(args) > 0 {

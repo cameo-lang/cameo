@@ -212,7 +212,7 @@ func installArithSeq() {
 	reader("size", arithSize)
 	def(c, "last", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) > 1 {
-			return object.Value{}, argError(ctx, len(args), "0..1")
+			return object.Value{}, ArgError(ctx, len(args), "0..1")
 		}
 		if len(args) == 0 {
 			out, err := arithLast(ctx, seq(self), 1)
@@ -221,7 +221,7 @@ func installArithSeq() {
 			}
 			return out[0], nil
 		}
-		n, err := wantInt(ctx, args[0], "")
+		n, err := WantInt(ctx, args[0], "")
 		if err != nil {
 			return object.Value{}, err
 		}

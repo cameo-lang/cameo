@@ -15,12 +15,12 @@ func installString() {
 	def(c, "+", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		o, ok := args[0].AsString()
 		if !ok {
-			return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into String", kindName(args[0]))
+			return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into String", KindName(args[0]))
 		}
 		return object.String(str(self) + string(o)), nil
 	})
 	def(c, "*", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		n, err := wantInt(ctx, args[0], "")
+		n, err := WantInt(ctx, args[0], "")
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -104,7 +104,7 @@ func installString() {
 		if len(args) == 0 {
 			return chomp(ctx, self, args, kw, block)
 		}
-		suffix, err := wantString(ctx, args[0])
+		suffix, err := WantString(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -126,9 +126,9 @@ func installString() {
 	// from self to max does.
 	def(c, "upto", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) < 1 || len(args) > 2 {
-			return object.Value{}, argError(ctx, len(args), "1..2")
+			return object.Value{}, ArgError(ctx, len(args), "1..2")
 		}
-		hi, err := wantString(ctx, args[0])
+		hi, err := WantString(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -170,7 +170,7 @@ func installString() {
 	def(c, "intern", 0, c.Methods["to_sym"].Native)
 	def(c, "to_i", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) == 1 {
-			base, err := wantInt(ctx, args[0], "")
+			base, err := WantInt(ctx, args[0], "")
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -265,15 +265,15 @@ func installString() {
 	// must fall on a character boundary.
 	def(c, "byteindex", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) < 1 || len(args) > 2 {
-			return object.Value{}, argError(ctx, len(args), "1..2")
+			return object.Value{}, ArgError(ctx, len(args), "1..2")
 		}
-		sub, err := wantString(ctx, args[0])
+		sub, err := WantString(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
 		s, off := str(self), int64(0)
 		if len(args) == 2 {
-			if off, err = wantInt(ctx, args[1], ""); err != nil {
+			if off, err = WantInt(ctx, args[1], ""); err != nil {
 				return object.Value{}, err
 			}
 		}
@@ -315,7 +315,7 @@ func installString() {
 	})
 	strArg := func(name string, f func(s, arg string) object.Value) {
 		def(c, name, 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-			arg, err := wantString(ctx, args[0])
+			arg, err := WantString(ctx, args[0])
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -342,11 +342,11 @@ func installString() {
 		return casecmpP(self, args[0]), nil
 	})
 	def(c, "tr", 2, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		from, err := wantString(ctx, args[0])
+		from, err := WantString(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
-		to, err := wantString(ctx, args[1])
+		to, err := WantString(ctx, args[1])
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -355,15 +355,15 @@ func installString() {
 	pad := func(name string, place func(s, fill string, n int) string) {
 		def(c, name, -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			if len(args) < 1 || len(args) > 2 {
-				return object.Value{}, argError(ctx, len(args), "1..2")
+				return object.Value{}, ArgError(ctx, len(args), "1..2")
 			}
-			n, err := wantInt(ctx, args[0], "")
+			n, err := WantInt(ctx, args[0], "")
 			if err != nil {
 				return object.Value{}, err
 			}
 			fill := " "
 			if len(args) == 2 {
-				if fill, err = wantString(ctx, args[1]); err != nil {
+				if fill, err = WantString(ctx, args[1]); err != nil {
 					return object.Value{}, err
 				}
 				if fill == "" {
@@ -515,13 +515,13 @@ func stringIndex(ctx object.Context, s string, args []object.Value) (object.Valu
 			}
 			return object.String(string(runes[start : start+length])), nil
 		}
-		return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into Integer", kindName(args[0]))
+		return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into Integer", KindName(args[0]))
 	case 2:
-		start, err := wantInt(ctx, args[0], "")
+		start, err := WantInt(ctx, args[0], "")
 		if err != nil {
 			return object.Value{}, err
 		}
-		length, err := wantInt(ctx, args[1], "")
+		length, err := WantInt(ctx, args[1], "")
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -537,7 +537,7 @@ func stringIndex(ctx object.Context, s string, args []object.Value) (object.Valu
 		}
 		return object.String(string(runes[start:end])), nil
 	}
-	return object.Value{}, argError(ctx, len(args), "1..2")
+	return object.Value{}, ArgError(ctx, len(args), "1..2")
 }
 
 // rangeBounds resolves a range over a sequence of length n into a start and

@@ -268,11 +268,11 @@ func installEnumerator() {
 				limit = "0"
 			}
 			if limit == "0" && len(args) > 0 || len(args) > 1 {
-				return object.Value{}, argError(ctx, len(args), limit)
+				return object.Value{}, ArgError(ctx, len(args), limit)
 			}
 			i := object.Int(0)
 			if len(args) == 1 && !args[0].IsNil() {
-				n, err := wantInt(ctx, args[0], "")
+				n, err := WantInt(ctx, args[0], "")
 				if err != nil {
 					return object.Value{}, err
 				}
@@ -330,7 +330,7 @@ func installEnumerator() {
 			}
 			return elems[0], nil
 		}
-		n, err := wantInt(ctx, args[0], "")
+		n, err := WantInt(ctx, args[0], "")
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -341,7 +341,7 @@ func installEnumerator() {
 		return object.NewList(elems...), err
 	})
 	def(c, "take", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		n, err := wantInt(ctx, args[0], "")
+		n, err := WantInt(ctx, args[0], "")
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -575,9 +575,9 @@ func installLazy() {
 	// count reads take and drop's argument, a size that is not negative.
 	count := func(ctx object.Context, args []object.Value, name string) (int64, error) {
 		if len(args) != 1 {
-			return 0, argError(ctx, len(args), "1")
+			return 0, ArgError(ctx, len(args), "1")
 		}
-		n, err := wantInt(ctx, args[0], "")
+		n, err := WantInt(ctx, args[0], "")
 		if err == nil && n < 0 {
 			err = ctx.Raise(object.ArgumentError, "attempt to %s negative size", name)
 		}
