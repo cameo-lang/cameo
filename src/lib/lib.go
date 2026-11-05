@@ -4,7 +4,10 @@
 // of Ruby's with its status, and how one is built in.
 package lib
 
-import "github.com/cameo-lang/cameo/src/lib/json"
+import (
+	"github.com/cameo-lang/cameo/src/lib/cgi"
+	"github.com/cameo-lang/cameo/src/lib/json"
+)
 
 // Libraries are the names require accepts, each with the libraries it
 // loads along with it: require "cgi" loads cgi/escape and cgi/util too.
@@ -28,5 +31,6 @@ var Libraries = map[string][]string{
 // Install defines every library. The evaluator calls it once, after
 // stdlib.Install.
 func Install() {
+	cgi.Install()
 	json.Install()
 }
