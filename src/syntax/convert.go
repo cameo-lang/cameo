@@ -785,7 +785,7 @@ func isLibraryFunction(n *ast.Call) bool {
 
 // compositeFieldTypes are the typed field helpers a class body takes
 // besides the scalar types of object.Scalar.
-var compositeFieldTypes = map[string]bool{"list": true, "set": true, "map": true, "ref": true, "enum": true}
+var compositeFieldTypes = map[string]bool{"list": true, "set": true, "map": true, "ref": true, "enum": true, "proc": true}
 
 // isFieldType reports a typed field helper.
 func isFieldType(name string) bool { return compositeFieldTypes[name] || object.Scalar(name) != nil }
@@ -841,6 +841,13 @@ func (c *converter) call(n *ast.Call) Node {
 			// block, which Ruby 3.3 made an ArgumentError.
 			if bp, ok := soleBlockPass(n); ok && name == "proc" {
 				return &Call{Pos: c.pos(), Recv: c.expr(bp.Value), Name: "to_proc"}
+			}
+			// proc :name declares a field that holds a block, which the
+			// field declarations below take, in a class body or not.
+			if name == "proc" && len(n.Args) > 0 && n.Block == nil {
+				if _, isSym := n.Args[0].(*ast.SymbolLit); isSym {
+					break
+				}
 			}
 			if n.Block == nil || len(n.Args) > 0 {
 				c.fail("%s takes a block and nothing else", name)
@@ -1519,6 +1526,10 @@ func (c *converter) fieldDecl(n *ast.Call) Node {
 		}
 		switch key.Name {
 		case "default":
+			if decl.Type == "proc" {
+				c.fail("proc :%s takes no default: a block is given when the instance is made", decl.Names[0])
+				return nil
+			}
 			decl.Default = kw.Value
 		case "number":
 			num, ok := kw.Value.(*Int)

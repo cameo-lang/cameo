@@ -173,6 +173,9 @@ func (in *Interp) fieldType(n *syntax.FieldDecl, env *Env, fr *Frame) (*object.F
 		t.Ref = cls
 	case "enum":
 		t.Enum = n.Values
+	case "proc":
+		// A proc field holds a block; a class with one is no message (see
+		// protogen.NoMessage).
 	}
 	return t, nil
 }
@@ -242,6 +245,11 @@ func (in *Interp) coerce(t *object.FieldType, v object.Value) (object.Value, boo
 		return coerceScalar(t.Scalar, v)
 	}
 	switch t.Kind {
+	case "proc":
+		if v.Kind() == object.KindProc {
+			return v, true
+		}
+		return object.Value{}, false
 	case "list":
 		l, ok := v.AsList()
 		if !ok {
@@ -447,6 +455,8 @@ func describeType(t *object.FieldType) string {
 		return article(t.Ref.QualifiedName())
 	case "enum":
 		return "one of :" + strings.Join(t.Enum, ", :")
+	case "proc":
+		return "a Proc"
 	}
 	return t.Kind
 }

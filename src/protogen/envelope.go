@@ -3,6 +3,7 @@ package protogen
 import (
 	"fmt"
 	"math/big"
+	"strings"
 	"sync"
 	"time"
 
@@ -272,7 +273,7 @@ func (e *Encoder) message(fd protoreflect.FileDescriptor, v object.Value) (*dyna
 		}
 		value, proc := v.Default()
 		if !proc.IsZero() {
-			return nil, &NotSerialisable{Kind: "Hash with a default proc"}
+			return nil, &NotSerialisable{Kind: "a Hash with a default proc"}
 		}
 		if !value.IsZero() {
 			dm, err := e.message(fd, value)
@@ -351,16 +352,32 @@ func (e *Encoder) message(fd protoreflect.FileDescriptor, v object.Value) (*dyna
 		if v.IsNil() {
 			break
 		}
-		return nil, &NotSerialisable{Kind: kindName(v)}
+		return nil, &NotSerialisable{Kind: article(kindName(v))}
 	}
 	return msg, nil
 }
 
 // NotSerialisable is the error for a value the envelope cannot carry: a
-// proc or a class.
-type NotSerialisable struct{ Kind string }
+// proc, a class, a Hash with a default proc, or an instance of a class
+// with a proc field. Kind names it with its article, "a Proc", for a
+// message about what was done with it; Why, when set, is the whole
+// explanation, which Error gives instead.
+type NotSerialisable struct{ Kind, Why string }
 
-func (e *NotSerialisable) Error() string { return "a " + e.Kind + " cannot be serialised" }
+func (e *NotSerialisable) Error() string {
+	if e.Why != "" {
+		return e.Why
+	}
+	return e.Kind + " cannot be serialised"
+}
+
+// article prefixes a noun with "a" or "an".
+func article(noun string) string {
+	if noun != "" && strings.ContainsRune("aeioAEIO", rune(noun[0])) {
+		return "an " + noun
+	}
+	return "a " + noun
+}
 
 func (e *Encoder) items(fd protoreflect.FileDescriptor, name string, elems []object.Value) (*dynamicpb.Message, error) {
 	md := fd.Messages().ByName(protoreflect.Name(name))

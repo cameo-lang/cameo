@@ -67,7 +67,11 @@ func (r *Registry) file(cls *object.Class) (protoreflect.FileDescriptor, error) 
 	fd, ok := r.files[cls]
 	r.mu.Unlock()
 	if ok {
+		// A cached descriptor proves the class is a message.
 		return fd, nil
+	}
+	if err := NoMessage(cls); err != nil {
+		return nil, err
 	}
 	exception := exceptionParts(cls) != nil
 	if cls.Digest == "" && !exception || cls.IsModule {
