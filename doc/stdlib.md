@@ -125,6 +125,7 @@ What asks for a library is measured, not guessed:
 | `debug` | debug 1.10.0 | `debugger` and `binding.break` stop in cameo's debugger, which takes rdbg's commands ([debugger.md](debugger.md)) |
 | `cameo/runner` | — | cameo's own: the library that gives CRuby `Cameo::Runner` is built in |
 | `minispec` | — (cameo's own) | `describe`, `it`, `specify` and `skip`, minitest 5.25's `assert`, `assert_equal`, `assert_nil`, `assert_empty`, `assert_includes`, `assert_instance_of`, `assert_kind_of`, `assert_match`, `assert_respond_to`, `assert_predicate`, `assert_operator`, `assert_in_delta`, `assert_raises`, their `refute_*` negations, `flunk` and `pass`, with minitest's messages, and `Minispec::Assertion` and `Minispec::Skip`. An example runs when `it` is called and prints its mark; the report at the end of the script, through `at_exit`, lists every failure, error and skip with its line and counts them, and a failure or an error ends the script with status 1. No `before`, `after` or `let`: a local the describe block assigns is what its examples share. Ruby's minitest finds tests by method name and keeps state in instance variables, so it is left out (below) |
+| `unicode_normalize` | — (core) | `String#unicode_normalize` and `unicode_normalized?` with `:nfc`, `:nfd`, `:nfkc`, `:nfkd`, on `golang.org/x/text/unicode/norm`, there without a `require` as in Ruby, and `require "unicode_normalize"` is accepted where Ruby knows only `unicode_normalize/normalize`; a binary String is `Encoding::CompatibilityError`, a UTF-8 String with bytes that are not UTF-8 is `ArgumentError`, and a US-ASCII String is as it is; `unicode_normalize!` is a bang method |
 
 ## Planned, in this order
 
@@ -132,7 +133,6 @@ Each is one pull request, which also moves its row to *Available*.
 
 | Library | Ruby's version | What goes in | Why this order |
 |---|---|---|---|
-| `unicode_normalize` | — (core) | `String#unicode_normalize`, `unicode_normalized?` with `:nfc`, `:nfd`, `:nfkc`, `:nfkd`, on `golang.org/x/text/unicode/norm` | the one core String method missing from text handling |
 | `ipaddr` | ipaddr 1.2.7 | `IPAddr.new`, `include?`, `===`, `to_s`, `to_string`, `mask`, `to_range`, `ipv4?`, `ipv6?`, `private?`, `loopback?`, `succ`, `<=>` | small; pure |
 | `zlib` | zlib 3.2.1 | `crc32`, `adler32`, `Zlib::Deflate.deflate`, `Zlib::Inflate.inflate`, `Zlib.gzip`, `Zlib.gunzip`; `GzipReader`/`GzipWriter` on an IO **unsupported** | 25 spec files; compressed payloads from `net/http` |
 | `open-uri` | open-uri 0.5.0 | `URI.open(url)` and `URI::HTTP#open` with a block or `read`, over `net/http`, returning the body as a String with `base_uri`, `content_type`, `charset`, `status` on it; no `File` for a `file:` URL | the one-liner that fetches a page |
