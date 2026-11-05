@@ -14,9 +14,7 @@ p [1, nil, 2, 1, 3].lazy.compact.uniq.with_index.to_a, [4, 5].lazy.each_with_ind
 p (1..).lazy.filter_map { |x| x * 2 if x.even? }.first(2), (1..).lazy.take(0).to_a, ["a", 1, :b].lazy.grep(Integer).to_a
 p (1..3).lazy.eager, (1..3).lazy.map { _1 + 1 }.sum, (1..3).lazy.include?(2), (1..).lazy.include?(5)
 p 1.then.to_a, 5.then { _1 + 1 }, (1..Float::INFINITY).lazy.map { _1 * 2 }.first(2)
-c = 0
-(1..).lazy.map { |x| c += 1; x }.first(3)
-p c
+(1..).lazy.map { |x| puts "map #{x}"; x }.first(3)
 x = [1, 2, 3].lazy.map { |v| v * 10 }
 p x.to_a, x.to_a, x.class, x.eager.class
 p (1..3).lazy.zip("a".."c") { |x, y| p [x, y] }

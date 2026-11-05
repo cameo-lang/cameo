@@ -33,14 +33,8 @@ class Body
 end
 
 def orbit(steps)
-  a = Body.new(0.0, 0.0, 0.0, 0.0, 10.0)
-  b = Body.new(1.0, 0.0, 0.0, 3.0, 0.1)
-  steps.times do
-    na = a.pulled(b, 1000)
-    nb = b.pulled(a, 1000)
-    a = na
-    b = nb
-  end
+  start = [Body.new(0.0, 0.0, 0.0, 0.0, 10.0), Body.new(1.0, 0.0, 0.0, 3.0, 0.1)]
+  a, b = steps.times.reduce(start) { |(a, b), _| [a.pulled(b, 1000), b.pulled(a, 1000)] }
   a.dist2(b)
 end
 

@@ -108,23 +108,24 @@ func TestBuildLeavesTheRestToTheInterpreter(t *testing.T) {
 // TestBuildWritesBlockLoops holds the Go of times, each and downto to
 // loops with the counter the loop's own, the stop check on the loop's
 // variable, or on a counter where the variable is a big.Int, and break and
-// next to Go's.
+// next to Go's. A block captures its variables, so the loops call a
+// method rather than add to a local.
 func TestBuildWritesBlockLoops(t *testing.T) {
 	res := build(t, `
+def g(i) = i * 2
 def f(n)
-  s = 0
-  n.times { |i| s += i }
+  n.times { |i| g(i) }
   (1...n).each do |i|
     next if i == 2
     break if i == 5
-    s += i
+    g(i)
   end
-  n.downto(1) { s += 1 }
-  s
+  n.downto(1) { g(1) }
+  n
 end
 `)
-	if got := strings.Join(res.Compiled, " "); got != "f" {
-		t.Fatalf("compiled %q, want f", got)
+	if got := strings.Join(res.Compiled, " "); got != "f g" {
+		t.Fatalf("compiled %q, want f g", got)
 	}
 	for _, want := range []string{
 		"if s.stop.Load() {", "t3 := s.stop", "for t2 := int64(0); t2 < t1; t2++ {", "if t3.Load() {", "v_i := t2",

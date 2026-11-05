@@ -27,9 +27,7 @@ class Pair
   end
 
   def churn(n)
-    s = 0.0
-    n.times { |i| s += a.dot(b) + a.dist2(b) / (i + 1) }
-    s
+    n.times.reduce(0.0) { |s, i| s + a.dot(b) + a.dist2(b) / (i + 1) }
   end
 end
 

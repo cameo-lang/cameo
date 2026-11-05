@@ -200,17 +200,20 @@ def __spec_os?(names)
   end
 end
 
+# __spec_platform? reads platform_is's arguments: the operating systems,
+# then the options, every one of which must hold. A block captures
+# values, so the options are read with all?, not folded into a variable.
 def __spec_platform?(args)
   options = args.last.is_a?(Hash) ? args.last : {}
   oses = args.last.is_a?(Hash) ? args[0...-1] : args
-  match = oses.empty? || __spec_os?(oses)
-  options.each do |key, value|
+  return false unless oses.empty? || __spec_os?(oses)
+  options.all? do |key, value|
     case key
-    when :os then match &&= __spec_os?(Array(value))
-    when :pointer_size, :c_long_size, :wordsize then match &&= value == 64
+    when :os then __spec_os?(Array(value))
+    when :pointer_size, :c_long_size, :wordsize then value == 64
+    else true
     end
   end
-  match
 end
 
 def platform_is(*args, &block) = __spec_guard(__spec_platform?(args), &block)

@@ -48,8 +48,8 @@ puts Person.from_proto(eve.to_proto).name
 
 values = [1, 2.5, "s", :sym, nil, true, [1, [2]], {"k" => [1]}, [1, 2].to_set, (1..3), ann]
 values.each do |v|
-  back = from_value_proto(v.to_value_proto)
-  puts "#{back.inspect} #{back == v || (v == :sym && back == "sym")}"
+  got = from_value_proto(v.to_value_proto)
+  puts "#{got.inspect} #{got == v || (v == :sym && got == "sym")}"
 end
 
 begin

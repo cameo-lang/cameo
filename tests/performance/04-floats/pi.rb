@@ -5,11 +5,9 @@ def now
 end
 
 def pi(terms)
-  sum = 0.0
-  terms.times do |k|
-    sum += (k % 2 == 0 ? 4.0 : -4.0) / (2 * k + 1)
+  terms.times.reduce(0.0) do |sum, k|
+    sum + (k % 2 == 0 ? 4.0 : -4.0) / (2 * k + 1)
   end
-  sum
 end
 
 t0 = now

@@ -30,6 +30,15 @@ const (
 type frame struct {
 	kind context
 	name string // the method name for ctxDef, the class or module name otherwise
+	// locals are the variables bound in this frame so far: a block's
+	// parameters and the names it binds first, or a scope's.
+	locals map[string]bool
+	// shared marks the body of a for loop, a block that runs in the frame
+	// around it: its locals are that frame's.
+	shared bool
+	// closure marks a class body that is a block, Class.new's: it reads
+	// the variables around it as a block does, and captures them as one.
+	closure bool
 }
 
 type converter struct {
@@ -51,13 +60,20 @@ type converter struct {
 	// binds x before it evaluates the value, so a lambda in the value may
 	// call itself through x; the parser declares x after the value and
 	// leaves such an x a method call.
-	assigning []pendingLocal
+	assigning []*pendingLocal
 }
 
 // pendingLocal is a local being assigned, with the scope it belongs to.
+// depth is the frame stack's height at the assignment, and lambda is set
+// when the value is a lambda or proc literal, the one block that may read
+// the local before it is bound (see Assign.Forward); forward records that
+// it does.
 type pendingLocal struct {
-	name  string
-	scope int
+	name    string
+	scope   int
+	depth   int
+	lambda  bool
+	forward bool
 }
 
 // scope returns the index of the innermost frame that starts a scope of
@@ -71,16 +87,35 @@ func (c *converter) scope() int {
 	return 0
 }
 
-// assigned returns true when a bare name is a local whose assignment is
-// being converted in the current scope.
-func (c *converter) assigned(name string) bool {
+// assigned returns the local a bare name is, when its assignment is being
+// converted in the current scope.
+func (c *converter) assigned(name string) *pendingLocal {
 	scope := c.scope()
 	for _, p := range c.assigning {
 		if p.name == name && p.scope == scope {
-			return true
+			return p
 		}
 	}
-	return false
+	return nil
+}
+
+// blocksAbove counts the blocks entered since the frame stack had the
+// given height.
+func (c *converter) blocksAbove(depth int) int {
+	n := 0
+	for _, f := range c.stack[depth:] {
+		if f.kind == ctxBlock && !f.shared {
+			n++
+		}
+	}
+	return n
+}
+
+// isLambdaLiteral reports whether n is `-> { }`, `lambda { }` or
+// `proc { }`.
+func isLambdaLiteral(n ast.Node) bool {
+	call, ok := n.(*ast.Call)
+	return ok && call.Recv == nil && call.Block != nil && len(call.Args) == 0 && (call.Name == "lambda" || call.Name == "proc")
 }
 
 func (c *converter) fail(format string, args ...any) {
@@ -89,8 +124,10 @@ func (c *converter) fail(format string, args ...any) {
 
 func (c *converter) pos() Pos { return Pos{L: c.line} }
 
-func (c *converter) push(kind context, name string) { c.stack = append(c.stack, frame{kind, name}) }
-func (c *converter) pop()                           { c.stack = c.stack[:len(c.stack)-1] }
+func (c *converter) push(kind context, name string) {
+	c.stack = append(c.stack, frame{kind: kind, name: name})
+}
+func (c *converter) pop() { c.stack = c.stack[:len(c.stack)-1] }
 
 // top is the innermost frame.
 func (c *converter) top() frame { return c.stack[len(c.stack)-1] }
@@ -210,11 +247,13 @@ func (c *converter) expr(n ast.Node) Node {
 	case *ast.VarRef:
 		return &Var{c.pos(), n.Name}
 	case *ast.Assign:
-		c.assigning = append(c.assigning, pendingLocal{n.Name, c.scope()})
+		pending := &pendingLocal{name: n.Name, scope: c.scope(), depth: len(c.stack), lambda: isLambdaLiteral(n.Value)}
+		c.assigning = append(c.assigning, pending)
 		value := c.expr(n.Value)
 		c.assigning = c.assigning[:len(c.assigning)-1]
 		markRebinds(value, &Var{Name: n.Name})
-		return &Assign{c.pos(), n.Name, value}
+		c.assignLocal(n.Name)
+		return &Assign{Pos: c.pos(), Name: n.Name, Value: value, Forward: pending.forward}
 	case *ast.OpAssign:
 		return c.opAssign(n)
 	case *ast.MultiAssign:
@@ -222,7 +261,11 @@ func (c *converter) expr(n ast.Node) Node {
 			c.fail("multiple assignment binds local variables only")
 			return nil
 		}
-		return &MultiAssign{c.pos(), n.Names, n.SplatIndex, c.exprs(n.Values)}
+		values := c.exprs(n.Values)
+		for _, name := range n.Names {
+			c.assignLocal(name)
+		}
+		return &MultiAssign{c.pos(), n.Names, n.SplatIndex, values}
 	case *ast.BinaryExpr:
 		return c.binary(n)
 	case *ast.UnaryExpr:
@@ -383,7 +426,8 @@ func (c *converter) opAssign(n *ast.OpAssign) Node {
 	default:
 		rhs = &Call{Pos: c.pos(), Recv: read, Name: n.Op, Args: []Node{value}}
 	}
-	return &Assign{c.pos(), n.Name, rhs}
+	c.assignLocal(n.Name)
+	return &Assign{Pos: c.pos(), Name: n.Name, Value: rhs}
 }
 
 func (c *converter) binary(n *ast.BinaryExpr) Node {
@@ -493,6 +537,64 @@ func isTarget(recv, target Node) bool {
 func (c *converter) inInitialize() bool {
 	def, ok := c.enclosingDef()
 	return ok && def.name == "initialize" && c.insideClass()
+}
+
+// owner is the index of the innermost frame that holds locals: a for
+// loop's body shares the frame around it.
+func (c *converter) owner() int {
+	i := len(c.stack) - 1
+	for i > 0 && c.stack[i].shared {
+		i--
+	}
+	return i
+}
+
+// declare records that the innermost frame binds name.
+func (c *converter) declare(name string) {
+	top := &c.stack[c.owner()]
+	if top.locals == nil {
+		top.locals = map[string]bool{}
+	}
+	top.locals[name] = true
+}
+
+// captured reports whether name, assigned in the innermost frame, is a
+// variable of a scope around a block: bound outside the block, in the
+// method, class body or top level the block is written in, or in a block
+// around it, and not first bound by the block itself.
+func (c *converter) captured(name string) bool {
+	top := c.owner()
+	if !c.stack[top].isBlock() || c.stack[top].locals[name] {
+		return false
+	}
+	for i := top - 1; i >= 0; i-- {
+		if c.stack[i].shared {
+			continue
+		}
+		if c.stack[i].locals[name] {
+			return true
+		}
+		if !c.stack[i].isBlock() {
+			return false
+		}
+	}
+	return false
+}
+
+// isBlock reports whether the frame captures the variables around it: a
+// block's, or the class body of Class.new.
+func (f frame) isBlock() bool { return f.kind == ctxBlock || f.closure }
+
+// assignLocal checks an assignment to a local: a block captures the values
+// its variables have when it is made, so it cannot rebind one of them, and
+// the checker refuses what would otherwise do nothing or, in a loop, never
+// end. Any other assignment binds the name in the innermost frame.
+func (c *converter) assignLocal(name string) {
+	if c.captured(name) {
+		c.fail("a block cannot rebind %s, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while", name)
+		return
+	}
+	c.declare(name)
 }
 
 // Refused is why cameo refuses a call of name whatever its receiver: a
@@ -696,7 +798,22 @@ func (c *converter) call(n *ast.Call) Node {
 		if name == "__LINE__" {
 			return &Int{c.pos(), int64(c.line)}
 		}
-		if c.assigned(name) {
+		if p := c.assigned(name); p != nil {
+			// A block captures its variables' values when it is made,
+			// and this one is bound after. The lambda assigned to the
+			// name is filled in once it is bound (Assign.Forward); any
+			// other block would read nil.
+			// The lambda's own body is the first frame above the
+			// assignment; a block nested in it is made while the
+			// lambda runs, when the name is bound.
+			switch blocks := c.blocksAbove(p.depth); {
+			case blocks == 0:
+			case p.lambda && c.stack[p.depth].kind == ctxBlock && !c.stack[p.depth].shared:
+				p.forward = true
+			default:
+				c.fail("%s is read in a block made before %s is bound: a block captures the values its variables have when it is made, and only the lambda or proc assigned to %s may read it", name, name, name)
+				return nil
+			}
 			return &Var{c.pos(), name}
 		}
 		if c.interpolating > 0 {
@@ -879,11 +996,47 @@ func (c *converter) blockAs(b *ast.Block, kind context) *Block {
 		out.Params.Positional = append(out.Params.Positional, p)
 	}
 	out.Params.BlockParam = b.BlockParam
-	c.push(kind, "")
+	c.stack = append(c.stack, frame{kind: kind, closure: kind == ctxClass})
+	c.declareParams(&out.Params)
+	for _, name := range b.Locals {
+		c.declare(name)
+	}
+	// A group parameter, |(a, b), c|, is a parameter the parser names and
+	// a multiple assignment it puts first in the body: its names are the
+	// block's own.
+	for _, stmt := range b.Body {
+		m, ok := stmt.(*ast.MultiAssign)
+		if !ok || m.Targets != nil || len(m.Values) != 1 {
+			break
+		}
+		v, ok := m.Values[0].(*ast.VarRef)
+		if !ok || !slices.Contains(b.Params, v.Name) {
+			break
+		}
+		for _, name := range m.Names {
+			c.declare(name)
+		}
+	}
 	out.Body = c.body(b.Body)
 	c.pop()
 	c.line = saved
 	return out
+}
+
+// declareParams records the parameters as the innermost frame's locals.
+func (c *converter) declareParams(p *Params) {
+	for _, param := range p.Positional {
+		c.declare(param.Name)
+	}
+	for _, kw := range p.Keywords {
+		c.declare(kw.Name)
+	}
+	if p.KwRest != "" {
+		c.declare(p.KwRest)
+	}
+	if p.BlockParam != "" {
+		c.declare(p.BlockParam)
+	}
 }
 
 func (c *converter) params(d *ast.MethodDef) Params {
@@ -966,18 +1119,23 @@ func (c *converter) forLoop(n *ast.For) Node {
 	const item = "for"
 	var bind Node
 	if len(n.Vars) == 1 {
-		bind = &Assign{c.pos(), n.Vars[0], &Var{c.pos(), item}}
+		bind = &Assign{Pos: c.pos(), Name: n.Vars[0], Value: &Var{c.pos(), item}}
 	} else {
 		bind = &MultiAssign{c.pos(), n.Vars, -1, []Node{&Var{c.pos(), item}}}
 	}
-	block := &Block{Pos: c.pos()}
+	// The body is Ruby's: it runs in the scope around it, so its
+	// variables, the loop's among them, are that scope's.
+	block := &Block{Pos: c.pos(), Shared: true}
 	block.Params.Positional = []Param{{Name: item}}
-	c.push(ctxBlock, "")
+	for _, v := range n.Vars {
+		c.assignLocal(v)
+	}
+	c.stack = append(c.stack, frame{kind: ctxBlock, shared: true})
 	block.Body = append([]Node{bind}, c.body(n.Body)...)
 	c.pop()
 	out := []Node{}
 	for _, v := range n.Vars {
-		out = append(out, &Assign{c.pos(), v, &Nil{c.pos()}})
+		out = append(out, &Assign{Pos: c.pos(), Name: v, Value: &Nil{c.pos()}})
 	}
 	iter := c.expr(n.Iter)
 	out = append(out, &Call{Pos: c.pos(), Recv: iter, Name: "each", Block: block}, iter)
@@ -1010,6 +1168,7 @@ func (c *converter) def(d *ast.MethodDef) Node {
 	out := &Def{Pos: c.pos(), Name: d.Name, Singleton: singleton}
 	out.Params = c.params(d)
 	c.push(ctxDef, d.Name)
+	c.declareParams(&out.Params)
 	out.Body = c.body(d.Body)
 	c.pop()
 	return out
@@ -1076,6 +1235,11 @@ func (c *converter) begin(b *ast.Begin) Node {
 			c.fail("rescue => target: an exception is caught into a local variable only")
 			continue
 		}
+		if r.Var != "" {
+			// rescue => e binds the exception where it is caught: in a
+			// block, the block's own e, whatever is bound around it.
+			c.declare(r.Var)
+		}
 		out.Rescues = append(out.Rescues, Rescue{Classes: c.exprs(r.Classes), Var: r.Var, Body: c.body(r.Body)})
 	}
 	if b.ElseBody != nil {
@@ -1130,14 +1294,24 @@ func (c *converter) pattern(p ast.Pattern) Pattern {
 	case *ast.ValuePattern:
 		return &ValuePattern{c.expr(p.Value)}
 	case *ast.BindPattern:
+		c.assignLocal(p.Name)
 		return &BindPattern{p.Name}
 	case *ast.ConstPattern:
 		return &ConstPattern{c.expr(p.Const)}
 	case *ast.BindingPattern:
+		c.assignLocal(p.Name)
 		return &BindingPattern{c.pattern(p.Sub), p.Name}
 	case *ast.ArrayPattern:
+		c.bindPatternName(p.SplatName)
 		return &ListPattern{Const: c.expr(p.Const), Pre: c.patterns(p.Pre), HasSplat: p.HasSplat, SplatName: p.SplatName, Post: c.patterns(p.Post)}
 	case *ast.HashPattern:
+		// `{name:}` without a pattern binds the key's value to name.
+		for i, key := range p.Keys {
+			if i < len(p.Values) && p.Values[i] == nil {
+				c.bindPatternName(key)
+			}
+		}
+		c.bindPatternName(p.RestName)
 		return &MapPattern{Const: c.expr(p.Const), Keys: p.Keys, Values: c.patterns(p.Values), HasRest: p.HasRest, RestName: p.RestName, RestNil: p.RestNil}
 	case *ast.AltPattern:
 		// go-ruby-parser v0.11.1 attaches `=> name` to the last alternative,
@@ -1150,10 +1324,20 @@ func (c *converter) pattern(p ast.Pattern) Pattern {
 		}
 		return &AltPattern{c.patterns(p.Alts)}
 	case *ast.FindPattern:
+		c.bindPatternName(p.PreName)
+		c.bindPatternName(p.PostName)
 		return &FindPattern{Const: c.expr(p.Const), PreName: p.PreName, Mid: c.patterns(p.Mid), PostName: p.PostName}
 	}
 	c.fail("unsupported pattern: %T", p)
 	return nil
+}
+
+// bindPatternName records a local a pattern binds, as an assignment does;
+// "" and "_" bind nothing.
+func (c *converter) bindPatternName(name string) {
+	if name != "" && name != "_" {
+		c.assignLocal(name)
+	}
 }
 
 // assignment rewrites `target.name = value` and `target[key] = value` into a
@@ -1194,7 +1378,8 @@ func (c *converter) update(recv ast.Node, key Node, attr bool, value Node, origi
 			c.fail("Hash.new's block cannot store into its hash %s: cameo values are immutable; return the default instead", r.Name)
 			return nil
 		}
-		return &Assign{c.pos(), r.Name, with(&Var{c.pos(), r.Name})}
+		c.assignLocal(r.Name)
+		return &Assign{Pos: c.pos(), Name: r.Name, Value: with(&Var{c.pos(), r.Name})}
 	case *ast.IvarRef:
 		name := strings.TrimPrefix(r.Name, "@")
 		c.fail("@%s: cameo has no instance variables; initialize sets a field with self.%s = …", name, name)

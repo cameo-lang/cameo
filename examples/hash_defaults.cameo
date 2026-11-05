@@ -1,6 +1,5 @@
 # Hash.new with a default value, or a block that computes the default.
-counts = Hash.new(0)
-%w[a b a c a].each { |w| counts[w] = counts[w] + 1 }
+counts = %w[a b a c a].each_with_object(Hash.new(0)) { |w, h| h[w] = h[w] + 1 }
 p counts.to_a, counts["zz"], counts.default, counts.fetch("zz", :none), counts.key?("zz")
 
 squares = Hash.new { |hash, n| n * n }

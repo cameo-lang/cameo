@@ -145,6 +145,24 @@ rebinds its receiver:
   `equal?`, `object_id` and `__id__` do not exist, and `compare_by_identity` changes
   nothing.
 
+**A block captures values, not variables.** When a block is made, every
+block, `proc`, `->` and a block on a call alike, copies the values its
+variables have at that moment, and reads that copy when it runs:
+`a = 3; l = proc { a }; a = 4; l.call` is 3, where Ruby's is 4.
+
+- An assignment inside a block to a variable of the scope around it is
+  refused before the script runs: "a block cannot rebind total, a
+  variable of the scope around it: a block captures the values its
+  variables have when it is made; bind a new name, or use reduce,
+  each_with_object or while". Ruby's `list.each { |x| total += x }` is
+  `list.reduce(0) { |total, x| total + x }`; a counter lives in a
+  `while`. A variable the block binds first is the block's own, as in
+  Ruby, and `rescue => e` inside a block binds the block's own `e`.
+- A lambda may call itself by the name it is assigned to,
+  `fact = ->(n) { … fact.(n - 1) }`, as in Ruby; any other block that
+  reads a name bound after it is refused.
+- A `for` loop is Ruby's: its body shares the scope around it.
+
 **A Random is a handle on a generator**, as a file handle is on a file:
 `r.rand`, `r.bytes` and `r.random_number` advance the generator `r` names,
 so each call returns the next number, and every holder of `r` (another
@@ -294,6 +312,8 @@ The checker rejects these by name, with the line:
 | a subclass of Numeric or BasicObject, `class X < Numeric` | none for Numeric; `method_missing` in an ordinary class for BasicObject. Inside a module, and with `Class.new(Numeric)`, the refusal is a `CameoError` when the definition runs |
 | a bang method of Ruby's core, such as `a.sort!` | the copying form, assigned: `a = a.sort` |
 | nested multiple assignment, `a, (b, c) = …` | separate assignments |
+| an assignment inside a block to a variable of the scope around it, `list.each { \|x\| total += x }` | `reduce`, `each_with_object`, `map`, `sum`, `count`, or a `while` loop; a block captures values |
+| a block that reads a name bound after it, other than the lambda assigned to that name | bind the name first |
 | `require_relative`, `load` | one file per script |
 | backticks, `fork` | none; `fork`'s message names `async` |
 | rational and imaginary literals, `1r` and `2i` | none |
