@@ -590,13 +590,19 @@ func (in *Interp) with(target, key, value object.Value, index bool) (object.Valu
 		}
 		// A class may define with for its own instances, a library's to
 		// refuse it: a URI has no setters, so u.host = "x" raises there.
-		// An assignment reaches that with, a script's through its body.
+		// An assignment reaches that with, a script's through its body. Or
+		// a library class may define a native setter, name=, which an
+		// assignment reaches this way: a handle such as a Logger changes
+		// in place, a value returns its copy.
 		if m := userMethod(target, "with"); m != nil {
 			kw := object.NewMap().Put(object.Symbol(string(name)), value)
 			if m.Native != nil {
 				return m.Native(in, target, nil, kw, object.Value{})
 			}
 			return in.invoke(m, target, nil, kw, object.Value{}, 0)
+		}
+		if m := userMethod(target, string(name)+"="); m != nil && m.Native != nil {
+			return m.Native(in, target, []object.Value{value}, nil, object.Value{})
 		}
 		idx, ok := t.Cls.FieldIndex[string(name)]
 		if !ok {

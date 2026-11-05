@@ -16,6 +16,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/forwardable"
 	"github.com/cameo-lang/cameo/src/lib/ipaddr"
 	"github.com/cameo-lang/cameo/src/lib/json"
+	"github.com/cameo-lang/cameo/src/lib/logger"
 	"github.com/cameo-lang/cameo/src/lib/marshal"
 	"github.com/cameo-lang/cameo/src/lib/minispec"
 	"github.com/cameo-lang/cameo/src/lib/pathname"
@@ -53,6 +54,7 @@ var Libraries = map[string][]string{
 	"forwardable": nil,
 	"ipaddr":      nil,
 	"json":        nil,
+	"logger":      nil,
 	"marshal":     nil,
 	"minispec":    nil,
 	// openssl is accepted for the OpenSSL::HMAC and OpenSSL::Digest names
@@ -99,6 +101,7 @@ func Install() {
 	forwardable.Install()
 	ipaddr.Install()
 	json.Install()
+	logger.Install()
 	marshal.Install()
 	pathname.Install()
 	time.Install()
