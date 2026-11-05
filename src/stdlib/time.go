@@ -359,7 +359,7 @@ func TimeToS(t time.Time) string {
 func TimeInspect(t time.Time) string {
 	s := Strftime(t, "%Y-%m-%d %H:%M:%S")
 	if ns := t.Nanosecond(); ns != 0 {
-		s += "." + strings.TrimRight(padDigits(int64(ns), 9), "0")
+		s += "." + strings.TrimRight(PadDigits(int64(ns), 9), "0")
 	}
 	if t.Location() == time.UTC {
 		return s + " UTC"
@@ -465,7 +465,7 @@ func civilTime(ctx object.Context, args []object.Value, loc *time.Location) (tim
 		}
 		if i == 1 {
 			if s, ok := a.AsString(); ok {
-				if m := monthNamed(s); m > 0 {
+				if m := MonthNamed(s); m > 0 {
 					f[1] = int64(m)
 					continue
 				}
@@ -536,7 +536,9 @@ func microseconds(ctx object.Context, v object.Value) (int64, error) {
 	return ns, nil
 }
 
-func monthNamed(s string) int {
+// MonthNamed returns the month a name or its three-letter abbreviation
+// names, 1 to 12, and 0 for no month.
+func MonthNamed(s string) int {
 	for m := time.January; m <= time.December; m++ {
 		if strings.EqualFold(s, m.String()[:3]) {
 			return int(m)
@@ -726,7 +728,7 @@ func Strftime(t time.Time, f string) string {
 			if width >= 0 {
 				w = width
 			}
-			s := padDigits(int64(t.Nanosecond()), 9)
+			s := PadDigits(int64(t.Nanosecond()), 9)
 			if w <= 9 {
 				s = s[:w]
 			} else {
@@ -741,14 +743,14 @@ func Strftime(t time.Time, f string) string {
 			}
 			h, m, s := off/3600, off/60%60, off%60
 			b.WriteByte(sign)
-			b.WriteString(padDigits(int64(h), 2))
+			b.WriteString(PadDigits(int64(h), 2))
 			switch {
 			case colons == 0:
-				b.WriteString(padDigits(int64(m), 2))
+				b.WriteString(PadDigits(int64(m), 2))
 			case colons == 1 || colons == 3 && s == 0 && m != 0:
-				b.WriteString(":" + padDigits(int64(m), 2))
+				b.WriteString(":" + PadDigits(int64(m), 2))
 			case colons == 2 || colons == 3 && s != 0:
-				b.WriteString(":" + padDigits(int64(m), 2) + ":" + padDigits(int64(s), 2))
+				b.WriteString(":" + PadDigits(int64(m), 2) + ":" + PadDigits(int64(s), 2))
 			}
 		case 'Z':
 			text(zoneName(t), true)

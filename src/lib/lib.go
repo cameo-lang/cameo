@@ -9,6 +9,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/cgi"
 	"github.com/cameo-lang/cameo/src/lib/json"
 	"github.com/cameo-lang/cameo/src/lib/pathname"
+	"github.com/cameo-lang/cameo/src/lib/time"
 )
 
 // Libraries are the names require accepts, each with the libraries it
@@ -37,4 +38,5 @@ func Install() {
 	cgi.Install()
 	json.Install()
 	pathname.Install()
+	time.Install()
 }
