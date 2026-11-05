@@ -64,9 +64,7 @@ class Pair
   end
 
   def energy(n)
-    s = 0.0
-    n.times { |i| s += a.dot(b) * weight / (i + 1) }
-    s
+    n.times.reduce(0.0) { |s, i| s + a.dot(b) * weight / (i + 1) }
   end
 
   def sign = flipped ? -weight : weight
@@ -83,9 +81,7 @@ class Counter
   end
 
   def sum(n)
-    s = start
-    n.times { |i| s += i }
-    s
+    n.times.reduce(start) { |s, i| s + i }
   end
 
   def beyond = huge + start
@@ -104,7 +100,7 @@ puts c.sum(5), c.beyond, Counter.new(2**62, 1).sum(3)
 `
 
 // digest identifies the program: syntax.Digest of Script, parsed.
-const digest = "e4df931dfe9a743a"
+const digest = "0b14d308b80ff9f1"
 
 func init() {
 	eval.RegisterCompiled(digest, eval.Compiled{
@@ -225,28 +221,28 @@ func fn_Counter__sum(s *state, self *object.Instance, v_n int64) (int64, error) 
 	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
-	t1, err := fieldInt(self, 0)
+	t2, err := fieldInt(self, 0)
 	if err != nil {
 		return 0, err
 	}
-	var v_s int64
-	_ = v_s
-	v_s = t1
-	t2 := v_n
-	t4 := s.stop
-	for t3 := int64(0); t3 < t2; t3++ {
-		if t4.Load() {
+	t1 := t2
+	t3 := v_n
+	t5 := s.stop
+	for t4 := int64(0); t4 < t3; t4++ {
+		if t5.Load() {
 			return 0, eval.ErrStopped
 		}
-		v_i := t3
+		v_s := t1
+		_ = v_s
+		v_i := t4
 		_ = v_i
-		t5, err := add(v_s, v_i)
+		t6, err := add(v_s, v_i)
 		if err != nil {
 			return 0, err
 		}
-		v_s = t5
+		t1 = t6
 	}
-	return v_s, nil
+	return t1, nil
 }
 
 func big_Counter__sum(s *state, self *object.Instance, v_n *big.Int) (*big.Int, error) {
@@ -254,25 +250,25 @@ func big_Counter__sum(s *state, self *object.Instance, v_n *big.Int) (*big.Int, 
 	if s.stop.Load() {
 		return nil, eval.ErrStopped
 	}
-	t1, err := fieldBig(self, 0)
+	t2, err := fieldBig(self, 0)
 	if err != nil {
 		return nil, err
 	}
-	var v_s *big.Int
-	_ = v_s
-	v_s = t1
-	t2 := v_n
-	t4 := s.stop
-	for t3 := new(big.Int); t3.Cmp(t2) < 0; t3 = new(big.Int).Add(t3, big_1) {
-		if t4.Load() {
+	t1 := t2
+	t3 := v_n
+	t5 := s.stop
+	for t4 := new(big.Int); t4.Cmp(t3) < 0; t4 = new(big.Int).Add(t4, big_1) {
+		if t5.Load() {
 			return nil, eval.ErrStopped
 		}
-		v_i := t3
+		v_s := t1
+		_ = v_s
+		v_i := t4
 		_ = v_i
-		t5 := new(big.Int).Add(v_s, v_i)
-		v_s = t5
+		t6 := new(big.Int).Add(v_s, v_i)
+		t1 = t6
 	}
-	return v_s, nil
+	return t1, nil
 }
 
 // call_Counter__sum is Counter#sum as a method: it runs with the arguments it takes and no
@@ -313,40 +309,40 @@ func fn_Pair__energy(s *state, self *object.Instance, v_n int64) (float64, error
 	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
-	var v_s float64
-	_ = v_s
-	v_s = 0.0
-	t1 := v_n
-	t3 := s.stop
-	for t2 := int64(0); t2 < t1; t2++ {
-		if t3.Load() {
+	t1 := 0.0
+	t2 := v_n
+	t4 := s.stop
+	for t3 := int64(0); t3 < t2; t3++ {
+		if t4.Load() {
 			return 0, eval.ErrStopped
 		}
-		v_i := t2
+		v_s := t1
+		_ = v_s
+		v_i := t3
 		_ = v_i
-		t4, err := fieldRef(self, 0)
+		t5, err := fieldRef(self, 0)
 		if err != nil {
 			return 0, err
 		}
-		t5, err := fieldRef(self, 1)
+		t6, err := fieldRef(self, 1)
 		if err != nil {
 			return 0, err
 		}
-		t6, err := fn_Vec__dot(s, t4, t5)
+		t7, err := fn_Vec__dot(s, t5, t6)
 		if err != nil {
 			return 0, err
 		}
-		t7, err := fieldInt(self, 2)
+		t8, err := fieldInt(self, 2)
 		if err != nil {
 			return 0, err
 		}
-		t8, err := add(v_i, 1)
+		t9, err := add(v_i, 1)
 		if err != nil {
 			return 0, err
 		}
-		v_s = float64(v_s + float64(float64(t6*float64(t7))/float64(t8)))
+		t1 = float64(v_s + float64(float64(t7*float64(t8))/float64(t9)))
 	}
-	return v_s, nil
+	return t1, nil
 }
 
 func big_Pair__energy(s *state, self *object.Instance, v_n *big.Int) (float64, error) {
@@ -354,37 +350,37 @@ func big_Pair__energy(s *state, self *object.Instance, v_n *big.Int) (float64, e
 	if s.stop.Load() {
 		return 0, eval.ErrStopped
 	}
-	var v_s float64
-	_ = v_s
-	v_s = 0.0
-	t1 := v_n
-	t3 := s.stop
-	for t2 := new(big.Int); t2.Cmp(t1) < 0; t2 = new(big.Int).Add(t2, big_1) {
-		if t3.Load() {
+	t1 := 0.0
+	t2 := v_n
+	t4 := s.stop
+	for t3 := new(big.Int); t3.Cmp(t2) < 0; t3 = new(big.Int).Add(t3, big_1) {
+		if t4.Load() {
 			return 0, eval.ErrStopped
 		}
-		v_i := t2
+		v_s := t1
+		_ = v_s
+		v_i := t3
 		_ = v_i
-		t4, err := fieldRef(self, 0)
+		t5, err := fieldRef(self, 0)
 		if err != nil {
 			return 0, err
 		}
-		t5, err := fieldRef(self, 1)
+		t6, err := fieldRef(self, 1)
 		if err != nil {
 			return 0, err
 		}
-		t6, err := big_Vec__dot(s, t4, t5)
+		t7, err := big_Vec__dot(s, t5, t6)
 		if err != nil {
 			return 0, err
 		}
-		t7, err := fieldBig(self, 2)
+		t8, err := fieldBig(self, 2)
 		if err != nil {
 			return 0, err
 		}
-		t8 := new(big.Int).Add(v_i, big_1)
-		v_s = float64(v_s + float64(float64(t6*object.BigToFloat(t7))/object.BigToFloat(t8)))
+		t9 := new(big.Int).Add(v_i, big_1)
+		t1 = float64(v_s + float64(float64(t7*object.BigToFloat(t8))/object.BigToFloat(t9)))
 	}
-	return v_s, nil
+	return t1, nil
 }
 
 // call_Pair__energy is Pair#energy as a method: it runs with the arguments it takes and no

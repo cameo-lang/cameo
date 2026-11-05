@@ -19,10 +19,9 @@ class Grid
   end
 
   def count
-    inside = 0
-    size.times do |y|
+    size.times.sum do |y|
       ci = top + scale * y
-      size.times do |x|
+      size.times.count do |x|
         cr = left + scale * x
         zr = 0.0
         zi = 0.0
@@ -34,10 +33,9 @@ class Grid
           zr = t
           i += 1
         end
-        inside += 1 if i == limit
+        i == limit
       end
     end
-    inside
   end
 end
 

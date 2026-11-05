@@ -1,27 +1,27 @@
-# Ruby's optparse library: an OptionParser reads a command line. The
-# options go through the blocks; parse returns the operands. Each line
-# prints what Ruby prints.
+# Ruby's optparse library: an OptionParser reads a command line. parse
+# returns the operands, and options holds what it saw, by the key into:
+# would give each switch; a block given to on is called as well. Each line
+# prints what Ruby prints, the options aside, which Ruby's blocks store.
 require "optparse"
 
-verbose = false
-name = nil
-count = 1
 parser = OptionParser.new do |o|
   o.banner = "Usage: greet [options] WHO..."
-  o.on("-v", "--[no-]verbose", "Say more") { |v| verbose = v }
-  o.on("-n", "--name NAME", "Who greets") { |n| name = n }
-  o.on("-c", "--count N", Integer, "How many times") { |c| count = c }
+  o.on("-v", "--[no-]verbose", "Say more")
+  o.on("-n", "--name NAME", "Who greets")
+  o.on("-c", "--count N", Integer, "How many times")
   o.on("--level LEVEL", [:low, :high], "Select level (low, high)") { |l| puts "level #{l}" }
 end
 puts parser.help
 
 rest = parser.parse(%w[-v --name Ann -c 2 Bob --level hi Carol])
-p rest, verbose, name, count
+p rest, parser.options
+options = parser.options
+p options[:verbose], options.fetch(:name, "nobody"), options.fetch(:count, 1)
 
 # An Array is a value: parse! returns the operands and leaves its argument
 # as it was, where Ruby takes the options out of it.
 argv = %w[--no-verbose -nDee Eve]
-p parser.parse!(argv), argv, verbose, name
+p parser.parse!(argv), argv, parser.options
 
 # getopts gives the options as a Hash; a flag defaults to false, an
 # argument to nil.

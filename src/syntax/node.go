@@ -130,11 +130,16 @@ type Var struct {
 	Name string
 }
 
-// Assign binds a local variable.
+// Assign binds a local variable. Forward is set when Value is a lambda or
+// proc that reads Name: a block captures the values of its variables when
+// it is made, and Name is bound only after, so the evaluator fills the
+// name into the lambda's captured scope once it is bound, and the lambda
+// can call itself.
 type Assign struct {
 	Pos
-	Name  string
-	Value Node
+	Name    string
+	Value   Node
+	Forward bool
 }
 
 // MultiAssign is `a, b = x, y` or `a, *b = list`. SplatIndex is the index of
@@ -204,11 +209,14 @@ type Call struct {
 	Rebinds bool
 }
 
-// Block is a literal block or a lambda body.
+// Block is a literal block or a lambda body. A block captures the values
+// of the variables around it when it is made; Shared marks the body of a
+// for loop, which runs in the scope around it instead, as Ruby's does.
 type Block struct {
 	Pos
 	Params Params
 	Body   []Node
+	Shared bool
 }
 
 // Params is a parameter list of a method, block or lambda.

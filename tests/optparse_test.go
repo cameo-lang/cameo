@@ -36,37 +36,31 @@ func TestARGVHoldsTheScriptsArguments(t *testing.T) {
 // argv keeps its options and order! sees them again.
 func TestOptionParserParsesAsRubysDoes(t *testing.T) {
 	out := runScript(t, `require "optparse"
-seen = {}
 o = OptionParser.new do |op|
   op.banner = "Usage: tool [options] FILES"
   op.separator ""
   op.separator "Specific options:"
-  op.on("-v", "--[no-]verbose", "Run verbosely") { |v| seen[:verbose] = v }
-  op.on("-n", "--name NAME", String, "Your name") { |v| seen[:name] = v }
-  op.on("-c", "--count N", Integer, "How many") { |v| seen[:count] = v }
-  op.on("-r", "--rate R", Float, "A rate") { |v| seen[:rate] = v }
-  op.on("-l", "--list x,y,z", Array, "A list") { |v| seen[:list] = v }
-  op.on("-o", "--optional [ARG]", "Optional arg") { |v| seen[:optional] = v }
-  op.on("--level LEVEL", [:low, :high], "Select level (low, high)") { |v| seen[:level] = v }
-  op.on("-x", "Short only") { seen[:x] = true }
-  op.on("--long-only", "Long only") { seen[:long] = true }
-  op.on_tail("-h", "--help", "Show help") { seen[:help] = true }
-  op.on_tail("--version", "Show version") { seen[:version] = true }
+  op.on("-v", "--[no-]verbose", "Run verbosely")
+  op.on("-n", "--name NAME", String, "Your name")
+  op.on("-c", "--count N", Integer, "How many")
+  op.on("-r", "--rate R", Float, "A rate")
+  op.on("-l", "--list x,y,z", Array, "A list")
+  op.on("-o", "--optional [ARG]", "Optional arg")
+  op.on("--level LEVEL", [:low, :high], "Select level (low, high)")
+  op.on("-x", "Short only")
+  op.on("--long-only", "Long only")
+  op.on_tail("-h", "--help", "Show help")
+  op.on_tail("--version", "Show version")
 end
 puts o.help
 p o.banner, o.to_s == o.help, o.summary_width, o.summary_indent, o.program_name, OptionParser::Version
-p o.parse(%w[-v -n Ann -c 3 -r 2.5 -l a,b,c file1 --level high -x --long-only file2]), seen
-seen = {}
-p o.parse(%w[--no-verbose --name=Bob -nCarl -o -ofoo --optional=bar --optional baz]), seen
-seen = {}
-p o.parse(%w[--verb --na Dee file -- -x --count 1]), seen
-seen = {}
+p o.parse(%w[-v -n Ann -c 3 -r 2.5 -l a,b,c file1 --level high -x --long-only file2]), o.options
+p o.parse(%w[--no-verbose --name=Bob -nCarl -o -ofoo --optional=bar --optional baz]), o.options
+p o.parse(%w[--verb --na Dee file -- -x --count 1]), o.options
 argv = %w[-v f1 -c 2 f2]
-p o.parse!(argv), argv, seen
-seen = {}
-p o.order!(argv), argv, seen
-seen = {}
-p o.permute(%w[a -n x b]), o.order(%w[a -n x b]), seen
+p o.parse!(argv), argv, o.options
+p o.order!(argv), argv, o.options
+p o.permute(%w[a -n x b]), o.options, o.order(%w[a -n x b]), o.options
 [%w[--bogus], %w[-z], %w[--name], %w[-c foo], %w[--level mid], %w[--verbose=yes], %w[-r x], %w[-c=7], %w[-n]].each do |args|
   begin
     o.parse(args)
@@ -91,18 +85,17 @@ p o.help, o.ver, o.summarize, o.to_a
 o = OptionParser.new("Usage: given [opts]", 20, "  ")
 o.on("-a", "--all", "All")
 p o.help
-seen = []
 o = OptionParser.new do |op|
-  op.on("-f", "--flag") { |v| seen += [v] }
-  op.on("--no-thing") { |v| seen += [v] }
-  op.on("-i", "--int N", Integer) { |v| seen += [v] }
-  op.on("-F", "--float F", Float) { |v| seen += [v] }
-  op.on("-b", "--bool B", TrueClass) { |v| seen += [v] }
-  op.on("-n", "--num N", Numeric) { |v| seen += [v] }
-  op.on("-t", "--type TYPE", %w[fast slow]) { |v| seen += [v] }
-  op.on("-m", "--mode MODE", {"a" => 1, "b" => 2}) { |v| seen += [v] }
+  op.on("-f", "--flag") { |v| p v }
+  op.on("--no-thing") { |v| p v }
+  op.on("-i", "--int N", Integer) { |v| p v }
+  op.on("-F", "--float F", Float) { |v| p v }
+  op.on("-b", "--bool B", TrueClass) { |v| p v }
+  op.on("-n", "--num N", Numeric) { |v| p v }
+  op.on("-t", "--type TYPE", %w[fast slow]) { |v| p v }
+  op.on("-m", "--mode MODE", {"a" => 1, "b" => 2}) { |v| p v }
 end
-p o.parse(%w[-f --no-thing -i 0x10 -i 1_000 -i 010 -F 1e3 -b yes -b no -b false -n 3 -n 2.5 -t fa -m b x]), seen
+p o.parse(%w[-f --no-thing -i 0x10 -i 1_000 -i 010 -F 1e3 -b yes -b no -b false -n 3 -n 2.5 -t fa -m b x]), o.options
 begin
   o.parse(%w[-t medium])
 rescue OptionParser::InvalidArgument => e
@@ -117,9 +110,8 @@ o = OptionParser.new
 o.on("-v") { }
 o.on("--help") { }
 p o.parse(%w[--help]), o.parse([]), o.parse(%w[a b]), o.parse(%w[-- -v]), o.parse(%w[-vv]), o.parse(%w[-v -v])
-seen = []
-o = OptionParser.new { |op| op.on("-abc") { |v| seen += [v] }; op.on("-d", "--delay[=N]", Integer) { |v| seen += [v] } }
-p o.parse(%w[-a -d -d5 --delay=7 --delay]), seen
+o = OptionParser.new { |op| op.on("-abc") { |v| p v }; op.on("-d", "--delay[=N]", Integer) { |v| p v } }
+p o.parse(%w[-a -d -d5 --delay=7 --delay]), o.options
 o = OptionParser.new
 o.on("-x", "--example", "desc")
 o.on("--very-long-option-name-that-is-wide VALUE", "wide desc")
@@ -157,7 +149,7 @@ true
 "t"
 "0.6.0"
 ["file1", "file2"]
-{verbose: true, name: "Ann", count: 3, rate: 2.5, list: ["a", "b", "c"], level: :high, x: true, long: true}
+{verbose: true, name: "Ann", count: 3, rate: 2.5, list: ["a", "b", "c"], level: :high, x: true, :"long-only" => true}
 []
 {verbose: false, name: "Carl", optional: "baz"}
 ["file", "-x", "--count", "1"]
@@ -169,8 +161,9 @@ true
 ["-v", "f1", "-c", "2", "f2"]
 {verbose: true}
 ["a", "b"]
-["a", "-n", "x", "b"]
 {name: "x"}
+["a", "-n", "x", "b"]
+{}
 [OptionParser::InvalidOption, "invalid option: --bogus", ["--bogus"], "invalid option"]
 [OptionParser::InvalidOption, "invalid option: -z", ["-z"], "invalid option"]
 [OptionParser::MissingArgument, "missing argument: --name", ["--name"], "missing argument"]
@@ -192,8 +185,21 @@ OptionParser::ParseError
 ["    -a, --all                        All of it\n", "        --size SIZE                  Size\n", "                                     in bytes\n", "    -q, --quiet\n"]
 ["Usage: x", "    -a, --all                        All of it\n", "        --size SIZE                  Size\n", "                                     in bytes\n", "    -q, --quiet\n"]
 "Usage: given [opts]\n  -a, --all            All\n"
+true
+false
+16
+1000
+8
+1000.0
+true
+false
+false
+3
+2.5
+"fast"
+2
 ["x"]
-[true, false, 16, 1000, 8, 1000.0, true, false, false, 3, 2.5, "fast", 2]
+{flag: true, thing: false, int: 8, float: 1000.0, bool: false, num: 2.5, type: "fast", mode: 2}
 invalid argument: -t medium
 unsupported argument type: Symbol
 []
@@ -202,8 +208,12 @@ unsupported argument type: Symbol
 ["-v"]
 []
 []
+"-d"
+5
+7
+nil
 []
-["-d", 5, 7, nil]
+{a: "-d", delay: nil}
 Usage: t [options]
     -x, --example                    desc
         --very-long-option-name-that-is-wide VALUE
@@ -220,9 +230,9 @@ invalid option: --no-verbose
 
 func TestOptionParserParsesARGVByDefault(t *testing.T) {
 	out, _ := runArgs(t, `require "optparse"
-name = nil
-rest = OptionParser.new { |o| o.on("-n", "--name NAME") { |v| name = v } }.parse!
-p rest, name, ARGV
+o = OptionParser.new { |o| o.on("-n", "--name NAME") }
+rest = o.parse!
+p rest, o.options[:name], ARGV
 p OptionParser.new.getopts(%w[-v --name=Bob x], "v", "name:")`, "-n", "Ann", "file", "--name=Bob")
 	assert.Equals(t, out, "[\"file\"]\n\"Bob\"\n[\"-n\", \"Ann\", \"file\", \"--name=Bob\"]\n{\"v\" => true, \"name\" => \"Bob\"}\n")
 }

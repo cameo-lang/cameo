@@ -152,6 +152,21 @@ func (c *code) compile(n syntax.Node) thunk {
 		}
 	case *syntax.Assign:
 		name, value := n.Name, c.compile(n.Value)
+		if n.Forward {
+			// The lambda reads its own name, which was unbound when
+			// it captured its scope: fill it in now.
+			return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
+				v, err := value(in, env, fr)
+				if err != nil {
+					return object.Value{}, err
+				}
+				env.Set(name, v)
+				if p, ok := asProc(v); ok && p.Env != nil {
+					p.Env.bind(name, v)
+				}
+				return v, nil
+			}
+		}
 		return func(in *Interp, env *Env, fr *Frame) (object.Value, error) {
 			v, err := value(in, env, fr)
 			if err != nil {
@@ -224,7 +239,7 @@ func (c *code) compile(n syntax.Node) thunk {
 	case *syntax.Lambda:
 		block, strict := n.Block, n.Strict
 		return func(_ *Interp, env *Env, fr *Frame) (object.Value, error) {
-			return procValue(&Proc{Block: block, Env: env, Frame: fr, Strict: strict}), nil
+			return procValue(&Proc{Block: block, Env: env.snapshot(), Frame: fr, Strict: strict}), nil
 		}
 	case *syntax.Yield:
 		args, ok := c.compileArgs(n.Args)
@@ -442,7 +457,7 @@ func (c *code) compileCall(n *syntax.Call) thunk {
 		}
 		var blk object.Value
 		if block != nil {
-			blk = procValue(&Proc{Block: block, Env: env, Frame: fr})
+			blk = procValue(&Proc{Block: block, Env: blockEnv(block, env), Frame: fr})
 		}
 		if checkMutation {
 			if v, handled, err := in.mutating(fr, r, recvName, name, values, nil, blk, rebinds, line); handled {

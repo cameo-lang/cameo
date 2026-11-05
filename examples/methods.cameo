@@ -26,9 +26,8 @@ puts
 def fib(n) = n < 2 ? n : fib(n - 1) + fib(n - 2)
 puts fib(15)
 
-counter = 0
-bump = -> { counter += 1 }
-3.times { bump.call }
+bump = ->(c) { c + 1 }
+counter = 3.times.reduce(0) { |c, _| bump.call(c) }
 puts counter
 
 add = ->(a, b = 10) { a + b }

@@ -32,7 +32,7 @@ func (in *Interp) evalCall(n *syntax.Call, env *Env, fr *Frame) (object.Value, e
 	var block object.Value
 	switch {
 	case n.Block != nil:
-		block = procValue(&Proc{Block: n.Block, Env: env, Frame: fr})
+		block = procValue(&Proc{Block: n.Block, Env: blockEnv(n.Block, env), Frame: fr})
 	case n.BlockArg != nil:
 		v, err := in.eval(n.BlockArg, env, fr)
 		if err != nil {
@@ -652,7 +652,7 @@ func (in *Interp) evalSuper(n *syntax.Super, env *Env, fr *Frame) (object.Value,
 		}
 	}
 	if n.Block != nil {
-		block = procValue(&Proc{Block: n.Block, Env: env, Frame: fr})
+		block = procValue(&Proc{Block: n.Block, Env: blockEnv(n.Block, env), Frame: fr})
 	} else if n.BlockArg != nil {
 		v, err := in.eval(n.BlockArg, env, fr)
 		if err != nil {

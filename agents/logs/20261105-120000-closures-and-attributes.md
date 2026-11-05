@@ -39,5 +39,6 @@ this makes a class deliberately unlike an instance.
 ## Progress
 - [x] Measured on main: capturing in proc/lambda literals only breaks 4 tests; in every block, 12, plus the loop hang
 - [x] aot folds: reduce, sum and count with a block over times, upto, downto and a Range compile to a loop with an accumulator, so the benchmark scripts, written as folds now, still compile
+- [x] Blocks capture values: Env.snapshot at every block made, Set stops at a captured scope, promises still reach the method scope; the checker refuses a rebinding of a captured variable (frames track their locals; a for body and a group parameter are the frame's own; rescue binds the block's own); Assign.Forward fills a self-recursive lambda; every example, library, test and benchmark script rewritten to reduce, sum, count, each_with_object or while; docs
 - [x] Option libraries (#241): GetoptLong includes Enumerable and takes args:; Getopt::Options in cameo with on and parse (it cannot nest in GetoptLong: a builtin class is shared by every program in the process); OptionParser#options records what a parse saw
 - [x] Class attributes (#240): converter (`attribute`, `self.x = v` in class bodies and class methods), object.Class.Attrs and Open, evalAttrDecl, writeAttr, inheritance, reopening, Class.new; tests; docs

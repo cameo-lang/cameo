@@ -14,11 +14,10 @@ const getoptlongScript = `require "getoptlong"
 opts = GetoptLong.new(["--help", "-h", GetoptLong::NO_ARGUMENT], ["--name", "-n", GetoptLong::REQUIRED_ARGUMENT], ["--level", "-l", GetoptLong::OPTIONAL_ARGUMENT], ["--verbose", GetoptLong::NO_ARGUMENT])
 opts.quiet = ARGV[0] == "quiet"
 opts.ordering = GetoptLong.const_get(ARGV[1])
-seen = []
-begin
-  opts.each { |opt, arg| seen += [[opt, arg]] }
+seen = begin
+  opts.to_a
 rescue GetoptLong::Error => e
-  seen += [[e.class, e.message]]
+  [[e.class, e.message]]
 end
 p seen, opts.rest, opts.terminated?, opts.error?, opts.error_message, ARGV.size
 `

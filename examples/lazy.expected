@@ -27,7 +27,9 @@ true
 [1]
 6
 [2, 4]
-3
+map 1
+map 2
+map 3
 [10, 20, 30]
 [10, 20, 30]
 Enumerator::Lazy

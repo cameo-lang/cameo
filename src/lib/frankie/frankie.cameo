@@ -47,15 +47,9 @@ module Frankie
       mine = self.path.split("/").reject(&:empty?)
       theirs = path.split("/").reject(&:empty?)
       return nil unless mine.size == theirs.size
-      params = {}
-      mine.zip(theirs).each do |pattern, segment|
-        if pattern.start_with?(":")
-          params = params.merge(pattern[1..] => segment)
-        elsif pattern != segment
-          return nil
-        end
-      end
-      params
+      pairs = mine.zip(theirs)
+      return nil if pairs.any? { |pattern, segment| !pattern.start_with?(":") && pattern != segment }
+      pairs.select { |pattern, _| pattern.start_with?(":") }.to_h { |pattern, segment| [pattern[1..], segment] }
     end
   end
 

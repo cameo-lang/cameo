@@ -18,20 +18,21 @@ module TSort
 
   # from returns [search, components, minimum]: the search after node, the
   # components found under it, children first, and the lowest index seen.
+  # The children come through a fold, since a block cannot write into its
+  # surroundings.
   def self.from(search, node, each_child)
     id = search[:ids].size
     base = search[:stack].size
-    search = {ids: search[:ids].merge(node => id), done: search[:done], stack: search[:stack] + [node]}
-    minimum = id
-    components = []
-    each_child.call(node) do |child|
+    start = {ids: search[:ids].merge(node => id), done: search[:done], stack: search[:stack] + [node]}
+    children = each_child.to_enum(:call, node).to_a
+    search, components, minimum = children.reduce([start, [], id]) do |(search, components, minimum), child|
       if search[:ids].key?(child)
         seen = search[:ids][child]
         minimum = seen if seen < minimum && !search[:done][child]
+        [search, components, minimum]
       else
         search, found, low = from(search, child, each_child)
-        components += found
-        minimum = low if low < minimum
+        [search, components + found, low < minimum ? low : minimum]
       end
     end
     if id == minimum
@@ -44,12 +45,11 @@ module TSort
   end
 
   def self.strongly_connected_components(each_node, each_child)
-    search = TSort.search
-    all = []
-    each_node.call do |node|
-      next if search[:ids].key?(node)
+    nodes = each_node.to_enum(:call).to_a
+    _, all = nodes.reduce([TSort.search, []]) do |(search, all), node|
+      next [search, all] if search[:ids].key?(node)
       search, found, _ = from(search, node, each_child)
-      all += found
+      [search, all + found]
     end
     all
   end

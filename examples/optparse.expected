@@ -5,13 +5,13 @@ Usage: greet [options] WHO...
         --level LEVEL                Select level (low, high)
 level high
 ["Bob", "Carol"]
+{verbose: true, name: "Ann", count: 2, level: :high}
 true
 "Ann"
 2
 ["Eve"]
 ["--no-verbose", "-nDee", "Eve"]
-false
-"Dee"
+{verbose: false, name: "Dee"}
 {"a" => true, "c" => "3", "long" => nil}
 OptionParser::InvalidOption: invalid option: --bogus
 OptionParser::InvalidArgument: invalid argument: --count x

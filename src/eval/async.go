@@ -363,17 +363,6 @@ func (in *Interp) evalAwaitAll(n *syntax.AwaitAll, env *Env, fr *Frame) (object.
 	return in.awaitEach(pending)
 }
 
-// methodScope is the scope a promise belongs to: the method body's, or the
-// top level's, that the current block scope sits in. A block is part of
-// the method that runs it, so a method that fans out in a loop and then
-// waits sees every promise.
-func methodScope(env *Env) *Env {
-	for env.parent != nil {
-		env = env.parent
-	}
-	return env
-}
-
 // start serialises the receiver, the method name and the arguments, and
 // queues the call for a worker interpreter; see sched.go.
 func (in *Interp) start(recvNode, methodNode syntax.Node, argNodes []syntax.Node, kwNodes []syntax.MapEntry, env *Env, fr *Frame, line int) (*Promise, error) {

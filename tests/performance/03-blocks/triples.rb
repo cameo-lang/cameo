@@ -5,15 +5,11 @@ def now
 end
 
 def triples(n)
-  count = 0
-  (1..n).each do |a|
-    (a..n).each do |b|
-      (b..n).each do |c|
-        count += 1 if a * a + b * b == c * c
-      end
+  (1..n).sum do |a|
+    (a..n).sum do |b|
+      (b..n).count { |c| a * a + b * b == c * c }
     end
   end
-  count
 end
 
 t0 = now

@@ -55,9 +55,8 @@ class Twice
 end
 
 def walk(n)
-  v = Vec.new(0, 0)
   step = Vec.new(0.5, -0.25)
-  n.times { |i| v = v.plus(step.scaled(i % 3)) }
+  v = n.times.reduce(Vec.new(0, 0)) { |v, i| v.plus(step.scaled(i % 3)) }
   v.norm2
 end
 
@@ -80,7 +79,7 @@ end
 `
 
 // digest identifies the program: syntax.Digest of Script, parsed.
-const digest = "a607c05ac96166f4"
+const digest = "bc07c6b3f441d458"
 
 func init() {
 	eval.RegisterCompiled(digest, eval.Compiled{
@@ -826,9 +825,9 @@ func fn_walk(s *state, v_n int64) (float64, error) {
 	var t1 *object.Instance
 	{
 		t2 := make([]object.Value, 3)
-		v_x := float64(0)
+		v_x := 0.5
 		_ = v_x
-		v_y := float64(0)
+		v_y := -0.25
 		_ = v_y
 		t2[0] = object.Float(v_x)
 		t2[1] = object.Float(v_y)
@@ -838,54 +837,57 @@ func fn_walk(s *state, v_n int64) (float64, error) {
 		}
 		t1 = t3
 	}
-	var v_v *object.Instance
-	_ = v_v
-	v_v = t1
-	var t4 *object.Instance
-	{
-		t5 := make([]object.Value, 3)
-		v_x := 0.5
-		_ = v_x
-		v_y := -0.25
-		_ = v_y
-		t5[0] = object.Float(v_x)
-		t5[1] = object.Float(v_y)
-		t6, err := eval.Construct(s.ctx, s.class("Vec"), t5)
-		if err != nil {
-			return 0, err
-		}
-		t4 = t6
-	}
 	var v_step *object.Instance
 	_ = v_step
-	v_step = t4
-	t7 := v_n
-	t9 := s.stop
-	for t8 := int64(0); t8 < t7; t8++ {
-		if t9.Load() {
+	v_step = t1
+	var t5 *object.Instance
+	{
+		t6 := make([]object.Value, 3)
+		v_x := float64(0)
+		_ = v_x
+		v_y := float64(0)
+		_ = v_y
+		t6[0] = object.Float(v_x)
+		t6[1] = object.Float(v_y)
+		t7, err := eval.Construct(s.ctx, s.class("Vec"), t6)
+		if err != nil {
+			return 0, err
+		}
+		t5 = t7
+	}
+	t4 := t5
+	t8 := v_n
+	t10 := s.stop
+	for t9 := int64(0); t9 < t8; t9++ {
+		if t10.Load() {
 			return 0, eval.ErrStopped
 		}
-		v_i := t8
+		v_v := t4
+		_ = v_v
+		v_i := t9
 		_ = v_i
-		t10, err := mod(v_i, 3)
+		t11, err := mod(v_i, 3)
 		if err != nil {
 			return 0, err
 		}
-		t11, err := fn_Vec__scaled(s, v_step, t10)
+		t12, err := fn_Vec__scaled(s, v_step, t11)
 		if err != nil {
 			return 0, err
 		}
-		t12, err := fn_Vec__plus(s, v_v, t11)
+		t13, err := fn_Vec__plus(s, v_v, t12)
 		if err != nil {
 			return 0, err
 		}
-		v_v = t12
+		t4 = t13
 	}
-	t13, err := fn_Vec__norm2(s, v_v)
+	var v_v *object.Instance
+	_ = v_v
+	v_v = t4
+	t14, err := fn_Vec__norm2(s, v_v)
 	if err != nil {
 		return 0, err
 	}
-	return t13, nil
+	return t14, nil
 }
 
 func big_walk(s *state, v_n *big.Int) (float64, error) {
@@ -895,9 +897,9 @@ func big_walk(s *state, v_n *big.Int) (float64, error) {
 	var t1 *object.Instance
 	{
 		t2 := make([]object.Value, 3)
-		v_x := object.BigToFloat(big_0)
+		v_x := 0.5
 		_ = v_x
-		v_y := object.BigToFloat(big_0)
+		v_y := -0.25
 		_ = v_y
 		t2[0] = object.Float(v_x)
 		t2[1] = object.Float(v_y)
@@ -907,54 +909,57 @@ func big_walk(s *state, v_n *big.Int) (float64, error) {
 		}
 		t1 = t3
 	}
-	var v_v *object.Instance
-	_ = v_v
-	v_v = t1
-	var t4 *object.Instance
-	{
-		t5 := make([]object.Value, 3)
-		v_x := 0.5
-		_ = v_x
-		v_y := -0.25
-		_ = v_y
-		t5[0] = object.Float(v_x)
-		t5[1] = object.Float(v_y)
-		t6, err := eval.Construct(s.ctx, s.class("Vec"), t5)
-		if err != nil {
-			return 0, err
-		}
-		t4 = t6
-	}
 	var v_step *object.Instance
 	_ = v_step
-	v_step = t4
-	t7 := v_n
-	t9 := s.stop
-	for t8 := new(big.Int); t8.Cmp(t7) < 0; t8 = new(big.Int).Add(t8, big_1) {
-		if t9.Load() {
+	v_step = t1
+	var t5 *object.Instance
+	{
+		t6 := make([]object.Value, 3)
+		v_x := object.BigToFloat(big_0)
+		_ = v_x
+		v_y := object.BigToFloat(big_0)
+		_ = v_y
+		t6[0] = object.Float(v_x)
+		t6[1] = object.Float(v_y)
+		t7, err := eval.Construct(s.ctx, s.class("Vec"), t6)
+		if err != nil {
+			return 0, err
+		}
+		t5 = t7
+	}
+	t4 := t5
+	t8 := v_n
+	t10 := s.stop
+	for t9 := new(big.Int); t9.Cmp(t8) < 0; t9 = new(big.Int).Add(t9, big_1) {
+		if t10.Load() {
 			return 0, eval.ErrStopped
 		}
-		v_i := t8
+		v_v := t4
+		_ = v_v
+		v_i := t9
 		_ = v_i
-		t10, err := bigMod(v_i, big_3)
+		t11, err := bigMod(v_i, big_3)
 		if err != nil {
 			return 0, err
 		}
-		t11, err := big_Vec__scaled(s, v_step, t10)
+		t12, err := big_Vec__scaled(s, v_step, t11)
 		if err != nil {
 			return 0, err
 		}
-		t12, err := big_Vec__plus(s, v_v, t11)
+		t13, err := big_Vec__plus(s, v_v, t12)
 		if err != nil {
 			return 0, err
 		}
-		v_v = t12
+		t4 = t13
 	}
-	t13, err := big_Vec__norm2(s, v_v)
+	var v_v *object.Instance
+	_ = v_v
+	v_v = t4
+	t14, err := big_Vec__norm2(s, v_v)
 	if err != nil {
 		return 0, err
 	}
-	return t13, nil
+	return t14, nil
 }
 
 // call_walk is walk as a method: it runs with the arguments it takes and no

@@ -69,8 +69,9 @@ func TestErrorsNameLineAndClass(t *testing.T) {
 }
 
 func TestScopes(t *testing.T) {
-	expectOutput(t, "x = 1\n[1].each { |i| x = i + 10; y = 5 }\nputs x\nputs defined?(y).inspect rescue puts \"nil\"\n", "11\nnil\n")
-	expectOutput(t, "def m\n  v = 1\n  l = -> { v += 1 }\n  l.call\n  l.call\n  v\nend\nputs m\n", "3\n")
+	// A block captures the values of its variables; its own are its own.
+	expectOutput(t, "x = 1\n[1].each { |i| y = x + i + 10; puts y }\nputs x\nputs defined?(y).inspect rescue puts \"nil\"\n", "12\n1\nnil\n")
+	expectOutput(t, "def m\n  v = 1\n  l = -> { v + 1 }\n  [l.call, l.call, v]\nend\np m\n", "[2, 2, 1]\n")
 	expectOutput(t, "x = 10\ndef m = x\nbegin\n  m\nrescue NameError, NoMethodError => e\n  puts e.class\nend\n", "NameError\n")
 }
 
@@ -279,12 +280,11 @@ func TestLazyStopsWhereItIsDone(t *testing.T) {
 	// take ends an endless source after its last element, and the stop of
 	// an inner pipeline does not end the outer one.
 	src := `
-n = 0
-p (1..).lazy.map { |x| n += 1; x }.take(3).to_a, n
+p (1..).lazy.map { |x| puts x; x }.take(3).to_a
 p (1..3).lazy.flat_map { |x| (x..).lazy.take(2) }.to_a
 p (1..).lazy.zip(10..).take(2).to_a
 `
-	expectOutput(t, src, "[1, 2, 3]\n3\n[1, 2, 2, 3, 3, 4]\n[[1, 10], [2, 11]]\n")
+	expectOutput(t, src, "1\n2\n3\n[1, 2, 3]\n[1, 2, 2, 3, 3, 4]\n[[1, 10], [2, 11]]\n")
 }
 
 func TestMethodMissing(t *testing.T) {

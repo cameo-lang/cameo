@@ -10,26 +10,27 @@ module Abbrev
     unless pattern.nil? || pattern.is_a?(Regexp)
       raise TypeError, "the pattern is a String or a Regexp, not #{pattern.class}"
     end
-    table = {}
-    seen = Hash.new(0)
-    words.each do |word|
-      next if word.empty?
-      word.size.downto(1) do |length|
+    # Each prefix of each word, longest first, is seen once for the word
+    # that owns it, twice when another word shares it, and no shorter
+    # prefix of a word is looked at once one is shared three times.
+    state = words.reduce({seen: Hash.new(0), table: {}}) do |st, word|
+      next st if word.empty?
+      word.size.downto(1).reduce(st.merge(stop: false)) do |s, length|
         abbreviation = word[0...length]
-        next if pattern && !pattern.match?(abbreviation)
-        seen = seen.merge(abbreviation => seen[abbreviation] + 1)
-        case seen[abbreviation]
-        when 1 then table = table.merge(abbreviation => word)
-        when 2 then table = table.except(abbreviation)
-        else break
+        next s if s[:stop] || pattern && !pattern.match?(abbreviation)
+        count = s[:seen][abbreviation] + 1
+        seen = s[:seen].merge(abbreviation => count)
+        case count
+        when 1 then s.merge(seen: seen, table: s[:table].merge(abbreviation => word))
+        when 2 then s.merge(seen: seen, table: s[:table].except(abbreviation))
+        else s.merge(seen: seen, stop: true)
         end
       end
     end
-    words.each do |word|
-      next if pattern && !pattern.match?(word)
-      table = table.merge(word => word)
+    words.reduce(state[:table]) do |table, word|
+      next table if pattern && !pattern.match?(word)
+      table.merge(word => word)
     end
-    table
   end
 
   def abbrev(words, pattern = nil) = Abbrev.abbrev(words, pattern)
