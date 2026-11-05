@@ -386,9 +386,6 @@ func installString() {
 		s, err := format(ctx, str(self), args)
 		return object.String(s), err
 	})
-	def(c, "unicode_normalize", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return self, nil
-	})
 	def(c, "ascii_only?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		for i := 0; i < len(str(self)); i++ {
 			if str(self)[i] >= 0x80 {
