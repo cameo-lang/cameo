@@ -1,24 +1,28 @@
-package stdlib
+// Package cgi is Ruby's cgi library, built into cameo: the functions of
+// cgi/escape and cgi/util that need no I/O. HTML escapes, URL encoding for
+// forms and for URI components, escaping of chosen elements, the RFC 1123
+// date and CGI.pretty. Ruby builds escapeElement and pretty on regular
+// expressions with lookaround, which cameo's regexps lack, so they are
+// scanned by hand here; the comment on each names the expression it
+// follows. CGI.new, cookies and sessions read a request and are left out.
+package cgi
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/cameo-lang/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/stdlib"
 )
 
-// installCGI defines the functions of Ruby's cgi/escape and cgi/util that
-// need no I/O: HTML escapes, URL encoding for forms and for URI components,
-// escaping of chosen elements, the RFC 1123 date and CGI.pretty. Ruby
-// builds escapeElement and pretty on regular expressions with lookaround,
-// which cameo's regexps lack, so they are scanned by hand here; the
-// comment on each names the expression it follows.
-func installCGI() {
+// Install defines the CGI module. lib.Install calls it once.
+func Install() {
 	m := object.NewModule("CGI")
 	object.ObjectClass.Consts["CGI"] = object.ClassValue(m)
 	str := func(f func(string) string) object.NativeFn {
 		return func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-			s, err := WantString(ctx, args[0])
+			s, err := stdlib.WantString(ctx, args[0])
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -42,9 +46,9 @@ func installCGI() {
 	elementFn := func(f func(s string, elements []string) string) object.NativeFn {
 		return func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			if len(args) == 0 {
-				return object.Value{}, ArgError(ctx, 0, "1+")
+				return object.Value{}, stdlib.ArgError(ctx, 0, "1+")
 			}
-			s, err := WantString(ctx, args[0])
+			s, err := stdlib.WantString(ctx, args[0])
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -54,7 +58,7 @@ func installCGI() {
 			}
 			elements := make([]string, len(rest))
 			for i, el := range rest {
-				if elements[i], err = WantString(ctx, el); err != nil {
+				if elements[i], err = stdlib.WantString(ctx, el); err != nil {
 					return object.Value{}, err
 				}
 			}
@@ -70,21 +74,21 @@ func installCGI() {
 	m.DefineSingleton("rfc1123_date", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		t, ok := args[0].AsTime()
 		if !ok {
-			return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into Time", KindName(args[0]))
+			return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into Time", stdlib.KindName(args[0]))
 		}
 		return object.String(t.UTC().Format("Mon, 02 Jan 2006 15:04:05 GMT")), nil
 	})
 	m.DefineSingleton("pretty", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) < 1 || len(args) > 2 {
-			return object.Value{}, ArgError(ctx, len(args), "1..2")
+			return object.Value{}, stdlib.ArgError(ctx, len(args), "1..2")
 		}
-		s, err := WantString(ctx, args[0])
+		s, err := stdlib.WantString(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
 		shift := "  "
 		if len(args) == 2 {
-			if shift, err = WantString(ctx, args[1]); err != nil {
+			if shift, err = stdlib.WantString(ctx, args[1]); err != nil {
 				return object.Value{}, err
 			}
 		}
@@ -107,7 +111,7 @@ func urlEscape(s, space string) string {
 		case c == ' ':
 			b.WriteString(space)
 		default:
-			b.WriteString("%" + strings.ToUpper(strconv.FormatUint(uint64(c)|0x100, 16)[1:]))
+			fmt.Fprintf(&b, "%%%02X", c)
 		}
 	}
 	return b.String()
@@ -164,10 +168,13 @@ func unescapeHTML(s string) string {
 
 // htmlEntity decodes the entity s starts with, returning its text and its
 // length, or a length of 0 when s starts with none Ruby decodes.
+// htmlEntities are the named entities unescapeHTML reads.
+var htmlEntities = []struct{ name, text string }{{"&amp;", "&"}, {"&quot;", `"`}, {"&gt;", ">"}, {"&lt;", "<"}, {"&apos;", "'"}}
+
 func htmlEntity(s string) (string, int) {
-	for name, text := range map[string]string{"&amp;": "&", "&quot;": `"`, "&gt;": ">", "&lt;": "<", "&apos;": "'"} {
-		if strings.HasPrefix(s, name) {
-			return text, len(name)
+	for _, e := range htmlEntities {
+		if strings.HasPrefix(s, e.name) {
+			return e.text, len(e.name)
 		}
 	}
 	if len(s) < 2 || s[1] != '#' {
@@ -189,7 +196,7 @@ func htmlEntity(s string) (string, int) {
 	if err != nil || code >= 0x10ffff {
 		return s[:n], n
 	}
-	return EncodeCodepoint(rune(code)), n
+	return stdlib.EncodeCodepoint(rune(code)), n
 }
 
 func isDigit(c byte, base int) bool {
