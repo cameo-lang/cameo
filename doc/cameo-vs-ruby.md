@@ -344,6 +344,12 @@ These are absent, and a script that uses one fails when it reaches it:
 
 ## Only in cameo
 
+- `Cameo::Native::Name` is every class and module the Go binary binds at
+  the top level, the core, the libraries and the classes a Go host
+  registers, bound there as well as at the top level:
+  `Cameo::Native::JSON == JSON`. A library written in cameo is not there.
+  ("Native" names what the Go binary defines; a host's registered class,
+  whose fields a protobuf message gives, is one of those.)
 - A `proc` field, `proc :handler`, holds a block, and reads as nil without
   one; a class with a `proc` field is no message: it has no `.proto`, and
   `to_proto`, `to_value_proto`, a host, `async` and the pause dump refuse its

@@ -67,6 +67,14 @@ What asks for a library is measured, not guessed:
 - **Installed at start, not at `require`.** `JSON` exists before `require
   "json"`, which Ruby's does not. `require` returns true the first time and
   false after, as Ruby's does.
+- **Every class and module the Go binary binds at the top level is
+  `Cameo::Native::Name` too**: once the core and the libraries installed,
+  the evaluator mirrors every top-level class there (`object.MirrorNative`),
+  and a class a Go host registers goes there as it is bound. The class
+  keeps its name, so a script sees no difference. A library written in
+  cameo defines its classes after that and is not there; it may take a
+  top-level name and keep the Go part of it reachable, bound under
+  `Cameo::Native` alone with `object.BindUnderNative`.
 - **A library may be written in cameo.** Its Go package embeds the `.cameo`
   source and registers it in `lib.Sources` under its require path; `require`
   parses it and runs it at the top level of the script the first time, so

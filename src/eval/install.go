@@ -18,6 +18,9 @@ func installStdlib() {
 	// Last: it wraps every String method defined before it, the
 	// libraries' as well as the core's.
 	stdlib.InstallStringEncodings()
+	// Everything the binary bound at the top level, the core and the
+	// libraries, is Cameo::Native::Name as well.
+	object.MirrorNative()
 	installRaise()
 	installCameo()
 	newException := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {

@@ -64,7 +64,7 @@ type jobState struct {
 // it once.
 func Install() {
 	m := benchmarkModule
-	object.ObjectClass.Consts["Benchmark"] = object.ClassValue(m)
+	object.DefineNative("Benchmark", object.ClassValue(m))
 	m.Consts["VERSION"] = object.String("0.4.0")
 	m.Consts["BENCHMARK_VERSION"] = object.String("2002-04-25")
 	m.Consts["CAPTION"] = object.String(benchmarkCaption)
