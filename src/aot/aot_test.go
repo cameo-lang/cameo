@@ -1,6 +1,7 @@
 package aot
 
 import (
+	"github.com/cameo-lang/cameo/src/assert"
 	"go/parser"
 	"go/token"
 	"strings"
@@ -134,6 +135,63 @@ end
 		if !strings.Contains(string(res.Go), want) {
 			t.Errorf("the Go lacks %q:\n%s", want, res.Go)
 		}
+	}
+}
+
+// TestBuildWritesFolds holds the Go of reduce, sum and count over times,
+// upto, downto and a Range to loops with an accumulator: reduce starts it
+// at the initial value, typed by it, and sets it to the block's value;
+// sum adds the block's Integer; count adds one when the condition holds.
+// A fold whose loop or accumulator the compiler cannot type is left to
+// the interpreter, and so is a block that breaks, since its value is what
+// the loop keeps.
+func TestBuildWritesFolds(t *testing.T) {
+	res := build(t, `
+def f(n)
+  s = n.times.reduce(0) { |acc, i| acc + i }
+  t = (1..n).reduce(s) { |acc, i| acc + i * i }
+  c = n.downto(1).count { |i| i > 2 }
+  u = 1.upto(n).sum { |i| i * 2 }
+  s + t + c + u
+end
+def g(n) = n.times.reduce(0.0) { |a, i| a + i.to_f }
+def h(n) = (0...n).reduce(1) { 2 }
+`)
+	if got := strings.Join(res.Compiled, " "); got != "f g h" {
+		t.Fatalf("compiled %q, want f g h; left: %v", got, res.Left)
+	}
+	// The bounds are read before the initial value, as the receiver is
+	// evaluated before the arguments: t1 is n, t2 the accumulator.
+	for _, want := range []string{
+		"t1 := v_n", "t2 := int64(0)", "for t3 := int64(0); t3 < t1; t3++ {", "v_acc := t2", "v_i := t3", "t5, err := add(v_acc, v_i)", "t2 = t5",
+		"for t16 := t13; t16 >= t14; t16-- {", "t15++",
+		"t24, err := add(t20, t23)", "t20 = t24", "t2 := 0.0", "t2 = float64(v_a + float64(v_i))",
+	} {
+		assert.Contains(t, string(res.Go), want, "the Go lacks %q", want)
+	}
+	// A bound that binds a local, (x = 3).times.reduce(x), reads it after
+	// the bound declared it.
+	res = build(t, "def f(n) = (x = 3).times.reduce(x) { |a, i| a + i }")
+	assert.Equals(t, res.Compiled, []string{"f"})
+	assert.True(t, strings.Index(string(res.Go), "var v_x int64") < strings.Index(string(res.Go), ":= v_x"), "the initial value reads x before the bound declares it:\n%s", res.Go)
+	for _, c := range []struct{ src, name, reason string }{
+		{"def f(n) = [1, 2].reduce(0) { |a, x| a + x }", "f", "the block of reduce is not compiled yet"},
+		{"def f(n) = n.times.reduce { |a, x| a + x }", "f", "the block of reduce is not compiled yet"},
+		{"def f(n) = (1..).reduce(0) { |a, i| a + i }", "f", "the block of reduce is not compiled yet"},
+		{"def f(n)\n  (1..).each { |i| g(i) }\n  n\nend\ndef g(i) = i", "f", "the Range of each has no end"},
+		{"def f(n) = n.times.sum { |i| i.to_f }", "f", "a sum of Float is not compiled yet"},
+		{"def f(n) = n.times.count { |i| i }", "f", "the block of count gives Integer, not true or false"},
+		{"def f(n) = n.times.reduce(0) { |a, i| break if i > 2; a + i }", "f", "break in the block of reduce is not compiled yet"},
+		{"def f(n)\n  r = 0\n  while r < 10\n    r = n.times.sum { |i| next if i > 1; i } + r\n  end\n  r\nend", "f", "next in the block of sum is not compiled yet"},
+		{"def f(n) = n.times.reduce(0) { |a, i| i.to_f }", "f", "the block of reduce gives Float, not Integer"},
+	} {
+		res := build(t, c.src)
+		reason, ok := res.Left[c.name]
+		if !ok {
+			t.Errorf("%q: %s compiled, want it left to the interpreter", c.src, c.name)
+			continue
+		}
+		assert.Contains(t, reason, c.reason, "%q", c.src)
 	}
 }
 

@@ -717,7 +717,7 @@ func big_receiver(s *state, v_n *big.Int) (*big.Int, error) {
 	}
 	var v_k *big.Int
 	_ = v_k
-	v_k = new(big.Int).Set(t4)
+	v_k = t4
 	t8 := new(big.Int).Add(v_m, v_k)
 	return t8, nil
 }

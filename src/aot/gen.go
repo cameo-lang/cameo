@@ -275,6 +275,9 @@ var bigHelperOf = map[string]string{"/": "bigDiv", "%": "bigMod"}
 
 func (f *fn) call(n *syntax.Call, value bool) string {
 	if n.Block != nil {
+		if folds[n.Name] {
+			return f.fold(n, value)
+		}
 		return f.loop(n, value)
 	}
 	if n.Recv == nil {
@@ -478,23 +481,96 @@ func (f *fn) toInt(v string) string {
 // are. On int64 a loop up to the largest Integer, or down to the smallest,
 // is left to the twin on *big.Int, where the counter cannot wrap.
 func (f *fn) loop(n *syntax.Call, value bool) string {
-	var from, to syntax.Node
-	cmp, step, edge := "<=", "Add", "1<<63 - 1"
+	lo, hi := f.loopBounds(n.Name, n.Recv, n.Args)
+	i, stop := f.loopFor(n.Name, lo, hi, exclusiveRange(n.Recv))
+	outer := f.openScope(stop)
+	if p := n.Block.Params.Positional; len(p) == 1 {
+		f.bindParam(p[0].Name, i, tInt)
+	}
+	f.body(n.Block.Body, false)
+	f.closeScope(outer)
+	if !value {
+		return ""
+	}
+	// times, upto and downto return their receiver.
+	if n.Name == "times" {
+		return hi
+	}
+	return lo
+}
+
+// fold writes reduce, sum or count with a block over times, upto, downto
+// or a Range as a loop that keeps an accumulator: reduce starts it at the
+// initial value and sets it to the block's value on every pass, sum adds
+// the block's Integer, and count adds one when the block's condition
+// holds. The accumulator is the fold's value.
+func (f *fn) fold(n *syntax.Call, value bool) string {
+	name, recv, args := "each", n.Recv, []syntax.Node(nil)
+	if c, ok := n.Recv.(*syntax.Call); ok {
+		name, recv, args = c.Name, c.Recv, c.Args
+	}
+	// The bounds are read before the initial value, as the receiver is
+	// evaluated before the arguments.
+	lo, hi := f.loopBounds(name, recv, args)
+	acc := f.temp()
 	switch n.Name {
-	case "times":
-		from, to, cmp = nil, n.Recv, "<"
-	case "upto":
-		from, to = n.Recv, n.Args[0]
-	case "downto":
-		from, to, cmp, step, edge = n.Recv, n.Args[0], ">=", "Sub", "-1 << 63"
-	case "each":
-		r := n.Recv.(*syntax.Range)
-		from, to = r.Lo, r.Hi
-		if r.Exclusive {
-			cmp = "<"
+	case "sum", "count":
+		if f.big {
+			f.line("%s := new(big.Int)", acc)
+		} else {
+			f.line("%s := int64(0)", acc)
+		}
+	default:
+		f.line("%s := %s", acc, f.typed(f.expr(n.Args[0], true)))
+	}
+	i, stop := f.loopFor(name, lo, hi, exclusiveRange(recv))
+	outer := f.openScope(stop)
+	p := n.Block.Params.Positional
+	counter := 0
+	if n.Name != "sum" && n.Name != "count" {
+		counter = 1
+		if len(p) > 0 {
+			f.bindParam(p[0].Name, acc, f.typeOf(n))
 		}
 	}
-	lo := "int64(0)"
+	if len(p) > counter {
+		f.bindParam(p[counter].Name, i, tInt)
+	}
+	if v := f.body(n.Block.Body, true); v != "" {
+		switch n.Name {
+		case "sum":
+			f.line("%s = %s", acc, f.arith("+", acc, v))
+		case "count":
+			f.line("if %s {", v)
+			if f.big {
+				f.line("\t%s = new(big.Int).Add(%s, %s)", acc, acc, f.g.constant(1))
+			} else {
+				f.line("\t%s++", acc)
+			}
+			f.line("}")
+		default:
+			f.line("%s = %s", acc, v)
+		}
+	}
+	f.closeScope(outer)
+	return acc
+}
+
+// loopBounds writes the bounds of a loop of name (times, upto, downto, or
+// each over a Range) over recv and args, read once before the loop, and
+// returns the Go of the lower and the upper one.
+func (f *fn) loopBounds(name string, recv syntax.Node, args []syntax.Node) (lo, hi string) {
+	var from, to syntax.Node
+	switch name {
+	case "times":
+		to = recv
+	case "upto", "downto":
+		from, to = recv, args[0]
+	case "each":
+		r := recv.(*syntax.Range)
+		from, to = r.Lo, r.Hi
+	}
+	lo = "int64(0)"
 	if f.big {
 		lo = "new(big.Int)"
 	}
@@ -502,13 +578,28 @@ func (f *fn) loop(n *syntax.Call, value bool) string {
 		lo = f.temp()
 		f.line("%s := %s", lo, f.typed(f.expr(from, true)))
 	}
-	hi := f.temp()
+	hi = f.temp()
 	f.line("%s := %s", hi, f.typed(f.expr(to, true)))
-	i := f.temp()
-	stop := f.stopFlag()
+	return lo, hi
+}
+
+// loopFor writes the for line of a loop of name from lo to hi, and returns
+// the counter and the local that holds the stop flag. An exclusive Range
+// stops before hi, as times does; upto and an inclusive Range reach it,
+// and downto counts down to it.
+func (f *fn) loopFor(name string, lo, hi string, exclusive bool) (i, stop string) {
+	cmp, step, edge := "<=", "Add", "1<<63 - 1"
+	switch {
+	case name == "times", name == "each" && exclusive:
+		cmp = "<"
+	case name == "downto":
+		cmp, step, edge = ">=", "Sub", "-1 << 63"
+	}
+	i = f.temp()
+	stop = f.stopFlag()
 	if f.big {
 		f.g.constant(1)
-		if from != nil {
+		if lo != "new(big.Int)" {
 			lo = fmt.Sprintf("new(big.Int).Set(%s)", lo)
 		}
 		f.line("for %s := %s; %s.Cmp(%s) %s 0; %s = new(big.Int).%s(%s, big_1) {", i, lo, i, hi, cmp, i, step, i)
@@ -524,30 +615,41 @@ func (f *fn) loop(n *syntax.Call, value bool) string {
 		}
 		f.line("for %s := %s; %s %s %s; %s%s {", i, lo, i, cmp, hi, i, next)
 	}
+	return i, stop
+}
+
+// exclusiveRange reports whether n is a Range that leaves its end out.
+func exclusiveRange(n syntax.Node) bool {
+	r, ok := n.(*syntax.Range)
+	return ok && r.Exclusive
+}
+
+// openScope enters a loop body: the stop check of a pass, and a copy of
+// the locals in scope, which closeScope restores, so that a local the body
+// first sets is the body's own.
+func (f *fn) openScope(stop string) map[string]typ {
 	f.depth++
 	f.pass(stop)
 	outer := f.vars
-	f.vars = make(map[string]typ, len(outer)+1)
+	f.vars = make(map[string]typ, len(outer)+2)
 	for k, v := range outer {
 		f.vars[k] = v
 	}
-	if p := n.Block.Params.Positional; len(p) == 1 {
-		f.vars[p[0].Name] = tInt
-		f.line("v_%s := %s", p[0].Name, i)
-		f.line("_ = v_%s", p[0].Name)
-	}
-	f.body(n.Block.Body, false)
+	return outer
+}
+
+func (f *fn) closeScope(outer map[string]typ) {
 	f.vars = outer
 	f.depth--
 	f.line("}")
-	if !value {
-		return ""
-	}
-	// times, upto and downto return their receiver.
-	if n.Name == "times" {
-		return hi
-	}
-	return lo
+}
+
+// bindParam declares a block parameter in the loop body, bound to the Go
+// of its value.
+func (f *fn) bindParam(name, value string, t typ) {
+	f.vars[name] = t
+	f.line("v_%s := %s", name, value)
+	f.line("_ = v_%s", name)
 }
 
 // stopFlag declares a local that holds the run's stop flag for a loop, so
