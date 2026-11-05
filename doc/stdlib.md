@@ -67,6 +67,15 @@ What asks for a library is measured, not guessed:
 - **Installed at start, not at `require`.** `JSON` exists before `require
   "json"`, which Ruby's does not. `require` returns true the first time and
   false after, as Ruby's does.
+- **A library may be written in cameo.** Its Go package embeds the `.cameo`
+  source and registers it in `lib.Sources` under its require path; `require`
+  parses it and runs it at the top level of the script the first time, so
+  its classes and methods exist from the `require` on, not from the start.
+  A source that does not parse is a `SyntaxError`, as in Ruby; one that
+  raises is a `LoadError` naming the library's file and line, and is not
+  loaded, so a later `require` runs it again. A worker `async` started
+  cannot load one, since its top level is a snapshot every worker shares:
+  the script requires it first, and the workers see it loaded.
 - **Ruby's behaviour, measured against Ruby.** A library follows the
   version Ruby 3.4.1 ships, to its output and the messages of its errors.
   `JSON::VERSION` and `Benchmark::VERSION` carry that version; `set`,

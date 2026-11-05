@@ -521,6 +521,8 @@ func (in *Interp) worker() *Interp {
 		stop:                 in.stop,
 		exits:                in.exits,
 		snap:                 top,
+		loaded:               maps.Clone(in.loaded),
+		isWorker:             true,
 	}
 	// The worker's generator is seeded from this one, here on the
 	// parent's goroutine, so a seeded script stays reproducible.
