@@ -36,8 +36,10 @@ and the protobuf representation are in
 interpreter is built in the milestones listed there.
 [doc/cameo-vs-ruby.md](doc/cameo-vs-ruby.md) lists, for someone who knows
 Ruby, what is the same, what differs, and what cameo does not support.
-A script can `require` the libraries cameo builds in: `set`, `time`, `pp`,
-`pathname`, `cgi`, `json` and `benchmark`.
+A script can `require` the libraries cameo builds in, which
+[doc/stdlib.md](doc/stdlib.md) lists, with every other library of Ruby's
+standard library and its status in cameo: built in, planned, or left out
+and why.
 
 ## Status
 
