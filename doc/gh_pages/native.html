@@ -327,13 +327,19 @@ area. A class is an <code>*object.Class</code> from
   <code>ctx</code> raises exceptions (<code>ctx.Raise</code>), calls
   methods and blocks, and renders values.</li>
   <li>An instance is an <code>object.Instance</code> with the class and
-  its <code>Fields</code>, as <code>Pathname</code> holds its path.</li>
+  its <code>Fields</code>, as an <code>Encoding</code> holds its name.</li>
   <li>An <code>install…</code> function defines the methods and binds the
   constant, and <code>stdlib.Install</code> calls it.</li>
-  <li><code>puts</code> and <code>p</code> render a builtin instance in
-  <code>src/eval/inspect.go</code>, which names each such class: a native
-  <code>to_s</code> or <code>inspect</code> is not enough.</li>
+  <li><code>puts</code> and <code>p</code> call the class's own native
+  <code>to_s</code> and <code>inspect</code>.</li>
 </ul>
+
+<p>A library that a script loads with <code>require</code>, as Ruby's
+standard library is, goes in a Go package of its own under
+<code>src/lib</code>, named for its <code>require</code> path and listed in
+<code>lib.Libraries</code>;
+<a href="https://github.com/cameo-lang/cameo/blob/main/doc/stdlib.md">doc/stdlib.md</a>
+tracks them.</p>
 
 <p>This adds <code>Money</code>, an amount in cents, in
 <code>src/stdlib/money.go</code>:</p>
@@ -341,85 +347,67 @@ area. A class is an <code>*object.Class</code> from
 <pre class="go"><code>package stdlib
 
 import (
-	&quot;fmt&quot;
+	"fmt"
 
-	&quot;github.com/cameo-lang/cameo/src/object&quot;
+	"github.com/cameo-lang/cameo/src/object"
 )
 
-// MoneyClass is Money: an amount in cents, held as its instance&#39;s one field.
-var MoneyClass = object.NewClass(&quot;Money&quot;, object.ObjectClass)
+// MoneyClass is Money: an amount in cents, held as its instance's one field.
+var MoneyClass = object.NewClass("Money", object.ObjectClass)
 
-// installMoney defines Money.new(cents), Money#cents, Money#+ and Money#to_s.
+// installMoney defines Money.new(cents), Money#cents, Money#+, Money#to_s
+// and Money#inspect.
 func installMoney() {
 	c := MoneyClass
-	object.ObjectClass.Consts[&quot;Money&quot;] = object.ClassValue(c)
+	object.ObjectClass.Consts["Money"] = object.ClassValue(c)
 	money := func(cents int64) object.Value {
 		return object.InstanceValue(&amp;object.Instance{Cls: c, Fields: []object.Value{object.Int(cents)}})
 	}
 	cents := func(v object.Value) int64 { return v.Instance().Fields[0].Int() }
+	dollars := func(v object.Value) string {
+		n := cents(v)
+		return fmt.Sprintf("$%d.%02d", n/100, n%100)
+	}
 
-	c.DefineSingleton(&quot;new&quot;, 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		n, err := wantInt(ctx, args[0], &quot;&quot;)
+	c.DefineSingleton("new", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		n, err := WantInt(ctx, args[0], "")
 		if err != nil {
 			return object.Value{}, err
 		}
 		return money(n), nil
 	})
-	def(c, &quot;cents&quot;, 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	def(c, "cents", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Int(cents(self)), nil
 	})
-	def(c, &quot;+&quot;, 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	def(c, "+", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		other, ok := args[0].AsInstance()
 		if !ok || other.Cls != c {
-			return object.Value{}, ctx.Raise(object.TypeError, &quot;Money can&#39;t be added to %s&quot;, kindName(args[0]))
+			return object.Value{}, ctx.Raise(object.TypeError, "Money can't be added to %s", KindName(args[0]))
 		}
 		return money(cents(self) + cents(args[0])), nil
 	})
-	def(c, &quot;to_s&quot;, 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(MoneyToS(self)), nil
+	// puts and p call a builtin class's own to_s and inspect.
+	def(c, "to_s", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return object.String(dollars(self)), nil
 	})
-}
-
-// MoneyToS renders a Money as dollars and cents: $14.49.
-func MoneyToS(v object.Value) string {
-	n := v.Instance().Fields[0].Int()
-	return fmt.Sprintf(&quot;$%d.%02d&quot;, n/100, n%100)
+	def(c, "inspect", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		return object.String("#&lt;Money " + dollars(self) + "&gt;"), nil
+	})
 }</code></pre>
 
-<p>and registers and renders it:</p>
+<p>and installs it:</p>
 
-<pre class="diff"><code>diff --git a/src/eval/inspect.go b/src/eval/inspect.go
---- a/src/eval/inspect.go
-+++ b/src/eval/inspect.go
-@@ -68,6 +68,8 @@ func (in *Interp) ToS(v object.Value) (string, error) {
- 			return &quot;#&lt;Object&gt;&quot;, nil
- 		case object.EncodingClass, object.PathnameClass:
- 			return v.Instance().Fields[0].Str(), nil
-+		case stdlib.MoneyClass:
-+			return stdlib.MoneyToS(v), nil
- 		}
- 	}
- 	if v.IsNil() {
-@@ -189,6 +191,8 @@ func (in *Interp) inspectBuiltin(v object.Value) (string, error) {
- 			return &quot;#&lt;Encoding:&quot; + v.Fields[0].Str() + &quot;&gt;&quot;, nil
- 		case object.PathnameClass:
- 			return &quot;#&lt;Pathname:&quot; + v.Fields[0].Str() + &quot;&gt;&quot;, nil
-+		case stdlib.MoneyClass:
-+			return &quot;#&lt;Money &quot; + stdlib.MoneyToS(object.InstanceValue(v)) + &quot;&gt;&quot;, nil
- 		}
- 		parts := make([]string, len(v.Cls.Fields))
- 		for i, f := range v.Cls.Fields {
-diff --git a/src/stdlib/stdlib.go b/src/stdlib/stdlib.go
+<pre class="diff"><code>diff --git a/src/stdlib/stdlib.go b/src/stdlib/stdlib.go
 --- a/src/stdlib/stdlib.go
 +++ b/src/stdlib/stdlib.go
-@@ -35,6 +35,7 @@ func Install() {
- 	installEncodings()
- 	installPack()
+@@ -41,6 +41,7 @@ func Install() {
  	installPaths()
+ 	installVersion()
+ 	installIO()
 +	installMoney()
- 	// After Enumerable and Enumerator: it wraps Enumerable&#39;s methods.
+ 	// After Enumerable and Enumerator: it wraps Enumerable's methods.
  	installUserEnumerable()
- 	// Last: it wraps every String method defined before it.</code></pre>
+ }</code></pre>
 
 <p>Built with these changes, cameo runs:</p>
 
@@ -440,8 +428,8 @@ true
 Money can&#39;t be added to Integer</code></pre>
 
 <p>A builtin class's instances are not protobuf messages: they cannot be
-passed to <code>async</code>, which raises <code>TypeError</code>, "Money
-is not a class with fields", and they reach a host as an
+passed to <code>async</code>, which raises <code>TypeError</code>, "a
+Money cannot be passed to async", and they reach a host as an
 <code>*object.Instance</code>. A new builtin also comes with an example in
 <code>examples/</code>, whose <code>.expected</code> output
 <code>go test</code> holds it to, and a line in

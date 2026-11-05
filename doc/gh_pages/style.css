@@ -1,6 +1,6 @@
 /* cameo's site: one stylesheet, Source Sans and IBM Plex Mono, light and dark. */
 
-@import url("https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@400&display=swap");
 
 :root {
   --bg: #fdfcf9;
@@ -9,8 +9,9 @@
   --rule: #e4dfd5;
   --accent: #4d7c0f;
   --accent-soft: #eaeedf;
-  --code-bg: #f4f1ea;
-  --out-bg: #eef1ec;
+  --code-bg: #f9f7f2;
+  --code-rule: #ece7dc;
+  --out-bg: #f3f6f0;
   --bad-bg: #f8e9e6;
   --bad-fg: #8a2b1d;
 }
@@ -23,7 +24,8 @@
     --rule: #34302a;
     --accent: #a3e635;
     --accent-soft: #262c13;
-    --code-bg: #221f19;
+    --code-bg: #1d1b15;
+    --code-rule: #2c2922;
     --out-bg: #1c221c;
     --bad-bg: #2d1b17;
     --bad-fg: #f0a597;
@@ -105,13 +107,17 @@ h4 { font-size: 13px; margin: 0 0 6px; text-transform: uppercase; letter-spacing
 
 .lead { font-size: 20px; color: var(--muted); margin-top: 0; }
 
+/* Code is set in the regular weight everywhere, in a heading, a
+   definition term or strong text too. */
 code {
   font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, "Liberation Mono", monospace;
   font-size: 0.88em;
+  font-weight: 400;
 }
 
 :not(pre) > code {
   background: var(--code-bg);
+  box-shadow: inset 0 0 0 1px var(--code-rule);
   padding: 1px 4px;
   border-radius: 4px;
 }
@@ -121,6 +127,7 @@ pre {
   padding: 12px 14px;
   overflow-x: auto;
   background: var(--code-bg);
+  border: 1px solid var(--code-rule);
   border-radius: 6px;
   line-height: 1.45;
   tab-size: 4;
@@ -137,7 +144,7 @@ dl dd { margin: 4px 0 0 0; }
 pre.output {
   background: var(--out-bg);
   margin-top: -8px;
-  border-top: 1px dashed var(--rule);
+  border-top: 1px dashed var(--code-rule);
   border-radius: 0 0 6px 6px;
 }
 
@@ -268,4 +275,3 @@ footer.site .inner { padding-top: 16px; padding-bottom: 24px; }
 .hljs-addition { background: var(--hl-add-bg); }
 .hljs-deletion { background: var(--hl-del-bg); }
 .hljs-emphasis { font-style: italic; }
-.hljs-strong { font-weight: 600; }

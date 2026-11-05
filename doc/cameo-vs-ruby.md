@@ -332,9 +332,11 @@ These are absent, and a script that uses one fails when it reaches it:
 
 - **Left out by design**: `Struct` and `Data` (classes declare typed
   fields; see above for Data), `Rational` and `Complex`, `ObjectSpace`, `GC`, `ENV`, `Module.new`,
-  refinements, `binding`, `method` and `Proc#curry`.
-- **No I/O beyond standard output and error**: `File`, `IO`, `Dir`,
-  `gets`, `STDIN`, `STDOUT`, `STDERR`, `$stdout`.
+  refinements, `binding` beyond the debugger's `binding.break`, `method`
+  and `Proc#curry`.
+- **No I/O beyond standard output and error**: `File` beyond its path
+  methods, `IO` beyond `STDOUT` and `STDERR` (and `$stdout` and
+  `$stderr`, which are them), `Dir`, `gets`, `STDIN`.
 - **No threads or processes**: `Thread`, `Fiber`, `Mutex`, `sleep`,
   `system`, `exec`, `spawn`; cameo has `async` and `await` instead.
 - **Not there yet**: `exit!`,

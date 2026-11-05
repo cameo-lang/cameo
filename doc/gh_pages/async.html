@@ -137,8 +137,8 @@ of their promises:</p>
   (<a href="img/async-four-cores.excalidraw">Excalidraw source</a>)</figcaption>
 </figure>
 
-<p>On a four-core machine the four calls take 1.2 seconds where running
-them one after another takes 2.3: about a 2&times; gain, not 4&times;,
+<p>On a four-core machine the four calls take 0.8 seconds where running
+them one after another takes 1.4: under a 2&times; gain, not 4&times;,
 since the runners share the memory system and the collector. The same
 script on one core takes as long as the sequential one, as the
 <a href="#one-core">timeline above</a> shows: there, <code>async</code>

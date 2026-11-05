@@ -57,7 +57,8 @@ reaches it. The full list is
   modifiers, <code>case</code>/<code>when</code>, pattern matching with
   <code>case</code>/<code>in</code>, <code>while</code>, <code>until</code>,
   <code>loop</code>, <code>break</code> with a value, <code>next</code>,
-  <code>&amp;.</code>.</li>
+  <code>redo</code>, <code>catch</code> and <code>throw</code>,
+  <code>&amp;.</code>, <code>exit</code> and <code>at_exit</code>.</li>
   <li><strong>Methods and blocks</strong>: positional, optional, rest,
   keyword and block parameters; endless <code>def</code>; argument
   forwarding; <code>yield</code>; lambdas, procs, <code>&amp;:sym</code>,
@@ -83,8 +84,12 @@ reaches it. The full list is
   <code>tsort</code>, <code>abbrev</code>, <code>singleton</code>,
   <code>forwardable</code>, <code>delegate</code>,
   <code>logger</code>, <code>stringio</code>, <code>strscan</code>,
-  <code>optparse</code>, <code>getoptlong</code>, <code>matrix</code> and
-  <code>bigdecimal</code>.</li>
+  <code>optparse</code>, <code>getoptlong</code>, <code>matrix</code>,
+  <code>bigdecimal</code> and <code>unicode_normalize</code>, and cameo's
+  own <code>minispec</code>, minitest's assertions in
+  <code>describe</code> and <code>it</code> blocks.
+  <a href="https://github.com/cameo-lang/cameo/blob/main/doc/stdlib.md">doc/stdlib.md</a>
+  says what each covers.</li>
 </ul>
 
 <p>This script prints the same under <code>ruby</code> 3.3 and under
@@ -120,7 +125,7 @@ end</code></pre>
 rescued ArgumentError: invalid value for Integer(): "12x"
 done</code></pre>
 
-<p>Of the 1318 cases in CRuby's benchmark suite that cameo may carry, 824
+<p>Of the 1318 cases in CRuby's benchmark suite that cameo may carry, 852
 run under cameo with Ruby's output. What stops most of the rest is
 metaprogramming, instance variables, <code>attr_*</code> accessors and
 mutation of something other than a local variable, which the sections
@@ -345,39 +350,30 @@ reaches it, mostly with <code>NameError</code> or
 <ul>
   <li><strong>Left out by design</strong>: <code>Struct</code> and
   <code>Data</code> (classes declare typed fields), <code>Rational</code>
-  and <code>Complex</code>, <code>Marshal</code> (instances are protobuf
-  messages), <code>ObjectSpace</code>, <code>GC</code>, <code>ENV</code>,
-  <code>Module.new</code>, refinements,
-  <code>binding</code>, <code>method</code>, <code>Proc#curry</code>.</li>
+  and <code>Complex</code>, <code>ObjectSpace</code>, <code>GC</code>,
+  <code>ENV</code>, <code>Module.new</code>, refinements,
+  <code>binding</code> beyond the debugger's <code>binding.break</code>,
+  <code>method</code>, <code>Proc#curry</code>.</li>
   <li><strong>No I/O beyond standard output and error</strong>:
   <code>File</code> beyond its path methods (<code>basename</code>,
-  <code>dirname</code>, <code>extname</code>, <code>join</code> and
-  <code>split</code>), <code>IO</code>, <code>Dir</code>,
-  <code>gets</code>, <code>STDIN</code>, <code>STDOUT</code>,
-  <code>STDERR</code>.</li>
+  <code>dirname</code>, <code>extname</code>, <code>join</code>,
+  <code>split</code>, <code>expand_path</code> and
+  <code>absolute_path</code>), <code>IO</code> beyond <code>STDOUT</code>
+  and <code>STDERR</code>, <code>Dir</code>, <code>gets</code>,
+  <code>STDIN</code>.</li>
   <li><strong>No threads or processes</strong>: <code>Thread</code>,
   <code>Fiber</code>, <code>Mutex</code>, <code>sleep</code>,
   <code>system</code>, <code>exec</code>, <code>spawn</code>. cameo has
   <code>async</code> and <code>await</code> instead.</li>
-  <li><strong>Not there yet</strong>: <code>exit</code>,
-  <code>at_exit</code>, <code>catch</code> and <code>throw</code>,
-  <code>redo</code>, <code>printf</code> (<code>format</code> exists),
-  <code>__method__</code>, <code>__LINE__</code>,
-  <code>Enumerator.new</code>, <code>Integer()</code> with a base,
-  <code>autoload</code>.</li>
-  <li><strong>Libraries</strong>: <code>require</code> of anything but
-  <code>set</code>, <code>time</code>, <code>pp</code>,
-  <code>pathname</code>, <code>cgi</code>, <code>json</code>,
-  <code>benchmark</code>, <code>uri</code>, <code>date</code>,
-  <code>digest</code>, <code>base64</code>,
-  <code>securerandom</code>, <code>csv</code>,
-  <code>marshal</code>, <code>shellwords</code>, <code>ipaddr</code>,
-  <code>zlib</code>, <code>prime</code>,
-  <code>tsort</code>, <code>abbrev</code>, <code>singleton</code>,
-  <code>forwardable</code>, <code>delegate</code>,
-  <code>logger</code>, <code>stringio</code>, <code>strscan</code>,
-  <code>optparse</code>, <code>getoptlong</code>, <code>matrix</code> and
-  <code>bigdecimal</code>, such as <code>resolv</code>.</li>
+  <li><strong>Not there yet</strong>: <code>exit!</code>,
+  <code>printf</code> (<code>format</code> exists),
+  <code>__method__</code>, <code>Enumerator.new</code>,
+  <code>Integer()</code> with a base, <code>autoload</code>.</li>
+  <li><strong>Libraries</strong>: <code>require</code> of a library not in
+  the list above, such as <code>resolv</code>, <code>yaml</code> or
+  <code>net/http</code>.
+  <a href="https://github.com/cameo-lang/cameo/blob/main/doc/stdlib.md">doc/stdlib.md</a>
+  says which are planned and which are left out.</li>
 </ul>
 
 <div class="pair">
@@ -544,17 +540,17 @@ p await(promises)</code></pre>
 <pre class="output"><code>[1, 2, 3, 4]
 [514229, 514229, 514229, 514229]</code></pre>
 
-<p>On a machine with four cores the four calls take 1.2 seconds, where
-running them one after another takes 2.3; <code>time</code> shows the cores
+<p>On a machine with four cores the four calls take 0.8 seconds, where
+running them one after another takes 1.4; <code>time</code> shows the cores
 at work, with more CPU time than wall time:</p>
 
 <pre class="sh"><code>$ time cameo examples/fibonacci.cameo
 [1, 2, 3, 4]
 [514229, 514229, 514229, 514229]
 
-real	0m1.192s
-user	0m3.569s
-sys	0m0.612s</code></pre>
+real	0m0.762s
+user	0m2.381s
+sys	0m0.311s</code></pre>
 
 <h4>Settling a promise by hand</h4>
 
