@@ -148,6 +148,17 @@ their receiver as value; `each` returns its Range, so it compiles as a
 statement only. On `int64`, a loop up to the largest Integer or down to
 the smallest is left to the twin, where the counter cannot wrap.
 
+A block captures the values of its variables, so a sum is a fold, not a
+block that adds to a local. `reduce` with its initial value, `sum` and
+`count` with a block over `times`, `upto`, `downto` or a Range compile to
+the same loop with an accumulator: `reduce` starts it at the initial
+value, which gives it its type, an Integer, a Float or an instance, and
+sets it to the block's value on every pass; `sum` adds the block's
+Integer; `count` adds one when the block's condition holds. The
+accumulator is the fold's value. A fold over an Array, a `reduce` without
+an initial value, a `sum` of Floats, whose interpreter adds them
+compensated, and a block that breaks are left to the interpreter.
+
 A compiled method reads the run's stop flag, an `atomic.Bool`, at every
 call and loop pass, as the interpreter does, so `RunContext` stops a run
 inside compiled code at its next call or pass. A loop holds the flag in a
