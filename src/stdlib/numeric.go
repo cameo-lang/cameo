@@ -42,6 +42,9 @@ func installFloat() {
 	c := object.FloatClass
 	arith := func(name string, f func(a, b float64) float64) {
 		def(c, name, 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+			if r, done, err := coerceOther(ctx, self, args[0], name); done {
+				return r, err
+			}
 			a, b, _, err := numArgs(ctx, self, args[0], name)
 			if err != nil {
 				return object.Value{}, err
@@ -55,6 +58,9 @@ func installFloat() {
 	arith("/", func(a, b float64) float64 { return a / b })
 	arith("**", floatPow)
 	def(c, "%", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if r, done, err := coerceOther(ctx, self, args[0], "%"); done {
+			return r, err
+		}
 		a, b, _, err := numArgs(ctx, self, args[0], "%")
 		if err != nil {
 			return object.Value{}, err
@@ -68,6 +74,9 @@ func installFloat() {
 	def(c, "fdiv", 1, c.Methods["/"].Native)
 	def(c, "pow", 1, c.Methods["**"].Native)
 	def(c, "div", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if r, done, err := coerceOther(ctx, self, args[0], "div"); done {
+			return r, err
+		}
 		a, b, _, err := numArgs(ctx, self, args[0], "div")
 		if err != nil {
 			return object.Value{}, err
@@ -78,6 +87,9 @@ func installFloat() {
 		return floatToInteger(ctx, math.Floor(a/b))
 	})
 	def(c, "divmod", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if r, done, err := coerceOther(ctx, self, args[0], "divmod"); done {
+			return r, err
+		}
 		a, b, _, err := numArgs(ctx, self, args[0], "divmod")
 		if err != nil {
 			return object.Value{}, err
@@ -96,9 +108,7 @@ func installFloat() {
 		return object.Float(-self.Float()), nil
 	})
 	def(c, "<=>", 1, compareNumber)
-	def(c, "==", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Bool(object.Equal(self, args[0])), nil
-	})
+	def(c, "==", 1, equalNumber)
 	def(c, "abs", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Float(math.Abs(float64(self.Float()))), nil
 	})
@@ -196,6 +206,9 @@ func installFloat() {
 	def(c, "angle", 0, arg)
 	def(c, "phase", 0, arg)
 	def(c, "remainder", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if r, done, err := coerceOther(ctx, self, args[0], "remainder"); done {
+			return r, err
+		}
 		x, y, _, err := numArgs(ctx, self, args[0], "remainder")
 		if err != nil {
 			return object.Value{}, err

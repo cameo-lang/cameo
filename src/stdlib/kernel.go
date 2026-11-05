@@ -138,6 +138,11 @@ func installKernel() {
 			}
 			return i, nil
 		}
+		// A value of a library's numeric class converts through to_int, as
+		// a BigDecimal does.
+		if args[0].Kind() == object.KindInstance && ctx.RespondsTo(args[0], "to_int") {
+			return ctx.Call(args[0], "to_int")
+		}
 		return object.Value{}, ctx.Raise(object.TypeError, "can't convert %s into Integer", KindName(args[0]))
 	})
 	def(o, "Float", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -272,6 +277,11 @@ func toFloat(ctx object.Context, v object.Value) (object.Value, error) {
 		return object.Float(f), nil
 	case object.KindFloat:
 		return v, nil
+	case object.KindInstance:
+		// A value of a library's numeric class, such as a BigDecimal.
+		if ctx.RespondsTo(v, "to_f") {
+			return ctx.Call(v, "to_f")
+		}
 	case object.KindString, object.KindBytes, object.KindASCII:
 		s := v.Str()
 		f, ok := parseFloat(strings.TrimSpace(string(s)))
