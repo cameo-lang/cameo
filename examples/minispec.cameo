@@ -1,0 +1,42 @@
+# minispec is cameo's test library: describe and it, minitest's assertions,
+# and minitest's report when the script ends. An example runs when it is
+# called and prints a dot, or F, E or S; the report lists every failure,
+# error and skip with its line, then counts them, and a failure or an
+# error ends the script with status 1.
+require "minispec"
+
+describe "Array" do
+  # The examples share what the describe block assigns: there is no let.
+  numbers = [3, 1, 2]
+
+  it "sorts a copy" do
+    assert_equal [1, 2, 3], numbers.sort
+    assert_equal [3, 1, 2], numbers, "sort leaves its receiver as it was"
+  end
+
+  describe "#first" do
+    it "is the first element, or nil" do
+      assert_equal 3, numbers.first
+      assert_nil [].first
+    end
+  end
+
+  it "includes its elements" do
+    assert_includes numbers, 2
+    refute_includes numbers, 4
+    refute_empty numbers
+  end
+
+  it "refuses a String index" do
+    e = assert_raises(TypeError) { numbers["x"] }
+    assert_match(/String into Integer/, e.message)
+  end
+end
+
+describe "Float" do
+  it "adds within a delta" do
+    assert_in_delta 0.3, 0.1 + 0.2
+    assert_operator 0.1 + 0.2, :>, 0.3
+    assert_kind_of Numeric, 0.3
+  end
+end
