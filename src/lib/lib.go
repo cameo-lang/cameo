@@ -12,6 +12,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/date"
 	"github.com/cameo-lang/cameo/src/lib/digest"
 	"github.com/cameo-lang/cameo/src/lib/json"
+	"github.com/cameo-lang/cameo/src/lib/marshal"
 	"github.com/cameo-lang/cameo/src/lib/minispec"
 	"github.com/cameo-lang/cameo/src/lib/pathname"
 	"github.com/cameo-lang/cameo/src/lib/securerandom"
@@ -39,6 +40,7 @@ var Libraries = map[string][]string{
 	"digest/sha1": {"digest"},
 	"digest/sha2": {"digest"},
 	"json":        nil,
+	"marshal":     nil,
 	"minispec":    nil,
 	// openssl is accepted for the OpenSSL::HMAC and OpenSSL::Digest names
 	// digest defines; a script written for openssl begins with it.
@@ -71,6 +73,7 @@ func Install() {
 	date.Install()
 	digest.Install()
 	json.Install()
+	marshal.Install()
 	pathname.Install()
 	time.Install()
 	minispec.Install()

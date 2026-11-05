@@ -273,7 +273,7 @@ func (e *Encoder) message(fd protoreflect.FileDescriptor, v object.Value) (*dyna
 		}
 		value, proc := v.Default()
 		if !proc.IsZero() {
-			return nil, &NotSerialisable{Kind: "a Hash with a default proc"}
+			return nil, &NotSerialisable{Kind: "a Hash with a default proc", Class: "Hash", DefaultProc: true}
 		}
 		if !value.IsZero() {
 			dm, err := e.message(fd, value)
@@ -352,17 +352,23 @@ func (e *Encoder) message(fd protoreflect.FileDescriptor, v object.Value) (*dyna
 		if v.IsNil() {
 			break
 		}
-		return nil, &NotSerialisable{Kind: article(kindName(v))}
+		return nil, &NotSerialisable{Kind: article(kindName(v)), Class: kindName(v)}
 	}
 	return msg, nil
 }
 
 // NotSerialisable is the error for a value the envelope cannot carry: a
-// proc, a class, a Hash with a default proc, or an instance of a class
-// with a proc field. Kind names it with its article, "a Proc", for a
-// message about what was done with it; Why, when set, is the whole
+// proc, a class, a Hash with a default proc, an instance of a class with
+// a proc field, or one of a class without fields, a library's. Kind
+// names it with its article, "a Proc", for a message about what was done
+// with it; Class is the value's class, which a message in Ruby's words
+// names, and DefaultProc is set for the Hash; Why, when set, is the whole
 // explanation, which Error gives instead.
-type NotSerialisable struct{ Kind, Why string }
+type NotSerialisable struct {
+	Kind, Why   string
+	Class       string
+	DefaultProc bool
+}
 
 func (e *NotSerialisable) Error() string {
 	if e.Why != "" {
