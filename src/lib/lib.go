@@ -16,6 +16,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/marshal"
 	"github.com/cameo-lang/cameo/src/lib/minispec"
 	"github.com/cameo-lang/cameo/src/lib/pathname"
+	"github.com/cameo-lang/cameo/src/lib/prime"
 	"github.com/cameo-lang/cameo/src/lib/securerandom"
 	"github.com/cameo-lang/cameo/src/lib/shellwords"
 	"github.com/cameo-lang/cameo/src/lib/time"
@@ -52,6 +53,7 @@ var Libraries = map[string][]string{
 	"openssl":                     {"digest"},
 	"pathname":                    nil,
 	"pp":                          nil,
+	"prime":                       nil,
 	"random/formatter":            nil,
 	"securerandom":                {"random/formatter"},
 	"set":                         nil,
@@ -93,4 +95,5 @@ func Install() {
 	shellwords.Install()
 	unicodenormalize.Install()
 	zlib.Install()
+	prime.Install()
 }
