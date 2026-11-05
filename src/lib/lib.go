@@ -98,9 +98,10 @@ var Libraries = map[string][]string{
 // start. A library listed here needs no entry in Libraries, and may have
 // one for what it loads along with it.
 var Sources = map[string]string{
-	"abbrev":  abbrev.Source,
-	"tsort":   tsort.Source,
-	"frankie": frankie.Source,
+	"abbrev":     abbrev.Source,
+	"shellwords": shellwords.Source,
+	"tsort":      tsort.Source,
+	"frankie":    frankie.Source,
 }
 
 // Install defines every library. The evaluator calls it once, after

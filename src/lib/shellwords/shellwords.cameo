@@ -1,0 +1,50 @@
+# Ruby's shellwords library: a line split into words by the Bourne shell's
+# rules, and words escaped and joined back into one. It follows shellwords
+# 0.2.2, whose pattern this is, without the \G anchor and the atomic group
+# cameo's regexps lack: a match starts where the last one ended, so the
+# anchor is not needed, and no alternative here backtracks into another.
+module Shellwords
+  VERSION = "0.2.2"
+  WORD = /\s*(?:([^\s\\'"]+)|'([^']*)'|"((?:[^"\\]|\\.)*)"|(\\.?)|(\S))(\s|\z)?/m
+
+  def self.shellsplit(line)
+    words = []
+    field = ""
+    pos = 0
+    while (m = WORD.match(line, pos))
+      word, single, double, escaped, garbage, separator = m[1], m[2], m[3], m[4], m[5], m[6]
+      if garbage
+        text = m.begin(0) > 0 ? "..." + m[0] : m[0]
+        raise ArgumentError, "Unmatched quote at #{m.begin(0)}: #{text}"
+      end
+      field += word || single || (double && double.gsub(/\\([$`"\\\n])/, '\1')) || escaped.gsub(/\\(.)/, '\1')
+      if separator
+        words += [field]
+        field = ""
+      end
+      pos = m.end(0)
+    end
+    words
+  end
+
+  def self.shellescape(str)
+    str = str.to_s
+    return "''" if str.empty?
+    str.gsub(/[^A-Za-z0-9_\-.,:+\/@\n]/) { |c| "\\" + c }.gsub("\n", "'\n'")
+  end
+
+  def self.shelljoin(array) = array.map { |word| shellescape(word) }.join(" ")
+
+  def self.split(line) = shellsplit(line)
+  def self.shellwords(line) = shellsplit(line)
+  def self.escape(str) = shellescape(str)
+  def self.join(array) = shelljoin(array)
+
+  def shellsplit(line) = Shellwords.shellsplit(line)
+  def shellwords(line) = Shellwords.shellsplit(line)
+  def split(line) = Shellwords.shellsplit(line)
+  def shellescape(str) = Shellwords.shellescape(str)
+  def escape(str) = Shellwords.shellescape(str)
+  def shelljoin(array) = Shellwords.shelljoin(array)
+  def join(array) = Shellwords.shelljoin(array)
+end
