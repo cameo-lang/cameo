@@ -39,6 +39,8 @@ type frame struct {
 	// closure marks a class body that is a block, Class.new's: it reads
 	// the variables around it as a block does, and captures them as one.
 	closure bool
+	// singleton marks the ctxDef of a class method, `def self.name`.
+	singleton bool
 }
 
 type converter struct {
@@ -126,6 +128,12 @@ func (c *converter) pos() Pos { return Pos{L: c.line} }
 
 func (c *converter) push(kind context, name string) {
 	c.stack = append(c.stack, frame{kind: kind, name: name})
+}
+
+// pushDef opens the frame of a method body; singleton marks a class
+// method's, where `self.name = value` sets an attribute of the class.
+func (c *converter) pushDef(name string, singleton bool) {
+	c.stack = append(c.stack, frame{kind: ctxDef, name: name, singleton: singleton})
 }
 func (c *converter) pop() { c.stack = c.stack[:len(c.stack)-1] }
 
@@ -483,10 +491,11 @@ func (c *converter) scopedConst(n *ast.ScopedConst) Node {
 }
 
 // fieldAssign is `self.name = value`, which sets a field while initialize
-// builds the instance; anywhere else there is nothing to set.
+// builds the instance, or an attribute of a class while its body builds the
+// class; anywhere else there is nothing to set.
 func (c *converter) fieldAssign(name string, value Node) Node {
-	if !c.inInitialize() {
-		c.fail("self.%s = …: a field is set in initialize only; elsewhere use with", name)
+	if !c.inInitialize() && !c.buildingClass() {
+		c.fail("self.%s = …: a field is set in initialize, and a class attribute in a class body or a class method; elsewhere use with", name)
 		return nil
 	}
 	markRebinds(value, &Call{Recv: &Self{}, Name: name})
@@ -595,6 +604,26 @@ func (c *converter) assignLocal(name string) {
 		return
 	}
 	c.declare(name)
+}
+
+// buildingClass reports whether the current position builds a class: it is
+// in a class body, or in a class method, where `self.name = value` sets an
+// attribute of the class. Whether the body still runs is the evaluator's
+// to check.
+func (c *converter) buildingClass() bool {
+	for i := len(c.stack) - 1; i >= 0; i-- {
+		switch c.stack[i].kind {
+		case ctxBlock:
+			continue
+		case ctxClass:
+			return true
+		case ctxDef:
+			return c.stack[i].singleton && c.insideClass()
+		default:
+			return false
+		}
+	}
+	return false
 }
 
 // Refused is why cameo refuses a call of name whatever its receiver: a
@@ -867,6 +896,10 @@ func (c *converter) call(n *ast.Call) Node {
 		case "reserved":
 			if c.inClassBody() {
 				return c.reserved(n)
+			}
+		case "attribute":
+			if c.inClassOrModuleBody() {
+				return c.attrDecl(n)
 			}
 		case "include", "extend":
 			// At the top level include takes Cameo, which the evaluator
@@ -1174,7 +1207,7 @@ func (c *converter) def(d *ast.MethodDef) Node {
 	}
 	out := &Def{Pos: c.pos(), Name: d.Name, Singleton: singleton}
 	out.Params = c.params(d)
-	c.push(ctxDef, d.Name)
+	c.pushDef(d.Name, singleton)
 	c.declareParams(&out.Params)
 	out.Body = c.body(d.Body)
 	c.pop()
@@ -1490,6 +1523,37 @@ func (c *converter) await(n *ast.Call, qualified bool) Node {
 // maxDeclaredNumber is the highest number: a field declaration takes, as
 // protogen.MaxDeclaredNumber, which syntax does not import.
 const maxDeclaredNumber = 4096
+
+// attrDecl converts `attribute :name, default: expr`.
+func (c *converter) attrDecl(n *ast.Call) Node {
+	decl := &AttrDecl{Pos: c.pos()}
+	args, kwargs, blockArg := c.args(n.Args)
+	if blockArg != nil || n.Block != nil {
+		c.fail("attribute: a declaration takes no block")
+		return nil
+	}
+	for _, a := range args {
+		s, ok := a.(*Sym)
+		if !ok {
+			c.fail("attribute: an attribute is named by a symbol")
+			return nil
+		}
+		decl.Names = append(decl.Names, s.Name)
+	}
+	if len(decl.Names) == 0 {
+		c.fail("attribute: a declaration names at least one attribute")
+		return nil
+	}
+	for _, kw := range kwargs {
+		key, ok := kw.Key.(*Sym)
+		if !ok || key.Name != "default" {
+			c.fail("attribute: the one option is default:")
+			return nil
+		}
+		decl.Default = kw.Value
+	}
+	return decl
+}
 
 func (c *converter) fieldDecl(n *ast.Call) Node {
 	decl := &FieldDecl{Pos: c.pos(), Type: n.Name}

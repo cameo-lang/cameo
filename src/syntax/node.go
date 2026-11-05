@@ -516,6 +516,16 @@ type FieldDecl struct {
 	Values  []string // the symbols of an enum field
 }
 
+// AttrDecl is `attribute :name, default: expr` in a class body: it declares
+// an attribute of the class itself, which the body and the class methods
+// it calls set with `self.name = value` while the body runs. Unlike a
+// field it is untyped and belongs to the class, not its instances.
+type AttrDecl struct {
+	Pos
+	Names   []string
+	Default Node // default: expr, or nil
+}
+
 // Reserved is `reserved <number> [, :name]` in a class body.
 type Reserved struct {
 	Pos

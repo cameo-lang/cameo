@@ -348,6 +348,12 @@ These are absent, and a script that uses one fails when it reaches it:
   a message too, of its message, line, cause and fields, and crosses to
   `await` and to a Go host with them.
 - `with`, which returns a copy with some fields changed.
+- Class attributes: `attribute :name, default: expr` in a class body
+  declares a value the class itself holds, which the body, and the class
+  methods it calls, set with `self.name = v` while the body runs; the
+  class is sealed when its body ends, as an instance is when `initialize`
+  returns. Ruby keeps such state in class instance variables, which cameo
+  has no syntax for. A subclass starts with a copy of its parent's.
 - The Cameo module, which a script includes: `async receiver, :method,
   args…` runs a method concurrently and returns its promise, an
   Integer; `await` collects a promise's result, or a list's, and `await
