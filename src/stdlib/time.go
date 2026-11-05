@@ -369,7 +369,7 @@ func TimeInspect(t time.Time) string {
 
 // zoneName is Time#zone: "UTC" for a UTC time, the local zone's name, and
 // none for a fixed offset.
-func zoneName(t time.Time) string {
+func zoneName(t Clockwork) string {
 	name, _ := t.Zone()
 	return name
 }
@@ -585,11 +585,29 @@ func floorScaled(x float64, scale int64) int64 {
 	return new(big.Int).Div(r.Num(), r.Denom()).Int64()
 }
 
+// Clockwork is what Strftime reads of a moment: the methods of time.Time it
+// uses, so that a Date, whose calendar is not Go's proleptic Gregorian one,
+// formats the same way with its own fields.
+type Clockwork interface {
+	Year() int
+	Month() time.Month
+	Day() int
+	YearDay() int
+	Hour() int
+	Minute() int
+	Second() int
+	Nanosecond() int
+	Weekday() time.Weekday
+	ISOWeek() (year, week int)
+	Zone() (name string, offset int)
+	Unix() int64
+}
+
 // Strftime formats t as Ruby's Time#strftime does, with its flags ("-" no
 // padding, "_" spaces, "0" zeros, "^" upper case, "#" swapped case), a
 // width, and colons for %z. A directive it does not know is copied as it
 // is.
-func Strftime(t time.Time, f string) string {
+func Strftime(t Clockwork, f string) string {
 	var b strings.Builder
 	for i := 0; i < len(f); i++ {
 		if f[i] != '%' {
