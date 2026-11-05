@@ -311,6 +311,10 @@ func (in *Interp) require(name object.Value) (object.Value, error) {
 			return object.Value{}, err
 		}
 	}
+	in.bringToTop(s)
+	for _, lib := range also {
+		in.bringToTop(lib)
+	}
 	if s == "debug" && in.console != nil {
 		in.Debug(in.console, in.consoleOut, in.source, false)
 	}
@@ -379,4 +383,19 @@ func throwTag(ctx object.Context, self object.Value, args []object.Value, kw *ob
 	}
 	return object.Value{}, &object.Exception{Cls: object.UncaughtThrowError, Message: "uncaught throw " + shown,
 		Attrs: map[string]object.Value{"tag": tag, "value": value}}
+}
+
+// bringToTop includes at the top level the modules the library name brings
+// there (lib.TopLevel), once: what the script calls without a receiver.
+func (in *Interp) bringToTop(name string) {
+	changed := false
+	for _, m := range lib.TopLevel[name] {
+		if !in.mainClass.IsA(m) {
+			in.mainClass.Include(m)
+			changed = true
+		}
+	}
+	if changed {
+		in.changedTop()
+	}
 }

@@ -196,6 +196,8 @@ func TestMinispecCountsExamplesAsyncCallsRun(t *testing.T) {
 require "minispec"
 include Cameo
 class Spec
+  include Minispec::DSL
+  include Minispec::Assertions
   def run(n)
     it("example #{n}") { assert_equal n, n }
     nil
@@ -233,12 +235,12 @@ end
 }
 
 func TestMinispecAnswersOnlyWhenRequired(t *testing.T) {
-	// The functions are methods of every object, as minitest's are, but
-	// a script that did not require minispec has no `it`.
+	// A script that did not require minispec has no `it`, and is told
+	// where it is.
 	var stdout, stderr bytes.Buffer
 	err := cameo.Run("t.cameo", "it(\"x\") { }\n", &stdout, &stderr)
 	assert.NotNil(t, err)
-	assert.Equals(t, err.Error(), "t.cameo:1: undefined method 'it' for an instance of Object: require \"minispec\" first (NoMethodError)")
+	assert.Equals(t, err.Error(), "t.cameo:1: undefined method 'it' for main: require \"minispec\" first (NoMethodError)")
 	assert.Equals(t, stdout.String(), "")
 }
 
@@ -268,6 +270,8 @@ func TestMinispecNamesAWorkersExamplesByItsOwnDescribes(t *testing.T) {
 require "minispec"
 include Cameo
 class Specs
+  include Minispec::DSL
+  include Minispec::Assertions
   def run(name)
     describe name do
       it "fails" do

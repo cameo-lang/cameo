@@ -703,7 +703,7 @@ func installInteger() {
 		return coerceFloats(ctx, self, args[0])
 	})
 	object.ObjectClass.Consts["Integer"] = object.ClassValue(c)
-	def(c.Class(), "sqrt", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	c.DefineSingleton("sqrt", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if !args[0].IsInteger() {
 			if _, err := WantInt(ctx, args[0], ""); err != nil {
 				return object.Value{}, err
