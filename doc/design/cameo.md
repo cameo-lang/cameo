@@ -818,6 +818,13 @@ re-opened by accident:
   digits, the form the value envelope already uses; dropping big integers
   was rejected, since 24 of the benchmark cases use them and the overflow
   checks would stay to raise instead.
+- **A `proc` field** holds a block, so a value can carry behaviour, such as
+  a route with its handler. A block cannot be serialised, so a class with a
+  `proc` field, or with a field that refers to such a class, is no message:
+  it has no `.proto`, `cameo proto` leaves it out, and its instances cannot
+  cross to a host, to `async` or into a dump, which is the rule a Proc
+  already has. Everything else about the class is a class's: the field is
+  typed, the value immutable, `with` copies it.
 - **Classes are values** bound to their name: a second definition with the
   same body is the same class, and one with a different body reopens a
   copy of the class and rebinds the name to it, which leaves instances

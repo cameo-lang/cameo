@@ -336,6 +336,9 @@ func (e *Encoder) message(fd protoreflect.FileDescriptor, v object.Value) (*dyna
 		} else {
 			inst := v.Instance()
 			cls = inst.Cls
+			if field, _ := ProcField(cls); field != "" {
+				return nil, &NotSerialisable{Kind: cls.QualifiedName() + " with a proc field"}
+			}
 			data, err = e.reg.Marshal(inst)
 		}
 		if err != nil {
