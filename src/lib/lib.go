@@ -8,6 +8,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/benchmark"
 	"github.com/cameo-lang/cameo/src/lib/cgi"
 	"github.com/cameo-lang/cameo/src/lib/json"
+	"github.com/cameo-lang/cameo/src/lib/minispec"
 	"github.com/cameo-lang/cameo/src/lib/pathname"
 	"github.com/cameo-lang/cameo/src/lib/time"
 )
@@ -25,6 +26,7 @@ var Libraries = map[string][]string{
 	"cgi/escape": nil,
 	"cgi/util":   {"cgi/escape"},
 	"json":       nil,
+	"minispec":   nil,
 	"pathname":   nil,
 	"pp":         nil,
 	"set":        nil,
@@ -48,4 +50,5 @@ func Install() {
 	json.Install()
 	pathname.Install()
 	time.Install()
+	minispec.Install()
 }

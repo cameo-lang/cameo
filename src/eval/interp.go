@@ -59,6 +59,8 @@ type Interp struct {
 	// exits are the blocks at_exit registered, shared with the workers; Run
 	// runs them when the script ends.
 	exits *exitHandlers
+	// states are what libraries keep for the run, by name; see State.
+	states *libStates
 	// stop ends the run, and is shared with the workers; see Stop.
 	stop *stopper
 	// catches are the tags of the catch blocks running, innermost last.
@@ -101,6 +103,12 @@ func (in *Interp) Const(name string) (object.Value, bool) {
 	v, ok := in.consts[name]
 	return v, ok
 }
+
+// File is the script's path, as Run was given it; "" before Run.
+func (in *Interp) File() string { return in.file }
+
+// Required implements object.Context.
+func (in *Interp) Required(name string) bool { return in.loaded[name] }
 
 // SetConst defines a top-level constant before the script runs: a module
 // the host gives it.
@@ -173,6 +181,7 @@ func New(stdout, stderr io.Writer) *Interp {
 		code:      &code{},
 		stop:      newStopper(),
 		exits:     &exitHandlers{},
+		states:    &libStates{m: map[string]any{}},
 	}
 	in.rng = object.NewRandom(object.NewSeed())
 	return in
@@ -348,4 +357,23 @@ func (in *Interp) runExitHandlers(err error) error {
 			err = object.NewSystemExit(1, "exit")
 		}
 	}
+}
+
+// libStates are the Go values libraries keep for a run, shared with the
+// workers.
+type libStates struct {
+	mu sync.Mutex
+	m  map[string]any
+}
+
+// State implements object.Context.
+func (in *Interp) State(name string, init func() any) any {
+	in.states.mu.Lock()
+	defer in.states.mu.Unlock()
+	v, ok := in.states.m[name]
+	if !ok {
+		v = init()
+		in.states.m[name] = v
+	}
+	return v
 }
