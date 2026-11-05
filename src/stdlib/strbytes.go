@@ -17,7 +17,7 @@ import (
 func installStringBytes() {
 	c := object.StringClass
 	def(c, "getbyte", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		i, err := wantInt(ctx, args[0], "")
+		i, err := WantInt(ctx, args[0], "")
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -50,7 +50,7 @@ func installStringBytes() {
 				low := new(big.Int).And(bigOf(a), big.NewInt(0xff))
 				b.WriteByte(byte(low.Int64()))
 			default:
-				return object.Value{}, ctx.Raise(object.TypeError, "wrong argument type %s (expected String or Integer)", kindName(a))
+				return object.Value{}, ctx.Raise(object.TypeError, "wrong argument type %s (expected String or Integer)", KindName(a))
 			}
 		}
 		return object.StringOf(self.Kind(), b.String()), nil
@@ -61,9 +61,9 @@ func installStringBytes() {
 // eight bits of args[1], as String#setbyte leaves its receiver.
 func SetByte(ctx object.Context, self object.Value, args []object.Value) (object.Value, error) {
 	if len(args) != 2 {
-		return object.Value{}, argError(ctx, len(args), "2")
+		return object.Value{}, ArgError(ctx, len(args), "2")
 	}
-	i, err := wantInt(ctx, args[0], "")
+	i, err := WantInt(ctx, args[0], "")
 	if err != nil {
 		return object.Value{}, err
 	}
@@ -81,7 +81,7 @@ func SetByte(ctx object.Context, self object.Value, args []object.Value) (object
 	case object.KindBig:
 		v = byte(new(big.Int).And(bigOf(args[1]), big.NewInt(0xff)).Int64())
 	default:
-		if _, err := wantInt(ctx, args[1], ""); err != nil {
+		if _, err := WantInt(ctx, args[1], ""); err != nil {
 			return object.Value{}, err
 		}
 		v = byte(int64(args[1].Float()))
@@ -96,10 +96,10 @@ func SetByte(ctx object.Context, self object.Value, args []object.Value) (object
 // or range.
 func bytesplice(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 	if len(args) < 2 || len(args) > 5 {
-		return object.Value{}, argError(ctx, len(args), "2..5")
+		return object.Value{}, ArgError(ctx, len(args), "2..5")
 	}
 	if len(args) == 4 {
-		return object.Value{}, argError(ctx, len(args), "2, 3, or 5")
+		return object.Value{}, ArgError(ctx, len(args), "2, 3, or 5")
 	}
 	s := self.Str()
 	var beg, n, vbeg, vlen int64
@@ -120,10 +120,10 @@ func bytesplice(ctx object.Context, self object.Value, args []object.Value, kw *
 		}
 	} else {
 		var err error
-		if beg, err = wantInt(ctx, args[0], ""); err != nil {
+		if beg, err = WantInt(ctx, args[0], ""); err != nil {
 			return object.Value{}, err
 		}
-		if n, err = wantInt(ctx, args[1], ""); err != nil {
+		if n, err = WantInt(ctx, args[1], ""); err != nil {
 			return object.Value{}, err
 		}
 		if val, err = spliceString(ctx, args[2]); err != nil {
@@ -131,10 +131,10 @@ func bytesplice(ctx object.Context, self object.Value, args []object.Value, kw *
 		}
 		vlen = int64(len(val.Str()))
 		if len(args) == 5 {
-			if vbeg, err = wantInt(ctx, args[3], ""); err != nil {
+			if vbeg, err = WantInt(ctx, args[3], ""); err != nil {
 				return object.Value{}, err
 			}
-			if vlen, err = wantInt(ctx, args[4], ""); err != nil {
+			if vlen, err = WantInt(ctx, args[4], ""); err != nil {
 				return object.Value{}, err
 			}
 		}
@@ -160,7 +160,7 @@ func bytesplice(ctx object.Context, self object.Value, args []object.Value, kw *
 
 func spliceString(ctx object.Context, v object.Value) (object.Value, error) {
 	if !v.IsString() {
-		return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into String", kindName(v))
+		return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into String", KindName(v))
 	}
 	return v, nil
 }
@@ -171,19 +171,19 @@ func spliceString(ctx object.Context, v object.Value) (object.Value, error) {
 func byteRange(ctx object.Context, v object.Value, size int64) (int64, int64, error) {
 	r, ok := v.AsRange()
 	if !ok {
-		return 0, 0, ctx.Raise(object.TypeError, "wrong argument type %s (expected Range)", kindName(v))
+		return 0, 0, ctx.Raise(object.TypeError, "wrong argument type %s (expected Range)", KindName(v))
 	}
 	var beg, end int64
 	var err error
 	if !r.Lo.IsZero() && !r.Lo.IsNil() {
-		if beg, err = wantInt(ctx, r.Lo, ""); err != nil {
+		if beg, err = WantInt(ctx, r.Lo, ""); err != nil {
 			return 0, 0, err
 		}
 	}
 	excl := r.Exclusive
 	if r.Hi.IsZero() || r.Hi.IsNil() {
 		end, excl = -1, false
-	} else if end, err = wantInt(ctx, r.Hi, ""); err != nil {
+	} else if end, err = WantInt(ctx, r.Hi, ""); err != nil {
 		return 0, 0, err
 	}
 	if beg < 0 {

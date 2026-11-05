@@ -24,12 +24,12 @@ func installRegexp() {
 
 	newRegexp := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) < 1 || len(args) > 2 {
-			return object.Value{}, argError(ctx, len(args), "1..2")
+			return object.Value{}, ArgError(ctx, len(args), "1..2")
 		}
 		if r, ok := args[0].AsRegexp(); ok {
 			return object.RegexpValue(r), nil
 		}
-		source, err := wantString(ctx, args[0])
+		source, err := WantString(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -62,7 +62,7 @@ func installRegexp() {
 	c.DefineSingleton("new", -1, newRegexp)
 	c.DefineSingleton("compile", -1, newRegexp)
 	escape := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		s, err := wantString(ctx, args[0])
+		s, err := WantString(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -83,7 +83,7 @@ func installRegexp() {
 			return r, err
 		}
 		if _, ok := r.AsRegexp(); !ok {
-			return object.Value{}, ctx.Raise(object.TypeError, "can't convert %s into Regexp (%s#to_regexp gives %s)", kindName(v), kindName(v), kindName(r))
+			return object.Value{}, ctx.Raise(object.TypeError, "can't convert %s into Regexp (%s#to_regexp gives %s)", KindName(v), KindName(v), KindName(r))
 		}
 		return r, nil
 	})
@@ -106,7 +106,7 @@ func installRegexp() {
 				options |= object.RegexpNoEncoding
 				continue
 			}
-			s, err := wantString(ctx, a)
+			s, err := WantString(ctx, a)
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -160,7 +160,7 @@ func installRegexp() {
 	})
 	def(c, "match", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) < 1 || len(args) > 2 {
-			return object.Value{}, argError(ctx, len(args), "1..2")
+			return object.Value{}, ArgError(ctx, len(args), "1..2")
 		}
 		if args[0].IsNil() {
 			return object.Nil, nil
@@ -169,7 +169,7 @@ func installRegexp() {
 	})
 	def(c, "match?", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) < 1 || len(args) > 2 {
-			return object.Value{}, argError(ctx, len(args), "1..2")
+			return object.Value{}, ArgError(ctx, len(args), "1..2")
 		}
 		if args[0].IsNil() {
 			return object.False, nil
@@ -181,7 +181,7 @@ func installRegexp() {
 		if args[0].IsNil() {
 			return object.Nil, nil
 		}
-		s, err := wantString(ctx, args[0])
+		s, err := WantString(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -200,7 +200,7 @@ func installRegexp() {
 			if err != nil {
 				return object.Value{}, err
 			}
-			if s, err = wantString(ctx, v); err != nil {
+			if s, err = WantString(ctx, v); err != nil {
 				return object.Value{}, err
 			}
 		}
@@ -275,11 +275,11 @@ func matchFrom(ctx object.Context, r *object.Regexp, args []object.Value, block 
 	case object.KindString, object.KindBytes, object.KindASCII, object.KindSymbol:
 		s = args[0].Str()
 	default:
-		return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into String", kindName(args[0]))
+		return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into String", KindName(args[0]))
 	}
 	pos := 0
 	if len(args) == 2 {
-		p, err := wantInt(ctx, args[1], "")
+		p, err := WantInt(ctx, args[1], "")
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -362,7 +362,7 @@ func installMatchData() {
 		if isName(v) {
 			return named(ctx, m, v)
 		}
-		n, err := wantInt(ctx, v, "")
+		n, err := WantInt(ctx, v, "")
 		if err != nil {
 			return 0, err
 		}
@@ -399,7 +399,7 @@ func installMatchData() {
 	def(c, "deconstruct", 0, captures)
 	def(c, "named_captures", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) > 0 {
-			return object.Value{}, argError(ctx, len(args), "0")
+			return object.Value{}, ArgError(ctx, len(args), "0")
 		}
 		symbols := false
 		if kw != nil {
@@ -438,7 +438,7 @@ func installMatchData() {
 		}
 		keys, ok := args[0].AsList()
 		if !ok {
-			return object.Value{}, ctx.Raise(object.TypeError, "wrong argument type %s (expected Array)", kindName(args[0]))
+			return object.Value{}, ctx.Raise(object.TypeError, "wrong argument type %s (expected Array)", KindName(args[0]))
 		}
 		// More keys than names cannot all be there, so none are read.
 		if keys.Len() > len(names) {
@@ -446,7 +446,7 @@ func installMatchData() {
 		}
 		for _, k := range keys.Elems {
 			if k.Kind() != object.KindSymbol {
-				return object.Value{}, ctx.Raise(object.TypeError, "wrong argument type %s (expected Symbol)", kindName(k))
+				return object.Value{}, ctx.Raise(object.TypeError, "wrong argument type %s (expected Symbol)", KindName(k))
 			}
 			i := m.NameIndex(k.Str())
 			if i < 0 {
@@ -481,7 +481,7 @@ func installMatchData() {
 					out = append(out, group(m, int(i)))
 				}
 			default:
-				i, err := wantInt(ctx, a, "")
+				i, err := WantInt(ctx, a, "")
 				if err != nil {
 					return object.Value{}, err
 				}
@@ -620,9 +620,9 @@ func patternOf(ctx object.Context, v object.Value) (matcher, error) {
 	if r, ok := v.AsRegexp(); ok {
 		return matcher{re: r}, nil
 	}
-	s, err := wantString(ctx, v)
+	s, err := WantString(ctx, v)
 	if err != nil {
-		return matcher{}, ctx.Raise(object.TypeError, "wrong argument type %s (expected Regexp)", kindName(v))
+		return matcher{}, ctx.Raise(object.TypeError, "wrong argument type %s (expected Regexp)", KindName(v))
 	}
 	return matcher{lit: s}, nil
 }

@@ -1,6 +1,10 @@
-// Package stdlib is cameo's standard library: the methods of the builtin
-// classes, implemented in Go against the object package. Everything returns
-// a new value; nothing changes its receiver.
+// Package stdlib is cameo's core: the methods of the builtin classes,
+// implemented in Go against the object package. Everything returns a new
+// value; nothing changes its receiver. The libraries a script requires are
+// under src/lib, one package each; they take what they share with the
+// core, the argument checks every builtin method makes and the pieces two
+// libraries share, from this package's exported functions, and stdlib
+// imports no library.
 package stdlib
 
 import (
@@ -34,7 +38,6 @@ func Install() {
 	installEnumerator()
 	installTimeParsing()
 	installCGI()
-	installJSON()
 	installBenchmark()
 	installEncodings()
 	installPack()
@@ -43,8 +46,6 @@ func Install() {
 	installIO()
 	// After Enumerable and Enumerator: it wraps Enumerable's methods.
 	installUserEnumerable()
-	// Last: it wraps every String method defined before it.
-	installStringEncodings()
 }
 
 type fn = func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error)
@@ -52,13 +53,16 @@ type fn = func(ctx object.Context, self object.Value, args []object.Value, kw *o
 // def is a shorthand for defining a method with a fixed arity.
 func def(c *object.Class, name string, arity int, f fn) { c.Define(name, arity, f) }
 
-// argError makes the ArgumentError for a wrong count.
-func argError(ctx object.Context, given int, expected string) error {
+// ArgError is the ArgumentError for a wrong number of arguments:
+// "wrong number of arguments (given 2, expected 1..3)".
+func ArgError(ctx object.Context, given int, expected string) error {
 	return ctx.Raise(object.ArgumentError, "wrong number of arguments (given %d, expected %s)", given, expected)
 }
 
-// wantInt reads an Integer argument or fails with a TypeError.
-func wantInt(ctx object.Context, v object.Value, what string) (int64, error) {
+// WantInt reads an Integer argument, a Float truncated, or fails: a
+// TypeError for what is no number, a RangeError for an Integer beyond 64
+// bits; what names the argument after "into Integer" in the message.
+func WantInt(ctx object.Context, v object.Value, what string) (int64, error) {
 	switch v.Kind() {
 	case object.KindInt:
 		v := v.Int()
@@ -69,11 +73,12 @@ func wantInt(ctx object.Context, v object.Value, what string) (int64, error) {
 	case object.KindBig:
 		return 0, ctx.Raise(object.RangeError, "bignum too big to convert into 'long'")
 	}
-	return 0, ctx.Raise(object.TypeError, "no implicit conversion of %s into Integer%s", kindName(v), what)
+	return 0, ctx.Raise(object.TypeError, "no implicit conversion of %s into Integer%s", KindName(v), what)
 }
 
-// wantString reads a String argument or fails with a TypeError.
-func wantString(ctx object.Context, v object.Value) (string, error) {
+// WantString reads a String or Symbol argument or fails with Ruby's
+// TypeError.
+func WantString(ctx object.Context, v object.Value) (string, error) {
 	switch v.Kind() {
 	case object.KindString, object.KindBytes, object.KindASCII:
 		v := v.Str()
@@ -82,11 +87,12 @@ func wantString(ctx object.Context, v object.Value) (string, error) {
 		v := v.Str()
 		return string(v), nil
 	}
-	return "", ctx.Raise(object.TypeError, "no implicit conversion of %s into String", kindName(v))
+	return "", ctx.Raise(object.TypeError, "no implicit conversion of %s into String", KindName(v))
 }
 
-// kindName names a value's class in a TypeError, the way Ruby does.
-func kindName(v object.Value) string {
+// KindName names a value's class as a TypeError does: "nil", "true",
+// "Integer".
+func KindName(v object.Value) string {
 	if v.IsNil() {
 		return "nil"
 	}
@@ -130,7 +136,7 @@ func toList(ctx object.Context, v object.Value) ([]object.Value, error) {
 	if v.Kind() == object.KindInstance {
 		return eachElems(ctx, v)
 	}
-	return nil, ctx.Raise(object.TypeError, "no implicit conversion of %s into List", kindName(v))
+	return nil, ctx.Raise(object.TypeError, "no implicit conversion of %s into List", KindName(v))
 }
 
 // eachElems collects what an object's own each yields, as Ruby's

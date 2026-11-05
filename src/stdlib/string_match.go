@@ -58,7 +58,7 @@ func installStringPatterns() {
 			return r, nil
 		}
 		// A string pattern is compiled as a regexp, as Ruby's match does.
-		s, err := wantString(ctx, v)
+		s, err := WantString(ctx, v)
 		if err != nil {
 			return nil, err
 		}
@@ -70,7 +70,7 @@ func installStringPatterns() {
 	}
 	def(c, "match", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) < 1 || len(args) > 2 {
-			return object.Value{}, argError(ctx, len(args), "1..2")
+			return object.Value{}, ArgError(ctx, len(args), "1..2")
 		}
 		r, err := asRegexp(ctx, args[0])
 		if err != nil {
@@ -80,7 +80,7 @@ func installStringPatterns() {
 	})
 	def(c, "match?", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) < 1 || len(args) > 2 {
-			return object.Value{}, argError(ctx, len(args), "1..2")
+			return object.Value{}, ArgError(ctx, len(args), "1..2")
 		}
 		r, err := asRegexp(ctx, args[0])
 		if err != nil {
@@ -94,7 +94,7 @@ func installStringPatterns() {
 	index := func(last bool) fn {
 		return func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			if len(args) < 1 || len(args) > 2 {
-				return object.Value{}, argError(ctx, len(args), "1..2")
+				return object.Value{}, ArgError(ctx, len(args), "1..2")
 			}
 			s := str(self)
 			p, err := patternOf(ctx, args[0])
@@ -106,7 +106,7 @@ func installStringPatterns() {
 				start = len(s)
 			}
 			if len(args) == 2 {
-				i, err := wantInt(ctx, args[1], "")
+				i, err := WantInt(ctx, args[1], "")
 				if err != nil {
 					return object.Value{}, err
 				}
@@ -165,7 +165,7 @@ func installStringPatterns() {
 				}
 				continue
 			}
-			p, err := wantString(ctx, a)
+			p, err := WantString(ctx, a)
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -224,7 +224,7 @@ func substitute(ctx object.Context, s string, args []object.Value, kw *object.Ma
 		args = append(args, object.MapValue(kw))
 	}
 	if len(args) < 1 || len(args) > 2 || (len(args) == 1 && block.IsZero()) {
-		return object.Value{}, argError(ctx, len(args), "2")
+		return object.Value{}, ArgError(ctx, len(args), "2")
 	}
 	p, err := patternOf(ctx, args[0])
 	if err != nil {
@@ -236,7 +236,7 @@ func substitute(ctx object.Context, s string, args []object.Value, kw *object.Ma
 		case object.KindBytes:
 			args = []object.Value{args[0], object.String(string(args[1].Bytes()))}
 		default:
-			return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into String", kindName(args[1]))
+			return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into String", KindName(args[1]))
 		}
 	}
 	// Over bytes the matched text, a hash's keys and a block's argument
@@ -294,7 +294,7 @@ func substitute(ctx object.Context, s string, args []object.Value, kw *object.Ma
 func split(ctx object.Context, s string, args []object.Value) (object.Value, error) {
 	limit := 0
 	if len(args) >= 2 {
-		n, err := wantInt(ctx, args[1], "")
+		n, err := WantInt(ctx, args[1], "")
 		if err != nil {
 			return object.Value{}, err
 		}

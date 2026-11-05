@@ -13,6 +13,9 @@ element of the path is the package name:
 ```
 src/cameo/        the host API a Go program imports
 src/cmd/cameo/    the cameo command
+src/stdlib/       the core classes' methods
+src/lib/<name>/   one of Ruby's libraries, named by its require path:
+                  src/lib/json is json, src/lib/net/http is net/http
 src/assert/       the assertions the tests use, vendored
 tests/            Go tests against the packages, as a caller uses them
 tests/integration/  shell tests that drive the built binary

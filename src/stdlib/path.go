@@ -255,11 +255,11 @@ func installPaths() {
 		if p, ok := pathnameOf(v); ok {
 			return p, nil
 		}
-		return wantString(ctx, v)
+		return WantString(ctx, v)
 	}
 	f.DefineSingleton("basename", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) < 1 || len(args) > 2 {
-			return object.Value{}, argError(ctx, len(args), "1..2")
+			return object.Value{}, ArgError(ctx, len(args), "1..2")
 		}
 		p, err := str(ctx, args[0])
 		if err != nil {
@@ -267,7 +267,7 @@ func installPaths() {
 		}
 		suffix := ""
 		if len(args) == 2 {
-			if suffix, err = wantString(ctx, args[1]); err != nil {
+			if suffix, err = WantString(ctx, args[1]); err != nil {
 				return object.Value{}, err
 			}
 		}
@@ -275,7 +275,7 @@ func installPaths() {
 	})
 	f.DefineSingleton("dirname", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) < 1 || len(args) > 2 {
-			return object.Value{}, argError(ctx, len(args), "1..2")
+			return object.Value{}, ArgError(ctx, len(args), "1..2")
 		}
 		p, err := str(ctx, args[0])
 		if err != nil {
@@ -283,7 +283,7 @@ func installPaths() {
 		}
 		levels := int64(1)
 		if len(args) == 2 {
-			if levels, err = wantInt(ctx, args[1], ""); err != nil {
+			if levels, err = WantInt(ctx, args[1], ""); err != nil {
 				return object.Value{}, err
 			}
 			if levels < 0 {
@@ -336,7 +336,7 @@ func installPaths() {
 	expand := func(home bool) object.NativeFn {
 		return func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			if len(args) < 1 || len(args) > 2 {
-				return object.Value{}, argError(ctx, len(args), "1..2")
+				return object.Value{}, ArgError(ctx, len(args), "1..2")
 			}
 			p, err := str(ctx, args[0])
 			if err != nil {
@@ -379,11 +379,11 @@ func installPathname() {
 		if p, ok := pathnameOf(v); ok {
 			return p, nil
 		}
-		return wantString(ctx, v)
+		return WantString(ctx, v)
 	}
 	newPath := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) != 1 {
-			return object.Value{}, argError(ctx, len(args), "1")
+			return object.Value{}, ArgError(ctx, len(args), "1")
 		}
 		p, err := arg(ctx, args[0])
 		if err != nil {
@@ -451,7 +451,7 @@ func installPathname() {
 		return PathnameValue(plusPath(self(s), result)), nil
 	})
 	def(c, "sub_ext", 1, func(ctx object.Context, s object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		repl, err := wantString(ctx, args[0])
+		repl, err := WantString(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}

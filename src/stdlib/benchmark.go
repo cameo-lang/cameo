@@ -82,7 +82,7 @@ func installBenchmark() {
 	}
 	define("measure", func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) > 1 {
-			return object.Value{}, argError(ctx, len(args), "0..1")
+			return object.Value{}, ArgError(ctx, len(args), "0..1")
 		}
 		label := object.String("")
 		if len(args) == 1 {
@@ -92,7 +92,7 @@ func installBenchmark() {
 	})
 	define("realtime", func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) > 0 {
-			return object.Value{}, argError(ctx, len(args), "0")
+			return object.Value{}, ArgError(ctx, len(args), "0")
 		}
 		if err := needBlock(ctx, block, "yield"); err != nil {
 			return object.Value{}, err
@@ -131,11 +131,11 @@ func installBenchmark() {
 	})
 	define("bmbm", func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) > 1 {
-			return object.Value{}, argError(ctx, len(args), "0..1")
+			return object.Value{}, ArgError(ctx, len(args), "0..1")
 		}
 		width := int64(0)
 		if len(args) == 1 {
-			w, err := wantInt(ctx, args[0], "")
+			w, err := WantInt(ctx, args[0], "")
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -220,7 +220,7 @@ var tmsDirectives = []struct {
 func tmsFormat(ctx object.Context, self, format object.Value, args []object.Value) (string, error) {
 	str := benchmarkFormat
 	if !format.IsZero() && !format.IsNil() {
-		s, err := wantString(ctx, format)
+		s, err := WantString(ctx, format)
 		if err != nil {
 			return "", err
 		}
@@ -285,7 +285,7 @@ func installTms() {
 	c := tmsClass
 	c.DefineSingleton("new", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) > 6 {
-			return object.Value{}, argError(ctx, len(args), "0..6")
+			return object.Value{}, ArgError(ctx, len(args), "0..6")
 		}
 		label := object.Nil
 		if len(args) == 6 {
@@ -444,7 +444,7 @@ func benchmarkRun(ctx object.Context, caption, widthArg, format object.Value, la
 	}
 	labelWidth := int64(0)
 	if !widthArg.IsNil() {
-		w, err := wantInt(ctx, widthArg, "")
+		w, err := WantInt(ctx, widthArg, "")
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -461,7 +461,7 @@ func benchmarkRun(ctx object.Context, caption, widthArg, format object.Value, la
 		return object.Value{}, err
 	}
 	var out strings.Builder
-	captionStr, err := wantString(ctx, caption)
+	captionStr, err := WantString(ctx, caption)
 	if err != nil {
 		return object.Value{}, err
 	}

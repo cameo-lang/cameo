@@ -1,6 +1,7 @@
 package eval
 
 import (
+	"github.com/cameo-lang/cameo/src/lib"
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/stdlib"
 	"github.com/cameo-lang/cameo/src/syntax"
@@ -9,10 +10,14 @@ import (
 )
 
 // installStdlib installs the standard library once per process: the Go
-// methods of the builtin classes, and the Proc methods, which know this
-// package's Proc.
+// methods of the builtin classes, the libraries under src/lib, and the
+// Proc methods, which know this package's Proc.
 func installStdlib() {
 	stdlib.Install()
+	lib.Install()
+	// Last: it wraps every String method defined before it, the
+	// libraries' as well as the core's.
+	stdlib.InstallStringEncodings()
 	installRaise()
 	installCameo()
 	newException := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -226,23 +231,25 @@ func hashProc(h object.Value) object.Value {
 	return procValue(&Proc{Sym: "[]", Recv: h, Strict: true})
 }
 
-// builtinLibraries are what require loads without a file: libraries
-// cameo builds in, each with the ones it loads along with it.
-var builtinLibraries = map[string][]string{
-	"set":        nil,
-	"time":       nil,
-	"pp":         nil,
-	"pathname":   nil,
-	"cgi":        {"cgi/escape", "cgi/util"},
-	"cgi/escape": nil,
-	"cgi/util":   {"cgi/escape"},
-	"json":       nil,
-	"benchmark":  nil,
+// ownLibraries are the names require accepts that no package under
+// src/lib installs: the evaluator's own.
+var ownLibraries = map[string][]string{
 	// debug switches the debugger on; see debug.go.
 	"debug": nil,
 	// cameo/runner is the Ruby library that gives CRuby Cameo::Runner;
 	// cameo has Cameo::Runner built in.
 	"cameo/runner": nil,
+}
+
+// libraryAlso returns the libraries require loads along with name, and
+// whether name is a library at all: one lib.Libraries registers, or one
+// of the evaluator's own.
+func libraryAlso(name string) ([]string, bool) {
+	if also, ok := lib.Libraries[name]; ok {
+		return also, true
+	}
+	also, ok := ownLibraries[name]
+	return also, ok
 }
 
 // require loads a library cameo builds in, true the first time and false
@@ -253,7 +260,7 @@ func (in *Interp) require(name object.Value) (object.Value, error) {
 	if !ok {
 		return object.Value{}, in.raise(object.TypeError, 0, "no implicit conversion of %s into String", typeName(name))
 	}
-	also, builtin := builtinLibraries[s]
+	also, builtin := libraryAlso(s)
 	if !builtin {
 		return object.Value{}, in.raise(object.LoadError, 0, "cannot load such file -- %s", s)
 	}

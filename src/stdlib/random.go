@@ -23,13 +23,13 @@ func installRandom() {
 
 	def(o, "rand", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) > 1 {
-			return object.Value{}, argError(ctx, len(args), "0..1")
+			return object.Value{}, ArgError(ctx, len(args), "0..1")
 		}
 		return kernelRand(ctx, args)
 	})
 	srand := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) > 1 {
-			return object.Value{}, argError(ctx, len(args), "0..1")
+			return object.Value{}, ArgError(ctx, len(args), "0..1")
 		}
 		seed := object.NewSeed()
 		if len(args) == 1 {
@@ -45,7 +45,7 @@ func installRandom() {
 
 	c.DefineSingleton("new", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) > 1 {
-			return object.Value{}, argError(ctx, len(args), "0..1")
+			return object.Value{}, ArgError(ctx, len(args), "0..1")
 		}
 		seed := object.NewSeed()
 		if len(args) == 1 {
@@ -146,7 +146,7 @@ func randomRand(ctx object.Context, r *object.Random, args []object.Value) (obje
 		return object.Value{}, err
 	}
 	if !ok {
-		if _, err := wantInt(ctx, args[0], ""); err != nil {
+		if _, err := WantInt(ctx, args[0], ""); err != nil {
 			return object.Value{}, err
 		}
 	}
@@ -177,7 +177,7 @@ func randomNumber(ctx object.Context, r *object.Random, args []object.Value) (ob
 // is neither a number nor a range of numbers.
 func randomDraw(ctx object.Context, r *object.Random, args []object.Value) (v object.Value, ok bool, err error) {
 	if len(args) > 1 {
-		return object.Value{}, true, argError(ctx, len(args), "0..1")
+		return object.Value{}, true, ArgError(ctx, len(args), "0..1")
 	}
 	if len(args) == 0 {
 		return object.Float(r.Float(false)), true, nil
@@ -347,7 +347,7 @@ func checkFloat(v object.Value) (float64, bool) {
 func finiteFloat(ctx object.Context, v object.Value) (float64, error) {
 	f, ok := checkFloat(v)
 	if !ok {
-		return 0, ctx.Raise(object.TypeError, "can't convert %s into Float", kindName(v))
+		return 0, ctx.Raise(object.TypeError, "can't convert %s into Float", KindName(v))
 	}
 	if math.IsInf(f, 0) || math.IsNaN(f) {
 		return 0, domainError(ctx)
@@ -376,12 +376,12 @@ func toInt(ctx object.Context, v object.Value) (object.Value, error) {
 			return i, nil
 		}
 	}
-	return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into Integer", kindName(v))
+	return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into Integer", KindName(v))
 }
 
 // byteCount reads the length bytes takes.
 func byteCount(ctx object.Context, v object.Value) (int, error) {
-	n, err := wantInt(ctx, v, "")
+	n, err := WantInt(ctx, v, "")
 	if err != nil {
 		return 0, err
 	}

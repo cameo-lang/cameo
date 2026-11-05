@@ -61,6 +61,7 @@ categories:
   - name: Standard library
     patterns:
       - "/src/stdlib/**/*"
+      - "/src/lib/**/*"
       - "!*_test.go"
   - name: Host API & command
     patterns:

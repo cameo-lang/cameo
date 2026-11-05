@@ -20,7 +20,7 @@ func installRange() {
 		}
 		// An endless range has a first n all the same.
 		if hi := object.OrNil(r(self).Hi); hi.IsNil() && len(args) == 1 {
-			n, err := wantInt(ctx, args[0], "")
+			n, err := WantInt(ctx, args[0], "")
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -52,7 +52,7 @@ func installRange() {
 		}
 		// first(n) produces no more elements than it returns.
 		if len(args) == 1 {
-			n, err := wantInt(ctx, args[0], "")
+			n, err := WantInt(ctx, args[0], "")
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -139,7 +139,7 @@ func installRange() {
 			if _, _, _, ok := rangeStrings(r(self)); ok {
 				return object.Nil, nil
 			}
-			return object.Value{}, ctx.Raise(object.TypeError, "can't iterate from %s", kindName(object.OrNil(r(self).Lo)))
+			return object.Value{}, ctx.Raise(object.TypeError, "can't iterate from %s", KindName(object.OrNil(r(self).Lo)))
 		}
 		lo, hi, ok := intEnds(r(self))
 		if f, isFloat := r(self).Hi.AsFloat(); isFloat && !ok {
@@ -226,7 +226,7 @@ func installRange() {
 			return self, nil
 		}
 		if !r(self).Lo.IsInteger() {
-			return object.Value{}, ctx.Raise(object.TypeError, "can't iterate from %s", kindName(object.OrNil(r(self).Lo)))
+			return object.Value{}, ctx.Raise(object.TypeError, "can't iterate from %s", KindName(object.OrNil(r(self).Lo)))
 		}
 		if r(self).Hi.IsZero() {
 			for i := r(self).Lo; ; {
@@ -242,7 +242,7 @@ func installRange() {
 		}
 		lo, hi, ok := intEnds(r(self))
 		if !ok {
-			return object.Value{}, ctx.Raise(object.TypeError, "can't iterate from %s", kindName(object.OrNil(r(self).Lo)))
+			return object.Value{}, ctx.Raise(object.TypeError, "can't iterate from %s", KindName(object.OrNil(r(self).Lo)))
 		}
 		err := eachInteger(lo, hi, 1, func(v object.Value) error {
 			_, err := ctx.Yield(block, v)
@@ -278,7 +278,7 @@ func installRange() {
 		if len(args) == 0 {
 			args = []object.Value{object.Int(1)}
 		}
-		by, err := wantInt(ctx, args[0], "")
+		by, err := WantInt(ctx, args[0], "")
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -300,7 +300,7 @@ func installRange() {
 	rangeStep := func(meth string) fn {
 		return func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			if len(args) > 1 {
-				return object.Value{}, argError(ctx, len(args), "0..1")
+				return object.Value{}, ArgError(ctx, len(args), "0..1")
 			}
 			lo, hi := object.OrNil(r(self).Lo), object.OrNil(r(self).Hi)
 			_, loNum := lo.AsNumber()
@@ -400,7 +400,7 @@ func installRange() {
 				return object.Value{}, ctx.Raise(object.RangeError, "cannot get the maximum of beginless range with custom comparison method")
 			}
 			if first, last, ok := intEnds(r(self)); ok && block.IsZero() && len(args) == 1 {
-				n, err := wantInt(ctx, args[0], "")
+				n, err := WantInt(ctx, args[0], "")
 				if err != nil {
 					return object.Value{}, err
 				}
@@ -537,7 +537,7 @@ func RangeElems(ctx object.Context, r *object.Range) ([]object.Value, error) {
 		if r.Hi.IsZero() && r.Lo.IsInteger() {
 			return nil, ctx.Raise(object.RangeError, "cannot convert endless range to a list")
 		}
-		return nil, ctx.Raise(object.TypeError, "can't iterate from %s", kindName(object.OrNil(r.Lo)))
+		return nil, ctx.Raise(object.TypeError, "can't iterate from %s", KindName(object.OrNil(r.Lo)))
 	}
 	out := []object.Value{}
 	if lo, ok := lo.AsInt(); ok {
@@ -661,7 +661,7 @@ func bsearch(ctx object.Context, r *object.Range, block object.Value) (object.Va
 		}
 		f, ok := res.AsNumber()
 		if !ok {
-			return false, false, ctx.Raise(object.TypeError, "wrong argument type %s (must be numeric, true, false or nil)", kindName(res))
+			return false, false, ctx.Raise(object.TypeError, "wrong argument type %s (must be numeric, true, false or nil)", KindName(res))
 		}
 		return f == 0, f < 0, nil
 	}
@@ -765,7 +765,7 @@ func bsearch(ctx object.Context, r *object.Range, block object.Value) (object.Va
 	case lo.IsNil() && hi.IsInteger():
 		return probe(bigOf(hi), false)
 	}
-	return object.Value{}, ctx.Raise(object.TypeError, "can't do binary search for %s", kindName(lo))
+	return object.Value{}, ctx.Raise(object.TypeError, "can't do binary search for %s", KindName(lo))
 }
 
 // floatOrder maps a float to an int64 in the same order, as CRuby's

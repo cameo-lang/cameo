@@ -97,7 +97,7 @@ func installMath() {
 	// log takes an optional base.
 	m.DefineSingleton("log", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) < 1 || len(args) > 2 {
-			return object.Value{}, argError(ctx, len(args), "1..2")
+			return object.Value{}, ArgError(ctx, len(args), "1..2")
 		}
 		x, err := wantFloat(ctx, args[0])
 		if err != nil {
@@ -125,5 +125,5 @@ func wantFloat(ctx object.Context, v object.Value) (float64, error) {
 	if f, ok := v.AsNumber(); ok {
 		return f, nil
 	}
-	return 0, ctx.Raise(object.TypeError, "can't convert %s into Float", kindName(v))
+	return 0, ctx.Raise(object.TypeError, "can't convert %s into Float", KindName(v))
 }

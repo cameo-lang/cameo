@@ -177,7 +177,7 @@ func installInteger() {
 			return object.BigInt(r), nil
 		}
 		if len(args) != 1 {
-			return object.Value{}, argError(ctx, len(args), "1..2")
+			return object.Value{}, ArgError(ctx, len(args), "1..2")
 		}
 		return c.Methods["**"].Native(ctx, self, args, kw, block)
 	})
@@ -208,7 +208,7 @@ func installInteger() {
 	bitwise := func(name string, small func(a, b int64) int64, large func(a, b *big.Int) *big.Int) {
 		def(c, name, 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			if !args[0].IsInteger() {
-				_, err := wantInt(ctx, args[0], "")
+				_, err := WantInt(ctx, args[0], "")
 				return object.Value{}, err
 			}
 			x, xok := self.AsInt()
@@ -225,7 +225,7 @@ func installInteger() {
 	// shift is << for a positive count and >> for a negative one; a left
 	// shift that overflows moves to a big integer.
 	shift := func(ctx object.Context, self object.Value, by object.Value, left bool) (object.Value, error) {
-		n, err := wantInt(ctx, by, "")
+		n, err := WantInt(ctx, by, "")
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -259,7 +259,7 @@ func installInteger() {
 		return shift(ctx, self, args[0], false)
 	})
 	def(c, "[]", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		i, err := wantInt(ctx, args[0], "")
+		i, err := WantInt(ctx, args[0], "")
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -307,7 +307,7 @@ func installInteger() {
 		return object.Nil, nil
 	})
 	def(c, "times", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		n, err := wantInt(ctx, self, "")
+		n, err := WantInt(ctx, self, "")
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -333,7 +333,7 @@ func installInteger() {
 				mask = object.FloatToInteger(mask.Float())
 			}
 			if !mask.IsInteger() {
-				return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into Integer", kindName(mask))
+				return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into Integer", KindName(mask))
 			}
 			m := bigOf(mask)
 			return object.Bool(f(new(big.Int).And(bigOf(self), m), m)), nil
@@ -390,7 +390,7 @@ func installInteger() {
 	def(c, "to_s", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		base := int64(10)
 		if len(args) == 1 {
-			b, err := wantInt(ctx, args[0], "")
+			b, err := WantInt(ctx, args[0], "")
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -451,7 +451,7 @@ func installInteger() {
 	})
 	gcdOf := func(ctx object.Context, self, other object.Value) (*big.Int, error) {
 		if !other.IsInteger() {
-			_, err := wantInt(ctx, other, "")
+			_, err := WantInt(ctx, other, "")
 			if err == nil {
 				err = ctx.Raise(object.TypeError, "not an integer")
 			}
@@ -507,7 +507,7 @@ func installInteger() {
 		}
 		y, ok := other.AsNumber()
 		if !ok {
-			return object.Value{}, ctx.Raise(object.TypeError, "%s can't be coerced into Integer", kindName(other))
+			return object.Value{}, ctx.Raise(object.TypeError, "%s can't be coerced into Integer", KindName(other))
 		}
 		if _, small := self.AsInt(); !small && y == 0 {
 			return object.Value{}, ctx.Raise(object.ZeroDivisionError, "divided by 0")
@@ -527,7 +527,7 @@ func installInteger() {
 	def(c, "digits", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		base := int64(10)
 		if len(args) == 1 {
-			b, err := wantInt(ctx, args[0], "")
+			b, err := WantInt(ctx, args[0], "")
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -570,7 +570,7 @@ func installInteger() {
 			if len(args) == 0 {
 				return self, nil
 			}
-			digits, err := wantInt(ctx, args[0], "")
+			digits, err := WantInt(ctx, args[0], "")
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -598,13 +598,13 @@ func installInteger() {
 	})
 	def(c, "round", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) > 1 {
-			return object.Value{}, argError(ctx, len(args), "0..1")
+			return object.Value{}, ArgError(ctx, len(args), "0..1")
 		}
 		mode, err := roundingMode(ctx, kw)
 		if err != nil || len(args) == 0 {
 			return self, err
 		}
-		digits, err := wantInt(ctx, args[0], "")
+		digits, err := WantInt(ctx, args[0], "")
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -625,7 +625,7 @@ func installInteger() {
 	object.ObjectClass.Consts["Integer"] = object.ClassValue(c)
 	def(c.Class(), "sqrt", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if !args[0].IsInteger() {
-			if _, err := wantInt(ctx, args[0], ""); err != nil {
+			if _, err := WantInt(ctx, args[0], ""); err != nil {
 				return object.Value{}, err
 			}
 			return floatToInteger(ctx, math.Floor(math.Sqrt(args[0].Float())))

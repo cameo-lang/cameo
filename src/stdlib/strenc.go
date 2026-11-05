@@ -106,7 +106,7 @@ func hasRegexp(args []object.Value) bool {
 	return false
 }
 
-func installStringEncodings() {
+func InstallStringEncodings() {
 	c := object.StringClass
 	var names []string
 	for name, m := range c.Methods {

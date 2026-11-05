@@ -55,7 +55,7 @@ func installKernel() {
 	// catch; the command ends with its status when nothing does.
 	def(o, "exit", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) > 1 {
-			return object.Value{}, argError(ctx, len(args), "0..1")
+			return object.Value{}, ArgError(ctx, len(args), "0..1")
 		}
 		status := int64(0)
 		if len(args) == 1 {
@@ -71,12 +71,12 @@ func installKernel() {
 	// with status 1.
 	def(o, "abort", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) > 1 {
-			return object.Value{}, argError(ctx, len(args), "0..1")
+			return object.Value{}, ArgError(ctx, len(args), "0..1")
 		}
 		if len(args) == 0 {
 			return object.Value{}, systemExit(1, "exit")
 		}
-		msg, err := wantString(ctx, args[0])
+		msg, err := WantString(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -96,9 +96,9 @@ func installKernel() {
 	})
 	def(o, "format", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) == 0 {
-			return object.Value{}, argError(ctx, 0, "1+")
+			return object.Value{}, ArgError(ctx, 0, "1+")
 		}
-		f, err := wantString(ctx, args[0])
+		f, err := WantString(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -138,7 +138,7 @@ func installKernel() {
 			}
 			return i, nil
 		}
-		return object.Value{}, ctx.Raise(object.TypeError, "can't convert %s into Integer", kindName(args[0]))
+		return object.Value{}, ctx.Raise(object.TypeError, "can't convert %s into Integer", KindName(args[0]))
 	})
 	def(o, "Float", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return toFloat(ctx, args[0])
@@ -202,13 +202,13 @@ func raise(ctx object.Context, args []object.Value) error {
 	case object.KindString, object.KindBytes, object.KindASCII:
 		v := args[0].Str()
 		if len(args) > 1 {
-			return argError(ctx, len(args), "1")
+			return ArgError(ctx, len(args), "1")
 		}
 		return &object.Exception{Cls: object.RuntimeError, Message: string(v)}
 	case object.KindException:
 		v := args[0].Exception()
 		if len(args) > 1 {
-			if msg, err := wantString(ctx, args[1]); err == nil {
+			if msg, err := WantString(ctx, args[1]); err == nil {
 				out := v.Copy()
 				out.Message, out.Line = msg, 0
 				return out
@@ -280,5 +280,5 @@ func toFloat(ctx object.Context, v object.Value) (object.Value, error) {
 		}
 		return object.Float(f), nil
 	}
-	return object.Value{}, ctx.Raise(object.TypeError, "can't convert %s into Float", kindName(v))
+	return object.Value{}, ctx.Raise(object.TypeError, "can't convert %s into Float", KindName(v))
 }

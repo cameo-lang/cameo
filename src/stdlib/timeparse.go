@@ -385,9 +385,9 @@ func installTimeParsing() {
 	c := object.TimeClass
 	str := func(ctx object.Context, args []object.Value, n string) (string, error) {
 		if len(args) < 1 {
-			return "", argError(ctx, len(args), n)
+			return "", ArgError(ctx, len(args), n)
 		}
-		return wantString(ctx, args[0])
+		return WantString(ctx, args[0])
 	}
 	c.DefineSingleton("parse", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		s, err := str(ctx, args, "1..2")
@@ -415,13 +415,13 @@ func installTimeParsing() {
 	c.DefineSingleton("xmlschema", 1, iso)
 	c.DefineSingleton("strptime", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) < 2 {
-			return object.Value{}, argError(ctx, len(args), "2..3")
+			return object.Value{}, ArgError(ctx, len(args), "2..3")
 		}
-		s, err := wantString(ctx, args[0])
+		s, err := WantString(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
-		f, err := wantString(ctx, args[1])
+		f, err := WantString(ctx, args[1])
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -437,7 +437,7 @@ func installTimeParsing() {
 		n := int64(0)
 		if len(args) == 1 {
 			var err error
-			if n, err = wantInt(ctx, args[0], ""); err != nil {
+			if n, err = WantInt(ctx, args[0], ""); err != nil {
 				return object.Value{}, err
 			}
 		}

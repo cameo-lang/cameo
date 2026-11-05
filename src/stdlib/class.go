@@ -74,14 +74,14 @@ func installClass() {
 		return object.NewList(names...), nil
 	})
 	def(m, "method_defined?", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		name, err := wantString(ctx, args[0])
+		name, err := WantString(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
 		return object.Bool(cls(self).Lookup(name) != nil), nil
 	})
 	def(m, "const_get", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		name, err := wantString(ctx, args[0])
+		name, err := WantString(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}

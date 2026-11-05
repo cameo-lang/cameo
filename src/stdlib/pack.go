@@ -119,7 +119,7 @@ func textOf(ctx object.Context, v object.Value) (string, error) {
 	if b, ok := v.AsBytes(); ok {
 		return string(b), nil
 	}
-	return wantString(ctx, v)
+	return WantString(ctx, v)
 }
 
 // pack is Array#pack: the bytes of elems by format, after those of buffer
@@ -176,7 +176,7 @@ func pack(ctx object.Context, elems []object.Value, format string, buffer object
 				}
 				f, ok := v.AsNumber()
 				if !ok {
-					return object.Value{}, ctx.Raise(object.TypeError, "can't convert %s into Float", kindName(v))
+					return object.Value{}, ctx.Raise(object.TypeError, "can't convert %s into Float", KindName(v))
 				}
 				if floatSize(d.letter) == 4 {
 					out = order(d.big).AppendUint32(out, math.Float32bits(float32(f)))
@@ -190,7 +190,7 @@ func pack(ctx object.Context, elems []object.Value, format string, buffer object
 				if err != nil {
 					return object.Value{}, err
 				}
-				n, err := wantInt(ctx, v, "")
+				n, err := WantInt(ctx, v, "")
 				if err != nil {
 					return object.Value{}, err
 				}
@@ -244,7 +244,7 @@ func packInt(ctx object.Context, v object.Value) (uint64, error) {
 		return uint64(int64(f)), nil
 	}
 	if !v.IsInteger() {
-		return 0, ctx.Raise(object.TypeError, "no implicit conversion of %s into Integer", kindName(v))
+		return 0, ctx.Raise(object.TypeError, "no implicit conversion of %s into Integer", KindName(v))
 	}
 	if n, ok := v.AsInt(); ok {
 		return uint64(n), nil
@@ -507,7 +507,7 @@ func unpackNumber(d directive, chunk []byte) object.Value {
 
 func installPack() {
 	def(object.ListClass, "pack", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		f, err := wantString(ctx, args[0])
+		f, err := WantString(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -529,7 +529,7 @@ func installPack() {
 		if err != nil || v.IsZero() {
 			return 0, err
 		}
-		n, err := wantInt(ctx, v, "")
+		n, err := WantInt(ctx, v, "")
 		switch {
 		case err != nil:
 			return 0, err
@@ -542,7 +542,7 @@ func installPack() {
 	}
 	for _, c := range []*object.Class{object.StringClass} {
 		def(c, "unpack", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-			f, err := wantString(ctx, args[0])
+			f, err := WantString(ctx, args[0])
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -561,7 +561,7 @@ func installPack() {
 			return object.NewList(vals...), nil
 		})
 		def(c, "unpack1", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-			f, err := wantString(ctx, args[0])
+			f, err := WantString(ctx, args[0])
 			if err != nil {
 				return object.Value{}, err
 			}

@@ -28,7 +28,7 @@ func installTime() {
 	})
 	c.DefineSingleton("at", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) < 1 || len(args) > 3 {
-			return object.Value{}, argError(ctx, len(args), "1..3")
+			return object.Value{}, ArgError(ctx, len(args), "1..3")
 		}
 		var t time.Time
 		loc := time.Local
@@ -64,7 +64,7 @@ func installTime() {
 			} else if x, ok := args[1].AsFloat(); ok {
 				t = t.Add(time.Duration(floorScaled(x, unit)))
 			} else {
-				return object.Value{}, ctx.Raise(object.TypeError, "can't convert %s into an exact number", kindName(args[1]))
+				return object.Value{}, ctx.Raise(object.TypeError, "can't convert %s into an exact number", KindName(args[1]))
 			}
 		}
 		loc, err := inKeyword(ctx, kw, loc)
@@ -89,7 +89,7 @@ func installTime() {
 			case civil && (len(args) == 7 || len(args) == 8):
 				usec, args = args[6], args[:6]
 			case civil && len(args) > 8:
-				return object.Value{}, argError(ctx, len(args), "1..8")
+				return object.Value{}, ArgError(ctx, len(args), "1..8")
 			}
 			if !usec.IsNil() {
 				t, err := civilTime(ctx, args, loc)
@@ -109,7 +109,7 @@ func installTime() {
 				args = args[:6]
 			}
 			if len(args) > 6 {
-				return object.Value{}, argError(ctx, len(args), "0..7")
+				return object.Value{}, ArgError(ctx, len(args), "0..7")
 			}
 			if len(args) == 0 {
 				return object.TimeValue(time.Now().Round(0).In(loc)), nil
@@ -203,7 +203,7 @@ func installTime() {
 	}
 	toLocal := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) > 1 {
-			return object.Value{}, argError(ctx, len(args), "0..1")
+			return object.Value{}, ArgError(ctx, len(args), "0..1")
 		}
 		loc := time.Local
 		if len(args) == 1 && !args[0].IsNil() {
@@ -299,12 +299,12 @@ func installTime() {
 	rounder := func(mode string) fn {
 		return func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			if len(args) > 1 {
-				return object.Value{}, argError(ctx, len(args), "0..1")
+				return object.Value{}, ArgError(ctx, len(args), "0..1")
 			}
 			digits := int64(0)
 			if len(args) == 1 {
 				var err error
-				if digits, err = wantInt(ctx, args[0], ""); err != nil {
+				if digits, err = WantInt(ctx, args[0], ""); err != nil {
 					return object.Value{}, err
 				}
 				if digits < 0 {
@@ -332,7 +332,7 @@ func installTime() {
 	def(c, "floor", -1, rounder("floor"))
 	def(c, "ceil", -1, rounder("ceil"))
 	def(c, "strftime", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		f, err := wantString(ctx, args[0])
+		f, err := WantString(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -407,7 +407,7 @@ func zoneArg(ctx object.Context, v object.Value) (*time.Location, error) {
 	}
 	s, ok := v.AsString()
 	if !ok {
-		return nil, ctx.Raise(object.TypeError, "can't convert %s into an exact number", kindName(v))
+		return nil, ctx.Raise(object.TypeError, "can't convert %s into an exact number", KindName(v))
 	}
 	bad := func() error {
 		return ctx.Raise(object.ArgumentError, `"+HH:MM", "-HH:MM", "UTC" or "A".."I","K".."Z" expected for utc_offset: %s`, s)
@@ -484,7 +484,7 @@ func civilTime(ctx object.Context, args []object.Value, loc *time.Location) (tim
 				continue
 			}
 		}
-		n, err := wantInt(ctx, a, "")
+		n, err := WantInt(ctx, a, "")
 		if err != nil {
 			return time.Time{}, err
 		}
@@ -521,7 +521,7 @@ func microseconds(ctx object.Context, v object.Value) (int64, error) {
 	if x, ok := v.AsFloat(); ok {
 		ns = floorScaled(x, 1000)
 	} else {
-		n, err := wantInt(ctx, v, "")
+		n, err := WantInt(ctx, v, "")
 		if err != nil {
 			return 0, err
 		}
@@ -558,7 +558,7 @@ func exactSeconds(ctx object.Context, v object.Value) (int64, int64, error) {
 		sec, frac := new(big.Int).DivMod(ns, big.NewInt(1e9), new(big.Int))
 		return sec.Int64(), frac.Int64(), nil
 	}
-	return 0, 0, ctx.Raise(object.TypeError, "can't convert %s into an exact number", kindName(v))
+	return 0, 0, ctx.Raise(object.TypeError, "can't convert %s into an exact number", KindName(v))
 }
 
 // duration is sign times a number of seconds as a duration, rounded down
@@ -570,7 +570,7 @@ func duration(ctx object.Context, v object.Value, sign int64) (time.Duration, er
 	if x, ok := v.AsFloat(); ok {
 		return time.Duration(floorScaled(float64(sign)*x, 1e9)), nil
 	}
-	return 0, ctx.Raise(object.TypeError, "can't convert %s into an exact number", kindName(v))
+	return 0, ctx.Raise(object.TypeError, "can't convert %s into an exact number", KindName(v))
 }
 
 // floorScaled is x times scale, rounded down, computed exactly: Ruby takes

@@ -54,9 +54,9 @@ func installObject() {
 	})
 	def(o, "respond_to?", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) < 1 {
-			return object.Value{}, argError(ctx, 0, "1")
+			return object.Value{}, ArgError(ctx, 0, "1")
 		}
-		name, err := wantString(ctx, args[0])
+		name, err := WantString(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -133,7 +133,7 @@ func installObject() {
 		if len(args) > 0 {
 			name, ok := args[0].AsSymbol()
 			if !ok {
-				return object.Value{}, ctx.Raise(object.TypeError, "%s is not a symbol", kindName(args[0]))
+				return object.Value{}, ctx.Raise(object.TypeError, "%s is not a symbol", KindName(args[0]))
 			}
 			meth, args = name, args[1:]
 		}
@@ -174,7 +174,7 @@ func installObject() {
 		def(c, "compare_by_identity", 0, identity)
 	}
 	def(o, "to_proc", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Value{}, ctx.Raise(object.NoMethodError, "undefined method 'to_proc' for %s", kindName(self))
+		return object.Value{}, ctx.Raise(object.NoMethodError, "undefined method 'to_proc' for %s", KindName(self))
 	})
 	comparable(object.Comparable)
 }
