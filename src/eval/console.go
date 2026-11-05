@@ -17,7 +17,7 @@ func (in *Interp) Eval(file string, prog *syntax.Program) (object.Value, error) 
 	}
 	v, err := in.runStatements(prog.Body, in.top, in.topFrame())
 	if c, ok := err.(*control); ok {
-		return object.Value{}, in.raise(object.LocalJumpError, c.line, "%s from the top level", c.kind)
+		return object.Value{}, in.topLevelJump(c)
 	}
 	return v, err
 }

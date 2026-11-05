@@ -519,6 +519,7 @@ func (in *Interp) worker() *Interp {
 		cameoTop:             top.cameoTop,
 		code:                 in.code,
 		stop:                 in.stop,
+		exits:                in.exits,
 		snap:                 top,
 	}
 	// The worker's generator is seeded from this one, here on the

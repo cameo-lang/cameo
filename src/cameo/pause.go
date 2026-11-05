@@ -19,6 +19,17 @@ var ErrPaused = eval.ErrPaused
 // in doc/design/pause.md.
 func (p *Program) Pause() { p.in.Pause() }
 
+// Finish runs the blocks at_exit registered since the script ended, by a
+// Call or a console line, and returns the error they end with, a
+// *RunError, or nil. Run runs the blocks the script registered; a host
+// that drives the program after Run calls Finish when it is done with it.
+func (p *Program) Finish() error {
+	if err := p.in.Finish(); err != nil {
+		return conv{p.in}.runError(err)
+	}
+	return nil
+}
+
 // Dump is a paused script, as Dump captures it.
 type Dump struct {
 	// Data is a cameo.Dump protobuf message in its wire form: the script,
