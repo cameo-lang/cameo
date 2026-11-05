@@ -62,6 +62,16 @@ func Install() {
 		m.Consts[c.Name] = object.ClassValue(c)
 	}
 	m.DefineSingleton("serve", -1, serve)
+	// response reads what a handler returned, in Sinatra's forms, as
+	// [status, headers, body]: the one reader of a response, which a
+	// framework's spec and the server share.
+	m.DefineSingleton("response", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		res, err := Respond(ctx, args[0])
+		if err != nil {
+			return object.Value{}, err
+		}
+		return object.NewList(object.Int(int64(res.Status)), StringMap(res.Headers), object.String(res.Body)), nil
+	})
 	// allowed? reports whether this program lets a script serve.
 	m.DefineSingleton("allowed?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Bool(ctx.IOAllowed("io/httpd")), nil
@@ -92,7 +102,9 @@ func StringMap(m map[string]string) object.Value {
 	return object.MapValue(b.Map())
 }
 
-// serve is HTTPD.serve(port: 4567, bind: "127.0.0.1", quiet: false) { |request| … }.
+// serve is HTTPD.serve(port: 4567, bind: "127.0.0.1", quiet: false,
+// listening: nil) { |request| … }; listening: is a callable given the
+// URL once the socket is open.
 func serve(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 	if len(args) != 0 {
 		return object.Value{}, ctx.Raise(object.ArgumentError, "wrong number of arguments (given %d, expected 0)", len(args))
@@ -101,6 +113,7 @@ func serve(ctx object.Context, self object.Value, args []object.Value, kw *objec
 		return object.Value{}, ctx.Raise(object.ArgumentError, "HTTPD.serve takes a block that answers each request")
 	}
 	port, bind, quiet := int64(4567), "127.0.0.1", false
+	listening := object.Nil
 	if kw != nil {
 		for i, k := range kw.Keys() {
 			v := kw.Values()[i]
@@ -118,12 +131,21 @@ func serve(ctx object.Context, self object.Value, args []object.Value, kw *objec
 				bind = s
 			case "quiet":
 				quiet = v.Truthy()
+			case "listening":
+				listening = v
 			default:
 				return object.Value{}, ctx.Raise(object.ArgumentError, "unknown keyword: :%s", k.Str())
 			}
 		}
 	}
-	err := Serve(ctx, net.JoinHostPort(bind, fmt.Sprint(port)), quiet, func(r *Request) (Response, error) {
+	var onListen func(url string) error
+	if !listening.IsNil() {
+		onListen = func(url string) error {
+			_, err := ctx.Call(listening, "call", object.String(url))
+			return err
+		}
+	}
+	err := Serve(ctx, net.JoinHostPort(bind, fmt.Sprint(port)), quiet, onListen, func(r *Request) (Response, error) {
 		v, err := ctx.Yield(block, RequestValue(r))
 		if err != nil {
 			return Response{}, err
@@ -147,17 +169,25 @@ type job struct {
 // goroutine that called it, one request at a time, until the run is
 // stopped (Context.Done), when it returns the run's stop error, or the
 // handler ends it with an error that is no StandardError. A Response
-// with no Status is a 200. Each request is logged on standard error in
+// with no Status is a 200. listening, when given, is called with the URL
+// once the socket is open, before any request. Each request is logged on standard error in
 // Rack's common log form with the seconds it took, unless quiet. It
 // raises HTTPD::Error when the host allows no I/O or the socket cannot be
 // opened.
-func Serve(ctx object.Context, addr string, quiet bool, handle Handler) error {
+func Serve(ctx object.Context, addr string, quiet bool, listening func(url string) error, handle Handler) error {
 	if !ctx.IOAllowed("io/httpd") {
 		return ctx.Raise(errorClass, "the host allows no network I/O: run the script with cameo --io=network, or let the program say AllowIO(\"network\") or AllowIO(\"io/httpd\")")
 	}
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
 		return ctx.Raise(errorClass, "%v", err)
+	}
+	if listening != nil {
+		// The socket is open: the URL it serves at, an IPv6 host in brackets.
+		if err := listening("http://" + ln.Addr().String()); err != nil {
+			ln.Close()
+			return err
+		}
 	}
 	jobs := make(chan job)
 	done := ctx.Done()
