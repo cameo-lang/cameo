@@ -393,7 +393,7 @@ func (in *Interp) start(recvNode, methodNode syntax.Node, argNodes []syntax.Node
 		data, err := enc.Encode(v)
 		var ns *protogen.NotSerialisable
 		if errors.As(err, &ns) {
-			return nil, in.raise(object.TypeError, line, "a %s cannot be passed to async", ns.Kind)
+			return nil, in.raise(object.TypeError, line, "%s cannot be passed to async", ns.Kind)
 		}
 		if err != nil {
 			return nil, in.raise(object.TypeError, line, "%s", err.Error())
@@ -639,7 +639,7 @@ func (in *Interp) travels(v object.Value, what string) *object.Exception {
 	}
 	var ns *protogen.NotSerialisable
 	if errors.As(err, &ns) {
-		return in.raise(object.TypeError, 0, "%s a %s, which cannot be passed back", what, ns.Kind).(*object.Exception)
+		return in.raise(object.TypeError, 0, "%s %s, which cannot be passed back", what, ns.Kind).(*object.Exception)
 	}
 	return in.raise(object.TypeError, 0, "%s", err.Error()).(*object.Exception)
 }

@@ -1,0 +1,42 @@
+# A proc field holds a block, so a value can carry behaviour: a route and
+# its handler. A class with one is no message: it has no .proto, and its
+# instances cannot cross to a host, to async or into a dump, as a Proc
+# cannot. Everything else about it is a class's: typed, immutable, copied
+# with `with`.
+class Route
+  string :method, :path
+  proc :handler
+end
+
+class App
+  list :routes, of: Route
+
+  def get(path, &handler) = with(routes: routes + [Route.new(method: "GET", path: path, handler: handler)])
+
+  def call(method, path)
+    route = routes.find { |r| r.method == method && r.path == path }
+    route ? route.handler.call(path) : "no route for #{method} #{path}"
+  end
+end
+
+app = App.new
+app = app.get("/hi") { |path| "hi from #{path}" }
+app = app.get("/bye") { |path| "bye from #{path}" }
+puts app.call("GET", "/hi"), app.call("GET", "/bye"), app.call("POST", "/hi")
+p app.routes.map(&:path)
+
+# A field without a block reads as nil, and a value that is no block is a
+# TypeError.
+p Route.new(method: "GET", path: "/").handler
+begin
+  Route.new(method: "GET", path: "/", handler: 1)
+rescue TypeError => e
+  puts e.message
+end
+
+# No message: to_proto and the class's proto say which field.
+begin
+  app.to_proto
+rescue CameoError => e
+  puts e.message
+end
