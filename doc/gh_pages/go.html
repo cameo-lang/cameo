@@ -200,6 +200,7 @@ back.</p>
 <tr><td>—</td><td>Set</td><td><code>[]any</code></td></tr>
 <tr><td><code>map[string]any</code>, <code>map[any]any</code></td><td>Hash</td><td><code>map[any]any</code></td></tr>
 <tr><td><code>proto.Message</code> of a loaded class</td><td>an instance of that class</td><td><code>proto.Message</code> (a <code>*dynamicpb.Message</code>)</td></tr>
+<tr><td><code>*cameo.Block</code></td><td>Proc</td><td><code>*cameo.Block</code>, whose <code>Call</code> runs it</td></tr>
 <tr><td><code>object.Value</code></td><td>itself</td><td>—</td></tr>
 <tr><td>—</td><td>Symbol, Range, Class and the rest</td><td>the <code>object.Value</code> itself</td></tr>
 </tbody>
@@ -402,7 +403,7 @@ func main() {
 		log.Fatal(err)
 	}
 	var calls atomic.Int64
-	prog.Module(&quot;Http&quot;).Def(&quot;get&quot;, func(args []any, kwargs map[string]any) (any, error) {
+	prog.Module(&quot;Http&quot;).Def(&quot;get&quot;, func(args []any, kwargs map[string]any, block *cameo.Block) (any, error) {
 		calls.Add(1) // runs on each worker&#39;s goroutine
 		return &quot;body of &quot; + args[0].(string), nil
 	})
@@ -479,7 +480,7 @@ func fetchAll(client *http.Client, urls []string) ([]any, error) {
 	}
 	web := prog.Module("Web")
 	fetchError := web.Exception("FetchError")
-	web.Def("fetch", func(args []any, kwargs map[string]any) (any, error) {
+	web.Def("fetch", func(args []any, kwargs map[string]any, block *cameo.Block) (any, error) {
 		url, ok := args[0].(string)
 		if !ok {
 			return nil, fmt.Errorf("Web.fetch takes a URL, not %v", args[0])

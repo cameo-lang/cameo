@@ -124,7 +124,7 @@ func TestAHostExceptionGoesBackInAsItself(t *testing.T) {
 	}
 	net := prog.Module("Net")
 	timeout := net.Exception("Timeout")
-	net.Def("get", func([]any, map[string]any) (any, error) { return nil, timeout.New("too slow") })
+	net.Def("get", func([]any, map[string]any, *Block) (any, error) { return nil, timeout.New("too slow") })
 	got, err := prog.Call(nil, "caught")
 	if err != nil {
 		t.Fatal(err)

@@ -115,7 +115,7 @@ func TestADumpLeavesOutAnInstanceWithAProcField(t *testing.T) {
 	// explanation, as it reports a Proc.
 	prog, err := cameo.Load("t.cameo", "class Route\n  proc :handler\nend\nr = Route.new(handler: proc { 1 })\nn = 1\nTest.pause\nn = 2\n", &bytes.Buffer{}, &bytes.Buffer{})
 	assert.NoError(t, err)
-	prog.Module("Test").Def("pause", func([]any, map[string]any) (any, error) {
+	prog.Module("Test").Def("pause", func([]any, map[string]any, *cameo.Block) (any, error) {
 		prog.Pause()
 		return nil, nil
 	})
