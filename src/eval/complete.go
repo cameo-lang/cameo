@@ -94,7 +94,8 @@ func (in *Interp) completionReceiver(recv string) (object.Value, bool) {
 }
 
 // methodsOf returns the names of the methods v answers: a class's or a
-// module's own, and those of its class, or an instance's class's.
+// module's own, and those of its class, or an instance's class's; not the
+// functions of Kernel, which a call with a receiver is refused.
 func methodsOf(v object.Value) []string {
 	var names []string
 	if c, ok := v.AsClass(); ok {
@@ -104,13 +105,24 @@ func methodsOf(v object.Value) []string {
 			}
 			for _, e := range k.Extends {
 				for _, a := range e.Ancestors() {
-					names = append(names, a.MethodNames()...)
+					names = append(names, publicNames(a)...)
 				}
 			}
 		}
 	}
 	for _, k := range v.Class().Ancestors() {
-		names = append(names, k.MethodNames()...)
+		names = append(names, publicNames(k)...)
+	}
+	return names
+}
+
+// publicNames returns the names of k's own methods but its private ones.
+func publicNames(k *object.Class) []string {
+	var names []string
+	for n, m := range k.Methods {
+		if !m.Private {
+			names = append(names, n)
+		}
 	}
 	return names
 }

@@ -933,3 +933,29 @@ p File.singleton_methods.include?(:basename), File.methods.include?(:open)
 `
 	expectOutput(t, src, "[:a, :b, :shout]\n[:b]\n[:b]\n[:y]\ntrue\nfalse\ntrue\ntrue\nfalse\ntrue\ntrue\n[]\ntrue\nfalse\n")
 }
+
+// TestKernelFunctionsArePrivate proves the functions of Kernel are private,
+// as in Ruby: a call without a receiver or on self reaches them from any
+// method, and Kernel.name and send do, but a call on another receiver and
+// public_send are refused, and respond_to?, methods and method_defined?
+// leave them out.
+func TestKernelFunctionsArePrivate(t *testing.T) {
+	src := `class Foo
+  def bar = format("%03d", Integer("7"))
+  def baz = self.format("%d", 8)
+end
+puts Foo.new.bar, Foo.new.baz
+Kernel.puts "via Kernel"
+p 1.send(:format, "%d", 2), Object.ancestors
+p 1.respond_to?(:puts), File.methods.include?(:puts), Object.method_defined?(:require), Object.instance_methods.include?(:raise)
+[-> { File.puts 1 }, -> { 1.public_send(:puts, 1) }, -> { Foo.new.raise "x" }].each do |f|
+  f.call
+rescue NoMethodError => e
+  p e.message
+end
+`
+	expectOutput(t, src, "007\n8\nvia Kernel\n\"2\"\n[Object, Kernel, BasicObject]\nfalse\nfalse\nfalse\nfalse\n"+
+		"\"private method 'puts' called for class File\"\n"+
+		"\"private method 'puts' called for an instance of Integer\"\n"+
+		"\"private method 'raise' called for an instance of Foo\"\n")
+}

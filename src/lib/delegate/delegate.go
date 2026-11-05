@@ -175,7 +175,7 @@ func Install() {
 
 	// DelegateClass(klass) is a new class of delegators to klass's
 	// instances; what it forwards is what the wrapped object answers.
-	object.ObjectClass.Define("DelegateClass", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	object.DefineFunction("DelegateClass", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		cls, ok := args[0].AsClass()
 		if !ok {
 			return object.Value{}, ctx.Raise(object.TypeError, "DelegateClass takes a class, not %s", stdlib.KindName(args[0]))

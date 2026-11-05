@@ -110,7 +110,7 @@ func Install() {
 		return jsonGenerateCall(ctx, args, kw, jsonGenerator{maxNesting: 100})
 	}
 	m.DefineSingleton("[]", -1, either)
-	object.ObjectClass.Define("JSON", -1, either)
+	object.DefineFunction("JSON", -1, either)
 
 	// One to_json on Object serves every class; a class that defines its
 	// own is called from the generator instead.

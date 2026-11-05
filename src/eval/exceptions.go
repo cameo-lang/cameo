@@ -84,7 +84,7 @@ func defaultFields(cls *object.Class) []object.Value {
 // in a rescue clause raises the exception it rescues again, and `cause:`
 // gives the exception its cause, nil for none.
 func installRaise() {
-	raise := object.ObjectClass.Methods["raise"].Native
+	raise := object.Kernel.Methods["raise"].Native
 	wrapped := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		in := ctx.(*Interp)
 		var cause object.Value
@@ -116,8 +116,8 @@ func installRaise() {
 		exc.Cause = cause
 		return object.Value{}, exc
 	}
-	object.ObjectClass.Define("raise", -1, wrapped)
-	object.ObjectClass.Define("fail", -1, wrapped)
+	object.DefineFunction("raise", -1, wrapped)
+	object.DefineFunction("fail", -1, wrapped)
 }
 
 // caused returns err with the rescued exception as its cause, when err is

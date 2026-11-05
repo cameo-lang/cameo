@@ -95,16 +95,16 @@ func init() {
 		in.Break()
 		return object.Nil, nil
 	}
-	object.ObjectClass.Define("debugger", 0, breakHere)
+	object.DefineFunction("debugger", 0, breakHere)
 	binding := object.NewClass("Binding", object.ObjectClass)
 	object.ObjectClass.Consts["Binding"] = object.ClassValue(binding)
 	binding.Define("break", -1, breakHere)
 	binding.Define("b", -1, breakHere)
 	binding.Define("irb", 0, breakHere)
-	object.ObjectClass.Define("binding", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	object.DefineFunction("binding", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.InstanceValue(&object.Instance{Cls: binding}), nil
 	})
-	object.ObjectClass.Define("require", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	object.DefineFunction("require", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return ctx.(*Interp).require(args[0])
 	})
 	// send calls the method its first argument names, as a call written
@@ -146,9 +146,21 @@ func init() {
 		return ctx.(*Interp).call(nil, self, name, args[1:], kw, block, true, 0)
 	}
 	object.BasicObjectClass.Define("__send__", -1, send)
-	for _, name := range []string{"send", "public_send"} {
-		object.ObjectClass.Define(name, -1, send)
-	}
+	object.ObjectClass.Define("send", -1, send)
+	// public_send is send refusing what a call with a receiver refuses: a
+	// function of Kernel.
+	object.ObjectClass.Define("public_send", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if len(args) > 0 {
+			name, ok := args[0].AsSymbol()
+			if !ok {
+				name, _ = args[0].AsString()
+			}
+			if m := ctx.(*Interp).findMethod(self, name); m != nil && m.Private {
+				return object.Value{}, ctx.(*Interp).privateMethod(self, name, 0)
+			}
+		}
+		return send(ctx, self, args, kw, block)
+	})
 	// method_missing is what super reaches from a class's own: the
 	// NoMethodError for the name.
 	object.BasicObjectClass.Define("method_missing", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -159,14 +171,14 @@ func init() {
 		name, _ := args[0].AsSymbol()
 		return object.Value{}, in.noMethod(self, name, args[1:], false, 0)
 	})
-	object.ObjectClass.Define("catch", -1, catchBlock)
-	object.ObjectClass.Define("throw", -1, throwTag)
+	object.DefineFunction("catch", -1, catchBlock)
+	object.DefineFunction("throw", -1, throwTag)
 	// __FILE__ is the script's path as it was given, and __dir__ the
 	// absolute directory it is in.
-	object.ObjectClass.Define("__FILE__", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	object.DefineFunction("__FILE__", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.String(ctx.(*Interp).file), nil
 	})
-	object.ObjectClass.Define("__dir__", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	object.DefineFunction("__dir__", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		abs, err := filepath.Abs(ctx.(*Interp).file)
 		if err != nil {
 			return object.Nil, nil

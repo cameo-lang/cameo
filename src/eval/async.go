@@ -676,7 +676,7 @@ func installCameo() {
 		}
 		return args[0], nil
 	})
-	raise := object.ObjectClass.Methods["fail"].Native
+	raise := object.Kernel.Methods["fail"].Native
 	fail := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		in := ctx.(*Interp)
 		if len(args) < 2 || args[0].Kind() != object.KindInt {
@@ -701,7 +701,7 @@ func installCameo() {
 	define("fail", -1, fail)
 	// A script that includes Cameo at the top level reaches fail from any
 	// method, where Kernel's would answer first.
-	object.ObjectClass.Define("fail", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	object.DefineFunction("fail", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if in, ok := ctx.(*Interp); ok && (in.cameoTop || self.Class().IsA(object.CameoModule)) {
 			return fail(ctx, self, args, kw, block)
 		}

@@ -16,12 +16,11 @@ import (
 // numbers; see doc/cameo-vs-ruby.md.
 func installRandom() {
 	c := object.RandomClass
-	o := object.ObjectClass
 	errno := object.ErrnoModule
 	object.EDOMError.Lexical = errno
 	errno.Consts["EDOM"] = object.ClassValue(object.EDOMError)
 
-	def(o, "rand", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	object.DefineFunction("rand", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) > 1 {
 			return object.Value{}, ArgError(ctx, len(args), "0..1")
 		}
@@ -40,7 +39,7 @@ func installRandom() {
 		}
 		return ctx.Rand().Reseed(seed), nil
 	}
-	def(o, "srand", -1, srand)
+	object.DefineFunction("srand", -1, srand)
 	c.DefineSingleton("srand", -1, srand)
 
 	c.DefineSingleton("new", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {

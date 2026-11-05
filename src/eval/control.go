@@ -112,6 +112,14 @@ func (in *Interp) noMethod(recv object.Value, name string, args []object.Value, 
 		Message: fmt.Sprintf("undefined method '%s' for %s%s", name, typeName(recv), in.requireHint(name))}
 }
 
+// privateMethod is the NoMethodError for a function of Kernel called with
+// a receiver: "private method 'puts' called for class File", as Ruby's.
+func (in *Interp) privateMethod(recv object.Value, name string, line int) error {
+	attrs := map[string]object.Value{"name": object.Symbol(name), "receiver": recv}
+	return &object.Exception{Cls: object.NoMethodError, Line: line, Attrs: attrs,
+		Message: fmt.Sprintf("private method '%s' called for %s", name, typeName(recv))}
+}
+
 // requireHint says which library to require for name, when a library the
 // script has not required brings a function of that name to the top level
 // (lib.TopLevel): `: require "minispec" first`, or "".

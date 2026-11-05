@@ -95,7 +95,8 @@ func installClass() {
 		if err != nil {
 			return object.Value{}, err
 		}
-		return object.Bool(cls(self).Lookup(name) != nil), nil
+		m := cls(self).Lookup(name)
+		return object.Bool(m != nil && !m.Private), nil
 	})
 	def(m, "const_get", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		name, err := WantString(ctx, args[0])
@@ -216,8 +217,8 @@ func instanceMethodNames(c *object.Class, inherited bool) map[string]bool {
 		classes = c.Ancestors()
 	}
 	for _, k := range classes {
-		for n := range k.Methods {
-			if !privateInRuby[n] {
+		for n, m := range k.Methods {
+			if !m.Private && !privateInRuby[n] {
 				names[n] = true
 			}
 		}

@@ -64,7 +64,7 @@ func installModule() {
 	})
 
 	// Kernel#URI: a URI as it is, a String parsed.
-	object.ObjectClass.Define("URI", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	object.DefineFunction("URI", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		v := args[0]
 		if isURI(v) {
 			return v, nil
