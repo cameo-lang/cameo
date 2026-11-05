@@ -118,6 +118,8 @@ func (in *Interp) evalSlow(n syntax.Node, env *Env, fr *Frame) (object.Value, er
 		return in.evalAlias(n, fr)
 	case *syntax.FieldDecl:
 		return in.evalFieldDecl(n, env, fr)
+	case *syntax.AttrDecl:
+		return in.evalAttrDecl(n, env, fr)
 	case *syntax.Reserved:
 		return in.evalReserved(n, fr)
 	case *syntax.Include:

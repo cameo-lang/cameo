@@ -23,18 +23,20 @@ func (in *Interp) readField(name string, fr *Frame, line int) (object.Value, err
 	return v, nil
 }
 
-// writeField sets a field of the instance initialize is building, as
-// `self.name = v` does.
+// writeField sets a field of the instance initialize is building, or an
+// attribute of the class whose body is running, as `self.name = v` does.
 func (in *Interp) writeField(name string, v object.Value, fr *Frame, line int) error {
 	var cls *object.Class
 	var fields []object.Value
 	switch {
+	case fr.Self.Kind() == object.KindClass:
+		return in.writeAttr(name, v, fr, line)
 	case fr.Building != nil:
 		cls, fields = fr.Building.Cls, fr.Building.Fields
 	case fr.BuildingExc != nil:
 		cls, fields = fr.BuildingExc.Cls, fr.BuildingExc.Fields
 	default:
-		return in.raise(object.CameoError, line, "self.%s = …: a field is set in initialize only", name)
+		return in.raise(object.CameoError, line, "self.%s = …: a field is set in initialize, and a class attribute while the class body runs", name)
 	}
 	idx, ok := cls.FieldIndex[name]
 	if !ok {
@@ -45,6 +47,21 @@ func (in *Interp) writeField(name string, v object.Value, fr *Frame, line int) e
 		return err
 	}
 	fields[idx] = checked
+	return nil
+}
+
+// writeAttr sets an attribute of the class self is, while its body runs:
+// from the body itself, or from a class method the body calls. A class is
+// sealed when its body ends, as an instance is when initialize returns.
+func (in *Interp) writeAttr(name string, v object.Value, fr *Frame, line int) error {
+	cls, _ := fr.Self.AsClass()
+	if _, ok := cls.Attrs[name]; !ok {
+		return in.raise(object.NameError, line, "self.%s = …: %s has no attribute %s", name, cls.QualifiedName(), name)
+	}
+	if !cls.Open {
+		return in.raise(object.CameoError, line, "self.%s = …: %s is sealed: an attribute is set while the class body runs", name, cls.QualifiedName())
+	}
+	cls.Attrs[name] = v
 	return nil
 }
 
@@ -161,7 +178,10 @@ func (in *Interp) newClass(args []object.Value, block object.Value) (object.Valu
 	}
 	lexical := append(append([]*object.Class{}, p.Frame.Lexical...), cls)
 	bodyFrame := &Frame{Self: object.ClassValue(cls), Lexical: lexical, DefTarget: cls}
-	if _, err := in.evalBody(p.Block.Body, env, bodyFrame); err != nil {
+	cls.Open = true
+	_, err := in.evalBody(p.Block.Body, env, bodyFrame)
+	cls.Open = false
+	if err != nil {
 		return object.Value{}, err
 	}
 	return object.ClassValue(cls), nil
@@ -204,6 +224,9 @@ func (in *Interp) evalDef(n *syntax.Def, fr *Frame) (object.Value, error) {
 	if existing, ok := table[n.Name]; ok && existing.Native != nil && existing.Body == nil && existing.Owner == target {
 		if _, isField := target.FieldIndex[n.Name]; isField {
 			return object.Value{}, in.raise(object.CameoError, n.Line(), "def %s: %s is a field of %s, and fields read themselves", n.Name, n.Name, target.QualifiedName())
+		}
+		if _, isAttr := target.AttrDefaults[n.Name]; isAttr && n.Singleton {
+			return object.Value{}, in.raise(object.CameoError, n.Line(), "def self.%s: %s is an attribute of %s, and attributes read themselves", n.Name, n.Name, target.QualifiedName())
 		}
 		return object.Value{}, in.raise(object.CameoError, n.Line(), "cannot replace the builtin method %s of %s", n.Name, target.Name)
 	}
@@ -376,6 +399,8 @@ func (in *Interp) evalClassBody(cls, reopened *object.Class, body []syntax.Node,
 	lexical := append(append([]*object.Class{}, fr.Lexical...), cls)
 	bodyFrame := &Frame{Self: object.ClassValue(cls), Lexical: lexical, DefTarget: cls, Reopened: reopened}
 	bodyEnv := NewEnv(nil)
+	cls.Open = true
+	defer func() { cls.Open = false }()
 	if in.dbg != nil {
 		// A class body is a frame of its own, as in Ruby, so next at
 		// the class statement steps over it.

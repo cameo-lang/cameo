@@ -715,7 +715,81 @@ func (in *Interp) inheritFields(cls, super *object.Class) error {
 	}
 	cls.ReservedNumbers = append(cls.ReservedNumbers, super.ReservedNumbers...)
 	cls.ReservedNames = append(cls.ReservedNames, super.ReservedNames...)
+	for name, v := range super.Attrs {
+		cls.Attrs[name] = v
+	}
 	return nil
+}
+
+// evalAttrDecl declares attributes of the class a body builds, each
+// holding its default, nil without one, and gives the class a reader for
+// each. A body reopening the class may declare an attribute it has again
+// with the same default, which keeps its value; a subclass may declare an
+// attribute its parent has, with a default of its own. The class must be
+// open: a declaration after the body ended is refused as a write is.
+func (in *Interp) evalAttrDecl(n *syntax.AttrDecl, env *Env, fr *Frame) (object.Value, error) {
+	cls := fr.DefTarget
+	if cls == nil || cls.IsModule || !isClassValue(fr.Self, cls) {
+		return object.Value{}, in.raise(object.CameoError, n.Line(), "attribute :%s: an attribute belongs to a class body", n.Names[0])
+	}
+	if !cls.Open {
+		return object.Value{}, in.raise(object.CameoError, n.Line(), "attribute :%s: %s is sealed: an attribute is declared while the class body runs", n.Names[0], cls.QualifiedName())
+	}
+	def := object.Nil
+	if n.Default != nil {
+		v, err := in.eval(n.Default, env, fr)
+		if err != nil {
+			return object.Value{}, err
+		}
+		def = v
+	}
+	for _, name := range n.Names {
+		if before, owner := attrDefault(cls, name); owner != nil {
+			switch {
+			case fr.Reopened != nil && object.Equal(before, def):
+				continue
+			case fr.Reopened != nil:
+				return object.Value{}, in.raise(object.CameoError, n.Line(), "attribute %s is already declared in %s with another default", name, cls.QualifiedName())
+			case owner == cls:
+				return object.Value{}, in.raise(object.CameoError, n.Line(), "attribute %s is already declared in %s", name, cls.QualifiedName())
+			}
+			// A subclass declares an inherited attribute with a default
+			// of its own.
+		}
+		if m := cls.LookupSingleton(name); m != nil && m.Owner == cls {
+			return object.Value{}, in.raise(object.CameoError, n.Line(), "attribute %s: %s already defines a class method %s", name, cls.QualifiedName(), name)
+		}
+		cls.Attrs[name] = def
+		cls.AttrDefaults[name] = def
+		cls.DefineSingleton(name, 0, attrReader(name))
+	}
+	return object.Nil, nil
+}
+
+// attrDefault returns the default an attribute was declared with, and the
+// class that declared it, cls or an ancestor; nil when none did.
+func attrDefault(cls *object.Class, name string) (object.Value, *object.Class) {
+	for k := cls; k != nil; k = k.Super {
+		if def, ok := k.AttrDefaults[name]; ok {
+			return def, k
+		}
+	}
+	return object.Value{}, nil
+}
+
+// attrReader reads an attribute of the class the method is called on: a
+// subclass reads its own copy.
+func attrReader(name string) object.NativeFn {
+	return func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		cls, ok := self.AsClass()
+		if !ok {
+			return object.Nil, nil
+		}
+		if v, ok := cls.Attrs[name]; ok {
+			return v, nil
+		}
+		return object.Nil, nil
+	}
 }
 
 // exceptionNumber reports whether number is one an exception class keeps
