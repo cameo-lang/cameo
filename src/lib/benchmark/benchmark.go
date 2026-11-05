@@ -1,4 +1,11 @@
-package stdlib
+// Package benchmark is Ruby's benchmark library, built into cameo:
+// Benchmark.measure, realtime, bm, bmbm and benchmark, and Benchmark::Tms.
+//
+// It is Ruby 3.4's benchmark 0.4.0, in Go: it reads the process's CPU
+// times and the monotonic clock itself, so a script times its own code
+// without the interpreter's start in the result. Tms#add! is left out: it
+// changes its receiver, which a cameo value cannot.
+package benchmark
 
 import (
 	"regexp"
@@ -8,19 +15,12 @@ import (
 	"unicode/utf8"
 
 	"github.com/cameo-lang/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/stdlib"
 )
-
-// Benchmark is Ruby 3.4's benchmark 0.4.0, in Go: it reads the process's
-// CPU times and the monotonic clock itself, so a script times its own code
-// without the interpreter's start in the result. Tms#add! is left out:
-// it changes its receiver, which a cameo value cannot.
 
 var (
 	benchmarkModule = object.NewModule("Benchmark")
 	tmsClass        = object.NewClass("Tms", object.ObjectClass)
-	// BenchmarkTmsClass is Benchmark::Tms, which p and puts render with
-	// BenchmarkTmsInspect and BenchmarkTmsToS.
-	BenchmarkTmsClass = tmsClass
 	// reportClass is the x of Benchmark.bm { |x| ... }, jobClass that of
 	// bmbm; each keeps what its report calls collect in Instance.Message.
 	reportClass = object.NewClass("Report", object.ObjectClass)
@@ -60,7 +60,9 @@ type jobState struct {
 	blocks []object.Value
 }
 
-func installBenchmark() {
+// Install defines the Benchmark module and its classes. lib.Install calls
+// it once.
+func Install() {
 	m := benchmarkModule
 	object.ObjectClass.Consts["Benchmark"] = object.ClassValue(m)
 	m.Consts["VERSION"] = object.String("0.4.0")
@@ -76,13 +78,13 @@ func installBenchmark() {
 
 	// The module functions are instance methods too, for a class that
 	// includes Benchmark.
-	define := func(name string, f fn) {
+	define := func(name string, f object.NativeFn) {
 		m.DefineSingleton(name, -1, f)
 		m.Define(name, -1, f)
 	}
 	define("measure", func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) > 1 {
-			return object.Value{}, ArgError(ctx, len(args), "0..1")
+			return object.Value{}, stdlib.ArgError(ctx, len(args), "0..1")
 		}
 		label := object.String("")
 		if len(args) == 1 {
@@ -92,9 +94,9 @@ func installBenchmark() {
 	})
 	define("realtime", func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) > 0 {
-			return object.Value{}, ArgError(ctx, len(args), "0")
+			return object.Value{}, stdlib.ArgError(ctx, len(args), "0")
 		}
-		if err := needBlock(ctx, block, "yield"); err != nil {
+		if err := stdlib.NeedBlock(ctx, block, "yield"); err != nil {
 			return object.Value{}, err
 		}
 		start := time.Now()
@@ -131,11 +133,11 @@ func installBenchmark() {
 	})
 	define("bmbm", func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) > 1 {
-			return object.Value{}, ArgError(ctx, len(args), "0..1")
+			return object.Value{}, stdlib.ArgError(ctx, len(args), "0..1")
 		}
 		width := int64(0)
 		if len(args) == 1 {
-			w, err := WantInt(ctx, args[0], "")
+			w, err := stdlib.WantInt(ctx, args[0], "")
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -154,7 +156,7 @@ type cpuTimes struct{ utime, stime, cutime, cstime float64 }
 
 // benchmarkMeasure runs block and returns the Tms of its run.
 func benchmarkMeasure(ctx object.Context, label, block object.Value) (object.Value, error) {
-	if err := needBlock(ctx, block, "yield"); err != nil {
+	if err := stdlib.NeedBlock(ctx, block, "yield"); err != nil {
 		return object.Value{}, err
 	}
 	t0, r0 := readCPUTimes(), time.Now()
@@ -220,7 +222,7 @@ var tmsDirectives = []struct {
 func tmsFormat(ctx object.Context, self, format object.Value, args []object.Value) (string, error) {
 	str := benchmarkFormat
 	if !format.IsZero() && !format.IsNil() {
-		s, err := WantString(ctx, format)
+		s, err := stdlib.WantString(ctx, format)
 		if err != nil {
 			return "", err
 		}
@@ -258,14 +260,14 @@ func tmsFormat(ctx object.Context, self, format object.Value, args []object.Valu
 	return out.Str(), nil
 }
 
-// BenchmarkTmsToS is Tms#to_s: its times in FORMAT.
-func BenchmarkTmsToS(ctx object.Context, t object.Value) (string, error) {
+// tmsToS is Tms#to_s: its times in FORMAT.
+func tmsToS(ctx object.Context, t object.Value) (string, error) {
 	return tmsFormat(ctx, t, object.Nil, nil)
 }
 
-// BenchmarkTmsInspect is Tms#inspect: Ruby's instance variables, without
-// the address Ruby shows and a cameo value has not.
-func BenchmarkTmsInspect(ctx object.Context, t object.Value) (string, error) {
+// tmsInspect is Tms#inspect: Ruby's instance variables, without the
+// address Ruby shows and a cameo value has not.
+func tmsInspect(ctx object.Context, t object.Value) (string, error) {
 	var b strings.Builder
 	b.WriteString("#<Benchmark::Tms")
 	for i, name := range tmsReaders {
@@ -285,7 +287,7 @@ func installTms() {
 	c := tmsClass
 	c.DefineSingleton("new", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) > 6 {
-			return object.Value{}, ArgError(ctx, len(args), "0..6")
+			return object.Value{}, stdlib.ArgError(ctx, len(args), "0..6")
 		}
 		label := object.Nil
 		if len(args) == 6 {
@@ -298,11 +300,11 @@ func installTms() {
 		return newTms(ctx, times, label)
 	})
 	for i, name := range tmsReaders {
-		def(c, name, 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		c.Define(name, 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			return tmsFields(self)[i], nil
 		})
 	}
-	def(c, "format", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	c.Define("format", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		format := object.Nil
 		if len(args) > 0 {
 			format, args = args[0], args[1:]
@@ -313,25 +315,25 @@ func installTms() {
 		}
 		return object.String(s), nil
 	})
-	def(c, "to_s", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		s, err := BenchmarkTmsToS(ctx, self)
+	c.Define("to_s", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		s, err := tmsToS(ctx, self)
 		if err != nil {
 			return object.Value{}, err
 		}
 		return object.String(s), nil
 	})
-	def(c, "inspect", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		s, err := BenchmarkTmsInspect(ctx, self)
+	c.Define("inspect", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		s, err := tmsInspect(ctx, self)
 		if err != nil {
 			return object.Value{}, err
 		}
 		return object.String(s), nil
 	})
-	def(c, "to_a", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	c.Define("to_a", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		f := tmsFields(self)
 		return object.NewList(f[tmsLabel], f[tmsUtime], f[tmsStime], f[tmsCutime], f[tmsCstime], f[tmsReal]), nil
 	})
-	def(c, "to_h", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	c.Define("to_h", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		f := tmsFields(self)
 		b := object.NewMapBuilder()
 		for _, i := range []int{tmsLabel, tmsUtime, tmsStime, tmsCutime, tmsCstime, tmsReal} {
@@ -340,11 +342,11 @@ func installTms() {
 		return object.MapValue(b.Map()), nil
 	})
 	for _, op := range []string{"+", "-", "*", "/"} {
-		def(c, op, 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		c.Define(op, 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			return tmsMemberwise(ctx, op, self, args[0])
 		})
 	}
-	def(c, "add", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	c.Define("add", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		t, err := benchmarkMeasure(ctx, object.String(""), block)
 		if err != nil {
 			return object.Value{}, err
@@ -393,12 +395,12 @@ func installReports() {
 		st.list = append(st.list, t)
 		return t, nil
 	}
-	def(reportClass, "report", -1, report)
-	def(reportClass, "item", -1, report)
-	def(reportClass, "width", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	reportClass.Define("report", -1, report)
+	reportClass.Define("item", -1, report)
+	reportClass.Define("width", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Int(int64(self.Instance().Message.(*reportState).width)), nil
 	})
-	def(reportClass, "list", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	reportClass.Define("list", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.NewList(self.Instance().Message.(*reportState).list...), nil
 	})
 
@@ -420,12 +422,12 @@ func installReports() {
 		st.blocks = append(st.blocks, block)
 		return self, nil
 	}
-	def(jobClass, "report", -1, item)
-	def(jobClass, "item", -1, item)
-	def(jobClass, "width", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	jobClass.Define("report", -1, item)
+	jobClass.Define("item", -1, item)
+	jobClass.Define("width", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Int(int64(self.Instance().Message.(*jobState).width)), nil
 	})
-	def(jobClass, "list", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	jobClass.Define("list", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		st := self.Instance().Message.(*jobState)
 		list := make([]object.Value, len(st.labels))
 		for i, label := range st.labels {
@@ -439,12 +441,12 @@ func installReports() {
 // caption, a line per report call, and a line per Tms in what the block
 // returned when that is an Array, labelled by labels in turn.
 func benchmarkRun(ctx object.Context, caption, widthArg, format object.Value, labels []object.Value, block object.Value) (object.Value, error) {
-	if err := needBlock(ctx, block, "yield"); err != nil {
+	if err := stdlib.NeedBlock(ctx, block, "yield"); err != nil {
 		return object.Value{}, err
 	}
 	labelWidth := int64(0)
 	if !widthArg.IsNil() {
-		w, err := WantInt(ctx, widthArg, "")
+		w, err := stdlib.WantInt(ctx, widthArg, "")
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -461,7 +463,7 @@ func benchmarkRun(ctx object.Context, caption, widthArg, format object.Value, la
 		return object.Value{}, err
 	}
 	var out strings.Builder
-	captionStr, err := WantString(ctx, caption)
+	captionStr, err := stdlib.WantString(ctx, caption)
 	if err != nil {
 		return object.Value{}, err
 	}
@@ -506,7 +508,7 @@ func benchmarkRun(ctx object.Context, caption, widthArg, format object.Value, la
 // rehearsal, collects garbage, and runs them again for the times it
 // returns, writing each line as its block finishes.
 func benchmarkBmbm(ctx object.Context, width int, block object.Value) (object.Value, error) {
-	if err := needBlock(ctx, block, "yield"); err != nil {
+	if err := stdlib.NeedBlock(ctx, block, "yield"); err != nil {
 		return object.Value{}, err
 	}
 	st := &jobState{width: width}
@@ -574,9 +576,9 @@ func benchmarkBmbm(ctx object.Context, width int, block object.Value) (object.Va
 
 // padRight and padLeft are String#ljust and #rjust.
 func padRight(s string, width int, pad string) string {
-	return s + padding(pad, width-utf8.RuneCountInString(s))
+	return s + stdlib.Padding(pad, width-utf8.RuneCountInString(s))
 }
 
 func padLeft(s string, width int, pad string) string {
-	return padding(pad, width-utf8.RuneCountInString(s)) + s
+	return stdlib.Padding(pad, width-utf8.RuneCountInString(s)) + s
 }

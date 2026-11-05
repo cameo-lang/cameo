@@ -373,14 +373,14 @@ func installString() {
 			return object.String(place(str(self), fill, int(n))), nil
 		})
 	}
-	pad("ljust", func(s, fill string, n int) string { return s + padding(fill, n-utf8.RuneCountInString(s)) })
-	pad("rjust", func(s, fill string, n int) string { return padding(fill, n-utf8.RuneCountInString(s)) + s })
+	pad("ljust", func(s, fill string, n int) string { return s + Padding(fill, n-utf8.RuneCountInString(s)) })
+	pad("rjust", func(s, fill string, n int) string { return Padding(fill, n-utf8.RuneCountInString(s)) + s })
 	pad("center", func(s, fill string, n int) string {
 		total := n - utf8.RuneCountInString(s)
 		if total <= 0 {
 			return s
 		}
-		return padding(fill, total/2) + s + padding(fill, total-total/2)
+		return Padding(fill, total/2) + s + Padding(fill, total-total/2)
 	})
 	def(c, "format", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		s, err := format(ctx, str(self), args)
@@ -403,7 +403,10 @@ func installString() {
 
 }
 
-func padding(fill string, n int) string {
+// Padding is n characters of fill, repeated and cut to n, as ljust and
+// rjust pad with. fill must not be empty: the callers refuse an empty one
+// as Ruby does, "zero width padding".
+func Padding(fill string, n int) string {
 	if n <= 0 {
 		return ""
 	}

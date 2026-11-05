@@ -37,7 +37,6 @@ func Install() {
 	installStringPatterns()
 	installEnumerator()
 	installTimeParsing()
-	installBenchmark()
 	installEncodings()
 	installPack()
 	installPaths()
@@ -102,8 +101,9 @@ func KindName(v object.Value) string {
 	return v.Class().QualifiedName()
 }
 
-// blockOrEnumerator fails when a method that needs a block has none.
-func needBlock(ctx object.Context, block object.Value, name string) error {
+// NeedBlock fails with a LocalJumpError when a method that needs a block
+// has none.
+func NeedBlock(ctx object.Context, block object.Value, name string) error {
 	if block.IsZero() {
 		return ctx.Raise(object.LocalJumpError, "no block given (%s)", name)
 	}

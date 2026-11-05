@@ -8,19 +8,37 @@ import (
 	"github.com/cameo-lang/cameo/src/stdlib"
 )
 
-// userMethod finds a user-defined (not native) method name on v's class.
+// userMethod finds the method name that v's own class gives it: one a
+// script defined, with a body, or, on an instance, a native one a library
+// defines on its class, which to_s, inspect and <=> reach as a script's.
+// Object's own natives are the defaults the evaluator renders itself.
 func userMethod(v object.Value, name string) *object.Method {
 	m := v.Class().Lookup(name)
-	if m != nil && m.Body != nil {
+	if m == nil {
+		return nil
+	}
+	if m.Body != nil {
+		return m
+	}
+	if v.Kind() == object.KindInstance && m.Native != nil && m.Owner != object.ObjectClass && m.Owner != object.BasicObjectClass {
 		return m
 	}
 	return nil
 }
 
+// callOwn calls the method userMethod found on v: a script's through its
+// body, a library's native one directly.
+func (in *Interp) callOwn(m *object.Method, v object.Value, args []object.Value) (object.Value, error) {
+	if m.Native != nil {
+		return m.Native(in, v, args, nil, object.Value{})
+	}
+	return in.invoke(m, v, args, nil, object.Value{}, 0)
+}
+
 // Inspect implements object.Context: a value's inspect, as p prints it.
 func (in *Interp) Inspect(v object.Value) (string, error) {
 	if m := userMethod(v, "inspect"); m != nil {
-		r, err := in.invoke(m, v, nil, nil, object.Value{}, 0)
+		r, err := in.callOwn(m, v, nil)
 		if err != nil {
 			return "", err
 		}
@@ -32,7 +50,7 @@ func (in *Interp) Inspect(v object.Value) (string, error) {
 // ToS implements object.Context: a value's to_s, as puts prints it.
 func (in *Interp) ToS(v object.Value) (string, error) {
 	if m := userMethod(v, "to_s"); m != nil {
-		r, err := in.invoke(m, v, nil, nil, object.Value{}, 0)
+		r, err := in.callOwn(m, v, nil)
 		if err != nil {
 			return "", err
 		}
@@ -68,8 +86,6 @@ func (in *Interp) ToS(v object.Value) (string, error) {
 			return "#<Object>", nil
 		case object.EncodingClass, object.PathnameClass:
 			return v.Instance().Fields[0].Str(), nil
-		case stdlib.BenchmarkTmsClass:
-			return stdlib.BenchmarkTmsToS(in, v)
 		}
 	}
 	if v.IsNil() {
@@ -195,8 +211,6 @@ func (in *Interp) inspectBuiltin(v object.Value) (string, error) {
 			return "#<Encoding:" + v.Fields[0].Str() + ">", nil
 		case object.PathnameClass:
 			return "#<Pathname:" + v.Fields[0].Str() + ">", nil
-		case stdlib.BenchmarkTmsClass:
-			return stdlib.BenchmarkTmsInspect(in, object.InstanceValue(v))
 		}
 		parts := make([]string, len(v.Cls.Fields))
 		for i, f := range v.Cls.Fields {
@@ -222,7 +236,7 @@ func itoa(i int64) string { return strconv.FormatInt(i, 10) }
 // user-defined == where a class has one.
 func (in *Interp) Equal(a, b object.Value) (bool, error) {
 	if m := userMethod(a, "=="); m != nil {
-		r, err := in.invoke(m, a, []object.Value{b}, nil, object.Value{}, 0)
+		r, err := in.callOwn(m, a, []object.Value{b})
 		if err != nil {
 			return false, err
 		}
@@ -281,7 +295,7 @@ func (in *Interp) Equal(a, b object.Value) (bool, error) {
 // compare.
 func (in *Interp) Compare(a, b object.Value) (int, error) {
 	if m := userMethod(a, "<=>"); m != nil {
-		r, err := in.invoke(m, a, []object.Value{b}, nil, object.Value{}, 0)
+		r, err := in.callOwn(m, a, []object.Value{b})
 		if err != nil {
 			return 0, err
 		}

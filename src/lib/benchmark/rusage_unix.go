@@ -1,6 +1,6 @@
 //go:build unix
 
-package stdlib
+package benchmark
 
 import "syscall"
 

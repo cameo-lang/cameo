@@ -426,7 +426,7 @@ func installLazy() {
 	stage := func(name string, block bool, start func(ctx object.Context, args []object.Value, block object.Value, yield func(object.Value) error) func(object.Value) error) {
 		def(c, name, -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, blk object.Value) (object.Value, error) {
 			if block {
-				if err := needBlock(ctx, blk, name); err != nil {
+				if err := NeedBlock(ctx, blk, name); err != nil {
 					return object.Value{}, err
 				}
 			}
@@ -604,7 +604,7 @@ func installLazy() {
 		}), nil
 	})
 	def(c, "take_while", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if err := needBlock(ctx, block, "take_while"); err != nil {
+		if err := NeedBlock(ctx, block, "take_while"); err != nil {
 			return object.Value{}, err
 		}
 		parent := self.Enumerator().Each
@@ -714,7 +714,7 @@ func installLazy() {
 		})
 	}
 	def(c, "chunk", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if err := needBlock(ctx, block, "chunk"); err != nil {
+		if err := NeedBlock(ctx, block, "chunk"); err != nil {
 			return object.Value{}, err
 		}
 		chunk := chunker(ctx, block)
