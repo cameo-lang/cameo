@@ -200,7 +200,7 @@ func (in *Interp) elementType(name string, fr *Frame, line int) (*object.FieldTy
 // the value as stored: an Integer given to a float field becomes a Float.
 func (in *Interp) checkField(f *object.Field, v object.Value, line int) (object.Value, error) {
 	if v.IsNil() {
-		return emptyFor(f.Type), nil
+		return object.Empty(f.Type), nil
 	}
 	out, ok := in.coerce(f.Type, v)
 	if !ok {
@@ -222,21 +222,6 @@ func (in *Interp) checkField(f *object.Field, v object.Value, line int) (object.
 		return object.Value{}, in.raise(object.TypeError, line, "field %s of %s takes %s, not %s", f.Name, f.Owner.QualifiedName(), describeType(f.Type), typeName(v))
 	}
 	return out, nil
-}
-
-// emptyFor is what a list, set or map field holds when given nil: the
-// empty collection, since the wire form cannot tell absent from empty. Any
-// other field holds nil.
-func emptyFor(t *object.FieldType) object.Value {
-	switch t.Kind {
-	case "list":
-		return object.NewList()
-	case "set":
-		return object.SetValue(object.NewSet())
-	case "map":
-		return object.MapValue(object.NewMap())
-	}
-	return object.Nil
 }
 
 // coerce checks v against a type and returns the stored form.
@@ -623,7 +608,8 @@ func (in *Interp) with(target, key, value object.Value, index bool) (object.Valu
 		}
 		fields := append([]object.Value{}, t.Fields...)
 		fields[idx] = checked
-		return object.InstanceValue(&object.Instance{Cls: t.Cls, Fields: fields}), nil
+		// The Message, what a library keeps on the instance, comes along.
+		return object.InstanceValue(&object.Instance{Cls: t.Cls, Fields: fields, Message: t.Message}), nil
 	case object.KindException:
 		return in.withException(target.Exception(), key, value)
 	case object.KindMap:

@@ -281,9 +281,16 @@ func (in *Interp) dispatch(fr *Frame, recv object.Value, name string, args []obj
 			return object.Nil, nil
 		}
 		// A class's own method_missing takes a call to a method it lacks,
-		// with the name as a symbol first; Object's raises.
-		if mm := recv.Class().Lookup("method_missing"); mm != nil && mm.Body != nil {
-			return in.invoke(mm, recv, append([]object.Value{object.Symbol(name)}, args...), kw, block, line)
+		// with the name as a symbol first: a script's, or a library's
+		// native one on its instances, as userMethod finds them; the
+		// core's own raises.
+		if mm := userMethod(recv, "method_missing"); mm != nil {
+			mmArgs := append([]object.Value{object.Symbol(name)}, args...)
+			if mm.Body == nil {
+				v, err := mm.Native(in, recv, mmArgs, kw, block)
+				return v, withLine(err, line)
+			}
+			return in.invoke(mm, recv, mmArgs, kw, block, line)
 		}
 		return object.Value{}, in.noMethod(recv, name, args, vcall, line)
 	}

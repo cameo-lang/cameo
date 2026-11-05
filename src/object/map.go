@@ -203,6 +203,10 @@ func (s *Set) Difference(o *Set) *Set {
 // Key is the canonical form of a value as a map key or set member: two
 // structurally equal values have equal keys. An Integer and a Float of the
 // same magnitude are different keys, as in Ruby.
+// Keyed is a Message that counts in its instance's identity as a key: a
+// delegator's wrapped object. KeyValue is the value that counts.
+type Keyed interface{ KeyValue() Value }
+
 func Key(v Value) string {
 	var b strings.Builder
 	writeKey(&b, v)
@@ -305,6 +309,10 @@ func writeKey(b *strings.Builder, v Value) {
 		for _, f := range i.Fields {
 			writeKey(b, f)
 			b.WriteByte(',')
+		}
+		if k, ok := i.Message.(Keyed); ok {
+			b.WriteByte('@')
+			writeKey(b, k.KeyValue())
 		}
 		b.WriteString(")")
 	case KindClass:

@@ -194,7 +194,7 @@ func (in *Interp) newInstance(cls *object.Class, args []object.Value, kw *object
 	for i, f := range cls.Fields {
 		inst.Fields[i] = f.Default
 		if f.Default.IsZero() {
-			inst.Fields[i] = emptyFor(f.Type)
+			inst.Fields[i] = object.Empty(f.Type)
 		}
 	}
 	if m := cls.Lookup("initialize"); m != nil && m.Body != nil {

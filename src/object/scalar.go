@@ -163,3 +163,18 @@ func IntegerUint64(v Value) uint64 {
 	}
 	return v.Big().Uint64()
 }
+
+// Empty is a field's value before anything was set, when it has no
+// default: an empty collection for a list, set or map field, since the
+// wire form cannot tell absent from empty, and nil for any other.
+func Empty(t *FieldType) Value {
+	switch t.Kind {
+	case "list":
+		return NewList()
+	case "set":
+		return SetValue(NewSet())
+	case "map":
+		return MapValue(NewMap())
+	}
+	return Nil
+}
