@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"fmt"
 	"reflect"
+	"regexp"
 	"strings"
 )
 
@@ -283,6 +284,26 @@ func NotContains(t testingT, container, element interface{}, details ...interfac
 
 	default:
 		msg := fmt.Sprintf("assert.NotContains(...) failed:\n  Unsupported container type: %T (expected string, slice, or array)", container)
+		msg = messageWithDetails(msg, details...)
+		t.Fatal(msg)
+	}
+}
+
+// Matches checks if actual matches the regular expression pattern, and
+// fails the test if not, or when the pattern does not compile.
+// details are optional and can provide additional details about the failed assertion, using a format string and values.
+func Matches(t testingT, actual string, pattern string, details ...interface{}) {
+	t.Helper()
+
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		msg := fmt.Sprintf("assert.Matches(...) failed:\n  Pattern does not compile: %q\n  %v", pattern, err)
+		msg = messageWithDetails(msg, details...)
+		t.Fatal(msg)
+		return
+	}
+	if !re.MatchString(actual) {
+		msg := fmt.Sprintf("assert.Matches(...) failed:\n  String:       %q\n  Should match: %q", actual, pattern)
 		msg = messageWithDetails(msg, details...)
 		t.Fatal(msg)
 	}

@@ -25,6 +25,21 @@ test_script_arguments_are_in_argv() {
   assert_eq '[]' "$out"
 }
 
+test_io_flag_allows_the_kinds_named() {
+  local script out
+  script="$(mktemp -d)/io.cameo"
+  printf 'require "io/httpd"\np HTTPD.allowed?\n' > "$script"
+  out=$("$CAMEO_BIN" "$script")
+  assert_eq 'false' "$out"
+  out=$("$CAMEO_BIN" --io=network "$script")
+  assert_eq 'true' "$out"
+  out=$("$CAMEO_BIN" --io=file,popen "$script")
+  assert_eq 'false' "$out"
+  out=$("$CAMEO_BIN" --io "$script")
+  assert_eq 'true' "$out"
+  if "$CAMEO_BIN" --io=bogus "$script" 2>/dev/null; then fail "--io=bogus was accepted"; fi
+}
+
 test_version_flag_matches_the_command() {
   local flag cmd
   flag=$("$CAMEO_BIN" --version)

@@ -13,6 +13,7 @@ import (
 	"reflect"
 	"slices"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -559,3 +560,41 @@ var builtinExceptions = sync.OnceValue(func() []*object.Class {
 	}
 	return out
 })
+
+// AllowIO lets the script do I/O. Nothing is allowed unless the program
+// says so: a program that embeds cameo is safe by default, and opts in
+// to each kind of I/O apart. Each of what is a kind, "network", "file"
+// or "popen", "all" for every kind, or a library's require path:
+// AllowIO("network") lets every library that reaches the network act,
+// AllowIO("io/httpd") that one library, and AllowIO("all") any I/O. The
+// cameo command and a program cameo build wrote allow what their --io
+// flag names. Call it before Run.
+func (p *Program) AllowIO(what ...string) { p.in.AllowIO(what...) }
+
+// IOKinds are the kinds of I/O --io= and AllowIO name.
+var IOKinds = []string{"network", "file", "popen"}
+
+// ParseIOFlags reads the --io flags at the front of a command line, as the
+// cameo command and a program cameo build wrote take them: --io allows
+// every kind of I/O, --io=network,file,popen the kinds named. It returns
+// what AllowIO takes and the arguments left, or an error naming a kind it
+// does not know.
+func ParseIOFlags(args []string) (allow, rest []string, err error) {
+	for len(args) > 0 {
+		switch {
+		case args[0] == "--io":
+			allow = append(allow, "all")
+		case strings.HasPrefix(args[0], "--io="):
+			for _, kind := range strings.Split(strings.TrimPrefix(args[0], "--io="), ",") {
+				if !slices.Contains(IOKinds, kind) {
+					return nil, nil, fmt.Errorf("--io takes %s, not %q", strings.Join(IOKinds, ", "), kind)
+				}
+				allow = append(allow, kind)
+			}
+		default:
+			return allow, args, nil
+		}
+		args = args[1:]
+	}
+	return allow, args, nil
+}

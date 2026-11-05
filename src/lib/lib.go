@@ -16,6 +16,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/digest"
 	"github.com/cameo-lang/cameo/src/lib/forwardable"
 	"github.com/cameo-lang/cameo/src/lib/getoptlong"
+	"github.com/cameo-lang/cameo/src/lib/io/httpd"
 	"github.com/cameo-lang/cameo/src/lib/ipaddr"
 	"github.com/cameo-lang/cameo/src/lib/json"
 	"github.com/cameo-lang/cameo/src/lib/logger"
@@ -61,6 +62,7 @@ var Libraries = map[string][]string{
 	"digest/sha1":     {"digest"},
 	"digest/sha2":     {"digest"},
 	"forwardable":     nil,
+	"io/httpd":        nil,
 	"ipaddr":          nil,
 	"json":            nil,
 	"logger":          nil,
@@ -86,6 +88,12 @@ var Libraries = map[string][]string{
 	"uri":                         nil,
 	"zlib":                        nil,
 }
+
+// IOKinds names, for each library that does I/O, the kind it does:
+// network, file or popen. Such a library acts only in a program that
+// allowed its kind, or it by name, through cameo.Program.AllowIO; nothing
+// is allowed unless the program says so.
+var IOKinds = map[string]string{"io/httpd": "network"}
 
 // Sources are the libraries written in cameo, by the name require
 // accepts: the source of each, which a library's Go package embeds and
@@ -114,6 +122,7 @@ func Install() {
 	digest.Install()
 	forwardable.Install()
 	ipaddr.Install()
+	httpd.Install()
 	json.Install()
 	logger.Install()
 	marshal.Install()

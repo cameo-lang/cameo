@@ -330,7 +330,10 @@ These are absent, and a script that uses one fails when it reaches it:
   fields; see above for Data), `Rational` and `Complex`, `ObjectSpace`, `GC`, `ENV`, `Module.new`,
   refinements, `binding`, `method` and `Proc#curry`.
 - **No I/O beyond standard output and error**: `File`, `IO`, `Dir`,
-  `gets`, `STDIN`, `STDOUT`, `STDERR`, `$stdout`.
+  `gets`, `STDIN`, `STDOUT`, `STDERR`, `$stdout`. A library that does I/O,
+  `io/httpd`, acts only where the program allowed its kind: `cameo --io`
+  or `--io=network,file,popen`, or `AllowIO` in a program that embeds
+  cameo, which allows nothing by default.
 - **No threads or processes**: `Thread`, `Fiber`, `Mutex`, `sleep`,
   `system`, `exec`, `spawn`; cameo has `async` and `await` instead.
 - **Not there yet**: `exit!`,
