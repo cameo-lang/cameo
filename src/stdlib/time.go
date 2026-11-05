@@ -6,13 +6,19 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
+
+	// The IANA time zone database, for a zone named in a script on a
+	// machine without one.
+	_ "time/tzdata"
 
 	"github.com/cameo-lang/cameo/src/object"
 )
 
-// installTime defines Time, an immutable instant with the offset it shows
-// in: UTC, the local zone, or a fixed offset such as "+09:00". Ruby's utc
+// installTime defines Time, an immutable instant with the zone it shows
+// in: UTC, the local zone, a fixed offset such as "+09:00", or an IANA
+// zone such as "Europe/Berlin", whose offset follows the date. Ruby's utc
 // and localtime change their receiver; cameo's return a new time, as
 // getutc and getlocal do. subsec is a Float, since cameo has no Rational.
 func installTime() {
@@ -397,7 +403,34 @@ func inKeyword(ctx object.Context, kw *object.Map, loc *time.Location) (*time.Lo
 
 // zoneArg reads a UTC offset as Ruby takes one: seconds, "+HH:MM" and its
 // variants ("+HH", "+HHMM", "+HH:MM:SS"), "UTC", "Z", or a military zone
-// letter. "-00:00" is UTC.
+// letter. "-00:00" is UTC. A name of the IANA time zone database, such as
+// "Europe/Berlin", is cameo's own: Ruby takes a zone object there.
+// zones caches the zones loaded by name: Go caches only UTC and Local,
+// and reads the zoneinfo file again on every LoadLocation.
+var zones sync.Map
+
+// LoadZone is the zone an IANA name such as "Europe/Berlin" denotes. Go
+// reads the host's zoneinfo directory first and the compiled-in database
+// (time/tzdata) when the host has none, so a name resolves on any
+// machine; a host's database may still know a name, or a spelling of it,
+// that the compiled-in one does not. A zone that is UTC under another
+// name, such as "Etc/UTC", is time.UTC, so the time is utc? and prints as
+// a UTC time does.
+func LoadZone(ctx object.Context, name string) (*time.Location, error) {
+	if loc, ok := zones.Load(name); ok {
+		return loc.(*time.Location), nil
+	}
+	loc, err := time.LoadLocation(name)
+	if err != nil {
+		return nil, ctx.Raise(object.ArgumentError, "unknown time zone %s: an IANA name such as Europe/Berlin, or an offset such as +01:00, expected", name)
+	}
+	if abbr, off := time.Now().In(loc).Zone(); abbr == "UTC" && off == 0 {
+		loc = time.UTC
+	}
+	zones.Store(name, loc)
+	return loc, nil
+}
+
 func zoneArg(ctx object.Context, v object.Value) (*time.Location, error) {
 	if n, ok := v.AsInt(); ok {
 		if n <= -86400 || n >= 86400 {
@@ -408,6 +441,9 @@ func zoneArg(ctx object.Context, v object.Value) (*time.Location, error) {
 	s, ok := v.AsString()
 	if !ok {
 		return nil, ctx.Raise(object.TypeError, "can't convert %s into an exact number", KindName(v))
+	}
+	if strings.Contains(s, "/") {
+		return LoadZone(ctx, s)
 	}
 	bad := func() error {
 		return ctx.Raise(object.ArgumentError, `"+HH:MM", "-HH:MM", "UTC" or "A".."I","K".."Z" expected for utc_offset: %s`, s)
