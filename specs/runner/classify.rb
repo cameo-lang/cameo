@@ -38,7 +38,7 @@ module Classify
     [/class variables are not supported|class_variable/, "expected", "class-variables"],
     [/This is not supported, use \S+ = \S+ instead|returns a copy in cameo and changes nothing|changes its receiver|cannot store into|the left side of an assignment must start|index assignment takes one index|cameo has no setters|a field is set in initialize|setters are not supported|multiple assignment binds local variables only/, "expected", "mutation"],
     [/\A(public|private|protected|private_constant|module_function|private_class_method|public_class_method)\b.* is not supported|every method is public/, "expected", "visibility"],
-    [/\Aattr_(reader|writer|accessor)/, "expected", "attr-accessor"],
+    [/\Aattr(_reader|_writer|_accessor)? /, "expected", "attr-accessor"],
     [/\b(eval|instance_eval|class_eval|module_eval|instance_exec|class_exec|define_method|define_singleton_method|remove_method|undef_method|alias_method|instance_method|method_added|singleton_class|const_set|remove_const)\b.*(not supported|undefined method)|class << self|on an object: methods belong to classes|allocate is not supported|undef is not supported|\bundefined method '(instance_method|method|singleton_methods|define_method|public_method)'/, "expected", "metaprogramming"],
     [/undefined method '(equal\?|object_id|__id__|frozen\?)'|FrozenError|can't modify frozen/, "expected", "identity-and-freezing"],
     [/a subclass of Numeric is not supported/, "expected", "numeric-subclass"],
@@ -54,6 +54,18 @@ module Classify
     [/: use a literal \(NoMethodError\)/, "expected", "literal-only"],
     [/This regexp is not supported in Cameo/, "expected", "regexp"],
     [/ruby2_keywords/, "expected", "ruby2_keywords"],
+    # a mutating call's refusal names the rebinding to use instead
+    [/mutating calls without rebinding/, "expected", "mutation"],
+    # a block captures the values of its variables (doc/cameo-vs-ruby.md)
+    [/a block cannot rebind|captures the values its variables have/, "expected", "block-captures-values"],
+    # Marshal reads cameo's wire form, not Ruby's
+    [/incompatible marshal data/, "expected", "marshal"],
+    # every method is public, so the lists by visibility do not exist
+    [/undefined method '(private|public|protected)_(instance_)?methods'/, "expected", "visibility"],
+    [/(imaginary|rational) literals are not supported|undefined method '(to_c|i)' for/, "expected", "rational-complex"],
+    [/fork is not supported/, "expected", "process"],
+    # initialize runs in new alone; send cannot reach it
+    [/send\(:initialize\): initialize runs only in new/, "expected", "metaprogramming"],
   ].freeze
 
   # Examples whose name says they test something cameo leaves out, where
@@ -62,15 +74,24 @@ module Classify
     [/'[es]' (modifier|option)|EUC-JP|Windows-31J|Shift_JIS|UTF-16|UTF-32|ISO-8859/, "expected", "encodings"],
   ].freeze
 
+  # Examples of something cameo leaves out whose failure message says
+  # nothing: a comparison of Marshal.dump's bytes with Ruby's, an
+  # exception ObjectSpace raised. Checked last, after the harness and the
+  # message rules, so that they hide no other cause.
+  LEFT_OUT_NAMES = [
+    [/\AMarshal\.(dump|load) /, "expected", "marshal"],
+    [/\A(ObjectSpace|GC)\./, "expected", "process"],
+  ].freeze
+
   # status returns [status, reason] for a message that stopped a spec, the
   # example's name, if there is one, deciding first.
   def self.status(message, name = "")
     NAME_RULES.each { |pattern, status, reason| return [status, reason] if name.match?(pattern) }
-    if (name = message[/undefined (?:local variable or )?method '([^']+)' for/, 1]) && HARNESS.include?(name)
-      return ["harness", name]
+    if (called = message[/undefined (?:local variable or )?method '([^']+)' for/, 1]) && HARNESS.include?(called)
+      return ["harness", called]
     end
-    if (name = message[/uninitialized constant (\w+)/, 1]) && HARNESS.include?(name)
-      return ["harness", name]
+    if (called = message[/uninitialized constant (\w+)/, 1]) && HARNESS.include?(called)
+      return ["harness", called]
     end
     RULES.each { |pattern, status, reason| return [status, reason] if message.match?(pattern) }
     LEFT_OUT.each do |reason, names|
@@ -78,6 +99,7 @@ module Classify
         return ["expected", reason] if message.match?(/uninitialized constant (\w+::)*#{Regexp.escape(n)}\b|for (class|module) #{Regexp.escape(n)}\b|'#{Regexp.escape(n)}' for|undefined method '#{Regexp.escape(n)}'/)
       end
     end
+    LEFT_OUT_NAMES.each { |pattern, status, reason| return [status, reason] if name.match?(pattern) }
     ["bug", ""]
   end
 end
