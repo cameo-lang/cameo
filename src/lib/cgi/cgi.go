@@ -19,7 +19,7 @@ import (
 // Install defines the CGI module. lib.Install calls it once.
 func Install() {
 	m := object.NewModule("CGI")
-	object.ObjectClass.Consts["CGI"] = object.ClassValue(m)
+	object.DefineNative("CGI", object.ClassValue(m))
 	str := func(f func(string) string) object.NativeFn {
 		return func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			s, err := stdlib.WantString(ctx, args[0])
