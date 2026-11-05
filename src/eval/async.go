@@ -520,6 +520,7 @@ func (in *Interp) worker() *Interp {
 		code:                 in.code,
 		stop:                 in.stop,
 		exits:                in.exits,
+		states:               in.states,
 		snap:                 top,
 		loaded:               maps.Clone(in.loaded),
 		isWorker:             true,

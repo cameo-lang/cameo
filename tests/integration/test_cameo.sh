@@ -81,6 +81,26 @@ test_at_exit_runs_its_handlers_when_the_script_ends() {
   assert_eq $'body\n'"$script"$':2: in handler (RuntimeError)\nhandler' "$out"
 }
 
+test_minispec_reports_a_failure_and_exits_1() {
+  local script out rc
+  script="$(mktemp -d)/spec.cameo"
+  cat >"$script" <<'CAMEO'
+require "minispec"
+describe "Math" do
+  it "adds" do
+    assert_equal 2, 1 + 1
+  end
+  it "fails" do
+    assert_equal 3, 1 + 1, "arithmetic"
+  end
+end
+CAMEO
+  rc=0
+  out=$("$CAMEO_BIN" "$script" 2>&1) || rc=$?
+  assert_eq 1 "$rc" "a failing example ends the run with status 1"
+  assert_eq $'.F\n\n  1) Failure:\nMath#fails ['"$script"$':7]:\narithmetic.\nExpected: 3\n  Actual: 2\n\n2 runs, 2 assertions, 1 failures, 0 errors, 0 skips' "$out"
+}
+
 test_benchmark_reports_the_time_inside_the_script() {
   local script out
   script="$(mktemp -d)/bench.cameo"
