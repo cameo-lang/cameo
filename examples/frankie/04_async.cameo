@@ -31,7 +31,7 @@ require "minispec"
 
 describe "GET /stats" do
   it "computes its parts at once" do
-    assert_equal "mean 5.0, spread 9, primes 2 3 7 3", app.request("GET", "/stats", params: {"n" => "2,3,7,9,10,1,3"}).body
+    assert_equal "mean 5.0, spread 9, primes 2 3 7 3", Rack::MockRequest.new(app).get("/stats", params: {"n" => "2,3,7,9,10,1,3"}).body
   end
 end
 

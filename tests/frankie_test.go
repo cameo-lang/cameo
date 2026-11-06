@@ -35,21 +35,21 @@ func TestFrankieExamplesPassTheirSpecs(t *testing.T) {
 }
 
 // TestFrankieServesOverHTTP proves an app's routes answer over the
-// network as they do to app.request: the path, the method, the query,
-// the headers, the status, a 404 and a 500.
+// network as they do to Rack::MockRequest: the path, the method, the
+// query, the headers, the body, the status, a 404 and a 500.
 func TestFrankieServesOverHTTP(t *testing.T) {
 	port := freePort(t)
 	stdout, stderr, stop := serve(t, fmt.Sprintf(`require "frankie"
 app = Frankie.app
 app = app.get("/hi/:name") { |req| "hi #{req.params["name"]}#{req.params["x"]}" }
-app = app.post("/made") { |req| [201, {"X-Agent" => req.headers["User-Agent"]}, req.body] }
+app = app.post("/made") { |req| [201, {"X-Agent" => req.user_agent}, req.body.read] }
 app = app.get("/boom") { nil.boom }
 app.serve(port: %d, quiet: true)
 `, port), port)
 	base := fmt.Sprintf("http://127.0.0.1:%d", port)
-	res, body := get(t, base+"/hi/sinatra?x=!")
+	res, body := get(t, base+"/hi/sina%20tra?x=!")
 	assert.Equals(t, res.StatusCode, 200)
-	assert.Equals(t, body, "hi sinatra!")
+	assert.Equals(t, body, "hi sina tra!")
 	assert.Equals(t, res.Header.Get("Content-Type"), "text/html;charset=utf-8")
 	req, err := http.NewRequest("POST", base+"/made", strings.NewReader("ring"))
 	assert.NoError(t, err)
@@ -74,8 +74,9 @@ app.serve(port: %d, quiet: true)
 	assert.Equals(t, stderr.String(), "serve.cameo:5: undefined method 'boom' for nil (NoMethodError)\n")
 }
 
-// TestFrankieResponseFormsAndErrors proves app.request reads every form a
-// route may return, and raises the route's exception to the caller.
+// TestFrankieResponseFormsAndErrors proves an app reads every form a route
+// may return, as Rack's triple with lowercase header names, and raises the
+// route's exception to the caller.
 func TestFrankieResponseFormsAndErrors(t *testing.T) {
 	out := runScript(t, `require "frankie"
 app = Frankie.app
@@ -83,52 +84,61 @@ app = app.get("/s") { "body" }
 app = app.get("/i") { 204 }
 app = app.get("/n") { nil }
 app = app.get("/two") { [202, "two"] }
+app = app.get("/three") { [200, {"X-A" => "b", "Content-Type" => "text/plain"}, ["x", "y"]] }
 app = app.get("/bad") { [1, 2, 3, 4] }
 app = app.get("/hash") { {} }
 app = app.get("/raise") { raise ArgumentError, "inside" }
-%w[/s /i /n /two].each { |path| r = app.request("GET", path); p [r.status, r.headers, r.body] }
+browser = Rack::MockRequest.new(app)
+%w[/s /i /n /two /three].each { |path| r = browser.get(path); p [r.status, r.headers, r.body] }
+p app.call(Rack::MockRequest.env_for("/s"))
 %w[/bad /hash /raise].each do |path|
-  app.request("GET", path)
+  browser.get(path)
 rescue TypeError, ArgumentError => e
   puts e.message
 end
 p app.routes.map(&:path), app.port, app.set(port: 1, quiet: true).quiet
 `)
-	assert.Equals(t, out, `[200, {"Content-Type" => "text/html;charset=utf-8"}, "body"]
-[204, {"Content-Type" => "text/html;charset=utf-8"}, ""]
-[200, {"Content-Type" => "text/html;charset=utf-8"}, ""]
-[202, {"Content-Type" => "text/html;charset=utf-8"}, "two"]
-a handler returned an Array of 4, not [status, body] or [status, headers, body]
-a handler returned Hash, not a String, an Integer or an Array
+	assert.Equals(t, out, `[200, {"content-type" => "text/html;charset=utf-8"}, "body"]
+[204, {"content-type" => "text/html;charset=utf-8"}, ""]
+[200, {"content-type" => "text/html;charset=utf-8"}, ""]
+[202, {"content-type" => "text/html;charset=utf-8"}, "two"]
+[200, {"x-a" => "b", "content-type" => "text/plain"}, "xy"]
+[200, {"content-type" => "text/html;charset=utf-8"}, ["body"]]
+a route returned an Array of 4, not [status, body] or [status, headers, body]
+a route returned Hash, not a String, an Integer or an Array
 inside
-["/s", "/i", "/n", "/two", "/bad", "/hash", "/raise"]
+["/s", "/i", "/n", "/two", "/three", "/bad", "/hash", "/raise"]
 4567
 true
 `)
 }
 
-// A spec sees what the wire sees: the content type under any spelling,
-// a percent-decoded path, a status outside 200..999 refused, a route
-// without a block refused at the definition, set taking its three
-// settings alone, a trailing or doubled slash matching no route, HEAD as
-// GET with an empty body, and a query string that is not one as a 400.
+// A spec sees what the wire sees: a percent-decoded capture, a status
+// outside 200..999 refused, a route without a block refused at the
+// definition, set taking its three settings alone, a trailing or doubled
+// slash matching no route, HEAD as GET with an empty body, a query string
+// that is not one as a 400; and the request is a Rack::Request, whose
+// params, form and cookies a route reads as Sinatra's does.
 func TestFrankieSpecsSeeWhatTheWireSees(t *testing.T) {
 	out := runScript(t, `require "frankie"
 app = Frankie.app
-app = app.get("/ct") { [200, {"content-type" => "application/json"}, "x"] }
 app = app.get("/hi/:name") { |r| r.params["name"] }
 app = app.get("/x") { 150 }
 app = app.get("/h") { "body" }
-p app.request("GET", "/ct").headers, app.request("GET", "/hi/a%20b").body
-begin; app.request("GET", "/x"); rescue TypeError => e; puts e.message; end
+app = app.post("/form/:id") { |r| [r.class, r.is_a?(Rack::Request), r.params, r.POST, r.cookies, r.path_info, r.url].inspect }
+browser = Rack::MockRequest.new(app)
+p browser.get("/hi/a%20b").body
+begin; browser.get("/x"); rescue TypeError => e; puts e.message; end
 begin; app.get("/y"); rescue ArgumentError => e; puts e.message; end
 begin; app.set(bogus: 1); rescue ArgumentError => e; puts e.message; end
-p app.set(port: 1).routes.size, app.request("GET", "/hi/bob/").status, app.request("GET", "//hi//bob").status, app.request("HEAD", "/h").body, app.request("HEAD", "/h").status
-p app.dispatch("GET", "/h", "a=\xc3\xa9", {}, {}, "")[0]
+p app.set(port: 1).routes.size, browser.get("/hi/bob/").status, browser.get("//hi//bob").status, browser.head("/h").body, browser.head("/h").status
+p browser.get("/h", "QUERY_STRING" => "a=%zz").status, browser.get("/h", "QUERY_STRING" => "a=%zz").body
+puts browser.post("/form/7?q=1", params: {"f" => "2"}, "HTTP_COOKIE" => "s=x").body
+wrapped = Rack::Builder.new { |b| b.use(Rack::ContentLength).run(app) }
+p Rack::MockRequest.new(wrapped).get("/h").headers
 `)
-	assert.Equals(t, out, `{"content-type" => "application/json"}
-"a b"
-a handler returned the status 150, not an Integer from 200 to 999
+	assert.Equals(t, out, `"a b"
+a route returned the status 150, not an Integer from 200 to 999
 get("/y") takes a block that returns the response
 unknown keyword: :bogus
 4
@@ -137,5 +147,8 @@ unknown keyword: :bogus
 ""
 200
 400
+"Bad Request"
+[Frankie::Request, true, {"q" => "1", "f" => "2", "id" => "7"}, {"f" => "2"}, {"s" => "x"}, "/form/7", "http://example.org/form/7?q=1"]
+{"content-type" => "text/html;charset=utf-8", "content-length" => "4"}
 `)
 }

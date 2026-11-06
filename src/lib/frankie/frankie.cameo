@@ -1,36 +1,30 @@
-# frankie is a Sinatra-like web framework written in cameo. An app is a
-# value: each verb returns a new app with the route, so a script builds
-# one up and serves it at the end:
+# frankie is a Sinatra-like web framework written in cameo, on Rack. An
+# app is a value: each verb returns a new app with the route, so a script
+# builds one up and serves it at the end:
 #
 #   require "frankie"
 #   app = Frankie.app
 #   app = app.get("/hi/:name") { |req| "hi #{req.params["name"]}" }
 #   app.serve(port: 8888)
 #
-# A route's block gets a Frankie::Request and returns the body as a
-# String, a status as an Integer, [status, body] or [status, headers,
-# body], as a Sinatra route does; HTTPD.response reads the forms, for a
-# spec as for the server. app.request(method, path, params:, headers:,
-# body:) returns the Frankie::Response of one request without the
-# network, for a spec. serve runs the app on io/httpd, the one I/O
-# frankie does, and only in a program that allows network I/O.
+# An app is a Rack app: call(env) answers a request, so Rack::MockRequest
+# tests it without the network, Rack::Builder puts middleware in front of
+# it, and io/httpd serves it. A route's block gets a Frankie::Request, a
+# Rack::Request whose params hold the path's captures (:name) too, as
+# Sinatra's does, and returns the body as a String, a status as an
+# Integer, [status, body] or [status, headers, body], as a Sinatra route
+# does. serve runs the app on io/httpd, the one I/O frankie does, and only
+# in a program that allows network I/O.
+require "rack"
 require "io/httpd"
 require "uri"
 
 module Frankie
-  # Request is what a route's block gets: params holds the query string's
-  # and the path's captures (:name), as Strings.
-  class Request
-    string :method, :path, :query, :body
-    map :params, key: :string, value: :string
-    map :headers, key: :string, value: :string
-  end
-
-  # Response is what app.request returns.
-  class Response
-    int :status
-    map :headers, key: :string, value: :string
-    string :body
+  # Request is what a route's block gets: a Rack::Request, with the path's
+  # captures in params, as Strings.
+  class Request < Rack::Request
+    def params = super.merge(route_params)
+    def route_params = env.fetch("frankie.route_params", {})
   end
 
   # Route is one verb and path pattern with its block; a segment ":name"
@@ -39,18 +33,51 @@ module Frankie
     string :method, :path
     proc :handler
 
-    # match returns the parameters the pattern captures from path, and
-    # nil when the route does not match: segment for segment, a trailing
-    # or a doubled slash included, as Sinatra matches.
-    def match(method, path)
+    # match returns the parameters the pattern captures from path, a list
+    # of percent-decoded segments, and nil when the route does not match:
+    # segment for segment, a trailing or a doubled slash included, as
+    # Sinatra matches.
+    def match(method, segments)
       return nil unless self.method == method
       mine = self.path.split("/", -1)
-      theirs = path.split("/", -1)
-      return nil unless mine.size == theirs.size
-      pairs = mine.zip(theirs)
+      return nil unless mine.size == segments.size
+      pairs = mine.zip(segments)
       return nil if pairs.any? { |pattern, segment| !pattern.start_with?(":") && pattern != segment }
       pairs.select { |pattern, _| pattern.start_with?(":") }.to_h { |pattern, segment| [pattern[1..], segment] }
     end
+  end
+
+  # PLAIN is the content type of frankie's own answers, the 404 and the
+  # 400; HTML a route's, unless it sets one.
+  PLAIN = "text/plain;charset=utf-8"
+  HTML = "text/html;charset=utf-8"
+
+  # response returns [status, headers, body] for what a route returned,
+  # in Sinatra's forms: a String is the body with status 200, an Integer a
+  # status with an empty body, nil an empty body, [status, body] and
+  # [status, headers, body]; the header names lowercase, as Rack 3's are,
+  # the content type text/html unless the route set one, and the body an
+  # Array, as Rack's is.
+  def self.response(value)
+    status, headers, body = case value
+      when nil then [200, {}, []]
+      when String then [200, {}, [value]]
+      when Integer then [value, {}, []]
+      when Array
+        case value.size
+        when 2 then [value[0], {}, value[1]]
+        when 3 then value
+        else raise TypeError, "a route returned an Array of #{value.size}, not [status, body] or [status, headers, body]"
+        end
+      else raise TypeError, "a route returned #{value.class}, not a String, an Integer or an Array"
+    end
+    unless status.is_a?(Integer) && status >= 200 && status <= 999
+      raise TypeError, "a route returned the status #{status.inspect}, not an Integer from 200 to 999"
+    end
+    raise TypeError, "a route returned headers of #{headers.class}, not a Hash" unless headers.is_a?(Hash)
+    named = headers.to_h { |k, v| [k.to_s.strip.downcase, v.to_s] }
+    named = {"content-type" => HTML}.merge(named) unless named.key?("content-type")
+    [status, named, body.nil? ? [] : (body.is_a?(String) ? [body] : Rack.chunks(body))]
   end
 
   class App
@@ -91,13 +118,27 @@ module Frankie
       with(port: port, bind: bind, quiet: quiet)
     end
 
-    # request returns the Response of one request without the network.
-    # The path is percent-decoded, as the server's is before it reaches
-    # the app, so a spec sees what the wire sees.
-    def request(method, path, params: {}, headers: {}, body: "")
-      decoded = path.split("/", -1).map { |segment| URI.decode_uri_component(segment) }.join("/")
-      status, response_headers, response_body = dispatch(method, decoded, "", params, headers, body)
-      Response.new(status: status, headers: response_headers, body: response_body)
+    # call answers the request env as a Rack app: the first matching
+    # route's block, given the Request, or a 404; a HEAD is its GET with
+    # an empty body, and a query string that is not one is a 400. An
+    # exception the block raises is the caller's: a spec sees it, and
+    # io/httpd answers 500 with it.
+    def call(env)
+      method = env[Rack::REQUEST_METHOD]
+      verb = method == Rack::HEAD ? Rack::GET : method
+      begin
+        Rack::Request.new(env).GET
+      rescue Rack::Utils::InvalidParameterError, Rack::Utils::ParameterTypeError
+        return [400, {"content-type" => PLAIN}, ["Bad Request"]]
+      end
+      segments = env.fetch(Rack::PATH_INFO, "").split("/", -1).map { |segment| URI.decode_uri_component(segment) }
+      routes.each do |route|
+        captures = route.match(verb, segments)
+        next unless captures
+        status, headers, body = Frankie.response(route.handler.call(Request.new(env.merge("frankie.route_params" => captures))))
+        return [status, headers, method == Rack::HEAD ? [] : body]
+      end
+      [404, {"content-type" => PLAIN}, ["Not Found"]]
     end
 
     # serve runs the app on io/httpd until the host stops the run, after
@@ -110,32 +151,8 @@ module Frankie
         warn "frankie does not serve: this program allows no network I/O; run it with cameo --io=network"
         return false
       end
-      HTTPD.serve(port: app.port, bind: app.bind, quiet: app.quiet, listening: ->(url) { puts "frankie serves on #{url}" }) do |req|
-        app.dispatch(req.method, req.path, req.query, {}, req.headers, req.body)
-      end
+      HTTPD.serve(app, port: app.port, bind: app.bind, quiet: app.quiet, listening: ->(url) { puts "frankie serves on #{url}" })
       true
-    end
-
-    # dispatch returns [status, headers, body] for a request: the first
-    # matching route's block, given the Request, through HTTPD.response, or
-    # a 404; a HEAD is its GET with an empty body, and a query string that
-    # is not one is a 400. An exception the block raises is the caller's:
-    # a spec sees it, and io/httpd answers 500 with it.
-    def dispatch(method, path, query, params, headers, body)
-      verb = method == "HEAD" ? "GET" : method
-      begin
-        from_query = URI.decode_www_form(query).to_h
-      rescue ArgumentError
-        return [400, {"Content-Type" => "text/plain;charset=utf-8"}, "Bad Request"]
-      end
-      routes.each do |route|
-        captures = route.match(verb, path)
-        next unless captures
-        request = Request.new(method: method, path: path, query: query, params: from_query.merge(params).merge(captures), headers: headers, body: body)
-        status, response_headers, response_body = HTTPD.response(route.handler.call(request))
-        return [status, response_headers, method == "HEAD" ? "" : response_body]
-      end
-      [404, {"Content-Type" => "text/plain;charset=utf-8"}, "Not Found"]
     end
   end
 

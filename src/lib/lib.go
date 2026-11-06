@@ -28,6 +28,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/optparse"
 	"github.com/cameo-lang/cameo/src/lib/pathname"
 	"github.com/cameo-lang/cameo/src/lib/prime"
+	"github.com/cameo-lang/cameo/src/lib/rack"
 	"github.com/cameo-lang/cameo/src/lib/securerandom"
 	"github.com/cameo-lang/cameo/src/lib/shellwords"
 	"github.com/cameo-lang/cameo/src/lib/singleton"
@@ -107,6 +108,7 @@ var IOKinds = map[string]string{"io/httpd": "network"}
 // one for what it loads along with it.
 var Sources = map[string]string{
 	"frankie":    frankie.Source,
+	"rack":       rack.Source,
 	"getoptlong": getoptlong.Source,
 	"abbrev":     abbrev.Source,
 	"shellwords": shellwords.Source,

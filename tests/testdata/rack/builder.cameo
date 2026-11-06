@@ -1,0 +1,23 @@
+# builder.rb under Ruby 3.4.1 and Rack 3.2.8 prints builder.expected; this
+# is the same in cameo, where Response and Builder return new values and
+# Builder.new's block gets the builder: tests/rack_test.go holds cameo to it.
+require "rack"
+res = Rack::Response.new("hi")
+res = res.write(" there")
+res = res.set_header("X-Y", "z")
+p res.finish.then { |s, h, b| [s, h, b.to_enum(:each).to_a] }
+r = Rack::Response.new
+r = r.write("a")
+r = r.write("b")
+p r.finish.then { |s, h, b| [s, h, b.to_enum(:each).to_a] }
+q = Rack::Response.new
+q = q.redirect("/there")
+p q.finish.then { |s, h, b| [s, h, b.to_enum(:each).to_a] }
+inner = ->(env) { [200, {"content-type" => "text/plain"}, ["#{env["SCRIPT_NAME"]}|#{env["PATH_INFO"]}"]] }
+app = Rack::Builder.new do |b|
+  b.use(Rack::ContentLength).use(Rack::Head).map("/admin") { |a| a.run(inner) }.run(inner)
+end
+m = Rack::MockRequest.new(app)
+["/", "/admin/x", "/y"].each { |path| x = m.get(path); p [x.status, x.headers, x.body] }
+p m.head("/").body, m.head("/").headers
+begin; Rack::Builder.new { |b| b.use(Rack::Head) }.to_app; rescue => e; p [e.class, e.message]; end

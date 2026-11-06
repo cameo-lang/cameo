@@ -1,0 +1,677 @@
+# Rack, the interface between a web server and a web application,
+# require "rack", following Rack 3's SPEC. An application is anything
+# with call(env): env is a Hash of the request, with REQUEST_METHOD,
+# SCRIPT_NAME, PATH_INFO, QUERY_STRING, SERVER_NAME, SERVER_PORT, the
+# headers as HTTP_* (CONTENT_TYPE and CONTENT_LENGTH without), and
+# rack.input, the body as an IO; call returns [status, headers, body],
+# headers a Hash of lowercase names, body an Array of Strings or anything
+# whose each yields them. io/httpd serves an application.
+#
+# Rack::Request reads env, Rack::Response builds a response,
+# Rack::Builder stacks middleware in front of an application, Rack::URLMap
+# routes by path prefix, Rack::MockRequest calls an application without
+# the network, for a test, and Rack::Utils parses and builds query
+# strings.
+#
+# Values cannot change in cameo, so what changes a Rack object in Ruby
+# returns a new one here: Response#write, set_header and redirect, and
+# Builder#use, run and map, which chain, as frankie's verbs do. A field
+# cannot hold env, whose values are of every kind, nor an application,
+# which may be any object with call, so a Request keeps env in a lambda,
+# and a middleware keeps the application it wraps in a proc field, the
+# lambda Builder gives it.
+require "stringio"
+require "uri"
+
+module Rack
+  # The env keys, as Rack names them.
+  REQUEST_METHOD = "REQUEST_METHOD"
+  SCRIPT_NAME = "SCRIPT_NAME"
+  PATH_INFO = "PATH_INFO"
+  QUERY_STRING = "QUERY_STRING"
+  SERVER_NAME = "SERVER_NAME"
+  SERVER_PORT = "SERVER_PORT"
+  SERVER_PROTOCOL = "SERVER_PROTOCOL"
+  HTTP_HOST = "HTTP_HOST"
+  HTTP_COOKIE = "HTTP_COOKIE"
+  HTTPS = "HTTPS"
+  CONTENT_TYPE = "CONTENT_TYPE"
+  CONTENT_LENGTH = "CONTENT_LENGTH"
+  RACK_INPUT = "rack.input"
+  RACK_ERRORS = "rack.errors"
+  RACK_URL_SCHEME = "rack.url_scheme"
+  # The request methods.
+  GET = "GET"
+  POST = "POST"
+  PUT = "PUT"
+  PATCH = "PATCH"
+  DELETE = "DELETE"
+  HEAD = "HEAD"
+  OPTIONS = "OPTIONS"
+  # The statuses whose response has no body.
+  STATUS_WITH_NO_ENTITY_BODY = [100, 101, 102, 103, 204, 304]
+
+  # callable returns app as a lambda of env: a field holds the lambda,
+  # where it could not hold an application of any class.
+  def self.callable(app)
+    raise ArgumentError, "a Rack application responds to call; #{app.inspect} does not" unless app.respond_to?(:call)
+    app.is_a?(Proc) ? app : ->(env) { app.call(env) }
+  end
+
+  # chunks returns the Strings a response body yields: an Array's, or
+  # those its each yields. A String is no body in Rack 3.
+  def self.chunks(body)
+    return body if body.is_a?(Array)
+    return body.to_ary if body.respond_to?(:to_ary)
+    raise TypeError, "a Rack body responds to each; #{body.class} does not, so wrap a String in an Array" unless body.respond_to?(:each)
+    body.to_enum(:each).to_a
+  end
+
+  # QueryParser holds the errors of parsing a query string, which Utils
+  # names too, as Rack's does.
+  module QueryParser
+    # InvalidParameterError is a query string that is not one: a bad
+    # %-encoding.
+    class InvalidParameterError < ArgumentError
+    end
+
+    # ParameterTypeError is a name used both as a list and as a hash, or
+    # as either and as a plain value.
+    class ParameterTypeError < TypeError
+    end
+  end
+
+  module Utils
+    InvalidParameterError = QueryParser::InvalidParameterError
+    ParameterTypeError = QueryParser::ParameterTypeError
+
+    HTTP_STATUS_CODES = {
+      100 => "Continue", 101 => "Switching Protocols", 102 => "Processing", 103 => "Early Hints",
+      200 => "OK", 201 => "Created", 202 => "Accepted", 203 => "Non-Authoritative Information",
+      204 => "No Content", 205 => "Reset Content", 206 => "Partial Content", 207 => "Multi-Status",
+      208 => "Already Reported", 226 => "IM Used",
+      300 => "Multiple Choices", 301 => "Moved Permanently", 302 => "Found", 303 => "See Other",
+      304 => "Not Modified", 305 => "Use Proxy", 307 => "Temporary Redirect", 308 => "Permanent Redirect",
+      400 => "Bad Request", 401 => "Unauthorized", 402 => "Payment Required", 403 => "Forbidden",
+      404 => "Not Found", 405 => "Method Not Allowed", 406 => "Not Acceptable",
+      407 => "Proxy Authentication Required", 408 => "Request Timeout", 409 => "Conflict", 410 => "Gone",
+      411 => "Length Required", 412 => "Precondition Failed", 413 => "Content Too Large",
+      414 => "URI Too Long", 415 => "Unsupported Media Type", 416 => "Range Not Satisfiable",
+      417 => "Expectation Failed", 421 => "Misdirected Request", 422 => "Unprocessable Content",
+      423 => "Locked", 424 => "Failed Dependency", 425 => "Too Early", 426 => "Upgrade Required",
+      428 => "Precondition Required", 429 => "Too Many Requests", 431 => "Request Header Fields Too Large",
+      451 => "Unavailable For Legal Reasons",
+      500 => "Internal Server Error", 501 => "Not Implemented", 502 => "Bad Gateway",
+      503 => "Service Unavailable", 504 => "Gateway Timeout", 505 => "HTTP Version Not Supported",
+      506 => "Variant Also Negotiates", 507 => "Insufficient Storage", 508 => "Loop Detected",
+      511 => "Network Authentication Required"
+    }
+    SYMBOL_TO_STATUS_CODE = HTTP_STATUS_CODES.to_h { |code, message| [message.downcase.gsub(/\s|-/, "_").to_sym, code] }
+
+    def self.escape(s) = URI.encode_www_form_component(s.to_s)
+
+    # unescape decodes s, a + as a space, raising InvalidParameterError
+    # for a bad %-encoding.
+    def self.unescape(s)
+      URI.decode_www_form_component(s.to_s)
+    rescue ArgumentError => e
+      raise InvalidParameterError, e.message
+    end
+
+    def self.escape_html(s)
+      s.to_s.gsub(/[&<>'"]/, "&" => "&amp;", "<" => "&lt;", ">" => "&gt;", "'" => "&#39;", '"' => "&quot;")
+    end
+
+    # status_code returns the code a Symbol names, :not_found 404, or an
+    # Integer's.
+    def self.status_code(status)
+      return status.to_i unless status.is_a?(Symbol)
+      SYMBOL_TO_STATUS_CODE.fetch(status) { raise ArgumentError, "Unrecognized status code #{status.inspect}" }
+    end
+
+    # parse_query returns the pairs of qs, a name given more than once
+    # with an Array of its values, a name without = with nil.
+    def self.parse_query(qs, separator = "&")
+      pairs(qs, separator).reduce({}) do |params, (k, v)|
+        if params.key?(k)
+          old = params[k]
+          params.merge(k => (old.is_a?(Array) ? old : [old]) + [v])
+        else
+          params.merge(k => v)
+        end
+      end
+    end
+
+    # parse_nested_query returns the pairs of qs with Rack's brackets:
+    # a[b]=1 a Hash in a, a[]=1 an Array.
+    def self.parse_nested_query(qs, separator = "&")
+      pairs(qs, separator).reduce({}) { |params, (k, v)| normalize_params(params, k, v) }
+    end
+
+    # pairs returns the decoded names and values of qs.
+    def self.pairs(qs, separator)
+      return [] if qs.nil? || qs.empty?
+      qs.split(separator).reject(&:empty?).map do |pair|
+        k, v = pair.split("=", 2)
+        [unescape(k), v.nil? ? nil : unescape(v)]
+      end
+    end
+
+    # normalize_params returns params with the value v of name added,
+    # name's brackets read as Rack reads them.
+    def self.normalize_params(params, name, v)
+      m = name.match(/\A[\[\]]*([^\[\]]+)\]*/)
+      k = m ? m[1] : ""
+      after = m ? m.post_match : ""
+      return params if k.empty?
+      if after.empty?
+        params.merge(k => v)
+      elsif after == "["
+        params.merge(name => v)
+      elsif after == "[]"
+        list = params.fetch(k, [])
+        raise ParameterTypeError, "expected Array (got #{list.class}) for param `#{k}'" unless list.is_a?(Array)
+        params.merge(k => list + [v])
+      elsif (child = after.match(/\A\[\]\[([^\[\]]+)\]\z/) || after.match(/\A\[\](.+)\z/))
+        child_key = child[1]
+        list = params.fetch(k, [])
+        raise ParameterTypeError, "expected Array (got #{list.class}) for param `#{k}'" unless list.is_a?(Array)
+        last = list.last
+        if last.is_a?(Hash) && !last.key?(child_key[/\A[^\[\]]+/])
+          params.merge(k => list[0...-1] + [normalize_params(last, child_key, v)])
+        else
+          params.merge(k => list + [normalize_params({}, child_key, v)])
+        end
+      else
+        hash = params.fetch(k, {})
+        raise ParameterTypeError, "expected Hash (got #{hash.class}) for param `#{k}'" unless hash.is_a?(Hash)
+        params.merge(k => normalize_params(hash, after, v))
+      end
+    end
+
+    # build_query returns params as a query string, an Array's values
+    # under the name each.
+    def self.build_query(params)
+      params.map do |k, v|
+        if v.is_a?(Array)
+          build_query(v.map { |x| [k, x] })
+        else
+          v.nil? ? escape(k) : "#{escape(k)}=#{escape(v)}"
+        end
+      end.join("&")
+    end
+
+    # build_nested_query returns value as a query string with Rack's
+    # brackets, the inverse of parse_nested_query.
+    def self.build_nested_query(value, prefix = nil)
+      case value
+      when Array
+        value.map { |v| build_nested_query(v, "#{prefix}[]") }.join("&")
+      when Hash
+        value.map { |k, v| build_nested_query(v, prefix ? "#{prefix}[#{k}]" : k) }.reject(&:empty?).join("&")
+      when nil
+        escape(prefix)
+      else
+        raise ArgumentError, "value must be a Hash" if prefix.nil?
+        "#{escape(prefix)}=#{escape(value)}"
+      end
+    end
+
+    # parse_cookies_header returns the cookies of a Cookie header, the
+    # first of a name given twice.
+    def self.parse_cookies_header(header)
+      return {} if header.nil? || header.empty?
+      header.split(/; */).reject(&:empty?).reduce({}) do |cookies, cookie|
+        key, value = cookie.split("=", 2)
+        next cookies if cookies.key?(key)
+        decoded = begin
+          unescape(value.to_s)
+        rescue InvalidParameterError
+          value
+        end
+        cookies.merge(key => decoded)
+      end
+    end
+  end
+
+  # Request reads a request's env. It keeps env in a lambda, since a field
+  # cannot hold a Hash of values of every kind. A framework subclasses it,
+  # as Sinatra's Request does.
+  class Request
+    proc :source
+
+    FORM_DATA_MEDIA_TYPES = ["application/x-www-form-urlencoded", "multipart/form-data"]
+    PARSEABLE_DATA_MEDIA_TYPES = ["multipart/related", "multipart/mixed"]
+    DEFAULT_PORTS = {"http" => 80, "https" => 443}
+
+    def initialize(env)
+      raise TypeError, "a Rack env is a Hash, not #{env.class}" unless env.is_a?(Hash)
+      self.source = -> { env }
+    end
+
+    def env = source.call
+    def get_header(name) = env[name]
+    def has_header?(name) = env.key?(name)
+    def fetch_header(name, &block) = env.fetch(name, &block)
+
+    def request_method = env[REQUEST_METHOD]
+    def script_name = env.fetch(SCRIPT_NAME, "").to_s
+    def path_info = env.fetch(PATH_INFO, "").to_s
+    def query_string = env.fetch(QUERY_STRING, "").to_s
+    def body = env[RACK_INPUT]
+    def content_length = env[CONTENT_LENGTH]
+    def user_agent = env["HTTP_USER_AGENT"]
+    def referer = env["HTTP_REFERER"]
+    def referrer = referer
+    def ip = env["REMOTE_ADDR"]
+    def server_name = env[SERVER_NAME]
+    def xhr? = env["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest"
+
+    def get? = request_method == GET
+    def post? = request_method == POST
+    def put? = request_method == PUT
+    def patch? = request_method == PATCH
+    def delete? = request_method == DELETE
+    def head? = request_method == HEAD
+    def options? = request_method == OPTIONS
+
+    # content_type is nil for none, as an empty CONTENT_TYPE is.
+    def content_type
+      type = env[CONTENT_TYPE]
+      type.nil? || type.empty? ? nil : type
+    end
+
+    # media_type is the content type without its parameters, lowercase.
+    def media_type
+      type = content_type
+      type && type.split(/\s*[;,]\s*/, 2).first.downcase
+    end
+
+    # media_type_params are the content type's parameters, by lowercase
+    # name: {"charset" => "utf-8"}.
+    def media_type_params
+      type = content_type
+      return {} unless type
+      type.split(/\s*[;,]\s*/)[1..].to_h do |param|
+        name, value = param.split("=", 2)
+        [name.downcase, value.to_s.delete_prefix('"').delete_suffix('"')]
+      end
+    end
+
+    def content_charset = media_type_params["charset"]
+
+    def scheme
+      if env[HTTPS] == "on"
+        "https"
+      else
+        env.fetch(RACK_URL_SCHEME, "http")
+      end
+    end
+
+    def ssl? = scheme == "https"
+
+    # authority is the Host header, or the server's name and port.
+    def authority = env[HTTP_HOST] || "#{server_name}:#{env[SERVER_PORT]}"
+
+    # host is the authority's host, an IPv6 address in its brackets.
+    def host
+      a = authority
+      return a[0..a.index("]")] if a.start_with?("[")
+      a.split(":", 2).first
+    end
+
+    # port is the authority's port, the scheme's default when it names
+    # none.
+    def port
+      a = authority
+      given = a.start_with?("[") ? a[(a.index("]") + 1)..].delete_prefix(":") : a.split(":", 2)[1].to_s
+      given.empty? ? (env[SERVER_PORT] || DEFAULT_PORTS.fetch(scheme, 80)).to_i : given.to_i
+    end
+
+    # host_with_port leaves out the scheme's default port.
+    def host_with_port
+      port == DEFAULT_PORTS[scheme] ? host : "#{host}:#{port}"
+    end
+
+    def base_url = "#{scheme}://#{host_with_port}"
+    def path = script_name + path_info
+    def fullpath = query_string.empty? ? path : "#{path}?#{query_string}"
+    def url = base_url + fullpath
+
+    # form_data? is whether the body is a form: a POST without a content
+    # type, or a form's media type.
+    def form_data? = (request_method == POST && content_type.nil?) || FORM_DATA_MEDIA_TYPES.include?(media_type)
+    def parseable_data? = PARSEABLE_DATA_MEDIA_TYPES.include?(media_type)
+
+    # GET are the query string's parameters.
+    def GET = Utils.parse_nested_query(query_string)
+
+    # POST are the form's parameters, read from the body, rewound first,
+    # since env keeps no parse to read again, and left read to its end, as
+    # Rack leaves it; {} for a body that is no form. A multipart body is
+    # not read: cameo has no multipart parser yet.
+    def POST
+      input = body
+      return {} if input.nil? || !(form_data? || parseable_data?)
+      raise NotImplementedError, "a multipart body is not supported" if media_type&.start_with?("multipart/")
+      input.rewind if input.respond_to?(:rewind)
+      data = input.read
+      Utils.parse_nested_query(data.to_s.dup.force_encoding("UTF-8"))
+    end
+
+    def params = self.GET.merge(self.POST)
+    def cookies = Utils.parse_cookies_header(env[HTTP_COOKIE])
+    def inspect = "#<#{self.class.name} #{request_method} #{fullpath}>"
+    def to_s = inspect
+  end
+
+  class Response
+    # Helpers are the status's predicates, a Response's and a
+    # MockResponse's.
+    module Helpers
+      def informational? = status >= 100 && status < 200
+      def successful? = status >= 200 && status < 300
+      def redirection? = status >= 300 && status < 400
+      def client_error? = status >= 400 && status < 500
+      def server_error? = status >= 500 && status < 600
+      def ok? = status == 200
+      def created? = status == 201
+      def accepted? = status == 202
+      def no_content? = status == 204
+      def moved_permanently? = status == 301
+      def bad_request? = status == 400
+      def unauthorized? = status == 401
+      def forbidden? = status == 403
+      def not_found? = status == 404
+      def method_not_allowed? = status == 405
+      def unprocessable? = status == 422
+      def redirect? = [301, 302, 303, 307, 308].include?(status)
+      def content_type = get_header("content-type")
+      def content_length = get_header("content-length")&.to_i
+      def location = get_header("location")
+      def get_header(name) = headers[name.downcase]
+      def [](name) = get_header(name)
+    end
+
+    include Helpers
+    int :status, default: 200
+    map :headers, key: :string, value: :string
+    list :body, of: :string
+    # counted is whether the response keeps content-length to its body,
+    # as Rack's does for a body begun as a String or as none.
+    bool :counted
+
+    # new(body = nil, status = 200, headers = {}) as Rack's: the body a
+    # String, whose length sets content-length, or an Array of them, the
+    # header names made lowercase.
+    def initialize(body = nil, status = 200, headers = {})
+      named = headers.to_h { |k, v| [k.to_s.downcase, v.to_s] }
+      self.status = Utils.status_code(status)
+      self.counted = (body.nil? || body.is_a?(String)) && !named.key?("content-length")
+      self.headers = named
+      self.body = body.is_a?(String) ? [body] : (body.nil? ? [] : Rack.chunks(body).map(&:to_s))
+    end
+
+    # finish returns [status, headers, body], with content-length where
+    # the response counts it, and without a body or a content type for a
+    # status that has none. Rack's finish sets content-length in headers
+    # too; this one returns it and leaves the response as it was.
+    def finish
+      if STATUS_WITH_NO_ENTITY_BODY.include?(status)
+        [status, headers.reject { |k, _| k == "content-type" || k == "content-length" }, []]
+      elsif counted && !body.empty?
+        [status, headers.merge("content-length" => body.sum(&:bytesize).to_s), body]
+      else
+        [status, headers, body]
+      end
+    end
+
+    def to_a = finish
+
+    # write returns the response with chunk added to its body.
+    def write(chunk) = with(body: body + [chunk.to_s])
+    def set_header(name, value) = with(headers: headers.merge(name.downcase => value.to_s))
+    def delete_header(name) = with(headers: headers.reject { |k, _| k == name.downcase })
+    def has_header?(name) = headers.key?(name.downcase)
+
+    # redirect returns the response sent to target, with status.
+    def redirect(target, status = 302) = with(status: status).set_header("location", target)
+  end
+
+  # Builder stacks middleware in front of an application: each use wraps
+  # the application in one more middleware, the first used outermost, as
+  # Rack's does; run names the application, and map an application for a
+  # path prefix (URLMap). Each returns a new Builder:
+  #
+  #   app = Rack::Builder.new { |b| b.use(Rack::Head).run(inner) }
+  #
+  # where Ruby's block runs on the builder with use and run bare. A
+  # middleware is a class whose new takes the application and the
+  # arguments use gave, and whose call(env) answers: the application
+  # comes as a lambda, which a proc field holds.
+  class Builder
+    proc :wrap
+    proc :runner
+    proc :mapper
+    list :map_paths, of: :string
+
+    def self.app(default_app = nil, &block) = new(default_app, &block).to_app
+
+    # new(default_app = nil) { |builder| ... } is the builder the block
+    # returns, given one that runs default_app.
+    def initialize(default_app = nil, &block)
+      self.wrap = ->(app) { app }
+      self.runner = default_app.nil? ? nil : Rack.callable(default_app)
+      self.map_paths = []
+      return unless block
+      built = block.call(self)
+      raise TypeError, "Rack::Builder.new's block returns the builder it configured, not #{built.class}" unless built.is_a?(Builder)
+      self.wrap = built.wrap
+      self.runner = built.runner
+      self.mapper = built.mapper
+      self.map_paths = built.map_paths
+    end
+
+    # use returns the builder with middleware wrapped around what comes
+    # after it, made with middleware.new(app, *args, &block).
+    def use(middleware, *args, &block)
+      outer = wrap
+      with(wrap: ->(app) { outer.call(middleware.new(Rack.callable(app), *args, &block)) })
+    end
+
+    # run returns the builder running app, or the block.
+    def run(app = nil, &block)
+      raise ArgumentError, "run takes an application or a block, not both" if app && block
+      target = app || block
+      raise ArgumentError, "run takes an application or a block" unless target
+      with(runner: Rack.callable(target))
+    end
+
+    # map returns the builder sending a path under path to the
+    # application the block's builder makes.
+    def map(path, &block)
+      raise ArgumentError, "map takes a block that configures the builder for #{path}" unless block
+      inner = Builder.new(&block).to_app
+      earlier = mapper
+      with(map_paths: map_paths + [path], mapper: ->(p) { p == path ? inner : earlier.call(p) })
+    end
+
+    # to_app returns the application: the middleware around what run
+    # named, or around a URLMap of the maps, with run's at "/".
+    def to_app
+      app = runner
+      unless map_paths.empty?
+        lookup = mapper
+        mapping = map_paths.to_h { |p| [p, lookup.call(p)] }
+        app = URLMap.new(runner ? {"/" => runner}.merge(mapping) : mapping)
+      end
+      raise "missing run or map statement" if app.nil?
+      wrap.call(app)
+    end
+
+    def call(env) = to_app.call(env)
+  end
+
+  # URLMap sends a request to the application of the longest path prefix
+  # its PATH_INFO starts with, a whole segment, moving the prefix to
+  # SCRIPT_NAME; a 404 with x-cascade: pass when none does.
+  class URLMap
+    proc :lookup
+    list :locations, of: :string
+
+    def initialize(map = {})
+      mapping = map.to_h do |location, app|
+        raise ArgumentError, "paths need to start with /" unless location.start_with?("/")
+        [location.chomp("/"), Rack.callable(app)]
+      end
+      self.locations = mapping.keys.sort_by { |l| -l.size }
+      self.lookup = ->(location) { mapping[location] }
+    end
+
+    def call(env)
+      path = env.fetch(PATH_INFO, "").to_s
+      script_name = env.fetch(SCRIPT_NAME, "").to_s
+      location = locations.find { |l| l.empty? || path == l || path.start_with?(l + "/") }
+      return [404, {"content-type" => "text/plain", "x-cascade" => "pass"}, ["Not Found: #{path}"]] if location.nil?
+      lookup.call(location).call(env.merge(SCRIPT_NAME => script_name + location, PATH_INFO => path[location.size..]))
+    end
+  end
+
+  # Head answers a HEAD with the GET's status and headers and no body.
+  class Head
+    proc :app
+
+    def initialize(app)
+      self.app = app
+    end
+
+    def call(env)
+      status, headers, body = app.call(env)
+      env[REQUEST_METHOD] == HEAD ? [status, headers, []] : [status, headers, body]
+    end
+  end
+
+  # ContentLength sets content-length where the response sets none and
+  # has a body.
+  class ContentLength
+    proc :app
+
+    def initialize(app)
+      self.app = app
+    end
+
+    def call(env)
+      status, headers, body = app.call(env)
+      return [status, headers, body] if STATUS_WITH_NO_ENTITY_BODY.include?(status) || headers.key?("content-length") || headers.key?("transfer-encoding")
+      chunks = Rack.chunks(body)
+      [status, headers.merge("content-length" => chunks.sum(&:bytesize).to_s), chunks]
+    end
+  end
+
+  # ContentType sets content-type, text/html by default, where the
+  # response sets none and has a body.
+  class ContentType
+    proc :app
+    string :content_type, default: "text/html"
+
+    def initialize(app, content_type = "text/html")
+      self.app = app
+      self.content_type = content_type
+    end
+
+    def call(env)
+      status, headers, body = app.call(env)
+      return [status, headers, body] if STATUS_WITH_NO_ENTITY_BODY.include?(status) || headers.key?("content-type")
+      [status, headers.merge("content-type" => content_type), body]
+    end
+  end
+
+  # MockResponse is what MockRequest returns: the status, the headers by
+  # lowercase name and the body as one String.
+  class MockResponse
+    include Response::Helpers
+    int :status
+    map :headers, key: :string, value: :string
+    string :body
+
+    def initialize(status, headers, body)
+      self.status = status
+      self.headers = headers.to_h { |k, v| [k.to_s.downcase, v.is_a?(Array) ? v.join("\n") : v.to_s] }
+      self.body = Rack.chunks(body).join
+      body.close if body.respond_to?(:close)
+    end
+
+    def =~(pattern) = body =~ pattern
+    def match(pattern) = body.match(pattern)
+  end
+
+  # MockRequest calls an application with the env of a request made up,
+  # without the network, for a test:
+  #
+  #   res = Rack::MockRequest.new(app).get("/hi?x=1", "HTTP_USER_AGENT" => "t")
+  #   res.status
+  #
+  # The options are Rack's: :method, :input, the body, :params, in the
+  # query string for a GET and as a form for the others, :script_name,
+  # and String keys, which go into env as they are.
+  class MockRequest
+    proc :app
+
+    DEFAULT_ENV = {"rack.multithread" => true, "rack.multiprocess" => true, "rack.run_once" => false}
+
+    def initialize(app)
+      self.app = Rack.callable(app)
+    end
+
+    def get(uri = "", opts = {}) = request(GET, uri, opts)
+    def post(uri = "", opts = {}) = request(POST, uri, opts)
+    def put(uri = "", opts = {}) = request(PUT, uri, opts)
+    def patch(uri = "", opts = {}) = request(PATCH, uri, opts)
+    def delete(uri = "", opts = {}) = request(DELETE, uri, opts)
+    def head(uri = "", opts = {}) = request(HEAD, uri, opts)
+    def options(uri = "", opts = {}) = request(OPTIONS, uri, opts)
+
+    def request(method = GET, uri = "", opts = {})
+      status, headers, body = app.call(MockRequest.env_for(uri, opts.merge(method: method)))
+      MockResponse.new(status, headers, body)
+    end
+
+    # env_for returns the env of a request for uri, a path with a query
+    # string or a whole URL.
+    def self.env_for(uri = "", opts = {})
+      parsed = URI.parse(uri.to_s)
+      method = (opts[:method] || GET).to_s.upcase
+      scheme = parsed.scheme || "http"
+      query = parsed.query.to_s
+      input = opts[:input]
+      content_type = opts["CONTENT_TYPE"]
+      params = opts[:params]
+      if params
+        if method == GET
+          given = params.is_a?(String) ? Utils.parse_nested_query(params) : params
+          query = Utils.build_nested_query(given.merge(Utils.parse_nested_query(query)))
+        elsif !opts.key?(:input)
+          content_type ||= "application/x-www-form-urlencoded"
+          input = params.is_a?(Hash) ? Utils.build_nested_query(params) : params
+        end
+      end
+      data = input.to_s.b
+      env = DEFAULT_ENV.merge(
+        REQUEST_METHOD => method,
+        SERVER_NAME => parsed.host || "example.org",
+        SERVER_PORT => (parsed.port || (scheme == "https" ? 443 : 80)).to_s,
+        SERVER_PROTOCOL => "HTTP/1.1",
+        QUERY_STRING => query,
+        PATH_INFO => parsed.path.to_s.empty? ? "/" : parsed.path,
+        SCRIPT_NAME => opts[:script_name].to_s,
+        RACK_URL_SCHEME => scheme,
+        HTTPS => scheme == "https" ? "on" : "off",
+        RACK_INPUT => StringIO.new(data),
+        RACK_ERRORS => StringIO.new,
+        CONTENT_LENGTH => data.bytesize.to_s
+      )
+      env = env.merge(CONTENT_TYPE => content_type) if content_type
+      env.merge(opts.select { |k, _| k.is_a?(String) && k != "CONTENT_TYPE" })
+    end
+  end
+end

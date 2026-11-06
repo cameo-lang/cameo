@@ -1,0 +1,9 @@
+[200, {"x-y" => "z", "content-length" => "8"}, ["hi", " there"]]
+[200, {"content-length" => "2"}, ["a", "b"]]
+[302, {"location" => "/there"}, []]
+[200, {"content-type" => "text/plain", "content-length" => "2"}, "|/"]
+[200, {"content-type" => "text/plain", "content-length" => "9"}, "/admin|/x"]
+[200, {"content-type" => "text/plain", "content-length" => "3"}, "|/y"]
+""
+{"content-type" => "text/plain", "content-length" => "0"}
+[RuntimeError, "missing run or map statement"]

@@ -826,6 +826,19 @@ passing for what it covers. Milestones 0 to 6 have landed; 7 is not built.
 Choices with real trade-offs, decided with the human so they are not
 re-opened by accident:
 
+- **The web is Rack.** `io/httpd` serves a Rack 3 app, `call(env)` to
+  `[status, headers, body]`, and nothing else: its own request class and
+  Sinatra's short response forms went, the forms into frankie, whose app
+  is a Rack app and whose request a `Rack::Request`, as Sinatra's are. So
+  Rack's middleware, `Rack::MockRequest` for specs and an app written for
+  Rack fit together as in Ruby. `rack` is written in cameo and held to
+  Rack 3.2.8's output. Two things a field cannot hold shaped it: `env`,
+  a Hash of values of every kind with an IO in it, and an app, any object
+  with `call`; a `Rack::Request` keeps `env` in a lambda, and a middleware
+  the app it wraps, which Builder passes as a lambda, in a `proc` field.
+  What changes a Response or a Builder in Ruby returns a new one, so
+  Builder's block gets the builder and returns it configured, unlike
+  Ruby's, which runs on the builder.
 - **File I/O is a module the program grants.** `File.read` and
   `File.open` are the methods of `Cameo::IO::FileIO`, in `Cameo::IO`,
   which holds cameo's I/O, and `File` extends it. A program answers them
