@@ -75,6 +75,14 @@ func (in *Interp) lookupConst(name string, fr *Frame, line int) (object.Value, e
 	}
 	if len(fr.Lexical) > 0 {
 		for _, a := range fr.Lexical[len(fr.Lexical)-1].Ancestors() {
+			// Object's constants are the program's top level, whose own,
+			// in.consts, come first: a module a library opened is the
+			// program's copy there (libraryOpens).
+			if a == object.ObjectClass {
+				if v, ok := in.consts[name]; ok {
+					return v, nil
+				}
+			}
 			if v, ok := a.Consts[name]; ok {
 				return v, nil
 			}
@@ -324,6 +332,18 @@ func (in *Interp) evalModuleDef(n *syntax.ModuleDef, env *Env, fr *Frame) (objec
 	if existing != nil && existing.IsModule && ranLast(existing, n.Digest) {
 		return object.ClassValue(existing), nil
 	}
+	if !bound && len(fr.Lexical) == 0 {
+		if native := in.libraryOpens(fr, n.Name); native != nil {
+			// A library reopens the module Go defined, on a copy, as it
+			// would one a script defined: see libraryOpens.
+			mod := native.Copy()
+			mod.Digest = "+" + n.Digest
+			if err := in.evalBound(mod, native, n.Body, env, fr, previous, bound); err != nil {
+				return object.Value{}, err
+			}
+			return object.ClassValue(mod), nil
+		}
+	}
 	if _, builtin := object.ObjectClass.Consts[n.Name]; builtin && len(fr.Lexical) == 0 {
 		return object.Value{}, in.raise(object.CameoError, n.Line(), "cannot redefine the builtin module %s", n.Name)
 	}
@@ -349,6 +369,41 @@ func (in *Interp) evalModuleDef(n *syntax.ModuleDef, env *Env, fr *Frame) (objec
 	}
 	return object.ClassValue(mod), nil
 }
+
+// libraryOpens returns the module Go defined at the top level under name,
+// when the code in fr is a library's, written in cameo, and the program
+// has no module of that name of its own yet; nil otherwise. A library
+// opens such a module to add to it, `module M` or `class M::C` in its
+// source where its Go package defined M, as a script reopens a module it
+// defined: on a copy, which the program binds to the name in its own
+// constants, so the module every program in the process shares stays as
+// Go defined it and other programs see none of the library. A script
+// still cannot: the core and the host's modules are not a script's to
+// change. A class Go defined at the top level is not opened so, since
+// its instances, which Go makes, would keep the class Go defined, without
+// what a copy added; one inside the module, M::C, reopens on the
+// copy as any class bound in a module does, which works where Go makes
+// its instances of the class new was called on.
+func (in *Interp) libraryOpens(fr *Frame, name string) *object.Class {
+	if fr.File == "" {
+		return nil
+	}
+	if _, own := in.consts[name]; own {
+		return nil
+	}
+	v, ok := object.ObjectClass.Consts[name]
+	if !ok {
+		return nil
+	}
+	mod, ok := v.AsClass()
+	if !ok || !mod.IsModule || mod.Digest != "" {
+		return nil
+	}
+	return mod
+}
+
+// scopeDigest names the library a copy libraryOpens made belongs to.
+func scopeDigest(fr *Frame) string { return "lib:" + fr.File }
 
 // ranLast reports whether the definition whose digest is given is the
 // last one that ran on cls: its first, or the last that reopened it.
@@ -476,6 +531,13 @@ func (in *Interp) scopedFrame(scope syntax.Node, env *Env, fr *Frame, line int) 
 	mod, ok := v.AsClass()
 	if !ok {
 		return nil, in.raise(object.TypeError, line, "%s is not a class/module", typeName(v))
+	}
+	// A library defines inside a module Go defined in the copy the
+	// program keeps of it (libraryOpens).
+	if native := in.libraryOpens(fr, mod.Name); native == mod {
+		mod = native.Copy()
+		mod.Digest = "+" + scopeDigest(fr)
+		in.bindConst(&Frame{}, mod.Name, object.ClassValue(mod))
 	}
 	// A builtin module, or a module or class the host registered, is
 	// shared by every program in the process: nothing is defined in it.
