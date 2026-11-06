@@ -343,9 +343,15 @@ a module it defined, and the program binds the copy to the name in its
 own constants: so a library is part Go, what a script cannot write, and
 part cameo. The module Go defined is shared by every program in the
 process and stays as it was, so a program that did not require the
-library sees none of it. A script cannot open a module Go defined, nor a
-library a class: the instances Go makes would keep the class Go defined,
-without what the copy added.
+library sees none of it. A class Go defined in such a module reopens on
+a copy as well, `class Rack::Request` in rack.cameo, bound in the
+module's copy: Go makes a request of the class `new` was called on, so a
+request has what the source added, and a subclass's is the subclass's. A
+script cannot open a module Go defined, nor a library a class Go defined
+at the top level, such as `String`, whose instances Go makes of the class
+it defined, without what a copy added. A constant a method names is the
+program's before the one every program shares, so `Rack` in a method of
+`Rack::Response` is the copy, with what the library added.
 
 **Inheritance** is single, by `class Child < Parent`. A child inherits fields
 and methods, may add fields, and may define a method of a name its parent
@@ -842,11 +848,13 @@ re-opened by accident:
   Sinatra's short response forms went, the forms into frankie, whose app
   is a Rack app and whose request a `Rack::Request`, as Sinatra's are. So
   Rack's middleware, `Rack::MockRequest` for specs and an app written for
-  Rack fit together as in Ruby. `rack` is written in cameo and held to
-  Rack 3.2.8's output. Two things a field cannot hold shaped it: `env`,
-  a Hash of values of every kind with an IO in it, and an app, any object
-  with `call`; a `Rack::Request` keeps `env` in a lambda, and a middleware
-  the app it wraps, which Builder passes as a lambda, in a `proc` field.
+  Rack fit together as in Ruby. `rack` is held to Rack 3.2.8's output and
+  written in cameo, but for the Rack module and what of `Rack::Request`
+  holds `env`, which Go defines, as Rack's `Rack::Request::Env` holds it:
+  a field cannot hold `env`, a Hash of values of every kind with an IO in
+  it. Nor can one hold an app, any object with `call`, so a middleware
+  keeps the app it wraps, which Builder passes as a lambda, in a `proc`
+  field.
   What changes a Response or a Builder in Ruby returns a new one, so
   Builder's block gets the builder and returns it configured, unlike
   Ruby's, which runs on the builder.

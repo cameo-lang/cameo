@@ -16,10 +16,14 @@
 # Values cannot change in cameo, so what changes a Rack object in Ruby
 # returns a new one here: Response#write, set_header and redirect, and
 # Builder#use, run and map, which chain, as frankie's verbs do. A field
-# cannot hold env, whose values are of every kind, nor an application,
-# which may be any object with call, so a Request keeps env in a lambda,
-# and a middleware keeps the application it wraps in a proc field, the
-# lambda Builder gives it.
+# cannot hold an application, which may be any object with call, so a
+# middleware keeps the application it wraps in a proc field, the lambda
+# Builder gives it.
+#
+# Go defines the Rack module and Rack::Request's new(env), env,
+# get_header and has_header?, as Rack's Rack::Request::Env holds env:
+# a field cannot hold a Hash of values of every kind. This source opens
+# both to add the rest.
 require "stringio"
 require "uri"
 
@@ -234,24 +238,13 @@ module Rack
     end
   end
 
-  # Request reads a request's env. It keeps env in a lambda, since a field
-  # cannot hold a Hash of values of every kind. A framework subclasses it,
-  # as Sinatra's Request does.
+  # Request reads a request's env, which Request.new(env), defined in Go,
+  # keeps. A framework subclasses it, as Sinatra's Request does.
   class Request
-    proc :source
-
     FORM_DATA_MEDIA_TYPES = ["application/x-www-form-urlencoded", "multipart/form-data"]
     PARSEABLE_DATA_MEDIA_TYPES = ["multipart/related", "multipart/mixed"]
     DEFAULT_PORTS = {"http" => 80, "https" => 443}
 
-    def initialize(env)
-      raise TypeError, "a Rack env is a Hash, not #{env.class}" unless env.is_a?(Hash)
-      self.source = -> { env }
-    end
-
-    def env = source.call
-    def get_header(name) = env[name]
-    def has_header?(name) = env.key?(name)
     def fetch_header(name, &block) = env.fetch(name, &block)
 
     def request_method = env[REQUEST_METHOD]

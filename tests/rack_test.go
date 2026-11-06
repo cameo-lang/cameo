@@ -67,3 +67,38 @@ end
 [TypeError, "a Rack body responds to each; String does not, so wrap a String in an Array"]
 `)
 }
+
+// TestRackRequestHoldsItsEnvInGo proves the part of Rack::Request Go
+// defines, new(env), env, get_header and has_header?, works with what
+// rack.cameo adds to the class: a subclass's new makes the subclass, a
+// request's env is the Hash it was given, and an env that is no Hash is
+// refused.
+func TestRackRequestHoldsItsEnvInGo(t *testing.T) {
+	out := runScript(t, `require "rack"
+class Mine < Rack::Request
+  def shout = path.upcase
+end
+env = {"REQUEST_METHOD" => "GET", "PATH_INFO" => "/a", "QUERY_STRING" => "x=1"}
+req = Mine.new(env)
+p req.class, req.is_a?(Rack::Request), req.shout, req.GET
+p req.env == env, req.get_header("PATH_INFO"), req.get_header("NONE"), req.has_header?("PATH_INFO"), req.has_header?("NONE")
+p req.fetch_header("NONE") { |k| k.downcase }
+begin
+  Rack::Request.new("GET /")
+rescue TypeError => e
+  p e.message
+end
+`)
+	assert.Equals(t, out, `Mine
+true
+"/A"
+{"x" => "1"}
+true
+"/a"
+nil
+true
+false
+"none"
+"a Rack env is a Hash, not String"
+`)
+}

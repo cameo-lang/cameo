@@ -152,6 +152,7 @@ func Install() {
 	singleton.Install()
 	stringio.Install()
 	fileio.Install()
+	rack.Install()
 	strscan.Install()
 	optparse.Install()
 	getoptlong.Install()
