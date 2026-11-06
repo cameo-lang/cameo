@@ -336,6 +336,17 @@ name replaces the first, as in Ruby; the same `def` evaluated again, as a
 loop around it does, changes nothing. There is no `remove_method` or
 `undef`. Modules reopen the same way.
 
+**A library written in cameo may open a module Go defined.** Its source,
+`module Rack … end` or `class Rack::Builder … end` where the library's Go
+package defined `Rack`, reopens the module on a copy, as a script reopens
+a module it defined, and the program binds the copy to the name in its
+own constants: so a library is part Go, what a script cannot write, and
+part cameo. The module Go defined is shared by every program in the
+process and stays as it was, so a program that did not require the
+library sees none of it. A script cannot open a module Go defined, nor a
+library a class: the instances Go makes would keep the class Go defined,
+without what the copy added.
+
 **Inheritance** is single, by `class Child < Parent`. A child inherits fields
 and methods, may add fields, and may define a method of a name its parent
 defines: a method is defined once *per class*, dispatch is Ruby's, and

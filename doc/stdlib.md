@@ -100,6 +100,11 @@ What asks for a library is measured, not guessed:
   source and registers it in `lib.Sources` under its require path; `require`
   parses it and runs it at the top level of the script the first time, so
   its classes and methods exist from the `require` on, not from the start.
+  A library may be part Go and part cameo: its source may open a module
+  its Go package defined, `module Rack` or `class Rack::Builder`, which
+  adds to the requiring program's copy of the module and leaves the one
+  every program shares as it was; a script may not, nor a library open a
+  class Go defined.
   A source that does not parse is a `SyntaxError`, as in Ruby; one that
   raises is a `LoadError` naming the library's file and line, and is not
   loaded, so a later `require` runs it again. A worker `async` started

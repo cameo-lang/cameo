@@ -240,7 +240,9 @@ q = p.with(x: 3)            # a copy; p is unchanged
   again gives the same class; a different body reopens a copy of the
   class and rebinds `X` to it. Instances made before, and classes that
   inherit from it, keep the class as it was and do not see what the
-  reopening adds, as they do in Ruby. A builtin class cannot be reopened.
+  reopening adds, as they do in Ruby. A builtin class cannot be reopened,
+  and a builtin module only by a library written in cameo, which adds to
+  the program's own copy of it.
 - Numeric and BasicObject cannot be subclassed. Integer and Float follow
   Ruby's `coerce` protocol for any value that answers `coerce`, so a number
   class of a script's own is an ordinary class that defines `coerce`:
