@@ -907,11 +907,38 @@ func TestProcsShowWhereTheyWereWritten(t *testing.T) {
 		"#<Proc:t.cameo:1>\n#<Proc:t.cameo:2 (lambda)>\n#<Proc:(&:up) (lambda)>\n#<Encoding:BINARY (ASCII-8BIT)>\n")
 }
 
+// TestMethodsListWhatAClassAndItsValuesAnswer proves methods,
+// singleton_methods and instance_methods: inherited and extended methods
+// unless false is passed, without initialize, which Ruby keeps private,
+// sorted, and for a builtin class too.
+func TestMethodsListWhatAClassAndItsValuesAnswer(t *testing.T) {
+	src := `module Loud
+  def shout = "HEY"
+end
+class A
+  extend Loud
+  def self.a = 1
+  def initialize = nil
+  def x = 1
+end
+class B < A
+  def self.b = 2
+  def y = 2
+end
+p B.singleton_methods, B.singleton_methods(false), B.methods(false)
+p B.instance_methods(false), B.instance_methods.include?(:x), B.instance_methods.include?(:initialize)
+p B.methods.include?(:shout), B.methods.include?(:ancestors), B.methods.include?(:x)
+p B.new.methods.include?(:y), B.new.methods.include?(:to_s), B.new.methods(false)
+p File.singleton_methods.include?(:basename), File.methods.include?(:open)
+`
+	expectOutput(t, src, "[:a, :b, :shout]\n[:b]\n[:b]\n[:y]\ntrue\nfalse\ntrue\ntrue\nfalse\ntrue\ntrue\n[]\ntrue\nfalse\n")
+}
+
 // TestKernelFunctionsArePrivate proves the functions of Kernel are private,
 // as in Ruby: a call without a receiver or on self reaches them from any
 // method, and Kernel.name and send do, but a call on another receiver and
-// public_send are refused, and respond_to?, instance_methods and
-// method_defined? leave them out.
+// public_send are refused, and respond_to?, methods and method_defined?
+// leave them out.
 func TestKernelFunctionsArePrivate(t *testing.T) {
 	src := `class Foo
   def bar = format("%03d", Integer("7"))
@@ -920,14 +947,14 @@ end
 puts Foo.new.bar, Foo.new.baz
 Kernel.puts "via Kernel"
 p 1.send(:format, "%d", 2), Object.ancestors
-p 1.respond_to?(:puts), Object.method_defined?(:require), Object.instance_methods.include?(:raise)
+p 1.respond_to?(:puts), File.methods.include?(:puts), Object.method_defined?(:require), Object.instance_methods.include?(:raise)
 [-> { File.puts 1 }, -> { 1.public_send(:puts, 1) }, -> { Foo.new.raise "x" }].each do |f|
   f.call
 rescue NoMethodError => e
   p e.message
 end
 `
-	expectOutput(t, src, "007\n8\nvia Kernel\n\"2\"\n[Object, Kernel, BasicObject]\nfalse\nfalse\nfalse\n"+
+	expectOutput(t, src, "007\n8\nvia Kernel\n\"2\"\n[Object, Kernel, BasicObject]\nfalse\nfalse\nfalse\nfalse\n"+
 		"\"private method 'puts' called for class File\"\n"+
 		"\"private method 'puts' called for an instance of Integer\"\n"+
 		"\"private method 'raise' called for an instance of Foo\"\n")

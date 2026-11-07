@@ -1,6 +1,9 @@
 package stdlib
 
 import (
+	"maps"
+	"slices"
+
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/protogen"
 )
@@ -69,15 +72,23 @@ func installClass() {
 		}
 		return object.Nil, nil
 	})
+	// instance_methods(inherited = true) are the methods a value of the
+	// class answers, without the ones Ruby keeps private; with false, the
+	// class's own only.
 	def(m, "instance_methods", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		names := []object.Value{}
-		for _, n := range cls(self).MethodNames() {
-			if cls(self).Methods[n].Private {
-				continue
-			}
-			names = append(names, object.Symbol(n))
+		if len(args) > 1 {
+			return object.Value{}, ArgError(ctx, len(args), "0..1")
 		}
-		return object.NewList(names...), nil
+		return methodSymbols(instanceMethodNames(cls(self), len(args) == 0 || args[0].Truthy())), nil
+	})
+	// singleton_methods(all = true) are the class methods: the class's own,
+	// its superclasses' and those of the modules they extend; with false,
+	// the class's own only.
+	def(m, "singleton_methods", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if len(args) > 1 {
+			return object.Value{}, ArgError(ctx, len(args), "0..1")
+		}
+		return methodSymbols(singletonMethodNames(cls(self), len(args) == 0 || args[0].Truthy())), nil
 	})
 	def(m, "method_defined?", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		name, err := WantString(ctx, args[0])
@@ -188,4 +199,60 @@ func Forward(module, name, library string) object.NativeFn {
 		}
 		return ctx.CallWith(m, name, append([]object.Value{self}, args...), kw, block)
 	}
+}
+
+// privateInRuby are the methods every class has that Ruby keeps private, so
+// that instance_methods and methods leave them out as Ruby's do. cameo has
+// no private methods: respond_to? still says true for them.
+var privateInRuby = map[string]bool{
+	"initialize": true, "initialize_copy": true, "method_missing": true, "respond_to_missing?": true,
+}
+
+// instanceMethodNames returns the names of the methods c's values answer:
+// c's own, and with inherited those of its ancestors too.
+func instanceMethodNames(c *object.Class, inherited bool) map[string]bool {
+	names := map[string]bool{}
+	classes := []*object.Class{c}
+	if inherited {
+		classes = c.Ancestors()
+	}
+	for _, k := range classes {
+		for n, m := range k.Methods {
+			if !m.Private && !privateInRuby[n] {
+				names[n] = true
+			}
+		}
+	}
+	return names
+}
+
+// singletonMethodNames returns the names of c's class methods: c's own,
+// and with all those LookupSingleton finds too, its superclasses' and the
+// methods of the modules they extend.
+func singletonMethodNames(c *object.Class, all bool) map[string]bool {
+	names := map[string]bool{}
+	for k := c; k != nil; k = k.Super {
+		for n := range k.SingletonMethods {
+			names[n] = true
+		}
+		if !all {
+			break
+		}
+		for _, e := range k.Extends {
+			for n := range instanceMethodNames(e, true) {
+				names[n] = true
+			}
+		}
+	}
+	return names
+}
+
+// methodSymbols returns names as a List of Symbols, sorted.
+func methodSymbols(names map[string]bool) object.Value {
+	sorted := slices.Sorted(maps.Keys(names))
+	out := make([]object.Value, len(sorted))
+	for i, n := range sorted {
+		out[i] = object.Symbol(n)
+	}
+	return object.NewList(out...)
 }
