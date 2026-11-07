@@ -9,6 +9,7 @@ import (
 
 	"github.com/cameo-lang/cameo/src/cameo"
 	cirb "github.com/cameo-lang/cameo/src/irb"
+	"github.com/cameo-lang/cameo/src/readline"
 	"github.com/cameo-lang/cameo/src/syntax"
 	"golang.org/x/term"
 )
@@ -55,9 +56,33 @@ func finishIRB(prog *cameo.Program, stderr io.Writer) int {
 	return 1
 }
 
+// giveTerminal gives prog the terminal of stdin and stdout, when both are
+// one, for Cameo::Kernel::Readline to read lines from: in raw mode while a
+// line is read, with a history kept in memory.
+func giveTerminal(prog *cameo.Program) {
+	in, out := int(os.Stdin.Fd()), int(os.Stdout.Fd())
+	if !term.IsTerminal(in) || !term.IsTerminal(out) {
+		return
+	}
+	e := readline.New(struct {
+		io.Reader
+		io.Writer
+	}{os.Stdin, os.Stdout}, readline.RawMode(func() (func(), error) {
+		state, err := term.MakeRaw(in)
+		if err != nil {
+			return nil, err
+		}
+		return func() { term.Restore(in, state) }, nil
+	}))
+	if cols, rows, err := term.GetSize(out); err == nil {
+		e.SetSize(cols, rows)
+	}
+	prog.Terminal(e)
+}
+
 // irbOnTerminal is irb on the terminal of stdin and stdout, which it puts in
-// raw mode for the line editor (package irb): arrow keys, history and
-// Ctrl-C, which drops the line.
+// raw mode for the line editor (package readline): arrow keys, a history
+// kept in ~/.cameo_history, and Ctrl-C, which drops the line.
 func irbOnTerminal(path string, stdin, stdout *os.File) int {
 	fd := int(stdin.Fd())
 	state, err := term.MakeRaw(fd)
@@ -68,7 +93,7 @@ func irbOnTerminal(path string, stdin, stdout *os.File) int {
 	t := cirb.NewTerminal(struct {
 		io.Reader
 		io.Writer
-	}{stdin, stdout})
+	}{stdin, stdout}, readline.HistoryFile(readline.DefaultHistoryFile()))
 	if cols, rows, err := term.GetSize(int(stdout.Fd())); err == nil {
 		t.SetSize(cols, rows)
 	}

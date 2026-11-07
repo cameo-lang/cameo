@@ -174,7 +174,10 @@ given. `fileutils` 1.7.3, `tempfile` 0.3.1, `tmpdir` 0.3.1, `find` 0.2.0,
 `pathname`'s I/O half (`exist?`, `read`, `children`, `glob`), `pstore`
 0.1.4, `yaml/store`, `io/console` 0.8.0, `io/nonblock` 0.3.1, `io/wait`
 0.3.1, `fcntl` 1.2.0, `etc` 1.4.5, `open3` 0.2.1, `pty`, `expect`,
-`syslog` 0.2.0, `un` 0.3.0, `readline` 0.0.4, `reline` 0.6.0, `socket`,
+`syslog` 0.2.0, `un` 0.3.0, `readline` 0.0.4 and `reline` 0.6.0 (in their
+place, `Cameo::Kernel::Readline.readline(prompt, add_hist)` reads a line
+from the terminal the host gives the program, and returns nil without
+one), `socket`,
 `win32ole` 1.9.1, `fiddle` 1.1.6, `nkf` 0.2.0 (encodings beyond UTF-8,
 binary and US-ASCII do not exist), `English` 0.8.0 (global variables).
 
