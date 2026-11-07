@@ -1,0 +1,30 @@
+--- a/internal/impl/message.go
++++ b/internal/impl/message.go
+@@ -193,20 +193,14 @@
+ 	}
+ 
+ 	// Derive a mapping of oneof wrappers to fields.
++	//
++	// cameo's TinyGo build: TinyGo's reflect has no MethodByName, so the
++	// generated XXX_OneofWrappers is reached through an interface on a nil
++	// pointer of the type, as the generated method takes it. The pre-2019
++	// XXX_OneofFuncs is not looked for.
+ 	oneofWrappers := mi.OneofWrappers
+-	methods := make([]reflect.Method, 0, 2)
+-	if m, ok := reflect.PtrTo(t).MethodByName("XXX_OneofFuncs"); ok {
+-		methods = append(methods, m)
+-	}
+-	if m, ok := reflect.PtrTo(t).MethodByName("XXX_OneofWrappers"); ok {
+-		methods = append(methods, m)
+-	}
+-	for _, fn := range methods {
+-		for _, v := range fn.Func.Call([]reflect.Value{reflect.Zero(fn.Type.In(0))}) {
+-			if vs, ok := v.Interface().([]any); ok {
+-				oneofWrappers = vs
+-			}
+-		}
++	if w, ok := reflect.Zero(reflect.PtrTo(t)).Interface().(interface{ XXX_OneofWrappers() []any }); ok {
++		oneofWrappers = w.XXX_OneofWrappers()
+ 	}
+ 	for _, v := range oneofWrappers {
+ 		tf := reflect.TypeOf(v).Elem()
