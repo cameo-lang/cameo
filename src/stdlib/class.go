@@ -79,7 +79,7 @@ func installClass() {
 		if len(args) > 1 {
 			return object.Value{}, ArgError(ctx, len(args), "0..1")
 		}
-		return methodSymbols(instanceMethodNames(cls(self), len(args) == 0 || args[0].Truthy())), nil
+		return methodSymbols(instanceMethodNames(ctx, cls(self), len(args) == 0 || args[0].Truthy())), nil
 	})
 	// singleton_methods(all = true) are the class methods: the class's own,
 	// its superclasses' and those of the modules they extend; with false,
@@ -88,7 +88,7 @@ func installClass() {
 		if len(args) > 1 {
 			return object.Value{}, ArgError(ctx, len(args), "0..1")
 		}
-		return methodSymbols(singletonMethodNames(cls(self), len(args) == 0 || args[0].Truthy())), nil
+		return methodSymbols(singletonMethodNames(ctx, cls(self), len(args) == 0 || args[0].Truthy())), nil
 	})
 	def(m, "method_defined?", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		name, err := WantString(ctx, args[0])
@@ -209,14 +209,18 @@ var privateInRuby = map[string]bool{
 }
 
 // instanceMethodNames returns the names of the methods c's values answer:
-// c's own, and with inherited those of its ancestors too.
-func instanceMethodNames(c *object.Class, inherited bool) map[string]bool {
+// c's own, and with inherited those of its ancestors too, but those of a
+// module of I/O the host does not allow (object.Class.IOKind).
+func instanceMethodNames(ctx object.Context, c *object.Class, inherited bool) map[string]bool {
 	names := map[string]bool{}
 	classes := []*object.Class{c}
 	if inherited {
 		classes = c.Ancestors()
 	}
 	for _, k := range classes {
+		if !ioAvailable(ctx, k) {
+			continue
+		}
 		for n, m := range k.Methods {
 			if !m.Private && !privateInRuby[n] {
 				names[n] = true
@@ -229,7 +233,7 @@ func instanceMethodNames(c *object.Class, inherited bool) map[string]bool {
 // singletonMethodNames returns the names of c's class methods: c's own,
 // and with all those LookupSingleton finds too, its superclasses' and the
 // methods of the modules they extend.
-func singletonMethodNames(c *object.Class, all bool) map[string]bool {
+func singletonMethodNames(ctx object.Context, c *object.Class, all bool) map[string]bool {
 	names := map[string]bool{}
 	for k := c; k != nil; k = k.Super {
 		for n := range k.SingletonMethods {
@@ -239,12 +243,18 @@ func singletonMethodNames(c *object.Class, all bool) map[string]bool {
 			break
 		}
 		for _, e := range k.Extends {
-			for n := range instanceMethodNames(e, true) {
+			for n := range instanceMethodNames(ctx, e, true) {
 				names[n] = true
 			}
 		}
 	}
 	return names
+}
+
+// ioAvailable reports whether the host allows the I/O of the module k,
+// true for a class or module that does none.
+func ioAvailable(ctx object.Context, k *object.Class) bool {
+	return k.IOKind == "" || ctx.IOAllowed(k.IOKind)
 }
 
 // methodSymbols returns names as a List of Symbols, sorted.

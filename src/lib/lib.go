@@ -16,6 +16,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/digest"
 	"github.com/cameo-lang/cameo/src/lib/forwardable"
 	"github.com/cameo-lang/cameo/src/lib/getoptlong"
+	"github.com/cameo-lang/cameo/src/lib/io/fileio"
 	"github.com/cameo-lang/cameo/src/lib/ipaddr"
 	"github.com/cameo-lang/cameo/src/lib/json"
 	"github.com/cameo-lang/cameo/src/lib/logger"
@@ -89,6 +90,12 @@ var Libraries = map[string][]string{
 	"zlib":                        nil,
 }
 
+// IOKinds names, for each library that does I/O, the kind it does:
+// network, file or popen. Such a library acts only in a program that
+// allowed its kind, or it by name, through cameo.Program.AllowIO; nothing
+// is allowed unless the program says so.
+var IOKinds = map[string]string{}
+
 // Sources are the libraries written in cameo, by the name require
 // accepts: the source of each, which a library's Go package embeds and
 // registers here. require parses it and runs it at the top level of the
@@ -138,6 +145,7 @@ func Install() {
 	prime.Install()
 	singleton.Install()
 	stringio.Install()
+	fileio.Install()
 	strscan.Install()
 	optparse.Install()
 	getoptlong.Install()

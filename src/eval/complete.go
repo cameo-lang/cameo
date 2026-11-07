@@ -47,7 +47,7 @@ func (in *Interp) Completions(before string) (word string, names []string) {
 		if !ok {
 			return word, nil
 		}
-		candidates = methodsOf(v)
+		candidates = in.methodsOf(v)
 	} else {
 		in.top.each(func(n string, _ object.Value) { candidates = append(candidates, n) })
 		for _, k := range in.mainClass.Ancestors() {
@@ -95,8 +95,9 @@ func (in *Interp) completionReceiver(recv string) (object.Value, bool) {
 
 // methodsOf returns the names of the methods v answers: a class's or a
 // module's own, and those of its class, or an instance's class's; not the
-// functions of Kernel, which a call with a receiver is refused.
-func methodsOf(v object.Value) []string {
+// functions of Kernel, which a call with a receiver is refused, nor the
+// methods of a module of I/O the host does not allow.
+func (in *Interp) methodsOf(v object.Value) []string {
 	var names []string
 	if c, ok := v.AsClass(); ok {
 		for k := c; k != nil; k = k.Super {
@@ -104,6 +105,9 @@ func methodsOf(v object.Value) []string {
 				names = append(names, n)
 			}
 			for _, e := range k.Extends {
+				if e.IOKind != "" && !in.IOAllowed(e.IOKind) {
+					continue
+				}
 				for _, a := range e.Ancestors() {
 					names = append(names, publicNames(a)...)
 				}

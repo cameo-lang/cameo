@@ -38,6 +38,19 @@ script that fetches data is what cameo is for; it reaches the network only
 through a client the Go host gives the program, so an embedding program
 decides whether a script may make requests at all (see *net/http* below).
 
+Files are the second: `File.read`, `File.open` and `File.write` are the methods
+of `Cameo::IO::FileIO`, in `Cameo::IO`, the module cameo's I/O is to live
+in, and `File` extends it. They need two things from the program, both:
+file I/O allowed, and a file system, an `afero.Fs`
+(`github.com/spf13/afero`) given with `Program.FileSystem(fsys, dir)`, which
+may be the disk, a directory of it (`afero.NewBasePathFs`), a read-only
+view (`afero.NewReadOnlyFs`) or memory; without either, `File` has no
+`read`, `open` or `write`, and `respond_to?`, `methods` and Tab in irb say so. `cameo --io`
+and `--io=file` give the machine's files, from the working directory,
+and so does `cameo --io=file irb`. `File.write` writes a whole file;
+`File.open` only reads. A path is only a path: `"|cmd"` runs nothing. See
+[cameo-vs-ruby.md](cameo-vs-ruby.md) for what differs from Ruby.
+
 What asks for a library is measured, not guessed:
 
 - **ruby/spec** ([specs/](../specs)): of the 1006 spec files that
@@ -92,7 +105,7 @@ What asks for a library is measured, not guessed:
   expected output Ruby 3.4 generated ([benchmarks/warmruby](../benchmarks/warmruby)
   runs CRuby 3.4.1 where the `ruby` on PATH is older), Go tests in
   [tests/](../tests), and an integration test against the binary where
-  it meets the command line or the outside, as `ARGV` and `io/httpd` do;
+  it meets the command line or the outside, as `ARGV` and `File.read` do;
   the examples' directory and `tests/integration/test_cameo.sh` are the
   record of which library has which. Where cameo differs, its row says so.
 - **Shared helpers come from `src/stdlib`**, which exports what a library
@@ -169,8 +182,8 @@ the decisions in [cameo-vs-ruby.md](cameo-vs-ruby.md) or
 [design/cameo.md](design/cameo.md).
 
 **The file system and the process.** cameo does no I/O beyond the standard
-streams and the network: a script is one file, and what it reads it is
-given. `fileutils` 1.7.3, `tempfile` 0.3.1, `tmpdir` 0.3.1, `find` 0.2.0,
+streams, the network and reading the files the program gives: a script is
+one file, and what it reads it is given. `fileutils` 1.7.3, `tempfile` 0.3.1, `tmpdir` 0.3.1, `find` 0.2.0,
 `pathname`'s I/O half (`exist?`, `read`, `children`, `glob`), `pstore`
 0.1.4, `yaml/store`, `io/console` 0.8.0, `io/nonblock` 0.3.1, `io/wait`
 0.3.1, `fcntl` 1.2.0, `etc` 1.4.5, `open3` 0.2.1, `pty`, `expect`,
