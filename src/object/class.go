@@ -210,6 +210,7 @@ func (c *Class) Copy() *Class {
 		Included:         c.Included,
 		Extended:         c.Extended,
 		Library:          c.Library,
+		IOKind:           c.IOKind,
 	}
 	moved := func(m *Method) *Method {
 		if m.Owner != c {
