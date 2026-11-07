@@ -1,0 +1,58 @@
+# A frankie app: a value each verb adds a route to, with its specs, which
+# call it as a Rack app through Rack::MockRequest, and serve at the end. The script is run by cameo, compiled or not:
+#
+#   cameo --io=network examples/frankie/01_hello.cameo
+#   curl localhost:4567/hi/sinatra
+require "frankie"
+# The server app.serve runs the app on, where the program allows network
+# I/O: cameo --io=network.
+require "io/httpd"
+
+app = Frankie.app
+
+app = app.get("/") do
+  "Hello from frankie!"
+end
+
+app = app.get("/hi/:name") do |req|
+  "hi #{req.params["name"]}"
+end
+
+app = app.post("/echo") do |req|
+  req.body.read
+end
+
+require "minispec"
+browser = Rack::MockRequest.new(app)
+
+describe "GET /" do
+  it "greets" do
+    res = browser.get("/")
+    assert_equal 200, res.status
+    assert_equal "Hello from frankie!", res.body
+    assert_equal "text/html;charset=utf-8", res.content_type
+  end
+end
+
+describe "GET /hi/:name" do
+  it "captures the name" do
+    assert_equal "hi sinatra", browser.get("/hi/sinatra").body
+  end
+
+  it "needs the name" do
+    assert_equal 404, browser.get("/hi").status
+    assert_equal "Not Found", browser.get("/hi").body
+  end
+end
+
+describe "POST /echo" do
+  it "returns the body" do
+    assert_equal "ring-a-ding", browser.post("/echo", input: "ring-a-ding").body
+  end
+
+  it "takes no GET" do
+    assert_equal 404, browser.get("/echo").status
+  end
+end
+
+app.serve

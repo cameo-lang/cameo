@@ -1,0 +1,26 @@
+# critic project settings for frankie, a project of its own inside cameo:
+# the Sinatra-like web framework written in cameo, src/lib/frankie, with
+# its examples here, each a route table with its specs. The patterns
+# follow git's glob rules, as in the repository's project.critic.yaml,
+# anchored at this directory.
+#
+# Categories are matched in order and the first match wins; the review
+# lists them in the same order, so what a review reads first comes first.
+
+project:
+  name: frankie
+  description: >
+    A Sinatra-like web framework written in cameo: an app is a value each
+    verb adds a route to, served on Rack, with examples that test their
+    routes in place with minispec.
+
+diffbase: main
+
+categories:
+  - name: Examples
+    patterns:
+      - "/*.cameo"
+      - "/*.expected"
+  - name: Manifest
+    patterns:
+      - "/project.critic.yaml"

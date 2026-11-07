@@ -1,0 +1,41 @@
+# frankie serves one request at a time, and a route that has several things
+# to compute starts them with async and awaits them all, so they run on
+# goroutines of their own while the route waits.
+require "frankie"
+# The server app.serve runs the app on, where the program allows network
+# I/O: cameo --io=network.
+require "io/httpd"
+include Cameo
+
+class Stats
+  def mean(numbers)
+    numbers.sum.to_f / numbers.size
+  end
+
+  def spread(numbers)
+    numbers.max - numbers.min
+  end
+
+  def primes(numbers)
+    numbers.select { |n| n > 1 && (2..n / 2).none? { |d| (n % d).zero? } }
+  end
+end
+
+app = Frankie.app
+
+app = app.get("/stats") do |req|
+  numbers = req.params.fetch("n", "").split(",").map(&:to_i)
+  stats = Stats.new
+  mean, spread, primes = await [async(stats, :mean, numbers), async(stats, :spread, numbers), async(stats, :primes, numbers)]
+  "mean #{mean}, spread #{spread}, primes #{primes.join(" ")}"
+end
+
+require "minispec"
+
+describe "GET /stats" do
+  it "computes its parts at once" do
+    assert_equal "mean 5.0, spread 9, primes 2 3 7 3", Rack::MockRequest.new(app).get("/stats", params: {"n" => "2,3,7,9,10,1,3"}).body
+  end
+end
+
+app.serve
