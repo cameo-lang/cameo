@@ -36,7 +36,7 @@ func Install() {
 		return stdlib.PathnameValue(p), nil
 	}
 	c.DefineSingleton("new", -1, newPath)
-	object.ObjectClass.Define("Pathname", -1, newPath)
+	object.DefineFunction("Pathname", -1, newPath)
 	self := func(v object.Value) string { p, _ := stdlib.PathnameOf(v); return p }
 	unary := func(name string, f func(string) object.Value) {
 		c.Define(name, 0, func(ctx object.Context, s object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {

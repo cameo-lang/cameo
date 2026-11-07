@@ -826,6 +826,19 @@ passing for what it covers. Milestones 0 to 6 have landed; 7 is not built.
 Choices with real trade-offs, decided with the human so they are not
 re-opened by accident:
 
+- **Kernel's functions are private, and nothing else is.** `puts`,
+  `require`, `raise`, `Integer()` and the other functions are private
+  methods of Kernel, as Ruby's `module_function` makes them, so a call
+  without a receiver or on `self` reaches them from any method, a call on
+  another receiver is refused with Ruby's NoMethodError, and `methods`,
+  `instance_methods`, `respond_to?` and Tab after a dot in irb leave them
+  out: `File.methods` lists what File can do, not forty functions every
+  value had. Kernel stays in Object's ancestors, as in Ruby. Rejected:
+  Kernel included only in the top-level object with a fallback for calls
+  without a receiver, which would have hidden the functions as well but
+  taken Kernel out of `Object.ancestors` and given a plain "undefined
+  method". This makes the core unlike a script, which still cannot
+  declare a private method: `private` stays refused.
 - **Overriding** is per class: a child may define a method its parent
   defines, and dispatch is dynamic. The alternative, one definition per
   hierarchy with static dispatch, was rejected as too far from Ruby.
