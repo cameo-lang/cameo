@@ -379,7 +379,7 @@ func (in *Interp) evalBound(cls, reopened *object.Class, body []syntax.Node, env
 // subclassRefused is syntax.SubclassRefused for the builtin class super,
 // which the checker sees only at the top level.
 func subclassRefused(super *object.Class) (string, bool) {
-	if super != object.NumericClass && super != object.BasicObjectClass {
+	if super != object.BasicObjectClass {
 		return "", false
 	}
 	return syntax.SubclassRefused(super.Name)

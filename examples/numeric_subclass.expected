@@ -1,0 +1,31 @@
+true
+true
+[Money, Numeric, Comparable, Object]
+false
+true
+#<Money $12.50>
+nil
+true
+true
+#<Money $3.00>
+#<Money $-12.50>
+false
+true
+true
+nil
+true
+#<Money $12.50>
+true
+#<Money $0.00>
+12
+13
+12.5
+12
+12
+6.25
+[#<Money $12.50>, #<Money $13.50>, #<Money $14.50>]
+$12.50 $13.50 $14.50 
+#<Money $13.50>
+#<Money $-9.50>
+false
+a Numeric
