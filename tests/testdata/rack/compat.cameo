@@ -1,0 +1,38 @@
+# Rack 3.2.8 under Ruby 3.4.1 prints compat.expected for this script, which
+# runs unchanged under both: tests/rack_test.go holds cameo to it.
+require "rack"
+U = Rack::Utils
+p U.parse_query("a=1&a=2&b&c=x+y"), U.parse_nested_query("a[b]=1&a[c][]=2&u[][n]=1&u[][m]=2&u[][n]=3&z")
+p U.build_query({"a" => ["1", "2"], "b" => "x y", "c" => nil}), U.build_nested_query({"a" => {"b" => [1, 2]}, "c" => "d&"})
+p U.escape("a b/&"), U.unescape("a+b%2F"), U.escape_html(%q{<a href="x">'&'</a>}), U.status_code(:not_found), U.status_code(201)
+p U.parse_cookies_header("a=1; b=x%20y; a=2"), U::HTTP_STATUS_CODES[404], U::SYMBOL_TO_STATUS_CODE[:im_a_teapot]
+[-> { U.parse_nested_query("a=%zz") }, -> { U.parse_nested_query("a=1&a[]=2") }, -> { U.parse_nested_query("a[]=1&a[b]=2") }].each do |f|
+  f.call
+rescue => e
+  p [e.class, e.message]
+end
+env = Rack::MockRequest.env_for("https://example.com:8443/app/x?q=1&r[]=2", method: "POST", input: "f=3&g[h]=4", "CONTENT_TYPE" => "application/x-www-form-urlencoded; charset=UTF-8", "HTTP_COOKIE" => "s=1", "HTTP_USER_AGENT" => "ua", "SCRIPT_NAME" => "")
+r = Rack::Request.new(env)
+p r.request_method, r.path_info, r.query_string, r.scheme, r.ssl?, r.host, r.port, r.host_with_port, r.base_url, r.url, r.fullpath, r.path
+p r.content_type, r.media_type, r.media_type_params, r.content_charset, r.content_length, r.form_data?, r.post?, r.get?
+p r.GET, r.POST, r.params, r.cookies, r.user_agent, r.body.read, r.xhr?
+r2 = Rack::Request.new(Rack::MockRequest.env_for("/a", "HTTP_HOST" => "h.example"))
+p r2.host, r2.port, r2.url, r2.POST, r2.params, r2.content_type, r2.media_type
+r3 = Rack::Request.new(Rack::MockRequest.env_for("/a", "HTTP_HOST" => "[::1]:3000"))
+p r3.host, r3.port, r3.host_with_port
+res = Rack::Response.new("hi", 201, {"X-A" => "b"})
+p res.finish, res.status, res.ok?, res.created?, res.successful?
+p Rack::Response.new(nil, 204, {"content-type" => "text/plain"}).finish
+p Rack::Response.new(["a", "b"]).finish
+app = ->(env) { [200, {"content-type" => "text/plain"}, ["#{env["REQUEST_METHOD"]} #{env["SCRIPT_NAME"]}|#{env["PATH_INFO"]}|#{env["QUERY_STRING"]}"]] }
+m = Rack::MockRequest.new(app)
+[m.get("/x?y=1"), m.post("/p", params: {"a" => "1"}), m.get("/g", params: {"a" => "1"}), m.head("/h"), m.request("PUT", "/u")].each { |x| p [x.status, x.headers, x.body, x.ok?, x.content_type, x["Content-Type"]] }
+p Rack::MockRequest.new(->(env) { [200, {}, [Rack::Request.new(env).POST.inspect, env["CONTENT_TYPE"].to_s]] }).post("/f", params: {"a" => {"b" => "1"}}).body
+map = Rack::URLMap.new({"/" => app, "/admin" => app, "/admin/deep/" => app})
+mm = Rack::MockRequest.new(map)
+["/", "/admin", "/admin/x", "/administrator", "/admin/deep/y", "/other"].each { |path| x = mm.get(path); p [x.status, x.body] }
+p Rack::MockRequest.new(Rack::URLMap.new({"/a" => app})).get("/b").then { |x| [x.status, x.headers, x.body] }
+p Rack::MockRequest.new(Rack::Head.new(app)).head("/h").body, Rack::MockRequest.new(Rack::Head.new(app)).get("/h").body
+p Rack::MockRequest.new(Rack::ContentLength.new(app)).get("/len").headers
+p Rack::MockRequest.new(Rack::ContentType.new(->(env) { [200, {}, ["x"]] }, "text/plain")).get("/").headers
+p Rack::MockRequest.new(Rack::ContentType.new(->(env) { [204, {}, []] })).get("/").headers
