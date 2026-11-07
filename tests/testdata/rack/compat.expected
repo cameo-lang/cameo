@@ -1,0 +1,77 @@
+{"a" => ["1", "2"], "b" => nil, "c" => "x y"}
+{"a" => {"b" => "1", "c" => ["2"]}, "u" => [{"n" => "1", "m" => "2"}, {"n" => "3"}], "z" => nil}
+"a=1&a=2&b=x+y&c"
+"a%5Bb%5D%5B%5D=1&a%5Bb%5D%5B%5D=2&c=d%26"
+"a+b%2F%26"
+"a b/"
+"&lt;a href=&quot;x&quot;&gt;&#39;&amp;&#39;&lt;/a&gt;"
+404
+201
+{"a" => "1", "b" => "x y"}
+"Not Found"
+nil
+[Rack::QueryParser::InvalidParameterError, "invalid %-encoding (%zz)"]
+[Rack::QueryParser::ParameterTypeError, "expected Array (got String) for param `a'"]
+[Rack::QueryParser::ParameterTypeError, "expected Hash (got Array) for param `a'"]
+"POST"
+"/app/x"
+"q=1&r[]=2"
+"https"
+true
+"example.com"
+8443
+"example.com:8443"
+"https://example.com:8443"
+"https://example.com:8443/app/x?q=1&r[]=2"
+"/app/x?q=1&r[]=2"
+"/app/x"
+"application/x-www-form-urlencoded; charset=UTF-8"
+"application/x-www-form-urlencoded"
+{"charset" => "UTF-8"}
+"UTF-8"
+"10"
+true
+true
+false
+{"q" => "1", "r" => ["2"]}
+{"f" => "3", "g" => {"h" => "4"}}
+{"q" => "1", "r" => ["2"], "f" => "3", "g" => {"h" => "4"}}
+{"s" => "1"}
+"ua"
+""
+false
+"h.example"
+80
+"http://h.example/a"
+{}
+{}
+nil
+nil
+"[::1]"
+3000
+"[::1]:3000"
+[201, {"x-a" => "b", "content-length" => "2"}, ["hi"]]
+201
+false
+true
+true
+[204, {}, []]
+[200, {}, ["a", "b"]]
+[200, {"content-type" => "text/plain"}, "GET |/x|y=1", true, "text/plain", "text/plain"]
+[200, {"content-type" => "text/plain"}, "POST |/p|", true, "text/plain", "text/plain"]
+[200, {"content-type" => "text/plain"}, "GET |/g|a=1", true, "text/plain", "text/plain"]
+[200, {"content-type" => "text/plain"}, "HEAD |/h|", true, "text/plain", "text/plain"]
+[200, {"content-type" => "text/plain"}, "PUT |/u|", true, "text/plain", "text/plain"]
+"{\"a\" => {\"b\" => \"1\"}}application/x-www-form-urlencoded"
+[200, "GET |/|"]
+[200, "GET /admin||"]
+[200, "GET /admin|/x|"]
+[200, "GET |/administrator|"]
+[200, "GET /admin/deep|/y|"]
+[200, "GET |/other|"]
+[404, {"content-type" => "text/plain", "x-cascade" => "pass"}, "Not Found: /b"]
+""
+"GET |/h|"
+{"content-type" => "text/plain", "content-length" => "10"}
+{"content-type" => "text/plain"}
+{}

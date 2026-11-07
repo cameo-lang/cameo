@@ -26,6 +26,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/optparse"
 	"github.com/cameo-lang/cameo/src/lib/pathname"
 	"github.com/cameo-lang/cameo/src/lib/prime"
+	"github.com/cameo-lang/cameo/src/lib/rack"
 	"github.com/cameo-lang/cameo/src/lib/securerandom"
 	"github.com/cameo-lang/cameo/src/lib/shellwords"
 	"github.com/cameo-lang/cameo/src/lib/singleton"
@@ -104,6 +105,7 @@ var IOKinds = map[string]string{}
 // start. A library listed here needs no entry in Libraries, and may have
 // one for what it loads along with it.
 var Sources = map[string]string{
+	"rack":       rack.Source,
 	"getoptlong": getoptlong.Source,
 	"abbrev":     abbrev.Source,
 	"shellwords": shellwords.Source,
@@ -146,6 +148,7 @@ func Install() {
 	singleton.Install()
 	stringio.Install()
 	fileio.Install()
+	rack.Install()
 	strscan.Install()
 	optparse.Install()
 	getoptlong.Install()

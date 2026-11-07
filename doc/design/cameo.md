@@ -337,15 +337,21 @@ loop around it does, changes nothing. There is no `remove_method` or
 `undef`. Modules reopen the same way.
 
 **A library written in cameo may open a module Go defined.** Its source,
-`module M … end` or `class M::C … end` where the library's Go package
-defined `M`, reopens the module on a copy, as a script reopens
+`module Rack … end` or `class Rack::Builder … end` where the library's Go
+package defined `Rack`, reopens the module on a copy, as a script reopens
 a module it defined, and the program binds the copy to the name in its
 own constants: so a library is part Go, what a script cannot write, and
 part cameo. The module Go defined is shared by every program in the
 process and stays as it was, so a program that did not require the
-library sees none of it. A script cannot open a module Go defined, nor a
-library a class: the instances Go makes would keep the class Go defined,
-without what the copy added.
+library sees none of it. A class Go defined in such a module reopens on
+a copy as well, `class Rack::Request` in rack.cameo, bound in the
+module's copy: Go makes a request of the class `new` was called on, so a
+request has what the source added, and a subclass's is the subclass's. A
+script cannot open a module Go defined, nor a library a class Go defined
+at the top level, such as `String`, whose instances Go makes of the class
+it defined, without what a copy added. A constant a method names is the
+program's before the one every program shares, so `Rack` in a method of
+`Rack::Response` is the copy, with what the library added.
 
 **Inheritance** is single, by `class Child < Parent`. A child inherits fields
 and methods, may add fields, and may define a method of a name its parent
@@ -837,6 +843,21 @@ passing for what it covers. Milestones 0 to 6 have landed; 7 is not built.
 Choices with real trade-offs, decided with the human so they are not
 re-opened by accident:
 
+- **The web is Rack.** A web app is a Rack 3 app, `call(env)` to
+  `[status, headers, body]`, so Rack's middleware, `Rack::MockRequest`
+  for specs and an app written for Rack fit together as in Ruby. `rack`
+  is held to Rack 3.2.8's output and written in cameo, but for the Rack
+  module, what of `Rack::Request` holds `env`, which Go defines, as Rack's
+  `Rack::Request::Env` holds it: a field cannot hold `env`, a Hash of
+  values of every kind with an IO in it, and `Rack::Handler`, the servers
+  registered in the program, which a script cannot keep in a value since
+  values do not change. Nor can a field hold an app, any object with
+  `call`, so a middleware keeps the app it wraps, which Builder passes as
+  a lambda, in a `proc` field. What changes a Response or a Builder in
+  Ruby returns a new one, so Builder's block gets the builder and returns
+  it configured, unlike Ruby's, which runs on the builder. rack itself
+  does no I/O: a server is a library of its own that registers with
+  `Rack::Handler`, so a framework serves an app without naming one.
 - **File I/O is a module the program grants.** `File.read`,
   `File.open` and `File.write` are the methods of `Cameo::IO::FileIO`, in `Cameo::IO`,
   which holds cameo's I/O, and `File` extends it. A program answers them
