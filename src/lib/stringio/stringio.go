@@ -911,3 +911,9 @@ func DefineReading(c *object.Class) {
 	}
 	c.Include(object.Enumerable)
 }
+
+// NewInput returns a StringIO reading data as binary: a request's body,
+// Rack's rack.input.
+func NewInput(data []byte) object.Value {
+	return NewReader(class, "", data, object.KindBytes)
+}

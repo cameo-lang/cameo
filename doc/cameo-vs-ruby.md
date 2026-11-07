@@ -361,7 +361,7 @@ These are absent, and a script that uses one fails when it reaches it:
 - **No I/O beyond standard output and error**: `IO` beyond `STDOUT` and
   `STDERR` (and `$stdout` and `$stderr`, which are them), `Dir`, `gets`,
   `STDIN`, and of `File` all but its path methods, reading and writing. What does
-  I/O, such as `File.read`, acts only where the program allowed
+  I/O, such as `io/httpd` and `File.read`, acts only where the program allowed
   its kind: `cameo --io` or `--io=network,file,popen`, or `AllowIO` in a
   program that embeds cameo, which allows nothing by default.
 - **Reading and writing files**: `File.read(path, length = nil, offset =

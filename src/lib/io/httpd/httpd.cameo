@@ -1,0 +1,15 @@
+# io/httpd's cameo part: it makes HTTPD a Rack handler and registers it
+# with Rack::Handler as "httpd", so a framework serves an app on it without
+# naming it.
+require "rack"
+
+module HTTPD
+  # run serves app as a Rack handler's run does: the options are rackup's,
+  # :Host and :Port, and :Quiet; a block is called with the URL once the
+  # socket is open.
+  def self.run(app, **options, &listening)
+    serve(app, port: options.fetch(:Port, 4567), bind: options.fetch(:Host, "127.0.0.1"), quiet: options.fetch(:Quiet, false), listening: listening)
+  end
+end
+
+Rack::Handler.register("httpd", HTTPD)

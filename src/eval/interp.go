@@ -142,6 +142,9 @@ func (in *Interp) stopped() error {
 	return nil
 }
 
+// Stopped implements object.Context.
+func (in *Interp) Stopped() error { return in.stopped() }
+
 // stopper is a run's stop: a flag the loops read, and channels that wake
 // whatever awaits a promise. Stop closes them all. A waiter selects on the
 // one its promise's id picks: a select locks every channel it waits on, so
@@ -150,10 +153,13 @@ type stopper struct {
 	flag atomic.Bool
 	once sync.Once
 	chs  [shards]chan struct{}
+	// done is the channel a host method that blocks watches (Context.Done),
+	// apart from the waiters' so the two do not contend for one.
+	done chan struct{}
 }
 
 func newStopper() *stopper {
-	s := &stopper{}
+	s := &stopper{done: make(chan struct{})}
 	for i := range s.chs {
 		s.chs[i] = make(chan struct{})
 	}
@@ -166,6 +172,7 @@ func (s *stopper) stop() {
 		for _, ch := range s.chs {
 			close(ch)
 		}
+		close(s.done)
 	})
 }
 
@@ -369,6 +376,9 @@ func (in *Interp) SetFileSystem(fsys afero.Fs, dir string) {
 
 // FileSystem implements object.Context.
 func (in *Interp) FileSystem() (afero.Fs, string) { return in.fsys, in.fsDir }
+
+// Done implements object.Context: the channel Stop closes.
+func (in *Interp) Done() <-chan struct{} { return in.stop.done }
 
 // runExitHandlers runs the blocks at_exit registered, the last first, once
 // the script ended with err, and returns the error the run ends with. The
