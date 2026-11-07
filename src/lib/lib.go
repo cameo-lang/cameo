@@ -35,6 +35,7 @@ import (
 	unicodenormalize "github.com/cameo-lang/cameo/src/lib/unicode_normalize"
 	"github.com/cameo-lang/cameo/src/lib/uri"
 	"github.com/cameo-lang/cameo/src/lib/zlib"
+	"github.com/cameo-lang/cameo/src/object"
 )
 
 // Libraries are the names require accepts, each with the libraries it
@@ -99,6 +100,14 @@ var Sources = map[string]string{
 	"abbrev":     abbrev.Source,
 	"shellwords": shellwords.Source,
 	"tsort":      tsort.Source,
+}
+
+// TopLevel are the modules a library includes at the top level of the
+// script that requires it, by the library's name: the functions a script
+// calls without a receiver once it required the library, which are no
+// methods of every object, so that File.methods does not list them.
+var TopLevel = map[string][]*object.Class{
+	"minispec": minispec.TopLevel,
 }
 
 // Install defines every library. The evaluator calls it once, after

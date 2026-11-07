@@ -14,8 +14,12 @@
 // The counts live in the run's state (Context.State), so examples an
 // async call runs count too; the describe names are each interpreter's,
 // so workers running examples at once do not mix theirs. The functions
-// are methods of every object, as minitest's are, but answer only in a
-// script that required minispec.
+// are the methods of two modules, Minispec::DSL (describe, it, specify) and
+// Minispec::Assertions (the assertions, skip, flunk and pass), as minitest's
+// are Minitest::Spec::DSL's and Minitest::Assertions': require "minispec"
+// includes both at the top level of the script that requires it, and a
+// class that wants the assertions in its methods includes
+// Minispec::Assertions, as a Ruby class includes Minitest::Assertions.
 package minispec
 
 import (
@@ -34,7 +38,16 @@ var (
 	// in an example does not catch it. Skip is one too.
 	assertionClass = object.NewClass("Assertion", object.ExceptionClass)
 	skipClass      = object.NewClass("Skip", assertionClass)
+	// dslModule is Minispec::DSL: describe, it and specify.
+	dslModule = object.NewModule("DSL")
+	// assertionsModule is Minispec::Assertions: the assertions, skip,
+	// flunk and pass.
+	assertionsModule = object.NewModule("Assertions")
 )
+
+// TopLevel are the modules require "minispec" includes at the top level of
+// the script: what a script calls describe, it and the assertions on.
+var TopLevel = []*object.Class{dslModule, assertionsModule}
 
 // result is one failed, erroring or skipped example, as the report lists
 // it.
@@ -81,23 +94,24 @@ func (st *state) startReport(ctx object.Context) {
 func Install() {
 	m := minispecModule
 	object.DefineNative("Minispec", object.ClassValue(m))
-	for _, c := range []*object.Class{assertionClass, skipClass} {
+	for _, c := range []*object.Class{assertionClass, skipClass, dslModule, assertionsModule} {
 		c.Lexical = m
 		m.Consts[c.Name] = object.ClassValue(c)
 	}
-	o := object.ObjectClass
-	define(o, "describe", describe)
-	define(o, "it", it)
-	define(o, "specify", it)
-	define(o, "skip", skip)
-	define(o, "flunk", flunk)
-	define(o, "pass", pass)
-	installAssertions(o)
+	define(dslModule, "describe", describe)
+	define(dslModule, "it", it)
+	define(dslModule, "specify", it)
+	a := assertionsModule
+	define(a, "skip", skip)
+	define(a, "flunk", flunk)
+	define(a, "pass", pass)
+	installAssertions(a)
 }
 
-// define defines name on every object, answering only in a script that
+// define defines name in the module o, answering only in a script that
 // required minispec: the method tables are the process's, the require a
-// script's, so a script that did not ask for the library sees no `it`.
+// script's, so a class that includes the module in a script that did not
+// ask for the library sees no `assert`.
 func define(o *object.Class, name string, f object.NativeFn) {
 	o.Define(name, -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if !ctx.Required("minispec") {

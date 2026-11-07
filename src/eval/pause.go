@@ -140,6 +140,7 @@ func (in *Interp) Resume(prog *syntax.Program, d *protogen.Dump) error {
 	}
 	for _, lib := range d.Loaded {
 		in.loaded[lib] = true
+		in.bringToTop(lib)
 	}
 	dec := in.Decoder()
 	for _, b := range d.Variables {
