@@ -36,6 +36,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib/uri"
 	"github.com/cameo-lang/cameo/src/lib/zlib"
 	"github.com/cameo-lang/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/readline"
 )
 
 // Libraries are the names require accepts, each with the libraries it
@@ -142,4 +143,5 @@ func Install() {
 	getoptlong.Install()
 	matrix.Install()
 	bigdecimal.Install()
+	readline.Install()
 }
