@@ -859,7 +859,9 @@ re-opened by accident:
   does no I/O: a server is a library of its own that registers with
   `Rack::Handler`, as `io/httpd` does, so a framework serves an app
   without naming one. `io/httpd` serves a Rack 3 app and nothing else: no
-  request class of its own and no short response forms.
+  request class of its own and no short response forms. Those are
+  frankie's, whose app is a Rack app and whose request a `Rack::Request`,
+  as Sinatra's are, and which serves on `Rack::Handler.default`.
 - **File I/O is a module the program grants.** `File.read`,
   `File.open` and `File.write` are the methods of `Cameo::IO::FileIO`, in `Cameo::IO`,
   which holds cameo's I/O, and `File` extends it. A program answers them

@@ -1,0 +1,167 @@
+# frankie is a Sinatra-like web framework written in cameo, on Rack. An
+# app is a value: each verb returns a new app with the route, so a script
+# builds one up and serves it at the end:
+#
+#   require "frankie"
+#   app = Frankie.app
+#   app = app.get("/hi/:name") { |req| "hi #{req.params["name"]}" }
+#   app.serve(port: 8888)
+#
+# An app is a Rack app: call(env) answers a request, so Rack::MockRequest
+# tests it without the network, Rack::Builder puts middleware in front of
+# it, and a server Rack::Handler holds serves it. A route's block gets a Frankie::Request, a
+# Rack::Request whose params hold the path's captures (:name) too, as
+# Sinatra's does, and returns the body as a String, a status as an
+# Integer, [status, body] or [status, headers, body], as a Sinatra route
+# does. serve runs the app on Rack::Handler.default, the first server the
+# script required that may serve in the program: frankie does no I/O of
+# its own.
+require "rack"
+require "uri"
+
+module Frankie
+  # Request is what a route's block gets: a Rack::Request, with the path's
+  # captures in params, as Strings.
+  class Request < Rack::Request
+    def params = super.merge(route_params)
+    def route_params = env.fetch("frankie.route_params", {})
+  end
+
+  # Route is one verb and path pattern with its block; a segment ":name"
+  # of the pattern captures the request's segment.
+  class Route
+    string :method, :path
+    proc :handler
+
+    # match returns the parameters the pattern captures from path, a list
+    # of percent-decoded segments, and nil when the route does not match:
+    # segment for segment, a trailing or a doubled slash included, as
+    # Sinatra matches.
+    def match(method, segments)
+      return nil unless self.method == method
+      mine = self.path.split("/", -1)
+      return nil unless mine.size == segments.size
+      pairs = mine.zip(segments)
+      return nil if pairs.any? { |pattern, segment| !pattern.start_with?(":") && pattern != segment }
+      pairs.select { |pattern, _| pattern.start_with?(":") }.to_h { |pattern, segment| [pattern[1..], segment] }
+    end
+  end
+
+  # PLAIN is the content type of frankie's own answers, the 404 and the
+  # 400; HTML a route's, unless it sets one.
+  PLAIN = "text/plain;charset=utf-8"
+  HTML = "text/html;charset=utf-8"
+
+  # response returns [status, headers, body] for what a route returned,
+  # in Sinatra's forms: a String is the body with status 200, an Integer a
+  # status with an empty body, nil an empty body, [status, body] and
+  # [status, headers, body]; the header names lowercase, as Rack 3's are,
+  # the content type text/html unless the route set one, and the body an
+  # Array, as Rack's is.
+  def self.response(value)
+    status, headers, body = case value
+      when nil then [200, {}, []]
+      when String then [200, {}, [value]]
+      when Integer then [value, {}, []]
+      when Array
+        case value.size
+        when 2 then [value[0], {}, value[1]]
+        when 3 then value
+        else raise TypeError, "a route returned an Array of #{value.size}, not [status, body] or [status, headers, body]"
+        end
+      else raise TypeError, "a route returned #{value.class}, not a String, an Integer or an Array"
+    end
+    unless status.is_a?(Integer) && status >= 200 && status <= 999
+      raise TypeError, "a route returned the status #{status.inspect}, not an Integer from 200 to 999"
+    end
+    raise TypeError, "a route returned headers of #{headers.class}, not a Hash" unless headers.is_a?(Hash)
+    named = headers.to_h { |k, v| [k.to_s.strip.downcase, v.to_s] }
+    named = {"content-type" => HTML}.merge(named) unless named.key?("content-type")
+    [status, named, body.nil? ? [] : (body.is_a?(String) ? [body] : Rack.chunks(body))]
+  end
+
+  class App
+    list :routes, of: Route
+    int :port, default: 4567
+    string :bind, default: "127.0.0.1"
+    bool :quiet, default: false
+
+    def get(path, &handler)
+      route("GET", path, &handler)
+    end
+
+    def post(path, &handler)
+      route("POST", path, &handler)
+    end
+
+    def put(path, &handler)
+      route("PUT", path, &handler)
+    end
+
+    def patch(path, &handler)
+      route("PATCH", path, &handler)
+    end
+
+    def delete(path, &handler)
+      route("DELETE", path, &handler)
+    end
+
+    # route returns the app with a route for method and path added; the
+    # first route added that matches a request handles it.
+    def route(method, path, &handler)
+      raise ArgumentError, "#{method.downcase}(#{path.inspect}) takes a block that returns the response" unless handler
+      with(routes: routes + [Route.new(method: method, path: path, handler: handler)])
+    end
+
+    # set returns the app with settings changed: set(port: 8888, quiet: true).
+    def set(port: self.port, bind: self.bind, quiet: self.quiet)
+      with(port: port, bind: bind, quiet: quiet)
+    end
+
+    # call answers the request env as a Rack app: the first matching
+    # route's block, given the Request, or a 404; a HEAD is its GET with
+    # an empty body, and a query string that is not one is a 400. An
+    # exception the block raises is the caller's: a spec sees it, and
+    # a server answers 500 with it.
+    def call(env)
+      method = env[Rack::REQUEST_METHOD]
+      verb = method == Rack::HEAD ? Rack::GET : method
+      begin
+        Rack::Request.new(env).GET
+      rescue Rack::Utils::InvalidParameterError, Rack::Utils::ParameterTypeError
+        return [400, {"content-type" => PLAIN}, ["Bad Request"]]
+      end
+      segments = env.fetch(Rack::PATH_INFO, "").split("/", -1).map { |segment| URI.decode_uri_component(segment) }
+      routes.each do |route|
+        captures = route.match(verb, segments)
+        next unless captures
+        status, headers, body = Frankie.response(route.handler.call(Request.new(env.merge("frankie.route_params" => captures))))
+        return [status, headers, method == Rack::HEAD ? [] : body]
+      end
+      [404, {"content-type" => PLAIN}, ["Not Found"]]
+    end
+
+    # serve runs the app on Rack::Handler.default until the host stops the
+    # run, after applying the settings given, and says where it serves once
+    # the socket is open. It returns false without serving where no server
+    # the script required may serve in this program, saying so on standard
+    # error.
+    def serve(**settings)
+      app = set(**settings)
+      server = Rack::Handler.default
+      unless server
+        names = Rack::Handler.names
+        reason = names.empty? ? "no Rack server is loaded; require one" : "this program allows none of its Rack servers to serve (#{names.join(", ")})"
+        warn "frankie does not serve: #{reason}"
+        return false
+      end
+      server.run(app, Host: app.bind, Port: app.port, Quiet: app.quiet) { |url| puts "frankie serves on #{url}" }
+      true
+    end
+  end
+
+  # app is a new app with no routes and the default settings.
+  def self.app
+    App.new
+  end
+end
