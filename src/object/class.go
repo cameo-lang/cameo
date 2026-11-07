@@ -618,6 +618,16 @@ type Context interface {
 	// library named by its require path, by the name, by the library's
 	// kind of I/O, or because every kind is allowed.
 	IOAllowed(lib string) bool
+	// Stopped is the error that ends the run once the host stopped it, nil
+	// while it runs: what a host method that blocks returns when Done is
+	// closed, so the script ends as it would at its next statement.
+	Stopped() error
+	// FormatError renders an error as the cameo command reports an
+	// uncaught one: the file, the line, the message and the class.
+	FormatError(err error) string
+	// Done is closed when the run is stopped from outside, so a host method
+	// that blocks can end.
+	Done() <-chan struct{}
 	// FileSystem is the file system the host gave the script, nil for
 	// none, and the absolute directory in it a relative path is read
 	// from: what Cameo::IO::FileIO reads, where IOAllowed("file") says it

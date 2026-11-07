@@ -575,10 +575,10 @@ var builtinExceptions = sync.OnceValue(func() []*object.Class {
 // to each kind of I/O apart. Each of what is a kind, "network", "file"
 // or "popen", "all" for every kind, or a library's require path, which
 // allows that one library: AllowIO("network") lets every library that
-// reaches the network act, AllowIO("file") File.read and File.open, and
-// AllowIO("all") any I/O. The
-// cameo command and a program cameo build wrote allow what their --io
-// flag names. Call it before Run.
+// reaches the network act, AllowIO("io/httpd") that one library,
+// AllowIO("file") File.read, File.open and File.write, and AllowIO("all")
+// any I/O. The cameo command and a program cameo build wrote allow what
+// their --io flag names. Call it before Run.
 func (p *Program) AllowIO(what ...string) { p.in.AllowIO(what...) }
 
 // FileSystem gives the script fsys to read and write files in, through

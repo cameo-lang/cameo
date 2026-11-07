@@ -40,6 +40,20 @@ test_io_flag_allows_the_kinds_named() {
   if "$CAMEO_BIN" --io=bogus "$script" 2>/dev/null; then fail "--io=bogus was accepted"; fi
 }
 
+test_io_network_allows_httpd() {
+  local script out
+  script="$(mktemp -d)/httpd.cameo"
+  printf 'require "io/httpd"\np HTTPD.allowed?\n' > "$script"
+  out=$("$CAMEO_BIN" "$script")
+  assert_eq 'false' "$out"
+  out=$("$CAMEO_BIN" --io=network "$script")
+  assert_eq 'true' "$out"
+  out=$("$CAMEO_BIN" --io=file,popen "$script")
+  assert_eq 'false' "$out"
+  out=$("$CAMEO_BIN" --io "$script")
+  assert_eq 'true' "$out"
+}
+
 test_io_file_reads_files_from_the_working_directory() {
   local dir out
   dir="$(mktemp -d)"

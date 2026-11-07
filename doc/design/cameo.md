@@ -857,7 +857,9 @@ re-opened by accident:
   Ruby returns a new one, so Builder's block gets the builder and returns
   it configured, unlike Ruby's, which runs on the builder. rack itself
   does no I/O: a server is a library of its own that registers with
-  `Rack::Handler`, so a framework serves an app without naming one.
+  `Rack::Handler`, as `io/httpd` does, so a framework serves an app
+  without naming one. `io/httpd` serves a Rack 3 app and nothing else: no
+  request class of its own and no short response forms.
 - **File I/O is a module the program grants.** `File.read`,
   `File.open` and `File.write` are the methods of `Cameo::IO::FileIO`, in `Cameo::IO`,
   which holds cameo's I/O, and `File` extends it. A program answers them
