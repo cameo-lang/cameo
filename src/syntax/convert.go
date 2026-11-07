@@ -643,8 +643,6 @@ func Refused(name string) (msg string, ok bool) {
 // named super, and false for a class a script may subclass.
 func SubclassRefused(super string) (msg string, ok bool) {
 	switch super {
-	case "Numeric":
-		return "a subclass of Numeric is not supported; Integer and Float do not coerce other numbers in their arithmetic", true
 	case "BasicObject":
 		return "a subclass of BasicObject is not supported; use method_missing in an ordinary class", true
 	}

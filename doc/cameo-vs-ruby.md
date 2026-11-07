@@ -243,13 +243,19 @@ q = p.with(x: 3)            # a copy; p is unchanged
   reopening adds, as they do in Ruby. A builtin class cannot be reopened,
   and a builtin module only by a library written in cameo, which adds to
   the program's own copy of it.
-- Numeric and BasicObject cannot be subclassed. Integer and Float follow
-  Ruby's `coerce` protocol for any value that answers `coerce`, so a number
-  class of a script's own is an ordinary class that defines `coerce`:
-  `1 + money` and `1 < money` then work as in Ruby. A BasicObject subclass
-  is a blank-slate object without Object's methods, which cameo does not
-  make; `method_missing` in an ordinary class does what a BasicObject proxy
-  does in Ruby.
+- A number class of a script's own subclasses Numeric, `class Money <
+  Numeric`, as in Ruby: it is a Numeric and a Comparable, and Numeric's
+  methods work through its own operators, as Ruby's do (`zero?` through
+  `==`, `positive?` and `abs` through `<=>`, `-@` through `coerce` and
+  `-`, `floor` and `round` through `to_f`, `div` and `%` through `/`,
+  `step` through `+`). Integer and Float follow Ruby's `coerce` protocol,
+  so `1 + money` and `1 < money` work, and Numeric's own `coerce` makes
+  Floats of both sides for a class without one. A blockless `step` on such
+  a number returns an Enumerator, where Ruby returns an
+  `ArithmeticSequence`.
+- BasicObject cannot be subclassed: a subclass is a blank-slate object
+  without Object's methods, which cameo does not make; `method_missing` in
+  an ordinary class does what a BasicObject proxy does in Ruby.
 
 `Data` is left out: a class with typed fields is cameo's Data, and `with`
 is Data's `with`. Ruby's
@@ -340,7 +346,7 @@ The checker rejects these by name, with the line:
 | `private`, `protected`, `public`, `module_function` | none: every method a script defines is public; only Kernel's functions are private |
 | `eval`, `instance_eval`, `class_eval`, `define_method`, `instance_variable_get` and `_set`, `undef` | a direct call or a `def` |
 | `def obj.x`, `class << self` | `def self.x` in a class body |
-| a subclass of Numeric or BasicObject, `class X < Numeric` | an ordinary class that defines `coerce` for Numeric; `method_missing` in an ordinary class for BasicObject. Inside a module, and with `Class.new(Numeric)`, the refusal is a `CameoError` when the definition runs |
+| a subclass of BasicObject, `class X < BasicObject` | `method_missing` in an ordinary class. Inside a module, and with `Class.new(BasicObject)`, the refusal is a `CameoError` when the definition runs |
 | a bang method of Ruby's core, such as `a.sort!` | the copying form, assigned: `a = a.sort` |
 | nested multiple assignment, `a, (b, c) = …` | separate assignments |
 | an assignment inside a block to a variable of the scope around it, `list.each { \|x\| total += x }` | `reduce`, `each_with_object`, `map`, `sum`, `count`, or a `while` loop; a block captures values |
