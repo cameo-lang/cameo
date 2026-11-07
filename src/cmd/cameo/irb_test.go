@@ -14,7 +14,7 @@ import (
 func TestIrbEvaluatesLinesAndWaitsForWholeExpressions(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	in := strings.NewReader("x = 41\ndef inc(n)\n  n + 1\nend\ninc(x)\n[x,\n 2].sum\nraise \"boom\"\nexit\nputs :unreached\n")
-	if status := irb("", in, &stdout, &stderr); status != 0 {
+	if status := irb("", nil, in, &stdout, &stderr); status != 0 {
 		t.Fatalf("exit status %d, stderr:\n%s", status, stderr.String())
 	}
 	want := "cameo(main):001> => 41\n" +
@@ -36,7 +36,7 @@ func TestIrbRunsTheScriptFirst(t *testing.T) {
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
-	if status := irb(script, strings.NewReader("twice(base)\n"), &stdout, &stderr); status != 0 {
+	if status := irb(script, nil, strings.NewReader("twice(base)\n"), &stdout, &stderr); status != 0 {
 		t.Fatalf("exit status %d, stderr:\n%s", status, stderr.String())
 	}
 	if !strings.HasPrefix(stdout.String(), "loaded\ncameo(main):001> => 20\n") {
@@ -52,7 +52,7 @@ func TestIrbEndsWithTheScriptsExit(t *testing.T) {
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
-	if status := irb(script, strings.NewReader("puts :unreached\n"), &stdout, &stderr); status != 3 {
+	if status := irb(script, nil, strings.NewReader("puts :unreached\n"), &stdout, &stderr); status != 3 {
 		t.Fatalf("exit status %d, stderr:\n%s", status, stderr.String())
 	}
 	if stdout.String() != "before\n" || stderr.Len() != 0 {
@@ -68,7 +68,7 @@ func TestDebugCommandStopsFirstAndQuits(t *testing.T) {
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
-	if status := debugScript(script, false, strings.NewReader("n\nq\n"), &stdout, &stderr); status != 0 {
+	if status := debugScript(script, nil, false, strings.NewReader("n\nq\n"), &stdout, &stderr); status != 0 {
 		t.Fatalf("exit status %d, stderr:\n%s", status, stderr.String())
 	}
 	if !strings.Contains(stdout.String(), "=>#0\t<main> at "+script+":1") || !strings.Contains(stdout.String(), "(rdbg) 1\n") || strings.Contains(stdout.String(), "(rdbg) 2\n") {

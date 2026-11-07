@@ -38,6 +38,19 @@ script that fetches data is what cameo is for; it reaches the network only
 through a client the Go host gives the program, so an embedding program
 decides whether a script may make requests at all (see *net/http* below).
 
+Files are the second: `File.read`, `File.open` and `File.write` are the methods
+of `Cameo::IO::FileIO`, in `Cameo::IO`, the module cameo's I/O is to live
+in, and `File` extends it. They need two things from the program, both:
+file I/O allowed, and a file system, an `afero.Fs`
+(`github.com/spf13/afero`) given with `Program.FileSystem(fsys, dir)`, which
+may be the disk, a directory of it (`afero.NewBasePathFs`), a read-only
+view (`afero.NewReadOnlyFs`) or memory; without either, `File` has no
+`read`, `open` or `write`, and `respond_to?`, `methods` and Tab in irb say so. `cameo --io`
+and `--io=file` give the machine's files, from the working directory,
+and so does `cameo --io=file irb`. `File.write` writes a whole file;
+`File.open` only reads. A path is only a path: `"|cmd"` runs nothing. See
+[cameo-vs-ruby.md](cameo-vs-ruby.md) for what differs from Ruby.
+
 What asks for a library is measured, not guessed:
 
 - **ruby/spec** ([specs/](../specs)): of the 1006 spec files that
@@ -79,6 +92,11 @@ What asks for a library is measured, not guessed:
   source and registers it in `lib.Sources` under its require path; `require`
   parses it and runs it at the top level of the script the first time, so
   its classes and methods exist from the `require` on, not from the start.
+  A library may be part Go and part cameo: its source may open a module
+  its Go package defined, `module M` or `class M::C`, which
+  adds to the requiring program's copy of the module and leaves the one
+  every program shares as it was; a script may not, nor a library open a
+  class Go defined.
   A source that does not parse is a `SyntaxError`, as in Ruby; one that
   raises is a `LoadError` naming the library's file and line, and is not
   loaded, so a later `require` runs it again. A worker `async` started
@@ -92,7 +110,7 @@ What asks for a library is measured, not guessed:
   expected output Ruby 3.4 generated ([benchmarks/warmruby](../benchmarks/warmruby)
   runs CRuby 3.4.1 where the `ruby` on PATH is older), Go tests in
   [tests/](../tests), and an integration test against the binary where
-  it meets the command line or the outside, as `ARGV` and `io/httpd` do;
+  it meets the command line or the outside, as `ARGV` and `File.read` do;
   the examples' directory and `tests/integration/test_cameo.sh` are the
   record of which library has which. Where cameo differs, its row says so.
 - **Shared helpers come from `src/stdlib`**, which exports what a library
@@ -124,7 +142,7 @@ What asks for a library is measured, not guessed:
 | `shellwords` | shellwords 0.2.2 | `Shellwords.split` (`shellsplit`, `shellwords`), `escape` (`shellescape`), `join` (`shelljoin`), `String#shellsplit`, `shellescape`, `Array#shelljoin`, with Ruby's quoting rules, its `ArgumentError` for an unmatched quote or a NUL, and its `NoMethodError` for what is not a String; written in cameo. The String and Array methods exist before the `require`, so `respond_to?` says so, and they say to require the library when it is not loaded; a class that includes the module gets the methods public, since every method in cameo is |
 | `debug` | debug 1.10.0 | `debugger` and `binding.break` stop in cameo's debugger, which takes rdbg's commands ([debugger.md](debugger.md)) |
 | `cameo/runner` | — | cameo's own: the library that gives CRuby `Cameo::Runner` is built in |
-| `minispec` | — (cameo's own) | `describe`, `it`, `specify` and `skip`, minitest 5.25's `assert`, `assert_equal`, `assert_nil`, `assert_empty`, `assert_includes`, `assert_instance_of`, `assert_kind_of`, `assert_match`, `assert_respond_to`, `assert_predicate`, `assert_operator`, `assert_in_delta`, `assert_raises`, their `refute_*` negations, `flunk` and `pass`, with minitest's messages, and `Minispec::Assertion` and `Minispec::Skip`. An example runs when `it` is called and prints its mark; the report at the end of the script, through `at_exit`, lists every failure, error and skip with its line and counts them, and a failure or an error ends the script with status 1. No `before`, `after` or `let`: a local the describe block assigns is what its examples share. Ruby's minitest finds tests by method name and keeps state in instance variables, so it is left out (below) |
+| `minispec` | — (cameo's own) | `describe`, `it`, `specify` and `skip`, minitest 5.25's `assert`, `assert_equal`, `assert_nil`, `assert_empty`, `assert_includes`, `assert_instance_of`, `assert_kind_of`, `assert_match`, `assert_respond_to`, `assert_predicate`, `assert_operator`, `assert_in_delta`, `assert_raises`, their `refute_*` negations, `flunk` and `pass`, with minitest's messages, and `Minispec::Assertion` and `Minispec::Skip`. An example runs when `it` is called and prints its mark; the report at the end of the script, through `at_exit`, lists every failure, error and skip with its line and counts them, and a failure or an error ends the script with status 1. No `before`, `after` or `let`: a local the describe block assigns is what its examples share. Ruby's minitest finds tests by method name and keeps state in instance variables, so it is left out (below) The functions are the methods of `Minispec::DSL` (`describe`, `it`, `specify`) and `Minispec::Assertions` (the assertions, `skip`, `flunk`, `pass`), which the `require` includes at the top level of the script alone, so they are no methods of every object and `File.methods` does not list them; a class that calls them in its methods, as one an async call runs examples in, includes the modules, as a Ruby class includes `Minitest::Assertions`. Called before the `require`, they say to require the library |
 | `unicode_normalize` | — (core) | `String#unicode_normalize` and `unicode_normalized?` with `:nfc`, `:nfd`, `:nfkc`, `:nfkd`, on `golang.org/x/text/unicode/norm`, there without a `require` as in Ruby, and `require "unicode_normalize"` is accepted where Ruby knows only `unicode_normalize/normalize`; a binary String is `Encoding::CompatibilityError`, a UTF-8 String with bytes that are not UTF-8 is `ArgumentError`, and a US-ASCII String is as it is; `unicode_normalize!` is a bang method |
 | `ipaddr` | ipaddr 1.2.7 | `IPAddr.new` from a string with a prefix length or a mask, or an Integer with its family, `to_s` compressed as Ruby compresses, `to_string`, `inspect`, `to_i`, `prefix`, `netmask`, `family`, `include?`, `===`, `==`, `eql?`, `<=>` and Comparable, `mask`, `to_range`, `succ` (so a Range of addresses iterates), `private?`, `loopback?`, `link_local?`, `ipv4?`, `ipv6?`, `ipv4_mapped?`, `ipv4_compat?`, `ipv4_mapped`, `ipv4_compat`, `native`, `\|`, `&`, `<<`, `>>`, `~`, `reverse`, `ip6_arpa`, `ip6_int`, `zone_id`, `hton`, `IPAddr.ntop`, the errors `IPAddr::Error`, `InvalidAddressError`, `InvalidPrefixError`, `AddressFamilyError`; `Socket::AF_INET`, `AF_INET6` and `AF_UNSPEC` are defined for the family argument. An IPAddr is a value with four fields, so it is a Hash key and a Set member; `mask!` and `set` are mutators, `mask` returns the copy; an error message names the address where ipaddr 1.2.6's left it out |
 | `zlib` | zlib 3.2.1 | `Zlib.crc32`, `adler32`, `crc_table`, `Zlib::Deflate.deflate` and `Zlib.deflate` with a level, `Zlib::Inflate.inflate` and `Zlib.inflate`, `Zlib.gzip` (`level:`; `strategy:` is accepted and ignored, Go's deflate having none) and `gunzip`, the constants, `Zlib::Error` and its kinds, `Zlib::NeedDict` for a stream with a dictionary, `Zlib::GzipFile::Error`, `CRCError`, `LengthError`, `NoFooter`, with zlib's messages, but for a corrupt deflate body, whose `DataError` says where Go's reader stopped. On Go's `compress/zlib`, `compress/gzip`, `compress/flate` and `hash`: what deflates here inflates in Ruby and the other way round, the headers, checksums and errors are zlib's, but the compressed bytes are Go's deflate's, not byte for byte zlib's. `Zlib::Deflate.new` and `Inflate.new` raise `NotImplementedError`: the streaming methods, `GzipReader` and `GzipWriter` on an IO are left out |
@@ -169,12 +187,15 @@ the decisions in [cameo-vs-ruby.md](cameo-vs-ruby.md) or
 [design/cameo.md](design/cameo.md).
 
 **The file system and the process.** cameo does no I/O beyond the standard
-streams and the network: a script is one file, and what it reads it is
-given. `fileutils` 1.7.3, `tempfile` 0.3.1, `tmpdir` 0.3.1, `find` 0.2.0,
+streams, the network and reading the files the program gives: a script is
+one file, and what it reads it is given. `fileutils` 1.7.3, `tempfile` 0.3.1, `tmpdir` 0.3.1, `find` 0.2.0,
 `pathname`'s I/O half (`exist?`, `read`, `children`, `glob`), `pstore`
 0.1.4, `yaml/store`, `io/console` 0.8.0, `io/nonblock` 0.3.1, `io/wait`
 0.3.1, `fcntl` 1.2.0, `etc` 1.4.5, `open3` 0.2.1, `pty`, `expect`,
-`syslog` 0.2.0, `un` 0.3.0, `readline` 0.0.4, `reline` 0.6.0, `socket`,
+`syslog` 0.2.0, `un` 0.3.0, `readline` 0.0.4 and `reline` 0.6.0 (in their
+place, `Cameo::Kernel::Readline.readline(prompt, add_hist)` reads a line
+from the terminal the host gives the program, and returns nil without
+one), `socket`,
 `win32ole` 1.9.1, `fiddle` 1.1.6, `nkf` 0.2.0 (encodings beyond UTF-8,
 binary and US-ASCII do not exist), `English` 0.8.0 (global variables).
 

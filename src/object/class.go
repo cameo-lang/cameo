@@ -1,6 +1,7 @@
 package object
 
 import (
+	"github.com/spf13/afero"
 	"maps"
 	"slices"
 	"sort"
@@ -30,6 +31,11 @@ type Class struct {
 	// Consts are the constants defined inside the class body: nested classes
 	// and modules, and plain constants.
 	Consts map[string]Value
+	// IOKind is the kind of I/O a module's methods do, "file" for
+	// Cameo::IO::FileIO: a class that extends or includes it answers them
+	// only in a program whose host allows that kind (Context.IOAllowed).
+	// The method tables are the process's, so the program asks at lookup.
+	IOKind string
 	// Includes are the modules included, in inclusion order; Extends those
 	// extended.
 	Includes []*Class
@@ -204,6 +210,7 @@ func (c *Class) Copy() *Class {
 		Included:         c.Included,
 		Extended:         c.Extended,
 		Library:          c.Library,
+		IOKind:           c.IOKind,
 	}
 	moved := func(m *Method) *Method {
 		if m.Owner != c {
@@ -607,6 +614,15 @@ type Context interface {
 	// AtExit keeps a block to run when the script ends, as Kernel#at_exit
 	// does.
 	AtExit(block Value)
+	// IOAllowed reports whether the host lets the script do I/O through the
+	// library named by its require path, by the name, by the library's
+	// kind of I/O, or because every kind is allowed.
+	IOAllowed(lib string) bool
+	// FileSystem is the file system the host gave the script, nil for
+	// none, and the absolute directory in it a relative path is read
+	// from: what Cameo::IO::FileIO reads, where IOAllowed("file") says it
+	// may.
+	FileSystem() (fsys afero.Fs, dir string)
 	// File is the script's file name, as its errors report it.
 	File() string
 	// Required reports whether the script required the library name:

@@ -336,6 +336,17 @@ name replaces the first, as in Ruby; the same `def` evaluated again, as a
 loop around it does, changes nothing. There is no `remove_method` or
 `undef`. Modules reopen the same way.
 
+**A library written in cameo may open a module Go defined.** Its source,
+`module M … end` or `class M::C … end` where the library's Go package
+defined `M`, reopens the module on a copy, as a script reopens
+a module it defined, and the program binds the copy to the name in its
+own constants: so a library is part Go, what a script cannot write, and
+part cameo. The module Go defined is shared by every program in the
+process and stays as it was, so a program that did not require the
+library sees none of it. A script cannot open a module Go defined, nor a
+library a class: the instances Go makes would keep the class Go defined,
+without what the copy added.
+
 **Inheritance** is single, by `class Child < Parent`. A child inherits fields
 and methods, may add fields, and may define a method of a name its parent
 defines: a method is defined once *per class*, dispatch is Ruby's, and
@@ -826,6 +837,21 @@ passing for what it covers. Milestones 0 to 6 have landed; 7 is not built.
 Choices with real trade-offs, decided with the human so they are not
 re-opened by accident:
 
+- **File I/O is a module the program grants.** `File.read`,
+  `File.open` and `File.write` are the methods of `Cameo::IO::FileIO`, in `Cameo::IO`,
+  which holds cameo's I/O, and `File` extends it. A program answers them
+  only where it allows file I/O and was given a file system, an
+  `afero.Fs` (`Program.FileSystem`), so a host chooses the disk, one
+  directory of it (`afero.NewBasePathFs`), or memory; with either missing they are undefined, not
+  methods that raise, so `respond_to?`, `methods` and irb's Tab tell a
+  script what it may do. The method tables are the process's, so a module
+  carries its kind of I/O (`IOKind`) and each program asks at lookup.
+  `File.write(path, data)` and `File.write(path) { data }` write a whole
+  file and return the String written, which a script can pass on, where
+  Ruby's return its length; `File.open` only reads, and a host that wants
+  no writes gives an `afero.NewReadOnlyFs`. A path is never a command: there is no pipe form, unlike the `open` and `IO.read` of
+  older Rubies. The cameo command gives the machine's file system, from
+  the working directory, for `--io=file`.
 - **Kernel's functions are private, and nothing else is.** `puts`,
   `require`, `raise`, `Integer()` and the other functions are private
   methods of Kernel, as Ruby's `module_function` makes them, so a call
@@ -1113,7 +1139,8 @@ re-opened by accident:
     an immutable path whose `+`, `join`, `cleanpath`, `parent` and
     `relative_path_from` follow Ruby's pathname.rb. `expand_path` reads the
     working directory and `$HOME` to resolve a relative path or `~`;
-    nothing reads a file. `__FILE__` is the script's path and `__dir__`
+    nothing reads or writes a file but `File.read`, `File.open` and
+    `File.write` (*Decisions taken*). `__FILE__` is the script's path and `__dir__`
     its directory.
   - `with` makes the copy with changes, from keywords (Ruby's
     `Data#with`) or from the hash its block returns; `tap` is Ruby's,
@@ -1130,7 +1157,7 @@ re-opened by accident:
     keeps Go's defaults.
   - Kept out: `GC`, `ENV`, metaprogramming (`define_method`, `eval`,
     `instance_variable_set`; `send` came in later, see above), setters and untyped fields, fibers
-    and threads, and anything that touches the file system.
+    and threads, and anything else that touches the file system.
   - Maps and sets are versions of an append-only table (`object/table.go`),
     so a copy with one more key costs O(1) and building a map key by key
     is linear, not quadratic.

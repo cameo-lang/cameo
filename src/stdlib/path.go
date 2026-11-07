@@ -243,7 +243,8 @@ func installPaths() {
 	f.Consts["PATH_SEPARATOR"] = object.String(":")
 	f.Consts["ALT_SEPARATOR"] = object.Nil
 	// The open, lock and fnmatch flags, with Linux's values. cameo opens
-	// no files; they are here for code that names them.
+	// files only to read them (Cameo::IO::FileIO, which takes a mode
+	// String); they are here for code that names them.
 	for name, v := range map[string]int64{
 		"RDONLY": 0, "WRONLY": 1, "RDWR": 2, "CREAT": 0o100, "EXCL": 0o200, "NOCTTY": 0o400,
 		"TRUNC": 0o1000, "APPEND": 0o2000, "NONBLOCK": 0o4000,

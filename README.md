@@ -83,10 +83,13 @@ is in [doc/design/pause.md](doc/design/pause.md).
 level, its value is printed, and a line that is not a whole expression yet
 waits for the next. With a script given, the script runs first and the
 lines see what it defined. On a terminal it edits the line being typed:
-arrow keys, a history on the up and down arrows, Tab to complete a name, and
-Ctrl-C to drop a line.
-A program that embeds cameo gets the same loop from the package
-[src/irb](src/irb), on a byte stream of its own.
+arrow keys, a history on the up and down arrows, which keeps the last 1000
+lines in `~/.cameo_history`, Tab to complete a name, and Ctrl-C to drop a
+line. A program that embeds cameo gets the same loop from the package
+[src/irb](src/irb), on a byte stream of its own, and the line editor alone
+from [src/readline](src/readline), with the history file and its limit of
+its choosing. A script run on a terminal reads lines with the same editor:
+`Cameo::Kernel::Readline.readline("name? ", true)`.
 
 `cameo debug` runs a script under a debugger with the commands of Ruby's
 debug library: `step`, `next`, `finish`, `continue`, `break` on a line or

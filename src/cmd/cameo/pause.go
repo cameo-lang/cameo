@@ -21,7 +21,7 @@ const statusPaused = 3
 // With pause set, ^C pauses the script and writes its dump; see
 // runProgram. With ignoreMutations set, a call of one of Ruby's mutators
 // returns its result on a copy instead of raising.
-func runScript(path string, argv []string, pause, ignoreMutations bool, stdout, stderr io.Writer) int {
+func runScript(path string, argv, allowIO []string, pause, ignoreMutations bool, stdout, stderr io.Writer) int {
 	src, err := os.ReadFile(path)
 	if err != nil {
 		fmt.Fprintln(stderr, err)
@@ -44,12 +44,13 @@ func runScript(path string, argv []string, pause, ignoreMutations bool, stdout, 
 	// A script that requires "debug" talks to the debugger on the
 	// terminal.
 	prog.Console(os.Stdin, stdout)
-	return runProgram(prog, pause, stderr)
+	giveTerminal(prog)
+	return runProgram(prog, allowIO, pause, stderr)
 }
 
 // resume continues the script the dump at path holds and returns the
 // process exit status, as runScript does.
-func resume(path string, pause, ignoreMutations bool, stdout, stderr io.Writer) int {
+func resume(path string, allowIO []string, pause, ignoreMutations bool, stdout, stderr io.Writer) int {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		fmt.Fprintln(stderr, err)
@@ -61,7 +62,8 @@ func resume(path string, pause, ignoreMutations bool, stdout, stderr io.Writer) 
 		return 1
 	}
 	prog.IgnoreMutationErrors(ignoreMutations)
-	return runProgram(prog, pause, stderr)
+	giveTerminal(prog)
+	return runProgram(prog, allowIO, pause, stderr)
 }
 
 // inspect prints what the dump at path holds.
@@ -84,7 +86,9 @@ func inspect(path string, out io.Writer) error {
 // top-level statement and writes its dump to a temporary file; a second
 // ^C, while the statement still runs, ends the process. Without it, ^C
 // ends the process as it does any other.
-func runProgram(prog *cameo.Program, pause bool, stderr io.Writer) int {
+func runProgram(prog *cameo.Program, allowIO []string, pause bool, stderr io.Writer) int {
+	// The command is the host: a script it runs may do the I/O --io named.
+	prog.AllowHostIO(allowIO...)
 	if pause {
 		interrupts := make(chan os.Signal, 2)
 		signal.Notify(interrupts, os.Interrupt)

@@ -82,6 +82,15 @@ each of the others, and which of those are bugs.
   `__send__`, which refuse a mutating method as a call
   does; `Class.new(Base) { … }`;
   `def self.x` in a class body.
+- **Asking what a value answers**: `methods`, a class's
+  `singleton_methods` and `instance_methods`, each with Ruby's argument to
+  leave out what is inherited (`File.singleton_methods` lists what `File`
+  can do), and `respond_to?`. Unlike Ruby's, the lists are sorted. They
+  leave out the functions of Kernel (below) and, by name, the four methods
+  Ruby keeps private that a script's class may define, `initialize`,
+  `initialize_copy`, `method_missing` and `respond_to_missing?`, though
+  `respond_to?` says true for those; in irb, Tab after a dot lists the
+  same names.
 - **Kernel's functions are private**, as in Ruby: `puts`, `p`, `print`,
   `require`, `raise`, `format`, `rand`, `loop`, `catch`, `exit`, the
   conversions `Integer()`, `Array()` and the rest are Kernel's, which
@@ -231,7 +240,9 @@ q = p.with(x: 3)            # a copy; p is unchanged
   again gives the same class; a different body reopens a copy of the
   class and rebinds `X` to it. Instances made before, and classes that
   inherit from it, keep the class as it was and do not see what the
-  reopening adds, as they do in Ruby. A builtin class cannot be reopened.
+  reopening adds, as they do in Ruby. A builtin class cannot be reopened,
+  and a builtin module only by a library written in cameo, which adds to
+  the program's own copy of it.
 - Numeric and BasicObject cannot be subclassed. Integer and Float follow
   Ruby's `coerce` protocol for any value that answers `coerce`, so a number
   class of a script's own is an ordinary class that defines `coerce`:
@@ -347,9 +358,32 @@ These are absent, and a script that uses one fails when it reaches it:
   fields; see above for Data), `Rational` and `Complex`, `ObjectSpace`, `GC`, `ENV`, `Module.new`,
   refinements, `binding` beyond the debugger's `binding.break`, `method`
   and `Proc#curry`.
-- **No I/O beyond standard output and error**: `File` beyond its path
-  methods, `IO` beyond `STDOUT` and `STDERR` (and `$stdout` and
-  `$stderr`, which are them), `Dir`, `gets`, `STDIN`.
+- **No I/O beyond standard output and error**: `IO` beyond `STDOUT` and
+  `STDERR` (and `$stdout` and `$stderr`, which are them), `Dir`, `gets`,
+  `STDIN`, and of `File` all but its path methods, reading and writing. What does
+  I/O, such as `File.read`, acts only where the program allowed
+  its kind: `cameo --io` or `--io=network,file,popen`, or `AllowIO` in a
+  program that embeds cameo, which allows nothing by default.
+- **Reading and writing files**: `File.read(path, length = nil, offset =
+  nil)`, `File.open(path, mode = "r")`, with or without a block, and
+  `File.write(path, data)` or `File.write(path) { data }` are the methods
+  of `Cameo::IO::FileIO`, which `File` extends; a File handle reads as a
+  `StringIO` does (`gets`, `read`, `each_line`, `readlines`, `eof?`,
+  `close`), with `path`. They exist only where the program allows file
+  I/O and gave a file system: `cameo --io=file`, which gives the
+  machine's, relative paths from the working directory, or
+  `AllowIO("file")` and `FileSystem(fsys, dir)` in a program that embeds
+  cameo, an `afero.Fs` (`github.com/spf13/afero`) whose paths the script
+  sees as they are, `..` stopping at its root; a host shares one directory
+  with `afero.NewBasePathFs`. Elsewhere `File.read` is an undefined method, as is
+  `respond_to?(:read)` false. Unlike Ruby: `File.write` returns the String
+  it wrote, not its length, and takes no offset or `mode:`; `File.open`
+  only reads, so a mode that writes raises `ArgumentError`; `File.open` of a directory raises
+  `Errno::EISDIR` at once, where Ruby's raises at the first read; and
+  **no pipe**: `"|cmd"` names a file, in `File.read` as in Ruby 3.4's,
+  and no form runs a command, unlike `open` and `IO.read` in older
+  Rubies. `File.exist?`, `Dir` and the rest of the file system
+  are not there yet.
 - **No threads or processes**: `Thread`, `Fiber`, `Mutex`, `sleep`,
   `system`, `exec`, `spawn`; cameo has `async` and `await` instead.
 - **Not there yet**: `exit!`,

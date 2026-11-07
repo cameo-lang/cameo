@@ -13,15 +13,18 @@ import (
 	"reflect"
 	"slices"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/spf13/afero"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
 	"github.com/cameo-lang/cameo/src/eval"
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/protogen"
+	"github.com/cameo-lang/cameo/src/readline"
 	"github.com/cameo-lang/cameo/src/syntax"
 )
 
@@ -124,6 +127,13 @@ func (p *Program) Args(args []string) {
 // such as a.push(1), returns its result on a copy instead of raising. The
 // receiver never changes either way.
 func (p *Program) IgnoreMutationErrors(ignore bool) { p.in.IgnoreMutationErrors = ignore }
+
+// Terminal gives the program e, which Cameo::Kernel::Readline.readline reads
+// lines from; without one, readline returns nil. Call it before the program
+// runs.
+func (p *Program) Terminal(e *readline.Editor) {
+	p.in.State(readline.StateName, func() any { return e })
+}
 
 // File is the script's path, as Load was given it.
 func (p *Program) File() string { return p.file }
@@ -559,3 +569,69 @@ var builtinExceptions = sync.OnceValue(func() []*object.Class {
 	}
 	return out
 })
+
+// AllowIO lets the script do I/O. Nothing is allowed unless the program
+// says so: a program that embeds cameo is safe by default, and opts in
+// to each kind of I/O apart. Each of what is a kind, "network", "file"
+// or "popen", "all" for every kind, or a library's require path, which
+// allows that one library: AllowIO("network") lets every library that
+// reaches the network act, AllowIO("file") File.read and File.open, and
+// AllowIO("all") any I/O. The
+// cameo command and a program cameo build wrote allow what their --io
+// flag names. Call it before Run.
+func (p *Program) AllowIO(what ...string) { p.in.AllowIO(what...) }
+
+// FileSystem gives the script fsys to read and write files in, through
+// File.read, File.open and File.write, with a relative path starting at dir, an absolute path
+// in fsys ("" for its root); an absolute path is fsys's own, and ".."
+// stops at its root. The script reads and writes only where AllowIO allows
+// file I/O too: without both, File has no read, open or write. A host that
+// shares part of a disk confines the script there itself, with
+// afero.NewBasePathFs, and keeps it from writing with afero.NewReadOnlyFs. Call it before
+// Run.
+func (p *Program) FileSystem(fsys afero.Fs, dir string) { p.in.SetFileSystem(fsys, dir) }
+
+// AllowHostIO allows what AllowIO does, and gives file I/O, when what
+// allows it, the machine's file system, with relative paths from the
+// working directory: what the cameo command and a program cameo build
+// wrote do with their --io flags. A program that embeds cameo calls
+// AllowIO and FileSystem instead, with the files it means to share.
+func (p *Program) AllowHostIO(what ...string) {
+	p.AllowIO(what...)
+	if !slices.Contains(what, "all") && !slices.Contains(what, "file") {
+		return
+	}
+	dir, err := os.Getwd()
+	if err != nil {
+		dir = "/"
+	}
+	p.FileSystem(afero.NewOsFs(), dir)
+}
+
+// IOKinds are the kinds of I/O --io= and AllowIO name.
+var IOKinds = []string{"network", "file", "popen"}
+
+// ParseIOFlags reads the --io flags at the front of a command line, as the
+// cameo command and a program cameo build wrote take them: --io allows
+// every kind of I/O, --io=network,file,popen the kinds named. It returns
+// what AllowIO takes and the arguments left, or an error naming a kind it
+// does not know.
+func ParseIOFlags(args []string) (allow, rest []string, err error) {
+	for len(args) > 0 {
+		switch {
+		case args[0] == "--io":
+			allow = append(allow, "all")
+		case strings.HasPrefix(args[0], "--io="):
+			for _, kind := range strings.Split(strings.TrimPrefix(args[0], "--io="), ",") {
+				if !slices.Contains(IOKinds, kind) {
+					return nil, nil, fmt.Errorf("--io takes %s, not %q", strings.Join(IOKinds, ", "), kind)
+				}
+				allow = append(allow, kind)
+			}
+		default:
+			return allow, args, nil
+		}
+		args = args[1:]
+	}
+	return allow, args, nil
+}

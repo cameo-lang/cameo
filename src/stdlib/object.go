@@ -71,6 +71,26 @@ func installObject() {
 		r, err := ctx.Call(self, "respond_to_missing?", object.Symbol(name), all)
 		return object.Bool(r.Truthy()), err
 	})
+	// methods are the names self answers: for a class its class methods
+	// and the methods of Class, for any other value its class's
+	// instance_methods. methods(false) are a class's own class methods,
+	// and nothing for another value, which has no singleton methods.
+	def(o, "methods", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if len(args) > 1 {
+			return object.Value{}, ArgError(ctx, len(args), "0..1")
+		}
+		regular := len(args) == 0 || args[0].Truthy()
+		names := map[string]bool{}
+		if c, ok := self.AsClass(); ok {
+			names = singletonMethodNames(ctx, c, regular)
+		}
+		if regular {
+			for n := range instanceMethodNames(ctx, self.Class(), true) {
+				names[n] = true
+			}
+		}
+		return methodSymbols(names), nil
+	})
 	def(o, "respond_to_missing?", 2, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.False, nil
 	})
