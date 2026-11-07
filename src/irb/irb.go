@@ -1,10 +1,9 @@
 // Package irb is cameo's irb as a library. A Session evaluates lines at the
 // top level of one program, as Ruby's irb does, and a Terminal edits them as
-// they are typed, on any byte stream: arrow keys, Ctrl-A, Ctrl-E, Ctrl-K,
-// Ctrl-W, a history on the up and down arrows (golang.org/x/term), and Tab,
-// which completes a name. The cameo command runs both on its terminal; a
-// program that embeds cameo runs them on a stream of its own, such as an
-// app's terminal that has no tty.
+// they are typed, on any byte stream, with a readline.Editor, whose Tab
+// completes a name the session knows. The cameo command runs both on its
+// terminal; a program that embeds cameo runs them on a stream of its own,
+// such as an app's terminal that has no tty.
 package irb
 
 import (

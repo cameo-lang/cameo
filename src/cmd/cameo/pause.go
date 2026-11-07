@@ -44,6 +44,7 @@ func runScript(path string, argv []string, pause, ignoreMutations bool, stdout, 
 	// A script that requires "debug" talks to the debugger on the
 	// terminal.
 	prog.Console(os.Stdin, stdout)
+	giveTerminal(prog)
 	return runProgram(prog, pause, stderr)
 }
 
@@ -61,6 +62,7 @@ func resume(path string, pause, ignoreMutations bool, stdout, stderr io.Writer) 
 		return 1
 	}
 	prog.IgnoreMutationErrors(ignoreMutations)
+	giveTerminal(prog)
 	return runProgram(prog, pause, stderr)
 }
 

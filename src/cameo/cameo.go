@@ -22,6 +22,7 @@ import (
 	"github.com/cameo-lang/cameo/src/eval"
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/protogen"
+	"github.com/cameo-lang/cameo/src/readline"
 	"github.com/cameo-lang/cameo/src/syntax"
 )
 
@@ -124,6 +125,13 @@ func (p *Program) Args(args []string) {
 // such as a.push(1), returns its result on a copy instead of raising. The
 // receiver never changes either way.
 func (p *Program) IgnoreMutationErrors(ignore bool) { p.in.IgnoreMutationErrors = ignore }
+
+// Terminal gives the program e, which Cameo::Kernel::Readline.readline reads
+// lines from; without one, readline returns nil. Call it before the program
+// runs.
+func (p *Program) Terminal(e *readline.Editor) {
+	p.in.State(readline.StateName, func() any { return e })
+}
 
 // File is the script's path, as Load was given it.
 func (p *Program) File() string { return p.file }
