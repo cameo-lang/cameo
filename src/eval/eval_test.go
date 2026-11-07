@@ -209,10 +209,8 @@ func TestBasicObjectIsTheRoot(t *testing.T) {
 	expectError(t, "class A\n def method_missing(name, *args) = super\nend\nA.new.zz\n", "undefined method 'zz' for an instance of A")
 }
 
-func TestNumericAndBasicObjectCannotBeSubclassed(t *testing.T) {
-	expectError(t, "module M\n class X < Numeric\n end\nend\n", "class X < Numeric: a subclass of Numeric is not supported; Integer and Float do not coerce other numbers")
+func TestBasicObjectCannotBeSubclassed(t *testing.T) {
 	expectError(t, "module M\n class X < BasicObject\n end\nend\n", "class X < BasicObject: a subclass of BasicObject is not supported; use method_missing in an ordinary class")
-	expectError(t, "X = Class.new(Numeric)\n", "Class.new(Numeric): a subclass of Numeric is not supported")
 	expectError(t, "X = Class.new(BasicObject)\n", "Class.new(BasicObject): a subclass of BasicObject is not supported")
 	// A module's own Numeric is an ordinary class.
 	expectOutput(t, "module M\n class Numeric; end\n class X < Numeric; end\n p X.superclass\nend\n", "M::Numeric\n")
@@ -958,4 +956,30 @@ end
 		"\"private method 'puts' called for class File\"\n"+
 		"\"private method 'puts' called for an instance of Integer\"\n"+
 		"\"private method 'raise' called for an instance of Foo\"\n")
+}
+
+// A number class of a script's own subclasses Numeric, as in Ruby: it is a
+// Numeric and a Comparable, Numeric's methods work through its own ==, <=>,
+// coerce, + and to_f, and Integer and Float coerce it in their arithmetic.
+func TestNumericCanBeSubclassed(t *testing.T) {
+	money := `class Money < Numeric
+  int :cents
+  def initialize(cents) = (self.cents = cents)
+  def +(o) = Money.new(cents + o.cents)
+  def -(o) = Money.new(cents - o.cents)
+  def <=>(o) = o.is_a?(Money) ? cents <=> o.cents : cents <=> o * 100
+  def ==(o) = o.is_a?(Money) ? cents == o.cents : cents == o * 100
+  def coerce(n) = [Money.new(n * 100), self]
+  def to_f = cents / 100.0
+  def inspect = "$#{cents}"
+end
+`
+	expectOutput(t, money+"p Money.ancestors.take(3), Money.new(5).is_a?(Numeric)\n", "[Money, Numeric, Comparable]\ntrue\n")
+	expectOutput(t, money+"p Money.new(0).zero?, Money.new(5).nonzero?, Money.new(0).nonzero?\n", "true\n$5\nnil\n")
+	expectOutput(t, money+"p Money.new(-3).negative?, Money.new(-3).abs, -Money.new(4)\n", "true\n$3\n$-4\n")
+	expectOutput(t, money+"p 1 + Money.new(50), 2 > Money.new(50), Money.new(150).floor, Money.new(150).round(1)\n", "$150\ntrue\n1\n1.5\n")
+	expectOutput(t, money+"p Money.new(100).step(Money.new(300), Money.new(100)).to_a\n", "[$100, $200, $300]\n")
+	// Without a coerce of its own, Numeric's makes Floats of both sides.
+	expectOutput(t, "class M < Numeric\n int :v\n def to_f = v.to_f\nend\np 1 + M.new(v: 2), M.new(v: 2).coerce(1)\n", "3.0\n[1.0, 2.0]\n")
+	expectOutput(t, "module U\n class F < Numeric; end\n p F.superclass\nend\nK = Class.new(Numeric)\np K.superclass\n", "Numeric\nNumeric\n")
 }
