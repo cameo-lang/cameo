@@ -1,0 +1,50 @@
+# Try pause and resume. Each top-level statement is a point where ^C can
+# pause the run, so the work is one top-level statement per step.
+#
+#   cameo counter.cameo       # press ^C after a few steps; it finishes the
+#                             # step it is in, pauses, and prints the dump's path
+#   cameo inspect <dump>      # where it paused and the variables it saved
+#   cameo resume <dump>       # continue from the next step
+#
+# cameo is bin/cameo of the repository, or on the PATH after make install.
+# A dump is kept after a resume, so it can be resumed again; ^C during a
+# resume writes a new one. A second ^C ends the run without a dump.
+#
+# The draws are seeded, so a resumed run draws what an uninterrupted one
+# would. doubler is a Proc, which a dump cannot carry: the last line fails
+# after a resume (issue #166).
+class Tally
+  int :count
+
+  def initialize(count)
+    self.count = count
+  end
+
+  def bump = with(count: count + 1)
+end
+
+def slow(n) = n < 2 ? n : slow(n - 1) + slow(n - 2)
+
+def step(tally, log)
+  slow(32)   # stands in for sleep, which cameo lacks
+  log = log << rand(100)
+  puts "step #{tally.count}  drew #{log.last}  log=#{log.inspect}"
+  log
+end
+
+srand(42)
+tally = Tally.new(0)
+log = []
+doubler = ->(n) { n * 2 }   # a Proc: the dump cannot carry it
+
+tally = tally.bump; log = step(tally, log)
+tally = tally.bump; log = step(tally, log)
+tally = tally.bump; log = step(tally, log)
+tally = tally.bump; log = step(tally, log)
+tally = tally.bump; log = step(tally, log)
+tally = tally.bump; log = step(tally, log)
+tally = tally.bump; log = step(tally, log)
+tally = tally.bump; log = step(tally, log)
+tally = tally.bump; log = step(tally, log)
+tally = tally.bump; log = step(tally, log)
+puts "done: #{tally.count} steps, sum #{log.sum}, doubled #{doubler.(log.sum)}"
