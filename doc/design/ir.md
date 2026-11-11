@@ -142,7 +142,7 @@ Branches are `ir/NN-<topic>`, each based on the one before, the first on
 2. eval: the tree walker evaluates every node but calls.
 3. eval: the tree walker evaluates calls; `compile.go` goes.
 4. build: `make proto`, the pinned tools and the CI check; `cameo.Value`
-   moves to `proto/cameo/value.proto` and generated code.
+   moves to `src/cameopb/cameo/value.proto` and generated code.
 5. protogen: the dump moves to a `.proto` file and generated code.
 6. ir: `ir.proto`, the instruction set, and the listing printer.
 7. ir: compiles and runs literals, variables, calls, blocks and control

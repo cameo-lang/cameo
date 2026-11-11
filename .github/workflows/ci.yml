@@ -23,6 +23,9 @@ jobs:
       - name: Dependencies
         run: make deps
 
+      - name: Generated code is current
+        run: make proto-check
+
       - name: Lint
         run: make lint
 

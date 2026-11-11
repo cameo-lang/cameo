@@ -21,6 +21,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
+	"github.com/cameo-lang/cameo/src/cameopb"
 	"github.com/cameo-lang/cameo/src/eval"
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/protogen"
@@ -268,7 +269,7 @@ func (p *Program) Proto(name string) (string, error) {
 // keyed by file name, plus the envelope in cameo/value.proto.
 func (p *Program) ProtoFiles() map[string]string {
 	files := protogen.Files(p.Classes())
-	files["cameo/value.proto"] = "syntax = \"proto3\";\n\npackage cameo;\n\n" + protogen.EnvelopeText
+	files["cameo/value.proto"] = cameopb.ValueProto
 	return files
 }
 
