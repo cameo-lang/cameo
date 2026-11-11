@@ -184,6 +184,23 @@ func (in *Interp) dumpStack(d *cameopb.Dump, enc *protogen.Encoder, classes *cla
 		if !m.result.IsZero() {
 			a.Result = value("what "+where+" returns", m.result)
 		}
+		if w := m.wait; w != nil {
+			aw := &cameopb.Dump_Awaiting{Single: w.single, Next: uint32(w.next)}
+			for _, p := range w.ps {
+				aw.Promises = append(aw.Promises, p.id)
+			}
+			for _, v := range w.results {
+				aw.Results = append(aw.Results, value("a result "+where+" awaited", v))
+			}
+			if w.failed != nil {
+				msg, err := enc.Message(object.ExceptionValue(w.failed))
+				if err != nil {
+					return fmt.Errorf("the failure %s awaited: %w", where, err)
+				}
+				aw.Failed = msg
+			}
+			a.Awaiting = aw
+		}
 		d.Stack = append(d.Stack, a)
 	}
 	for i, fr := range sd.frameList {
@@ -707,6 +724,36 @@ func (in *Interp) restoreStack(dec *protogen.Decoder, d *cameopb.Dump, script *p
 			if m.result, err = value(a.GetResult()); err != nil {
 				return fmt.Errorf("what activation %d returns: %w", i, err)
 			}
+		}
+		if aw := a.GetAwaiting(); aw != nil {
+			w := &awaiting{single: aw.GetSingle(), next: int(aw.GetNext())}
+			for k, id := range aw.GetPromises() {
+				p := in.promises.get(id)
+				// A promise the activation has the result of may be
+				// gone; one it still waits for is in the dump.
+				if p == nil && k >= w.next {
+					return fmt.Errorf("activation %d of the dump awaits promise %d, which the dump does not have", i, id)
+				}
+				w.ps = append(w.ps, p)
+			}
+			for _, b := range aw.GetResults() {
+				v, err := value(b)
+				if err != nil {
+					return fmt.Errorf("a result activation %d awaited: %w", i, err)
+				}
+				w.results = append(w.results, v)
+			}
+			if aw.GetFailed() != nil {
+				v, err := dec.Value(aw.GetFailed())
+				if err != nil {
+					return err
+				}
+				w.failed, _ = v.AsException()
+			}
+			if w.next > len(w.ps) {
+				return fmt.Errorf("activation %d of the dump awaits past its promises", i)
+			}
+			m.wait = w
 		}
 		acts = append(acts, m)
 	}

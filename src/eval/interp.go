@@ -104,11 +104,12 @@ type Interp struct {
 	// interpreted counts the calls of compiled methods running on the
 	// interpreter, which their own calls do too; see reinvoke.
 	interpreted int
-	// pause is set by Pause; paused once Run returned ErrPaused, with
+	// pausing is the run's pause, which Pause asks for and the run's
+	// workers share; paused is set once Run returned ErrPaused, with
 	// next the index of the top-level statement the run continues with
 	// and nextLine its line. from is where Run starts: the pause point
 	// of a resumed run, 0 otherwise. See pause.go.
-	pause    atomic.Bool
+	pausing  *pauser
 	paused   bool
 	next     int
 	nextLine int
@@ -211,6 +212,7 @@ func New(stdout, stderr io.Writer) *Interp {
 		promises:  newPromises(),
 		code:      &code{},
 		stop:      newStopper(),
+		pausing:   newPauser(),
 		exits:     &exitHandlers{},
 		states:    &libStates{m: map[string]any{}},
 	}
@@ -233,7 +235,7 @@ func (in *Interp) Run(file string, prog *syntax.Program) error {
 		// A run that paused goes on where it paused when it is run again:
 		// its host did not want the dump, or could not have one.
 		in.paused = false
-		in.pause.Store(false)
+		in.pausing.reset()
 		in.from, in.resumed, in.frozen = in.next, in.frozen, nil
 		if in.dbgTop != nil {
 			fr = in.dbgTop.fr
@@ -252,7 +254,7 @@ func (in *Interp) Run(file string, prog *syntax.Program) error {
 	p, err := in.program(file, prog)
 	for i := in.from; err == nil && i < len(prog.Body); i++ {
 		inside := len(in.resumed) > 0
-		if in.pause.Load() {
+		if in.pausing.flag.Load() {
 			// Between two statements; or, for a run that resumed inside
 			// one and has not gone on yet, where it was.
 			in.paused, in.next, in.nextLine = true, i, prog.Body[i].Line()

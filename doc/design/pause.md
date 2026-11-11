@@ -54,9 +54,16 @@ to is. So are the `initialize` that `new` runs, a method `super` calls,
 and an operator a class defines, `a + b` or `a == b`.
 
 The pause waits for every call `async` started, so their results travel
-settled in the dump. A promise the script or a host made by hand and has not
-settled cannot wait and is left out. A script that is waiting in `await`
-pauses when the promise settles.
+settled in the dump. A promise the script or a host made by hand and has
+not settled is in the dump as pending: the resumed run has it under its
+id, the script settles it with `resolve` or `fail` as it would have, and
+a host with `Program.PendingPromise(id)`.
+
+A script that is waiting in `await` pauses there: an `await` is not
+inside an instruction but a state of its activation, which the dump holds
+as the promises it waits for and the results it has. The resumed run
+waits again, for a call's result that is settled in the dump by then, or
+for a pending promise until something settles it.
 
 ## What a dump holds
 
@@ -74,7 +81,7 @@ The dump is the protobuf message `cameo.Dump`, written in
 | `units` | the code of the run: the script's unit, and the unit of every library written in cameo it required |
 | `classes`, `top` | the classes and modules the script defined, and the methods of the top level |
 | `cameo_top` | whether the script included `Cameo` at the top level |
-| `promises` | every promise, settled: its id, the method `async` ran, and its result or the exception it failed with |
+| `promises` | every promise: its id, the method `async` ran, and its result or the exception it failed with; or that it is pending, for one made by hand |
 | `loaded` | the libraries `require` loaded |
 | `rand` | the state of the random number generator, so a seeded script draws on as if it had not paused |
 | `at_exit` | the blocks `at_exit` registered, in order, which a resumed run runs when it ends |

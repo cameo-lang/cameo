@@ -27,7 +27,7 @@ var ErrPaused = errors.New("the script paused")
 // returns ErrPaused, and Dump captures the run. A run that is inside a
 // builtin's call into the script, the block of an each, pauses once the
 // builtin returned; Stop ends a run at once.
-func (in *Interp) Pause() { in.pause.Store(true) }
+func (in *Interp) Pause() { in.pausing.ask() }
 
 // Dump captures a paused run: the script, where it paused, its top-level
 // variables, the constants it assigned, and its promises. It waits for the
@@ -114,6 +114,9 @@ func (in *Interp) settledPromises(enc *protogen.Encoder) ([]*cameopb.Dump_Promis
 		awaited, settled := p.awaited, p.settled
 		p.mu.Unlock()
 		if p.method == "" && !settled {
+			// One made by hand that nothing settled yet stays pending:
+			// the script or the host settles it after the resume.
+			out = append(out, &cameopb.Dump_Promise{Id: id, Awaited: awaited, Pending: true})
 			continue
 		}
 		result, exc, err := p.wait(in)
@@ -281,6 +284,11 @@ func (in *Interp) classNamed(name string) *object.Class {
 // restorePromise puts a settled promise back into the run's table.
 func (in *Interp) restorePromise(dec *protogen.Decoder, s *cameopb.Dump_Promise) error {
 	p := &Promise{id: s.Id, method: s.Method, done: make(chan struct{})}
+	if s.Pending {
+		p.awaited = s.Awaited
+		in.promises.restore(p)
+		return nil
+	}
 	var result object.Value
 	var exc *object.Exception
 	if s.Failure != nil {
