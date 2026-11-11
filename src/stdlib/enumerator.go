@@ -571,6 +571,16 @@ func installLazy() {
 	}
 	stage("grep", false, grep(true))
 	stage("grep_v", false, grep(false))
+	// Both take the pattern, which the stage reads when it runs.
+	for _, name := range []string{"grep", "grep_v"} {
+		staged := c.Methods[name].Native
+		def(c, name, -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+			if len(args) != 1 {
+				return object.Value{}, ArgError(ctx, len(args), "1")
+			}
+			return staged(ctx, self, args, kw, block)
+		})
+	}
 
 	// count reads take and drop's argument, a size that is not negative.
 	count := func(ctx object.Context, args []object.Value, name string) (int64, error) {
