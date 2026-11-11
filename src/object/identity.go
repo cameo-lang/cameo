@@ -21,7 +21,7 @@ type identityKey struct {
 func identity(v Value) uint64 {
 	identityMu.Lock()
 	defer identityMu.Unlock()
-	k := identityKey{v.kind, v.p}
+	k := identityKey{v.kind(), v.p}
 	if id, ok := identities[k]; ok {
 		return id
 	}

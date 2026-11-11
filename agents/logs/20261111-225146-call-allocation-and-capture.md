@@ -1,10 +1,10 @@
 # Task: Cut the allocation of a call and of a block's capture
 
 **Started:** 2026-11-11 22:51:46
-**Ended:** 2026-11-11 23:45:00
+**Ended:** 2026-11-12 01:30:00
 **Strategy:** Performance
 **Status:** Completed
-**Complexity:** Simple
+**Complexity:** Medium
 **Used Models:** Fable 5.2
 **Token usage (Estimated):** 3M input, 60k output
 
@@ -29,6 +29,11 @@ CRuby on the benchmarks.
 - [x] The three-way benchmark: all 791 cases of benchmarks/ruby/works
       on CRuby 3.4.1 without and with YJIT, main (7a0bcb8b) and the top
       of the stack (e343c790)
+- [x] Names as numbers (object.Sym): scopes and operators (#371), the
+      method of a SEND (#372)
+- [x] An instruction per arithmetic and comparison operator, the SEND
+      form removed, IR version 2 (#373)
+- [x] A Value of two words, 16 bytes where it was 24 (#374)
 
 ## Obstacles
 - **Issue:** a CPU profile from runtime/pprof on macOS showed the
@@ -44,6 +49,14 @@ CRuby on the benchmarks.
   against 70 s on main, measured in a container.
   **Resolution:** on this machine it took 40.7 s before the two changes
   and 20.6 s after; main takes 63 s.
+- **Issue:** the BINARY_ instructions first kept the SEND form running
+  for dumps written before them.
+  **Resolution:** dumps are not kept across versions; the form, its flag
+  and its test were removed and the IR version raised.
+- **Issue:** with the kind of a Value computed from its two words, three
+  cases were 4 to 12% slower.
+  **Resolution:** the kinds that live in the payload are tested by one
+  comparison of the pointer word with the kind's mark.
 
 ## Outcome
 #369 and #370 on top of the stack. From ir/48-map-put to the top:
@@ -57,6 +70,11 @@ main and 313% for the top of the stack. The stack is slower than main in
 geometric mean, and 163% on the 49 cases CRuby takes 0.1 s or more for.
 The largest gaps are loops and calls with no allocation left to remove:
 loop_whileloop 365% of main, vm_ensure 423%, app_strconcat 268%.
+
+After the benchmark: names as numbers and the method lookup by number
+changed the times by 0 to 4%, the operator instructions by 2 to 5%. The
+Value of 16 bytes took 37% off hash_literal_small8, 22% off
+array_values_at_range, 10% off hash_aref_fix and 6% off app_fib.
 
 Follow-up: the cost per instruction of the loop in run, step and exec.
 A scope of a block's call that nothing kept could be reused as the

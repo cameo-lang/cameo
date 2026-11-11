@@ -118,43 +118,88 @@ func (k Kind) String() string {
 // point at different bytes: use Equal for structural equality, Same for
 // identity, IsNil and IsZero for the two kinds of nothing.
 type Value struct {
-	_    [0]func()
-	kind Kind
-	n    int64
-	p    unsafe.Pointer
+	_ [0]func()
+	p unsafe.Pointer
+	n int64
 }
+
+// A Value is two words. Its kind is not a field of its own:
+//
+//   - nil, a boolean, an integer and a float have their payload in n, all
+//     64 bits of it, and p points at the mark of their kind, an element of
+//     kindMarks: the address says the kind;
+//   - a string or a symbol has its bytes at p and its length in the low 56
+//     bits of n; one of no bytes has the mark of its kind at p;
+//   - every other kind has its object at p;
+//   - the top byte of n is the kind of whatever has no mark at p.
+//
+// p is a pointer Go's garbage collector follows, or the address of a
+// mark, which is a global. The zero Value has neither, and is KindNone.
+var kindMarks [256]byte
+
+const (
+	kindShift = 56
+	lenMask   = 1<<kindShift - 1
+)
+
+// mark returns the mark of kind k. A kind that lives in the payload is
+// tested by comparing p with its mark, which is one comparison where
+// kind is two.
+func mark(k Kind) unsafe.Pointer { return unsafe.Pointer(&kindMarks[k]) }
+
+// kind returns the kind of v.
+func (v Value) kind() Kind {
+	if d := uintptr(v.p) - uintptr(unsafe.Pointer(&kindMarks[0])); d < uintptr(len(kindMarks)) {
+		return Kind(d)
+	}
+	return Kind(uint64(v.n) >> kindShift)
+}
+
+// immValue makes a value of a kind that lives in the payload.
+func immValue(k Kind, n int64) Value { return Value{p: mark(k), n: n} }
+
+// ptrValue makes a value of a kind that is an object, at p.
+func ptrValue(k Kind, p unsafe.Pointer) Value { return Value{p: p, n: int64(k) << kindShift} }
+
+// strValue makes a string or a symbol of n bytes at p.
+func strValue(k Kind, n int64, p unsafe.Pointer) Value {
+	if n == 0 {
+		return Value{p: mark(k)}
+	}
+	return Value{p: p, n: n | int64(k)<<kindShift}
+}
+
+// size returns the number of bytes of a string or a symbol.
+func (v Value) size() int { return int(v.n & lenMask) }
 
 // Nil is cameo's nil; True and False its booleans.
 var (
-	Nil   = Value{kind: KindNil}
-	True  = Value{kind: KindBool, n: 1}
-	False = Value{kind: KindBool, n: 0}
+	Nil   = immValue(KindNil, 0)
+	True  = immValue(KindBool, 1)
+	False = immValue(KindBool, 0)
 )
 
 // Kind returns what the value holds.
-func (v Value) Kind() Kind { return v.kind }
+func (v Value) Kind() Kind { return v.kind() }
 
 // IsZero reports the zero Value: no value at all.
-func (v Value) IsZero() bool { return v.kind == KindNone }
+func (v Value) IsZero() bool { return v.p == nil && v.n == 0 }
 
 // IsNil reports cameo's nil.
-func (v Value) IsNil() bool { return v.kind == KindNil }
+func (v Value) IsNil() bool { return v.p == mark(KindNil) }
 
 // Truthy reports whether a value counts as true: everything but nil and
 // false. The zero Value counts as nil.
 func (v Value) Truthy() bool {
-	switch v.kind {
-	case KindNone, KindNil:
-		return false
-	case KindBool:
+	if v.p == mark(KindBool) {
 		return v.n != 0
 	}
-	return true
+	return v.p != mark(KindNil) && !v.IsZero()
 }
 
 // Class returns the class the value dispatches on.
 func (v Value) Class() *Class {
-	switch v.kind {
+	switch v.kind() {
 	case KindNone, KindNil:
 		return NilClass
 	case KindBool:
@@ -213,10 +258,10 @@ type integer interface {
 }
 
 // Int makes an integer value.
-func Int[T integer](i T) Value { return Value{kind: KindInt, n: int64(i)} }
+func Int[T integer](i T) Value { return immValue(KindInt, int64(i)) }
 
 // Float makes a float value.
-func Float(f float64) Value { return Value{kind: KindFloat, n: int64(math.Float64bits(f))} }
+func Float(f float64) Value { return immValue(KindFloat, int64(math.Float64bits(f))) }
 
 // Bool makes a boolean value.
 func Bool(b bool) Value {
@@ -228,29 +273,30 @@ func Bool(b bool) Value {
 
 // String makes a string value sharing s's bytes.
 func String(s string) Value {
-	return Value{kind: KindString, n: int64(len(s)), p: unsafe.Pointer(unsafe.StringData(s))}
+	return strValue(KindString, int64(len(s)), unsafe.Pointer(unsafe.StringData(s)))
 }
 
 // Symbol makes a symbol value sharing the name's bytes.
 func Symbol(name string) Value {
-	return Value{kind: KindSymbol, n: int64(len(name)), p: unsafe.Pointer(unsafe.StringData(name))}
+	return strValue(KindSymbol, int64(len(name)), unsafe.Pointer(unsafe.StringData(name)))
 }
 
 // Bytes makes a binary (ASCII-8BIT) string sharing b, which must not be
 // changed afterwards.
 func Bytes(b []byte) Value {
-	return Value{kind: KindBytes, n: int64(len(b)), p: unsafe.Pointer(unsafe.SliceData(b))}
+	return strValue(KindBytes, int64(len(b)), unsafe.Pointer(unsafe.SliceData(b)))
 }
 
 // StringOf makes a string of s in the encoding kind names: KindString
 // (UTF-8), KindBytes (binary) or KindASCII (US-ASCII).
 func StringOf(kind Kind, s string) Value {
-	return Value{kind: kind, n: int64(len(s)), p: unsafe.Pointer(unsafe.StringData(s))}
+	return strValue(kind, int64(len(s)), unsafe.Pointer(unsafe.StringData(s)))
 }
 
 // IsString reports a String in any encoding.
 func (v Value) IsString() bool {
-	return v.kind == KindString || v.kind == KindBytes || v.kind == KindASCII
+	k := v.kind()
+	return k == KindString || k == KindBytes || k == KindASCII
 }
 
 // ASCIIOnly reports a string of 7-bit bytes alone, which reads the same in
@@ -266,27 +312,27 @@ func ASCIIOnly(s string) bool {
 
 // ListValue, MapValue, SetValue, RangeValue, InstanceValue, ClassValue and
 // ExceptionValue wrap an object as a value.
-func ListValue(l *List) Value           { return Value{kind: KindList, p: unsafe.Pointer(l)} }
-func MapValue(m *Map) Value             { return Value{kind: KindMap, p: unsafe.Pointer(m)} }
-func SetValue(s *Set) Value             { return Value{kind: KindSet, p: unsafe.Pointer(s)} }
-func RangeValue(r *Range) Value         { return Value{kind: KindRange, p: unsafe.Pointer(r)} }
-func InstanceValue(i *Instance) Value   { return Value{kind: KindInstance, p: unsafe.Pointer(i)} }
-func ClassValue(c *Class) Value         { return Value{kind: KindClass, p: unsafe.Pointer(c)} }
-func ExceptionValue(e *Exception) Value { return Value{kind: KindException, p: unsafe.Pointer(e)} }
+func ListValue(l *List) Value           { return ptrValue(KindList, unsafe.Pointer(l)) }
+func MapValue(m *Map) Value             { return ptrValue(KindMap, unsafe.Pointer(m)) }
+func SetValue(s *Set) Value             { return ptrValue(KindSet, unsafe.Pointer(s)) }
+func RangeValue(r *Range) Value         { return ptrValue(KindRange, unsafe.Pointer(r)) }
+func InstanceValue(i *Instance) Value   { return ptrValue(KindInstance, unsafe.Pointer(i)) }
+func ClassValue(c *Class) Value         { return ptrValue(KindClass, unsafe.Pointer(c)) }
+func ExceptionValue(e *Exception) Value { return ptrValue(KindException, unsafe.Pointer(e)) }
 
 // TimeValue makes a time value. Its location says how it shows: time.UTC
 // for a UTC time, time.Local for the local zone, a fixed zone for an
 // offset, and a loaded IANA zone, whose offset follows the date, for a
 // zone named by a script.
-func TimeValue(t time.Time) Value { return Value{kind: KindTime, p: unsafe.Pointer(&t)} }
+func TimeValue(t time.Time) Value { return ptrValue(KindTime, unsafe.Pointer(&t)) }
 
 // RegexpValue and MatchValue wrap a regexp and a match.
-func RegexpValue(r *Regexp) Value { return Value{kind: KindRegexp, p: unsafe.Pointer(r)} }
-func MatchValue(m *Match) Value   { return Value{kind: KindMatch, p: unsafe.Pointer(m)} }
+func RegexpValue(r *Regexp) Value { return ptrValue(KindRegexp, unsafe.Pointer(r)) }
+func MatchValue(m *Match) Value   { return ptrValue(KindMatch, unsafe.Pointer(m)) }
 
 // Opaque wraps an object this package does not know, a proc or a process,
 // under its kind. The evaluator reads it back with Opaque.
-func Opaque(kind Kind, p unsafe.Pointer) Value { return Value{kind: kind, p: p} }
+func Opaque(kind Kind, p unsafe.Pointer) Value { return ptrValue(kind, p) }
 
 // Readers. The unchecked ones (Int, Float, Str, ...) are for use after a
 // kind check and panic on another kind; the As* ones report the kind.
@@ -308,22 +354,24 @@ func (v Value) Bool() bool {
 
 // Str returns the text of a string, in any encoding, or a symbol.
 func (v Value) Str() string {
-	if !v.IsString() && v.kind != KindSymbol {
+	if k := v.kind(); k != KindString && k != KindSymbol && k != KindBytes && k != KindASCII {
 		v.must(KindString)
 	}
-	if v.n == 0 {
+	n := v.size()
+	if n == 0 {
 		return ""
 	}
-	return unsafe.String((*byte)(v.p), int(v.n))
+	return unsafe.String((*byte)(v.p), n)
 }
 
 // Bytes returns the bytes of a byte string; the slice must not be changed.
 func (v Value) Bytes() []byte {
 	v.must(KindBytes)
-	if v.n == 0 {
+	n := v.size()
+	if n == 0 {
 		return []byte{}
 	}
-	return unsafe.Slice((*byte)(v.p), int(v.n))
+	return unsafe.Slice((*byte)(v.p), n)
 }
 
 func (v Value) List() *List {
@@ -365,20 +413,20 @@ func (v Value) Time() time.Time {
 func (v Value) Opaque() unsafe.Pointer { return v.p }
 
 func (v Value) must(k Kind) {
-	if v.kind != k {
-		panic(fmt.Sprintf("object: %s read as %s", v.kind, k))
+	if v.kind() != k {
+		panic(fmt.Sprintf("object: %s read as %s", v.kind(), k))
 	}
 }
 
 func (v Value) AsInt() (int64, bool) {
-	if v.kind != KindInt {
+	if v.p != mark(KindInt) {
 		return 0, false
 	}
 	return v.n, true
 }
 
 func (v Value) AsFloat() (float64, bool) {
-	if v.kind != KindFloat {
+	if v.p != mark(KindFloat) {
 		return 0, false
 	}
 	return math.Float64frombits(uint64(v.n)), true
@@ -386,7 +434,7 @@ func (v Value) AsFloat() (float64, bool) {
 
 // AsNumber reads an integer or a float as a float.
 func (v Value) AsNumber() (float64, bool) {
-	switch v.kind {
+	switch v.kind() {
 	case KindInt:
 		return float64(v.n), true
 	case KindBig:
@@ -398,7 +446,7 @@ func (v Value) AsNumber() (float64, bool) {
 }
 
 func (v Value) AsBool() (bool, bool) {
-	if v.kind != KindBool {
+	if v.p != mark(KindBool) {
 		return false, false
 	}
 	return v.n != 0, true
@@ -413,7 +461,7 @@ func (v Value) AsString() (string, bool) {
 }
 
 func (v Value) AsSymbol() (string, bool) {
-	if v.kind != KindSymbol {
+	if v.kind() != KindSymbol {
 		return "", false
 	}
 	return v.Str(), true
@@ -422,42 +470,42 @@ func (v Value) AsSymbol() (string, bool) {
 // AsFieldName returns the field a keyword names, by a Symbol or a String,
 // and false for any other key.
 func (v Value) AsFieldName() (string, bool) {
-	if v.kind == KindSymbol || v.IsString() {
+	if v.kind() == KindSymbol || v.IsString() {
 		return v.Str(), true
 	}
 	return "", false
 }
 
 func (v Value) AsBytes() ([]byte, bool) {
-	if v.kind != KindBytes {
+	if v.kind() != KindBytes {
 		return nil, false
 	}
 	return v.Bytes(), true
 }
 
 func (v Value) AsList() (*List, bool) {
-	if v.kind != KindList {
+	if v.kind() != KindList {
 		return nil, false
 	}
 	return (*List)(v.p), true
 }
 
 func (v Value) AsMap() (*Map, bool) {
-	if v.kind != KindMap {
+	if v.kind() != KindMap {
 		return nil, false
 	}
 	return (*Map)(v.p), true
 }
 
 func (v Value) AsSet() (*Set, bool) {
-	if v.kind != KindSet {
+	if v.kind() != KindSet {
 		return nil, false
 	}
 	return (*Set)(v.p), true
 }
 
 func (v Value) AsRange() (*Range, bool) {
-	if v.kind != KindRange {
+	if v.kind() != KindRange {
 		return nil, false
 	}
 	return (*Range)(v.p), true
@@ -469,7 +517,7 @@ func (v Value) Regexp() *Regexp {
 }
 
 func (v Value) AsRegexp() (*Regexp, bool) {
-	if v.kind != KindRegexp {
+	if v.kind() != KindRegexp {
 		return nil, false
 	}
 	return (*Regexp)(v.p), true
@@ -481,28 +529,28 @@ func (v Value) Match() *Match {
 }
 
 func (v Value) AsTime() (time.Time, bool) {
-	if v.kind != KindTime {
+	if v.kind() != KindTime {
 		return time.Time{}, false
 	}
 	return *(*time.Time)(v.p), true
 }
 
 func (v Value) AsInstance() (*Instance, bool) {
-	if v.kind != KindInstance {
+	if v.kind() != KindInstance {
 		return nil, false
 	}
 	return (*Instance)(v.p), true
 }
 
 func (v Value) AsClass() (*Class, bool) {
-	if v.kind != KindClass {
+	if v.kind() != KindClass {
 		return nil, false
 	}
 	return (*Class)(v.p), true
 }
 
 func (v Value) AsException() (*Exception, bool) {
-	if v.kind != KindException {
+	if v.kind() != KindException {
 		return nil, false
 	}
 	return (*Exception)(v.p), true
@@ -510,7 +558,7 @@ func (v Value) AsException() (*Exception, bool) {
 
 // Same reports identity: the same kind and the same payload. Two strings
 // are the same only when they share their bytes.
-func Same(a, b Value) bool { return a.kind == b.kind && a.n == b.n && a.p == b.p }
+func Same(a, b Value) bool { return a.n == b.n && a.p == b.p }
 
 // Objects.
 

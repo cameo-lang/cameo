@@ -20,8 +20,8 @@ const kindsKnown Kinds = 1 << 30
 func KindsOf(elems []Value) Kinds {
 	var k Kinds
 	for _, el := range elems {
-		k |= 1 << el.kind
-		if el.kind == KindFloat && math.IsNaN(el.Float()) {
+		k |= 1 << el.kind()
+		if el.kind() == KindFloat && math.IsNaN(el.Float()) {
 			k |= KindsNaN
 		}
 	}
