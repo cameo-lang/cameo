@@ -158,6 +158,25 @@ func (in *Interp) findMethod(recv object.Value, name string) *object.Method {
 	return in.available(recv.Class().Lookup(name))
 }
 
+// findMethodSym is findMethod for a name that is interned.
+func (in *Interp) findMethodSym(recv object.Value, name object.Sym) *object.Method {
+	if cls, ok := recv.AsClass(); ok {
+		if m := cls.LookupSingletonSym(name); m != nil {
+			return in.available(m)
+		}
+	}
+	return in.available(recv.Class().LookupSym(name))
+}
+
+// lookupSym is lookup for a name that is interned: what a SEND calls.
+func (in *Interp) lookupSym(recv object.Value, name object.Sym, selfCall bool) *object.Method {
+	m := in.findMethodSym(recv, name)
+	if m == nil && selfCall {
+		return in.lookup(recv, name.String(), selfCall)
+	}
+	return m
+}
+
 // available returns m, or nil when m is a method of a module of I/O the
 // host does not allow (object.Class.IOKind): File.read without file I/O.
 func (in *Interp) available(m *object.Method) *object.Method {

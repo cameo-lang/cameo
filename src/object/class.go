@@ -81,6 +81,23 @@ type lookupCache struct {
 	gen       uint64
 	ancestors []*Class
 	methods   map[string]*Method
+	// bySym and singletons are the instance methods and the class
+	// methods resolved so far by Sym, which is how a call of a script
+	// finds them.
+	bySym      map[Sym]*Method
+	singletons map[Sym]*Method
+}
+
+// with returns a copy of the cache that has one more entry in the map
+// pick returns.
+func (lc *lookupCache) with(pick func(*lookupCache) *map[Sym]*Method, name Sym, m *Method) *lookupCache {
+	next := *lc
+	at := pick(&next)
+	grown := make(map[Sym]*Method, len(*at)+1)
+	maps.Copy(grown, *at)
+	grown[name] = m
+	*at = grown
+	return &next
 }
 
 // cache returns the class's lookup cache for the current generation,
@@ -360,7 +377,31 @@ func (c *Class) Lookup(name string) *Method {
 	methods := make(map[string]*Method, len(lc.methods)+1)
 	maps.Copy(methods, lc.methods)
 	methods[name] = m
-	c.lookup.Store(&lookupCache{gen: lc.gen, ancestors: lc.ancestors, methods: methods})
+	next := *lc
+	next.methods = methods
+	c.lookup.Store(&next)
+	return m
+}
+
+// LookupSym is Lookup for a name that is interned: one lookup by number
+// once the name was resolved for the class.
+func (c *Class) LookupSym(name Sym) *Method {
+	if m, ok := c.cache().bySym[name]; ok {
+		return m
+	}
+	m := c.Lookup(name.String())
+	c.lookup.Store(c.cache().with(func(lc *lookupCache) *map[Sym]*Method { return &lc.bySym }, name, m))
+	return m
+}
+
+// LookupSingletonSym is LookupSingleton for a name that is interned, and
+// keeps what it found until a method is defined or a module extended.
+func (c *Class) LookupSingletonSym(name Sym) *Method {
+	if m, ok := c.cache().singletons[name]; ok {
+		return m
+	}
+	m := c.LookupSingleton(name.String())
+	c.lookup.Store(c.cache().with(func(lc *lookupCache) *map[Sym]*Method { return &lc.singletons }, name, m))
 	return m
 }
 

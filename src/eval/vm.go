@@ -100,7 +100,7 @@ type machine struct {
 	unit *cameopb.Unit
 	// syms is the names of unit as Syms, read when the first instruction
 	// asks for one (sym).
-	syms    []object.Sym
+	syms    *unitNames
 	env     *Env
 	fr      *Frame
 	stack   []object.Value
@@ -181,7 +181,16 @@ func (m *machine) sym(c *cameopb.Code, i int) object.Sym {
 	if m.syms == nil {
 		m.syms = m.in.symsOf(m.unit)
 	}
-	return m.syms[c.Args[i].GetName()]
+	return m.syms.syms[c.Args[i].GetName()]
+}
+
+// mayMutate reports whether the name a SEND calls can be one of Ruby's
+// mutators (mutate.go).
+func (m *machine) mayMutate(c *cameopb.Code) bool {
+	if m.syms == nil {
+		m.syms = m.in.symsOf(m.unit)
+	}
+	return m.syms.mutators[c.Args[0].GetName()]
 }
 
 func has(c *cameopb.Code, f cameopb.Flag) bool { return c.Flags&uint64(f) != 0 }
@@ -381,7 +390,7 @@ func (m *machine) exec(c *cameopb.Code) error {
 			return nil
 		}
 		name := m.name(c, 0)
-		return m.call(c, in.lookup(fr.Self, name, true), fr.Self, name, nil, nil, object.Value{}, true, true, line)
+		return m.call(c, in.lookupSym(fr.Self, m.sym(c, 0), true), fr.Self, name, nil, nil, object.Value{}, true, true, line)
 	case cameopb.Op_DEFINED_LOCAL:
 		if _, ok := env.GetSym(m.sym(c, 0)); ok {
 			m.push(object.String("local-variable"))
@@ -628,7 +637,7 @@ func (m *machine) send(c *cameopb.Code) error {
 	}
 	if has(c, cameopb.Flag_FLAG_OPERATOR) {
 		// An operator a class defines is a call like any other.
-		return m.call(c, in.lookup(recv, name, false), recv, name, args, nil, object.Value{}, false, true, line)
+		return m.call(c, in.lookupSym(recv, m.sym(c, 0), false), recv, name, args, nil, object.Value{}, false, true, line)
 	}
 	recvName := "x"
 	for _, a := range c.Args[2:] {
@@ -639,7 +648,7 @@ func (m *machine) send(c *cameopb.Code) error {
 			recvName = m.unit.Names[k.Name]
 		}
 	}
-	if !selfCall && mayMutate(name) {
+	if !selfCall && m.mayMutate(c) {
 		if v, handled, err := in.mutating(fr, recv, recvName, name, args, kw, block, has(c, cameopb.Flag_FLAG_REBINDS), line); handled {
 			if err != nil {
 				return err
@@ -648,7 +657,7 @@ func (m *machine) send(c *cameopb.Code) error {
 			return nil
 		}
 	}
-	return m.call(c, in.lookup(recv, name, selfCall), recv, name, args, kw, block, has(c, cameopb.Flag_FLAG_VCALL), selfCall || has(c, cameopb.Flag_FLAG_PRIVATE), line)
+	return m.call(c, in.lookupSym(recv, m.sym(c, 0), selfCall), recv, name, args, kw, block, has(c, cameopb.Flag_FLAG_VCALL), selfCall || has(c, cameopb.Flag_FLAG_PRIVATE), line)
 }
 
 // call calls the method meth, which lookup found for name on recv, for

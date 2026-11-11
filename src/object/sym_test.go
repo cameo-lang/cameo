@@ -45,3 +45,30 @@ func TestInternNumbersANameOnce(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equals(t, s, got[0])
 }
+
+// A lookup by Sym finds what a lookup by name finds, a miss too, and
+// forgets it when a method is defined: on the class, on its superclass,
+// or as a class method.
+func TestLookupBySymFollowsDefinitions(t *testing.T) {
+	noop := func(Context, Value, []Value, *Map, Value) (Value, error) { return Nil, nil }
+	base := NewClass("SymLookupBase", ObjectClass)
+	sub := NewClass("SymLookupSub", base)
+	name := Intern("sym_lookup_method")
+
+	assert.True(t, sub.LookupSym(name) == nil)
+	assert.True(t, sub.LookupSingletonSym(name) == nil)
+
+	base.Define("sym_lookup_method", 0, noop)
+	inherited := sub.LookupSym(name)
+	assert.True(t, inherited != nil && inherited == sub.Lookup("sym_lookup_method"))
+	assert.True(t, inherited.Owner == base)
+
+	sub.Define("sym_lookup_method", 0, noop)
+	assert.True(t, sub.LookupSym(name).Owner == sub)
+
+	base.DefineSingleton("sym_lookup_method", 0, noop)
+	found := sub.LookupSingletonSym(name)
+	assert.True(t, found != nil && found == sub.LookupSingleton("sym_lookup_method"))
+	// The instance method is still found after the class method was.
+	assert.True(t, sub.LookupSym(name).Owner == sub)
+}
