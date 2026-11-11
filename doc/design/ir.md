@@ -513,9 +513,15 @@ that is all cameo, and widens it from there.
     running; the dump carries the script's stack, its scopes and frames.
 22. object: the step function, with `Integer#times`, `upto`, `downto` and
     `loop` as the first.
-23. Builtins as step functions, one pull request per group: List, Hash,
-    Range and Set, Enumerable over a script's `each`, String and the rest of
-    the core, then the libraries.
+23. Builtins as step functions, one pull request per group. Built: List,
+    Hash, Range and Set, the walks and folds of Enumerable over them,
+    `new` with a script's `initialize`, `super`, an operator a class
+    defines, a proc called as a value. Open: Enumerable over the `each`
+    of a script's object, the builtins that call a method of a script's
+    object for an instant (`sort_by`, `min_by`, `max_by`, `uniq`,
+    `to_h`, `zip`, `to_s` in an interpolation, `==`, `<=>`), String, and
+    the libraries. Each of them delays a pause until it returns and
+    makes no dump wrong.
 24. Enumerators: an Enumerator travels as the call that made it, through
     the envelope, `async` and a dump, and its `each` with a block runs
     the method that made it as an activation. Not a step function of its
@@ -537,4 +543,24 @@ that is all cameo, and widens it from there.
 29. aot: a compiled method leaves its call to the interpreter at a pause.
     It reads one flag for a stop and a pause, so the check costs what the
     stop check did.
-30. debug: the debugger and irb read the activation stack.
+30. debug: the debugger and irb read the activation stack. Done with
+    step 20 in substance: every method and block activation tells the
+    debugger when it starts and ends (`machine.debugged`), so stepping,
+    `finish` and the backtrace follow the activations. The debugger still
+    keeps its own list of frames beside them, which a later change can
+    drop; a run that resumes from a dump starts without a debugger.
+
+**What is open after the stack**
+
+- The step functions of step 23 that are not built, listed there.
+- A class body, a parameter's default, an exception's `initialize` and
+  the expression inside a pattern run in a loop of their own, so a pause
+  waits for them.
+- Library state on a class, Singleton's instance, has no hook (step 27),
+  and of the libraries' handles only StringIO has one.
+- An enumerator a library makes records no call and does not travel
+  (step 24).
+- Outside a dump a symbol travels as a String.
+- The evaluator is about a third slower than the recursive one of Stack
+  A on a micro-benchmark, the price of an activation per call. Nothing
+  was done about it yet.
