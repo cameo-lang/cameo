@@ -282,16 +282,22 @@ func (in *Interp) evalAwait(n *syntax.Await, env *Env, fr *Frame) (object.Value,
 	if err != nil {
 		return object.Value{}, err
 	}
+	return in.await(v, n.Line())
+}
+
+// await waits for the promise v names, or for each of a list of them.
+func (in *Interp) await(v object.Value, line int) (object.Value, error) {
 	if l, ok := v.AsList(); ok {
 		ps := make([]*Promise, l.Len())
 		for i := range ps {
-			if ps[i], err = in.promise(l.Elems[i], n.Line()); err != nil {
+			var err error
+			if ps[i], err = in.promise(l.Elems[i], line); err != nil {
 				return object.Value{}, err
 			}
 		}
 		return in.awaitEach(ps)
 	}
-	p, err := in.promise(v, n.Line())
+	p, err := in.promise(v, line)
 	if err != nil {
 		return object.Value{}, err
 	}
@@ -352,6 +358,12 @@ func (in *Interp) evalAwaitAll(n *syntax.AwaitAll, env *Env, fr *Frame) (object.
 	if err := in.needCameo(n.Qualified, "await", fr, n.Line()); err != nil {
 		return object.Value{}, err
 	}
+	return in.awaitAll(env)
+}
+
+// awaitAll waits for the promises of the method scope env is in that are
+// not awaited yet.
+func (in *Interp) awaitAll(env *Env) (object.Value, error) {
 	var pending []*Promise
 	for _, p := range methodScope(env).promises {
 		p.mu.Lock()
@@ -374,17 +386,30 @@ func (in *Interp) start(recvNode, methodNode syntax.Node, argNodes []syntax.Node
 	if err != nil {
 		return nil, err
 	}
-	var method string
-	switch m.Kind() {
-	case object.KindSymbol, object.KindString, object.KindBytes, object.KindASCII:
-		method = m.Str()
-	default:
-		return nil, in.raise(object.TypeError, line, "async names the method by a symbol, not %s", typeName(m))
+	method, err := in.asyncMethod(m, line)
+	if err != nil {
+		return nil, err
 	}
 	args, kw, err := in.evalCallArgs(argNodes, kwNodes, env, fr, line)
 	if err != nil {
 		return nil, err
 	}
+	return in.startCall(recv, method, args, kw, env, line)
+}
+
+// asyncMethod is the name of the method async is to call, which m gives.
+func (in *Interp) asyncMethod(m object.Value, line int) (string, error) {
+	switch m.Kind() {
+	case object.KindSymbol, object.KindString, object.KindBytes, object.KindASCII:
+		return m.Str(), nil
+	}
+	return "", in.raise(object.TypeError, line, "async names the method by a symbol, not %s", typeName(m))
+}
+
+// startCall serialises the receiver and the arguments of recv.method, and
+// queues the call for a worker interpreter. The promise belongs to the
+// method scope env is in.
+func (in *Interp) startCall(recv object.Value, method string, args []object.Value, kw *object.Map, env *Env, line int) (*Promise, error) {
 	if !in.RespondsTo(recv, method) {
 		return nil, in.raise(object.NoMethodError, line, "undefined method '%s' for %s", method, typeName(recv))
 	}

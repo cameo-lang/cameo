@@ -427,6 +427,73 @@ func (m *machine) exec(c *cameopb.Code) error {
 			return err
 		}
 		m.push(v)
+	case cameopb.Op_NEED_METHOD:
+		if fr.Method == nil {
+			return in.raise(object.LocalJumpError, line, "super called outside of method")
+		}
+	case cameopb.Op_SUPER:
+		block := fr.Block
+		if has(c, cameopb.Flag_FLAG_BLOCK_ARG) {
+			v, err := in.toProc(m.pop(), line)
+			if err != nil {
+				return err
+			}
+			block = v
+		}
+		args, kw := fr.Args, fr.Kw
+		if !has(c, cameopb.Flag_FLAG_FORWARD) {
+			args, kw = m.callArgs(c, 0)
+		}
+		if has(c, cameopb.Flag_FLAG_BLOCK) {
+			block = m.closure(c.Args[1].GetProc())
+		}
+		v, err := in.callSuper(fr, args, kw, block, line)
+		if err != nil {
+			return err
+		}
+		m.push(v)
+	case cameopb.Op_WITH:
+		value := m.pop()
+		key := m.pop()
+		target := m.pop()
+		v, err := in.with(target, key, value, has(c, cameopb.Flag_FLAG_INDEX))
+		if err != nil {
+			return withLine(err, line)
+		}
+		m.push(v)
+	case cameopb.Op_NEED_CAMEO:
+		return in.needCameo(false, m.name(c, 0), fr, line)
+	case cameopb.Op_ASYNC, cameopb.Op_AWAIT_CALL:
+		args, kw := m.callArgs(c, 0)
+		method, err := in.asyncMethod(m.pop(), line)
+		if err != nil {
+			return err
+		}
+		p, err := in.startCall(m.pop(), method, args, kw, env, line)
+		if err != nil {
+			return err
+		}
+		if c.Op == cameopb.Op_ASYNC {
+			m.push(object.Int(p.id))
+			return nil
+		}
+		v, err := in.awaitOne(p)
+		if err != nil {
+			return err
+		}
+		m.push(v)
+	case cameopb.Op_AWAIT:
+		v, err := in.await(m.pop(), line)
+		if err != nil {
+			return err
+		}
+		m.push(v)
+	case cameopb.Op_AWAIT_ALL:
+		v, err := in.awaitAll(env)
+		if err != nil {
+			return err
+		}
+		m.push(v)
 	case cameopb.Op_SETCONST:
 		return in.defineConst(m.name(c, 0), m.top(), fr, line)
 	case cameopb.Op_FIELD_SET:
@@ -474,6 +541,18 @@ func (m *machine) callArgs(c *cameopb.Code, i int) ([]object.Value, *object.Map)
 	return m.popN(int(c.Args[i].GetInt())), kw
 }
 
+// closure makes the block of a call from proc index of the unit: over a
+// copy of the values in sight, or for the body of a for loop over the
+// scope itself.
+func (m *machine) closure(index uint32) object.Value {
+	p := &irProc{unit: m.unit, proc: m.unit.Procs[index]}
+	env := m.env
+	if !p.proc.GetShared() {
+		env = env.snapshot()
+	}
+	return procValue(&Proc{IR: p, Env: env, Frame: m.fr})
+}
+
 // send runs a SEND: a method call.
 func (m *machine) send(c *cameopb.Code) error {
 	in, fr := m.in, m.fr
@@ -508,12 +587,7 @@ func (m *machine) send(c *cameopb.Code) error {
 	for _, a := range c.Args[2:] {
 		switch k := a.GetKind().(type) {
 		case *cameopb.Arg_Proc:
-			p := &irProc{unit: m.unit, proc: m.unit.Procs[k.Proc]}
-			blockEnv := m.env
-			if !p.proc.GetShared() {
-				blockEnv = m.env.snapshot()
-			}
-			block = procValue(&Proc{IR: p, Env: blockEnv, Frame: fr})
+			block = m.closure(k.Proc)
 		case *cameopb.Arg_Name:
 			recvName = m.unit.Names[k.Name]
 		}
