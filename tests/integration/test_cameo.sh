@@ -70,7 +70,7 @@ test_ir_prints_the_instructions_a_script_compiles_to() {
   script="$(mktemp -d)/sum.cameo"
   printf 'a = 1\nputs a + 2\n' > "$script"
   out=$("$CAMEO_BIN" ir "$script")
-  assert_eq $'proc #0 <main>\n  CONST 1\n  STORE a\n  DROP\n  LOAD a\n  CONST 2\n  SEND + 1 operator\n  SEND puts 1 self' "$out"
+  assert_eq $'proc #0 <main>\n  CONST 1\n  STORE a\n  DROP\n  LOAD a\n  CONST 2\n  BINARY_PLUS\n  SEND puts 1 self' "$out"
   printf 'class Point\n  def norm = 1\nend\n' > "$script"
   out=$("$CAMEO_BIN" ir "$script")
   assert_contains "$out" $'proc #1 <class:Point>\n  DEF norm #2'

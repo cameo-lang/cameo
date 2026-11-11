@@ -95,20 +95,20 @@ x = i > 2 && i < 9 ? "in" : "out"
     cond:
       LOAD i
       CONST 3
-      SEND < 1 operator
+      BINARY_LT
     body:
       LOAD i
       CONST 1
-      SEND + 1 operator
+      BINARY_PLUS
       STORE i
   DROP
   LOAD i
   CONST 2
-  SEND > 1 operator
+  BINARY_GT
   AND
     LOAD i
     CONST 9
-    SEND < 1 operator
+    BINARY_LT
   IF
     then:
       CONST "in"
@@ -249,7 +249,7 @@ b = case v
     in 0 guard:
       LOAD n
       CONST 0
-      SEND > 1 operator
+      BINARY_GT
     in 0:
       LOAD n
     in 1 guard:

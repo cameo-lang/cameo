@@ -209,8 +209,6 @@ enum Flag {
   FLAG_DROPPED = 0x40;
   // SEND: the call's value is assigned back to its receiver.
   FLAG_REBINDS = 0x80;
-  // SEND: an operator with one plain argument, which has a fast path.
-  FLAG_OPERATOR = 0x100;
   // SEND: the receiver is self written out.
   FLAG_PRIVATE = 0x200;
   // STORE: the value is a lambda that reads the name it is stored under.
@@ -323,6 +321,23 @@ enum Op {
   // [block] -> result. recv_local is the local or constant the receiver
   // was read from, which the error of a mutating call names.
   SEND = 30;
+  // BINARY_PLUS and the ten instructions after it: recv arg -> result.
+  // An arithmetic or comparison operator with a receiver and one plain
+  // argument. On two Integers or two Floats the evaluator computes the
+  // result; on anything else it calls the method of the operator's name
+  // on recv with arg, as a SEND does. Their numbers are in the order of
+  // + - * / % < <= > >= == !=.
+  BINARY_PLUS = 80;
+  BINARY_MINUS = 81;
+  BINARY_TIMES = 82;
+  BINARY_DIVIDE = 83;
+  BINARY_MODULO = 84;
+  BINARY_LT = 85;
+  BINARY_LE = 86;
+  BINARY_GT = 87;
+  BINARY_GE = 88;
+  BINARY_EQ = 89;
+  BINARY_NE = 90;
   // SAFE{rest}: recv -> nil when recv is nil; else runs rest, which ends
   // in the SEND on recv.
   SAFE = 31;
