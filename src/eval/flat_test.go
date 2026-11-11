@@ -57,16 +57,107 @@ end
 	assert.True(t, ops[fBinary] >= 4)
 }
 
-// A proc with an instruction flat code has no jumps for runs from
-// cursors: a rescue, a case, a pattern match, an await.
-func TestLowerLeavesWhatItDoesNotKnowToCursors(t *testing.T) {
-	for name, src := range map[string]string{
-		"rescue": "def f(x)\n  begin\n    x + 1\n  rescue => e\n    0\n  end\nend\n",
-		"case":   "def f(x)\n  case x\n  when 1 then :one\n  else :other\n  end\nend\n",
-		"in":     "def f(x)\n  case x\n  in [a, b] then a\n  else 0\n  end\nend\n",
-	} {
-		assert.True(t, loweredProc(t, src, "f") == nil, name)
+// A when of a case is a test and a jump. An instruction with lists that
+// flat code has no jumps for, a rescue or a pattern match, is one
+// instruction of the flat code, which enters its lists.
+func TestLowerKeepsTheListsItHasNoJumpsFor(t *testing.T) {
+	count := func(src string, op flatOp) int {
+		flat := loweredProc(t, src, "f")
+		assert.True(t, flat != nil)
+		n := 0
+		for _, ins := range flat.code {
+			if ins.op == op {
+				n++
+			}
+		}
+		return n
 	}
+	assert.Equals(t, count("def f(x)\n  case x\n  when 1 then :one\n  when 2, 3 then :more\n  else :other\n  end\nend\n", fWhen), 2)
+	assert.Equals(t, count("def f(x)\n  begin\n    x + 1\n  rescue => e\n    0\n  end\nend\n", fTree), 1)
+	assert.Equals(t, count("def f(x)\n  case x\n  in [a, b] then a\n  else 0\n  end\nend\n", fTree), 1)
+}
+
+// A break, next or redo out of a rescue or an ensure inside a loop is the
+// loop's, after the ensure clause ran; a case inside a loop and a loop
+// inside a case run; and a case without a subject tests its conditions.
+func TestLoopsAroundListsOnCursors(t *testing.T) {
+	expectOutput(t, `def scan(n)
+  out = []
+  i = 0
+  while i < n
+    i += 1
+    begin
+      next if i == 2
+      break :stopped if i == 5
+      raise "odd" if i == 3
+      out += [i]
+    rescue => e
+      out += [e.message]
+      next
+    ensure
+      out += [:e]
+    end
+    out += [:after]
+  end
+end
+def kind(x)
+  case x
+  when Integer, Float then :number
+  when "a".."f" then :letter
+  when nil then :none
+  else :other
+  end
+end
+def grade(n)
+  case
+  when n > 8 then :high
+  when n > 4 then :mid
+  end
+end
+def count_kinds(list)
+  i = 0
+  numbers = 0
+  while i < list.size
+    case list[i]
+    when Integer
+      numbers += 1
+    when :stop
+      break
+    end
+    i += 1
+  end
+  [numbers, i]
+end
+def retried
+  tries = 0
+  i = 0
+  while i < 2
+    i += 1
+    begin
+      tries += 1
+      redo if tries == 2
+    ensure
+      tries += 10
+    end
+  end
+  tries
+end
+p scan(6), scan(2)
+p kind(1), kind(2.5), kind("c"), kind(nil), kind(:x), grade(9), grade(5), grade(1)
+p count_kinds([1, "a", 2, :stop, 3]), retried
+`, `:stopped
+nil
+:number
+:number
+:letter
+:none
+:other
+:high
+:mid
+nil
+[2, 3]
+22
+`)
 }
 
 // Loops run from flat code as they run from cursors: break with a value,

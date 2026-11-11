@@ -494,6 +494,22 @@ func (m *machine) caseFrom(c *cameopb.Code, i int) {
 // caseConds tests the conditions of a when, list i of a CASE, which are
 // on the stack as a list, and enters its body or goes to the next when.
 func (m *machine) caseConds(c *cameopb.Code, i int) error {
+	hit, err := m.caseHit(c)
+	if err != nil {
+		return err
+	}
+	if hit {
+		m.enter(c, i+1, phaseValue, len(m.stack), true)
+		return nil
+	}
+	m.caseFrom(c, i+2)
+	return nil
+}
+
+// caseHit tests the conditions of a when of the CASE c, which are on the
+// stack as a list, and drops them. With one that fits it drops the
+// subject too and reports true.
+func (m *machine) caseHit(c *cameopb.Code) (bool, error) {
 	conds := m.pop()
 	var subject object.Value
 	if has(c, cameopb.Flag_FLAG_SUBJECT) {
@@ -504,19 +520,17 @@ func (m *machine) caseConds(c *cameopb.Code, i int) error {
 		if !subject.IsZero() {
 			var err error
 			if hit, err = m.in.caseEqual(cond, subject); err != nil {
-				return withLine(err, int(c.Line))
+				return false, withLine(err, int(c.Line))
 			}
 		}
 		if hit {
 			if !subject.IsZero() {
 				m.pop()
 			}
-			m.enter(c, i+1, phaseValue, len(m.stack), true)
-			return nil
+			return true, nil
 		}
 	}
-	m.caseFrom(c, i+2)
-	return nil
+	return false, nil
 }
 
 // caseIn runs a CASE_IN: per clause a pattern, the kind of its guard and
