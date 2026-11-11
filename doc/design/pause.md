@@ -104,10 +104,12 @@ What a class holds that only Go knows is not in the dump: a resumed run
 includes `Singleton` in a class again, which gives the class its methods
 back, and not the instance it had made.
 
-An instance in the dump names its class and the class's digest, and finds
-the class by its name. An instance of a class the script reopened after it
-made the instance has a class no name leads to, and a dump that holds one
-does not resume.
+An instance in the dump names its class and the class's digest. The dump
+carries the class of every instance it holds, so an instance of a class the
+script reopened after it made the instance comes back as an instance of the
+class it was made of, not of the one the name is bound to now. A closure
+names the classes of its binding by name alone, and comes back with the
+ones the names are bound to.
 
 A dump resumes on a cameo of its IR version: `version` says which, and a
 cameo of another version refuses the dump, as it refuses one written before
