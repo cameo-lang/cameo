@@ -135,6 +135,184 @@ true
 `)
 }
 
+func TestRescueRunsOnTheIR(t *testing.T) {
+	_, walked := onBoth(t, `tries = 0
+r = begin
+  tries += 1
+  raise ArgumentError, "no" if tries < 3
+  "ok after #{tries}"
+rescue TypeError, ArgumentError => e
+  retry
+else
+  :unused
+ensure
+  puts "ensure ran"
+end
+puts r.inspect
+x = begin
+  Integer("zz")
+rescue => e
+  "rescued #{e.class}: #{e.message}"
+end
+puts x
+y = begin
+  1 + [nil.foo]
+rescue NoMethodError
+  begin
+    raise "inner"
+  rescue => inner
+    "#{inner.message} caused by #{inner.cause.class}"
+  end
+end
+puts y
+z = begin
+  10
+ensure
+  20
+end
+puts z
+errors = [ZeroDivisionError, KeyError]
+w = begin
+  1 / 0
+rescue *errors => e
+  e.class
+end
+puts w
+`, `ensure ran
+:unused
+rescued ArgumentError: invalid value for Integer(): "zz"
+inner caused by NoMethodError
+10
+ZeroDivisionError
+`)
+	assert.Equals(t, walked, 0)
+	onBoth(t, "begin\n  raise \"boom\"\nensure\n  puts \"cleanup\"\nend\n", "cleanup\nt.cameo:2: boom (RuntimeError)\n")
+	onBoth(t, "begin\n  raise \"a\"\nrescue TypeError\n  1\nend\n", "t.cameo:2: a (RuntimeError)\n")
+	onBoth(t, "begin\n  1\nrescue 5\n  2\nend\nbegin\n  raise \"x\"\nrescue 5\n  2\nend\n", "t.cameo: class or module required for rescue clause (TypeError)\n")
+}
+
+func TestCaseRunsOnTheIR(t *testing.T) {
+	_, walked := onBoth(t, `kinds = [1, "s", :sym, 2.5, nil, [1, 2], 40].map do |v|
+  case v
+  when Integer, Float then v > 10 ? "big" : "number"
+  when "s", /x/ then "string"
+  when *[:sym, :other] then "symbol"
+  when nil then "nil"
+  else "other"
+  end
+end
+puts kinds.inspect
+n = 5
+puts(case
+     when n < 3 then "low"
+     when n < 9 then "mid"
+     end)
+puts (case n when 1 then :one end).inspect
+`, "[\"number\", \"string\", \"symbol\", \"number\", \"nil\", \"other\", \"big\"]\nmid\nnil\n")
+	assert.Equals(t, walked, 0)
+}
+
+func TestPatternsRunOnTheIR(t *testing.T) {
+	_, walked := onBoth(t, `def kind(v)
+  case v
+  in Integer | Float => n if n > 100 then "big #{n}"
+  in Integer | Float then "number"
+  in [] then "empty"
+  in [first, *rest] unless rest.empty? then "list of #{first} and #{rest.size}"
+  in [only] then "one #{only}"
+  in {name: String => name, **rest} then "named #{name} with #{rest.inspect}"
+  in {x:, y:} then "point #{x},#{y}"
+  in [*, :needle, *post] then "found before #{post.inspect}"
+  in String then "string"
+  else "other"
+  end
+end
+puts kind(500), kind(5), kind([]), kind([1, 2, 3]), kind([7]), kind({name: "ann", age: 3})
+puts kind({x: 1, y: 2}), kind("s"), kind(nil)
+config = {db: {user: "admin", port: 5432}}
+config => {db: {user:, port: Integer => port}}
+puts user, port
+if 5 in Integer
+  puts true
+end
+unless "s" in Integer
+  puts false
+end
+case [1, [2, 3]]
+in [a, [b, *c]]
+  puts a + b + c.sum
+end
+case {status: "ok"}
+in {status: "ok" | "fine", **nil}
+  puts "exact"
+end
+`, `big 500
+number
+empty
+list of 1 and 2
+one 7
+named ann with {age: 3}
+point 1,2
+string
+other
+admin
+5432
+true
+false
+6
+exact
+`)
+	assert.Equals(t, walked, 1)
+	onBoth(t, "case 5\nin String then 1\nend\n", "t.cameo:1: 5 (NoMatchingPatternError)\n")
+	onBoth(t, "x = {a: 1}\nx => {b:}\n", "t.cameo:2: {a: 1} (NoMatchingPatternError)\n")
+}
+
+func TestAssignmentFormsRunOnTheIR(t *testing.T) {
+	_, walked := onBoth(t, `a, b = 1, 2
+c, *d = [3, 4, 5]
+*e, f = 6, 7, 8
+g, h = [9]
+puts [a, b, c, d, e, f, g, h].inspect
+x = (i, j = 1, 2)
+puts x.inspect
+LIMIT = 10
+puts LIMIT, ::LIMIT, Math::PI.round(2), Comparable.class
+word = "b"
+puts "abc" =~ /#{word}c/, "abc".match?(/B/i), /a#{/b/}c/.source
+puts defined?(a).inspect, defined?(zzz).inspect, defined?(LIMIT), defined?(Nope).inspect
+puts defined?(puts), defined?(a.nope).inspect, defined?(self), defined?(q = 1), defined?(42)
+puts defined?(String.new), defined?(Nope::Deeper).inspect
+def blocky = defined?(yield).inspect
+puts blocky, blocky { 1 }
+`, `[1, 2, 3, [4, 5], [6, 7], 8, 9, nil]
+[1, 2]
+10
+10
+3.14
+Module
+1
+true
+a(?-mix:b)c
+"local-variable"
+nil
+constant
+nil
+method
+nil
+self
+assignment
+expression
+method
+nil
+nil
+"yield"
+`)
+	assert.Equals(t, walked, 1)
+	onBoth(t, "Nope::X\n", "t.cameo:1: uninitialized constant Nope (NameError)\n")
+	onBoth(t, "x = 5\nx::Y\n", "t.cameo:2: an instance of Integer is not a class/module (TypeError)\n")
+	onBoth(t, "String = 1\n", "t.cameo:1: cannot reassign the builtin constant String (CameoError)\n")
+}
+
 func TestErrorsOnTheIRNameTheirLine(t *testing.T) {
 	onBoth(t, `def f(x)
   x + nope
