@@ -397,9 +397,90 @@ func (c *compiler) expr(e *emitter, n syntax.Node) error {
 			return err
 		}
 		e.emit(cameopb.Op_FIELD_SET, line, c.nameArg(n.Name))
+	case *syntax.Super:
+		return c.super(e, n)
+	case *syntax.With:
+		for _, operand := range []syntax.Node{n.Target, n.Key, n.Value} {
+			if err := c.expr(e, operand); err != nil {
+				return err
+			}
+		}
+		e.emit(cameopb.Op_WITH, line).Flags = flag(cameopb.Flag_FLAG_INDEX, n.Index)
+	case *syntax.Async:
+		return c.asyncCall(e, cameopb.Op_ASYNC, "async", n.Qualified, n.Recv, n.Method, n.Args, n.KwArgs, line)
+	case *syntax.Await:
+		if n.Promise == nil {
+			return c.asyncCall(e, cameopb.Op_AWAIT_CALL, "await", n.Qualified, n.Recv, n.Method, n.Args, n.KwArgs, line)
+		}
+		c.needCameo(e, "await", n.Qualified, line)
+		if err := c.expr(e, n.Promise); err != nil {
+			return err
+		}
+		e.emit(cameopb.Op_AWAIT, line).Flags = flag(cameopb.Flag_FLAG_QUALIFIED, n.Qualified)
+	case *syntax.AwaitAll:
+		c.needCameo(e, "await", n.Qualified, line)
+		e.emit(cameopb.Op_AWAIT_ALL, line).Flags = flag(cameopb.Flag_FLAG_QUALIFIED, n.Qualified)
 	default:
 		return &Unsupported{Node: n}
 	}
+	return nil
+}
+
+// needCameo emits the check that Cameo is included, which a form written
+// Cameo.async does not need. It comes before the form's operands, as the
+// check comes before they are evaluated.
+func (c *compiler) needCameo(e *emitter, name string, qualified bool, line int) {
+	if !qualified {
+		e.emit(cameopb.Op_NEED_CAMEO, line, c.nameArg(name))
+	}
+}
+
+// asyncCall compiles `async recv, :method, *args` and the same form of
+// await: the receiver, the method's name and the arguments, then op.
+func (c *compiler) asyncCall(e *emitter, op cameopb.Op, name string, qualified bool, recv, method syntax.Node, args []syntax.Node, kwargs []syntax.MapEntry, line int) error {
+	c.needCameo(e, name, qualified, line)
+	if err := c.expr(e, recv); err != nil {
+		return err
+	}
+	if err := c.expr(e, method); err != nil {
+		return err
+	}
+	argc, flags, err := c.callArgs(e, args, kwargs, line)
+	if err != nil {
+		return err
+	}
+	e.emit(op, line, intArg(argc)).Flags = flags | flag(cameopb.Flag_FLAG_QUALIFIED, qualified)
+	return nil
+}
+
+// super compiles a call of super: a bare one passes the method's own
+// arguments, and any super the method's block unless it names another.
+func (c *compiler) super(e *emitter, n *syntax.Super) error {
+	line := n.Line()
+	e.emit(cameopb.Op_NEED_METHOD, line)
+	argc, flags := 0, uint64(cameopb.Flag_FLAG_FORWARD)
+	if !n.Forward {
+		var err error
+		if argc, flags, err = c.callArgs(e, n.Args, n.KwArgs, line); err != nil {
+			return err
+		}
+	}
+	args := []*cameopb.Arg{intArg(argc)}
+	switch {
+	case n.Block != nil:
+		index, err := c.block(n.Block)
+		if err != nil {
+			return err
+		}
+		args = append(args, procArg(index))
+		flags |= uint64(cameopb.Flag_FLAG_BLOCK)
+	case n.BlockArg != nil:
+		if err := c.expr(e, n.BlockArg); err != nil {
+			return err
+		}
+		flags |= uint64(cameopb.Flag_FLAG_BLOCK_ARG)
+	}
+	e.emit(cameopb.Op_SUPER, line, args...).Flags = flags
 	return nil
 }
 
