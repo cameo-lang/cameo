@@ -15,7 +15,17 @@ import (
 // BasicObject's natives are the defaults the evaluator renders itself,
 // and Comparable's == and Enumerable's methods are the core's fallbacks.
 func userMethod(v object.Value, name string) *object.Method {
-	m := v.Class().Lookup(name)
+	return userMethodOf(v, v.Class().Lookup(name))
+}
+
+// userMethodSym is userMethod for a name that is interned.
+func userMethodSym(v object.Value, name object.Sym) *object.Method {
+	return userMethodOf(v, v.Class().LookupSym(name))
+}
+
+// userMethodOf returns m, the method a name resolves to on v, when a
+// script defined it or it is a library's on an instance.
+func userMethodOf(v object.Value, m *object.Method) *object.Method {
 	if m == nil {
 		return nil
 	}
@@ -55,7 +65,7 @@ func (in *Interp) Inspect(v object.Value) (string, error) {
 
 // ToS implements object.Context: a value's to_s, as puts prints it.
 func (in *Interp) ToS(v object.Value) (string, error) {
-	if m := userMethod(v, "to_s"); m != nil {
+	if m := userMethodSym(v, object.SymToS); m != nil {
 		r, err := in.callOwn(m, v, nil)
 		if err != nil {
 			return "", err
