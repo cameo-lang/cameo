@@ -230,7 +230,6 @@ func (in *Interp) Resume(prog *syntax.Program, d *cameopb.Dump) error {
 		return fmt.Errorf("the dump continues at statement %d of %d", next, len(prog.Body))
 	}
 	in.file = d.File
-	in.code.compiled = CompiledFor(prog)
 	// The script's own unit first, so that the code the run continues in
 	// and the code of its methods are one.
 	script, err := in.program(d.File, prog)

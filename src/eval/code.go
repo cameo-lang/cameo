@@ -8,8 +8,8 @@ import (
 )
 
 // code is what the interpreters of one program share, the script's and
-// every async worker's: the values of its literals that are made once, and
-// its compiled methods.
+// every async worker's: its units, and the values of its literals that
+// are made once.
 type code struct {
 	// programs holds the units of the programs that ran: the script, the
 	// libraries written in cameo it required, the lines of a console.
@@ -26,10 +26,6 @@ type code struct {
 	// uses holds what each proc needs of its binding to travel; see
 	// closure.go.
 	uses sync.Map // *cameopb.Proc -> *uses
-	// compiled is the Go implementation `cameo build` made of the
-	// program's top-level methods, nil when it made none; see
-	// RegisterCompiled.
-	compiled Compiled
 }
 
 // literal returns the value of the literal n, which make makes on first

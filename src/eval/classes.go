@@ -242,16 +242,6 @@ func (in *Interp) defineMethod(name string, singleton bool, body *irProc, fr *Fr
 		return object.Value{}, in.raise(object.CameoError, line, "cannot replace the builtin method %s of %s", name, target.Name)
 	}
 	m := &object.Method{Name: name, Owner: target, Body: body, Arity: -1, Lexical: fr.Lexical, File: fr.File}
-	// A method `cameo build` compiled runs as Go, and keeps its body for
-	// the calls the Go code leaves to the interpreter: a top-level method
-	// by its name, a class's as Class#name.
-	if !singleton {
-		key := name
-		if target != in.mainClass {
-			key = target.QualifiedName() + "#" + name
-		}
-		m.Native = in.code.compiled[key]
-	}
 	if singleton {
 		target.SetSingletonMethod(m)
 	} else {
