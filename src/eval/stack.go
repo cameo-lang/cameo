@@ -23,6 +23,9 @@ const (
 	actMethod
 	// actBlock is a call of a block or a lambda a script wrote.
 	actBlock
+	// actStep is a call of a builtin that is a stepper (object.Stepper):
+	// it has no code, and runs a step between two calls of its block.
+	actStep
 )
 
 // maxDepth is how many activations an interpreter runs at once before a
@@ -83,6 +86,25 @@ func (in *Interp) run(floor int) (object.Value, error) {
 	var err error
 	for {
 		m := in.acts[len(in.acts)-1]
+		if m.kind == actStep {
+			// A builtin that is a stepper: its next step, which calls
+			// the block or ends the builtin.
+			v, called, stepErr := in.stepOn(m, err)
+			if called {
+				err = nil
+				continue
+			}
+			in.acts = in.acts[:len(in.acts)-1]
+			if err = stepErr; len(in.acts) == floor {
+				return v, err
+			}
+			if err != nil {
+				err = withLine(err, int(m.site.Line))
+				continue
+			}
+			in.acts[len(in.acts)-1].push(v)
+			continue
+		}
 		if len(m.cursors) > 0 {
 			if err == nil {
 				// A pause stops the run here, before an instruction,
@@ -116,10 +138,86 @@ func (in *Interp) run(floor int) (object.Value, error) {
 			return v, err
 		}
 		if err != nil {
-			err = withLine(err, int(m.site.Line))
+			if m.site != nil {
+				err = withLine(err, int(m.site.Line))
+			}
 			continue
 		}
 		in.acts[len(in.acts)-1].push(v)
+	}
+}
+
+// stepping is a builtin that is a stepper, between two of its steps: the
+// method, the call it was made with, what its last step kept and what
+// its next step is called with. rescue is set when the last step asked
+// for the exception its block raises.
+type stepping struct {
+	builtin *object.Method
+	call    *object.Call
+	state   []object.Value
+	got     object.Got
+	rescue  bool
+}
+
+// stepAct makes the activation of a call of the builtin meth, which is a
+// stepper.
+func (in *Interp) stepAct(meth *object.Method, recv object.Value, args []object.Value, kw *object.Map, block object.Value) *machine {
+	return &machine{in: in, kind: actStep, stepper: &stepping{
+		builtin: meth,
+		call:    &object.Call{Self: recv, Args: args, Kw: kw, Block: block},
+		got:     object.Got{First: true},
+	}}
+}
+
+// stepOn runs the next step of the stepper m is an activation of. err is
+// the completion its block was left by, nil when the block returned,
+// whose value is then on m's stack. It reports called when the step
+// pushed the block's activation; otherwise the builtin ended, with the
+// value or the completion returned.
+func (in *Interp) stepOn(m *machine, err error) (v object.Value, called bool, _ error) {
+	st := m.stepper
+	block := st.call.Block
+	switch {
+	case err == nil && len(m.stack) > 0:
+		st.got.Value = m.pop()
+	case err != nil:
+		// A break out of the block ends the builtin with its value, as it
+		// ends any call the block was given to.
+		if c, ok := err.(*control); ok && c.kind == ctrlBreak && c.target != nil && c.target == blockTarget(block) {
+			return c.value, false, nil
+		}
+		exc, ok := err.(*object.Exception)
+		if !ok || !st.rescue {
+			return object.Value{}, false, err
+		}
+		st.got.Raised = exc
+	}
+	for {
+		s, err := st.builtin.Step(in, st.call, st.state, st.got)
+		if err != nil {
+			return object.Value{}, false, err
+		}
+		if s.Done {
+			return s.Value, false, nil
+		}
+		st.state, st.rescue, st.got = s.State, s.Rescue, object.Got{}
+		// A block a script wrote becomes the activation that runs; any
+		// other is called here, and the stepper goes on with its value.
+		if p, ok := asProc(block); ok && p.written() {
+			act, err := in.blockAct(p, s.Yield, nil, object.Value{})
+			if err == nil {
+				err = in.pushAct(act, nil)
+			}
+			if err == nil {
+				return object.Value{}, true, nil
+			}
+			return in.stepOn(m, err)
+		}
+		value, err := in.callBlock(block, s.Yield, nil, object.Value{})
+		if err != nil {
+			return in.stepOn(m, err)
+		}
+		st.got.Value = value
 	}
 }
 

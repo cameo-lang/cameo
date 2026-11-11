@@ -27,6 +27,14 @@ of `each` takes effect when `each` returns. The builtins a script spends
 its time in become step functions, whose state is data too, group by
 group; until one has, it only delays a pause.
 
+The builtins that are step functions so far, inside whose block a run
+pauses at once: `Integer#times`, `upto` and `downto`, and `loop`. The dump
+holds such a builtin as an activation of its own, between the call that
+made it and its block: the method, the call it was made with, and what it
+keeps from one call of the block to the next, for `times` the number it
+came to. A dump that is inside a builtin this cameo has no step function
+for is refused.
+
 The same holds for these, each for as long as it takes: a class body, an
 `initialize` that `new` called, a parameter's default, `super`, an
 operator a class defines, `Proc#call`, a `require` of a library written in
