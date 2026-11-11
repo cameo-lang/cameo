@@ -40,6 +40,10 @@ type Interp struct {
 	// run can wait for the calls async started and report the failures
 	// nobody awaited.
 	promises *promises
+	// restored holds the classes of the dump the run resumed from, by the
+	// id the dump refers to them with; nil for a run that began at its
+	// start.
+	restored map[string]*object.Class
 	// cameoTop is set once the script included Cameo at the top level,
 	// which brings async and the rest of Cameo to every method.
 	cameoTop bool
