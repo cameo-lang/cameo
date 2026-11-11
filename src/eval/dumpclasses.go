@@ -30,6 +30,8 @@ type classDump struct {
 	// being written, the script's or a worker's: a binding that is an
 	// instance one of its frames is making refers to it there.
 	stack *stackDump
+	// handles is the handles the dump holds.
+	handles *handleDump
 }
 
 // note has the dump carry the class of an instance it holds.

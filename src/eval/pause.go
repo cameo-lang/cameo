@@ -52,7 +52,10 @@ func (in *Interp) Dump(source string) (*cameopb.Dump, error) {
 	}
 	// The class of an instance is carried too: a class the script
 	// reopened since it made the instance is one no constant leads to.
-	enc := in.ProcEncoder(false).WithSymbols().WithClasses(classes.note)
+	// And a handle, a library's value that changes, is in the dump once.
+	handles := &handleDump{in: in, classes: classes, ids: map[*object.Instance]uint32{}}
+	enc := in.ProcEncoder(false).WithSymbols().WithClasses(classes.note).WithHandles(handles.index)
+	handles.enc, classes.handles = enc, handles
 	in.top.each(func(name string, v object.Value) {
 		d.Variables = append(d.Variables, classes.binding(enc, name, v))
 	})
@@ -81,6 +84,7 @@ func (in *Interp) Dump(source string) (*cameopb.Dump, error) {
 	}
 	d.Top = &cameopb.Dump_Class{Methods: classes.methods(in.mainClass)}
 	d.Classes = classes.classes(enc)
+	d.Handles = handles.list
 	d.Missing = classes.missing
 	// The units come last: a closure a worker made is of a unit the run
 	// learned of only when the closure was read.
@@ -200,7 +204,7 @@ func (w *Interp) dumpWorker(p *Promise, classes *classDump) (*cameopb.Dump_Worke
 	main := classes.stack
 	classes.stack = w.dumping
 	defer func() { w.dumping, classes.stack = nil, main }()
-	enc := w.ProcEncoder(false).WithSymbols().WithClasses(classes.note)
+	enc := w.ProcEncoder(false).WithSymbols().WithClasses(classes.note).WithHandles(classes.handles.index)
 	msg := &stackMsg{}
 	if err := w.dumpStack(msg, enc, classes); err != nil {
 		return nil, err
@@ -251,10 +255,15 @@ func (in *Interp) Resume(prog *syntax.Program, d *cameopb.Dump) error {
 		return err
 	}
 	// The frames of a run that paused inside a statement, before any
-	// value is read: a Proc among the values may refer to one.
+	// value is read: a Proc among the values may refer to one. Then the
+	// handles, which the values refer to as well.
+	in.handles = handlesOf(d.GetHandles())
 	dec := in.Decoder()
 	own := &stackMsg{stack: d.GetStack(), scopes: d.GetScopes(), frames: d.GetFrames(), next: next}
 	if err := in.restoreShells(dec, own); err != nil {
+		return err
+	}
+	if err := in.restoreHandles(dec); err != nil {
 		return err
 	}
 	if err := in.restoreClassValues(dec, d.GetClasses()); err != nil {

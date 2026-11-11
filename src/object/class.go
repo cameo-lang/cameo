@@ -21,7 +21,10 @@ type Class struct {
 	// Library is what a library keeps on a class, by the library's name:
 	// Singleton's one instance. A reopened class, a copy, shares it.
 	Library map[string]any
-	Super   *Class // nil for a module, and for BasicObject
+	// State is set for a class whose instances are handles, values that
+	// change, when the library can put one through a dump (StateHook).
+	State *StateHook
+	Super *Class // nil for a module, and for BasicObject
 	// Digest identifies a user definition by its body; "" for a builtin class.
 	Digest string
 	// Methods are instance methods; SingletonMethods the class methods
