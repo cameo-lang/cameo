@@ -212,7 +212,11 @@ type Frame struct {
 // written in. Strict is a lambda: arguments are counted, and return returns
 // from the lambda.
 type Proc struct {
+	// Block is the body of a proc the tree walker made, and IR that of
+	// one the IR evaluator made; a proc has one of them, or neither (see
+	// Sym and Go).
 	Block  *syntax.Block
+	IR     *irProc
 	Env    *Env
 	Frame  *Frame
 	Strict bool
@@ -245,10 +249,35 @@ func asProc(v object.Value) (*Proc, bool) {
 	return (*Proc)(v.Opaque()), true
 }
 
-// Arity is the number of required positional parameters, negative when the
-// block takes a splat or optional parameters, as Proc#arity reports.
-func (p *Proc) Arity() int {
-	if p.Block == nil {
+// written reports whether p has a body a script wrote: a block or a
+// lambda, not a proc made from a symbol or by a builtin.
+func (p *Proc) written() bool { return p.Block != nil || p.IR != nil }
+
+// line is the line a written proc starts on.
+func (p *Proc) line() int {
+	if p.IR != nil {
+		return int(p.IR.proc.GetLine())
+	}
+	return p.Block.Line()
+}
+
+// procCode returns what a call of the written proc p runs: its parameter
+// list, and its IR, nil when it runs on the tree walker.
+func (in *Interp) procCode(p *Proc) (*params, *irProc) {
+	compiled := p.IR
+	if compiled == nil {
+		compiled = in.code.irBlock(p.Block)
+	}
+	if compiled != nil {
+		return in.code.irParams(compiled), compiled
+	}
+	return in.code.astParams(&p.Block.Params), nil
+}
+
+// arity is the number of required positional parameters of p, negative
+// when it takes a splat or optional parameters, as Proc#arity reports.
+func (in *Interp) arity(p *Proc) int {
+	if !p.written() {
 		if p.Go != nil {
 			return -1
 		}
@@ -257,17 +286,6 @@ func (p *Proc) Arity() int {
 		}
 		return -2
 	}
-	required, variable := 0, false
-	for _, param := range p.Block.Params.Positional {
-		switch {
-		case param.Splat, param.Default != nil:
-			variable = true
-		default:
-			required++
-		}
-	}
-	if variable || (!p.Strict && len(p.Block.Params.Keywords) > 0) {
-		return -(required + 1)
-	}
-	return required
+	ps, _ := in.procCode(p)
+	return ps.arity(p.Strict)
 }

@@ -425,14 +425,27 @@ func (in *Interp) invoke(m *object.Method, recv object.Value, args []object.Valu
 			fr.BuildingExc = exc
 		}
 	}
-	v, err := object.Value{}, in.bindParams(&def.Params, args, kw, block, env, fr, true, m.Name, line)
+	// The method runs on its IR when all of it compiles, and on the tree
+	// walker otherwise; its parameters are bound from the same.
+	compiled := in.code.irDef(def)
+	ps := in.code.astParams(&def.Params)
+	if compiled != nil {
+		ps = in.code.irParams(compiled)
+	}
+	body := func() (object.Value, error) {
+		if compiled != nil {
+			return in.runBody(compiled, env, fr)
+		}
+		return in.evalBody(def.Body, env, fr)
+	}
+	v, err := object.Value{}, in.bindParams(ps, args, kw, block, env, fr, true, m.Name, line)
 	if err == nil {
 		if in.dbg != nil {
 			in.dbg.enter(methodName(m, recv), env, fr)
-			v, err = in.evalBody(def.Body, env, fr)
+			v, err = body()
 			in.dbg.leave()
 		} else {
-			v, err = in.evalBody(def.Body, env, fr)
+			v, err = body()
 		}
 	}
 	if len(env.promises) > 0 {
@@ -469,7 +482,7 @@ func (in *Interp) inFile(err error, fr *Frame) error {
 
 // bindParams binds arguments to parameters in env. strict is a method or
 // lambda, where the argument count must fit; a block is lenient.
-func (in *Interp) bindParams(p *syntax.Params, args []object.Value, kw *object.Map, block object.Value, env *Env, fr *Frame, strict bool, name string, line int) error {
+func (in *Interp) bindParams(p *params, args []object.Value, kw *object.Map, block object.Value, env *Env, fr *Frame, strict bool, name string, line int) error {
 	// Keywords given to a method with no keyword parameters are one more
 	// positional argument, a map.
 	if kw != nil && len(p.Keywords) == 0 && p.KwRest == "" {
@@ -540,7 +553,7 @@ func (in *Interp) bindParams(p *syntax.Params, args []object.Value, kw *object.M
 				fill--
 				env.Define(param.Name, take())
 			} else {
-				v, err := in.eval(param.Default, env, fr)
+				v, err := param.Default(in, env, fr)
 				if err != nil {
 					return err
 				}
@@ -564,7 +577,7 @@ func (in *Interp) bindParams(p *syntax.Params, args []object.Value, kw *object.M
 				env.Define(k.Name, v)
 				used[k.Name] = true
 			case k.Default != nil:
-				d, err := in.eval(k.Default, env, fr)
+				d, err := k.Default(in, env, fr)
 				if err != nil {
 					return err
 				}
@@ -656,22 +669,28 @@ func (in *Interp) callBlock(block object.Value, args []object.Value, kw *object.
 		copy.Lambda = true
 		fr = &copy
 	}
-	if err := in.bindParams(&p.Block.Params, args, kw, inner, env, fr, p.Strict, "block", p.Block.Line()); err != nil {
+	ps, compiled := in.procCode(p)
+	if err := in.bindParams(ps, args, kw, inner, env, fr, p.Strict, "block", p.line()); err != nil {
 		return object.Value{}, err
 	}
-	body := p.Block.Body
+	body := func() (object.Value, error) {
+		if compiled != nil {
+			return in.runBody(compiled, env, fr)
+		}
+		return in.evalBody(p.Block.Body, env, fr)
+	}
 	if in.dbg != nil {
 		in.dbg.enter(blockName(in.dbg, p.Frame), env, fr)
 		defer in.dbg.leave()
 	}
-	v, err := in.evalBody(body, env, fr)
+	v, err := body()
 	for err != nil {
 		c, ok := err.(*control)
 		if !ok || c.kind != ctrlRedo || c.target != nil {
 			break
 		}
 		if err = in.stopped(); err == nil {
-			v, err = in.evalBody(body, env, fr)
+			v, err = body()
 		}
 	}
 	if err != nil {

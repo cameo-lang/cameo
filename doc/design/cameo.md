@@ -799,7 +799,8 @@ One Go module, `github.com/cameo-lang/cameo`, with the packages under `src/`:
 | `eval/sched.go` | the queue of calls `async` started and the runner goroutines that take them |
 | `protogen` | descriptors from class declarations, `.proto` text, values to and from the `cameo.Value` envelope |
 | `cameopb` | cameo's own messages: the `.proto` files under `src/cameopb/cameo` and the Go code `make proto` generates from them, committed |
-| `ir` | the intermediate representation, whose messages are `cameo/ir.proto`: the listing of a unit; see [ir.md](ir.md) |
+| `ir` | the intermediate representation, whose messages are `cameo/ir.proto`: the compiler from the AST, and the listing of a unit; see [ir.md](ir.md) |
+| `eval/vm.go` | the IR evaluator, which runs what compiles while the tree walker runs the rest |
 | `aot` | `cameo build`: Go source for the top-level methods it can type, which the interpreter calls in place of their bodies; see [aot.md](aot.md) |
 | `irb` | the read-eval-print loop of `cameo irb`, and the line editor it runs on a terminal; see [debugger.md](../debugger.md) |
 | `buildinfo` | the version, commit and date the binary was built from, for `cameo version` and `RUBY_ENGINE_VERSION` |

@@ -10,8 +10,6 @@ import (
 )
 
 func nameArg(i uint32) *cameopb.Arg { return &cameopb.Arg{Kind: &cameopb.Arg_Name{Name: i}} }
-func procArg(i uint32) *cameopb.Arg { return &cameopb.Arg{Kind: &cameopb.Arg_Proc{Proc: i}} }
-func intArg(i int64) *cameopb.Arg   { return &cameopb.Arg{Kind: &cameopb.Arg_Int{Int: i}} }
 func intConst(i int64) *cameopb.Arg {
 	return &cameopb.Arg{Kind: &cameopb.Arg_Constant{Constant: &cameopb.Value{Kind: &cameopb.Value_IntValue{IntValue: i}}}}
 }

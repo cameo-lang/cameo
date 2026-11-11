@@ -65,6 +65,18 @@ test_version_flag_matches_the_command() {
   assert_contains "$flag" "$cmd"
 }
 
+test_ir_prints_the_instructions_a_script_compiles_to() {
+  local script out rc=0
+  script="$(mktemp -d)/sum.cameo"
+  printf 'a = 1\nputs a + 2\n' > "$script"
+  out=$("$CAMEO_BIN" ir "$script")
+  assert_eq $'proc #0 <main>\n  CONST 1\n  STORE a\n  DROP\n  LOAD a\n  CONST 2\n  SEND + 1 operator\n  SEND puts 1 self' "$out"
+  printf 'class Point\nend\n' > "$script"
+  out=$("$CAMEO_BIN" ir "$script" 2>&1) || rc=$?
+  assert_eq 1 "$rc" "cameo ir on a form that does not compile yet"
+  assert_contains "$out" 'line 1: *syntax.ClassDef does not compile to the IR yet'
+}
+
 test_unknown_command_fails() {
   local rc=0
   "$CAMEO_BIN" no-such-command >/dev/null 2>&1 || rc=$?
