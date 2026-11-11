@@ -444,6 +444,28 @@ failed: boom
 	prints(t, "include Cameo\nx = async 1, 2\n", "t.cameo:2: async names the method by a symbol, not an instance of Integer (TypeError)\n")
 }
 
+// A return in a proc returns from the method the proc was written in. Once
+// that method has returned there is nothing to return from, and the return
+// raises LocalJumpError, as Ruby's does.
+func TestAReturnFromAProcWhoseMethodReturnedRaises(t *testing.T) {
+	prints(t, `def make = proc { return 1 }
+pr = make
+begin
+  pr.call
+rescue LocalJumpError => e
+  puts "LocalJumpError: #{e.message}"
+end
+puts "after"
+def find(list) = list.each { |x| return x if x > 1 }
+puts find([1, 2, 3])
+double = ->(x) { return x * 2 }
+puts double.(4)
+def twice = [1, 2].map { |x| ->(y) { return y + x } }.map { |f| f.(10) }
+puts twice.inspect
+`, "LocalJumpError: unexpected return\nafter\n2\n8\n[11, 12]\n")
+	prints(t, "def make = proc { return 1 }\nmake.call\nputs \"not reached\"\n", "t.cameo:1: unexpected return (LocalJumpError)\n")
+}
+
 func TestErrorsNameTheLineOfTheirInstruction(t *testing.T) {
 	prints(t, `def f(x)
   x + nope

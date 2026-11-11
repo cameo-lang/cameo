@@ -373,8 +373,9 @@ which `Singleton` uses to refuse what Ruby refuses.
 
 Blocks and lambdas are written as Ruby's: `yield` calls a block, `&block`
 captures it as a Proc, `proc.call` and `proc.()` invoke it. `return`
-inside a block returns from the enclosing method; `break` and `next` behave as
-in Ruby. Procs are values but not serialisable, so they cannot cross `async`.
+inside a block returns from the enclosing method, and raises
+`LocalJumpError` once that method has returned, as in Ruby; `break` and
+`next` behave as in Ruby. Procs are values but not serialisable, so they cannot cross `async`.
 
 ### Blocks capture values
 

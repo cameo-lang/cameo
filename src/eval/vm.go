@@ -302,7 +302,11 @@ func (m *machine) exec(c *cameopb.Code) error {
 	case cameopb.Op_NOT:
 		m.push(object.Bool(!m.pop().Truthy()))
 	case cameopb.Op_RETURN:
-		return &control{kind: ctrlReturn, value: m.pop(), target: fr, line: line}
+		v := m.pop()
+		if fr.ended {
+			return in.raise(object.LocalJumpError, line, "unexpected return")
+		}
+		return &control{kind: ctrlReturn, value: v, target: fr, line: line}
 	case cameopb.Op_BREAK:
 		return &control{kind: ctrlBreak, value: m.pop(), line: line}
 	case cameopb.Op_NEXT:

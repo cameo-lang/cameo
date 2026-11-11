@@ -196,6 +196,10 @@ type Frame struct {
 	BuildingExc *object.Exception
 	// Lambda marks the frame of a lambda call, where return stops.
 	Lambda bool
+	// ended is set when the call the frame belongs to returned. A proc
+	// may outlive the method it was written in; its return then has
+	// nowhere to go.
+	ended bool
 }
 
 // Proc is a block or lambda: a body closed over the scope and frame it was
