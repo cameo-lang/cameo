@@ -36,8 +36,9 @@ type Dump struct {
 	Next      int32           `protobuf:"varint,3,opt,name=next,proto3" json:"next,omitempty"`
 	Line      int32           `protobuf:"varint,4,opt,name=line,proto3" json:"line,omitempty"`
 	Variables []*Dump_Binding `protobuf:"bytes,5,rep,name=variables,proto3" json:"variables,omitempty"`
-	// constants are the constants the script assigned; its classes come back
-	// by running their definitions again.
+	// constants are the constants of the top level: the ones the script
+	// assigned, and its classes and modules, each a reference to a class of
+	// classes.
 	Constants []*Dump_Binding `protobuf:"bytes,6,rep,name=constants,proto3" json:"constants,omitempty"`
 	Promises  []*Dump_Promise `protobuf:"bytes,7,rep,name=promises,proto3" json:"promises,omitempty"`
 	// loaded names the libraries require loaded.
@@ -46,7 +47,25 @@ type Dump struct {
 	Rand []byte `protobuf:"bytes,9,opt,name=rand,proto3" json:"rand,omitempty"`
 	// at_exit are the blocks at_exit registered, in the order they were
 	// registered; a binding without a name.
-	AtExit        []*Dump_Binding `protobuf:"bytes,10,rep,name=at_exit,json=atExit,proto3" json:"at_exit,omitempty"`
+	AtExit []*Dump_Binding `protobuf:"bytes,10,rep,name=at_exit,json=atExit,proto3" json:"at_exit,omitempty"`
+	// version is the IR version of the dump's code; a cameo resumes a dump
+	// of the version it runs.
+	Version uint32 `protobuf:"varint,11,opt,name=version,proto3" json:"version,omitempty"`
+	// units are the units of code the run had: the script's, and those of
+	// the libraries written in cameo it required. Methods and closures name
+	// their code in them, by digest.
+	Units []*Unit `protobuf:"bytes,12,rep,name=units,proto3" json:"units,omitempty"`
+	// classes are the classes and modules the script defined, and the ones
+	// it holds a copy of because a library written in cameo added to them.
+	// The methods of the top level are in top.
+	Classes []*Dump_Class `protobuf:"bytes,13,rep,name=classes,proto3" json:"classes,omitempty"`
+	// cameo_top is set when the script included Cameo at the top level.
+	CameoTop bool        `protobuf:"varint,14,opt,name=cameo_top,json=cameoTop,proto3" json:"cameo_top,omitempty"`
+	Top      *Dump_Class `protobuf:"bytes,15,opt,name=top,proto3" json:"top,omitempty"`
+	// missing says what of the classes the dump leaves out, one entry for
+	// each: a constant or an attribute whose value the envelope cannot
+	// carry, as a Binding's missing says for a variable.
+	Missing       []string `protobuf:"bytes,16,rep,name=missing,proto3" json:"missing,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -151,9 +170,52 @@ func (x *Dump) GetAtExit() []*Dump_Binding {
 	return nil
 }
 
+func (x *Dump) GetVersion() uint32 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
+}
+
+func (x *Dump) GetUnits() []*Unit {
+	if x != nil {
+		return x.Units
+	}
+	return nil
+}
+
+func (x *Dump) GetClasses() []*Dump_Class {
+	if x != nil {
+		return x.Classes
+	}
+	return nil
+}
+
+func (x *Dump) GetCameoTop() bool {
+	if x != nil {
+		return x.CameoTop
+	}
+	return false
+}
+
+func (x *Dump) GetTop() *Dump_Class {
+	if x != nil {
+		return x.Top
+	}
+	return nil
+}
+
+func (x *Dump) GetMissing() []string {
+	if x != nil {
+		return x.Missing
+	}
+	return nil
+}
+
 // Binding is one variable or constant. value is its value, set also for
-// nil; a class is named in class instead; a value the envelope cannot
-// carry has neither, and missing says what it was.
+// nil; a class is referred to in class instead, as Class describes; a
+// value the envelope cannot carry has neither, and missing says what it
+// was.
 type Dump_Binding struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -363,11 +425,465 @@ func (x *Dump_Failure) GetLine() int32 {
 	return 0
 }
 
+// Class is a class or a module as the run had made it.
+//
+// A class is referred to by a string, here and in a Binding: the id of
+// a class of the dump; or the qualified name of a class the dump does
+// not carry, which Go defined or the host registered, with "::" in
+// front when a constant of the script hides that name.
+type Dump_Class struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// id is the qualified name, Geo::Point, for the class that name is
+	// bound to. A class that is no longer bound to its name, since the
+	// script reopened it, which makes a new class, or one that never had
+	// a name, has its digest after an @, and a number where two would
+	// have the same.
+	Id string `protobuf:"bytes,14,opt,name=id,proto3" json:"id,omitempty"`
+	// name is the qualified name, "" for a class Class.new made that no
+	// constant names yet; lexical the class or module it is defined in.
+	Name    string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Lexical string `protobuf:"bytes,15,opt,name=lexical,proto3" json:"lexical,omitempty"`
+	Module  bool   `protobuf:"varint,2,opt,name=module,proto3" json:"module,omitempty"`
+	// super is the superclass, "" for a module.
+	Super  string `protobuf:"bytes,3,opt,name=super,proto3" json:"super,omitempty"`
+	Digest string `protobuf:"bytes,4,opt,name=digest,proto3" json:"digest,omitempty"`
+	// includes and extends are the modules included and extended, in
+	// order.
+	Includes []string `protobuf:"bytes,5,rep,name=includes,proto3" json:"includes,omitempty"`
+	Extends  []string `protobuf:"bytes,6,rep,name=extends,proto3" json:"extends,omitempty"`
+	// fields are the class's fields in order, the inherited ones too.
+	Fields          []*Dump_Field  `protobuf:"bytes,7,rep,name=fields,proto3" json:"fields,omitempty"`
+	ReservedNumbers []int64        `protobuf:"varint,8,rep,packed,name=reserved_numbers,json=reservedNumbers,proto3" json:"reserved_numbers,omitempty"`
+	ReservedNames   []string       `protobuf:"bytes,9,rep,name=reserved_names,json=reservedNames,proto3" json:"reserved_names,omitempty"`
+	Methods         []*Dump_Method `protobuf:"bytes,10,rep,name=methods,proto3" json:"methods,omitempty"`
+	// consts are the constants of the class's body, the classes and
+	// modules defined in it among them.
+	Consts []*Dump_Binding `protobuf:"bytes,11,rep,name=consts,proto3" json:"consts,omitempty"`
+	// attrs are the values of the class's attributes; attr_defaults the
+	// defaults of the ones it declared itself.
+	Attrs         []*Dump_Binding `protobuf:"bytes,12,rep,name=attrs,proto3" json:"attrs,omitempty"`
+	AttrDefaults  []*Dump_Binding `protobuf:"bytes,13,rep,name=attr_defaults,json=attrDefaults,proto3" json:"attr_defaults,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Dump_Class) Reset() {
+	*x = Dump_Class{}
+	mi := &file_cameo_dump_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Dump_Class) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Dump_Class) ProtoMessage() {}
+
+func (x *Dump_Class) ProtoReflect() protoreflect.Message {
+	mi := &file_cameo_dump_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Dump_Class.ProtoReflect.Descriptor instead.
+func (*Dump_Class) Descriptor() ([]byte, []int) {
+	return file_cameo_dump_proto_rawDescGZIP(), []int{0, 3}
+}
+
+func (x *Dump_Class) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Dump_Class) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *Dump_Class) GetLexical() string {
+	if x != nil {
+		return x.Lexical
+	}
+	return ""
+}
+
+func (x *Dump_Class) GetModule() bool {
+	if x != nil {
+		return x.Module
+	}
+	return false
+}
+
+func (x *Dump_Class) GetSuper() string {
+	if x != nil {
+		return x.Super
+	}
+	return ""
+}
+
+func (x *Dump_Class) GetDigest() string {
+	if x != nil {
+		return x.Digest
+	}
+	return ""
+}
+
+func (x *Dump_Class) GetIncludes() []string {
+	if x != nil {
+		return x.Includes
+	}
+	return nil
+}
+
+func (x *Dump_Class) GetExtends() []string {
+	if x != nil {
+		return x.Extends
+	}
+	return nil
+}
+
+func (x *Dump_Class) GetFields() []*Dump_Field {
+	if x != nil {
+		return x.Fields
+	}
+	return nil
+}
+
+func (x *Dump_Class) GetReservedNumbers() []int64 {
+	if x != nil {
+		return x.ReservedNumbers
+	}
+	return nil
+}
+
+func (x *Dump_Class) GetReservedNames() []string {
+	if x != nil {
+		return x.ReservedNames
+	}
+	return nil
+}
+
+func (x *Dump_Class) GetMethods() []*Dump_Method {
+	if x != nil {
+		return x.Methods
+	}
+	return nil
+}
+
+func (x *Dump_Class) GetConsts() []*Dump_Binding {
+	if x != nil {
+		return x.Consts
+	}
+	return nil
+}
+
+func (x *Dump_Class) GetAttrs() []*Dump_Binding {
+	if x != nil {
+		return x.Attrs
+	}
+	return nil
+}
+
+func (x *Dump_Class) GetAttrDefaults() []*Dump_Binding {
+	if x != nil {
+		return x.AttrDefaults
+	}
+	return nil
+}
+
+// Field is one field of a class. owner is the class that declared it:
+// the class itself, or an ancestor.
+type Dump_Field struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Number        int64                  `protobuf:"varint,2,opt,name=number,proto3" json:"number,omitempty"`
+	Type          *Dump_FieldType        `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
+	Default       *Value                 `protobuf:"bytes,4,opt,name=default,proto3" json:"default,omitempty"`
+	Owner         string                 `protobuf:"bytes,5,opt,name=owner,proto3" json:"owner,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Dump_Field) Reset() {
+	*x = Dump_Field{}
+	mi := &file_cameo_dump_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Dump_Field) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Dump_Field) ProtoMessage() {}
+
+func (x *Dump_Field) ProtoReflect() protoreflect.Message {
+	mi := &file_cameo_dump_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Dump_Field.ProtoReflect.Descriptor instead.
+func (*Dump_Field) Descriptor() ([]byte, []int) {
+	return file_cameo_dump_proto_rawDescGZIP(), []int{0, 4}
+}
+
+func (x *Dump_Field) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *Dump_Field) GetNumber() int64 {
+	if x != nil {
+		return x.Number
+	}
+	return 0
+}
+
+func (x *Dump_Field) GetType() *Dump_FieldType {
+	if x != nil {
+		return x.Type
+	}
+	return nil
+}
+
+func (x *Dump_Field) GetDefault() *Value {
+	if x != nil {
+		return x.Default
+	}
+	return nil
+}
+
+func (x *Dump_Field) GetOwner() string {
+	if x != nil {
+		return x.Owner
+	}
+	return ""
+}
+
+// FieldType is the declared type of a field: kind is a scalar type's
+// name, or list, set, map, ref, enum, proc.
+type Dump_FieldType struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Kind  string                 `protobuf:"bytes,1,opt,name=kind,proto3" json:"kind,omitempty"`
+	// elem is the element of a list or set and the value of a map; key
+	// the scalar type of a map's keys.
+	Elem *Dump_FieldType `protobuf:"bytes,2,opt,name=elem,proto3" json:"elem,omitempty"`
+	Key  string          `protobuf:"bytes,3,opt,name=key,proto3" json:"key,omitempty"`
+	// ref is the class of a ref field; enum the symbols of an enum field.
+	Ref           string   `protobuf:"bytes,4,opt,name=ref,proto3" json:"ref,omitempty"`
+	Enum          []string `protobuf:"bytes,5,rep,name=enum,proto3" json:"enum,omitempty"`
+	Named         string   `protobuf:"bytes,6,opt,name=named,proto3" json:"named,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Dump_FieldType) Reset() {
+	*x = Dump_FieldType{}
+	mi := &file_cameo_dump_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Dump_FieldType) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Dump_FieldType) ProtoMessage() {}
+
+func (x *Dump_FieldType) ProtoReflect() protoreflect.Message {
+	mi := &file_cameo_dump_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Dump_FieldType.ProtoReflect.Descriptor instead.
+func (*Dump_FieldType) Descriptor() ([]byte, []int) {
+	return file_cameo_dump_proto_rawDescGZIP(), []int{0, 5}
+}
+
+func (x *Dump_FieldType) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *Dump_FieldType) GetElem() *Dump_FieldType {
+	if x != nil {
+		return x.Elem
+	}
+	return nil
+}
+
+func (x *Dump_FieldType) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *Dump_FieldType) GetRef() string {
+	if x != nil {
+		return x.Ref
+	}
+	return ""
+}
+
+func (x *Dump_FieldType) GetEnum() []string {
+	if x != nil {
+		return x.Enum
+	}
+	return nil
+}
+
+func (x *Dump_FieldType) GetNamed() string {
+	if x != nil {
+		return x.Named
+	}
+	return ""
+}
+
+// Method is a method a script defined: its code as the proc of a unit.
+// owner is the class that defines it, when it is not the class that
+// lists it: an alias gives a class a method of an ancestor under
+// another name. lexical are the classes and modules around its
+// definition, innermost last; file is the library it is from, "" for
+// the script.
+//
+// A method Go implements has no code to carry. One a script gave
+// another name with alias is listed with alias_of, the name it has in
+// owner, and no unit.
+type Dump_Method struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Singleton     bool                   `protobuf:"varint,2,opt,name=singleton,proto3" json:"singleton,omitempty"`
+	Unit          string                 `protobuf:"bytes,3,opt,name=unit,proto3" json:"unit,omitempty"`
+	Proc          uint32                 `protobuf:"varint,4,opt,name=proc,proto3" json:"proc,omitempty"`
+	Lexical       []string               `protobuf:"bytes,5,rep,name=lexical,proto3" json:"lexical,omitempty"`
+	File          string                 `protobuf:"bytes,6,opt,name=file,proto3" json:"file,omitempty"`
+	Owner         string                 `protobuf:"bytes,7,opt,name=owner,proto3" json:"owner,omitempty"`
+	AliasOf       string                 `protobuf:"bytes,8,opt,name=alias_of,json=aliasOf,proto3" json:"alias_of,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Dump_Method) Reset() {
+	*x = Dump_Method{}
+	mi := &file_cameo_dump_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Dump_Method) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Dump_Method) ProtoMessage() {}
+
+func (x *Dump_Method) ProtoReflect() protoreflect.Message {
+	mi := &file_cameo_dump_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Dump_Method.ProtoReflect.Descriptor instead.
+func (*Dump_Method) Descriptor() ([]byte, []int) {
+	return file_cameo_dump_proto_rawDescGZIP(), []int{0, 6}
+}
+
+func (x *Dump_Method) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *Dump_Method) GetSingleton() bool {
+	if x != nil {
+		return x.Singleton
+	}
+	return false
+}
+
+func (x *Dump_Method) GetUnit() string {
+	if x != nil {
+		return x.Unit
+	}
+	return ""
+}
+
+func (x *Dump_Method) GetProc() uint32 {
+	if x != nil {
+		return x.Proc
+	}
+	return 0
+}
+
+func (x *Dump_Method) GetLexical() []string {
+	if x != nil {
+		return x.Lexical
+	}
+	return nil
+}
+
+func (x *Dump_Method) GetFile() string {
+	if x != nil {
+		return x.File
+	}
+	return ""
+}
+
+func (x *Dump_Method) GetOwner() string {
+	if x != nil {
+		return x.Owner
+	}
+	return ""
+}
+
+func (x *Dump_Method) GetAliasOf() string {
+	if x != nil {
+		return x.AliasOf
+	}
+	return ""
+}
+
 var File_cameo_dump_proto protoreflect.FileDescriptor
 
 const file_cameo_dump_proto_rawDesc = "" +
 	"\n" +
-	"\x10cameo/dump.proto\x12\x05cameo\x1a\x11cameo/value.proto\"\xae\x05\n" +
+	"\x10cameo/dump.proto\x12\x05cameo\x1a\x0ecameo/ir.proto\x1a\x11cameo/value.proto\"\xf3\x0e\n" +
 	"\x04Dump\x12\x12\n" +
 	"\x04file\x18\x01 \x01(\tR\x04file\x12\x16\n" +
 	"\x06source\x18\x02 \x01(\tR\x06source\x12\x12\n" +
@@ -379,7 +895,13 @@ const file_cameo_dump_proto_rawDesc = "" +
 	"\x06loaded\x18\b \x03(\tR\x06loaded\x12\x12\n" +
 	"\x04rand\x18\t \x01(\fR\x04rand\x12,\n" +
 	"\aat_exit\x18\n" +
-	" \x03(\v2\x13.cameo.Dump.BindingR\x06atExit\x1aq\n" +
+	" \x03(\v2\x13.cameo.Dump.BindingR\x06atExit\x12\x18\n" +
+	"\aversion\x18\v \x01(\rR\aversion\x12!\n" +
+	"\x05units\x18\f \x03(\v2\v.cameo.UnitR\x05units\x12+\n" +
+	"\aclasses\x18\r \x03(\v2\x11.cameo.Dump.ClassR\aclasses\x12\x1b\n" +
+	"\tcameo_top\x18\x0e \x01(\bR\bcameoTop\x12#\n" +
+	"\x03top\x18\x0f \x01(\v2\x11.cameo.Dump.ClassR\x03top\x12\x18\n" +
+	"\amissing\x18\x10 \x03(\tR\amissing\x1aq\n" +
 	"\aBinding\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\"\n" +
 	"\x05value\x18\x02 \x01(\v2\f.cameo.ValueR\x05value\x12\x14\n" +
@@ -394,7 +916,46 @@ const file_cameo_dump_proto_rawDesc = "" +
 	"\aFailure\x12\x14\n" +
 	"\x05class\x18\x01 \x01(\tR\x05class\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12\x12\n" +
-	"\x04line\x18\x03 \x01(\x05R\x04lineB)Z'github.com/cameo-lang/cameo/src/cameopbb\x06proto3"
+	"\x04line\x18\x03 \x01(\x05R\x04line\x1a\xfe\x03\n" +
+	"\x05Class\x12\x0e\n" +
+	"\x02id\x18\x0e \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
+	"\alexical\x18\x0f \x01(\tR\alexical\x12\x16\n" +
+	"\x06module\x18\x02 \x01(\bR\x06module\x12\x14\n" +
+	"\x05super\x18\x03 \x01(\tR\x05super\x12\x16\n" +
+	"\x06digest\x18\x04 \x01(\tR\x06digest\x12\x1a\n" +
+	"\bincludes\x18\x05 \x03(\tR\bincludes\x12\x18\n" +
+	"\aextends\x18\x06 \x03(\tR\aextends\x12)\n" +
+	"\x06fields\x18\a \x03(\v2\x11.cameo.Dump.FieldR\x06fields\x12)\n" +
+	"\x10reserved_numbers\x18\b \x03(\x03R\x0freservedNumbers\x12%\n" +
+	"\x0ereserved_names\x18\t \x03(\tR\rreservedNames\x12,\n" +
+	"\amethods\x18\n" +
+	" \x03(\v2\x12.cameo.Dump.MethodR\amethods\x12+\n" +
+	"\x06consts\x18\v \x03(\v2\x13.cameo.Dump.BindingR\x06consts\x12)\n" +
+	"\x05attrs\x18\f \x03(\v2\x13.cameo.Dump.BindingR\x05attrs\x128\n" +
+	"\rattr_defaults\x18\r \x03(\v2\x13.cameo.Dump.BindingR\fattrDefaults\x1a\x9c\x01\n" +
+	"\x05Field\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x16\n" +
+	"\x06number\x18\x02 \x01(\x03R\x06number\x12)\n" +
+	"\x04type\x18\x03 \x01(\v2\x15.cameo.Dump.FieldTypeR\x04type\x12&\n" +
+	"\adefault\x18\x04 \x01(\v2\f.cameo.ValueR\adefault\x12\x14\n" +
+	"\x05owner\x18\x05 \x01(\tR\x05owner\x1a\x98\x01\n" +
+	"\tFieldType\x12\x12\n" +
+	"\x04kind\x18\x01 \x01(\tR\x04kind\x12)\n" +
+	"\x04elem\x18\x02 \x01(\v2\x15.cameo.Dump.FieldTypeR\x04elem\x12\x10\n" +
+	"\x03key\x18\x03 \x01(\tR\x03key\x12\x10\n" +
+	"\x03ref\x18\x04 \x01(\tR\x03ref\x12\x12\n" +
+	"\x04enum\x18\x05 \x03(\tR\x04enum\x12\x14\n" +
+	"\x05named\x18\x06 \x01(\tR\x05named\x1a\xc1\x01\n" +
+	"\x06Method\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1c\n" +
+	"\tsingleton\x18\x02 \x01(\bR\tsingleton\x12\x12\n" +
+	"\x04unit\x18\x03 \x01(\tR\x04unit\x12\x12\n" +
+	"\x04proc\x18\x04 \x01(\rR\x04proc\x12\x18\n" +
+	"\alexical\x18\x05 \x03(\tR\alexical\x12\x12\n" +
+	"\x04file\x18\x06 \x01(\tR\x04file\x12\x14\n" +
+	"\x05owner\x18\a \x01(\tR\x05owner\x12\x19\n" +
+	"\balias_of\x18\b \x01(\tR\aaliasOfB)Z'github.com/cameo-lang/cameo/src/cameopbb\x06proto3"
 
 var (
 	file_cameo_dump_proto_rawDescOnce sync.Once
@@ -408,27 +969,43 @@ func file_cameo_dump_proto_rawDescGZIP() []byte {
 	return file_cameo_dump_proto_rawDescData
 }
 
-var file_cameo_dump_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_cameo_dump_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_cameo_dump_proto_goTypes = []any{
-	(*Dump)(nil),         // 0: cameo.Dump
-	(*Dump_Binding)(nil), // 1: cameo.Dump.Binding
-	(*Dump_Promise)(nil), // 2: cameo.Dump.Promise
-	(*Dump_Failure)(nil), // 3: cameo.Dump.Failure
-	(*Value)(nil),        // 4: cameo.Value
+	(*Dump)(nil),           // 0: cameo.Dump
+	(*Dump_Binding)(nil),   // 1: cameo.Dump.Binding
+	(*Dump_Promise)(nil),   // 2: cameo.Dump.Promise
+	(*Dump_Failure)(nil),   // 3: cameo.Dump.Failure
+	(*Dump_Class)(nil),     // 4: cameo.Dump.Class
+	(*Dump_Field)(nil),     // 5: cameo.Dump.Field
+	(*Dump_FieldType)(nil), // 6: cameo.Dump.FieldType
+	(*Dump_Method)(nil),    // 7: cameo.Dump.Method
+	(*Unit)(nil),           // 8: cameo.Unit
+	(*Value)(nil),          // 9: cameo.Value
 }
 var file_cameo_dump_proto_depIdxs = []int32{
-	1, // 0: cameo.Dump.variables:type_name -> cameo.Dump.Binding
-	1, // 1: cameo.Dump.constants:type_name -> cameo.Dump.Binding
-	2, // 2: cameo.Dump.promises:type_name -> cameo.Dump.Promise
-	1, // 3: cameo.Dump.at_exit:type_name -> cameo.Dump.Binding
-	4, // 4: cameo.Dump.Binding.value:type_name -> cameo.Value
-	4, // 5: cameo.Dump.Promise.value:type_name -> cameo.Value
-	3, // 6: cameo.Dump.Promise.failure:type_name -> cameo.Dump.Failure
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	1,  // 0: cameo.Dump.variables:type_name -> cameo.Dump.Binding
+	1,  // 1: cameo.Dump.constants:type_name -> cameo.Dump.Binding
+	2,  // 2: cameo.Dump.promises:type_name -> cameo.Dump.Promise
+	1,  // 3: cameo.Dump.at_exit:type_name -> cameo.Dump.Binding
+	8,  // 4: cameo.Dump.units:type_name -> cameo.Unit
+	4,  // 5: cameo.Dump.classes:type_name -> cameo.Dump.Class
+	4,  // 6: cameo.Dump.top:type_name -> cameo.Dump.Class
+	9,  // 7: cameo.Dump.Binding.value:type_name -> cameo.Value
+	9,  // 8: cameo.Dump.Promise.value:type_name -> cameo.Value
+	3,  // 9: cameo.Dump.Promise.failure:type_name -> cameo.Dump.Failure
+	5,  // 10: cameo.Dump.Class.fields:type_name -> cameo.Dump.Field
+	7,  // 11: cameo.Dump.Class.methods:type_name -> cameo.Dump.Method
+	1,  // 12: cameo.Dump.Class.consts:type_name -> cameo.Dump.Binding
+	1,  // 13: cameo.Dump.Class.attrs:type_name -> cameo.Dump.Binding
+	1,  // 14: cameo.Dump.Class.attr_defaults:type_name -> cameo.Dump.Binding
+	6,  // 15: cameo.Dump.Field.type:type_name -> cameo.Dump.FieldType
+	9,  // 16: cameo.Dump.Field.default:type_name -> cameo.Value
+	6,  // 17: cameo.Dump.FieldType.elem:type_name -> cameo.Dump.FieldType
+	18, // [18:18] is the sub-list for method output_type
+	18, // [18:18] is the sub-list for method input_type
+	18, // [18:18] is the sub-list for extension type_name
+	18, // [18:18] is the sub-list for extension extendee
+	0,  // [0:18] is the sub-list for field type_name
 }
 
 func init() { file_cameo_dump_proto_init() }
@@ -436,6 +1013,7 @@ func file_cameo_dump_proto_init() {
 	if File_cameo_dump_proto != nil {
 		return
 	}
+	file_cameo_ir_proto_init()
 	file_cameo_value_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -443,7 +1021,7 @@ func file_cameo_dump_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_cameo_dump_proto_rawDesc), len(file_cameo_dump_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

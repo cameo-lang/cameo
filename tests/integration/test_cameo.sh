@@ -255,6 +255,8 @@ variables:
 '
   assert_contains "$out" $'constants:
   ARGV = []
+classes:
+  class Point
 promises: none'
   out=$("$CAMEO_BIN" resume "$dump" 2>&1)
   assert_eq "after 3" "$out"

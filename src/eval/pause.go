@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/cameo-lang/cameo/src/cameopb"
+	"github.com/cameo-lang/cameo/src/ir"
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/protogen"
 	"github.com/cameo-lang/cameo/src/syntax"
@@ -34,21 +35,22 @@ func (in *Interp) Dump(source string) (*cameopb.Dump, error) {
 	if !in.paused {
 		return nil, errors.New("the script is not paused")
 	}
-	d := &cameopb.Dump{File: in.file, Source: source, Next: int32(in.next), Line: int32(in.nextLine)}
-	// One encoder for the whole dump: a Proc travels as a closure, and the
-	// first closure of each unit carries the unit's code.
-	enc := in.ProcEncoder(true)
+	d := &cameopb.Dump{Version: ir.Version, File: in.file, Source: source, Next: int32(in.next), Line: int32(in.nextLine), CameoTop: in.cameoTop}
+	// One encoder for the whole dump: a Proc travels as a closure, which
+	// names its code in a unit of the dump.
+	enc := in.ProcEncoder(false)
+	classes := in.newClassDump()
 	in.top.each(func(name string, v object.Value) {
-		d.Variables = append(d.Variables, in.binding(enc, name, v))
+		d.Variables = append(d.Variables, classes.binding(enc, name, v))
 	})
 	for _, name := range sortedKeys(in.consts) {
 		v := in.consts[name]
-		// A class the script defined under its own name comes back from
-		// its definition.
-		if cls, ok := v.AsClass(); ok && cls.Name == name {
+		// A class Go defined or the host registered, under its own name,
+		// is there in the run that resumes.
+		if cls, ok := v.AsClass(); ok && cls.Name == name && !classes.carried(cls) {
 			continue
 		}
-		d.Constants = append(d.Constants, in.binding(enc, name, v))
+		d.Constants = append(d.Constants, classes.binding(enc, name, v))
 	}
 	promises, err := in.settledPromises(enc)
 	if err != nil {
@@ -56,8 +58,18 @@ func (in *Interp) Dump(source string) (*cameopb.Dump, error) {
 	}
 	d.Promises = promises
 	for _, block := range in.exits.all() {
-		d.AtExit = append(d.AtExit, in.binding(enc, "", block))
+		d.AtExit = append(d.AtExit, classes.binding(enc, "", block))
 	}
+	d.Top = &cameopb.Dump_Class{Methods: classes.methods(in.mainClass)}
+	d.Classes = classes.classes(enc)
+	d.Missing = classes.missing
+	// The units come last: a closure a worker made is of a unit the run
+	// learned of only when the closure was read.
+	in.code.units.Range(func(_, unit any) bool {
+		d.Units = append(d.Units, unit.(*cameopb.Unit))
+		return true
+	})
+	sort.Slice(d.Units, func(i, j int) bool { return d.Units[i].GetDigest() < d.Units[j].GetDigest() })
 	for lib := range in.loaded {
 		d.Loaded = append(d.Loaded, lib)
 	}
@@ -66,22 +78,6 @@ func (in *Interp) Dump(source string) (*cameopb.Dump, error) {
 		return nil, err
 	}
 	return d, nil
-}
-
-// binding is the dump's form of one variable or constant.
-func (in *Interp) binding(enc *protogen.Encoder, name string, v object.Value) *cameopb.Dump_Binding {
-	b := &cameopb.Dump_Binding{Name: name}
-	if cls, ok := v.AsClass(); ok {
-		b.Class = cls.QualifiedName()
-		return b
-	}
-	msg, err := enc.Message(v)
-	if err != nil {
-		b.Missing = err.Error()
-		return b
-	}
-	b.Value = msg
-	return b
 }
 
 // settledPromises waits for every call async started and returns the
@@ -127,24 +123,22 @@ func (in *Interp) settledPromises(enc *protogen.Encoder) ([]*cameopb.Dump_Promis
 // restores the variables, the constants and the promises. Run then runs
 // the statements from the pause point on.
 func (in *Interp) Resume(prog *syntax.Program, d *cameopb.Dump) error {
+	if d.GetVersion() != ir.Version {
+		return fmt.Errorf("the dump is of IR version %d, and this cameo runs version %d: a dump resumes on a cameo of its version", d.GetVersion(), ir.Version)
+	}
 	next := int(d.Next)
 	if next < 0 || next > len(prog.Body) {
 		return fmt.Errorf("the dump continues at statement %d of %d", next, len(prog.Body))
 	}
 	in.file = d.File
 	in.code.compiled = CompiledFor(prog)
-	fr := in.topFrame()
-	p, err := in.program(d.File, prog)
-	if err != nil {
+	// The script's own unit first, so that the code the run continues in
+	// and the code of its methods are one.
+	if _, err := in.program(d.File, prog); err != nil {
 		return err
 	}
-	for i, n := range prog.Body[:next] {
-		if !isDefinition(n) {
-			continue
-		}
-		if _, err := in.runList(p.unit, p.statements[i], in.top, fr); err != nil {
-			return err
-		}
+	if err := in.restoreUnits(d.GetUnits()); err != nil {
+		return err
 	}
 	if len(d.Loaded) > 0 && in.loaded == nil {
 		in.loaded = map[string]bool{}
@@ -153,7 +147,17 @@ func (in *Interp) Resume(prog *syntax.Program, d *cameopb.Dump) error {
 		in.loaded[lib] = true
 		in.bringToTop(lib)
 	}
+	if d.GetCameoTop() && !in.cameoTop {
+		in.mainClass.Include(object.CameoModule)
+		in.cameoTop = true
+	}
+	if err := in.restoreClasses(d); err != nil {
+		return err
+	}
 	dec := in.Decoder()
+	if err := in.restoreClassValues(dec, d.GetClasses()); err != nil {
+		return err
+	}
 	for _, b := range d.Variables {
 		v, ok, err := in.restore(dec, b)
 		if err != nil {
@@ -207,7 +211,7 @@ func (in *Interp) Restore(b *cameopb.Dump_Binding) (object.Value, bool, error) {
 func (in *Interp) restore(dec *protogen.Decoder, b *cameopb.Dump_Binding) (object.Value, bool, error) {
 	switch {
 	case b.Class != "":
-		cls := in.classNamed(b.Class)
+		cls := in.classRef(b.Class)
 		if cls == nil {
 			return object.Value{}, false, fmt.Errorf("no class %s", b.Class)
 		}
@@ -269,16 +273,4 @@ func (in *Interp) restorePromise(dec *protogen.Decoder, s *cameopb.Dump_Promise)
 	p.awaited = s.Awaited
 	in.promises.restore(p)
 	return nil
-}
-
-// isDefinition reports a top-level statement a resumed run runs again: a
-// class, module or method definition, include, or require.
-func isDefinition(n syntax.Node) bool {
-	switch n := n.(type) {
-	case *syntax.ClassDef, *syntax.ModuleDef, *syntax.Def, *syntax.Include:
-		return true
-	case *syntax.Call:
-		return n.Recv == nil && n.Name == "require"
-	}
-	return false
 }

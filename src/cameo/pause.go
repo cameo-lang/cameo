@@ -35,13 +35,13 @@ func (p *Program) Finish() error {
 // Dump is a paused script, as Dump captures it.
 type Dump struct {
 	// Data is a cameo.Dump protobuf message in its wire form: the script,
-	// where it paused, its top-level variables and constants, its
-	// promises. Resume reads it.
+	// where it paused, its top-level variables and constants, its classes
+	// and their code, its promises. Resume reads it.
 	Data []byte
 	// Line is the line of the statement the script continues with.
 	Line int
 	// Missing names the variables and constants the dump leaves out,
-	// each with what it held: "f (a Proc cannot be serialised)".
+	// each with what it held: "f (an Enumerator cannot be serialised)".
 	Missing []string
 }
 
@@ -67,13 +67,14 @@ func (p *Program) Dump() (*Dump, error) {
 			out.Missing = append(out.Missing, fmt.Sprintf("an at_exit block (%s)", b.Missing))
 		}
 	}
+	out.Missing = append(out.Missing, d.Missing...)
 	return out, nil
 }
 
 // Resume loads a dump as a program that continues the script from where
 // it paused: Run runs the statements after the pause point. The script's
-// definitions before it run again first, with their output going to
-// stdout and stderr.
+// classes and methods are in the dump, so nothing before the pause point
+// runs again. A dump resumes on a cameo of the IR version that wrote it.
 func Resume(data []byte, stdout, stderr io.Writer) (*Program, error) {
 	d, err := readDump(data)
 	if err != nil {
@@ -111,6 +112,10 @@ func InspectDump(data []byte) (string, error) {
 		}
 		b.WriteString("\n")
 		for _, binding := range bindings {
+			// A class under its own name is listed with the classes.
+			if binding.Class != "" && binding.Class == binding.Name {
+				continue
+			}
 			if binding.Missing != "" {
 				fmt.Fprintf(&b, "  %s = (%s)\n", binding.Name, binding.Missing)
 				continue
@@ -132,6 +137,19 @@ func InspectDump(data []byte) (string, error) {
 	}
 	if err := bindings("constants", d.Constants); err != nil {
 		return "", err
+	}
+	b.WriteString("classes:")
+	if len(d.Classes) == 0 {
+		b.WriteString(" none\n")
+	} else {
+		b.WriteString("\n")
+	}
+	for _, c := range d.Classes {
+		kind := "class"
+		if c.Module {
+			kind = "module"
+		}
+		fmt.Fprintf(&b, "  %s %s\n", kind, c.Id)
 	}
 	b.WriteString("promises:")
 	if len(d.Promises) == 0 {
