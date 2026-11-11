@@ -225,7 +225,7 @@ func (in *Interp) evalDef(n *syntax.Def, fr *Frame) (object.Value, error) {
 	// definition evaluated again, as a loop around it does, changes nothing,
 	// and leaves the method caches as they are.
 	if existing, ok := table[n.Name]; ok && existing.Owner == target && existing.Body != nil {
-		if cd, ok := existing.Body.(*compiledDef); ok && cd.def == n {
+		if def, ok := existing.Body.(*syntax.Def); ok && def == n {
 			return object.Symbol(n.Name), nil
 		}
 	}
@@ -238,7 +238,7 @@ func (in *Interp) evalDef(n *syntax.Def, fr *Frame) (object.Value, error) {
 		}
 		return object.Value{}, in.raise(object.CameoError, n.Line(), "cannot replace the builtin method %s of %s", n.Name, target.Name)
 	}
-	m := &object.Method{Name: n.Name, Owner: target, Body: &compiledDef{def: n, body: in.code.body(n, n.Body)}, Arity: -1, Lexical: fr.Lexical, File: fr.File}
+	m := &object.Method{Name: n.Name, Owner: target, Body: n, Arity: -1, Lexical: fr.Lexical, File: fr.File}
 	// A method `cameo build` compiled runs as Go, and keeps its body for
 	// the calls the Go code leaves to the interpreter: a top-level method
 	// by its name, a class's as Class#name.

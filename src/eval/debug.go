@@ -86,7 +86,6 @@ func (in *Interp) Debug(console io.Reader, out io.Writer, source string, stop bo
 	if in.dbg == nil {
 		in.dbg = &Debugger{in: in, console: bufio.NewScanner(console), out: out}
 		in.dbg.console.Buffer(make([]byte, 1<<20), 1<<20)
-		in.code.debug.Store(true)
 		// With the debugger on, debugger and binding.break are defined
 		// as if the script had required "debug".
 		if in.loaded == nil {
@@ -339,17 +338,17 @@ func (d *Debugger) frameName(f *dbgFrame) string {
 	if strings.HasPrefix(f.name, "block in ") || f.fr == nil || f.fr.Method == nil {
 		return f.name
 	}
-	cd, ok := f.fr.Method.Body.(*compiledDef)
+	def, ok := f.fr.Method.Body.(*syntax.Def)
 	if !ok {
 		return f.name
 	}
 	var args []string
-	for _, p := range cd.def.Params.Positional {
+	for _, p := range def.Params.Positional {
 		if v, ok := f.env.lookup(p.Name); ok {
 			args = append(args, p.Name+"="+d.inspect(v))
 		}
 	}
-	for _, p := range cd.def.Params.Keywords {
+	for _, p := range def.Params.Keywords {
 		if v, ok := f.env.lookup(p.Name); ok {
 			args = append(args, p.Name+": "+d.inspect(v))
 		}
