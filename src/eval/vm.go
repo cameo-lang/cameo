@@ -95,6 +95,19 @@ type machine struct {
 	fr      *Frame
 	stack   []object.Value
 	cursors []cursor
+	// kind says what the activation is, and proc is the block of an
+	// actBlock; they decide what happens when it ends (stack.go).
+	kind actKind
+	proc *Proc
+	// site is the instruction of the activation below that called this
+	// one, nil when Go code did.
+	site *cameopb.Code
+	// debugged is set when the debugger was told of the activation.
+	debugged bool
+	// inGo counts the lists the activation runs to their end inside an
+	// instruction (nested). A call made while it is not zero cannot go
+	// back to the loop, and runs in a loop of its own.
+	inGo int
 }
 
 // runBody runs the body of a proc in env and fr and returns its value.
@@ -115,10 +128,7 @@ func (in *Interp) runList(unit *cameopb.Unit, code []*cameopb.Code, env *Env, fr
 func (in *Interp) runCode(unit *cameopb.Unit, code []*cameopb.Code, env *Env, fr *Frame, body bool) (object.Value, error) {
 	m := &machine{in: in, unit: unit, env: env, fr: fr}
 	m.cursors = append(m.cursors, cursor{code: code, statement: body})
-	if err := m.loop(0); err != nil {
-		return object.Value{}, err
-	}
-	return m.pop(), nil
+	return in.start(m)
 }
 
 func (m *machine) push(v object.Value) { m.stack = append(m.stack, v) }
@@ -249,6 +259,14 @@ func (m *machine) exec(c *cameopb.Code) error {
 		}
 	case cameopb.Op_YIELD:
 		args, kw := m.callArgs(c, 0)
+		// A block a script wrote becomes the activation that runs.
+		if p, ok := asProc(fr.Block); ok && p.written() && m.inGo == 0 {
+			act, err := in.blockAct(p, args, kw, object.Value{})
+			if err == nil {
+				err = in.pushAct(act, c)
+			}
+			return withLine(err, line)
+		}
 		v, err := in.callBlock(fr.Block, args, kw, object.Value{})
 		if err != nil {
 			return withLine(err, line)
@@ -336,11 +354,7 @@ func (m *machine) exec(c *cameopb.Code) error {
 			m.push(v)
 			return nil
 		}
-		v, err := in.dispatch(fr, fr.Self, name, nil, nil, object.Value{}, true, true, true, line)
-		if err != nil {
-			return withLine(err, line)
-		}
-		m.push(v)
+		return m.call(c, in.lookup(fr.Self, name, true), fr.Self, name, nil, nil, object.Value{}, true, true, line)
 	case cameopb.Op_DEFINED_LOCAL:
 		if _, ok := env.Get(m.name(c, 0)); ok {
 			m.push(object.String("local-variable"))
@@ -593,8 +607,27 @@ func (m *machine) send(c *cameopb.Code) error {
 			return nil
 		}
 	}
-	v, err := in.dispatch(fr, recv, name, args, kw, block, selfCall, has(c, cameopb.Flag_FLAG_VCALL), selfCall || has(c, cameopb.Flag_FLAG_PRIVATE), line)
-	if err == nil && !selfCall && has(c, cameopb.Flag_FLAG_DROPPED) {
+	return m.call(c, in.lookup(recv, name, selfCall), recv, name, args, kw, block, has(c, cameopb.Flag_FLAG_VCALL), selfCall || has(c, cameopb.Flag_FLAG_PRIVATE), line)
+}
+
+// call calls the method meth, which lookup found for name on recv, for
+// the instruction c. A method a script defined becomes the activation
+// that runs, and its value is pushed when it ends; any other call is
+// made here and its value pushed.
+func (m *machine) call(c *cameopb.Code, meth *object.Method, recv object.Value, name string, args []object.Value, kw *object.Map, block object.Value, vcall, private bool, line int) error {
+	in := m.in
+	if m.inGo == 0 && in.runs(meth, private) {
+		act, err := in.methodAct(meth, recv, args, kw, block, line)
+		if err == nil {
+			err = in.pushAct(act, c)
+		}
+		return withLine(err, line)
+	}
+	v, err := in.dispatchTo(meth, recv, name, args, kw, block, vcall, private, line)
+	// A call whose value is dropped did nothing when Ruby's changes the
+	// receiver and cameo's returns a copy (dropped); such a method is a
+	// builtin's, so the check is not an activation's to make.
+	if err == nil && c.Op == cameopb.Op_SEND && !has(c, cameopb.Flag_FLAG_SELF) && has(c, cameopb.Flag_FLAG_DROPPED) {
 		err = in.dropped(recv, name, line)
 	}
 	if err != nil {

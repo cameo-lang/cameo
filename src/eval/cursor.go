@@ -72,44 +72,41 @@ func (m *machine) enter(c *cameopb.Code, i int, ph phase, base int, body bool) *
 	return &m.cursors[len(m.cursors)-1]
 }
 
-// loop runs instructions until the activation is inside floor lists
-// again: the lists above ended, or a completion left them, which loop
-// returns when no cursor above floor takes it.
-func (m *machine) loop(floor int) error {
-	for len(m.cursors) > floor {
-		cur := &m.cursors[len(m.cursors)-1]
-		var err error
-		if cur.next == len(cur.code) {
-			ended := *cur
-			m.cursors = m.cursors[:len(m.cursors)-1]
-			err = m.ended(&ended)
-		} else {
-			c := cur.code[cur.next]
-			cur.next++
-			if cur.statement && m.in.dbg != nil {
-				err = m.in.dbg.line(int(c.Line), m.env, m.fr)
-			}
-			cur.statement = c.Op == cameopb.Op_DROP
-			if err == nil {
-				err = m.exec(c)
-			}
-		}
-		if err != nil {
-			if err = m.unwind(err, floor); err != nil {
-				return err
-			}
+// step runs the next instruction of the innermost list, or, when that
+// list is through, continues the instruction that owns it. It returns the
+// completion that leaves the list, which unwind finds the taker of.
+func (m *machine) step() error {
+	cur := &m.cursors[len(m.cursors)-1]
+	if cur.next == len(cur.code) {
+		ended := *cur
+		m.cursors = m.cursors[:len(m.cursors)-1]
+		return m.ended(&ended)
+	}
+	c := cur.code[cur.next]
+	cur.next++
+	if cur.statement && m.in.dbg != nil {
+		if err := m.in.dbg.line(int(c.Line), m.env, m.fr); err != nil {
+			return err
 		}
 	}
-	return nil
+	cur.statement = c.Op == cameopb.Op_DROP
+	return m.exec(c)
 }
 
 // nested runs a list to its end inside an instruction and pops its
-// value: the expression in a pattern, which is matched in Go.
+// value: the expression in a pattern, which is matched in Go. A
+// completion no cursor of the list takes is returned.
 func (m *machine) nested(code []*cameopb.Code) (object.Value, error) {
 	floor := len(m.cursors)
 	m.cursors = append(m.cursors, cursor{code: code, base: len(m.stack)})
-	if err := m.loop(floor); err != nil {
-		return object.Value{}, err
+	m.inGo++
+	defer func() { m.inGo-- }()
+	for len(m.cursors) > floor {
+		if err := m.step(); err != nil {
+			if err = m.unwind(err, floor); err != nil {
+				return object.Value{}, err
+			}
+		}
 	}
 	return m.pop(), nil
 }
