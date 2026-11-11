@@ -99,16 +99,11 @@ behaviour the pull request describes, add it to its description.
 
 **Generated files.** A file built from the source conflicts or goes stale on
 every restack. Do not merge it by hand: take either side and regenerate it.
-In cameo, `examples/aot/*/*.go` embed a digest of the parsed script, so any
-change to `syntax` changes them:
+In cameo, `src/cameopb/*.pb.go` is generated from the `.proto` files beside
+it:
 
 ```sh
-make build
-for rb in examples/aot/*.rb; do
-  ex=$(basename "$rb" .rb)
-  pkg=$ex; [ -f "examples/aot/$ex/main.go" ] && pkg=main
-  bin/cameo build "$rb" "examples/aot/$ex" "$pkg"
-done
+make proto
 ```
 
 Run `make check` on the top before you push. Then push each branch with a
