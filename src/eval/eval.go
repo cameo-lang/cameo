@@ -28,8 +28,7 @@ func (in *Interp) evalBody(body []syntax.Node, env *Env, fr *Frame) (object.Valu
 	return last, nil
 }
 
-// eval evaluates one node: the tree walker. A call goes through its
-// compiled thunk (compile.go).
+// eval evaluates one node: the tree walker.
 func (in *Interp) eval(n syntax.Node, env *Env, fr *Frame) (object.Value, error) {
 	switch n := n.(type) {
 	case *syntax.Nil:
@@ -83,7 +82,7 @@ func (in *Interp) eval(n syntax.Node, env *Env, fr *Frame) (object.Value, error)
 	case *syntax.Interp:
 		return in.evalInterp(n, env, fr)
 	case *syntax.Call:
-		return in.code.expr(n)(in, env, fr)
+		return in.evalCall(n, env, fr)
 	case *syntax.Lambda:
 		return procValue(&Proc{Block: n.Block, Env: env.snapshot(), Frame: fr, Strict: n.Strict}), nil
 	case *syntax.Return:
