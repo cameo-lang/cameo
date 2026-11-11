@@ -118,5 +118,5 @@ begin
 rescue => e
   p [e.message, e.class]
 end
-`,"each3 done\n2\neach3 done\n20\neach3 done\n3\n:deep\n2\n3\n\"unexpected return\"\npass 1\npass 2\npass 2\npass 3\neach3 done\n3\n[\"from raiser\", ArgumentError]\n")
+`, "each3 done\n2\neach3 done\n20\neach3 done\n3\n:deep\n2\n3\n\"unexpected return\"\npass 1\npass 2\npass 2\npass 3\neach3 done\n3\n[\"from raiser\", ArgumentError]\n")
 }
