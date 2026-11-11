@@ -49,7 +49,7 @@ func (in *Interp) Dump(source string) (*cameopb.Dump, error) {
 	}
 	// The class of an instance is carried too: a class the script
 	// reopened since it made the instance is one no constant leads to.
-	enc := in.ProcEncoder(false).WithClasses(func(cls *object.Class) {
+	enc := in.ProcEncoder(false).WithSymbols().WithClasses(func(cls *object.Class) {
 		if classes.carried(cls) {
 			classes.ref(cls)
 		}

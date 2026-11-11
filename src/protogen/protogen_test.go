@@ -160,6 +160,16 @@ func TestEnvelopeRoundTrip(t *testing.T) {
 	if _, err := enc.Encode(object.ClassValue(object.ProcClass)); err == nil {
 		t.Fatal("a class cannot be encoded")
 	}
+	// An encoder set to keep symbols writes one as a symbol, also as the
+	// key of a map.
+	keyed := object.MapValue(object.MapOf(object.Symbol("k"), object.NewList(object.Symbol("v"), object.String("s"))))
+	data, err = NewEncoder(reg).WithSymbols().Encode(keyed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if back, _ := dec.Decode(data); object.Key(back) != object.Key(keyed) {
+		t.Fatalf("a symbol kept as a symbol read back as %s, want %s", object.Key(back), object.Key(keyed))
+	}
 }
 
 // The envelope's wire form is fixed by its field numbers: bytes another
