@@ -116,23 +116,32 @@ func (p *params) arity(strict bool) int {
 	return required
 }
 
-// symsOf returns the names of unit as Syms, index for index. The run's
-// interpreters share the list of a unit, and each keeps the one it asked
-// for last.
-func (in *Interp) symsOf(unit *cameopb.Unit) []object.Sym {
+// unitNames is what the evaluator keeps of each name of a unit, index
+// for index: its Sym, and whether a call of it can be one of Ruby's
+// mutators.
+type unitNames struct {
+	syms     []object.Sym
+	mutators []bool
+}
+
+// symsOf returns the names of unit as the evaluator reads them. The
+// run's interpreters share them, and each keeps the unit it asked for
+// last.
+func (in *Interp) symsOf(unit *cameopb.Unit) *unitNames {
 	if unit == in.symsUnit {
 		return in.symsList
 	}
-	var list []object.Sym
+	var names *unitNames
 	if known, ok := in.code.syms.Load(unit); ok {
-		list = known.([]object.Sym)
+		names = known.(*unitNames)
 	} else {
-		list = make([]object.Sym, len(unit.Names))
+		names = &unitNames{syms: make([]object.Sym, len(unit.Names)), mutators: make([]bool, len(unit.Names))}
 		for i, name := range unit.Names {
-			list[i] = object.Intern(name)
+			names.syms[i] = object.Intern(name)
+			names.mutators[i] = mayMutate(name)
 		}
-		in.code.syms.Store(unit, list)
+		in.code.syms.Store(unit, names)
 	}
-	in.symsUnit, in.symsList = unit, list
-	return list
+	in.symsUnit, in.symsList = unit, names
+	return names
 }
