@@ -42,7 +42,7 @@ end.parse!
 
 # sh runs a command in the repository and returns its output, or fails.
 def sh(*cmd, chdir: ROOT)
-  out = IO.popen(cmd, chdir:, err: [:child, :out], &:read)
+  out = IO.popen(cmd, chdir:, err: [:child, :out], encoding: "UTF-8", &:read)
   raise "#{cmd.join(' ')} failed:\n#{out}" unless $?.success?
   out
 end
@@ -63,7 +63,7 @@ def cases(paths, scratch)
   site = File.join(OUT, "site")
   FileUtils.mkdir_p(site)
   Dir.glob(File.join(ROOT, "doc/gh_pages/*.html")).sort.each do |page|
-    File.read(page).scan(%r{<pre class="cameo( rejected)?"><code>(.*?)</code></pre>}m).each_with_index do |(rejected, code), i|
+    File.read(page, encoding: "UTF-8").scan(%r{<pre class="cameo( rejected)?"><code>(.*?)</code></pre>}m).each_with_index do |(rejected, code), i|
       next if rejected
       f = File.join(site, "#{File.basename(page, '.html')}-#{i + 1}.cameo")
       File.write(f, CGI.unescapeHTML(code))
@@ -117,7 +117,7 @@ Dir.mktmpdir("cameo-conformance") do |scratch|
   list.each_with_index do |c, i|
     pkg = format("c%04d", i + 1)
     dir = File.join(OUT, "cases", pkg)
-    built = IO.popen([cameo, "build", c.path, dir, pkg], err: [:child, :out], &:read)
+    built = IO.popen([cameo, "build", c.path, dir, pkg], err: [:child, :out], encoding: "UTF-8", &:read)
     unless $?.success?
       c.outcome, c.detail = :build_failed, built.lines.first.to_s.strip
       next

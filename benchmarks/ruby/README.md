@@ -60,12 +60,27 @@ A failing case is filed under the first thing that stops it. Fixing that may
 uncover a second blocker, so a file can move from `stdlib/` to another
 directory rather than to `works/`.
 
-`bugs/` is empty: every case filed there has been fixed. A bare `Object`
-prints as `#<Object>`, without the address Ruby shows, since cameo values
-have no identity; the cases that print one count as working.
+`bugs/` holds two `Time.strptime` cases: cameo's strptime does not parse
+`%s`, or a zone name such as `UTC` for `%z`.
+
+A bare `Object` prints as `#<Object>`, without the address Ruby shows,
+since cameo values have no identity; the cases that print one count as
+working.
 
 Integers grow past 64 bits as Ruby's do, so `unsupported/bignum/` is gone;
 its rational and imaginary literal cases are under `unsupported/complex/`.
+
+## Where a file differs from CRuby's
+
+cameo refuses two Ruby idioms before a script runs: a block that rebinds
+a variable of the scope around it (blocks capture values), and a call to
+one of Ruby's bang methods such as `map!`. A case under `works/` that used
+one to build its data, or in a step other than the one the benchmark
+measures, is rewritten to the form cameo accepts and that gives Ruby's
+result too: `h = n.times.each_with_object({}) { |i, h| h[i] = nil }` for a hash filled
+in a block, `array1 = array1.map(&:to_i)` for `array1.map!(&:to_i)`. A case
+whose timed body is the mutation itself, such as `set.add`, `str.gsub!` or
+`h.shift`, is under `unsupported/mutation/`, unchanged.
 
 ## Running them
 

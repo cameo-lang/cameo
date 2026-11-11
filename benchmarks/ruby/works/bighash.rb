@@ -1,1 +1,1 @@
-h = {}; 5000000.times {|n| h[n] = n }
+h = 5000000.times.each_with_object({}) {|n, h| h[n] = n }

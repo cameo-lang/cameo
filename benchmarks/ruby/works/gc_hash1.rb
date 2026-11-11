@@ -1,8 +1,7 @@
 value = 0.01
-h = {}
 n = 50_000
 
-1.upto(n){|i|
+h = 1.upto(n).each_with_object({}){|i, h|
   h["%020d" % i] = "v-#{i}"
 }
 

@@ -1,1 +1,1 @@
-1000000.times.map{|i| a={}; 8.times{|j| a[j]=j}; a}
+1000000.times.map{|i| 8.times.each_with_object({}){|j, a| a[j]=j}}

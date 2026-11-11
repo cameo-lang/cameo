@@ -1,4 +1,3 @@
-h = {}.compare_by_identity
 syms = ('a'..'z').to_a.map(&:to_sym)
-syms.each { |s| h[s] = s }
+h = syms.each_with_object({}.compare_by_identity) { |s, h| h[s] = s }
 200_000.times { syms.each { |s| h[s] } }
