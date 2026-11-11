@@ -62,6 +62,11 @@ func (p *Program) Dump() (*Dump, error) {
 			out.Missing = append(out.Missing, fmt.Sprintf("%s (%s)", b.Name, b.Missing))
 		}
 	}
+	for _, b := range d.AtExit {
+		if b.Missing != "" {
+			out.Missing = append(out.Missing, fmt.Sprintf("an at_exit block (%s)", b.Missing))
+		}
+	}
 	return out, nil
 }
 
@@ -152,6 +157,9 @@ func InspectDump(data []byte) (string, error) {
 			return "", err
 		}
 		fmt.Fprintf(&b, "  %d %s = %s\n", ps.Id, method, s)
+	}
+	if n := len(d.AtExit); n > 0 {
+		fmt.Fprintf(&b, "at_exit: %d\n", n)
 	}
 	return b.String(), nil
 }

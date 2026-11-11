@@ -312,6 +312,13 @@ func (h *exitHandlers) push(block object.Value) {
 	h.mu.Unlock()
 }
 
+// all returns the blocks registered, the first first.
+func (h *exitHandlers) all() []object.Value {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return append([]object.Value{}, h.blocks...)
+}
+
 // pop removes and returns the last block registered, and false when there
 // is none.
 func (h *exitHandlers) pop() (object.Value, bool) {

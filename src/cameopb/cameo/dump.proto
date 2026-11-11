@@ -56,4 +56,7 @@ message Dump {
   repeated string loaded = 8;
   // rand is the state of the random number generator.
   bytes rand = 9;
+  // at_exit are the blocks at_exit registered, in the order they were
+  // registered; a binding without a name.
+  repeated Binding at_exit = 10;
 }
