@@ -83,9 +83,10 @@ func inspect(path string, out io.Writer) error {
 // runProgram runs a loaded or resumed program and returns the process
 // exit status: 0 when it ended, 1 when it failed, statusPaused when it
 // paused. With pause set, the first ^C pauses the script before its next
-// top-level statement and writes its dump to a temporary file; a second
-// ^C, while the statement still runs, ends the process. Without it, ^C
-// ends the process as it does any other.
+// instruction, or once the builtin it is inside has returned, and writes
+// its dump to a temporary file; a second ^C, while the script still
+// runs, ends the process. Without it, ^C ends the process as it does any
+// other.
 func runProgram(prog *cameo.Program, allowIO []string, pause bool, stderr io.Writer) int {
 	// The command is the host: a script it runs may do the I/O --io named.
 	prog.AllowHostIO(allowIO...)
@@ -96,7 +97,7 @@ func runProgram(prog *cameo.Program, allowIO []string, pause bool, stderr io.Wri
 		go func() {
 			<-interrupts
 			prog.Pause()
-			fmt.Fprintln(stderr, "cameo: pausing before the next top-level statement; press ^C again to end the script")
+			fmt.Fprintln(stderr, "cameo: pausing; press ^C again to end the script")
 			<-interrupts
 			os.Exit(130)
 		}()

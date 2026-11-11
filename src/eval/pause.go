@@ -13,18 +13,20 @@ import (
 	"github.com/cameo-lang/cameo/src/syntax"
 )
 
-// A run pauses between two top-level statements, never inside one: the
-// evaluator keeps a running statement's state on the Go stack, which no
-// dump can hold. What a dump holds, and how a resumed run gets its classes
-// back, is in doc/design/pause.md.
+// A run pauses before an instruction, inside a statement or between two,
+// when every activation it is running is on the interpreter's stack: one
+// loop runs, and no builtin is in the middle of a call into the script
+// (stack.go). What a dump holds, and how a resumed run gets its classes
+// and its activations back, is in doc/design/pause.md.
 
 // ErrPaused ends a run that Pause asked to pause. It is not an exception,
 // so no rescue catches it.
 var ErrPaused = errors.New("the script paused")
 
-// Pause asks the run to pause before its next top-level statement: Run
-// then returns ErrPaused, and Dump captures the run. A statement that never
-// ends is never paused; Stop ends it.
+// Pause asks the run to pause before its next instruction: Run then
+// returns ErrPaused, and Dump captures the run. A run that is inside a
+// builtin's call into the script, the block of an each, pauses once the
+// builtin returned; Stop ends a run at once.
 func (in *Interp) Pause() { in.pause.Store(true) }
 
 // Dump captures a paused run: the script, where it paused, its top-level
@@ -39,6 +41,12 @@ func (in *Interp) Dump(source string) (*cameopb.Dump, error) {
 	// One encoder for the whole dump: a Proc travels as a closure, which
 	// names its code in a unit of the dump.
 	classes := in.newClassDump()
+	if len(in.frozen) > 0 {
+		// The run paused inside a statement: a Proc written in a frame
+		// of its activations refers to the frame (EncodeProc).
+		in.dumping = stackFrames(in.frozen)
+		defer func() { in.dumping = nil }()
+	}
 	// The class of an instance is carried too: a class the script
 	// reopened since it made the instance is one no constant leads to.
 	enc := in.ProcEncoder(false).WithClasses(func(cls *object.Class) {
@@ -65,6 +73,11 @@ func (in *Interp) Dump(source string) (*cameopb.Dump, error) {
 	d.Promises = promises
 	for _, block := range in.exits.all() {
 		d.AtExit = append(d.AtExit, classes.binding(enc, "", block))
+	}
+	if in.dumping != nil {
+		if err := in.dumpStack(d, enc, classes); err != nil {
+			return nil, fmt.Errorf("the run cannot be dumped where it paused: %w", err)
+		}
 	}
 	d.Top = &cameopb.Dump_Class{Methods: classes.methods(in.mainClass)}
 	d.Classes = classes.classes(enc)
@@ -124,10 +137,10 @@ func (in *Interp) settledPromises(enc *protogen.Encoder) ([]*cameopb.Dump_Promis
 }
 
 // Resume readies the interpreter to continue the run d describes, whose
-// script prog is: it runs the definitions among the top-level statements
-// before the pause point — class, module, def, include and require — and
-// restores the variables, the constants and the promises. Run then runs
-// the statements from the pause point on.
+// script prog is: it makes the classes of the dump, restores the
+// variables, the constants and the promises, and the activations of a
+// run that paused inside a statement. Run then goes on from the pause
+// point.
 func (in *Interp) Resume(prog *syntax.Program, d *cameopb.Dump) error {
 	if d.GetVersion() != ir.Version {
 		return fmt.Errorf("the dump is of IR version %d, and this cameo runs version %d: a dump resumes on a cameo of its version", d.GetVersion(), ir.Version)
@@ -140,7 +153,8 @@ func (in *Interp) Resume(prog *syntax.Program, d *cameopb.Dump) error {
 	in.code.compiled = CompiledFor(prog)
 	// The script's own unit first, so that the code the run continues in
 	// and the code of its methods are one.
-	if _, err := in.program(d.File, prog); err != nil {
+	script, err := in.program(d.File, prog)
+	if err != nil {
 		return err
 	}
 	if err := in.restoreUnits(d.GetUnits()); err != nil {
@@ -160,6 +174,9 @@ func (in *Interp) Resume(prog *syntax.Program, d *cameopb.Dump) error {
 	if err := in.restoreClasses(d); err != nil {
 		return err
 	}
+	// The frames of a run that paused inside a statement, before any
+	// value is read: a Proc among the values may refer to one.
+	in.restoreShells(d)
 	dec := in.Decoder()
 	if err := in.restoreClassValues(dec, d.GetClasses()); err != nil {
 		return err
@@ -204,6 +221,9 @@ func (in *Interp) Resume(prog *syntax.Program, d *cameopb.Dump) error {
 			return fmt.Errorf("the dump's random number state is not one this cameo reads: %w", err)
 		}
 	}
+	if err := in.restoreStack(dec, d, script); err != nil {
+		return err
+	}
 	in.from = next
 	return nil
 }
@@ -216,6 +236,8 @@ func (in *Interp) Restore(b *cameopb.Dump_Binding) (object.Value, bool, error) {
 
 func (in *Interp) restore(dec *protogen.Decoder, b *cameopb.Dump_Binding) (object.Value, bool, error) {
 	switch {
+	case b.Main:
+		return object.InstanceValue(in.main), true, nil
 	case b.Class != "":
 		cls := in.classRef(b.Class)
 		if cls == nil {

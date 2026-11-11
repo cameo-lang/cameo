@@ -15,10 +15,11 @@ import (
 // is not an exception, so no rescue catches it.
 var ErrPaused = eval.ErrPaused
 
-// Pause asks the running script to pause before its next top-level
-// statement; Run then returns ErrPaused and Dump captures the script. A
-// statement that never ends is never paused. The limits and the dump are
-// in doc/design/pause.md.
+// Pause asks the running script to pause before its next instruction,
+// inside a method or a loop as well as between two statements; Run then
+// returns ErrPaused and Dump captures the script. A script inside a
+// builtin's call of a block pauses when the builtin returns. The limits
+// and the dump are in doc/design/pause.md.
 func (p *Program) Pause() { p.in.Pause() }
 
 // Finish runs the blocks at_exit registered since the script ended, by a
@@ -104,6 +105,31 @@ func InspectDump(data []byte) (string, error) {
 	var b strings.Builder
 	fmt.Fprintf(&b, "script: %s\n", d.File)
 	fmt.Fprintf(&b, "paused: before line %d\n", d.Line)
+	// The calls the run paused in, the innermost first; a run that
+	// paused in a statement of the top level has none to show.
+	if len(d.Stack) > 1 {
+		b.WriteString("inside:\n")
+		for i := len(d.Stack) - 1; i > 0; i-- {
+			a := d.Stack[i]
+			name := "the top level"
+			if int(a.Frame) < len(d.Frames) {
+				if m := d.Frames[a.Frame].Method; m != nil {
+					switch {
+					case m.Owner == "":
+						name = m.Name
+					case m.Singleton:
+						name = m.Owner + "." + m.Name
+					default:
+						name = m.Owner + "#" + m.Name
+					}
+				}
+			}
+			if a.Kind == cameopb.Dump_Activation_BLOCK {
+				name = "a block in " + name
+			}
+			fmt.Fprintf(&b, "  %s, line %d\n", name, a.Line)
+		}
+	}
 	bindings := func(title string, bindings []*cameopb.Dump_Binding) error {
 		fmt.Fprintf(&b, "%s:", title)
 		if len(bindings) == 0 {

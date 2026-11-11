@@ -73,12 +73,13 @@ cameo irb [script.cameo]      # evaluate lines typed in, at the top level of the
 cameo debug script.cameo      # run the script under the debugger, stopped before its first statement
 ```
 
-`^C` pauses a running script before its next top-level statement and writes
-its state, a protobuf message, to a temporary file; `cameo resume` continues
-it, `cameo inspect` shows it, and `cameo --no-pause script.cameo` lets `^C`
-end the script instead. A statement that never ends is never paused: a
-second `^C` ends the script. What the dump holds, and what it leaves out,
-is in [doc/design/pause.md](doc/design/pause.md).
+`^C` pauses a running script where it is, inside a method or a loop, and
+writes its state, a protobuf message, to a temporary file; `cameo resume`
+continues it there, `cameo inspect` shows it, and `cameo --no-pause
+script.cameo` lets `^C` end the script instead. A script inside the block
+of a builtin, `list.each { … }`, pauses when the builtin returns; a second
+`^C` ends the script. What the dump holds, and what it leaves out, is in
+[doc/design/pause.md](doc/design/pause.md).
 
 `cameo irb` is a read-eval-print loop: each line typed in runs at the top
 level, its value is printed, and a line that is not a whole expression yet

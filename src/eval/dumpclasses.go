@@ -95,6 +95,10 @@ func (cd *classDump) ref(cls *object.Class) string {
 // binding is the dump's form of one variable or constant.
 func (cd *classDump) binding(enc *protogen.Encoder, name string, v object.Value) *cameopb.Dump_Binding {
 	b := &cameopb.Dump_Binding{Name: name}
+	if isMain(v) {
+		b.Main = true
+		return b
+	}
 	if cls, ok := v.AsClass(); ok {
 		if b.Class = cd.ref(cls); b.Class == "" {
 			b.Missing = "a class no constant names"

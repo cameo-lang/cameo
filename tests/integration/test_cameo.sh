@@ -205,8 +205,8 @@ CAMEO
 }
 
 # pausing_script writes a script that busies itself for a while in one
-# top-level statement, so an interrupt sent meanwhile pauses it before the
-# statement after. Job control is on in the subshell that starts it: a
+# top-level statement, a loop, so an interrupt sent meanwhile pauses it
+# inside that statement. Job control is on in the subshell that starts it: a
 # background job without it ignores SIGINT.
 pausing_script() {
   local script
@@ -244,12 +244,12 @@ test_interrupt_pauses_the_script_and_resume_continues_it() {
   out=$(interrupt_after 0.5 "$CAMEO_BIN" "$script") || rc=$?
   assert_eq 3 "$rc" "a paused script exits 3; output: $out"
   assert_contains "$out" $'before
-cameo: pausing before the next top-level statement'
-  assert_contains "$out" "cameo: paused before line 9 of $script"
+cameo: pausing; press ^C again'
+  assert_contains "$out" "cameo: paused before line 8 of $script"
   dump=$(sed -n 's/^cameo: resume with: cameo resume //p' <<<"$out")
   assert_match '^/.*/cameo-wait-[^/]*\.dump$' "$dump"
   out=$("$CAMEO_BIN" inspect "$dump")
-  assert_contains "$out" $'paused: before line 9
+  assert_contains "$out" $'paused: before line 8
 variables:
   p = Point(x: 1, y: 2)
 '
