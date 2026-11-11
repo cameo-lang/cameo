@@ -141,13 +141,13 @@ func (x *Dump) GetRand() []byte {
 	return nil
 }
 
-// Binding is one variable or constant. value is the envelope wire form
-// of its value; a class is named in class instead; a value the envelope
-// cannot carry has neither, and missing says what it was.
+// Binding is one variable or constant. value is its value, set also for
+// nil; a class is named in class instead; a value the envelope cannot
+// carry has neither, and missing says what it was.
 type Dump_Binding struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Value         []byte                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	Value         *Value                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 	Class         string                 `protobuf:"bytes,3,opt,name=class,proto3" json:"class,omitempty"`
 	Missing       string                 `protobuf:"bytes,4,opt,name=missing,proto3" json:"missing,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -191,7 +191,7 @@ func (x *Dump_Binding) GetName() string {
 	return ""
 }
 
-func (x *Dump_Binding) GetValue() []byte {
+func (x *Dump_Binding) GetValue() *Value {
 	if x != nil {
 		return x.Value
 	}
@@ -219,7 +219,7 @@ type Dump_Promise struct {
 	Id    int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	// method is the method async ran; none for a promise made by hand.
 	Method  string        `protobuf:"bytes,2,opt,name=method,proto3" json:"method,omitempty"`
-	Value   []byte        `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty"`
+	Value   *Value        `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty"`
 	Failure *Dump_Failure `protobuf:"bytes,4,opt,name=failure,proto3" json:"failure,omitempty"`
 	// awaited is set when the script awaited the promise before the pause.
 	Awaited       bool `protobuf:"varint,5,opt,name=awaited,proto3" json:"awaited,omitempty"`
@@ -271,7 +271,7 @@ func (x *Dump_Promise) GetMethod() string {
 	return ""
 }
 
-func (x *Dump_Promise) GetValue() []byte {
+func (x *Dump_Promise) GetValue() *Value {
 	if x != nil {
 		return x.Value
 	}
@@ -357,7 +357,7 @@ var File_cameo_dump_proto protoreflect.FileDescriptor
 
 const file_cameo_dump_proto_rawDesc = "" +
 	"\n" +
-	"\x10cameo/dump.proto\x12\x05cameo\"\xe4\x04\n" +
+	"\x10cameo/dump.proto\x12\x05cameo\x1a\x11cameo/value.proto\"\x80\x05\n" +
 	"\x04Dump\x12\x12\n" +
 	"\x04file\x18\x01 \x01(\tR\x04file\x12\x16\n" +
 	"\x06source\x18\x02 \x01(\tR\x06source\x12\x12\n" +
@@ -367,16 +367,16 @@ const file_cameo_dump_proto_rawDesc = "" +
 	"\tconstants\x18\x06 \x03(\v2\x13.cameo.Dump.BindingR\tconstants\x12/\n" +
 	"\bpromises\x18\a \x03(\v2\x13.cameo.Dump.PromiseR\bpromises\x12\x16\n" +
 	"\x06loaded\x18\b \x03(\tR\x06loaded\x12\x12\n" +
-	"\x04rand\x18\t \x01(\fR\x04rand\x1ac\n" +
+	"\x04rand\x18\t \x01(\fR\x04rand\x1aq\n" +
 	"\aBinding\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\fR\x05value\x12\x14\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\"\n" +
+	"\x05value\x18\x02 \x01(\v2\f.cameo.ValueR\x05value\x12\x14\n" +
 	"\x05class\x18\x03 \x01(\tR\x05class\x12\x18\n" +
-	"\amissing\x18\x04 \x01(\tR\amissing\x1a\x90\x01\n" +
+	"\amissing\x18\x04 \x01(\tR\amissing\x1a\x9e\x01\n" +
 	"\aPromise\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x16\n" +
-	"\x06method\x18\x02 \x01(\tR\x06method\x12\x14\n" +
-	"\x05value\x18\x03 \x01(\fR\x05value\x12-\n" +
+	"\x06method\x18\x02 \x01(\tR\x06method\x12\"\n" +
+	"\x05value\x18\x03 \x01(\v2\f.cameo.ValueR\x05value\x12-\n" +
 	"\afailure\x18\x04 \x01(\v2\x13.cameo.Dump.FailureR\afailure\x12\x18\n" +
 	"\aawaited\x18\x05 \x01(\bR\aawaited\x1aM\n" +
 	"\aFailure\x12\x14\n" +
@@ -402,17 +402,20 @@ var file_cameo_dump_proto_goTypes = []any{
 	(*Dump_Binding)(nil), // 1: cameo.Dump.Binding
 	(*Dump_Promise)(nil), // 2: cameo.Dump.Promise
 	(*Dump_Failure)(nil), // 3: cameo.Dump.Failure
+	(*Value)(nil),        // 4: cameo.Value
 }
 var file_cameo_dump_proto_depIdxs = []int32{
 	1, // 0: cameo.Dump.variables:type_name -> cameo.Dump.Binding
 	1, // 1: cameo.Dump.constants:type_name -> cameo.Dump.Binding
 	2, // 2: cameo.Dump.promises:type_name -> cameo.Dump.Promise
-	3, // 3: cameo.Dump.Promise.failure:type_name -> cameo.Dump.Failure
-	4, // [4:4] is the sub-list for method output_type
-	4, // [4:4] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	4, // 3: cameo.Dump.Binding.value:type_name -> cameo.Value
+	4, // 4: cameo.Dump.Promise.value:type_name -> cameo.Value
+	3, // 5: cameo.Dump.Promise.failure:type_name -> cameo.Dump.Failure
+	6, // [6:6] is the sub-list for method output_type
+	6, // [6:6] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_cameo_dump_proto_init() }
@@ -420,6 +423,7 @@ func file_cameo_dump_proto_init() {
 	if File_cameo_dump_proto != nil {
 		return
 	}
+	file_cameo_value_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

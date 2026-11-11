@@ -70,12 +70,12 @@ func (in *Interp) binding(enc *protogen.Encoder, name string, v object.Value) *c
 		b.Class = cls.QualifiedName()
 		return b
 	}
-	data, err := enc.Encode(v)
+	msg, err := enc.Message(v)
 	if err != nil {
 		b.Missing = err.Error()
 		return b
 	}
-	b.Value = data
+	b.Value = msg
 	return b
 }
 
@@ -105,10 +105,10 @@ func (in *Interp) settledPromises(enc *protogen.Encoder) ([]*cameopb.Dump_Promis
 			s.Failure = &cameopb.Dump_Failure{Class: exc.Cls.QualifiedName(), Message: exc.Message, Line: int32(exc.Line)}
 			// The whole exception, with its fields and cause, when the
 			// envelope carries it.
-			if data, err := enc.Encode(object.ExceptionValue(exc)); err == nil {
-				s.Value = data
+			if msg, err := enc.Message(object.ExceptionValue(exc)); err == nil {
+				s.Value = msg
 			}
-		} else if s.Value, err = enc.Encode(result); err != nil {
+		} else if s.Value, err = enc.Message(result); err != nil {
 			return nil, fmt.Errorf("promise %d (%s): %w", id, p.method, err)
 		}
 		out = append(out, s)
@@ -195,7 +195,7 @@ func (in *Interp) restore(dec *protogen.Decoder, b *cameopb.Dump_Binding) (objec
 		}
 		return object.ClassValue(cls), true, nil
 	case b.Value != nil:
-		v, err := dec.Decode(b.Value)
+		v, err := dec.Value(b.Value)
 		return v, err == nil, err
 	}
 	return object.Value{}, false, nil
@@ -232,8 +232,8 @@ func (in *Interp) restorePromise(dec *protogen.Decoder, s *cameopb.Dump_Promise)
 			return fmt.Errorf("no class %s", s.Failure.Class)
 		}
 		exc = &object.Exception{Cls: cls, Message: s.Failure.Message, Line: int(s.Failure.Line), Fields: defaultFields(cls)}
-		if len(s.Value) > 0 {
-			v, err := dec.Decode(s.Value)
+		if s.Value != nil {
+			v, err := dec.Value(s.Value)
 			if err != nil {
 				return err
 			}
@@ -243,7 +243,7 @@ func (in *Interp) restorePromise(dec *protogen.Decoder, s *cameopb.Dump_Promise)
 		}
 	} else {
 		var err error
-		if result, err = dec.Decode(s.Value); err != nil {
+		if result, err = dec.Value(s.Value); err != nil {
 			return err
 		}
 	}

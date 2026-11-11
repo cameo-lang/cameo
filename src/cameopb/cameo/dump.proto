@@ -6,15 +6,17 @@ package cameo;
 
 option go_package = "github.com/cameo-lang/cameo/src/cameopb";
 
+import "cameo/value.proto";
+
 // Dump is a paused run: the script, where it paused, and what its top
 // level held.
 message Dump {
-  // Binding is one variable or constant. value is the envelope wire form
-  // of its value; a class is named in class instead; a value the envelope
-  // cannot carry has neither, and missing says what it was.
+  // Binding is one variable or constant. value is its value, set also for
+  // nil; a class is named in class instead; a value the envelope cannot
+  // carry has neither, and missing says what it was.
   message Binding {
     string name = 1;
-    bytes value = 2;
+    Value value = 2;
     string class = 3;
     string missing = 4;
   }
@@ -25,7 +27,7 @@ message Dump {
     int64 id = 1;
     // method is the method async ran; none for a promise made by hand.
     string method = 2;
-    bytes value = 3;
+    Value value = 3;
     Failure failure = 4;
     // awaited is set when the script awaited the promise before the pause.
     bool awaited = 5;
