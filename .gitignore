@@ -1,3 +1,6 @@
 # build output: `go build ./...` writes the single main package here
 /cameo
 /bin/
+
+# the copy of ruby/spec that `make ruby-spec` clones (specs/checkout.rb)
+/ruby-spec/
