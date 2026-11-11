@@ -23,7 +23,7 @@ func (m *machine) define(c *cameopb.Code) error {
 		fr = scoped
 	}
 	decl := classDecl{Name: m.name(c, 0), Digest: m.name(c, 2), line: line}
-	p := &irProc{unit: m.unit, proc: m.unit.Procs[c.Args[1].GetProc()]}
+	p := procOf(m.unit, c.Args[1].GetProc())
 	body := func(env *Env, fr *Frame) (object.Value, error) { return in.runBody(p, env, fr) }
 	var v object.Value
 	var err error
