@@ -38,8 +38,14 @@ func (in *Interp) Dump(source string) (*cameopb.Dump, error) {
 	d := &cameopb.Dump{Version: ir.Version, File: in.file, Source: source, Next: int32(in.next), Line: int32(in.nextLine), CameoTop: in.cameoTop}
 	// One encoder for the whole dump: a Proc travels as a closure, which
 	// names its code in a unit of the dump.
-	enc := in.ProcEncoder(false)
 	classes := in.newClassDump()
+	// The class of an instance is carried too: a class the script
+	// reopened since it made the instance is one no constant leads to.
+	enc := in.ProcEncoder(false).WithClasses(func(cls *object.Class) {
+		if classes.carried(cls) {
+			classes.ref(cls)
+		}
+	})
 	in.top.each(func(name string, v object.Value) {
 		d.Variables = append(d.Variables, classes.binding(enc, name, v))
 	})

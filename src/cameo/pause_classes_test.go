@@ -12,33 +12,46 @@ import (
 )
 
 // resumed runs src to its pause, dumps it, and runs the dump in a program
-// of its own. It returns what the script printed before the pause, what
-// it printed after, and the dump.
+// of its own, and that one to its pause, until the script ends. It
+// returns what the script printed before the first pause, what it printed
+// after, and the first dump.
 func resumed(t *testing.T, src string) (before, after string, dump *Dump) {
 	t.Helper()
 	prog, out := pausing(t, src)
 	if err := prog.Run(); !errors.Is(err, ErrPaused) {
 		t.Fatalf("Run returned %v, want ErrPaused", err)
 	}
-	dump, err := prog.Dump()
-	if err != nil {
-		t.Fatal(err)
-	}
 	var rest bytes.Buffer
-	cont, err := Resume(dump.Data, &rest, &rest)
-	if err != nil {
-		t.Fatal(err)
+	for {
+		d, err := prog.Dump()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if dump == nil {
+			dump = d
+		}
+		cont, err := Resume(d.Data, &rest, &rest)
+		if err != nil {
+			t.Fatal(err)
+		}
+		cont.Module("Test").Def("pause", func([]any, map[string]any, *Block) (any, error) {
+			cont.Pause()
+			return nil, nil
+		})
+		prog = cont
+		if err := cont.Run(); !errors.Is(err, ErrPaused) {
+			if err != nil {
+				t.Fatal(err)
+			}
+			return out.String(), rest.String(), dump
+		}
 	}
-	if err := cont.Run(); err != nil {
-		t.Fatal(err)
-	}
-	return out.String(), rest.String(), dump
 }
 
-// whole runs src without its pause and returns what it printed.
+// whole runs src without its pauses and returns what it printed.
 func whole(t *testing.T, src string) string {
 	t.Helper()
-	prog, out := pausing(t, strings.Replace(src, "Test.pause\n", "", 1))
+	prog, out := pausing(t, strings.ReplaceAll(src, "Test.pause\n", ""))
 	if err := prog.Run(); err != nil {
 		t.Fatal(err)
 	}
@@ -178,6 +191,35 @@ puts User.new.tool, (User.new.more rescue "no more")
 class Later < Base
 end
 puts Later.new.extra
+`)
+}
+
+// An instance made before its class was reopened keeps the class it was
+// made of, which no constant leads to any more. The dump carries that
+// class for it, also through a second pause.
+func TestResumeKeepsAnInstanceOfAReopenedClass(t *testing.T) {
+	sameAsWhole(t, `class Point
+  int :x
+  def double = x * 2
+end
+class Gone < StandardError
+  string :code
+end
+old = Point.new(x: 2)
+kept = [Gone.new("gone", code: "G1"), {"k" => old}]
+class Point
+  int :y
+  def sum = x + y
+end
+class Gone
+  def hint = "hint"
+end
+Test.pause
+puts old.double, (old.sum rescue "no sum"), old.is_a?(Point), old.inspect
+puts kept[0].code, (kept[0].hint rescue "no hint"), kept[1]["k"] == old
+now = Point.new(x: 1, y: 2)
+Test.pause
+puts old.double, now.sum, now.class == old.class, old == Point.new(x: 2)
 `)
 }
 

@@ -39,6 +39,8 @@ type Encoder struct {
 	// units this encoder has carried.
 	carryUnits bool
 	sent       map[string]bool
+	// classes is told the class of every instance and exception encoded.
+	classes func(*object.Class)
 }
 
 // NewEncoder makes an encoder over the registry's classes.
@@ -51,6 +53,14 @@ func NewEncoder(reg *Registry) *Encoder { return &Encoder{reg: reg} }
 // a worker of the same program does.
 func (e *Encoder) WithProcs(codec ProcCodec, carryUnits bool) *Encoder {
 	e.procs, e.carryUnits, e.sent = codec, carryUnits, map[string]bool{}
+	return e
+}
+
+// WithClasses returns the encoder set to tell seen the class of every
+// instance and exception it encodes, for a writer that carries the
+// classes beside the values, as a dump does.
+func (e *Encoder) WithClasses(seen func(*object.Class)) *Encoder {
+	e.classes = seen
 	return e
 }
 
@@ -143,6 +153,9 @@ func (e *Encoder) Message(v object.Value) (*cameopb.Value, error) {
 		}
 		if err != nil {
 			return nil, err
+		}
+		if e.classes != nil {
+			e.classes(cls)
 		}
 		return &cameopb.Value{Kind: &cameopb.Value_Object{Object: &cameopb.Object{Class: cls.QualifiedName(), Digest: cls.Digest, Message: data}}}, nil
 	case object.KindProc:
