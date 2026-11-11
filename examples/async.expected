@@ -3,4 +3,4 @@
 [3, 6, 9]
 [30, 60]
 job raised: boom
-not serialisable: a Proc cannot be passed to async
+not serialisable: a Class cannot be passed to async
