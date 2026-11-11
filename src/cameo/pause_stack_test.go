@@ -156,7 +156,7 @@ class Point
 end
 def pick(a, b, c) = [a, b, c]
 puts "a #{mark(1)} b #{mark(2)} c"
-p pick(mark("a"), [mark(1), mark(2)], {"k" => 1}.merge({"j" => mark(3)}))
+p pick(mark(:a), [mark(1), mark(2)], {k: 1}.merge({"j" => mark(3)}))
 p(case mark(5)
   when mark(4) then "four"
   when mark(5) then "five"
@@ -171,6 +171,24 @@ while mark(i) < 2
   i += 1
 end
 p i
+`)
+}
+
+// A symbol is a symbol after a resume: in a variable, as the key of a
+// Hash, in what a Proc captured, in a constant of a class. In a message
+// for another program it is a String, which a dump is not.
+func TestASymbolInADumpStaysASymbol(t *testing.T) {
+	sameAsWhole(t, `class Light
+  STATES = [:red, :green]
+  def self.after(s) = STATES[(STATES.index(s) + 1) % 2]
+end
+mode = :red
+table = {red: "stop", green: "go"}
+check = -> { [mode, mode == :red, table[mode]] }
+Test.pause
+p mode, mode == :red, table[mode], table.keys, check.call
+p Light.after(mode), Light::STATES
+p from_value_proto(mode.to_value_proto)
 `)
 }
 

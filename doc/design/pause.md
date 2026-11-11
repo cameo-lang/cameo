@@ -69,9 +69,12 @@ does not have them: reading such a variable raises `NameError`, and such
 an `at_exit` block does not run. The same holds for a constant or an
 attribute of a class: `missing` names it.
 
-A symbol in the dump reads back as a String, as a symbol does wherever a
-value crosses the envelope: a resumed run that compares a variable with
-`:name` compares a String.
+A symbol in the dump is a symbol after the resume. Everywhere else a
+value crosses the envelope a symbol reads back as a String
+([cameo.md](cameo.md#symbols)), the one form every reader has; a dump is
+read by the run it was, which compares against `:name` and looks keys up
+in `{name: …}`. So the dump writes a symbol as `symbol_value`, which no
+other message does.
 
 ## How a resumed run gets its classes back
 

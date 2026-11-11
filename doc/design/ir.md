@@ -130,8 +130,10 @@ message Binding { repeated Local locals = 1; Value self = 2; string self_class =
 - **A symbol in a binding reads back as a String**, as a symbol does
   wherever a value crosses the envelope ([cameo.md](cameo.md#symbols)). A
   proc that compares a captured value with a symbol compares differently
-  after it travelled. Whether the envelope should carry symbols, now that
-  it carries what a running program holds, is an open question.
+  after it travelled to another program or to a worker. A dump is the
+  exception: it keeps symbols ([pause.md](pause.md#what-a-dump-holds)),
+  since a run that resumes must compute what it would have. Whether
+  `async` and `to_value_proto` should keep them too is an open question.
 - **Every instruction carries its line**, for error messages and the
   debugger.
 - **Locals are addressed by name.** A binding is then names and values with
