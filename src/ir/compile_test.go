@@ -297,7 +297,7 @@ func TestCompileAssignmentForms(t *testing.T) {
 }
 
 func TestCompileSuperWithAndAsync(t *testing.T) {
-	prog, err := syntax.Parse("t.cameo", `def go(a, &b)
+	assert.Equals(t, listing(t, `def go(a, &b)
   super
   super(a, k: 1) { 2 }
   x = a.with(n: 1)
@@ -306,11 +306,10 @@ func TestCompileSuperWithAndAsync(t *testing.T) {
   await a, :run
   Cameo.await :all
 end
-`)
-	assert.NoError(t, err)
-	unit, err := CompileDef("t.cameo", prog.Body[0].(*syntax.Def))
-	assert.NoError(t, err)
-	assert.Equals(t, Listing(unit), `proc #0 go(a, &b)
+`), `proc #0 <main>
+  DEF go #1
+
+proc #1 go(a, &b)
   NEED_METHOD
   SUPER 0 forward
   DROP
@@ -320,7 +319,7 @@ end
   CONST 1
   SYM k
   MAP_SET
-  SUPER 1 #1 kw block
+  SUPER 1 #2 kw block
   DROP
   LOAD a
   MAP
@@ -348,7 +347,7 @@ end
   DROP
   AWAIT_ALL qualified
 
-proc #1 block
+proc #2 block
   CONST 2
 `)
 }

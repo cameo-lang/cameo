@@ -3,7 +3,6 @@ package eval
 import (
 	"github.com/cameo-lang/cameo/src/cameopb"
 	"github.com/cameo-lang/cameo/src/object"
-	"github.com/cameo-lang/cameo/src/syntax"
 )
 
 // params is the parameter list of a method, block or lambda as bindParams
@@ -32,31 +31,6 @@ type kwParam struct {
 }
 
 type defaultFn func(in *Interp, env *Env, fr *Frame) (object.Value, error)
-
-// astParams returns the parameter list of p, an AST's, made once per
-// program.
-func (c *code) astParams(p *syntax.Params) *params {
-	if ps, ok := c.params.Load(p); ok {
-		return ps.(*params)
-	}
-	out := &params{KwRest: p.KwRest, BlockParam: p.BlockParam}
-	for _, sp := range p.Positional {
-		pp := param{Name: sp.Name, Splat: sp.Splat}
-		if def := sp.Default; def != nil {
-			pp.Default = func(in *Interp, env *Env, fr *Frame) (object.Value, error) { return in.eval(def, env, fr) }
-		}
-		out.Positional = append(out.Positional, pp)
-	}
-	for _, sk := range p.Keywords {
-		kp := kwParam{Name: sk.Name}
-		if def := sk.Default; def != nil {
-			kp.Default = func(in *Interp, env *Env, fr *Frame) (object.Value, error) { return in.eval(def, env, fr) }
-		}
-		out.Keywords = append(out.Keywords, kp)
-	}
-	actual, _ := c.params.LoadOrStore(p, out)
-	return actual.(*params)
-}
 
 // irParams returns the parameter list of the proc p, made once per
 // program.

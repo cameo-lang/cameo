@@ -338,10 +338,11 @@ func (d *Debugger) frameName(f *dbgFrame) string {
 	if strings.HasPrefix(f.name, "block in ") || f.fr == nil || f.fr.Method == nil {
 		return f.name
 	}
-	if f.fr.Method.Body == nil {
+	code, ok := f.fr.Method.Body.(*irProc)
+	if !ok {
 		return f.name
 	}
-	_, ps, _, _ := d.in.methodCode(f.fr.Method)
+	ps := d.in.code.irParams(code)
 	var args []string
 	for _, p := range ps.Positional {
 		if v, ok := f.env.lookup(p.Name); ok {
@@ -494,7 +495,7 @@ func (in *Interp) evalIn(src string, env *Env, fr *Frame) (object.Value, error) 
 		in.dbg.evaluating = true
 		defer func() { in.dbg.evaluating = false }()
 	}
-	return in.runStatements(prog.Body, env, fr)
+	return in.runProgram("(rdbg)", prog, env, fr)
 }
 
 // Quit reports whether the debugger ended the run.

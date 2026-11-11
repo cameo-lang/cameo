@@ -1,8 +1,8 @@
 package eval
 
 import (
+	"errors"
 	"math/big"
-	"sync/atomic"
 
 	"github.com/cameo-lang/cameo/src/cameopb"
 	"github.com/cameo-lang/cameo/src/ir"
@@ -10,84 +10,78 @@ import (
 	"github.com/cameo-lang/cameo/src/syntax"
 )
 
-// The IR evaluator: it runs the instructions of a proc (cameo/ir.proto) on
-// the value stack of one activation. doc/design/ir.md has the design.
-//
-// While the IR is being built, a method, a block or a top-level statement
-// runs here when the compiler compiles all of it, and on the tree walker
-// otherwise. Both evaluators run on the same scopes, frames and procs, so
-// code on one calls code on the other.
+// The evaluator: it runs the instructions of a proc (cameo/ir.proto) on
+// the value stack of one activation. A program is compiled to a unit
+// before it runs (package ir). doc/design/ir.md has the design.
 
-// TreeWalkerOnly, when set, keeps every program on the tree walker. The
-// tests set it to hold the two evaluators to the same output.
-var TreeWalkerOnly atomic.Bool
-
-// irProc is one proc of a unit: the code of a method, a block or a
-// statement.
+// irProc is one proc of a unit: the code of a method, a block, a class
+// body or the top level.
 type irProc struct {
 	unit *cameopb.Unit
 	proc *cameopb.Proc
 }
 
-// irKey names what was compiled: a node, and whether as a top-level
-// statement. A def at the top level is both a statement and, once it ran,
-// a method's body.
-type irKey struct {
-	node      syntax.Node
-	statement bool
+// program is a parsed program compiled: its unit, and the code of each
+// statement of its top level, which is proc 0 of the unit.
+type program struct {
+	unit       *cameopb.Unit
+	statements [][]*cameopb.Code
 }
 
-// irFor returns the IR of the node of key, a method, a block or a
-// top-level statement, which compile compiles on first use; nil when the
-// compiler does not compile it yet.
-func (c *code) irFor(key irKey, compile func() (*cameopb.Unit, error)) *irProc {
-	if TreeWalkerOnly.Load() {
-		return nil
+// program returns prog compiled into a unit, once per parsed program.
+func (in *Interp) program(file string, prog *syntax.Program) (*program, error) {
+	if p, ok := in.code.programs.Load(prog); ok {
+		return p.(*program), nil
 	}
-	if p, ok := c.ir.Load(key); ok {
-		return p.(*irProc)
-	}
-	var p *irProc
-	if unit, err := compile(); err == nil {
-		p = &irProc{unit: unit, proc: unit.Procs[0]}
-	}
-	actual, _ := c.ir.LoadOrStore(key, p)
-	return actual.(*irProc)
-}
-
-// IRCounts returns how many of the methods, blocks and top-level
-// statements the program has run so far were compiled to the IR, and how
-// many stayed on the tree walker.
-func (in *Interp) IRCounts() (compiled, walked int) {
-	in.code.ir.Range(func(_, p any) bool {
-		if p.(*irProc) != nil {
-			compiled++
-		} else {
-			walked++
+	unit, err := ir.Compile(file, prog)
+	if err != nil {
+		// The one node without an instruction is a splat outside a
+		// list, which the checker refuses.
+		var unsupported *ir.Unsupported
+		if errors.As(err, &unsupported) {
+			return nil, in.raise(object.CameoError, unsupported.Node.Line(), "a splat belongs in a list or an argument list")
 		}
-		return true
-	})
-	return compiled, walked
-}
-
-func (c *code) irDef(def *syntax.Def) *irProc {
-	return c.irFor(irKey{node: def}, func() (*cameopb.Unit, error) { return ir.CompileDef("", def) })
-}
-
-func (c *code) irBlock(b *syntax.Block) *irProc {
-	return c.irFor(irKey{node: b}, func() (*cameopb.Unit, error) { return ir.CompileBlock("", b) })
-}
-
-func (c *code) irStatement(n syntax.Node) *irProc {
-	return c.irFor(irKey{node: n, statement: true}, func() (*cameopb.Unit, error) { return ir.CompileStatement("", n) })
-}
-
-// evalTop evaluates a top-level statement: its IR when it has one.
-func (in *Interp) evalTop(n syntax.Node, env *Env, fr *Frame) (object.Value, error) {
-	if p := in.code.irStatement(n); p != nil {
-		return in.runList(p.unit, p.proc.GetCode(), env, fr)
+		return nil, err
 	}
-	return in.eval(n, env, fr)
+	p := &program{unit: unit}
+	if len(prog.Body) > 0 {
+		p.statements = statements(unit.Procs[0].GetCode())
+	}
+	actual, _ := in.code.programs.LoadOrStore(prog, p)
+	return actual.(*program), nil
+}
+
+// statements splits the code of a body into its statements, which a DROP
+// ends.
+func statements(code []*cameopb.Code) [][]*cameopb.Code {
+	var out [][]*cameopb.Code
+	start := 0
+	for i, c := range code {
+		if c.Op == cameopb.Op_DROP {
+			out = append(out, code[start:i])
+			start = i + 1
+		}
+	}
+	return append(out, code[start:])
+}
+
+// runProgram runs the statements of prog with env and fr and returns the
+// last value; a return among them ends them with its value.
+func (in *Interp) runProgram(file string, prog *syntax.Program, env *Env, fr *Frame) (object.Value, error) {
+	p, err := in.program(file, prog)
+	if err != nil {
+		return object.Value{}, err
+	}
+	var v object.Value = object.Nil
+	for _, statement := range p.statements {
+		if v, err = in.runList(p.unit, statement, env, fr); err != nil {
+			if c, ok := err.(*control); ok && c.kind == ctrlReturn {
+				return c.value, nil
+			}
+			return object.Value{}, err
+		}
+	}
+	return v, nil
 }
 
 // machine runs the instructions of one activation: a method call, a block
@@ -286,7 +280,7 @@ func (m *machine) exec(c *cameopb.Code) error {
 			return withLine(err, line)
 		}
 		m.push(v)
-	case cameopb.Op_DROP:
+	case cameopb.Op_DROP, cameopb.Op_POP:
 		m.pop()
 	case cameopb.Op_IF:
 		if m.pop().Truthy() {

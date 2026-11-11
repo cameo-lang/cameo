@@ -10,31 +10,7 @@ import (
 
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/protogen"
-	"github.com/cameo-lang/cameo/src/syntax"
 )
-
-// evalFieldDecl declares typed fields in a class body: each gets the
-// number its declaration gives, or the one protogen.FieldNumber derives
-// from its name, its default checked against its type, and a reader.
-func (in *Interp) evalFieldDecl(sn *syntax.FieldDecl, env *Env, fr *Frame) (object.Value, error) {
-	n := &fieldDecl{Type: sn.Type, Names: sn.Names, Number: sn.Number, Of: sn.Of, Key: sn.Key, Value: sn.Value, Values: sn.Values, line: sn.Line()}
-	if err := in.fieldTarget(n, fr); err != nil {
-		return object.Value{}, err
-	}
-	typ, err := in.fieldType(n, func() (object.Value, error) { return in.eval(sn.Ref, env, fr) }, fr)
-	if err != nil {
-		return object.Value{}, err
-	}
-	var def object.Value
-	if sn.Default != nil {
-		v, err := in.eval(sn.Default, env, fr)
-		if err != nil {
-			return object.Value{}, err
-		}
-		def = v
-	}
-	return in.declareFields(n, typ, def, fr)
-}
 
 // fieldDecl is a field declaration as its statement wrote it, but for the
 // class of a ref and the default, which are evaluated.
@@ -498,10 +474,6 @@ func article(noun string) string {
 	return "a " + noun
 }
 
-func (in *Interp) evalReserved(n *syntax.Reserved, fr *Frame) (object.Value, error) {
-	return in.reserve(reserved{Number: n.Number, Name: n.Name, line: n.Line()}, fr)
-}
-
 // reserved is what a reserved statement declares: a field number, and a
 // name or "".
 type reserved struct {
@@ -538,17 +510,6 @@ func (in *Interp) reserve(n reserved, fr *Frame) (object.Value, error) {
 		cls.ReservedNames = append(cls.ReservedNames, n.Name)
 	}
 	return object.Nil, nil
-}
-
-func (in *Interp) evalInclude(n *syntax.Include, env *Env, fr *Frame) (object.Value, error) {
-	if err := in.includeTarget(n.Extend, fr, n.Line()); err != nil {
-		return object.Value{}, err
-	}
-	v, err := in.eval(n.Module, env, fr)
-	if err != nil {
-		return object.Value{}, err
-	}
-	return in.include(v, n.Extend, fr, n.Line())
 }
 
 // topLevelInclude reports whether an include in fr is the top level's,
@@ -618,25 +579,6 @@ func (in *Interp) include(v object.Value, extend bool, fr *Frame, line int) (obj
 		}
 	}
 	return object.ClassValue(cls), nil
-}
-
-// evalWith is a copy of a value with one key replaced: what chained and
-// index assignment rewrite to.
-func (in *Interp) evalWith(n *syntax.With, env *Env, fr *Frame) (object.Value, error) {
-	target, err := in.eval(n.Target, env, fr)
-	if err != nil {
-		return object.Value{}, err
-	}
-	key, err := in.eval(n.Key, env, fr)
-	if err != nil {
-		return object.Value{}, err
-	}
-	value, err := in.eval(n.Value, env, fr)
-	if err != nil {
-		return object.Value{}, err
-	}
-	out, err := in.with(target, key, value, n.Index)
-	return out, withLine(err, n.Line())
 }
 
 // with returns target with key set to value: a field on an instance, an
@@ -808,27 +750,6 @@ func (in *Interp) inheritFields(cls, super *object.Class) error {
 		cls.Attrs[name] = v
 	}
 	return nil
-}
-
-// evalAttrDecl declares attributes of the class a body builds, each
-// holding its default, nil without one, and gives the class a reader for
-// each. A body reopening the class may declare an attribute it has again
-// with the same default, which keeps its value; a subclass may declare an
-// attribute its parent has, with a default of its own. The class must be
-// open: a declaration after the body ended is refused as a write is.
-func (in *Interp) evalAttrDecl(n *syntax.AttrDecl, env *Env, fr *Frame) (object.Value, error) {
-	if err := in.attrTarget(n.Names, fr, n.Line()); err != nil {
-		return object.Value{}, err
-	}
-	def := object.Nil
-	if n.Default != nil {
-		v, err := in.eval(n.Default, env, fr)
-		if err != nil {
-			return object.Value{}, err
-		}
-		def = v
-	}
-	return in.declareAttrs(n.Names, def, fr, n.Line())
 }
 
 // attrTarget is the error for an attribute declared outside a class body,

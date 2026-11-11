@@ -12,7 +12,6 @@ import (
 
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/protogen"
-	"github.com/cameo-lang/cameo/src/syntax"
 )
 
 // Promise is a result a script awaits: the call async started on a worker,
@@ -253,38 +252,6 @@ func (in *Interp) needCameo(qualified bool, name string, fr *Frame, line int) er
 	return in.raise(object.NoMethodError, line, "%s comes from the Cameo module: include Cameo, or call Cameo.%s", name, name)
 }
 
-// evalAsync starts recv.method(*args) on a worker and returns its promise.
-func (in *Interp) evalAsync(n *syntax.Async, env *Env, fr *Frame) (object.Value, error) {
-	if err := in.needCameo(n.Qualified, "async", fr, n.Line()); err != nil {
-		return object.Value{}, err
-	}
-	p, err := in.start(n.Recv, n.Method, n.Args, n.KwArgs, env, fr, n.Line())
-	if err != nil {
-		return object.Value{}, err
-	}
-	return object.Int(p.id), nil
-}
-
-// evalAwait waits for a promise or a list of them, or starts a call and
-// waits for it.
-func (in *Interp) evalAwait(n *syntax.Await, env *Env, fr *Frame) (object.Value, error) {
-	if err := in.needCameo(n.Qualified, "await", fr, n.Line()); err != nil {
-		return object.Value{}, err
-	}
-	if n.Promise == nil {
-		p, err := in.start(n.Recv, n.Method, n.Args, n.KwArgs, env, fr, n.Line())
-		if err != nil {
-			return object.Value{}, err
-		}
-		return in.awaitOne(p)
-	}
-	v, err := in.eval(n.Promise, env, fr)
-	if err != nil {
-		return object.Value{}, err
-	}
-	return in.await(v, n.Line())
-}
-
 // await waits for the promise v names, or for each of a list of them.
 func (in *Interp) await(v object.Value, line int) (object.Value, error) {
 	if l, ok := v.AsList(); ok {
@@ -352,15 +319,6 @@ func (in *Interp) awaitEach(ps []*Promise) (object.Value, error) {
 	return object.NewList(results...), nil
 }
 
-// evalAwaitAll waits for every promise async started in this scope that is
-// not awaited yet, and returns their results in start order.
-func (in *Interp) evalAwaitAll(n *syntax.AwaitAll, env *Env, fr *Frame) (object.Value, error) {
-	if err := in.needCameo(n.Qualified, "await", fr, n.Line()); err != nil {
-		return object.Value{}, err
-	}
-	return in.awaitAll(env)
-}
-
 // awaitAll waits for the promises of the method scope env is in that are
 // not awaited yet.
 func (in *Interp) awaitAll(env *Env) (object.Value, error) {
@@ -373,28 +331,6 @@ func (in *Interp) awaitAll(env *Env) (object.Value, error) {
 		p.mu.Unlock()
 	}
 	return in.awaitEach(pending)
-}
-
-// start serialises the receiver, the method name and the arguments, and
-// queues the call for a worker interpreter; see sched.go.
-func (in *Interp) start(recvNode, methodNode syntax.Node, argNodes []syntax.Node, kwNodes []syntax.MapEntry, env *Env, fr *Frame, line int) (*Promise, error) {
-	recv, err := in.eval(recvNode, env, fr)
-	if err != nil {
-		return nil, err
-	}
-	m, err := in.eval(methodNode, env, fr)
-	if err != nil {
-		return nil, err
-	}
-	method, err := in.asyncMethod(m, line)
-	if err != nil {
-		return nil, err
-	}
-	args, kw, err := in.evalCallArgs(argNodes, kwNodes, env, fr, line)
-	if err != nil {
-		return nil, err
-	}
-	return in.startCall(recv, method, args, kw, env, line)
 }
 
 // asyncMethod is the name of the method async is to call, which m gives.

@@ -15,27 +15,11 @@ func (in *Interp) Eval(file string, prog *syntax.Program) (object.Value, error) 
 	if in.file == "" {
 		in.file = file
 	}
-	v, err := in.runStatements(prog.Body, in.top, in.topFrame())
+	v, err := in.runProgram(file, prog, in.top, in.topFrame())
 	if c, ok := err.(*control); ok {
 		return object.Value{}, in.topLevelJump(c)
 	}
 	return v, err
-}
-
-// runStatements runs statements with env and fr and returns the last
-// value; a return among them ends them with its value.
-func (in *Interp) runStatements(body []syntax.Node, env *Env, fr *Frame) (object.Value, error) {
-	var v object.Value = object.Nil
-	for _, n := range body {
-		var err error
-		if v, err = in.evalTop(n, env, fr); err != nil {
-			if c, ok := err.(*control); ok && c.kind == ctrlReturn {
-				return c.value, nil
-			}
-			return object.Value{}, err
-		}
-	}
-	return v, nil
 }
 
 // Prelude is what a top-level snippet is parsed behind so that its bare

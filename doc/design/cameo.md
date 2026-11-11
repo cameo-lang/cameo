@@ -792,16 +792,14 @@ One Go module, `github.com/cameo-lang/cameo`, with the packages under `src/`:
 | `rx` | translates a Ruby regular expression into one for Go's regexp, and names what it uses that Go's cannot do |
 | `syntax` | wraps the parser; normalises its tree into cameo's own AST, rewrites `a.x.y =` and index assignment into copies, rejects what cameo leaves out, with line numbers; hashes class bodies so equal definitions are one class |
 | `object` | the value model: a `Value` is a tagged 24-byte struct (kind, integer payload, pointer), so an integer, a float, a boolean and nil never touch the heap and a string shares its bytes; kinds, structural equality, hashing, the class table, dynamic messages, conversion to and from `cameo.Value` and Go values |
-| `eval` | the evaluator: a tree walker over the AST; scopes, method dispatch with a per-class lookup cache, blocks, exceptions, intrinsics (`with`, `async`, `await`, the field helpers) |
+| `eval` | the evaluator: `vm.go` runs the IR a program is compiled to; scopes, method dispatch with a per-class lookup cache, blocks, exceptions, intrinsics (`with`, `async`, `await`, the field helpers) |
 | `stdlib` | the core classes: Kernel, BasicObject, Object, Numeric, Integer, Float, String, Symbol, Array, Hash, Set, Range, Time, Math, Regexp, MatchData, Enumerable, Comparable, Enumerator, Proc, Random, Encoding, `STDOUT` and `STDERR`, the exception classes; and the helpers the libraries share |
 | `lib` | Ruby's standard library as cameo builds it in: one Go package per library under `src/lib/<require path>`, registered in `lib.Libraries`; see [stdlib.md](../stdlib.md) |
 | `eval/async.go` | promises and the run's table of them, the per-scope list `await :all` reads, the worker interpreter a call runs in |
 | `eval/sched.go` | the queue of calls `async` started and the runner goroutines that take them |
 | `protogen` | descriptors from class declarations, `.proto` text, values to and from the `cameo.Value` envelope |
 | `cameopb` | cameo's own messages: the `.proto` files under `src/cameopb/cameo` and the Go code `make proto` generates from them, committed |
-| `ir` | the intermediate representation, whose messages are `cameo/ir.proto`: the compiler from the AST, and the listing of a unit; see [ir.md](ir.md) |
-| `eval/vm.go` | the IR evaluator, which runs what compiles while the tree walker runs the rest |
-| `aot` | `cameo build`: Go source for the top-level methods it can type, which the interpreter calls in place of their bodies; see [aot.md](aot.md) |
+| `ir` | the intermediate representation, whose messages are `cameo/ir.proto`: the compiler from the AST, and the listing of a unit; see [ir.md](ir.md) || `aot` | `cameo build`: Go source for the top-level methods it can type, which the interpreter calls in place of their bodies; see [aot.md](aot.md) |
 | `irb` | the read-eval-print loop of `cameo irb`, and the line editor it runs on a terminal; see [debugger.md](../debugger.md) |
 | `buildinfo` | the version, commit and date the binary was built from, for `cameo version` and `RUBY_ENGINE_VERSION` |
 | `cmd/cameo` | the binary: `cameo script.cameo`, `check`, `proto`, `build`, `run`, `debug`, `irb`, `resume` and `inspect` (see [pause.md](pause.md)), `version` |
