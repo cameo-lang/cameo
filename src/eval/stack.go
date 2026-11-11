@@ -148,12 +148,14 @@ func (in *Interp) run(floor int) (object.Value, error) {
 			continue
 		}
 		in.acts = in.acts[:len(in.acts)-1]
+		site := m.site
+		in.release(m)
 		if len(in.acts) == floor {
 			return v, err
 		}
 		if err != nil {
-			if m.site != nil {
-				err = withLine(err, int(m.site.Line))
+			if site != nil {
+				err = withLine(err, int(site.Line))
 			}
 			continue
 		}
@@ -346,7 +348,8 @@ func (in *Interp) methodAct(m *object.Method, recv object.Value, args []object.V
 			fr.BuildingExc = exc
 		}
 	}
-	act := &machine{in: in, unit: code.unit, env: env, fr: fr, kind: actMethod}
+	act := in.machine()
+	act.unit, act.env, act.fr, act.kind = code.unit, env, fr, actMethod
 	if err := in.bindParams(in.code.irParams(code), args, kw, block, env, fr, true, m.Name, line); err != nil {
 		_, err = in.leave(act, object.Value{}, err)
 		return nil, err
@@ -365,15 +368,18 @@ func (in *Interp) blockAct(p *Proc, args []object.Value, kw *object.Map, inner o
 	if err := in.stopped(); err != nil {
 		return nil, err
 	}
-	env := NewEnv(p.Env)
+	var env *Env
 	fr := p.Frame
 	if p.Strict {
 		// A lambda's call is a frame of its own, where its return stops:
 		// it starts and ends with the call, whatever became of the
 		// method the lambda was written in.
-		copy := *p.Frame
-		copy.Lambda, copy.ended = true, false
-		fr = &copy
+		bound := &activation{frame: *p.Frame}
+		bound.frame.Lambda, bound.frame.ended = true, false
+		bound.env.parent = p.Env
+		fr, env = &bound.frame, &bound.env
+	} else {
+		env = NewEnv(p.Env)
 	}
 	if err := in.bindParams(in.code.irParams(p.IR), args, kw, inner, env, fr, p.Strict, "block", p.line()); err != nil {
 		if p.Strict {
@@ -381,7 +387,8 @@ func (in *Interp) blockAct(p *Proc, args []object.Value, kw *object.Map, inner o
 		}
 		return nil, err
 	}
-	act := &machine{in: in, unit: p.IR.unit, env: env, fr: fr, kind: actBlock, proc: p}
+	act := in.machine()
+	act.unit, act.env, act.fr, act.kind, act.proc = p.IR.unit, env, fr, actBlock, p
 	act.cursors = append(act.cursors, cursor{code: p.IR.proc.GetCode(), statement: true})
 	if in.dbg != nil {
 		in.dbg.enter(blockName(in.dbg, p.Frame), env, fr)
