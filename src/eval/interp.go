@@ -53,6 +53,10 @@ type Interp struct {
 	paramsBy   map[*cameopb.Unit][]*params
 	paramsUnit *cameopb.Unit
 	paramsList []*params
+	// flatBy and flatList are the flat code of the procs the interpreter
+	// called, kept as the parameter lists are (flatOfProc).
+	flatBy   map[*cameopb.Unit][]lowered
+	flatList []lowered
 	// symsUnit and symsList are the unit whose names were asked for as
 	// Syms last, and those Syms (symsOf).
 	symsUnit *cameopb.Unit

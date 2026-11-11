@@ -23,6 +23,9 @@ type code struct {
 	units sync.Map // string -> *cameopb.Unit
 	// params holds the parameter lists bindParams reads, by proc.
 	params sync.Map // *cameopb.Proc -> *params
+	// flat holds the flat code of each list that was lowered, by its
+	// first instruction; nil for a list that runs from cursors.
+	flat sync.Map // *cameopb.Code -> *flatCode
 	// syms holds the names of each unit as Syms (symsOf).
 	syms sync.Map // *cameopb.Unit -> *unitNames
 	// uses holds what each proc needs of its binding to travel; see

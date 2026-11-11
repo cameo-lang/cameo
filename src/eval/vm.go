@@ -105,6 +105,16 @@ type machine struct {
 	fr      *Frame
 	stack   []object.Value
 	cursors []cursor
+	// flat is the flat code the activation runs, nil when it runs from
+	// cursors; pc is its next instruction, bases the height of the value
+	// stack at the start of each loop it is in, and flatBody whether its
+	// list is one of statements (flat.go). again is set when the block
+	// of the activation is to run once more, for a redo.
+	flat     *flatCode
+	pc       int
+	bases    []int
+	flatBody bool
+	again    bool
 	// kind says what the activation is, and proc is the block of an
 	// actBlock; they decide what happens when it ends (stack.go).
 	kind actKind
@@ -145,8 +155,18 @@ func (in *Interp) runList(unit *cameopb.Unit, code []*cameopb.Code, env *Env, fr
 func (in *Interp) runCode(unit *cameopb.Unit, code []*cameopb.Code, env *Env, fr *Frame, body bool) (object.Value, error) {
 	m := in.machine()
 	m.unit, m.env, m.fr = unit, env, fr
-	m.cursors = append(m.cursors, cursor{code: code, statement: body})
+	m.startAt(in.flatOf(unit, code, body), code, body)
 	return in.start(m)
+}
+
+// startAt puts the activation at the start of code: of its flat code when
+// it has some and no debugger follows the run, of a cursor otherwise.
+func (m *machine) startAt(flat *flatCode, code []*cameopb.Code, body bool) {
+	if flat != nil && m.in.dbg == nil {
+		m.flat, m.pc, m.flatBody = flat, 0, body
+		return
+	}
+	m.cursors = append(m.cursors, cursor{code: code, statement: body})
 }
 
 func (m *machine) push(v object.Value) { m.stack = append(m.stack, v) }
