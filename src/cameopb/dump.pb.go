@@ -78,7 +78,7 @@ func (x Dump_Activation_Kind) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Dump_Activation_Kind.Descriptor instead.
 func (Dump_Activation_Kind) EnumDescriptor() ([]byte, []int) {
-	return file_cameo_dump_proto_rawDescGZIP(), []int{0, 3, 0}
+	return file_cameo_dump_proto_rawDescGZIP(), []int{0, 5, 0}
 }
 
 type Dump_Completion_Kind int32
@@ -136,7 +136,7 @@ func (x Dump_Completion_Kind) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Dump_Completion_Kind.Descriptor instead.
 func (Dump_Completion_Kind) EnumDescriptor() ([]byte, []int) {
-	return file_cameo_dump_proto_rawDescGZIP(), []int{0, 7, 0}
+	return file_cameo_dump_proto_rawDescGZIP(), []int{0, 9, 0}
 }
 
 // Dump is a paused run: the script, where it paused, and what its top
@@ -188,9 +188,15 @@ type Dump struct {
 	// two statements. scopes and frames are what the activations run in;
 	// an activation, a scope and a closure refer to one by its index, plus
 	// one where zero says none.
-	Stack         []*Dump_Activation `protobuf:"bytes,17,rep,name=stack,proto3" json:"stack,omitempty"`
-	Scopes        []*Dump_Scope      `protobuf:"bytes,18,rep,name=scopes,proto3" json:"scopes,omitempty"`
-	Frames        []*Dump_Frame      `protobuf:"bytes,19,rep,name=frames,proto3" json:"frames,omitempty"`
+	Stack  []*Dump_Activation `protobuf:"bytes,17,rep,name=stack,proto3" json:"stack,omitempty"`
+	Scopes []*Dump_Scope      `protobuf:"bytes,18,rep,name=scopes,proto3" json:"scopes,omitempty"`
+	Frames []*Dump_Frame      `protobuf:"bytes,19,rep,name=frames,proto3" json:"frames,omitempty"`
+	// workers are the calls async started that were running when the run
+	// paused, each with the stack of the interpreter that ran it; calls the
+	// ones no worker had taken. The promise of each is in promises,
+	// pending.
+	Workers       []*Dump_Worker `protobuf:"bytes,20,rep,name=workers,proto3" json:"workers,omitempty"`
+	Calls         []*Dump_Call   `protobuf:"bytes,21,rep,name=calls,proto3" json:"calls,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -354,6 +360,20 @@ func (x *Dump) GetScopes() []*Dump_Scope {
 func (x *Dump) GetFrames() []*Dump_Frame {
 	if x != nil {
 		return x.Frames
+	}
+	return nil
+}
+
+func (x *Dump) GetWorkers() []*Dump_Worker {
+	if x != nil {
+		return x.Workers
+	}
+	return nil
+}
+
+func (x *Dump) GetCalls() []*Dump_Call {
+	if x != nil {
+		return x.Calls
 	}
 	return nil
 }
@@ -602,6 +622,163 @@ func (x *Dump_Failure) GetLine() int32 {
 	return 0
 }
 
+// Worker is a call async started, stopped where it was: the
+// activations of its interpreter, outermost first, with the scopes
+// and frames they run in, which their indexes are into.
+type Dump_Worker struct {
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Promise int64                  `protobuf:"varint,1,opt,name=promise,proto3" json:"promise,omitempty"`
+	Stack   []*Dump_Activation     `protobuf:"bytes,2,rep,name=stack,proto3" json:"stack,omitempty"`
+	Scopes  []*Dump_Scope          `protobuf:"bytes,3,rep,name=scopes,proto3" json:"scopes,omitempty"`
+	Frames  []*Dump_Frame          `protobuf:"bytes,4,rep,name=frames,proto3" json:"frames,omitempty"`
+	// rand is the state of the worker's random number generator.
+	Rand          []byte `protobuf:"bytes,5,opt,name=rand,proto3" json:"rand,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Dump_Worker) Reset() {
+	*x = Dump_Worker{}
+	mi := &file_cameo_dump_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Dump_Worker) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Dump_Worker) ProtoMessage() {}
+
+func (x *Dump_Worker) ProtoReflect() protoreflect.Message {
+	mi := &file_cameo_dump_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Dump_Worker.ProtoReflect.Descriptor instead.
+func (*Dump_Worker) Descriptor() ([]byte, []int) {
+	return file_cameo_dump_proto_rawDescGZIP(), []int{0, 3}
+}
+
+func (x *Dump_Worker) GetPromise() int64 {
+	if x != nil {
+		return x.Promise
+	}
+	return 0
+}
+
+func (x *Dump_Worker) GetStack() []*Dump_Activation {
+	if x != nil {
+		return x.Stack
+	}
+	return nil
+}
+
+func (x *Dump_Worker) GetScopes() []*Dump_Scope {
+	if x != nil {
+		return x.Scopes
+	}
+	return nil
+}
+
+func (x *Dump_Worker) GetFrames() []*Dump_Frame {
+	if x != nil {
+		return x.Frames
+	}
+	return nil
+}
+
+func (x *Dump_Worker) GetRand() []byte {
+	if x != nil {
+		return x.Rand
+	}
+	return nil
+}
+
+// Call is a call async started that no worker had taken.
+type Dump_Call struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Promise       int64                  `protobuf:"varint,1,opt,name=promise,proto3" json:"promise,omitempty"`
+	Recv          *Dump_Binding          `protobuf:"bytes,2,opt,name=recv,proto3" json:"recv,omitempty"`
+	Method        string                 `protobuf:"bytes,3,opt,name=method,proto3" json:"method,omitempty"`
+	Args          []*Dump_Binding        `protobuf:"bytes,4,rep,name=args,proto3" json:"args,omitempty"`
+	Kw            *Value                 `protobuf:"bytes,5,opt,name=kw,proto3" json:"kw,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Dump_Call) Reset() {
+	*x = Dump_Call{}
+	mi := &file_cameo_dump_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Dump_Call) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Dump_Call) ProtoMessage() {}
+
+func (x *Dump_Call) ProtoReflect() protoreflect.Message {
+	mi := &file_cameo_dump_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Dump_Call.ProtoReflect.Descriptor instead.
+func (*Dump_Call) Descriptor() ([]byte, []int) {
+	return file_cameo_dump_proto_rawDescGZIP(), []int{0, 4}
+}
+
+func (x *Dump_Call) GetPromise() int64 {
+	if x != nil {
+		return x.Promise
+	}
+	return 0
+}
+
+func (x *Dump_Call) GetRecv() *Dump_Binding {
+	if x != nil {
+		return x.Recv
+	}
+	return nil
+}
+
+func (x *Dump_Call) GetMethod() string {
+	if x != nil {
+		return x.Method
+	}
+	return ""
+}
+
+func (x *Dump_Call) GetArgs() []*Dump_Binding {
+	if x != nil {
+		return x.Args
+	}
+	return nil
+}
+
+func (x *Dump_Call) GetKw() *Value {
+	if x != nil {
+		return x.Kw
+	}
+	return nil
+}
+
 // Activation is one running proc: where it is, and what it holds.
 type Dump_Activation struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -638,7 +815,7 @@ type Dump_Activation struct {
 
 func (x *Dump_Activation) Reset() {
 	*x = Dump_Activation{}
-	mi := &file_cameo_dump_proto_msgTypes[4]
+	mi := &file_cameo_dump_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -650,7 +827,7 @@ func (x *Dump_Activation) String() string {
 func (*Dump_Activation) ProtoMessage() {}
 
 func (x *Dump_Activation) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_dump_proto_msgTypes[4]
+	mi := &file_cameo_dump_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -663,7 +840,7 @@ func (x *Dump_Activation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Dump_Activation.ProtoReflect.Descriptor instead.
 func (*Dump_Activation) Descriptor() ([]byte, []int) {
-	return file_cameo_dump_proto_rawDescGZIP(), []int{0, 3}
+	return file_cameo_dump_proto_rawDescGZIP(), []int{0, 5}
 }
 
 func (x *Dump_Activation) GetKind() Dump_Activation_Kind {
@@ -769,7 +946,7 @@ type Dump_Awaiting struct {
 
 func (x *Dump_Awaiting) Reset() {
 	*x = Dump_Awaiting{}
-	mi := &file_cameo_dump_proto_msgTypes[5]
+	mi := &file_cameo_dump_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -781,7 +958,7 @@ func (x *Dump_Awaiting) String() string {
 func (*Dump_Awaiting) ProtoMessage() {}
 
 func (x *Dump_Awaiting) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_dump_proto_msgTypes[5]
+	mi := &file_cameo_dump_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -794,7 +971,7 @@ func (x *Dump_Awaiting) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Dump_Awaiting.ProtoReflect.Descriptor instead.
 func (*Dump_Awaiting) Descriptor() ([]byte, []int) {
-	return file_cameo_dump_proto_rawDescGZIP(), []int{0, 4}
+	return file_cameo_dump_proto_rawDescGZIP(), []int{0, 6}
 }
 
 func (x *Dump_Awaiting) GetPromises() []int64 {
@@ -853,7 +1030,7 @@ type Dump_Builtin struct {
 
 func (x *Dump_Builtin) Reset() {
 	*x = Dump_Builtin{}
-	mi := &file_cameo_dump_proto_msgTypes[6]
+	mi := &file_cameo_dump_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -865,7 +1042,7 @@ func (x *Dump_Builtin) String() string {
 func (*Dump_Builtin) ProtoMessage() {}
 
 func (x *Dump_Builtin) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_dump_proto_msgTypes[6]
+	mi := &file_cameo_dump_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -878,7 +1055,7 @@ func (x *Dump_Builtin) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Dump_Builtin.ProtoReflect.Descriptor instead.
 func (*Dump_Builtin) Descriptor() ([]byte, []int) {
-	return file_cameo_dump_proto_rawDescGZIP(), []int{0, 5}
+	return file_cameo_dump_proto_rawDescGZIP(), []int{0, 7}
 }
 
 func (x *Dump_Builtin) GetMethod() *Binding_Method {
@@ -957,7 +1134,7 @@ type Dump_Cursor struct {
 
 func (x *Dump_Cursor) Reset() {
 	*x = Dump_Cursor{}
-	mi := &file_cameo_dump_proto_msgTypes[7]
+	mi := &file_cameo_dump_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -969,7 +1146,7 @@ func (x *Dump_Cursor) String() string {
 func (*Dump_Cursor) ProtoMessage() {}
 
 func (x *Dump_Cursor) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_dump_proto_msgTypes[7]
+	mi := &file_cameo_dump_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -982,7 +1159,7 @@ func (x *Dump_Cursor) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Dump_Cursor.ProtoReflect.Descriptor instead.
 func (*Dump_Cursor) Descriptor() ([]byte, []int) {
-	return file_cameo_dump_proto_rawDescGZIP(), []int{0, 6}
+	return file_cameo_dump_proto_rawDescGZIP(), []int{0, 8}
 }
 
 func (x *Dump_Cursor) GetNext() uint32 {
@@ -1052,7 +1229,7 @@ type Dump_Completion struct {
 
 func (x *Dump_Completion) Reset() {
 	*x = Dump_Completion{}
-	mi := &file_cameo_dump_proto_msgTypes[8]
+	mi := &file_cameo_dump_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1064,7 +1241,7 @@ func (x *Dump_Completion) String() string {
 func (*Dump_Completion) ProtoMessage() {}
 
 func (x *Dump_Completion) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_dump_proto_msgTypes[8]
+	mi := &file_cameo_dump_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1077,7 +1254,7 @@ func (x *Dump_Completion) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Dump_Completion.ProtoReflect.Descriptor instead.
 func (*Dump_Completion) Descriptor() ([]byte, []int) {
-	return file_cameo_dump_proto_rawDescGZIP(), []int{0, 7}
+	return file_cameo_dump_proto_rawDescGZIP(), []int{0, 9}
 }
 
 func (x *Dump_Completion) GetKind() Dump_Completion_Kind {
@@ -1137,7 +1314,7 @@ type Dump_Scope struct {
 
 func (x *Dump_Scope) Reset() {
 	*x = Dump_Scope{}
-	mi := &file_cameo_dump_proto_msgTypes[9]
+	mi := &file_cameo_dump_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1149,7 +1326,7 @@ func (x *Dump_Scope) String() string {
 func (*Dump_Scope) ProtoMessage() {}
 
 func (x *Dump_Scope) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_dump_proto_msgTypes[9]
+	mi := &file_cameo_dump_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1162,7 +1339,7 @@ func (x *Dump_Scope) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Dump_Scope.ProtoReflect.Descriptor instead.
 func (*Dump_Scope) Descriptor() ([]byte, []int) {
-	return file_cameo_dump_proto_rawDescGZIP(), []int{0, 8}
+	return file_cameo_dump_proto_rawDescGZIP(), []int{0, 10}
 }
 
 func (x *Dump_Scope) GetTop() bool {
@@ -1241,7 +1418,7 @@ type Dump_Frame struct {
 
 func (x *Dump_Frame) Reset() {
 	*x = Dump_Frame{}
-	mi := &file_cameo_dump_proto_msgTypes[10]
+	mi := &file_cameo_dump_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1253,7 +1430,7 @@ func (x *Dump_Frame) String() string {
 func (*Dump_Frame) ProtoMessage() {}
 
 func (x *Dump_Frame) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_dump_proto_msgTypes[10]
+	mi := &file_cameo_dump_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1266,7 +1443,7 @@ func (x *Dump_Frame) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Dump_Frame.ProtoReflect.Descriptor instead.
 func (*Dump_Frame) Descriptor() ([]byte, []int) {
-	return file_cameo_dump_proto_rawDescGZIP(), []int{0, 9}
+	return file_cameo_dump_proto_rawDescGZIP(), []int{0, 11}
 }
 
 func (x *Dump_Frame) GetTop() bool {
@@ -1404,7 +1581,7 @@ type Dump_Class struct {
 
 func (x *Dump_Class) Reset() {
 	*x = Dump_Class{}
-	mi := &file_cameo_dump_proto_msgTypes[11]
+	mi := &file_cameo_dump_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1416,7 +1593,7 @@ func (x *Dump_Class) String() string {
 func (*Dump_Class) ProtoMessage() {}
 
 func (x *Dump_Class) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_dump_proto_msgTypes[11]
+	mi := &file_cameo_dump_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1429,7 +1606,7 @@ func (x *Dump_Class) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Dump_Class.ProtoReflect.Descriptor instead.
 func (*Dump_Class) Descriptor() ([]byte, []int) {
-	return file_cameo_dump_proto_rawDescGZIP(), []int{0, 10}
+	return file_cameo_dump_proto_rawDescGZIP(), []int{0, 12}
 }
 
 func (x *Dump_Class) GetId() string {
@@ -1552,7 +1729,7 @@ type Dump_Field struct {
 
 func (x *Dump_Field) Reset() {
 	*x = Dump_Field{}
-	mi := &file_cameo_dump_proto_msgTypes[12]
+	mi := &file_cameo_dump_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1564,7 +1741,7 @@ func (x *Dump_Field) String() string {
 func (*Dump_Field) ProtoMessage() {}
 
 func (x *Dump_Field) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_dump_proto_msgTypes[12]
+	mi := &file_cameo_dump_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1577,7 +1754,7 @@ func (x *Dump_Field) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Dump_Field.ProtoReflect.Descriptor instead.
 func (*Dump_Field) Descriptor() ([]byte, []int) {
-	return file_cameo_dump_proto_rawDescGZIP(), []int{0, 11}
+	return file_cameo_dump_proto_rawDescGZIP(), []int{0, 13}
 }
 
 func (x *Dump_Field) GetName() string {
@@ -1634,7 +1811,7 @@ type Dump_FieldType struct {
 
 func (x *Dump_FieldType) Reset() {
 	*x = Dump_FieldType{}
-	mi := &file_cameo_dump_proto_msgTypes[13]
+	mi := &file_cameo_dump_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1646,7 +1823,7 @@ func (x *Dump_FieldType) String() string {
 func (*Dump_FieldType) ProtoMessage() {}
 
 func (x *Dump_FieldType) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_dump_proto_msgTypes[13]
+	mi := &file_cameo_dump_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1659,7 +1836,7 @@ func (x *Dump_FieldType) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Dump_FieldType.ProtoReflect.Descriptor instead.
 func (*Dump_FieldType) Descriptor() ([]byte, []int) {
-	return file_cameo_dump_proto_rawDescGZIP(), []int{0, 12}
+	return file_cameo_dump_proto_rawDescGZIP(), []int{0, 14}
 }
 
 func (x *Dump_FieldType) GetKind() string {
@@ -1730,7 +1907,7 @@ type Dump_Method struct {
 
 func (x *Dump_Method) Reset() {
 	*x = Dump_Method{}
-	mi := &file_cameo_dump_proto_msgTypes[14]
+	mi := &file_cameo_dump_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1742,7 +1919,7 @@ func (x *Dump_Method) String() string {
 func (*Dump_Method) ProtoMessage() {}
 
 func (x *Dump_Method) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_dump_proto_msgTypes[14]
+	mi := &file_cameo_dump_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1755,7 +1932,7 @@ func (x *Dump_Method) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Dump_Method.ProtoReflect.Descriptor instead.
 func (*Dump_Method) Descriptor() ([]byte, []int) {
-	return file_cameo_dump_proto_rawDescGZIP(), []int{0, 13}
+	return file_cameo_dump_proto_rawDescGZIP(), []int{0, 15}
 }
 
 func (x *Dump_Method) GetName() string {
@@ -1818,7 +1995,7 @@ var File_cameo_dump_proto protoreflect.FileDescriptor
 
 const file_cameo_dump_proto_rawDesc = "" +
 	"\n" +
-	"\x10cameo/dump.proto\x12\x05cameo\x1a\x0ecameo/ir.proto\x1a\x11cameo/value.proto\"\xc4 \n" +
+	"\x10cameo/dump.proto\x12\x05cameo\x1a\x0ecameo/ir.proto\x1a\x11cameo/value.proto\"\x82$\n" +
 	"\x04Dump\x12\x12\n" +
 	"\x04file\x18\x01 \x01(\tR\x04file\x12\x16\n" +
 	"\x06source\x18\x02 \x01(\tR\x06source\x12\x12\n" +
@@ -1839,7 +2016,9 @@ const file_cameo_dump_proto_rawDesc = "" +
 	"\amissing\x18\x10 \x03(\tR\amissing\x12,\n" +
 	"\x05stack\x18\x11 \x03(\v2\x16.cameo.Dump.ActivationR\x05stack\x12)\n" +
 	"\x06scopes\x18\x12 \x03(\v2\x11.cameo.Dump.ScopeR\x06scopes\x12)\n" +
-	"\x06frames\x18\x13 \x03(\v2\x11.cameo.Dump.FrameR\x06frames\x1a\xa1\x01\n" +
+	"\x06frames\x18\x13 \x03(\v2\x11.cameo.Dump.FrameR\x06frames\x12,\n" +
+	"\aworkers\x18\x14 \x03(\v2\x12.cameo.Dump.WorkerR\aworkers\x12&\n" +
+	"\x05calls\x18\x15 \x03(\v2\x10.cameo.Dump.CallR\x05calls\x1a\xa1\x01\n" +
 	"\aBinding\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\"\n" +
 	"\x05value\x18\x02 \x01(\v2\f.cameo.ValueR\x05value\x12\x14\n" +
@@ -1857,7 +2036,19 @@ const file_cameo_dump_proto_rawDesc = "" +
 	"\aFailure\x12\x14\n" +
 	"\x05class\x18\x01 \x01(\tR\x05class\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12\x12\n" +
-	"\x04line\x18\x03 \x01(\x05R\x04line\x1a\xf2\x03\n" +
+	"\x04line\x18\x03 \x01(\x05R\x04line\x1a\xba\x01\n" +
+	"\x06Worker\x12\x18\n" +
+	"\apromise\x18\x01 \x01(\x03R\apromise\x12,\n" +
+	"\x05stack\x18\x02 \x03(\v2\x16.cameo.Dump.ActivationR\x05stack\x12)\n" +
+	"\x06scopes\x18\x03 \x03(\v2\x11.cameo.Dump.ScopeR\x06scopes\x12)\n" +
+	"\x06frames\x18\x04 \x03(\v2\x11.cameo.Dump.FrameR\x06frames\x12\x12\n" +
+	"\x04rand\x18\x05 \x01(\fR\x04rand\x1a\xa8\x01\n" +
+	"\x04Call\x12\x18\n" +
+	"\apromise\x18\x01 \x01(\x03R\apromise\x12'\n" +
+	"\x04recv\x18\x02 \x01(\v2\x13.cameo.Dump.BindingR\x04recv\x12\x16\n" +
+	"\x06method\x18\x03 \x01(\tR\x06method\x12'\n" +
+	"\x04args\x18\x04 \x03(\v2\x13.cameo.Dump.BindingR\x04args\x12\x1c\n" +
+	"\x02kw\x18\x05 \x01(\v2\f.cameo.ValueR\x02kw\x1a\xf2\x03\n" +
 	"\n" +
 	"Activation\x12/\n" +
 	"\x04kind\x18\x01 \x01(\x0e2\x1b.cameo.Dump.Activation.KindR\x04kind\x12\x12\n" +
@@ -1993,7 +2184,7 @@ func file_cameo_dump_proto_rawDescGZIP() []byte {
 }
 
 var file_cameo_dump_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_cameo_dump_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_cameo_dump_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_cameo_dump_proto_goTypes = []any{
 	(Dump_Activation_Kind)(0), // 0: cameo.Dump.Activation.Kind
 	(Dump_Completion_Kind)(0), // 1: cameo.Dump.Completion.Kind
@@ -2001,75 +2192,85 @@ var file_cameo_dump_proto_goTypes = []any{
 	(*Dump_Binding)(nil),      // 3: cameo.Dump.Binding
 	(*Dump_Promise)(nil),      // 4: cameo.Dump.Promise
 	(*Dump_Failure)(nil),      // 5: cameo.Dump.Failure
-	(*Dump_Activation)(nil),   // 6: cameo.Dump.Activation
-	(*Dump_Awaiting)(nil),     // 7: cameo.Dump.Awaiting
-	(*Dump_Builtin)(nil),      // 8: cameo.Dump.Builtin
-	(*Dump_Cursor)(nil),       // 9: cameo.Dump.Cursor
-	(*Dump_Completion)(nil),   // 10: cameo.Dump.Completion
-	(*Dump_Scope)(nil),        // 11: cameo.Dump.Scope
-	(*Dump_Frame)(nil),        // 12: cameo.Dump.Frame
-	(*Dump_Class)(nil),        // 13: cameo.Dump.Class
-	(*Dump_Field)(nil),        // 14: cameo.Dump.Field
-	(*Dump_FieldType)(nil),    // 15: cameo.Dump.FieldType
-	(*Dump_Method)(nil),       // 16: cameo.Dump.Method
-	(*Unit)(nil),              // 17: cameo.Unit
-	(*Value)(nil),             // 18: cameo.Value
-	(*Binding_Method)(nil),    // 19: cameo.Binding.Method
+	(*Dump_Worker)(nil),       // 6: cameo.Dump.Worker
+	(*Dump_Call)(nil),         // 7: cameo.Dump.Call
+	(*Dump_Activation)(nil),   // 8: cameo.Dump.Activation
+	(*Dump_Awaiting)(nil),     // 9: cameo.Dump.Awaiting
+	(*Dump_Builtin)(nil),      // 10: cameo.Dump.Builtin
+	(*Dump_Cursor)(nil),       // 11: cameo.Dump.Cursor
+	(*Dump_Completion)(nil),   // 12: cameo.Dump.Completion
+	(*Dump_Scope)(nil),        // 13: cameo.Dump.Scope
+	(*Dump_Frame)(nil),        // 14: cameo.Dump.Frame
+	(*Dump_Class)(nil),        // 15: cameo.Dump.Class
+	(*Dump_Field)(nil),        // 16: cameo.Dump.Field
+	(*Dump_FieldType)(nil),    // 17: cameo.Dump.FieldType
+	(*Dump_Method)(nil),       // 18: cameo.Dump.Method
+	(*Unit)(nil),              // 19: cameo.Unit
+	(*Value)(nil),             // 20: cameo.Value
+	(*Binding_Method)(nil),    // 21: cameo.Binding.Method
 }
 var file_cameo_dump_proto_depIdxs = []int32{
 	3,  // 0: cameo.Dump.variables:type_name -> cameo.Dump.Binding
 	3,  // 1: cameo.Dump.constants:type_name -> cameo.Dump.Binding
 	4,  // 2: cameo.Dump.promises:type_name -> cameo.Dump.Promise
 	3,  // 3: cameo.Dump.at_exit:type_name -> cameo.Dump.Binding
-	17, // 4: cameo.Dump.units:type_name -> cameo.Unit
-	13, // 5: cameo.Dump.classes:type_name -> cameo.Dump.Class
-	13, // 6: cameo.Dump.top:type_name -> cameo.Dump.Class
-	6,  // 7: cameo.Dump.stack:type_name -> cameo.Dump.Activation
-	11, // 8: cameo.Dump.scopes:type_name -> cameo.Dump.Scope
-	12, // 9: cameo.Dump.frames:type_name -> cameo.Dump.Frame
-	18, // 10: cameo.Dump.Binding.value:type_name -> cameo.Value
-	18, // 11: cameo.Dump.Promise.value:type_name -> cameo.Value
-	5,  // 12: cameo.Dump.Promise.failure:type_name -> cameo.Dump.Failure
-	0,  // 13: cameo.Dump.Activation.kind:type_name -> cameo.Dump.Activation.Kind
-	9,  // 14: cameo.Dump.Activation.cursors:type_name -> cameo.Dump.Cursor
-	3,  // 15: cameo.Dump.Activation.stack:type_name -> cameo.Dump.Binding
-	8,  // 16: cameo.Dump.Activation.builtin:type_name -> cameo.Dump.Builtin
-	3,  // 17: cameo.Dump.Activation.block:type_name -> cameo.Dump.Binding
-	3,  // 18: cameo.Dump.Activation.result:type_name -> cameo.Dump.Binding
-	7,  // 19: cameo.Dump.Activation.awaiting:type_name -> cameo.Dump.Awaiting
-	3,  // 20: cameo.Dump.Awaiting.results:type_name -> cameo.Dump.Binding
-	18, // 21: cameo.Dump.Awaiting.failed:type_name -> cameo.Value
-	19, // 22: cameo.Dump.Builtin.method:type_name -> cameo.Binding.Method
-	3,  // 23: cameo.Dump.Builtin.self:type_name -> cameo.Dump.Binding
-	3,  // 24: cameo.Dump.Builtin.args:type_name -> cameo.Dump.Binding
-	18, // 25: cameo.Dump.Builtin.kw:type_name -> cameo.Value
-	3,  // 26: cameo.Dump.Builtin.block:type_name -> cameo.Dump.Binding
-	3,  // 27: cameo.Dump.Builtin.state:type_name -> cameo.Dump.Binding
-	18, // 28: cameo.Dump.Cursor.rescuing:type_name -> cameo.Value
-	10, // 29: cameo.Dump.Cursor.pending:type_name -> cameo.Dump.Completion
-	1,  // 30: cameo.Dump.Completion.kind:type_name -> cameo.Dump.Completion.Kind
-	3,  // 31: cameo.Dump.Completion.value:type_name -> cameo.Dump.Binding
-	18, // 32: cameo.Dump.Completion.exception:type_name -> cameo.Value
-	3,  // 33: cameo.Dump.Scope.locals:type_name -> cameo.Dump.Binding
-	3,  // 34: cameo.Dump.Frame.self:type_name -> cameo.Dump.Binding
-	19, // 35: cameo.Dump.Frame.method:type_name -> cameo.Binding.Method
-	3,  // 36: cameo.Dump.Frame.args:type_name -> cameo.Dump.Binding
-	18, // 37: cameo.Dump.Frame.kw:type_name -> cameo.Value
-	3,  // 38: cameo.Dump.Frame.block:type_name -> cameo.Dump.Binding
-	18, // 39: cameo.Dump.Frame.building:type_name -> cameo.Value
-	14, // 40: cameo.Dump.Class.fields:type_name -> cameo.Dump.Field
-	16, // 41: cameo.Dump.Class.methods:type_name -> cameo.Dump.Method
-	3,  // 42: cameo.Dump.Class.consts:type_name -> cameo.Dump.Binding
-	3,  // 43: cameo.Dump.Class.attrs:type_name -> cameo.Dump.Binding
-	3,  // 44: cameo.Dump.Class.attr_defaults:type_name -> cameo.Dump.Binding
-	15, // 45: cameo.Dump.Field.type:type_name -> cameo.Dump.FieldType
-	18, // 46: cameo.Dump.Field.default:type_name -> cameo.Value
-	15, // 47: cameo.Dump.FieldType.elem:type_name -> cameo.Dump.FieldType
-	48, // [48:48] is the sub-list for method output_type
-	48, // [48:48] is the sub-list for method input_type
-	48, // [48:48] is the sub-list for extension type_name
-	48, // [48:48] is the sub-list for extension extendee
-	0,  // [0:48] is the sub-list for field type_name
+	19, // 4: cameo.Dump.units:type_name -> cameo.Unit
+	15, // 5: cameo.Dump.classes:type_name -> cameo.Dump.Class
+	15, // 6: cameo.Dump.top:type_name -> cameo.Dump.Class
+	8,  // 7: cameo.Dump.stack:type_name -> cameo.Dump.Activation
+	13, // 8: cameo.Dump.scopes:type_name -> cameo.Dump.Scope
+	14, // 9: cameo.Dump.frames:type_name -> cameo.Dump.Frame
+	6,  // 10: cameo.Dump.workers:type_name -> cameo.Dump.Worker
+	7,  // 11: cameo.Dump.calls:type_name -> cameo.Dump.Call
+	20, // 12: cameo.Dump.Binding.value:type_name -> cameo.Value
+	20, // 13: cameo.Dump.Promise.value:type_name -> cameo.Value
+	5,  // 14: cameo.Dump.Promise.failure:type_name -> cameo.Dump.Failure
+	8,  // 15: cameo.Dump.Worker.stack:type_name -> cameo.Dump.Activation
+	13, // 16: cameo.Dump.Worker.scopes:type_name -> cameo.Dump.Scope
+	14, // 17: cameo.Dump.Worker.frames:type_name -> cameo.Dump.Frame
+	3,  // 18: cameo.Dump.Call.recv:type_name -> cameo.Dump.Binding
+	3,  // 19: cameo.Dump.Call.args:type_name -> cameo.Dump.Binding
+	20, // 20: cameo.Dump.Call.kw:type_name -> cameo.Value
+	0,  // 21: cameo.Dump.Activation.kind:type_name -> cameo.Dump.Activation.Kind
+	11, // 22: cameo.Dump.Activation.cursors:type_name -> cameo.Dump.Cursor
+	3,  // 23: cameo.Dump.Activation.stack:type_name -> cameo.Dump.Binding
+	10, // 24: cameo.Dump.Activation.builtin:type_name -> cameo.Dump.Builtin
+	3,  // 25: cameo.Dump.Activation.block:type_name -> cameo.Dump.Binding
+	3,  // 26: cameo.Dump.Activation.result:type_name -> cameo.Dump.Binding
+	9,  // 27: cameo.Dump.Activation.awaiting:type_name -> cameo.Dump.Awaiting
+	3,  // 28: cameo.Dump.Awaiting.results:type_name -> cameo.Dump.Binding
+	20, // 29: cameo.Dump.Awaiting.failed:type_name -> cameo.Value
+	21, // 30: cameo.Dump.Builtin.method:type_name -> cameo.Binding.Method
+	3,  // 31: cameo.Dump.Builtin.self:type_name -> cameo.Dump.Binding
+	3,  // 32: cameo.Dump.Builtin.args:type_name -> cameo.Dump.Binding
+	20, // 33: cameo.Dump.Builtin.kw:type_name -> cameo.Value
+	3,  // 34: cameo.Dump.Builtin.block:type_name -> cameo.Dump.Binding
+	3,  // 35: cameo.Dump.Builtin.state:type_name -> cameo.Dump.Binding
+	20, // 36: cameo.Dump.Cursor.rescuing:type_name -> cameo.Value
+	12, // 37: cameo.Dump.Cursor.pending:type_name -> cameo.Dump.Completion
+	1,  // 38: cameo.Dump.Completion.kind:type_name -> cameo.Dump.Completion.Kind
+	3,  // 39: cameo.Dump.Completion.value:type_name -> cameo.Dump.Binding
+	20, // 40: cameo.Dump.Completion.exception:type_name -> cameo.Value
+	3,  // 41: cameo.Dump.Scope.locals:type_name -> cameo.Dump.Binding
+	3,  // 42: cameo.Dump.Frame.self:type_name -> cameo.Dump.Binding
+	21, // 43: cameo.Dump.Frame.method:type_name -> cameo.Binding.Method
+	3,  // 44: cameo.Dump.Frame.args:type_name -> cameo.Dump.Binding
+	20, // 45: cameo.Dump.Frame.kw:type_name -> cameo.Value
+	3,  // 46: cameo.Dump.Frame.block:type_name -> cameo.Dump.Binding
+	20, // 47: cameo.Dump.Frame.building:type_name -> cameo.Value
+	16, // 48: cameo.Dump.Class.fields:type_name -> cameo.Dump.Field
+	18, // 49: cameo.Dump.Class.methods:type_name -> cameo.Dump.Method
+	3,  // 50: cameo.Dump.Class.consts:type_name -> cameo.Dump.Binding
+	3,  // 51: cameo.Dump.Class.attrs:type_name -> cameo.Dump.Binding
+	3,  // 52: cameo.Dump.Class.attr_defaults:type_name -> cameo.Dump.Binding
+	17, // 53: cameo.Dump.Field.type:type_name -> cameo.Dump.FieldType
+	20, // 54: cameo.Dump.Field.default:type_name -> cameo.Value
+	17, // 55: cameo.Dump.FieldType.elem:type_name -> cameo.Dump.FieldType
+	56, // [56:56] is the sub-list for method output_type
+	56, // [56:56] is the sub-list for method input_type
+	56, // [56:56] is the sub-list for extension type_name
+	56, // [56:56] is the sub-list for extension extendee
+	0,  // [0:56] is the sub-list for field type_name
 }
 
 func init() { file_cameo_dump_proto_init() }
@@ -2085,7 +2286,7 @@ func file_cameo_dump_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_cameo_dump_proto_rawDesc), len(file_cameo_dump_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   15,
+			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

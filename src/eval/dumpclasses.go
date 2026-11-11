@@ -26,6 +26,17 @@ type classDump struct {
 	order []*object.Class
 	// missing says what of the classes the dump leaves out.
 	missing []string
+	// stack is the frames and scopes of the interpreter whose values are
+	// being written, the script's or a worker's: a binding that is an
+	// instance one of its frames is making refers to it there.
+	stack *stackDump
+}
+
+// note has the dump carry the class of an instance it holds.
+func (cd *classDump) note(cls *object.Class) {
+	if cd.carried(cls) {
+		cd.ref(cls)
+	}
 }
 
 func (in *Interp) newClassDump() *classDump {
@@ -99,7 +110,7 @@ func (cd *classDump) binding(enc *protogen.Encoder, name string, v object.Value)
 		b.Main = true
 		return b
 	}
-	if b.Building = cd.in.dumping.buildingIn(v); b.Building != 0 {
+	if b.Building = cd.stack.buildingIn(v); b.Building != 0 {
 		return b
 	}
 	if cls, ok := v.AsClass(); ok {

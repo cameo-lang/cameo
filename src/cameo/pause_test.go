@@ -116,11 +116,18 @@ constants:
 classes:
   class Point
 promises:
-  1 x = 1
-  2 boom raised boom (ArgumentError)
 `
-	if text != want {
-		t.Fatalf("inspect:\n%s\nwant:\n%s", text, want)
+	// A call async started is settled in the dump when a worker ran it
+	// before the pause, and pending when none had taken it.
+	x, boom := "  1 x = 1\n", "  2 boom raised boom (ArgumentError)\n"
+	if strings.Contains(text, "  1 x pending\n") {
+		x = "  1 x pending\n"
+	}
+	if strings.Contains(text, "  2 boom pending\n") {
+		boom = "  2 boom pending\n"
+	}
+	if text != want+x+boom {
+		t.Fatalf("inspect:\n%s\nwant:\n%s", text, want+x+boom)
 	}
 }
 
