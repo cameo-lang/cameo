@@ -45,6 +45,9 @@ type Promise struct {
 	// ended is set when the method that started the promise returned
 	// before anything awaited it: the first await then forgets it.
 	ended bool
+	// needed is set while a pause is asked for and something that cannot
+	// pause waits for the promise: its worker then does not freeze.
+	needed atomic.Bool
 }
 
 // ID is the promise's id, the Integer a script awaits.
@@ -77,6 +80,11 @@ func (p *Promise) wait(in *Interp) (object.Value, *object.Exception, error) {
 	// so the goroutine that awaits it does not park, with its stack, while
 	// another runs it.
 	if c := in.promises.calls.claim(p); c != nil {
+		// This waiter cannot pause: with a pause asked for, the call it
+		// waits for is needed and runs to its end.
+		if in.pausing.flag.Load() {
+			in.pausing.need(p)
+		}
 		c.run(p)
 		if err := in.stopped(); err != nil {
 			return object.Value{}, nil, err
@@ -91,6 +99,19 @@ func (p *Promise) wait(in *Interp) (object.Value, *object.Exception, error) {
 		case <-p.done:
 		case <-in.stop.ch(p.id):
 			return object.Value{}, nil, ErrStopped
+		case <-in.pausing.asked():
+			// A pause is asked for, and this waiter cannot pause: the
+			// promise is needed. Its worker goes on, or is thawed, and a
+			// call no worker took runs here.
+			in.pausing.need(p)
+			if c := in.promises.calls.claim(p); c != nil {
+				c.run(p)
+			}
+			select {
+			case <-p.done:
+			case <-in.stop.ch(p.id):
+				return object.Value{}, nil, ErrStopped
+			}
 		}
 	}
 	p.mu.Lock()
@@ -418,14 +439,47 @@ type asyncCall struct {
 	kw     []byte
 }
 
-// run makes the call and settles p with its result.
+// run makes the call and settles p with its result, unless the worker
+// froze for a pause: then p stays pending, and the worker keeps its
+// activations for the dump, or for the thaw that has it go on.
 func (c *asyncCall) run(p *Promise) {
-	result, later, exc := c.w.runCall(c.recv, c.method, c.args, c.kw)
-	if exc != nil {
-		p.settle(object.Value{}, exc, nil)
-		return
+	w := c.w
+	w.settles, w.pausable = p, true
+	result, err := w.runCall(c.recv, c.method, c.args, c.kw)
+	w.finish(p, result, err)
+}
+
+// finish settles p with what the worker's call came to.
+func (w *Interp) finish(p *Promise, result object.Value, err error) {
+	// A worker that froze keeps its promise pending. When something came
+	// to need the promise while the worker stopped, it goes on here.
+	for err == ErrPaused && w.frozen != nil {
+		if w.pausing.frozenNow(w, p) {
+			return
+		}
+		w.resumed, w.frozen = w.frozen, nil
+		result, err = w.goOn()
 	}
-	p.settle(result, nil, later)
+	defer w.pausing.changed()
+	switch e := err.(type) {
+	case nil:
+		result, later, exc := w.handOver(result, "a worker returned")
+		p.settle(result, exc, later)
+	case *object.Exception:
+		p.settle(object.Value{}, e, nil)
+	case *control:
+		p.settle(object.Value{}, w.raise(object.LocalJumpError, e.line, "%s from a worker", e.kind).(*object.Exception), nil)
+	default:
+		p.settle(object.Value{}, w.raise(object.CameoError, 0, "%s", err.Error()).(*object.Exception), nil)
+	}
+}
+
+// thaw has a worker that froze go on, on this goroutine, to the end of
+// its call or to where it freezes again.
+func (w *Interp) thaw(p *Promise) {
+	w.resumed, w.frozen = w.frozen, nil
+	result, err := w.goOn()
+	w.finish(p, result, err)
 }
 
 // topLevel is a copy of an interpreter's top level: its constants, its
@@ -509,23 +563,25 @@ func (in *Interp) worker() *Interp {
 }
 
 // runCall decodes the receiver and the arguments, and calls the method.
-func (w *Interp) runCall(recvC crossing, method string, argC []crossing, kwData []byte) (object.Value, func(*Interp) (object.Value, error), *object.Exception) {
+// It returns the method's value, or what ended the call: an exception, a
+// jump out of it, or ErrPaused when the worker froze.
+func (w *Interp) runCall(recvC crossing, method string, argC []crossing, kwData []byte) (object.Value, error) {
 	dec := w.Decoder()
 	recv, err := recvC.value(dec)
 	if err != nil {
-		return object.Value{}, nil, w.raise(object.TypeError, 0, "%s", err.Error()).(*object.Exception)
+		return object.Value{}, w.raise(object.TypeError, 0, "%s", err.Error())
 	}
 	args := make([]object.Value, len(argC))
 	for i, c := range argC {
 		if args[i], err = c.value(dec); err != nil {
-			return object.Value{}, nil, w.raise(object.TypeError, 0, "%s", err.Error()).(*object.Exception)
+			return object.Value{}, w.raise(object.TypeError, 0, "%s", err.Error())
 		}
 	}
 	var kw *object.Map
 	if kwData != nil {
 		v, err := dec.Decode(kwData)
 		if err != nil {
-			return object.Value{}, nil, w.raise(object.TypeError, 0, "%s", err.Error()).(*object.Exception)
+			return object.Value{}, w.raise(object.TypeError, 0, "%s", err.Error())
 		}
 		// Keywords are symbols, which travelled as strings.
 		if m, ok := v.AsMap(); ok {
@@ -540,17 +596,7 @@ func (w *Interp) runCall(recvC crossing, method string, argC []crossing, kwData 
 		}
 	}
 	fr := &Frame{Self: object.InstanceValue(w.main), DefTarget: w.mainClass}
-	result, callErr := w.call(fr, recv, method, args, kw, object.Value{}, false, 0)
-	if callErr != nil {
-		if exc, ok := callErr.(*object.Exception); ok {
-			return object.Value{}, nil, exc
-		}
-		if c, ok := callErr.(*control); ok {
-			return object.Value{}, nil, w.raise(object.LocalJumpError, c.line, "%s from a worker", c.kind).(*object.Exception)
-		}
-		return object.Value{}, nil, w.raise(object.CameoError, 0, "%s", callErr.Error()).(*object.Exception)
-	}
-	return w.handOver(result, "a worker returned")
+	return w.call(fr, recv, method, args, kw, object.Value{}, false, 0)
 }
 
 // crossing is a value on its way to a worker: the value itself when it

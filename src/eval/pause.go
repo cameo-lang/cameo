@@ -6,6 +6,8 @@ import (
 	"sort"
 	"strings"
 
+	"google.golang.org/protobuf/proto"
+
 	"github.com/cameo-lang/cameo/src/cameopb"
 	"github.com/cameo-lang/cameo/src/ir"
 	"github.com/cameo-lang/cameo/src/object"
@@ -45,15 +47,12 @@ func (in *Interp) Dump(source string) (*cameopb.Dump, error) {
 		// The run paused inside a statement: a Proc written in a frame
 		// of its activations refers to the frame (EncodeProc).
 		in.dumping = stackFrames(in.frozen)
+		classes.stack = in.dumping
 		defer func() { in.dumping = nil }()
 	}
 	// The class of an instance is carried too: a class the script
 	// reopened since it made the instance is one no constant leads to.
-	enc := in.ProcEncoder(false).WithSymbols().WithClasses(func(cls *object.Class) {
-		if classes.carried(cls) {
-			classes.ref(cls)
-		}
-	})
+	enc := in.ProcEncoder(false).WithSymbols().WithClasses(classes.note)
 	in.top.each(func(name string, v object.Value) {
 		d.Variables = append(d.Variables, classes.binding(enc, name, v))
 	})
@@ -66,18 +65,19 @@ func (in *Interp) Dump(source string) (*cameopb.Dump, error) {
 		}
 		d.Constants = append(d.Constants, classes.binding(enc, name, v))
 	}
-	promises, err := in.settledPromises(enc)
-	if err != nil {
+	if err := in.dumpPromises(d, enc, classes); err != nil {
 		return nil, err
 	}
-	d.Promises = promises
+	var err error
 	for _, block := range in.exits.all() {
 		d.AtExit = append(d.AtExit, classes.binding(enc, "", block))
 	}
 	if in.dumping != nil {
-		if err := in.dumpStack(d, enc, classes); err != nil {
+		own := &stackMsg{}
+		if err := in.dumpStack(own, enc, classes); err != nil {
 			return nil, fmt.Errorf("the run cannot be dumped where it paused: %w", err)
 		}
+		d.Stack, d.Scopes, d.Frames = own.stack, own.scopes, own.frames
 	}
 	d.Top = &cameopb.Dump_Class{Methods: classes.methods(in.mainClass)}
 	d.Classes = classes.classes(enc)
@@ -99,12 +99,15 @@ func (in *Interp) Dump(source string) (*cameopb.Dump, error) {
 	return d, nil
 }
 
-// settledPromises waits for every call async started and returns the
-// promises of the run, settled. A promise the host or the script made by
-// hand and has not settled is left out.
-func (in *Interp) settledPromises(enc *protogen.Encoder) ([]*cameopb.Dump_Promise, error) {
+// dumpPromises waits until no call async started is running, and writes
+// the promises of the run into d: a settled one with its result, and a
+// pending one as pending — one made by hand, one whose call no worker
+// took, with the call, and one whose worker froze, with the worker's
+// stack.
+func (in *Interp) dumpPromises(d *cameopb.Dump, enc *protogen.Encoder, classes *classDump) error {
+	in.quiet()
 	t := in.promises
-	var out []*cameopb.Dump_Promise
+	dec := in.Decoder()
 	for id := int64(1); id <= t.next.Load(); id++ {
 		p := t.get(id)
 		if p == nil {
@@ -113,15 +116,30 @@ func (in *Interp) settledPromises(enc *protogen.Encoder) ([]*cameopb.Dump_Promis
 		p.mu.Lock()
 		awaited, settled := p.awaited, p.settled
 		p.mu.Unlock()
-		if p.method == "" && !settled {
-			// One made by hand that nothing settled yet stays pending:
-			// the script or the host settles it after the resume.
-			out = append(out, &cameopb.Dump_Promise{Id: id, Awaited: awaited, Pending: true})
+		if !settled {
+			d.Promises = append(d.Promises, &cameopb.Dump_Promise{Id: id, Method: p.method, Awaited: awaited, Pending: true})
+			in.pausing.mu.Lock()
+			frozen := in.pausing.frozen[p]
+			in.pausing.mu.Unlock()
+			switch c, w := p.call.Load(), frozen; {
+			case c != nil:
+				call, err := in.dumpCall(p, c, dec, enc, classes)
+				if err != nil {
+					return fmt.Errorf("the call of promise %d (%s): %w", id, p.method, err)
+				}
+				d.Calls = append(d.Calls, call)
+			case w != nil:
+				worker, err := w.dumpWorker(p, classes)
+				if err != nil {
+					return fmt.Errorf("the worker of promise %d (%s): %w", id, p.method, err)
+				}
+				d.Workers = append(d.Workers, worker)
+			}
 			continue
 		}
 		result, exc, err := p.wait(in)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		s := &cameopb.Dump_Promise{Id: id, Method: p.method, Awaited: awaited}
 		if exc != nil {
@@ -132,11 +150,66 @@ func (in *Interp) settledPromises(enc *protogen.Encoder) ([]*cameopb.Dump_Promis
 				s.Value = msg
 			}
 		} else if s.Value, err = enc.Message(result); err != nil {
-			return nil, fmt.Errorf("promise %d (%s): %w", id, p.method, err)
+			return fmt.Errorf("promise %d (%s): %w", id, p.method, err)
 		}
-		out = append(out, s)
+		d.Promises = append(d.Promises, s)
+	}
+	return nil
+}
+
+// dumpCall is the dump's form of a call async started that no worker
+// took.
+func (in *Interp) dumpCall(p *Promise, c *asyncCall, dec *protogen.Decoder, enc *protogen.Encoder, classes *classDump) (*cameopb.Dump_Call, error) {
+	out := &cameopb.Dump_Call{Promise: p.id, Method: c.method}
+	held := func(cr crossing) (*cameopb.Dump_Binding, error) {
+		v, err := cr.value(dec)
+		if err != nil {
+			return nil, err
+		}
+		b := classes.binding(enc, "", v)
+		if b.Missing != "" {
+			return nil, errors.New(b.Missing)
+		}
+		return b, nil
+	}
+	var err error
+	if out.Recv, err = held(c.recv); err != nil {
+		return nil, err
+	}
+	for _, a := range c.args {
+		b, err := held(a)
+		if err != nil {
+			return nil, err
+		}
+		out.Args = append(out.Args, b)
+	}
+	if c.kw != nil {
+		out.Kw = &cameopb.Value{}
+		if err := proto.Unmarshal(c.kw, out.Kw); err != nil {
+			return nil, err
+		}
 	}
 	return out, nil
+}
+
+// dumpWorker is the dump's form of the worker w, which froze: its
+// activations with their scopes and frames, under the promise p it
+// settles.
+func (w *Interp) dumpWorker(p *Promise, classes *classDump) (*cameopb.Dump_Worker, error) {
+	w.dumping = stackFrames(w.frozen)
+	main := classes.stack
+	classes.stack = w.dumping
+	defer func() { w.dumping, classes.stack = nil, main }()
+	enc := w.ProcEncoder(false).WithSymbols().WithClasses(classes.note)
+	msg := &stackMsg{}
+	if err := w.dumpStack(msg, enc, classes); err != nil {
+		return nil, err
+	}
+	rand, err := w.rng.MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
+	return &cameopb.Dump_Worker{Promise: p.id, Stack: msg.stack, Scopes: msg.scopes, Frames: msg.frames, Rand: rand}, nil
 }
 
 // Resume readies the interpreter to continue the run d describes, whose
@@ -180,7 +253,8 @@ func (in *Interp) Resume(prog *syntax.Program, d *cameopb.Dump) error {
 	// The frames of a run that paused inside a statement, before any
 	// value is read: a Proc among the values may refer to one.
 	dec := in.Decoder()
-	if err := in.restoreShells(dec, d); err != nil {
+	own := &stackMsg{stack: d.GetStack(), scopes: d.GetScopes(), frames: d.GetFrames(), next: next}
+	if err := in.restoreShells(dec, own); err != nil {
 		return err
 	}
 	if err := in.restoreClassValues(dec, d.GetClasses()); err != nil {
@@ -226,10 +300,72 @@ func (in *Interp) Resume(prog *syntax.Program, d *cameopb.Dump) error {
 			return fmt.Errorf("the dump's random number state is not one this cameo reads: %w", err)
 		}
 	}
-	if err := in.restoreStack(dec, d, script); err != nil {
+	if err := in.restoreStack(dec, own, script); err != nil {
 		return err
 	}
+	// The calls async started go on when the run does: the host may
+	// still give the program what the workers need.
+	in.wakeCalls, in.wakeWorkers = d.GetCalls(), d.GetWorkers()
 	in.from = next
+	return nil
+}
+
+// wake starts what a dump holds of the calls async started: it queues the
+// calls no worker had taken, and gives each worker that froze an
+// interpreter with its activations and a goroutine to go on in.
+func (in *Interp) wake() error {
+	calls, workers := in.wakeCalls, in.wakeWorkers
+	in.wakeCalls, in.wakeWorkers = nil, nil
+	dec := in.Decoder()
+	for _, c := range calls {
+		p := in.promises.get(c.GetPromise())
+		if p == nil {
+			return fmt.Errorf("the dump has a call for promise %d, which it does not have", c.GetPromise())
+		}
+		call := &asyncCall{w: in.worker(), method: c.GetMethod()}
+		recv, _, err := in.restore(dec, c.GetRecv())
+		if err != nil {
+			return fmt.Errorf("the call of promise %d: %w", p.id, err)
+		}
+		call.recv = crossing{v: recv}
+		for _, a := range c.GetArgs() {
+			v, _, err := in.restore(dec, a)
+			if err != nil {
+				return fmt.Errorf("the call of promise %d: %w", p.id, err)
+			}
+			call.args = append(call.args, crossing{v: v})
+		}
+		if c.GetKw() != nil {
+			if call.kw, err = proto.Marshal(c.GetKw()); err != nil {
+				return err
+			}
+		}
+		p.call.Store(call)
+		in.promises.calls.push(p)
+	}
+	for _, wk := range workers {
+		p := in.promises.get(wk.GetPromise())
+		if p == nil {
+			return fmt.Errorf("the dump has a worker for promise %d, which it does not have", wk.GetPromise())
+		}
+		w := in.worker()
+		w.settles, w.pausable, w.restored = p, true, in.restored
+		if wk.GetRand() != nil {
+			if err := w.rng.UnmarshalBinary(wk.GetRand()); err != nil {
+				return fmt.Errorf("the worker of promise %d: %w", p.id, err)
+			}
+		}
+		msg := &stackMsg{stack: wk.GetStack(), scopes: wk.GetScopes(), frames: wk.GetFrames()}
+		wdec := w.Decoder()
+		if err := w.restoreShells(wdec, msg); err != nil {
+			return fmt.Errorf("the worker of promise %d: %w", p.id, err)
+		}
+		if err := w.restoreStack(wdec, msg, nil); err != nil {
+			return fmt.Errorf("the worker of promise %d: %w", p.id, err)
+		}
+		w.frozen, w.resumed = w.resumed, nil
+		go w.thaw(p)
+	}
 	return nil
 }
 

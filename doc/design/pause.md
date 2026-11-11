@@ -53,11 +53,29 @@ the program. A lambda or a proc called as a value, `f.call(x)`, `f.(x)` or
 to is. So are the `initialize` that `new` runs, a method `super` calls,
 and an operator a class defines, `a + b` or `a == b`.
 
-The pause waits for every call `async` started, so their results travel
-settled in the dump. A promise the script or a host made by hand and has
-not settled is in the dump as pending: the resumed run has it under its
-id, the script settles it with `resolve` or `fail` as it would have, and
-a host with `Program.PendingPromise(id)`.
+The calls `async` started pause too. A worker stops before its next
+instruction, as the script does, and the dump holds its stack under the
+promise its call settles; a call no worker had taken is in the dump as
+the call. A call that had ended is in the dump with its result. The
+resumed run gives each stopped worker an interpreter and a goroutine and
+queues the calls again, when `Run` is called, so that a host can first
+give the program the modules it gave the one that paused.
+
+One thing keeps a worker running through a pause: something that cannot
+pause waits for it. A script inside the block of a builtin that is no
+step function, waiting there in an `await`, needs that call's result
+before it can pause, so the worker runs to its end, and so does a call it
+awaits in turn. `Dump` waits for those and for nothing else
+([ir.md](ir.md#workers-and-await-at-a-pause)).
+
+A worker's top level after a resume is the one the resumed run has. A
+worker that was started before the script defined a method sees that
+method after a resume, where in the run that paused it did not.
+
+A promise the script or a host made by hand and has not settled is in
+the dump as pending: the resumed run has it under its id, the script
+settles it with `resolve` or `fail` as it would have, and a host with
+`Program.PendingPromise(id)`.
 
 A script that is waiting in `await` pauses there: an `await` is not
 inside an instruction but a state of its activation, which the dump holds
@@ -81,7 +99,8 @@ The dump is the protobuf message `cameo.Dump`, written in
 | `units` | the code of the run: the script's unit, and the unit of every library written in cameo it required |
 | `classes`, `top` | the classes and modules the script defined, and the methods of the top level |
 | `cameo_top` | whether the script included `Cameo` at the top level |
-| `promises` | every promise: its id, the method `async` ran, and its result or the exception it failed with; or that it is pending, for one made by hand |
+| `promises` | every promise: its id, the method `async` ran, and its result or the exception it failed with; or that it is pending, for one made by hand and for a call that had not ended |
+| `workers`, `calls` | the calls `async` started that had not ended: a worker's activations with their scopes and frames, for one that was running, and the receiver, method and arguments, for one no worker had taken |
 | `loaded` | the libraries `require` loaded |
 | `rand` | the state of the random number generator, so a seeded script draws on as if it had not paused |
 | `at_exit` | the blocks `at_exit` registered, in order, which a resumed run runs when it ends |
