@@ -52,8 +52,6 @@ const (
 	Flag_FLAG_DROPPED Flag = 64
 	// SEND: the call's value is assigned back to its receiver.
 	Flag_FLAG_REBINDS Flag = 128
-	// SEND: an operator with one plain argument, which has a fast path.
-	Flag_FLAG_OPERATOR Flag = 256
 	// SEND: the receiver is self written out.
 	Flag_FLAG_PRIVATE Flag = 512
 	// STORE: the value is a lambda that reads the name it is stored under.
@@ -107,7 +105,6 @@ var (
 		32:        "FLAG_VCALL",
 		64:        "FLAG_DROPPED",
 		128:       "FLAG_REBINDS",
-		256:       "FLAG_OPERATOR",
 		512:       "FLAG_PRIVATE",
 		1024:      "FLAG_FORWARD",
 		2048:      "FLAG_STRICT",
@@ -140,7 +137,6 @@ var (
 		"FLAG_VCALL":     32,
 		"FLAG_DROPPED":   64,
 		"FLAG_REBINDS":   128,
-		"FLAG_OPERATOR":  256,
 		"FLAG_PRIVATE":   512,
 		"FLAG_FORWARD":   1024,
 		"FLAG_STRICT":    2048,
@@ -259,6 +255,23 @@ const (
 	// [block] -> result. recv_local is the local or constant the receiver
 	// was read from, which the error of a mutating call names.
 	Op_SEND Op = 30
+	// BINARY_PLUS and the ten instructions after it: recv arg -> result.
+	// An arithmetic or comparison operator with a receiver and one plain
+	// argument. On two Integers or two Floats the evaluator computes the
+	// result; on anything else it calls the method of the operator's name
+	// on recv with arg, as a SEND does. Their numbers are in the order of
+	// + - * / % < <= > >= == !=.
+	Op_BINARY_PLUS   Op = 80
+	Op_BINARY_MINUS  Op = 81
+	Op_BINARY_TIMES  Op = 82
+	Op_BINARY_DIVIDE Op = 83
+	Op_BINARY_MODULO Op = 84
+	Op_BINARY_LT     Op = 85
+	Op_BINARY_LE     Op = 86
+	Op_BINARY_GT     Op = 87
+	Op_BINARY_GE     Op = 88
+	Op_BINARY_EQ     Op = 89
+	Op_BINARY_NE     Op = 90
 	// SAFE{rest}: recv -> nil when recv is nil; else runs rest, which ends
 	// in the SEND on recv.
 	Op_SAFE Op = 31
@@ -374,6 +387,17 @@ var (
 		23: "DEFINED_METHOD",
 		24: "DEFINED_YIELD",
 		30: "SEND",
+		80: "BINARY_PLUS",
+		81: "BINARY_MINUS",
+		82: "BINARY_TIMES",
+		83: "BINARY_DIVIDE",
+		84: "BINARY_MODULO",
+		85: "BINARY_LT",
+		86: "BINARY_LE",
+		87: "BINARY_GT",
+		88: "BINARY_GE",
+		89: "BINARY_EQ",
+		90: "BINARY_NE",
 		31: "SAFE",
 		32: "BLOCK_GIVEN",
 		33: "YIELD",
@@ -439,6 +463,17 @@ var (
 		"DEFINED_METHOD": 23,
 		"DEFINED_YIELD":  24,
 		"SEND":           30,
+		"BINARY_PLUS":    80,
+		"BINARY_MINUS":   81,
+		"BINARY_TIMES":   82,
+		"BINARY_DIVIDE":  83,
+		"BINARY_MODULO":  84,
+		"BINARY_LT":      85,
+		"BINARY_LE":      86,
+		"BINARY_GT":      87,
+		"BINARY_GE":      88,
+		"BINARY_EQ":      89,
+		"BINARY_NE":      90,
 		"SAFE":           31,
 		"BLOCK_GIVEN":    32,
 		"YIELD":          33,
@@ -2124,7 +2159,7 @@ const file_cameo_ir_proto_rawDesc = "" +
 	"\x02of\x18\x04 \x01(\tR\x02of\x12\x10\n" +
 	"\x03key\x18\x05 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x06 \x01(\tR\x05value\x12\x16\n" +
-	"\x06values\x18\a \x03(\tR\x06values*\xbd\x04\n" +
+	"\x06values\x18\a \x03(\tR\x06values*\xa9\x04\n" +
 	"\x04Flag\x12\r\n" +
 	"\tFLAG_NONE\x10\x00\x12\r\n" +
 	"\tFLAG_SELF\x10\x01\x12\r\n" +
@@ -2136,8 +2171,7 @@ const file_cameo_ir_proto_rawDesc = "" +
 	"\n" +
 	"FLAG_VCALL\x10 \x12\x10\n" +
 	"\fFLAG_DROPPED\x10@\x12\x11\n" +
-	"\fFLAG_REBINDS\x10\x80\x01\x12\x12\n" +
-	"\rFLAG_OPERATOR\x10\x80\x02\x12\x11\n" +
+	"\fFLAG_REBINDS\x10\x80\x01\x12\x11\n" +
 	"\fFLAG_PRIVATE\x10\x80\x04\x12\x11\n" +
 	"\fFLAG_FORWARD\x10\x80\b\x12\x10\n" +
 	"\vFLAG_STRICT\x10\x80\x10\x12\x13\n" +
@@ -2160,7 +2194,7 @@ const file_cameo_ir_proto_rawDesc = "" +
 	"\fFLAG_DEFAULT\x10\x80\x80\x80 \x12\x0f\n" +
 	"\bFLAG_REF\x10\x80\x80\x80@\x12\x10\n" +
 	"\bFLAG_TOP\x10\x80\x80\x80\x80\x01\x12\x13\n" +
-	"\vFLAG_STATIC\x10\x80\x80\x80\x80\x02*\x90\x06\n" +
+	"\vFLAG_STATIC\x10\x80\x80\x80\x80\x02*\xc5\a\n" +
 	"\x02Op\x12\x12\n" +
 	"\x0eOP_UNSPECIFIED\x10\x00\x12\t\n" +
 	"\x05CONST\x10\x01\x12\a\n" +
@@ -2193,7 +2227,18 @@ const file_cameo_ir_proto_rawDesc = "" +
 	"\rDEFINED_CONST\x10\x16\x12\x12\n" +
 	"\x0eDEFINED_METHOD\x10\x17\x12\x11\n" +
 	"\rDEFINED_YIELD\x10\x18\x12\b\n" +
-	"\x04SEND\x10\x1e\x12\b\n" +
+	"\x04SEND\x10\x1e\x12\x0f\n" +
+	"\vBINARY_PLUS\x10P\x12\x10\n" +
+	"\fBINARY_MINUS\x10Q\x12\x10\n" +
+	"\fBINARY_TIMES\x10R\x12\x11\n" +
+	"\rBINARY_DIVIDE\x10S\x12\x11\n" +
+	"\rBINARY_MODULO\x10T\x12\r\n" +
+	"\tBINARY_LT\x10U\x12\r\n" +
+	"\tBINARY_LE\x10V\x12\r\n" +
+	"\tBINARY_GT\x10W\x12\r\n" +
+	"\tBINARY_GE\x10X\x12\r\n" +
+	"\tBINARY_EQ\x10Y\x12\r\n" +
+	"\tBINARY_NE\x10Z\x12\b\n" +
 	"\x04SAFE\x10\x1f\x12\x0f\n" +
 	"\vBLOCK_GIVEN\x10 \x12\t\n" +
 	"\x05YIELD\x10!\x12\t\n" +

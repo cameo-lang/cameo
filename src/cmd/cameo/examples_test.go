@@ -86,7 +86,7 @@ func TestIRPrintsAListing(t *testing.T) {
 proc #1 block(x)
   LOAD x
   CONST 2
-  SEND * 1 operator
+  BINARY_TIMES
 `
 	if out.String() != want {
 		t.Fatalf("listing differs\n--- got ---\n%s--- want ---\n%s", out.String(), want)
