@@ -95,20 +95,31 @@ func TestAStoppedWorkerGoesOnWithItsRun(t *testing.T) {
 // builtin that is no stepper, needs the call it waits for: that worker
 // does not stop, the script gets its result, and the run pauses when the
 // builtin returned. The dump holds no worker.
+//
+// The worker asks for the pause once the script is inside the block,
+// which the gate tells it: asked earlier, the pause would land before
+// the builtin, with the worker stopped, and that is right too.
 func TestAWorkerSomethingNeedsRunsToItsEnd(t *testing.T) {
 	const src = `include Cameo
 class Work
-  def count(n)
+  def count(n, gate)
     i = 0
     while i < n
       i += 1
-      Test.pause if i == 500
+      if i == 500
+        await(gate)
+        Test.pause
+      end
     end
     i
   end
 end
-job = async(Work.new, :count, 1000)
-shown = "a".gsub("a") { await(job).to_s }
+gate = promise
+job = async(Work.new, :count, 1000, gate)
+shown = "a".gsub("a") do
+  resolve(gate, true)
+  await(job).to_s
+end
 puts shown
 puts "after"
 `
