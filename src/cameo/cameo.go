@@ -270,6 +270,7 @@ func (p *Program) Proto(name string) (string, error) {
 func (p *Program) ProtoFiles() map[string]string {
 	files := protogen.Files(p.Classes())
 	files["cameo/value.proto"] = cameopb.ValueProto
+	files["cameo/ir.proto"] = cameopb.IRProto
 	return files
 }
 

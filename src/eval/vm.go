@@ -47,6 +47,7 @@ func (in *Interp) program(file string, prog *syntax.Program) (*program, error) {
 	if len(prog.Body) > 0 {
 		p.statements = statements(unit.Procs[0].GetCode())
 	}
+	in.code.units.LoadOrStore(unit.GetDigest(), unit)
 	actual, _ := in.code.programs.LoadOrStore(prog, p)
 	return actual.(*program), nil
 }
@@ -551,18 +552,18 @@ func (m *machine) constant(c *cameopb.Code) (object.Value, error) {
 	switch k := c.Args[0].GetConstant().GetKind().(type) {
 	case nil:
 		return object.Nil, nil
-	case *cameopb.Value_BoolValue:
+	case *cameopb.Constant_BoolValue:
 		return object.Bool(k.BoolValue), nil
-	case *cameopb.Value_IntValue:
+	case *cameopb.Constant_IntValue:
 		return object.Int(k.IntValue), nil
-	case *cameopb.Value_FloatValue:
+	case *cameopb.Constant_FloatValue:
 		return object.Float(k.FloatValue), nil
-	case *cameopb.Value_StringValue:
+	case *cameopb.Constant_StringValue:
 		return object.String(k.StringValue), nil
-	case *cameopb.Value_BytesValue:
+	case *cameopb.Constant_BytesValue:
 		// A string literal that is not valid UTF-8; see ir.proto.
 		return object.String(string(k.BytesValue)), nil
-	case *cameopb.Value_BigValue:
+	case *cameopb.Constant_BigValue:
 		return m.in.code.literal(c, func() (object.Value, error) {
 			b, _ := new(big.Int).SetString(k.BigValue, 10)
 			return object.BigInt(b), nil
