@@ -99,8 +99,8 @@ message Set {
   repeated Value items = 1;
 }
 
-// Map is a Hash: its entries in order, and its default value when it has
-// one. A Hash with a default proc cannot travel.
+// Map is a Hash: its entries in order, and its default when it has one, a
+// value or a proc that computes it.
 message Map {
   message Entry {
     Value key = 1;
@@ -108,6 +108,7 @@ message Map {
   }
   repeated Entry entries = 1;
   Value default = 2;
+  Closure default_proc = 3;
 }
 
 message Range {

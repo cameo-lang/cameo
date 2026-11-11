@@ -194,6 +194,26 @@ puts await([async(w, :adder, 1), async(w, :adder, 2)]).map { |f| f.(0) }.inspect
 	assert.Equals(t, out.String(), "[3, 6]\n15\ntrue\n16\n777\n[1, 2]\n")
 }
 
+// A Hash with a default proc travels with the proc, and computes its
+// defaults where it arrives.
+func TestAHashTravelsWithItsDefaultProc(t *testing.T) {
+	_, out := ran(t, `include Cameo
+class Work
+  def lookup(table, key) = table[key]
+  def table = Hash.new { |h, k| "made #{k}" }.merge({"a" => "had a"})
+end
+step = 10
+squares = Hash.new { |h, k| k * k + step }.merge({1 => "one"})
+copy = from_value_proto(squares.to_value_proto)
+p copy[1], copy[4], copy.size, copy.default_proc.lambda?
+w = Work.new
+p await(w, :lookup, squares, 3)
+made = await(w, :table)
+p made["a"], made["z"]
+`)
+	assert.Equals(t, out.String(), "\"one\"\n26\n1\nfalse\n19\n\"had a\"\n\"made z\"\n")
+}
+
 // A symbol a proc captured reads back as a String, as a symbol does
 // wherever a value crosses the envelope (doc/design/cameo.md, "Symbols").
 func TestASymbolAProcCapturedReadsBackAsAString(t *testing.T) {
