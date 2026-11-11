@@ -284,16 +284,19 @@ func (p *Program) Descriptor(name string) (protoreflect.MessageDescriptor, error
 }
 
 // Encode is the envelope wire form of a value (an object.Value or a Go
-// value), for storing or sending it.
+// value), for storing or sending it. A *Block is encoded as the Proc it
+// came from, with the code it runs and the values it captured, so that
+// another program can decode and call it; the classes it names must be
+// loaded there.
 func (p *Program) Encode(v any) ([]byte, error) {
 	val, err := p.ToValue(v)
 	if err != nil {
 		return nil, err
 	}
-	return p.in.Encoder().Encode(val)
+	return p.in.ProcEncoder(true).Encode(val)
 }
 
-// Decode reads an envelope back into a Go value.
+// Decode reads an envelope back into a Go value: a Proc as a *Block.
 func (p *Program) Decode(data []byte) (any, error) {
 	v, err := p.in.Decoder().Decode(data)
 	if err != nil {

@@ -667,7 +667,9 @@ the integer and float kinds and `*big.Int`, string, `[]byte`, `[]any`, `map[stri
 and a `proto.Message` whose full name is a loaded class's message. Results
 come back as nil, bool, int64 (a `*big.Int` beyond 64 bits), float64, string, `[]byte`, `[]any`,
 `map[any]any`, and a `proto.Message` for an instance or an exception; a symbol, range or
-class stays an `object.Value`. A Hash's Symbol keys become strings, as
+class stays an `object.Value`. A Proc comes back as a `*cameo.Block`,
+which `Encode` writes as a closure, its code and the values it captured,
+and `Decode` of another program reads back as a block to call. A Hash's Symbol keys become strings, as
 symbols do wherever a value leaves cameo; a Hash whose keys have no Go map
 form (a key not comparable in Go, or `:a` beside `"a"`) is an error.
 
