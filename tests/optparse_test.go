@@ -149,7 +149,7 @@ true
 "t"
 "0.6.0"
 ["file1", "file2"]
-{verbose: true, name: "Ann", count: 3, rate: 2.5, list: ["a", "b", "c"], level: :high, x: true, :"long-only" => true}
+{verbose: true, name: "Ann", count: 3, rate: 2.5, list: ["a", "b", "c"], level: :high, x: true, "long-only": true}
 []
 {verbose: false, name: "Carl", optional: "baz"}
 ["file", "-x", "--count", "1"]
@@ -199,7 +199,7 @@ false
 "fast"
 2
 ["x"]
-{flag: true, :"no-thing" => false, int: 8, float: 1000.0, bool: false, num: 2.5, type: "fast", mode: 2}
+{flag: true, "no-thing": false, int: 8, float: 1000.0, bool: false, num: 2.5, type: "fast", mode: 2}
 invalid argument: -t medium
 unsupported argument type: Symbol
 []
@@ -324,7 +324,7 @@ Usage: t [options]
 "Bob"
 []
 needless argument: --help=x
-{color: false, :"no-thing" => false}
+{color: false, "no-thing": false}
 []
 ["x"]
 1

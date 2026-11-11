@@ -983,3 +983,18 @@ end
 	expectOutput(t, "class M < Numeric\n int :v\n def to_f = v.to_f\nend\np 1 + M.new(v: 2), M.new(v: 2).coerce(1)\n", "3.0\n[1.0, 2.0]\n")
 	expectOutput(t, "module U\n class F < Numeric; end\n p F.superclass\nend\nK = Class.new(Numeric)\np K.superclass\n", "Numeric\nNumeric\n")
 }
+
+// A symbol key that a bare `name:` would misread prints quoted, as in
+// CRuby 3.4: `"0": 0`, not `:"0" => 0`.
+func TestHashInspectQuotesSymbolKeys(t *testing.T) {
+	expectOutput(t, `h = {kw: 1, :"0" => 0, :"a b" => 2, :+ => 3, :foo= => 4, :foo? => 5, :@iv => 6, "s" => 7, 1 => 8}
+p h
+puts h.to_s
+p [{:"0" => {:"1" => 1}}]
+p [:@iv, :$g, :!~]
+`, `{kw: 1, "0": 0, "a b": 2, "+": 3, "foo=": 4, foo?: 5, "@iv": 6, "s" => 7, 1 => 8}
+{kw: 1, "0": 0, "a b": 2, "+": 3, "foo=": 4, foo?: 5, "@iv": 6, "s" => 7, 1 => 8}
+[{"0": {"1": 1}}]
+[:@iv, :$g, :!~]
+`)
+}
