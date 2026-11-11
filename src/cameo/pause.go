@@ -5,8 +5,10 @@ import (
 	"io"
 	"strings"
 
+	"google.golang.org/protobuf/proto"
+
+	"github.com/cameo-lang/cameo/src/cameopb"
 	"github.com/cameo-lang/cameo/src/eval"
-	"github.com/cameo-lang/cameo/src/protogen"
 )
 
 // ErrPaused is what Run returns once Pause asked the script to pause. It
@@ -50,12 +52,12 @@ func (p *Program) Dump() (*Dump, error) {
 	if err != nil {
 		return nil, err
 	}
-	data, err := protogen.MarshalDump(d)
+	data, err := proto.Marshal(d)
 	if err != nil {
 		return nil, err
 	}
-	out := &Dump{Data: data, Line: d.Line}
-	for _, b := range append(append([]protogen.Binding{}, d.Variables...), d.Constants...) {
+	out := &Dump{Data: data, Line: int(d.Line)}
+	for _, b := range append(append([]*cameopb.Dump_Binding{}, d.Variables...), d.Constants...) {
 		if b.Missing != "" {
 			out.Missing = append(out.Missing, fmt.Sprintf("%s (%s)", b.Name, b.Missing))
 		}
@@ -68,9 +70,9 @@ func (p *Program) Dump() (*Dump, error) {
 // definitions before it run again first, with their output going to
 // stdout and stderr.
 func Resume(data []byte, stdout, stderr io.Writer) (*Program, error) {
-	d, err := protogen.UnmarshalDump(data)
+	d, err := readDump(data)
 	if err != nil {
-		return nil, fmt.Errorf("not a cameo dump: %w", err)
+		return nil, err
 	}
 	prog, err := Load(d.File, d.Source, stdout, stderr)
 	if err != nil {
@@ -85,9 +87,9 @@ func Resume(data []byte, stdout, stderr io.Writer) (*Program, error) {
 // InspectDump describes a dump: the script, where it paused, and every
 // variable, constant and promise it holds, each as p would print it.
 func InspectDump(data []byte) (string, error) {
-	d, err := protogen.UnmarshalDump(data)
+	d, err := readDump(data)
 	if err != nil {
-		return "", fmt.Errorf("not a cameo dump: %w", err)
+		return "", err
 	}
 	prog, err := Resume(data, io.Discard, io.Discard)
 	if err != nil {
@@ -96,7 +98,7 @@ func InspectDump(data []byte) (string, error) {
 	var b strings.Builder
 	fmt.Fprintf(&b, "script: %s\n", d.File)
 	fmt.Fprintf(&b, "paused: before line %d\n", d.Line)
-	bindings := func(title string, bindings []protogen.Binding) error {
+	bindings := func(title string, bindings []*cameopb.Dump_Binding) error {
 		fmt.Fprintf(&b, "%s:", title)
 		if len(bindings) == 0 {
 			b.WriteString(" none\n")
@@ -138,10 +140,10 @@ func InspectDump(data []byte) (string, error) {
 			method = "promise"
 		}
 		if ps.Failure != nil {
-			fmt.Fprintf(&b, "  %d %s raised %s (%s)\n", ps.ID, method, ps.Failure.Message, ps.Failure.Class)
+			fmt.Fprintf(&b, "  %d %s raised %s (%s)\n", ps.Id, method, ps.Failure.Message, ps.Failure.Class)
 			continue
 		}
-		v, _, err := prog.in.Restore(protogen.Binding{Value: ps.Value})
+		v, _, err := prog.in.Restore(&cameopb.Dump_Binding{Value: ps.Value})
 		if err != nil {
 			return "", err
 		}
@@ -149,7 +151,16 @@ func InspectDump(data []byte) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		fmt.Fprintf(&b, "  %d %s = %s\n", ps.ID, method, s)
+		fmt.Fprintf(&b, "  %d %s = %s\n", ps.Id, method, s)
 	}
 	return b.String(), nil
+}
+
+// readDump reads a cameo.Dump message from its wire form.
+func readDump(data []byte) (*cameopb.Dump, error) {
+	d := &cameopb.Dump{}
+	if err := proto.Unmarshal(data, d); err != nil {
+		return nil, fmt.Errorf("not a cameo dump: %w", err)
+	}
+	return d, nil
 }
