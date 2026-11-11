@@ -269,6 +269,49 @@ value, an exception, a `break` — which goes on when the clause ends.
 An interpreter has one stack of activations: the script's interpreter, and
 each worker an `async` call runs in.
 
+### Flat code
+
+Cursors are what a dump writes; they are not what a run executes most of
+the time. An `if`, a pass of a loop and an `&&` each push a cursor and
+pop it again, and the loop in `run` makes a pass per instruction. A loop
+of `i += 1` took 3.4 times the time of the evaluator that walked the
+syntax tree.
+
+When an interpreter first runs a list, it **lowers** it to flat code
+(`eval/flat.go`): the instructions of the list and of the lists inside
+it in one array, with jumps where the IR has lists.
+
+| the IR has | flat code has |
+|---|---|
+| `IF{then}{else}` | a test that jumps to the else, and a jump over it |
+| `WHILE{cond}{body}` | the condition, a test that leaves, the body, a jump back |
+| `break`, `next`, `redo` in a loop's body | a jump to the loop's end, condition or body |
+| `AND`, `OR`, `SAFE` | a test that jumps over the rest |
+| `CASE` | per when its conditions, a test, its body; then the else |
+| `INTERP{part...}` | each part, and an instruction that adds it to the string |
+| an instruction without lists | itself, run by `machine.exec` as from a cursor |
+| `BEGIN`, `CASE_IN`, a `REGEXP` with parts, `defined?` of an expression | itself: it enters its list, and the activation runs from cursors until none is left |
+
+An activation that runs flat code has an index into it in place of
+cursors, and the height of the value stack at the start of each loop it
+is in. `runFlat` runs it until the activation ends, a call becomes the
+activation that runs, or a pause is asked for.
+
+The unit and the dump do not know of flat code. Each flat instruction
+that is where an instruction of the IR starts remembers that
+instruction, the list it is in and the lists around that one. A run
+pauses before such an instruction and no other, and `freeze` turns the
+index of each activation back into the cursors of that place
+(`cursorsAt`): the activation that runs is before its next instruction,
+and one that called is after the instruction that called. A run that
+goes on after a pause continues those activations from their cursors,
+and runs the calls they make from flat code again.
+
+A list runs from cursors as a whole when an `async` call or an `await`
+is anywhere in it, since an activation that awaits waits in the loop of
+`run`, and while a debugger follows the run, which is told each
+statement's line by the cursor.
+
 ### Calls, returns and unwinding
 
 A `SEND` whose method a script defined pushes an activation and returns to
