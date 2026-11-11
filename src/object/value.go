@@ -338,17 +338,23 @@ func Opaque(kind Kind, p unsafe.Pointer) Value { return ptrValue(kind, p) }
 // kind check and panic on another kind; the As* ones report the kind.
 
 func (v Value) Int() int64 {
-	v.must(KindInt)
+	if v.p != mark(KindInt) {
+		v.must(KindInt)
+	}
 	return v.n
 }
 
 func (v Value) Float() float64 {
-	v.must(KindFloat)
+	if v.p != mark(KindFloat) {
+		v.must(KindFloat)
+	}
 	return math.Float64frombits(uint64(v.n))
 }
 
 func (v Value) Bool() bool {
-	v.must(KindBool)
+	if v.p != mark(KindBool) {
+		v.must(KindBool)
+	}
 	return v.n != 0
 }
 

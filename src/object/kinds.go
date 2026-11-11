@@ -20,8 +20,14 @@ const kindsKnown Kinds = 1 << 30
 func KindsOf(elems []Value) Kinds {
 	var k Kinds
 	for _, el := range elems {
-		k |= 1 << el.kind()
-		if el.kind() == KindFloat && math.IsNaN(el.Float()) {
+		// An integer, the usual element, is known by its mark alone.
+		if el.p == mark(KindInt) {
+			k |= 1 << KindInt
+			continue
+		}
+		kind := el.kind()
+		k |= 1 << kind
+		if kind == KindFloat && math.IsNaN(el.Float()) {
 			k |= KindsNaN
 		}
 	}
