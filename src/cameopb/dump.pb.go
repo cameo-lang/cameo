@@ -1128,8 +1128,11 @@ type Dump_Frame struct {
 	// call returned, which a block written in it outlived.
 	Lambda bool `protobuf:"varint,11,opt,name=lambda,proto3" json:"lambda,omitempty"`
 	Ended  bool `protobuf:"varint,12,opt,name=ended,proto3" json:"ended,omitempty"`
-	// building is the instance the frame's initialize is filling.
+	// building is the instance the frame's initialize is filling. An
+	// initialize that a super in another initialize called fills the
+	// same instance, and names that frame, plus one, in building_of.
 	Building      *Value `protobuf:"bytes,13,opt,name=building,proto3" json:"building,omitempty"`
+	BuildingOf    uint32 `protobuf:"varint,14,opt,name=building_of,json=buildingOf,proto3" json:"building_of,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1246,6 +1249,13 @@ func (x *Dump_Frame) GetBuilding() *Value {
 		return x.Building
 	}
 	return nil
+}
+
+func (x *Dump_Frame) GetBuildingOf() uint32 {
+	if x != nil {
+		return x.BuildingOf
+	}
+	return 0
 }
 
 // Class is a class or a module as the run had made it.
@@ -1706,7 +1716,7 @@ var File_cameo_dump_proto protoreflect.FileDescriptor
 
 const file_cameo_dump_proto_rawDesc = "" +
 	"\n" +
-	"\x10cameo/dump.proto\x12\x05cameo\x1a\x0ecameo/ir.proto\x1a\x11cameo/value.proto\"\xad\x1e\n" +
+	"\x10cameo/dump.proto\x12\x05cameo\x1a\x0ecameo/ir.proto\x1a\x11cameo/value.proto\"\xce\x1e\n" +
 	"\x04Dump\x12\x12\n" +
 	"\x04file\x18\x01 \x01(\tR\x04file\x12\x16\n" +
 	"\x06source\x18\x02 \x01(\tR\x06source\x12\x12\n" +
@@ -1802,7 +1812,7 @@ const file_cameo_dump_proto_rawDesc = "" +
 	"\x06parent\x18\x03 \x01(\rR\x06parent\x12\x1a\n" +
 	"\bcaptured\x18\x04 \x01(\bR\bcaptured\x12\x16\n" +
 	"\x06origin\x18\x05 \x01(\rR\x06origin\x12\x1a\n" +
-	"\bpromises\x18\x06 \x03(\x03R\bpromises\x1a\x8e\x03\n" +
+	"\bpromises\x18\x06 \x03(\x03R\bpromises\x1a\xaf\x03\n" +
 	"\x05Frame\x12\x10\n" +
 	"\x03top\x18\x01 \x01(\bR\x03top\x12'\n" +
 	"\x04self\x18\x02 \x01(\v2\x13.cameo.Dump.BindingR\x04self\x12-\n" +
@@ -1817,7 +1827,9 @@ const file_cameo_dump_proto_rawDesc = "" +
 	" \x01(\tR\x04file\x12\x16\n" +
 	"\x06lambda\x18\v \x01(\bR\x06lambda\x12\x14\n" +
 	"\x05ended\x18\f \x01(\bR\x05ended\x12(\n" +
-	"\bbuilding\x18\r \x01(\v2\f.cameo.ValueR\bbuildingJ\x04\b\x04\x10\x05\x1a\xfe\x03\n" +
+	"\bbuilding\x18\r \x01(\v2\f.cameo.ValueR\bbuilding\x12\x1f\n" +
+	"\vbuilding_of\x18\x0e \x01(\rR\n" +
+	"buildingOfJ\x04\b\x04\x10\x05\x1a\xfe\x03\n" +
 	"\x05Class\x12\x0e\n" +
 	"\x02id\x18\x0e \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +

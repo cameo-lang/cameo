@@ -51,8 +51,12 @@ func stackFrames(acts []*machine) *stackDump {
 		if _, ok := sd.frames[m.fr]; !ok {
 			sd.frames[m.fr] = uint32(len(sd.frameList))
 			sd.frameList = append(sd.frameList, m.fr)
-			if m.fr.Building != nil {
-				sd.building[m.fr.Building] = sd.frames[m.fr]
+			// The first frame that fills an instance holds it; the frame
+			// of an initialize its super called refers to that one.
+			if inst := m.fr.Building; inst != nil {
+				if _, held := sd.building[inst]; !held {
+					sd.building[inst] = sd.frames[m.fr]
+				}
 			}
 		}
 		sd.scope(m.env)
@@ -187,7 +191,9 @@ func (in *Interp) dumpStack(d *cameopb.Dump, enc *protogen.Encoder, classes *cla
 			return fmt.Errorf("frame %d is of an exception's initialize or a class body, which no pause is inside", i)
 		}
 		f := &cameopb.Dump_Frame{Top: fr == acts[0].fr, File: fr.File, Lambda: fr.Lambda, Ended: fr.ended}
-		if inst := fr.Building; inst != nil {
+		if inst := fr.Building; inst != nil && sd.building[inst] != uint32(i) {
+			f.BuildingOf = sd.building[inst] + 1
+		} else if inst != nil {
 			// The instance as it is now. Its message is not kept on it:
 			// its initialize goes on filling it.
 			msg, err := enc.Message(object.InstanceValue(inst))
@@ -424,6 +430,14 @@ func (in *Interp) restoreShells(dec *protogen.Decoder, d *cameopb.Dump) error {
 		// Its initialize goes on filling it: no message is kept on it.
 		inst.Message = nil
 		sr.frames[i].Building = inst
+	}
+	for i, f := range d.GetFrames() {
+		if ref := f.GetBuildingOf(); ref != 0 {
+			if int(ref) > len(sr.frames) || sr.frames[ref-1].Building == nil {
+				return fmt.Errorf("frame %d of the dump fills the instance of frame %d, which makes none", i, ref-1)
+			}
+			sr.frames[i].Building = sr.frames[ref-1].Building
+		}
 	}
 	return nil
 }
