@@ -27,8 +27,8 @@ settled cannot wait and is left out.
 
 ## What a dump holds
 
-The dump is the protobuf message `cameo.Dump`, built in
-[src/protogen/dump.go](../../src/protogen/dump.go):
+The dump is the protobuf message `cameo.Dump`, written in
+[src/cameopb/cameo/dump.proto](../../src/cameopb/cameo/dump.proto):
 
 | field | holds |
 |---|---|

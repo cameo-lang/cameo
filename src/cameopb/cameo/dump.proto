@@ -1,0 +1,57 @@
+// A dump is a paused run, as `cameo` writes it on ^C and `cameo resume`
+// reads it back. doc/design/pause.md describes what it holds.
+syntax = "proto3";
+
+package cameo;
+
+option go_package = "github.com/cameo-lang/cameo/src/cameopb";
+
+// Dump is a paused run: the script, where it paused, and what its top
+// level held.
+message Dump {
+  // Binding is one variable or constant. value is the envelope wire form
+  // of its value; a class is named in class instead; a value the envelope
+  // cannot carry has neither, and missing says what it was.
+  message Binding {
+    string name = 1;
+    bytes value = 2;
+    string class = 3;
+    string missing = 4;
+  }
+
+  // Promise is a settled promise: its result in value, or the exception it
+  // failed with in failure, and in value too when the envelope carries it.
+  message Promise {
+    int64 id = 1;
+    // method is the method async ran; none for a promise made by hand.
+    string method = 2;
+    bytes value = 3;
+    Failure failure = 4;
+    // awaited is set when the script awaited the promise before the pause.
+    bool awaited = 5;
+  }
+
+  // Failure is the exception a promise failed with.
+  message Failure {
+    string class = 1;
+    string message = 2;
+    int32 line = 3;
+  }
+
+  // file and source are the script: its path and its text.
+  string file = 1;
+  string source = 2;
+  // next is the index of the top-level statement the run continues with,
+  // line its line.
+  int32 next = 3;
+  int32 line = 4;
+  repeated Binding variables = 5;
+  // constants are the constants the script assigned; its classes come back
+  // by running their definitions again.
+  repeated Binding constants = 6;
+  repeated Promise promises = 7;
+  // loaded names the libraries require loaded.
+  repeated string loaded = 8;
+  // rand is the state of the random number generator.
+  bytes rand = 9;
+}
