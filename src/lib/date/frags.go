@@ -56,7 +56,8 @@ var fragTables = []struct {
 }
 
 // rewriteFrags turns seconds since the epoch into a day and a time of
-// day, under the offset given.
+// day, under the offset given. The fraction is the seconds' own, as Ruby's
+// rt_rewrite_frags sets it: a sec_fraction %N read beside %s is dropped.
 func rewriteFrags(f *frags) {
 	secs, ok := f.values["seconds"]
 	if !ok {
@@ -78,6 +79,7 @@ func rewriteFrags(f *frags) {
 	day := floorDiv(int64(whole), daySecs)
 	df := floorMod(int64(whole), daySecs)
 	f.del("seconds")
+	f.del("sec_fraction")
 	f.set("jd", unixEpoch+day)
 	f.set("hour", df/3600)
 	f.set("min", df/60%60)

@@ -18,40 +18,41 @@ type LayoutFields struct {
 	Year, Mon, Day, Hour, Min, Sec, Frac, Zone, Wday, Yday, Epoch bool
 }
 
-// layoutDirective is one strftime layoutDirective as a Go layout token: alt is a
-// second spelling Go needs for the same text, and set what it sets.
+// layoutDirective is one strftime layoutDirective as a Go layout token: alts are
+// the other spellings Go needs for the same directive, and set what it sets.
 type layoutDirective struct {
-	token, alt string
-	set        func(*LayoutFields)
+	token string
+	alts  []string
+	set   func(*LayoutFields)
 }
 
 var directives = map[byte]layoutDirective{
-	'Y': {"2006", "", func(f *LayoutFields) { f.Year = true }},
-	'y': {"06", "", func(f *LayoutFields) { f.Year = true }},
-	'm': {"01", "", func(f *LayoutFields) { f.Mon = true }},
-	'B': {"January", "", func(f *LayoutFields) { f.Mon = true }},
-	'b': {"Jan", "", func(f *LayoutFields) { f.Mon = true }},
-	'h': {"Jan", "", func(f *LayoutFields) { f.Mon = true }},
-	'd': {"02", "", func(f *LayoutFields) { f.Day = true }},
-	'e': {"_2", "", func(f *LayoutFields) { f.Day = true }},
-	'j': {"002", "", func(f *LayoutFields) { f.Yday = true }},
-	'H': {"15", "", func(f *LayoutFields) { f.Hour = true }},
-	'k': {"15", "", func(f *LayoutFields) { f.Hour = true }},
-	'I': {"03", "", func(f *LayoutFields) { f.Hour = true }},
-	'l': {"3", "", func(f *LayoutFields) { f.Hour = true }},
-	'M': {"04", "", func(f *LayoutFields) { f.Min = true }},
-	'S': {"05", "", func(f *LayoutFields) { f.Sec = true }},
-	'L': {"999", "", func(f *LayoutFields) { f.Frac = true }},
-	'N': {"999999999", "", func(f *LayoutFields) { f.Frac = true }},
-	'p': {"PM", "", func(f *LayoutFields) { f.Hour = true }},
-	'P': {"pm", "", func(f *LayoutFields) { f.Hour = true }},
-	'z': {"-0700", "Z07:00", func(f *LayoutFields) { f.Zone = true }},
-	'Z': {"MST", "", func(f *LayoutFields) { f.Zone = true }},
-	'A': {"Monday", "", func(f *LayoutFields) { f.Wday = true }},
-	'a': {"Mon", "", func(f *LayoutFields) { f.Wday = true }},
-	'n': {"\n", "", nil},
-	't': {"\t", "", nil},
-	'%': {"%", "", nil},
+	'Y': {"2006", nil, func(f *LayoutFields) { f.Year = true }},
+	'y': {"06", nil, func(f *LayoutFields) { f.Year = true }},
+	'm': {"01", nil, func(f *LayoutFields) { f.Mon = true }},
+	'B': {"January", nil, func(f *LayoutFields) { f.Mon = true }},
+	'b': {"Jan", nil, func(f *LayoutFields) { f.Mon = true }},
+	'h': {"Jan", nil, func(f *LayoutFields) { f.Mon = true }},
+	'd': {"02", nil, func(f *LayoutFields) { f.Day = true }},
+	'e': {"_2", nil, func(f *LayoutFields) { f.Day = true }},
+	'j': {"002", nil, func(f *LayoutFields) { f.Yday = true }},
+	'H': {"15", nil, func(f *LayoutFields) { f.Hour = true }},
+	'k': {"15", nil, func(f *LayoutFields) { f.Hour = true }},
+	'I': {"03", nil, func(f *LayoutFields) { f.Hour = true }},
+	'l': {"3", nil, func(f *LayoutFields) { f.Hour = true }},
+	'M': {"04", nil, func(f *LayoutFields) { f.Min = true }},
+	'S': {"05", nil, func(f *LayoutFields) { f.Sec = true }},
+	'L': {"999", nil, func(f *LayoutFields) { f.Frac = true }},
+	'N': {"999999999", nil, func(f *LayoutFields) { f.Frac = true }},
+	'p': {"PM", nil, func(f *LayoutFields) { f.Hour = true }},
+	'P': {"pm", nil, func(f *LayoutFields) { f.Hour = true }},
+	'z': {"-0700", []string{"Z07:00", "MST"}, func(f *LayoutFields) { f.Zone = true }},
+	'Z': {"MST", nil, func(f *LayoutFields) { f.Zone = true }},
+	'A': {"Monday", nil, func(f *LayoutFields) { f.Wday = true }},
+	'a': {"Mon", nil, func(f *LayoutFields) { f.Wday = true }},
+	'n': {"\n", nil, nil},
+	't': {"\t", nil, nil},
+	'%': {"%", nil, nil},
 }
 
 // unpadded are the tokens %-d and kin take: Go's one-digit forms.
@@ -65,15 +66,30 @@ var compositeDirectives = strings.NewReplacer("%T", "%H:%M:%S", "%D", "%m/%d/%y"
 func ExpandComposites(format string) string { return compositeDirectives.Replace(format) }
 
 // StrptimeLayouts translates a strftime format into the Go layouts that
-// read it: one, or two when the format has %z, which Go spells one way
-// for +0900 and another for +09:00 and Z. A layoutDirective Go has no layout
-// for is an error naming it; %s alone is the Epoch field.
+// read it: one, or three for each %z, which Go spells one way for +0900,
+// another for +09:00 and Z, and a third for a zone name such as UTC. A
+// directive Go has no layout for is an error naming it.
+//
+// Go's layouts have no token for seconds since the epoch, so a format that
+// starts with %s sets the Epoch field, and the layouts read what follows
+// the seconds (ParseEpoch). That rest may set a fraction and a zone only.
 func StrptimeLayouts(format string) ([]string, LayoutFields, error) {
-	var fields LayoutFields
-	if epochFormat.MatchString(format) {
+	if rest, ok := strings.CutPrefix(format, "%s"); ok {
+		layouts, fields, err := strptimeLayouts(rest)
+		if err != nil {
+			return nil, fields, err
+		}
+		if fields != (LayoutFields{Frac: fields.Frac, Zone: fields.Zone}) {
+			return nil, fields, fmt.Errorf("Go's time reads %%s only with a fraction and a zone after it")
+		}
 		fields.Epoch = true
-		return nil, fields, nil
+		return layouts, fields, nil
 	}
+	return strptimeLayouts(format)
+}
+
+func strptimeLayouts(format string) ([]string, LayoutFields, error) {
+	var fields LayoutFields
 	format = compositeDirectives.Replace(format)
 	layouts := []string{""}
 	add := func(token string) {
@@ -127,44 +143,51 @@ func StrptimeLayouts(format string) ([]string, LayoutFields, error) {
 		if d.set != nil {
 			d.set(&fields)
 		}
-		if d.alt != "" {
-			more := make([]string, len(layouts))
-			for k := range layouts {
-				more[k] = layouts[k] + d.alt
+		base := layouts
+		layouts = nil
+		for _, tok := range append([]string{token}, d.alts...) {
+			for _, l := range base {
+				layouts = append(layouts, l+tok)
 			}
-			add(token)
-			layouts = append(layouts, more...)
-		} else {
-			add(token)
 		}
 	}
 	return layouts, fields, nil
 }
 
-// epochFormat is the one form a %s takes: alone, or with a zone after it,
-// since Go's layouts have no token for seconds since the epoch.
-var epochFormat = regexp.MustCompile(`^%s(\s+%[zZ])?$`)
+// epochSeconds is what %s reads: an integer with an optional sign.
+var epochSeconds = regexp.MustCompile(`^\s*[-+]?\d+`)
 
-// ParseEpoch reads s by an epoch format, %s or %s %z: the seconds since
-// the epoch, in the zone named or the local one.
-func ParseEpoch(s, format string) (time.Time, bool) {
-	s = strings.TrimSpace(s)
-	num, zone := s, ""
-	if i := strings.IndexAny(s, " \t"); i >= 0 {
-		num, zone = s[:i], strings.TrimSpace(s[i:])
-	}
-	n, err := strconv.ParseInt(num, 10, 64)
-	if err != nil || (zone != "") != (format != "%s") {
+// ParseEpoch reads s by the layouts and fields StrptimeLayouts returns for
+// a format that starts with %s: the seconds since the epoch, then the rest
+// of s by the layouts. A fraction is added to the seconds away from zero,
+// as Ruby adds it, and the time is in the zone read, or in loc without one.
+func ParseEpoch(s string, layouts []string, fields LayoutFields, loc *time.Location) (time.Time, bool) {
+	num := epochSeconds.FindString(s)
+	if num == "" {
 		return time.Time{}, false
 	}
-	loc := time.Local
-	if zone != "" {
-		var ok bool
-		if loc, ok = ZoneNamed(zone); !ok {
-			return time.Time{}, false
+	n, err := strconv.ParseInt(strings.TrimSpace(num), 10, 64)
+	if err != nil {
+		return time.Time{}, false
+	}
+	if loc == nil {
+		loc = time.Local
+	}
+	rest, ok := TryLayouts(s[len(num):], layouts, loc)
+	if !ok {
+		return time.Time{}, false
+	}
+	nsec := int64(0)
+	if fields.Frac {
+		nsec = int64(rest.Nanosecond())
+		if n < 0 {
+			nsec = -nsec
 		}
 	}
-	return time.Unix(n, 0).In(loc), true
+	if fields.Zone {
+		loc = rest.Location()
+	}
+	return time.Unix(n, nsec).In(loc), true
 }
 
 // TryLayouts reads s by the first layout that fits, in loc for a layout

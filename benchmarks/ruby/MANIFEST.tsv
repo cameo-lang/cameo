@@ -1,6 +1,4 @@
 directory	file	source	reason
-bugs	time_strptime--time_strptime_4.rb	benchmark/time_strptime.yml, entry time_strptime_4	Time.strptime does not take %s, seconds since the epoch
-bugs	time_strptime--time_strptime_7.rb	benchmark/time_strptime.yml, entry time_strptime_7	Time.strptime does not take a zone name such as UTC for %z
 stdlib/string	string_tr--tr_escape.rb	benchmark/string_tr.yml, entry tr_escape	String#tr with a hash (newer than Ruby 3.3)
 unsupported/anonymous-classes	class_superclass--large_class_superclass.rb	benchmark/class_superclass.yml, entry large_class_superclass	Module.new (a module built at run time, to include or extend)
 unsupported/anonymous-classes	class_superclass--medium_class_superclass.rb	benchmark/class_superclass.yml, entry medium_class_superclass	Module.new (a module built at run time, to include or extend)
@@ -1161,7 +1159,9 @@ works	time_strptime--time_strptime_0.rb	benchmark/time_strptime.yml, entry time_
 works	time_strptime--time_strptime_1.rb	benchmark/time_strptime.yml, entry time_strptime_1	
 works	time_strptime--time_strptime_2.rb	benchmark/time_strptime.yml, entry time_strptime_2	
 works	time_strptime--time_strptime_3.rb	benchmark/time_strptime.yml, entry time_strptime_3	
+works	time_strptime--time_strptime_4.rb	benchmark/time_strptime.yml, entry time_strptime_4	
 works	time_strptime--time_strptime_6.rb	benchmark/time_strptime.yml, entry time_strptime_6	
+works	time_strptime--time_strptime_7.rb	benchmark/time_strptime.yml, entry time_strptime_7	
 works	time_strptime--time_strptime_8.rb	benchmark/time_strptime.yml, entry time_strptime_8	
 works	time_strptime--time_strptime_9.rb	benchmark/time_strptime.yml, entry time_strptime_9	
 works	time_subsec.rb	benchmark/time_subsec.rb	

@@ -60,8 +60,7 @@ A failing case is filed under the first thing that stops it. Fixing that may
 uncover a second blocker, so a file can move from `stdlib/` to another
 directory rather than to `works/`.
 
-`bugs/` holds two `Time.strptime` cases: cameo's strptime does not parse
-`%s`, or a zone name such as `UTC` for `%z`.
+`bugs/` is empty: every case filed there has been fixed.
 
 A bare `Object` prints as `#<Object>`, without the address Ruby shows,
 since cameo values have no identity; the cases that print one count as
