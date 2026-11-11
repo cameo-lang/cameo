@@ -18,6 +18,9 @@ top-level statement and pauses there. A top-level statement that never
 ends, `loop do … end` or a call that does all the work, is never paused: a
 second `^C` ends the process.
 
+[ir.md](ir.md) is the plan that lifts this limit: an IR that protobuf
+carries, and an evaluator that keeps a run's state off the Go stack.
+
 The pause waits for every call `async` started, so their results travel
 settled in the dump. A promise the script or a host made by hand and has not
 settled cannot wait and is left out.
