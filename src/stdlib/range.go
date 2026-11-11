@@ -381,6 +381,8 @@ func installRange() {
 		}
 		return object.Enumerable.Methods["sum"].Native(ctx, self, args, kw, block)
 	})
+	// count and sum are Enumerable's with a block, steps included.
+	foldsOf(c, "count", "sum")
 	// min and max of a range compare its ends rather than walk it, after
 	// CRuby's range_min and range_max: min(n) is first(n), and max(n) of
 	// an Integer range counts down from its end.

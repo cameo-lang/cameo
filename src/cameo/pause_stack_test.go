@@ -394,6 +394,45 @@ p h.each_with_index.map { |(k, v), i| [k, i] }
 `)
 }
 
+// A run pauses inside the block of the methods that fold a list into one
+// value: inject, sum, count, any?, all?, none?, one?, take_while,
+// drop_while, group_by, each_slice, each_cons and reverse_each. The
+// calls that are made with more than a block, a pattern or the name of an
+// operation, compute what they did.
+func TestPauseInsideTheBlockOfAFold(t *testing.T) {
+	const src = `def mark(x)
+  Test.pause
+  x
+end
+list = [3, 1, 2]
+p list.inject { |a, x| mark(a) + x }, list.reduce(10) { |a, x| a * mark(x) }
+p [].inject { |a, x| mark(a) }, [7].inject { |a, x| mark(a) }
+p list.sum { |x| mark(x) * 2 }, list.sum(0.5) { |x| mark(x) }
+p list.count { |x| mark(x) > 1 }
+p list.any? { |x| mark(x) > 2 }, list.all? { |x| mark(x) > 0 }, list.none? { |x| mark(x) > 5 }, list.one? { |x| mark(x) == 1 }
+p list.take_while { |x| mark(x) > 1 }, list.drop_while { |x| mark(x) > 1 }
+p list.take_while { |x| mark(x) > 0 }, list.drop_while { |x| mark(x) > 0 }
+p list.group_by { |x| mark(x).odd? }
+list.each_slice(2) { |pair| p mark(pair) }
+list.each_cons(2) { |pair| p mark(pair) }
+p list.reverse_each { |x| p mark(x) }
+p (1..4).inject { |a, x| mark(a) + x }, (1..4).each_slice(3) { |s| mark(s) }
+p({a: 1, b: 2}.sum { |k, v| mark(v) }, Set[1, 2].count { |x| mark(x) > 1 })
+h = {a: 1, b: 2}
+p h.map { |k, v| [k, mark(v)] }, h.find { |k, v| mark(v) == 2 }, h.flat_map { |k, v| [mark(k)] }
+p h.group_by { |k, v| mark(v).odd? }, h.partition { |k, v| mark(v) > 1 }, h.count { |k, v| mark(v) > 1 }
+p h.each_with_index.to_a, h.each_with_object([]) { |(k, v), memo| memo + [mark(k)] }
+p h.inject(0) { |a, (k, v)| a + mark(v) }, h.any? { |k, v| mark(v) > 1 }, h.all? { |k, v| mark(v) > 1 }
+p Set[1, 2].map { |x| mark(x) * 2 }, (1..3).count { |x| mark(x).odd? }, (1..3).sum { |x| mark(x) }
+`
+	everyPauseLands(t, src)
+	sameAsWhole(t, src+`p list.inject(:+), list.inject(1, :*), list.sum, list.sum(1), list.count, list.count(1)
+p list.any?, list.all?(Integer), list.none?(String), list.one?(3)
+p list.each_slice(2).to_a, list.each_cons(2).to_a, list.reverse_each.to_a
+p list.inject(2) { |a, x| a * x }, (1..3).sum { |x| x * 0.5 }
+`)
+}
+
 // A run that paused goes on when it is run again, from where it paused:
 // what a host does with a script it could not dump. Here the block of
 // loop holds a StringIO, which no dump carries.

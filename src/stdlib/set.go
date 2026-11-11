@@ -230,6 +230,8 @@ func installSet() {
 	def(c, "map", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Enumerable.Methods["map"].Native(ctx, self, args, kw, block)
 	})
+	// count and map are Enumerable's with a block, steps included.
+	foldsOf(c, "count", "map")
 	def(c, "to_set", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if block.IsZero() {
 			return self, nil

@@ -454,8 +454,12 @@ func installList() {
 		return self, nil
 	})
 	def(c, "to_ary", 0, c.Methods["to_list"].Native)
-	def(c, "each_slice", -1, object.Enumerable.Methods["each_slice"].Native)
-	def(c, "sum", -1, object.Enumerable.Methods["sum"].Native)
+	// each_slice and sum are Enumerable's, steps included.
+	for _, name := range []string{"each_slice", "sum"} {
+		m := *object.Enumerable.Methods[name]
+		m.Owner = c
+		c.SetMethod(&m)
+	}
 	def(c, "assoc", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		for _, e := range elems(self) {
 			if pair, ok := e.AsList(); ok && pair.Len() > 0 {
