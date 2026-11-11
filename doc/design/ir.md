@@ -168,10 +168,12 @@ activation the lists of an instruction run on cursors (`eval/cursor.go`),
 and a completion unwinds them. And an interpreter has one stack of
 activations and one loop (`eval/stack.go`): a `SEND` or a bare name whose
 method a script defined, and a `YIELD` to a block a script wrote, push an
-activation and go back to the loop. Every other way into a method or a
-block still starts a loop of its own, nested in the one that runs: a
-builtin calling its block, `super`, an operator a class defines, a
-parameter's default, `Proc#call`, the expression inside a pattern.
+activation and go back to the loop, and so does a call of a lambda or a
+proc as a value, `f.call(x)`. Every other way into a method or a block
+still starts a loop of its own, nested in the one that runs: a builtin
+that is no step function calling its block, `new` calling `initialize`,
+`super`, an operator a class defines, a parameter's default, the
+expression inside a pattern.
 
 A script's recursion no longer rides on Go's stack, which ended the
 process at about a million calls: a call past 200,000 activations raises

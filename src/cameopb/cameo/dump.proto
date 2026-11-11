@@ -125,6 +125,10 @@ message Dump {
     // line is the line of the activation's next instruction.
     int32 line = 8;
     Builtin builtin = 9;
+    // block is the proc of a BLOCK that was called as a value, with
+    // call. One the activation below yielded to has none: it is the
+    // block of that activation's frame, or of its builtin.
+    Binding block = 10;
   }
 
   // Builtin is a builtin that calls its block, between two of the calls:

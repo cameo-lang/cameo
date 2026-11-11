@@ -368,6 +368,16 @@ func (in *Interp) blockAct(p *Proc, args []object.Value, kw *object.Map, inner o
 	return act, nil
 }
 
+// callsProc reports whether name is a method of Proc that calls the proc
+// with its arguments.
+func callsProc(name string) bool {
+	switch name {
+	case "call", "()", "[]", "yield", "===":
+		return true
+	}
+	return false
+}
+
 // runs reports whether a call of the method m is an activation the loop
 // runs: m is one a script defined, and not one `cameo build` compiled
 // that runs as Go. private says whether the call reaches a function of

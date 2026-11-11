@@ -394,6 +394,42 @@ p h.each_with_index.map { |(k, v), i| [k, i] }
 `)
 }
 
+// A run pauses inside a lambda or a proc that is called as a value, with
+// call, () or [], and resumes there: a lambda's return still returns
+// from the lambda, a proc's from the method it was written in, and a
+// lambda that calls itself is as deep as it was.
+func TestPauseInsideAProcCalledAsAValue(t *testing.T) {
+	const src = `def mark(x)
+  Test.pause
+  x
+end
+double = ->(x) { mark(x) * 2 }
+p double.call(1), double.(2), double[3]
+add = proc { |a, b| mark(a) + b }
+p add.call(1, 2), add.yield(3, 4)
+fact = ->(n) { n <= 1 ? mark(1) : n * fact.(n - 1) }
+p fact.(5)
+early = ->(x) { return mark(x) if x > 1; :small }
+p early.(1), early.(2)
+def apply(x, &blk) = blk.call(mark(x))
+p apply(3) { |v| mark(v) + 1 }
+def finder(list)
+  check = proc { |x| return mark(x) if x.even? }
+  list.each { |x| check.call(x) }
+  :none
+end
+p finder([1, 3, 4, 5]), finder([1, 3])
+compose = ->(f, g) { ->(x) { g.(f.(mark(x))) } }
+p compose.(double, ->(y) { mark(y) + 1 }).(5)
+case 4
+when ->(n) { mark(n).even? } then puts "even"
+end
+p [1, 2, 3].map(&double), [1, 2].each_with_object([]) { |x, memo| memo + [double.(x)] }
+`
+	everyPauseLands(t, src)
+	sameAsWhole(t, src)
+}
+
 // A run that paused goes on when it is run again, from where it paused:
 // what a host does with a script it could not dump. Here the block of
 // loop holds a StringIO, which no dump carries.

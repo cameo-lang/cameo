@@ -119,10 +119,16 @@ func (in *Interp) dumpStack(d *cameopb.Dump, enc *protogen.Encoder, classes *cla
 		case actBlock:
 			a.Kind = cameopb.Dump_Activation_BLOCK
 			a.Unit, a.Proc = procRef(m.proc.IR)
-			// A block's activation is of the block the frame below
-			// yielded to; the resume finds the proc there.
-			if i == 0 || blockTarget(acts[i-1].yields()) != any(m.proc) {
-				return fmt.Errorf("the block %s runs was not yielded to by the call below it", where)
+			// A block's activation is of the block the activation below
+			// yielded to, where the resume finds the very same proc; or
+			// of a proc called as a value, which the dump holds here.
+			if i == 0 {
+				return fmt.Errorf("the block %s runs was called by nothing", where)
+			}
+			if blockTarget(acts[i-1].yields()) != any(m.proc) {
+				if a.Block = value("the proc of "+where, procValue(m.proc)); a.Block.Missing != "" {
+					return fmt.Errorf("the proc of %s: %s", where, a.Block.Missing)
+				}
 			}
 		default:
 			if i != 0 {
@@ -572,9 +578,15 @@ func (in *Interp) restoreStack(dec *protogen.Decoder, d *cameopb.Dump, script *p
 				if i == 0 {
 					return fmt.Errorf("activation 0 of the dump is a block")
 				}
-				p, ok := asProc(acts[i-1].yields())
-				if !ok {
-					return fmt.Errorf("activation %d of the dump is a block, and the call below it has none", i)
+				block := acts[i-1].yields()
+				if a.GetBlock() != nil {
+					if block, err = value(a.GetBlock()); err != nil {
+						return fmt.Errorf("the proc of activation %d: %w", i, err)
+					}
+				}
+				p, ok := asProc(block)
+				if !ok || !p.written() {
+					return fmt.Errorf("activation %d of the dump is a block, and the dump has no proc for it", i)
 				}
 				m.proc = p
 			}
