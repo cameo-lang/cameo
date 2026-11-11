@@ -22,14 +22,18 @@ import (
 // observes a variable from outside its scope, which is what an immutable
 // value needs.
 //
+// A scope holds its variables by Sym, so a read compares numbers. The
+// methods that take a name as a string intern it, for the code that runs
+// seldom: a dump, the debugger, a pattern's bindings.
+//
 // The first few variables live in the scope itself, so a scope of a method
 // with a handful of locals costs no allocation beyond its own; more spill
 // into a map.
 type Env struct {
-	names  [envInline]string
+	names  [envInline]object.Sym
 	values [envInline]object.Value
 	n      int
-	more   map[string]object.Value
+	more   map[object.Sym]object.Value
 	parent *Env
 	// captured marks a scope a block captured: Set never rebinds in it.
 	captured bool
@@ -51,6 +55,15 @@ func NewEnv(parent *Env) *Env {
 
 // lookup finds name in this scope alone.
 func (e *Env) lookup(name string) (object.Value, bool) {
+	// A name nothing interned is the name of no variable.
+	if sym, ok := object.LookupSym(name); ok {
+		return e.lookupSym(sym)
+	}
+	return object.Value{}, false
+}
+
+// lookupSym is lookup for a name that is interned.
+func (e *Env) lookupSym(name object.Sym) (object.Value, bool) {
 	for i := 0; i < e.n; i++ {
 		if e.names[i] == name {
 			return e.values[i], true
@@ -64,7 +77,10 @@ func (e *Env) lookup(name string) (object.Value, bool) {
 }
 
 // bind binds name in this scope alone, rebinding it when it is bound.
-func (e *Env) bind(name string, v object.Value) {
+func (e *Env) bind(name string, v object.Value) { e.bindSym(object.Intern(name), v) }
+
+// bindSym is bind for a name that is interned.
+func (e *Env) bindSym(name object.Sym, v object.Value) {
 	for i := 0; i < e.n; i++ {
 		if e.names[i] == name {
 			e.values[i] = v
@@ -78,7 +94,7 @@ func (e *Env) bind(name string, v object.Value) {
 		return
 	}
 	if e.more == nil {
-		e.more = map[string]object.Value{}
+		e.more = map[object.Sym]object.Value{}
 	}
 	e.more[name] = v
 }
@@ -87,22 +103,33 @@ func (e *Env) bind(name string, v object.Value) {
 // for the inline ones and by name for the rest.
 func (e *Env) each(f func(name string, v object.Value)) {
 	for i := 0; i < e.n; i++ {
-		f(e.names[i], e.values[i])
+		f(e.names[i].String(), e.values[i])
 	}
+	rest := make(map[string]object.Value, len(e.more))
 	names := make([]string, 0, len(e.more))
-	for name := range e.more {
+	for sym, v := range e.more {
+		name := sym.String()
+		rest[name] = v
 		names = append(names, name)
 	}
 	sort.Strings(names)
 	for _, name := range names {
-		f(name, e.more[name])
+		f(name, rest[name])
 	}
 }
 
 // Get reads a variable, searching outwards, and false when it is unbound.
 func (e *Env) Get(name string) (object.Value, bool) {
+	if sym, ok := object.LookupSym(name); ok {
+		return e.GetSym(sym)
+	}
+	return object.Value{}, false
+}
+
+// GetSym is Get for a name that is interned.
+func (e *Env) GetSym(name object.Sym) (object.Value, bool) {
 	for s := e; s != nil; s = s.parent {
-		if v, ok := s.lookup(name); ok {
+		if v, ok := s.lookupSym(name); ok {
 			return v, true
 		}
 	}
@@ -112,14 +139,17 @@ func (e *Env) Get(name string) (object.Value, bool) {
 // Set rebinds a variable where it is bound, or binds it in this scope when
 // it is new or captured: a block's new variable is the block's own, and so
 // is its rebinding of a captured one.
-func (e *Env) Set(name string, v object.Value) {
+func (e *Env) Set(name string, v object.Value) { e.SetSym(object.Intern(name), v) }
+
+// SetSym is Set for a name that is interned.
+func (e *Env) SetSym(name object.Sym, v object.Value) {
 	for s := e; s != nil && !s.captured; s = s.parent {
-		if _, ok := s.lookup(name); ok {
-			s.bind(name, v)
+		if _, ok := s.lookupSym(name); ok {
+			s.bindSym(name, v)
 			return
 		}
 	}
-	e.bind(name, v)
+	e.bindSym(name, v)
 }
 
 // snapshot copies the variables the scope sees into a captured scope, the
@@ -164,11 +194,11 @@ func (e *Env) copyInto(s *Env) {
 // copyOwn binds the variables of this scope alone in s.
 func (e *Env) copyOwn(s *Env) {
 	for i := 0; i < e.n; i++ {
-		s.bind(e.names[i], e.values[i])
+		s.bindSym(e.names[i], e.values[i])
 	}
 	if e.more != nil {
 		for name, v := range e.more {
-			s.bind(name, v)
+			s.bindSym(name, v)
 		}
 	}
 }
@@ -190,6 +220,9 @@ func methodScope(env *Env) *Env {
 // Define binds a variable in this scope, shadowing an outer one: what a
 // parameter does.
 func (e *Env) Define(name string, v object.Value) { e.bind(name, v) }
+
+// DefineSym is Define for a name that is interned.
+func (e *Env) DefineSym(name object.Sym, v object.Value) { e.bindSym(name, v) }
 
 // activation is a method's frame and its scope in one allocation.
 type activation struct {

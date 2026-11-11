@@ -8,139 +8,84 @@ import (
 	"github.com/cameo-lang/cameo/src/object"
 )
 
-// binaryOp returns the fast path for an arithmetic or comparison operator
-// on two integers or two floats, or nil for any other name. The
-// fast path returns nil when the operands are not both integers or both
-// floats, and the call goes the ordinary way. It is sound because Integer
-// and Float are builtin classes, which a script can neither reopen nor
-// replace a method of, so `+` on an integer can only ever mean this.
-func binaryOp(name string) func(a, b object.Value) object.Value {
-	switch name {
-	case "+":
-		return func(a, b object.Value) object.Value {
-			if x, y, ok := ints(a, b); ok {
-				if r, ok := object.AddInt(x, y); ok {
-					return object.Int(r)
-				}
-				return object.Value{}
+// binary returns the value of the arithmetic or comparison operator op on
+// two integers or two floats, and the zero Value when op is none of them
+// or the operands are not both integers or both floats: the call then
+// goes the ordinary way. It is sound because Integer and Float are
+// builtin classes, which a script can neither reopen nor replace a method
+// of, so `+` on an integer can only ever mean this.
+func binary(op object.Sym, a, b object.Value) object.Value {
+	if x, y, ok := ints(a, b); ok {
+		switch op {
+		case object.SymAdd:
+			if r, ok := object.AddInt(x, y); ok {
+				return object.Int(r)
 			}
-			if x, y, ok := floats(a, b); ok {
-				return object.Float(x + y)
+		case object.SymSub:
+			if r, ok := object.SubInt(x, y); ok {
+				return object.Int(r)
 			}
-			return object.Value{}
-		}
-	case "-":
-		return func(a, b object.Value) object.Value {
-			if x, y, ok := ints(a, b); ok {
-				if r, ok := object.SubInt(x, y); ok {
-					return object.Int(r)
-				}
-				return object.Value{}
+		case object.SymMul:
+			if r, ok := object.MulInt(x, y); ok {
+				return object.Int(r)
 			}
-			if x, y, ok := floats(a, b); ok {
-				return object.Float(x - y)
-			}
-			return object.Value{}
-		}
-	case "*":
-		return func(a, b object.Value) object.Value {
-			if x, y, ok := ints(a, b); ok {
-				if r, ok := object.MulInt(x, y); ok {
-					return object.Int(r)
-				}
-				return object.Value{}
-			}
-			if x, y, ok := floats(a, b); ok {
-				return object.Float(x * y)
-			}
-			return object.Value{}
-		}
-	case "/":
-		// Integer division floors, as Ruby's does; a zero divisor, the one
-		// quotient that overflows and the floats go the ordinary way.
-		return func(a, b object.Value) object.Value {
-			if x, y, ok := ints(a, b); ok && y != 0 && (y != -1 || x != math.MinInt64) {
+		case object.SymDiv:
+			// Integer division floors, as Ruby's does; a zero divisor and
+			// the one quotient that overflows go the ordinary way.
+			if y != 0 && (y != -1 || x != math.MinInt64) {
 				q := x / y
 				if x%y != 0 && (x < 0) != (y < 0) {
 					q--
 				}
 				return object.Int(q)
 			}
-			return object.Value{}
-		}
-	case "%":
-		return func(a, b object.Value) object.Value {
-			if x, y, ok := ints(a, b); ok && y != 0 {
+		case object.SymMod:
+			if y != 0 {
 				m := x % y
 				if m != 0 && (m < 0) != (y < 0) {
 					m += y
 				}
 				return object.Int(m)
 			}
-			return object.Value{}
+		case object.SymLt:
+			return object.Bool(x < y)
+		case object.SymLe:
+			return object.Bool(x <= y)
+		case object.SymGt:
+			return object.Bool(x > y)
+		case object.SymGe:
+			return object.Bool(x >= y)
+		case object.SymEq:
+			return object.Bool(x == y)
+		case object.SymNe:
+			return object.Bool(x != y)
 		}
-	case "<":
-		return func(a, b object.Value) object.Value {
-			if x, y, ok := ints(a, b); ok {
-				return object.Bool(x < y)
-			}
-			if x, y, ok := floats(a, b); ok {
-				return object.Bool(x < y)
-			}
-			return object.Value{}
-		}
-	case "<=":
-		return func(a, b object.Value) object.Value {
-			if x, y, ok := ints(a, b); ok {
-				return object.Bool(x <= y)
-			}
-			if x, y, ok := floats(a, b); ok {
-				return object.Bool(x <= y)
-			}
-			return object.Value{}
-		}
-	case ">":
-		return func(a, b object.Value) object.Value {
-			if x, y, ok := ints(a, b); ok {
-				return object.Bool(x > y)
-			}
-			if x, y, ok := floats(a, b); ok {
-				return object.Bool(x > y)
-			}
-			return object.Value{}
-		}
-	case ">=":
-		return func(a, b object.Value) object.Value {
-			if x, y, ok := ints(a, b); ok {
-				return object.Bool(x >= y)
-			}
-			if x, y, ok := floats(a, b); ok {
-				return object.Bool(x >= y)
-			}
-			return object.Value{}
-		}
-	case "==":
-		return func(a, b object.Value) object.Value {
-			if x, y, ok := ints(a, b); ok {
-				return object.Bool(x == y)
-			}
-			if x, y, ok := floats(a, b); ok {
-				return object.Bool(x == y)
-			}
-			return object.Value{}
-		}
-	case "!=":
-		return func(a, b object.Value) object.Value {
-			if x, y, ok := ints(a, b); ok {
-				return object.Bool(x != y)
-			}
-			if x, y, ok := floats(a, b); ok {
-				return object.Bool(x != y)
-			}
-			return object.Value{}
+		return object.Value{}
+	}
+	if x, y, ok := floats(a, b); ok {
+		// Float division and modulo go the ordinary way.
+		switch op {
+		case object.SymAdd:
+			return object.Float(x + y)
+		case object.SymSub:
+			return object.Float(x - y)
+		case object.SymMul:
+			return object.Float(x * y)
+		case object.SymLt:
+			return object.Bool(x < y)
+		case object.SymLe:
+			return object.Bool(x <= y)
+		case object.SymGt:
+			return object.Bool(x > y)
+		case object.SymGe:
+			return object.Bool(x >= y)
+		case object.SymEq:
+			return object.Bool(x == y)
+		case object.SymNe:
+			return object.Bool(x != y)
 		}
 	}
-	return nil
+	return object.Value{}
 }
 
 func ints(a, b object.Value) (int64, int64, bool) {
@@ -346,7 +291,7 @@ func (in *Interp) bindParams(p *params, args []object.Value, kw *object.Map, blo
 	if p.plain && kw == nil && len(args) == len(p.Positional) {
 		// Required parameters alone, and as many arguments.
 		for i := range p.Positional {
-			env.Define(p.Positional[i].Name, args[i])
+			env.DefineSym(p.Positional[i].sym, args[i])
 		}
 		return nil
 	}
