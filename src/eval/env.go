@@ -230,7 +230,7 @@ func writtenProc(unit *cameopb.Unit, index uint32, env *Env, fr *Frame) *Proc {
 	w := &struct {
 		Proc
 		ir irProc
-	}{Proc: Proc{Env: env, Frame: fr}, ir: irProc{unit: unit, proc: unit.Procs[index]}}
+	}{Proc: Proc{Env: env, Frame: fr}, ir: irProc{unit: unit, proc: unit.Procs[index], index: index}}
 	w.IR = &w.ir
 	return &w.Proc
 }

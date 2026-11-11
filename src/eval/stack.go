@@ -350,7 +350,7 @@ func (in *Interp) methodAct(m *object.Method, recv object.Value, args []object.V
 	}
 	act := in.machine()
 	act.unit, act.env, act.fr, act.kind = code.unit, env, fr, actMethod
-	if err := in.bindParams(in.code.irParams(code), args, kw, block, env, fr, true, m.Name, line); err != nil {
+	if err := in.bindParams(in.paramsOf(code), args, kw, block, env, fr, true, m.Name, line); err != nil {
 		_, err = in.leave(act, object.Value{}, err)
 		return nil, err
 	}
@@ -381,7 +381,7 @@ func (in *Interp) blockAct(p *Proc, args []object.Value, kw *object.Map, inner o
 	} else {
 		env = NewEnv(p.Env)
 	}
-	if err := in.bindParams(in.code.irParams(p.IR), args, kw, inner, env, fr, p.Strict, "block", p.line()); err != nil {
+	if err := in.bindParams(in.paramsOf(p.IR), args, kw, inner, env, fr, p.Strict, "block", p.line()); err != nil {
 		if p.Strict {
 			fr.ended = true
 		}

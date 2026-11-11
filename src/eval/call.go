@@ -343,6 +343,13 @@ func (in *Interp) inFile(err error, fr *Frame) error {
 // bindParams binds arguments to parameters in env. strict is a method or
 // lambda, where the argument count must fit; a block is lenient.
 func (in *Interp) bindParams(p *params, args []object.Value, kw *object.Map, block object.Value, env *Env, fr *Frame, strict bool, name string, line int) error {
+	if p.plain && kw == nil && len(args) == len(p.Positional) {
+		// Required parameters alone, and as many arguments.
+		for i := range p.Positional {
+			env.Define(p.Positional[i].Name, args[i])
+		}
+		return nil
+	}
 	// Keywords given to a method with no keyword parameters are one more
 	// positional argument, a map.
 	if kw != nil && len(p.Keywords) == 0 && p.KwRest == "" {

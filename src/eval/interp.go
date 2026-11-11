@@ -47,6 +47,12 @@ type Interp struct {
 	// free is machines of activations that ended, which the next calls
 	// run on (machine.go).
 	free []*machine
+	// paramsBy is the parameter lists of the procs the interpreter
+	// called, by unit and index; paramsUnit and paramsList are the unit
+	// asked for last and its lists (paramsOf).
+	paramsBy   map[*cameopb.Unit][]*params
+	paramsUnit *cameopb.Unit
+	paramsList []*params
 	// loops counts the loops running the activations: one for the run,
 	// and one more for each call Go code makes into the evaluator while
 	// it runs.

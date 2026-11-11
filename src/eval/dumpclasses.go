@@ -503,7 +503,7 @@ func (in *Interp) restoreMethods(cls *object.Class, c *cameopb.Dump_Class, alias
 		if int(dm.GetProc()) >= len(unit.GetProcs()) {
 			return fmt.Errorf("unit %s has no proc %d for %s of %s", dm.GetUnit(), dm.GetProc(), dm.GetName(), of)
 		}
-		m := &object.Method{Name: dm.GetName(), Owner: owner, Body: &irProc{unit: unit, proc: unit.Procs[dm.GetProc()]}, Arity: -1, File: dm.GetFile()}
+		m := &object.Method{Name: dm.GetName(), Owner: owner, Body: procOf(unit, dm.GetProc()), Arity: -1, File: dm.GetFile()}
 		for _, ref := range dm.GetLexical() {
 			l := in.classRef(ref)
 			if l == nil {
