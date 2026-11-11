@@ -157,6 +157,9 @@ type Method struct {
 	// script's: a library written in cameo, so an error in its body is
 	// reported with the library's file. "" is the script.
 	File string
+	// AliasOf is the name the method has in Owner, when a script's alias
+	// gave it the name it has here.
+	AliasOf string
 }
 
 // NativeFn implements a method in Go. kw is nil when no keyword arguments

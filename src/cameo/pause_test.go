@@ -113,6 +113,8 @@ constants:
   ARGV = []
   Alias = Point
   LIMIT = 3
+classes:
+  class Point
 promises:
   1 x = 1
   2 boom raised boom (ArgumentError)

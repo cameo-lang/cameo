@@ -6,14 +6,16 @@ package cameo;
 
 option go_package = "github.com/cameo-lang/cameo/src/cameopb";
 
+import "cameo/ir.proto";
 import "cameo/value.proto";
 
 // Dump is a paused run: the script, where it paused, and what its top
 // level held.
 message Dump {
   // Binding is one variable or constant. value is its value, set also for
-  // nil; a class is named in class instead; a value the envelope cannot
-  // carry has neither, and missing says what it was.
+  // nil; a class is referred to in class instead, as Class describes; a
+  // value the envelope cannot carry has neither, and missing says what it
+  // was.
   message Binding {
     string name = 1;
     Value value = 2;
@@ -48,8 +50,9 @@ message Dump {
   int32 next = 3;
   int32 line = 4;
   repeated Binding variables = 5;
-  // constants are the constants the script assigned; its classes come back
-  // by running their definitions again.
+  // constants are the constants of the top level: the ones the script
+  // assigned, and its classes and modules, each a reference to a class of
+  // classes.
   repeated Binding constants = 6;
   repeated Promise promises = 7;
   // loaded names the libraries require loaded.
@@ -59,4 +62,110 @@ message Dump {
   // at_exit are the blocks at_exit registered, in the order they were
   // registered; a binding without a name.
   repeated Binding at_exit = 10;
+
+  // version is the IR version of the dump's code; a cameo resumes a dump
+  // of the version it runs.
+  uint32 version = 11;
+  // units are the units of code the run had: the script's, and those of
+  // the libraries written in cameo it required. Methods and closures name
+  // their code in them, by digest.
+  repeated Unit units = 12;
+  // classes are the classes and modules the script defined, and the ones
+  // it holds a copy of because a library written in cameo added to them.
+  // The methods of the top level are in top.
+  repeated Class classes = 13;
+  // cameo_top is set when the script included Cameo at the top level.
+  bool cameo_top = 14;
+  Class top = 15;
+  // missing says what of the classes the dump leaves out, one entry for
+  // each: a constant or an attribute whose value the envelope cannot
+  // carry, as a Binding's missing says for a variable.
+  repeated string missing = 16;
+
+  // Class is a class or a module as the run had made it.
+  //
+  // A class is referred to by a string, here and in a Binding: the id of
+  // a class of the dump; or the qualified name of a class the dump does
+  // not carry, which Go defined or the host registered, with "::" in
+  // front when a constant of the script hides that name.
+  message Class {
+    // id is the qualified name, Geo::Point, for the class that name is
+    // bound to. A class that is no longer bound to its name, since the
+    // script reopened it, which makes a new class, or one that never had
+    // a name, has its digest after an @, and a number where two would
+    // have the same.
+    string id = 14;
+    // name is the qualified name, "" for a class Class.new made that no
+    // constant names yet; lexical the class or module it is defined in.
+    string name = 1;
+    string lexical = 15;
+    bool module = 2;
+    // super is the superclass, "" for a module.
+    string super = 3;
+    string digest = 4;
+    // includes and extends are the modules included and extended, in
+    // order.
+    repeated string includes = 5;
+    repeated string extends = 6;
+    // fields are the class's fields in order, the inherited ones too.
+    repeated Field fields = 7;
+    repeated int64 reserved_numbers = 8;
+    repeated string reserved_names = 9;
+    repeated Method methods = 10;
+    // consts are the constants of the class's body, the classes and
+    // modules defined in it among them.
+    repeated Binding consts = 11;
+    // attrs are the values of the class's attributes; attr_defaults the
+    // defaults of the ones it declared itself.
+    repeated Binding attrs = 12;
+    repeated Binding attr_defaults = 13;
+    // A copy of a class or module Go defined, which has a digest that
+    // starts with +, lists what it has beyond the one Go defined: the
+    // modules, fields and methods added to it, and all of its constants.
+  }
+
+  // Field is one field of a class. owner is the class that declared it:
+  // the class itself, or an ancestor.
+  message Field {
+    string name = 1;
+    int64 number = 2;
+    FieldType type = 3;
+    Value default = 4;
+    string owner = 5;
+  }
+
+  // FieldType is the declared type of a field: kind is a scalar type's
+  // name, or list, set, map, ref, enum, proc.
+  message FieldType {
+    string kind = 1;
+    // elem is the element of a list or set and the value of a map; key
+    // the scalar type of a map's keys.
+    FieldType elem = 2;
+    string key = 3;
+    // ref is the class of a ref field; enum the symbols of an enum field.
+    string ref = 4;
+    repeated string enum = 5;
+    string named = 6;
+  }
+
+  // Method is a method a script defined: its code as the proc of a unit.
+  // owner is the class that defines it, when it is not the class that
+  // lists it: an alias gives a class a method of an ancestor under
+  // another name. lexical are the classes and modules around its
+  // definition, innermost last; file is the library it is from, "" for
+  // the script.
+  //
+  // A method Go implements has no code to carry. One a script gave
+  // another name with alias is listed with alias_of, the name it has in
+  // owner, and no unit.
+  message Method {
+    string name = 1;
+    bool singleton = 2;
+    string unit = 3;
+    uint32 proc = 4;
+    repeated string lexical = 5;
+    string file = 6;
+    string owner = 7;
+    string alias_of = 8;
+  }
 }

@@ -97,7 +97,7 @@ func (in *Interp) HostExceptions() []*object.Class {
 	return out
 }
 
-func sortedKeys(m map[string]object.Value) []string {
+func sortedKeys[V any](m map[string]V) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)

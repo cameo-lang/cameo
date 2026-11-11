@@ -508,6 +508,9 @@ func (in *Interp) alias(name, old string, fr *Frame, line int) (object.Value, er
 	}
 	alias := *m
 	alias.Name = name
+	if alias.AliasOf == "" {
+		alias.AliasOf = m.Name
+	}
 	target.SetMethod(&alias)
 	if target == in.mainClass {
 		in.changedTop()
