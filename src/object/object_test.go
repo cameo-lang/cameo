@@ -79,6 +79,35 @@ func TestFormatting(t *testing.T) {
 	}
 }
 
+// The wants are CRuby 3.4's.
+func TestSymbolInspect(t *testing.T) {
+	for s, want := range map[string]string{
+		"@a": ":@a", "@@a": ":@@a", "@é": ":@é", "$a1": ":$a1", "$_": ":$_", "$é": ":$é",
+		"$0": ":$0", "$1": ":$1", "$10": ":$10", "$~": ":$~", "$\\": `:$\`, `$"`: `:$"`, "$-w": ":$-w", "$-0": ":$-0",
+		"!~": ":!~", "`": ":`", "a=": ":a=", "A?": ":A?",
+		"@": `:"@"`, "@@": `:"@@"`, "@1": `:"@1"`, "@a?": `:"@a?"`, "@a=": `:"@a="`, "$": `:"$"`, "$01": `:"$01"`,
+		"$-": `:"$-"`, "$-ww": `:"$-ww"`, "$a?": `:"$a?"`, "a?=": `:"a?="`, "=": `:"="`, "=>": `:"=>"`, "": `:""`,
+	} {
+		if got := SymbolInspect(s); got != want {
+			t.Errorf("SymbolInspect(%q) = %s, want %s", s, got, want)
+		}
+	}
+}
+
+// The wants are CRuby 3.4's.
+func TestSymbolKey(t *testing.T) {
+	for s, want := range map[string]string{
+		"kw": "kw: ", "Foo": "Foo: ", "foo?": "foo?: ", "foo!": "foo!: ", "é": "é: ", "if": "if: ", "_x": "_x: ",
+		"0": `"0": `, "foo bar": `"foo bar": `, "a-b": `"a-b": `, "": `"": `, `a"b`: `"a\"b": `, "\n": `"\n": `,
+		"+": `"+": `, "[]": `"[]": `, "[]=": `"[]=": `, "<=>": `"<=>": `, "!": `"!": `, "!~": `"!~": `, "foo=": `"foo=": `,
+		"@iv": `"@iv": `, "@@cv": `"@@cv": `, "$g": `"$g": `, "$1": `"$1": `,
+	} {
+		if got := SymbolKey(s); got != want {
+			t.Errorf("SymbolKey(%q) = %q, want %q", s, got, want)
+		}
+	}
+}
+
 func TestAncestorsAndLookup(t *testing.T) {
 	m := NewModule("M")
 	m.Define("hello", 0, nil)
