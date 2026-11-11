@@ -155,8 +155,8 @@ func (in *Interp) inspectBuiltin(v object.Value) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			if s, ok := k.AsSymbol(); ok && object.SymbolInspect(string(s)) == ":"+string(s) {
-				parts[i] = string(s) + ": " + val
+			if s, ok := k.AsSymbol(); ok {
+				parts[i] = object.SymbolKey(string(s)) + val
 				continue
 			}
 			ks, err := in.Inspect(k)

@@ -724,12 +724,67 @@ func printable(r rune) bool {
 }
 
 // SymbolInspect prints a symbol the way Ruby's Symbol#inspect does: `:name`,
-// quoted when the name is not a plain identifier or operator.
+// quoted when the name is not one Ruby's parser reads after a colon.
 func SymbolInspect(s string) string {
-	if isIdentifier(s) || isOperator(s) {
+	if isSymbolName(s) {
 		return ":" + s
 	}
 	return ":" + QuoteString(s)
+}
+
+// SymbolKey returns how Hash#inspect prints a symbol key, CRuby 3.4's
+// `name: `, or `"name": ` where `name:` would not read back as the symbol:
+// a name `:name` would quote, one that starts with @, $ or !, and one that
+// ends in an operator character, as `foo=:` and `+:` do not parse.
+func SymbolKey(s string) string {
+	if !isSymbolName(s) || strings.ContainsAny(s[:1], "@$!") || strings.ContainsAny(s[len(s)-1:], "+-*/`%^&|]<=>~@") {
+		return QuoteString(s) + ": "
+	}
+	return s + ": "
+}
+
+// isSymbolName reports whether Ruby's parser reads s after a colon: an
+// identifier, a method name ending in ?, ! or =, an operator, or the name of
+// an instance, class or global variable.
+func isSymbolName(s string) bool {
+	switch {
+	case isMethodName(s) || operators[s]:
+		return true
+	case strings.HasPrefix(s, "@@"):
+		return isIdentifier(s[2:])
+	case strings.HasPrefix(s, "@"):
+		return isIdentifier(s[1:])
+	case strings.HasPrefix(s, "$"):
+		return isGlobalName(s[1:])
+	}
+	return false
+}
+
+// isGlobalName reports whether s is what follows the $ of a global
+// variable's name: an identifier, a match group ($1, $10, but not $01),
+// $0, one punctuation character ($~, $!), or $- and one character ($-w).
+func isGlobalName(s string) bool {
+	switch {
+	case isIdentifier(s):
+		return true
+	case len(s) == 1 && strings.ContainsAny(s, "~*$?!@/\\;,.=:<>\"&'`+0"):
+		return true
+	case len(s) == 2 && s[0] == '-':
+		r := s[1]
+		return r == '_' || r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9'
+	case s != "" && s[0] >= '1' && s[0] <= '9':
+		return strings.Trim(s, "0123456789") == ""
+	}
+	return false
+}
+
+// isMethodName reports whether s is an identifier, or one followed by ?, !
+// or =.
+func isMethodName(s string) bool {
+	if n := len(s); n > 1 && strings.ContainsAny(s[n-1:], "?!=") {
+		s = s[:n-1]
+	}
+	return isIdentifier(s)
 }
 
 func isIdentifier(s string) bool {
@@ -740,7 +795,6 @@ func isIdentifier(s string) bool {
 		switch {
 		case r == '_' || r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r > 0x7f:
 		case r >= '0' && r <= '9' && i > 0:
-		case (r == '?' || r == '!' || r == '=') && i == len(s)-1 && i > 0:
 		default:
 			return false
 		}
@@ -752,9 +806,8 @@ var operators = map[string]bool{
 	"+": true, "-": true, "*": true, "/": true, "%": true, "**": true, "==": true, "!=": true,
 	"<": true, ">": true, "<=": true, ">=": true, "<=>": true, "===": true, "[]": true, "[]=": true,
 	"<<": true, ">>": true, "!": true, "&": true, "|": true, "^": true, "~": true, "+@": true, "-@": true, "=~": true,
+	"!~": true, "`": true,
 }
-
-func isOperator(s string) bool { return operators[s] }
 
 // Cls returns the class a class value is.
 func (v Value) Cls() *Class {
