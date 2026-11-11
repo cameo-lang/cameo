@@ -48,11 +48,11 @@ func strptime(s, format string) (stdlib.Clock, error) {
 		return stdlib.Clock{}, err
 	}
 	if fields.Epoch {
-		t, ok := stdlib.ParseEpoch(s, format)
+		t, ok := stdlib.ParseEpoch(s, layouts, fields, gotime.Local)
 		if !ok {
 			return stdlib.Clock{}, errNoMatch
 		}
-		return stdlib.Clock{Year: t.Year(), Mon: int(t.Month()), Day: t.Day(), Hour: t.Hour(), Min: t.Minute(), Sec: t.Second(), Nsec: 0, Loc: t.Location()}, nil
+		return stdlib.Clock{Year: t.Year(), Mon: int(t.Month()), Day: t.Day(), Hour: t.Hour(), Min: t.Minute(), Sec: t.Second(), Nsec: t.Nanosecond(), Loc: t.Location()}, nil
 	}
 	t, ok := stdlib.TryLayouts(s, layouts, gotime.Local)
 	if !ok {
