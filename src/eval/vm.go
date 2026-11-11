@@ -19,6 +19,13 @@ import (
 type irProc struct {
 	unit *cameopb.Unit
 	proc *cameopb.Proc
+	// index is the proc's place in the unit's procs.
+	index uint32
+}
+
+// procOf returns proc index of unit.
+func procOf(unit *cameopb.Unit, index uint32) *irProc {
+	return &irProc{unit: unit, proc: unit.Procs[index], index: index}
 }
 
 // program is a parsed program compiled: its unit, and the code of each
@@ -477,7 +484,7 @@ func (m *machine) exec(c *cameopb.Code) error {
 	case cameopb.Op_AWAIT_ALL:
 		return m.await(&awaiting{ps: in.unawaited(env)})
 	case cameopb.Op_DEF:
-		body := &irProc{unit: m.unit, proc: m.unit.Procs[c.Args[1].GetProc()]}
+		body := procOf(m.unit, c.Args[1].GetProc())
 		v, err := in.defineMethod(m.name(c, 0), has(c, cameopb.Flag_FLAG_SINGLETON), body, fr, line)
 		if err != nil {
 			return err

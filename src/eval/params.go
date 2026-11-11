@@ -13,6 +13,8 @@ type params struct {
 	Keywords   []kwParam
 	KwRest     string // **name, or ""
 	BlockParam string // &name, or ""
+	// plain is set when every parameter is a required positional one.
+	plain bool
 }
 
 // param is one positional parameter: required (Default nil, Splat false),
@@ -60,8 +62,37 @@ func (c *code) irParams(p *irProc) *params {
 	if src != nil && src.Block != nil {
 		out.BlockParam = unit.Names[src.GetBlock()]
 	}
+	out.plain = len(out.Keywords) == 0 && out.KwRest == "" && out.BlockParam == ""
+	for _, param := range out.Positional {
+		if param.Splat || param.Default != nil {
+			out.plain = false
+		}
+	}
 	actual, _ := c.params.LoadOrStore(p.proc, out)
 	return actual.(*params)
+}
+
+// paramsOf returns the parameter list of the proc p. The interpreter
+// keeps the lists it asked for by unit and index, so a call reads its
+// list without the lock-free map every interpreter of the run shares.
+func (in *Interp) paramsOf(p *irProc) *params {
+	if p.unit != in.paramsUnit {
+		list, ok := in.paramsBy[p.unit]
+		if !ok {
+			if in.paramsBy == nil {
+				in.paramsBy = map[*cameopb.Unit][]*params{}
+			}
+			list = make([]*params, len(p.unit.Procs))
+			in.paramsBy[p.unit] = list
+		}
+		in.paramsUnit, in.paramsList = p.unit, list
+	}
+	if ps := in.paramsList[p.index]; ps != nil {
+		return ps
+	}
+	ps := in.code.irParams(p)
+	in.paramsList[p.index] = ps
+	return ps
 }
 
 // arity is Proc#arity of a parameter list: the number of required

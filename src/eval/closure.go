@@ -316,7 +316,7 @@ func (in *Interp) DecodeProc(d *protogen.Decoder, c *cameopb.Closure) (object.Va
 		}
 		env.bind(local.GetName(), v)
 	}
-	p := &Proc{IR: &irProc{unit: unit, proc: unit.Procs[c.GetProc()]}, Env: env, Frame: fr, Strict: c.GetStrict()}
+	p := &Proc{IR: procOf(unit, c.GetProc()), Env: env, Frame: fr, Strict: c.GetStrict()}
 	v := procValue(p)
 	if name := c.GetSelfName(); name != "" {
 		env.bind(name, v)
