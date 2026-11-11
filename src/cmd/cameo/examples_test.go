@@ -11,7 +11,6 @@ import (
 
 	"github.com/cameo-lang/cameo/src/cameo"
 	"github.com/cameo-lang/cameo/src/cameopb"
-	"github.com/cameo-lang/cameo/src/eval"
 	"github.com/cameo-lang/cameo/src/ir"
 	"github.com/cameo-lang/cameo/src/syntax"
 )
@@ -57,40 +56,6 @@ func TestExamples(t *testing.T) {
 				t.Fatalf("output differs\n--- got ---\n%s--- want ---\n%s", stdout.String(), expected)
 			}
 		})
-	}
-}
-
-// TestExamplesOnTheTreeWalker runs the corpus with the IR evaluator off.
-// TestExamples runs what compiles on the IR, so the two together hold both
-// evaluators to the expected output while the IR is being built.
-func TestExamplesOnTheTreeWalker(t *testing.T) {
-	eval.TreeWalkerOnly.Store(true)
-	defer eval.TreeWalkerOnly.Store(false)
-	scripts, err := filepath.Glob(filepath.Join(examplesDir, "*.cameo"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	ran := 0
-	for _, script := range scripts {
-		name := filepath.Base(script)
-		if _, isPending := pending[name]; isPending {
-			continue
-		}
-		expected, err := os.ReadFile(strings.TrimSuffix(script, ".cameo") + ".expected")
-		if err != nil {
-			t.Fatalf("%s: missing expected output: %v", name, err)
-		}
-		var stdout, stderr bytes.Buffer
-		if err := cameo.RunFile(script, &stdout, &stderr); err != nil {
-			t.Fatalf("%s failed: %v\nstdout so far:\n%s", name, err, stdout.String())
-		}
-		if stdout.String() != string(expected) {
-			t.Fatalf("%s: output differs\n--- got ---\n%s--- want ---\n%s", name, stdout.String(), expected)
-		}
-		ran++
-	}
-	if ran == 0 {
-		t.Fatalf("no example scripts ran under %s", examplesDir)
 	}
 }
 

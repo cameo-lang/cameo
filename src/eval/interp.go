@@ -1,5 +1,6 @@
-// Package eval runs cameo programs: it walks the syntax package's AST over
-// the object package's values. The design is in doc/design/cameo.md.
+// Package eval runs cameo programs: it compiles the syntax package's AST
+// to the IR (package ir) and runs that over the object package's values.
+// The design is in doc/design/cameo.md and doc/design/ir.md.
 package eval
 
 import (
@@ -211,8 +212,8 @@ func (in *Interp) Run(file string, prog *syntax.Program) error {
 		in.dbg.stack = []*dbgFrame{in.dbgTop}
 	}
 	var v object.Value = object.Nil
-	var err error
-	for i := in.from; i < len(prog.Body); i++ {
+	p, err := in.program(file, prog)
+	for i := in.from; err == nil && i < len(prog.Body); i++ {
 		if in.pause.Load() {
 			in.paused, in.next, in.nextLine = true, i, prog.Body[i].Line()
 			return ErrPaused
@@ -222,9 +223,7 @@ func (in *Interp) Run(file string, prog *syntax.Program) error {
 				break
 			}
 		}
-		if v, err = in.evalTop(prog.Body[i], in.top, fr); err != nil {
-			break
-		}
+		v, err = in.runList(p.unit, p.statements[i], in.top, fr)
 	}
 	if err == nil {
 		in.last = v

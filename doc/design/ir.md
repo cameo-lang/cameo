@@ -122,21 +122,20 @@ listings.
 Stack A runs the IR with a recursive evaluator, so a run still pauses between
 top-level statements, but its dump carries procs, classes and methods.
 
-**While the IR is being built**, both evaluators run. `eval/vm.go` runs a
-method, a block or a top-level statement on the IR when the compiler
-(`ir/compile.go`) compiles all of it, and the tree walker runs it otherwise:
-a top-level statement that does not compile, a `class` for instance, runs
-on the tree walker, and the methods it defines are compiled one by one when
-they are first called. The two evaluators share scopes, frames and procs,
-so code on one calls code on the other. `eval.TreeWalkerOnly` keeps a
-program on the tree walker, which the tests use to hold both to one output.
+**The IR is what runs.** A program is compiled to one unit before its first
+statement runs (`ir.Compile`): the script, each library written in cameo
+that it requires, each line of a console. `eval/vm.go` runs the unit: a
+machine per activation, with a value stack, the scope and the frame. Proc 0
+of a unit is its top level, whose statements the run takes one at a time, so
+that it can pause between two of them. A method's body is a proc
+(`object.Method.Body` holds an `*irProc`), and so is a block's
+(`eval.Proc.IR`). The AST is the compiler's input and nothing else reads it
+at run time; `cameo build` compiles from it too, apart from the IR.
 
-Every form of the language compiles: `cameo ir script.cameo` prints the
-unit of any script the checker accepts, and a test holds the example
-corpus to compiling whole and reading back from its wire form. A script's
-top-level statements are still compiled one at a time, each into a unit of
-its own with the methods and blocks written in it; step 10 compiles a
-file into one unit.
+The tree walker and the closure compiler it replaced are gone. While the
+IR was built in slices, both evaluators ran every test, and ruby/spec's
+language and core examples had the same status on each, 3,938 rows without
+a difference, before the tree walker was removed.
 
 Stack B replaces the recursion with a frame stack per interpreter. A frame is
 a proc, a position (a path of indices into its nested lists), a value stack

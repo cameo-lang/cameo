@@ -10,7 +10,7 @@ the same.
 ## Where a run pauses
 
 A run pauses between two top-level statements, never inside one. The
-evaluator walks the script's tree recursively, so
+evaluator runs a statement's instructions recursively, so
 the state of a statement that is running — the loop it is in, the method it
 called, the block it is evaluating — lives on the Go stack, which nothing
 can serialise. `^C` sets a flag; the interpreter reads it before each

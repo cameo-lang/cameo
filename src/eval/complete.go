@@ -89,7 +89,7 @@ func (in *Interp) completionReceiver(recv string) (object.Value, bool) {
 	if err != nil {
 		return object.Value{}, false
 	}
-	v, err := in.runStatements(prog.Body, in.top, in.topFrame())
+	v, err := in.runProgram("(completion)", prog, in.top, in.topFrame())
 	return v, err == nil
 }
 

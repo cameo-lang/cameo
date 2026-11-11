@@ -379,6 +379,9 @@ enum Op {
   CASE_IN = 63;
   // MATCH(pattern): subject -> nil, or with TEST a boolean.
   MATCH = 64;
+  // POP: value ->. Discards a value inside a statement: between the
+  // expressions one construct of the source is rewritten to.
+  POP = 65;
 
   // Definitions.
 

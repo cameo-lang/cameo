@@ -5,7 +5,6 @@ import (
 	"unsafe"
 
 	"github.com/cameo-lang/cameo/src/object"
-	"github.com/cameo-lang/cameo/src/syntax"
 )
 
 // Env is a lexical scope of local variables. A block's scope has the scope
@@ -120,15 +119,6 @@ func (e *Env) Set(name string, v object.Value) {
 	e.bind(name, v)
 }
 
-// blockEnv is the scope a block closes over: a snapshot of env, or env
-// itself for the body of a for loop.
-func blockEnv(b *syntax.Block, env *Env) *Env {
-	if b.Shared {
-		return env
-	}
-	return env.snapshot()
-}
-
 // snapshot copies every variable the scope sees into a captured scope, the
 // values they have now, an inner binding shadowing an outer one. A block
 // closes over the snapshot, not the scope.
@@ -212,10 +202,8 @@ type Frame struct {
 // written in. Strict is a lambda: arguments are counted, and return returns
 // from the lambda.
 type Proc struct {
-	// Block is the body of a proc the tree walker made, and IR that of
-	// one the IR evaluator made; a proc has one of them, or neither (see
-	// Sym and Go).
-	Block  *syntax.Block
+	// IR is the body of a proc a script wrote, a proc of a unit; nil for
+	// one made from a symbol or by a builtin (see Sym and Go).
 	IR     *irProc
 	Env    *Env
 	Frame  *Frame
@@ -251,28 +239,10 @@ func asProc(v object.Value) (*Proc, bool) {
 
 // written reports whether p has a body a script wrote: a block or a
 // lambda, not a proc made from a symbol or by a builtin.
-func (p *Proc) written() bool { return p.Block != nil || p.IR != nil }
+func (p *Proc) written() bool { return p.IR != nil }
 
 // line is the line a written proc starts on.
-func (p *Proc) line() int {
-	if p.IR != nil {
-		return int(p.IR.proc.GetLine())
-	}
-	return p.Block.Line()
-}
-
-// procCode returns what a call of the written proc p runs: its parameter
-// list, and its IR, nil when it runs on the tree walker.
-func (in *Interp) procCode(p *Proc) (*params, *irProc) {
-	compiled := p.IR
-	if compiled == nil {
-		compiled = in.code.irBlock(p.Block)
-	}
-	if compiled != nil {
-		return in.code.irParams(compiled), compiled
-	}
-	return in.code.astParams(&p.Block.Params), nil
-}
+func (p *Proc) line() int { return int(p.IR.proc.GetLine()) }
 
 // arity is the number of required positional parameters of p, negative
 // when it takes a splat or optional parameters, as Proc#arity reports.
@@ -286,6 +256,5 @@ func (in *Interp) arity(p *Proc) int {
 		}
 		return -2
 	}
-	ps, _ := in.procCode(p)
-	return ps.arity(p.Strict)
+	return in.code.irParams(p.IR).arity(p.Strict)
 }

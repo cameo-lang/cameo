@@ -8,32 +8,23 @@ import (
 	"github.com/cameo-lang/cameo/src/syntax"
 )
 
-// onBoth runs src on the IR evaluator and on the tree walker, holds both
-// to the output want, and returns how many of the script's methods, blocks
-// and top-level statements ran on the IR and how many on the tree walker.
-func onBoth(t *testing.T, src, want string) (compiled, walked int) {
+// prints runs src and holds what it prints to want; an error that ends
+// the script is the last line. The expected outputs are what the tree
+// walker printed for these scripts before the evaluator replaced it.
+func prints(t *testing.T, src, want string) {
 	t.Helper()
-	runOn := func(treeWalker bool) (string, *Interp) {
-		TreeWalkerOnly.Store(treeWalker)
-		defer TreeWalkerOnly.Store(false)
-		prog, err := syntax.Parse("t.cameo", src)
-		assert.NoError(t, err)
-		var out bytes.Buffer
-		in := New(&out, &out)
-		if err := in.Run("t.cameo", prog); err != nil {
-			out.WriteString(in.FormatError(err) + "\n")
-		}
-		return out.String(), in
+	prog, err := syntax.Parse("t.cameo", src)
+	assert.NoError(t, err)
+	var out bytes.Buffer
+	in := New(&out, &out)
+	if err := in.Run("t.cameo", prog); err != nil {
+		out.WriteString(in.FormatError(err) + "\n")
 	}
-	walkedOut, _ := runOn(true)
-	assert.Equals(t, walkedOut, want, "on the tree walker")
-	irOut, in := runOn(false)
-	assert.Equals(t, irOut, want, "on the IR")
-	return in.IRCounts()
+	assert.Equals(t, out.String(), want)
 }
 
-func TestStatementsRunOnTheIR(t *testing.T) {
-	compiled, walked := onBoth(t, `a = 3
+func TestStatements(t *testing.T) {
+	prints(t, `a = 3
 b = a * 2 + 1
 puts b
 puts "a is #{a}, b is #{b}"
@@ -42,12 +33,10 @@ puts({x: a, **{y: b}}.inspect)
 puts (1..a).to_a.inspect, (1...a).to_a.inspect
 puts a > 2 && b > 2, a > 5 || nil.inspect, !a
 `, "7\na is 3, b is 7\n[3, 7, 9, :sym]\n{x: 3, y: 7}\n[1, 2, 3]\n[1, 2]\ntrue\nnil\nfalse\n")
-	assert.Equals(t, compiled, 8)
-	assert.Equals(t, walked, 0)
 }
 
-func TestAMethodDefinitionRunsOnTheIR(t *testing.T) {
-	compiled, walked := onBoth(t, `def fib(n)
+func TestAMethodDefinition(t *testing.T) {
+	prints(t, `def fib(n)
   if n < 2
     n
   else
@@ -56,14 +45,10 @@ func TestAMethodDefinitionRunsOnTheIR(t *testing.T) {
 end
 puts fib(15)
 `, "610\n")
-	// Two statements: the def, whose unit holds the method's body, and
-	// the puts.
-	assert.Equals(t, compiled, 2)
-	assert.Equals(t, walked, 0)
 }
 
-func TestDefinitionsRunOnTheIR(t *testing.T) {
-	_, walked := onBoth(t, `module Shape
+func TestDefinitions(t *testing.T) {
+	prints(t, `module Shape
   SIDES = 0
   def describe = "#{self.class.name} with #{sides} sides"
   def self.unit = 1
@@ -138,16 +123,15 @@ false
 42
 :helper
 `)
-	assert.Equals(t, walked, 0)
-	onBoth(t, "class A < 5\nend\n", "t.cameo:1: superclass must be a Class (an instance of Integer given) (TypeError)\n")
-	onBoth(t, "class A\n  int :x\n  int :x\nend\n", "t.cameo:3: field x is already declared in A (CameoError)\n")
-	onBoth(t, "class A\n  include Integer\nend\n", "t.cameo:2: wrong argument type class Integer (expected Module) (TypeError)\n")
-	onBoth(t, "s = \"a\\xffb\"\nputs s.bytes.inspect, s.encoding, s.valid_encoding?\n", "[97, 255, 98]\nUTF-8\nfalse\n")
-	onBoth(t, "class A\n  def boom = raise(\"in body\")\n  boom2\nend\nputs defined?(A).inspect\n", "t.cameo:3: undefined local variable or method 'boom2' for class A (NameError)\n")
+	prints(t, "class A < 5\nend\n", "t.cameo:1: superclass must be a Class (an instance of Integer given) (TypeError)\n")
+	prints(t, "class A\n  int :x\n  int :x\nend\n", "t.cameo:3: field x is already declared in A (CameoError)\n")
+	prints(t, "class A\n  include Integer\nend\n", "t.cameo:2: wrong argument type class Integer (expected Module) (TypeError)\n")
+	prints(t, "s = \"a\\xffb\"\nputs s.bytes.inspect, s.encoding, s.valid_encoding?\n", "[97, 255, 98]\nUTF-8\nfalse\n")
+	prints(t, "class A\n  def boom = raise(\"in body\")\n  boom2\nend\nputs defined?(A).inspect\n", "t.cameo:3: undefined local variable or method 'boom2' for class A (NameError)\n")
 }
 
-func TestLoopsAndJumpsRunOnTheIR(t *testing.T) {
-	_, walked := onBoth(t, `i = 0
+func TestLoopsAndJumps(t *testing.T) {
+	prints(t, `i = 0
 total = 0
 while i < 10
   i += 1
@@ -158,11 +142,10 @@ end
 puts total
 puts (while false do end).inspect
 `, "25\nnil\n")
-	assert.Equals(t, walked, 0)
 }
 
-func TestBlocksRunOnTheIR(t *testing.T) {
-	_, walked := onBoth(t, `puts [1, 2, 3].map { |x| x * 2 }.inspect
+func TestBlocks(t *testing.T) {
+	prints(t, `puts [1, 2, 3].map { |x| x * 2 }.inspect
 double = ->(x) { x * 2 }
 puts double.(4), double.lambda?, double.arity
 add = proc { |a, b = 10, *rest| a + b + rest.sum }
@@ -175,11 +158,10 @@ puts [1, 2, 3].each_with_index.map { |x, i| x * i }.inspect
 puts (1..3).reduce(0) { |sum, x| sum + x }
 puts [1, 2, 3, 4].find { |x| x > 2 }
 `, "[2, 4, 6]\n8\ntrue\n1\n11\n6\n-2\n120\n3\n[3, 7]\n[0, 2, 6]\n6\n3\n")
-	assert.Equals(t, walked, 0)
 }
 
-func TestCallsRunOnTheIR(t *testing.T) {
-	onBoth(t, `def greet(name, greeting = "hello", *rest, punct: "!", **opts, &blk)
+func TestCalls(t *testing.T) {
+	prints(t, `def greet(name, greeting = "hello", *rest, punct: "!", **opts, &blk)
   s = "#{greeting} #{name}#{punct}"
   s = blk.call(s) if blk
   return s, rest, opts
@@ -219,8 +201,8 @@ true
 `)
 }
 
-func TestRescueRunsOnTheIR(t *testing.T) {
-	_, walked := onBoth(t, `tries = 0
+func TestRescue(t *testing.T) {
+	prints(t, `tries = 0
 r = begin
   tries += 1
   raise ArgumentError, "no" if tries < 3
@@ -269,14 +251,13 @@ inner caused by NoMethodError
 10
 ZeroDivisionError
 `)
-	assert.Equals(t, walked, 0)
-	onBoth(t, "begin\n  raise \"boom\"\nensure\n  puts \"cleanup\"\nend\n", "cleanup\nt.cameo:2: boom (RuntimeError)\n")
-	onBoth(t, "begin\n  raise \"a\"\nrescue TypeError\n  1\nend\n", "t.cameo:2: a (RuntimeError)\n")
-	onBoth(t, "begin\n  1\nrescue 5\n  2\nend\nbegin\n  raise \"x\"\nrescue 5\n  2\nend\n", "t.cameo: class or module required for rescue clause (TypeError)\n")
+	prints(t, "begin\n  raise \"boom\"\nensure\n  puts \"cleanup\"\nend\n", "cleanup\nt.cameo:2: boom (RuntimeError)\n")
+	prints(t, "begin\n  raise \"a\"\nrescue TypeError\n  1\nend\n", "t.cameo:2: a (RuntimeError)\n")
+	prints(t, "begin\n  1\nrescue 5\n  2\nend\nbegin\n  raise \"x\"\nrescue 5\n  2\nend\n", "t.cameo: class or module required for rescue clause (TypeError)\n")
 }
 
-func TestCaseRunsOnTheIR(t *testing.T) {
-	_, walked := onBoth(t, `kinds = [1, "s", :sym, 2.5, nil, [1, 2], 40].map do |v|
+func TestCase(t *testing.T) {
+	prints(t, `kinds = [1, "s", :sym, 2.5, nil, [1, 2], 40].map do |v|
   case v
   when Integer, Float then v > 10 ? "big" : "number"
   when "s", /x/ then "string"
@@ -293,11 +274,10 @@ puts(case
      end)
 puts (case n when 1 then :one end).inspect
 `, "[\"number\", \"string\", \"symbol\", \"number\", \"nil\", \"other\", \"big\"]\nmid\nnil\n")
-	assert.Equals(t, walked, 0)
 }
 
-func TestPatternsRunOnTheIR(t *testing.T) {
-	_, walked := onBoth(t, `def kind(v)
+func TestPatterns(t *testing.T) {
+	prints(t, `def kind(v)
   case v
   in Integer | Float => n if n > 100 then "big #{n}"
   in Integer | Float then "number"
@@ -346,13 +326,12 @@ false
 6
 exact
 `)
-	assert.Equals(t, walked, 0)
-	onBoth(t, "case 5\nin String then 1\nend\n", "t.cameo:1: 5 (NoMatchingPatternError)\n")
-	onBoth(t, "x = {a: 1}\nx => {b:}\n", "t.cameo:2: {a: 1} (NoMatchingPatternError)\n")
+	prints(t, "case 5\nin String then 1\nend\n", "t.cameo:1: 5 (NoMatchingPatternError)\n")
+	prints(t, "x = {a: 1}\nx => {b:}\n", "t.cameo:2: {a: 1} (NoMatchingPatternError)\n")
 }
 
-func TestAssignmentFormsRunOnTheIR(t *testing.T) {
-	_, walked := onBoth(t, `a, b = 1, 2
+func TestAssignmentForms(t *testing.T) {
+	prints(t, `a, b = 1, 2
 c, *d = [3, 4, 5]
 *e, f = 6, 7, 8
 g, h = [9]
@@ -391,14 +370,13 @@ nil
 nil
 "yield"
 `)
-	assert.Equals(t, walked, 0)
-	onBoth(t, "Nope::X\n", "t.cameo:1: uninitialized constant Nope (NameError)\n")
-	onBoth(t, "x = 5\nx::Y\n", "t.cameo:2: an instance of Integer is not a class/module (TypeError)\n")
-	onBoth(t, "String = 1\n", "t.cameo:1: cannot reassign the builtin constant String (CameoError)\n")
+	prints(t, "Nope::X\n", "t.cameo:1: uninitialized constant Nope (NameError)\n")
+	prints(t, "x = 5\nx::Y\n", "t.cameo:2: an instance of Integer is not a class/module (TypeError)\n")
+	prints(t, "String = 1\n", "t.cameo:1: cannot reassign the builtin constant String (CameoError)\n")
 }
 
-func TestSuperWithAndAsyncRunOnTheIR(t *testing.T) {
-	compiled, _ := onBoth(t, `class Animal
+func TestSuperWithAndAsync(t *testing.T) {
+	prints(t, `class Animal
   string :name
   def initialize(name) = self.name = name
   def speak(loud = false, *rest, punct: ".", &blk)
@@ -461,19 +439,18 @@ bo
 []
 failed: boom
 `)
-	assert.True(t, compiled >= 20, "%d units ran on the IR", compiled)
-	onBoth(t, "def f = super\nf\n", "t.cameo:1: super: no superclass method 'f' for main (NoMethodError)\n")
-	onBoth(t, "class W\n  def go = 1\nend\nx = async W.new, :go\n", "t.cameo:4: async comes from the Cameo module: include Cameo, or call Cameo.async (NoMethodError)\n")
-	onBoth(t, "include Cameo\nx = async 1, 2\n", "t.cameo:2: async names the method by a symbol, not an instance of Integer (TypeError)\n")
+	prints(t, "def f = super\nf\n", "t.cameo:1: super: no superclass method 'f' for main (NoMethodError)\n")
+	prints(t, "class W\n  def go = 1\nend\nx = async W.new, :go\n", "t.cameo:4: async comes from the Cameo module: include Cameo, or call Cameo.async (NoMethodError)\n")
+	prints(t, "include Cameo\nx = async 1, 2\n", "t.cameo:2: async names the method by a symbol, not an instance of Integer (TypeError)\n")
 }
 
-func TestErrorsOnTheIRNameTheirLine(t *testing.T) {
-	onBoth(t, `def f(x)
+func TestErrorsNameTheLineOfTheirInstruction(t *testing.T) {
+	prints(t, `def f(x)
   x + nope
 end
 f(1)
 `, "t.cameo:2: undefined local variable or method 'nope' for main (NameError)\n")
-	onBoth(t, "x = 1\ny = x.missing(2)\n", "t.cameo:2: undefined method 'missing' for an instance of Integer (NoMethodError)\n")
-	onBoth(t, "def f = yield\nf\n", "t.cameo:1: no block given (yield) (LocalJumpError)\n")
-	onBoth(t, "a = [1]\na << 2\n", "t.cameo:2: cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)\n")
+	prints(t, "x = 1\ny = x.missing(2)\n", "t.cameo:2: undefined method 'missing' for an instance of Integer (NoMethodError)\n")
+	prints(t, "def f = yield\nf\n", "t.cameo:1: no block given (yield) (LocalJumpError)\n")
+	prints(t, "a = [1]\na << 2\n", "t.cameo:2: cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)\n")
 }
