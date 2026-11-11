@@ -315,6 +315,122 @@ func (m *machine) exec(c *cameopb.Code) error {
 		return &control{kind: ctrlNext, value: m.pop(), line: line}
 	case cameopb.Op_REDO:
 		return &control{kind: ctrlRedo, line: line}
+	case cameopb.Op_RETRY:
+		return &control{kind: ctrlRetry, line: line}
+	case cameopb.Op_BEGIN:
+		return m.begin(c)
+	case cameopb.Op_CASE:
+		return m.caseWhen(c)
+	case cameopb.Op_CASE_IN:
+		return m.caseIn(c)
+	case cameopb.Op_MATCH:
+		subject := m.pop()
+		ok, err := m.match(c.Args[0].GetPattern(), subject, line)
+		if err != nil {
+			return err
+		}
+		switch {
+		case has(c, cameopb.Flag_FLAG_TEST):
+			m.push(object.Bool(ok))
+		case !ok:
+			s, _ := in.Inspect(subject)
+			return in.raise(object.NoMatchingPattern, line, "%s", s)
+		default:
+			m.push(object.Nil)
+		}
+	case cameopb.Op_MULTI_ASSIGN:
+		values := m.pop().List().Elems
+		var result object.Value
+		if c.Args[0].GetInt() == 1 {
+			result = values[0]
+			if l, ok := values[0].AsList(); ok {
+				values = l.Elems
+			}
+		} else {
+			result = object.NewList(values...)
+		}
+		names := make([]string, len(c.Args)-2)
+		for i := range names {
+			names[i] = m.name(c, i+2)
+		}
+		assignNames(names, int(c.Args[1].GetInt()), values, env)
+		m.push(result)
+	case cameopb.Op_REGEXP:
+		v, err := m.regexp(c)
+		if err != nil {
+			return err
+		}
+		m.push(v)
+	case cameopb.Op_VAR_OR_CALL:
+		name := m.name(c, 0)
+		if v, ok := env.Get(name); ok {
+			m.push(v)
+			return nil
+		}
+		v, err := in.dispatch(fr, fr.Self, name, nil, nil, object.Value{}, true, true, true, line)
+		if err != nil {
+			return withLine(err, line)
+		}
+		m.push(v)
+	case cameopb.Op_DEFINED_LOCAL:
+		if _, ok := env.Get(m.name(c, 0)); ok {
+			m.push(object.String("local-variable"))
+		} else {
+			m.push(object.Nil)
+		}
+	case cameopb.Op_DEFINED_CONST:
+		base := len(m.stack)
+		if err := m.list(c.Code[0].GetCode()); err != nil {
+			if exc, ok := err.(*object.Exception); ok && exc.Cls.IsA(object.NameError) {
+				m.stack = m.stack[:base]
+				m.push(object.Nil)
+				return nil
+			}
+			return err
+		}
+		m.pop()
+		m.push(object.String("constant"))
+	case cameopb.Op_DEFINED_METHOD:
+		recv := fr.Self
+		if recvCode := c.Code[0].GetCode(); len(recvCode) > 0 {
+			base := len(m.stack)
+			if err := m.list(recvCode); err != nil {
+				if _, ok := err.(*object.Exception); ok {
+					m.stack = m.stack[:base]
+					m.push(object.Nil)
+					return nil
+				}
+				return err
+			}
+			recv = m.pop()
+		}
+		if recv.Class().Lookup(m.name(c, 0)) != nil {
+			m.push(object.String("method"))
+		} else {
+			m.push(object.Nil)
+		}
+	case cameopb.Op_DEFINED_YIELD:
+		if fr.Block.IsZero() {
+			m.push(object.Nil)
+		} else {
+			m.push(object.String("yield"))
+		}
+	case cameopb.Op_SCOPED:
+		var v object.Value
+		var err error
+		if has(c, cameopb.Flag_FLAG_TOP) {
+			v, err = in.topConst(m.name(c, 0), line)
+		} else {
+			v, err = in.scopedConst(m.pop(), m.name(c, 0), line)
+		}
+		if err != nil {
+			return err
+		}
+		m.push(v)
+	case cameopb.Op_SETCONST:
+		return in.defineConst(m.name(c, 0), m.top(), fr, line)
+	case cameopb.Op_FIELD_SET:
+		return in.writeField(m.name(c, 0), m.top(), fr, line)
 	default:
 		return in.raise(object.CameoError, line, "the evaluator does not run %s yet", c.Op)
 	}

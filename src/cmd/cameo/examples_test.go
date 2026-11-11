@@ -121,15 +121,15 @@ proc #1 block(x)
 	if out.String() != want {
 		t.Fatalf("listing differs\n--- got ---\n%s--- want ---\n%s", out.String(), want)
 	}
-	rescue := filepath.Join(dir, "rescue.cameo")
-	if err := os.WriteFile(rescue, []byte("x = 1\nbegin\n  x\nrescue\n  2\nend\n"), 0o644); err != nil {
+	class := filepath.Join(dir, "class.cameo")
+	if err := os.WriteFile(class, []byte("x = 1\nclass Point\nend\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	err := irListing(rescue, &out)
-	if err == nil || !strings.Contains(err.Error(), "rescue.cameo: line 2: *syntax.Begin does not compile to the IR yet") {
-		t.Fatalf("cameo ir on a begin: %v", err)
+	err := irListing(class, &out)
+	if err == nil || !strings.Contains(err.Error(), "class.cameo: line 2: *syntax.ClassDef does not compile to the IR yet") {
+		t.Fatalf("cameo ir on a class: %v", err)
 	}
-	if status := run([]string{"ir", rescue}); status != 1 {
+	if status := run([]string{"ir", class}); status != 1 {
 		t.Fatalf("exit status %d for a script that does not compile, want 1", status)
 	}
 }

@@ -335,10 +335,326 @@ func (c *compiler) expr(e *emitter, n syntax.Node) error {
 		e.emit(cameopb.Op_NOT, line)
 	case *syntax.Seq:
 		return c.statements(e, n.Body, line)
+	case *syntax.Begin:
+		return c.begin(e, n)
+	case *syntax.Retry:
+		e.emit(cameopb.Op_RETRY, line)
+	case *syntax.Case:
+		return c.caseWhen(e, n)
+	case *syntax.CaseIn:
+		return c.caseIn(e, n)
+	case *syntax.MatchPattern:
+		if err := c.expr(e, n.Subject); err != nil {
+			return err
+		}
+		p, err := c.pattern(n.Pattern)
+		if err != nil {
+			return err
+		}
+		e.emit(cameopb.Op_MATCH, line, &cameopb.Arg{Kind: &cameopb.Arg_Pattern{Pattern: p}}).Flags = flag(cameopb.Flag_FLAG_TEST, n.Test)
+	case *syntax.MultiAssign:
+		if _, _, err := c.args(e, n.Values, line, true); err != nil {
+			return err
+		}
+		args := []*cameopb.Arg{intArg(len(n.Values)), intArg(n.SplatIndex)}
+		for _, name := range n.Names {
+			args = append(args, c.nameArg(name))
+		}
+		e.emit(cameopb.Op_MULTI_ASSIGN, line, args...)
+	case *syntax.Regexp:
+		code := e.emit(cameopb.Op_REGEXP, line, intArg(n.Options))
+		for _, part := range n.Parts {
+			s, err := c.value(part)
+			if err != nil {
+				return err
+			}
+			code.Code = append(code.Code, s)
+		}
+		if len(n.Parts) == 1 {
+			_, static := n.Parts[0].(*syntax.Str)
+			code.Flags = flag(cameopb.Flag_FLAG_STATIC, static)
+		}
+	case *syntax.VarOrCall:
+		e.emit(cameopb.Op_VAR_OR_CALL, line, c.nameArg(n.Name))
+	case *syntax.Defined:
+		return c.defined(e, n)
+	case *syntax.ScopedConst:
+		if n.Scope == nil {
+			e.emit(cameopb.Op_SCOPED, line, c.nameArg(n.Name)).Flags = uint64(cameopb.Flag_FLAG_TOP)
+			return nil
+		}
+		if err := c.expr(e, n.Scope); err != nil {
+			return err
+		}
+		e.emit(cameopb.Op_SCOPED, line, c.nameArg(n.Name))
+	case *syntax.ConstAssign:
+		if err := c.expr(e, n.Value); err != nil {
+			return err
+		}
+		e.emit(cameopb.Op_SETCONST, line, c.nameArg(n.Name))
+	case *syntax.FieldAssign:
+		if err := c.expr(e, n.Value); err != nil {
+			return err
+		}
+		e.emit(cameopb.Op_FIELD_SET, line, c.nameArg(n.Name))
 	default:
 		return &Unsupported{Node: n}
 	}
 	return nil
+}
+
+// begin compiles begin/rescue/else/ensure. The lists are the body, the
+// else and the ensure, then two per rescue clause: its classes, which
+// leaves them as a list and is empty for a clause that names none, and
+// its body.
+func (c *compiler) begin(e *emitter, n *syntax.Begin) error {
+	line := n.Line()
+	body, err := c.body(n.Body, line)
+	if err != nil {
+		return err
+	}
+	els, err := c.body(n.Else, line)
+	if err != nil {
+		return err
+	}
+	ensure, err := c.body(n.Ensure, line)
+	if err != nil {
+		return err
+	}
+	code := &cameopb.Code{Op: cameopb.Op_BEGIN, Line: int32(line), Code: []*cameopb.Seq{body, els, ensure}}
+	code.Flags = flag(cameopb.Flag_FLAG_ELSE, n.Else != nil) | flag(cameopb.Flag_FLAG_ENSURE, n.Ensure != nil)
+	for i := range n.Rescues {
+		r := &n.Rescues[i]
+		classes := &emitter{}
+		if len(r.Classes) > 0 {
+			if _, _, err := c.args(classes, r.Classes, line, true); err != nil {
+				return err
+			}
+		}
+		clause, err := c.body(r.Body, line)
+		if err != nil {
+			return err
+		}
+		code.Args = append(code.Args, c.nameArg(r.Var))
+		code.Code = append(code.Code, classes.seq(), clause)
+	}
+	e.code = append(e.code, code)
+	return nil
+}
+
+// caseWhen compiles case/when: two lists per when, its conditions as a
+// list and its body, then the else.
+func (c *compiler) caseWhen(e *emitter, n *syntax.Case) error {
+	line := n.Line()
+	flags := uint64(cameopb.Flag_FLAG_ELSE)
+	if n.Subject != nil {
+		if err := c.expr(e, n.Subject); err != nil {
+			return err
+		}
+		flags |= uint64(cameopb.Flag_FLAG_SUBJECT)
+	}
+	code := &cameopb.Code{Op: cameopb.Op_CASE, Line: int32(line), Flags: flags}
+	for _, w := range n.Whens {
+		conds := &emitter{}
+		if _, _, err := c.args(conds, w.Conds, line, true); err != nil {
+			return err
+		}
+		body, err := c.body(w.Body, line)
+		if err != nil {
+			return err
+		}
+		code.Code = append(code.Code, conds.seq(), body)
+	}
+	els, err := c.body(n.Else, line)
+	if err != nil {
+		return err
+	}
+	code.Code = append(code.Code, els)
+	e.code = append(e.code, code)
+	return nil
+}
+
+// caseIn compiles case/in: per clause a pattern, the kind of its guard
+// (0 none, 1 if, 2 unless) and two lists, the guard and the body.
+func (c *compiler) caseIn(e *emitter, n *syntax.CaseIn) error {
+	line := n.Line()
+	if err := c.expr(e, n.Subject); err != nil {
+		return err
+	}
+	code := &cameopb.Code{Op: cameopb.Op_CASE_IN, Line: int32(line)}
+	for _, cl := range n.Clauses {
+		p, err := c.pattern(cl.Pattern)
+		if err != nil {
+			return err
+		}
+		guard, kind := &cameopb.Seq{}, 0
+		if cl.Guard != nil {
+			if guard, err = c.value(cl.Guard); err != nil {
+				return err
+			}
+			kind = 1
+			if cl.GuardNeg {
+				kind = 2
+			}
+		}
+		body, err := c.body(cl.Body, line)
+		if err != nil {
+			return err
+		}
+		code.Args = append(code.Args, &cameopb.Arg{Kind: &cameopb.Arg_Pattern{Pattern: p}}, intArg(kind))
+		code.Code = append(code.Code, guard, body)
+	}
+	if n.Else != nil {
+		els, err := c.body(n.Else, line)
+		if err != nil {
+			return err
+		}
+		code.Code = append(code.Code, els)
+		code.Flags = uint64(cameopb.Flag_FLAG_ELSE)
+	}
+	e.code = append(e.code, code)
+	return nil
+}
+
+// defined compiles defined?(expr), which evaluates no more of expr than
+// it must: what expr is decides the instruction.
+func (c *compiler) defined(e *emitter, n *syntax.Defined) error {
+	line := n.Line()
+	text := func(s string) {
+		e.emit(cameopb.Op_CONST, line, constArg(&cameopb.Value{Kind: &cameopb.Value_StringValue{StringValue: s}}))
+	}
+	switch x := n.Expr.(type) {
+	case *syntax.Var:
+		e.emit(cameopb.Op_DEFINED_LOCAL, line, c.nameArg(x.Name))
+	case *syntax.Const, *syntax.ScopedConst:
+		expr, err := c.value(x)
+		if err != nil {
+			return err
+		}
+		e.emit(cameopb.Op_DEFINED_CONST, line).Code = []*cameopb.Seq{expr}
+	case *syntax.Call:
+		recv := &cameopb.Seq{}
+		if x.Recv != nil {
+			var err error
+			if recv, err = c.value(x.Recv); err != nil {
+				return err
+			}
+		}
+		e.emit(cameopb.Op_DEFINED_METHOD, line, c.nameArg(x.Name)).Code = []*cameopb.Seq{recv}
+	case *syntax.Yield:
+		e.emit(cameopb.Op_DEFINED_YIELD, line)
+	case *syntax.Self:
+		text("self")
+	case *syntax.Assign, *syntax.FieldAssign, *syntax.ConstAssign, *syntax.MultiAssign:
+		text("assignment")
+	default:
+		text("expression")
+	}
+	return nil
+}
+
+// pattern compiles a pattern of case/in, `=>` and `in`.
+func (c *compiler) pattern(p syntax.Pattern) (*cameopb.Pattern, error) {
+	patterns := func(ps []syntax.Pattern) ([]*cameopb.Pattern, error) {
+		var out []*cameopb.Pattern
+		for _, p := range ps {
+			cp, err := c.pattern(p)
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, cp)
+		}
+		return out, nil
+	}
+	// constOf compiles the constant of `Const[…]` and `Const(…)`, nil
+	// when the pattern has none.
+	constOf := func(n syntax.Node) (*cameopb.Seq, error) {
+		if n == nil {
+			return nil, nil
+		}
+		return c.value(n)
+	}
+	// named is the index of a name that may be absent.
+	named := func(name string) *uint32 {
+		if name == "" {
+			return nil
+		}
+		i := c.name(name)
+		return &i
+	}
+	switch p := p.(type) {
+	case *syntax.ValuePattern:
+		v, err := c.value(p.Value)
+		if err != nil {
+			return nil, err
+		}
+		return &cameopb.Pattern{Kind: &cameopb.Pattern_Value{Value: v}}, nil
+	case *syntax.BindPattern:
+		return &cameopb.Pattern{Kind: &cameopb.Pattern_Bind{Bind: &cameopb.Pattern_Local{Name: c.name(p.Name)}}}, nil
+	case *syntax.ConstPattern:
+		v, err := c.value(p.Const)
+		if err != nil {
+			return nil, err
+		}
+		return &cameopb.Pattern{Kind: &cameopb.Pattern_Const{Const: v}}, nil
+	case *syntax.BindingPattern:
+		sub, err := c.pattern(p.Sub)
+		if err != nil {
+			return nil, err
+		}
+		return &cameopb.Pattern{Kind: &cameopb.Pattern_Binding{Binding: &cameopb.Pattern_As{Sub: sub, Name: c.name(p.Name)}}}, nil
+	case *syntax.AltPattern:
+		alts, err := patterns(p.Alts)
+		if err != nil {
+			return nil, err
+		}
+		return &cameopb.Pattern{Kind: &cameopb.Pattern_Alt{Alt: &cameopb.Pattern_Either{Alts: alts}}}, nil
+	case *syntax.ListPattern:
+		cn, err := constOf(p.Const)
+		if err != nil {
+			return nil, err
+		}
+		pre, err := patterns(p.Pre)
+		if err != nil {
+			return nil, err
+		}
+		post, err := patterns(p.Post)
+		if err != nil {
+			return nil, err
+		}
+		return &cameopb.Pattern{Kind: &cameopb.Pattern_List{List: &cameopb.Pattern_Array{
+			Const: cn, Pre: pre, HasSplat: p.HasSplat, SplatName: named(p.SplatName), Post: post,
+		}}}, nil
+	case *syntax.FindPattern:
+		cn, err := constOf(p.Const)
+		if err != nil {
+			return nil, err
+		}
+		mid, err := patterns(p.Mid)
+		if err != nil {
+			return nil, err
+		}
+		return &cameopb.Pattern{Kind: &cameopb.Pattern_Find{Find: &cameopb.Pattern_Search{
+			Const: cn, PreName: named(p.PreName), Mid: mid, PostName: named(p.PostName),
+		}}}, nil
+	case *syntax.MapPattern:
+		cn, err := constOf(p.Const)
+		if err != nil {
+			return nil, err
+		}
+		out := &cameopb.Pattern_Hash{Const: cn, HasRest: p.HasRest, RestName: named(p.RestName), RestNil: p.RestNil}
+		for i, key := range p.Keys {
+			entry := &cameopb.Pattern_Hash_Entry{Key: c.name(key)}
+			if p.Values[i] != nil {
+				if entry.Value, err = c.pattern(p.Values[i]); err != nil {
+					return nil, err
+				}
+			}
+			out.Entries = append(out.Entries, entry)
+		}
+		return &cameopb.Pattern{Kind: &cameopb.Pattern_Map{Map: out}}, nil
+	}
+	return nil, fmt.Errorf("a pattern of kind %T does not compile to the IR", p)
 }
 
 // jump compiles return, break and next: the value, nil when absent, then
