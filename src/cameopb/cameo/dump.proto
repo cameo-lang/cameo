@@ -238,8 +238,11 @@ message Dump {
     // call returned, which a block written in it outlived.
     bool lambda = 11;
     bool ended = 12;
-    // building is the instance the frame's initialize is filling.
+    // building is the instance the frame's initialize is filling. An
+    // initialize that a super in another initialize called fills the
+    // same instance, and names that frame, plus one, in building_of.
     Value building = 13;
+    uint32 building_of = 14;
   }
 
   // Class is a class or a module as the run had made it.

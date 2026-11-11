@@ -412,7 +412,16 @@ func (m *machine) exec(c *cameopb.Code) error {
 		if has(c, cameopb.Flag_FLAG_BLOCK) {
 			block = m.closure(c.Args[1].GetProc())
 		}
-		v, err := in.callSuper(fr, args, kw, block, line)
+		// A method a script defined becomes the activation that runs.
+		meth := in.superMethod(fr)
+		if m.inGo == 0 && in.runs(meth, true) {
+			act, err := in.methodAct(meth, fr.Self, args, kw, block, line)
+			if err == nil {
+				err = in.pushAct(act, c)
+			}
+			return withLine(err, line)
+		}
+		v, err := in.callSuperTo(meth, fr, args, kw, block, line)
 		if err != nil {
 			return err
 		}
@@ -587,12 +596,8 @@ func (m *machine) send(c *cameopb.Code) error {
 			m.push(v)
 			return nil
 		}
-		v, err := in.call(fr, recv, name, args, nil, object.Value{}, false, line)
-		if err != nil {
-			return withLine(err, line)
-		}
-		m.push(v)
-		return nil
+		// An operator a class defines is a call like any other.
+		return m.call(c, in.lookup(recv, name, false), recv, name, args, nil, object.Value{}, false, true, line)
 	}
 	recvName := "x"
 	for _, a := range c.Args[2:] {
