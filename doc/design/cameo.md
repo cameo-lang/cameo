@@ -642,8 +642,8 @@ scalar kinds plus `List`, `Map`, `Set`, `Range`, `Time`, `Regexp`, `Object` (a
 class name and the packed message of an instance or an exception) and
 `Closure` (a Proc: the proc of a unit of code and the binding it runs in, see
 [ir.md](ir.md)). A symbol travels as a string, see *Symbols*.
-A hash's default value travels with it; a hash with a default block cannot
-travel. It is what `async` serialises, what the
+A hash's default travels with it, a value or the block that computes it.
+It is what `async` serialises, what the
 Go host API takes and returns, and what `cameo proto` emits alongside the
 classes.
 
