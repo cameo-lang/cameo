@@ -1,0 +1,388 @@
+// The IR: the code of a cameo program as protobuf carries it.
+// doc/design/ir.md describes its shape and how it runs.
+//
+// The IR is structured stack code. A proc is a list of instructions that
+// push and pop the values of one activation's stack; control flow is an
+// instruction that carries nested lists, so there are no jumps, and a
+// position in a proc is a path of indices.
+syntax = "proto3";
+
+package cameo;
+
+option go_package = "github.com/cameo-lang/cameo/src/cameopb";
+
+import "cameo/value.proto";
+
+// Unit is the code of one source file: the script, or a library written
+// in cameo.
+message Unit {
+  // version is the IR version the unit was compiled to; see ir.Version.
+  uint32 version = 1;
+  // digest identifies the unit by its code, line numbers left out. A
+  // closure names the unit it belongs to by it.
+  string digest = 2;
+  string file = 3;
+  // names are the names the instructions refer to by index: variables,
+  // methods, constants, symbols.
+  repeated string names = 4;
+  // procs[0] is the top level of the file.
+  repeated Proc procs = 5;
+}
+
+// Proc is one body of code: the top level, a method, a block, a lambda, a
+// class or module body.
+message Proc {
+  // name is what a listing and the debugger show: the method's name,
+  // "block", "<main>", "<class:Point>".
+  string name = 1;
+  Params params = 2;
+  repeated Code code = 3;
+  int32 line = 4;
+  // shared marks the body of a for loop, which runs in the scope around
+  // it; any other block runs in a copy of the values it captured.
+  bool shared = 5;
+}
+
+// Params is the parameter list of a method, block or lambda. Names are
+// indices into the unit's names.
+message Params {
+  // Positional is required, optional when default is set, or the one
+  // splat. A default is code that leaves the value on the stack.
+  message Positional {
+    uint32 name = 1;
+    Seq default = 2;
+    bool splat = 3;
+  }
+  message Keyword {
+    uint32 name = 1;
+    Seq default = 2;
+    bool required = 3;
+  }
+  repeated Positional positional = 1;
+  repeated Keyword keywords = 2;
+  // kw_rest is the **name parameter, block the &name parameter.
+  optional uint32 kw_rest = 3;
+  optional uint32 block = 4;
+}
+
+// Code is one instruction: an operation, its arguments, its flags (a set
+// of Flag bits), and for control flow the lists it runs. What each
+// operation takes is written at its Op.
+message Code {
+  Op op = 1;
+  repeated Arg args = 2;
+  repeated Seq code = 3;
+  int32 line = 4;
+  uint64 flags = 5;
+}
+
+// Seq is a list of instructions.
+message Seq {
+  repeated Code code = 1;
+}
+
+// Arg is one argument of an instruction.
+message Arg {
+  oneof kind {
+    // constant is a literal value.
+    Value constant = 1;
+    // name is an index into the unit's names.
+    uint32 name = 2;
+    // proc is an index into the unit's procs.
+    uint32 proc = 3;
+    int64 int = 4;
+    Pattern pattern = 5;
+    FieldDecl field = 6;
+  }
+}
+
+// Pattern is a pattern of case/in, `=>` and `in`. Code inside a pattern
+// leaves one value on the stack.
+message Pattern {
+  // Local binds the subject to a local; "_" binds nothing.
+  message Local {
+    uint32 name = 1;
+  }
+  // As is `sub => name`.
+  message As {
+    Pattern sub = 1;
+    uint32 name = 2;
+  }
+  // Array is `[pre, *splat, post]`, optionally `Const[…]`.
+  message Array {
+    Seq const = 1;
+    repeated Pattern pre = 2;
+    bool has_splat = 3;
+    optional uint32 splat_name = 4;
+    repeated Pattern post = 5;
+  }
+  // Hash is `{key: pattern, **rest}`, optionally `Const(key:)`. An entry
+  // without a pattern binds the key's name.
+  message Hash {
+    message Entry {
+      uint32 key = 1;
+      Pattern value = 2;
+    }
+    Seq const = 1;
+    repeated Entry entries = 2;
+    bool has_rest = 3;
+    optional uint32 rest_name = 4;
+    bool rest_nil = 5;
+  }
+  // Either is `p1 | p2`.
+  message Either {
+    repeated Pattern alts = 1;
+  }
+  // Search is `[*pre, mid, *post]`.
+  message Search {
+    Seq const = 1;
+    optional uint32 pre_name = 2;
+    repeated Pattern mid = 3;
+    optional uint32 post_name = 4;
+  }
+  oneof kind {
+    // value matches when `value === subject`.
+    Seq value = 1;
+    Local bind = 2;
+    // const matches when `subject.is_a?(const)`.
+    Seq const = 3;
+    As binding = 4;
+    Array list = 5;
+    Hash map = 6;
+    Either alt = 7;
+    Search find = 8;
+  }
+}
+
+// FieldDecl is a typed field declaration of a class body: `string :a, :b`,
+// `list :tags, of: :string`, `map :scores, key: :string, value: :int`,
+// `ref :origin, Point`, `enum :kind, values: [:a, :b]`.
+message FieldDecl {
+  // type is a scalar type, or list, set, map, ref, enum, proc.
+  string type = 1;
+  repeated string names = 2;
+  // number is the declared field number, 0 for the one derived from the
+  // name.
+  int64 number = 3;
+  // of is the element type of a list or set; key and value those of a map.
+  string of = 4;
+  string key = 5;
+  string value = 6;
+  // values are the symbols of an enum.
+  repeated string values = 7;
+}
+
+// Flag is one bit of an instruction's flags.
+enum Flag {
+  FLAG_NONE = 0;
+  // SEND: the call has no receiver; it is on self, and nothing is popped
+  // for it.
+  FLAG_SELF = 0x1;
+  // The arguments are one list on the stack, built with LIST, APPEND and
+  // SPLAT, where the count argument is otherwise how many are popped.
+  FLAG_ARGV = 0x2;
+  // The keyword arguments are a map on the stack, above the arguments.
+  FLAG_KW = 0x4;
+  // A `&expr` argument is on the stack, on top.
+  FLAG_BLOCK_ARG = 0x8;
+  // The instruction has a literal block: its proc argument.
+  FLAG_BLOCK = 0x10;
+  // SEND: a bare name, which may have been meant as a local.
+  FLAG_VCALL = 0x20;
+  // SEND: nothing reads the call's value.
+  FLAG_DROPPED = 0x40;
+  // SEND: the call's value is assigned back to its receiver.
+  FLAG_REBINDS = 0x80;
+  // SEND: an operator with one plain argument, which has a fast path.
+  FLAG_OPERATOR = 0x100;
+  // SEND: the receiver is self written out.
+  FLAG_PRIVATE = 0x200;
+  // STORE: the value is a lambda that reads the name it is stored under.
+  // SUPER: a bare super, which passes the method's own arguments.
+  FLAG_FORWARD = 0x400;
+  // LAMBDA: a lambda, not a proc.
+  FLAG_STRICT = 0x800;
+  // RANGE: the range excludes its end; it has a lower, an upper bound.
+  FLAG_EXCLUSIVE = 0x1000;
+  FLAG_LO = 0x2000;
+  FLAG_HI = 0x4000;
+  // WHILE: the body runs once before the condition.
+  FLAG_DO_WHILE = 0x8000;
+  // BEGIN, CASE, CASE_IN: there is an else list. BEGIN: an ensure list.
+  FLAG_ELSE = 0x10000;
+  FLAG_ENSURE = 0x20000;
+  // CASE: the subject is on the stack.
+  FLAG_SUBJECT = 0x40000;
+  // MATCH: `subject in pattern`, which pushes a boolean, where `=>` raises.
+  FLAG_TEST = 0x80000;
+  // DEF: a class method, `def self.name`.
+  FLAG_SINGLETON = 0x100000;
+  // CLASS, MODULE: `class A::B`; the module A is on the stack.
+  FLAG_SCOPED = 0x200000;
+  // CLASS: the superclass is on the stack.
+  FLAG_SUPER = 0x400000;
+  // INCLUDE: extend.
+  FLAG_EXTEND = 0x800000;
+  // WITH: `target[key] = value`.
+  FLAG_INDEX = 0x1000000;
+  // ASYNC, AWAIT, AWAIT_CALL, AWAIT_ALL: written Cameo.async.
+  FLAG_QUALIFIED = 0x2000000;
+  // FIELD, ATTR: the default is on the stack. FIELD: the class of a ref is.
+  FLAG_DEFAULT = 0x4000000;
+  FLAG_REF = 0x8000000;
+  // SCOPED: `::Name`; no scope is popped.
+  FLAG_TOP = 0x10000000;
+  // REGEXP: no part is interpolated, so the regexp is made once.
+  FLAG_STATIC = 0x20000000;
+}
+
+// Op is an operation. The comment of each says what it takes: arguments in
+// parentheses, lists in braces, then what it pops and pushes, the top of
+// the stack on the right.
+enum Op {
+  OP_UNSPECIFIED = 0;
+
+  // Values.
+
+  // CONST(constant): -> value. An empty constant is nil.
+  CONST = 1;
+  // SYM(name): -> symbol.
+  SYM = 2;
+  // SELF: -> self.
+  SELF = 3;
+  // LOAD(name): -> the local's value, nil when it is unbound.
+  LOAD = 4;
+  // STORE(name): value -> value. Binds the local.
+  STORE = 5;
+  // FIELD_SET(name): value -> value. Sets a field of the instance
+  // initialize is filling.
+  FIELD_SET = 6;
+  // GETCONST(name): -> the constant, looked up from the lexical scope
+  // outwards.
+  GETCONST = 7;
+  // SCOPED(name): scope -> the constant of scope. With TOP: -> the
+  // top-level constant.
+  SCOPED = 8;
+  // SETCONST(name): value -> value. Binds the constant in the lexical
+  // scope.
+  SETCONST = 9;
+  // LIST(int n): n values -> list.
+  LIST = 10;
+  // APPEND: list value -> list.
+  APPEND = 11;
+  // SPLAT: list value -> list with the elements of value spliced in.
+  SPLAT = 12;
+  // MAP: -> an empty map.
+  MAP = 13;
+  // MAP_SET: map value key -> map.
+  MAP_SET = 14;
+  // MAP_MERGE: map value -> map with the entries of value, a `**value`.
+  MAP_MERGE = 15;
+  // RANGE: [lo] [hi] -> range, each bound popped when its flag is set.
+  RANGE = 16;
+  // INTERP(int n): n values -> string of their to_s, concatenated.
+  INTERP = 17;
+  // REGEXP(int n, int options): n values -> regexp of their sources,
+  // concatenated.
+  REGEXP = 18;
+  // VAR_OR_CALL(name): -> the local of that name, or the method's result.
+  VAR_OR_CALL = 19;
+  // LAMBDA(proc): -> closure over the values of the locals in sight.
+  LAMBDA = 20;
+  // DEFINED_LOCAL(name): -> "local-variable" or nil.
+  DEFINED_LOCAL = 21;
+  // DEFINED_CONST{expr}: -> "constant", or nil when expr raises NameError.
+  DEFINED_CONST = 22;
+  // DEFINED_METHOD(name){recv}: -> "method" or nil. recv is empty for a
+  // call on self; when it raises an exception, nil.
+  DEFINED_METHOD = 23;
+  // DEFINED_YIELD: -> "yield" or nil.
+  DEFINED_YIELD = 24;
+
+  // Calls.
+
+  // SEND(name, int argc, [proc], [name recv_local]): [recv] args [kw]
+  // [block] -> result. recv_local is the local the receiver was read
+  // from, which a mutating call rebinds.
+  SEND = 30;
+  // SAFE{rest}: recv -> nil when recv is nil; else runs rest, which ends
+  // in the SEND on recv.
+  SAFE = 31;
+  // BLOCK_GIVEN: -> whether the method was given a block.
+  BLOCK_GIVEN = 32;
+  // YIELD(int argc): args [kw] -> the block's result.
+  YIELD = 33;
+  // SUPER(int argc, [proc]): args [kw] [block] -> result.
+  SUPER = 34;
+  // NEED_CAMEO(name): raises unless Cameo is included; name is async or
+  // await.
+  NEED_CAMEO = 35;
+  // ASYNC(int argc): recv method args [kw] -> promise.
+  ASYNC = 36;
+  // AWAIT: promise or list of promises -> result or list of results.
+  AWAIT = 37;
+  // AWAIT_CALL(int argc): recv method args [kw] -> result.
+  AWAIT_CALL = 38;
+  // AWAIT_ALL: -> the results of the promises the scope started.
+  AWAIT_ALL = 39;
+  // WITH: target key value -> copy of target with key set to value.
+  WITH = 40;
+  // MULTI_ASSIGN(int argc, int splat, names...): values -> value. splat is
+  // the index of the *name, or -1.
+  MULTI_ASSIGN = 41;
+
+  // Control flow.
+
+  // DROP: value ->. Ends a statement; the next instruction starts one.
+  DROP = 50;
+  // IF{then, else}: cond -> value.
+  IF = 51;
+  // WHILE{cond, body}: -> nil, or the value of a break.
+  WHILE = 52;
+  // AND{right}: left -> left when it is false or nil, else right.
+  AND = 53;
+  // OR{right}: left -> left when it is neither false nor nil, else right.
+  OR = 54;
+  // NOT: value -> boolean.
+  NOT = 55;
+  // RETURN, BREAK, NEXT: value ->. Leave the method, the loop or block,
+  // the iteration.
+  RETURN = 56;
+  BREAK = 57;
+  NEXT = 58;
+  // REDO, RETRY: restart the iteration, the begin body.
+  REDO = 59;
+  RETRY = 60;
+  // BEGIN(name var...){body, else, ensure, classes, clause...}: -> value.
+  // One name and one pair of lists per rescue clause: classes leaves a
+  // list of the classes it rescues, empty for StandardError, and var is
+  // the local the exception is bound to, "" for none.
+  BEGIN = 61;
+  // CASE{conds, body..., else}: [subject] -> value. conds leaves a list.
+  CASE = 62;
+  // CASE_IN(pattern, int guard...){guard, body..., else}: subject ->
+  // value. One pattern, one int and one pair of lists per clause; the int
+  // is 0 for no guard, 1 for if, 2 for unless.
+  CASE_IN = 63;
+  // MATCH(pattern): subject -> nil, or with TEST a boolean.
+  MATCH = 64;
+
+  // Definitions.
+
+  // DEF(name, proc): -> the name as a symbol.
+  DEF = 70;
+  // CLASS(name, proc body, name digest): [scope] [super] -> class.
+  CLASS = 71;
+  // MODULE(name, proc body, name digest): [scope] -> module.
+  MODULE = 72;
+  // ALIAS(name new, name old): -> nil.
+  ALIAS = 73;
+  // FIELD(field): [ref] [default] -> nil.
+  FIELD = 74;
+  // ATTR(names...): [default] -> nil.
+  ATTR = 75;
+  // RESERVED(int number, name): -> nil. name is "" for none.
+  RESERVED = 76;
+  // INCLUDE: module -> the class, or nil at the top level.
+  INCLUDE = 77;
+}
