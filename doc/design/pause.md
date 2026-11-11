@@ -9,21 +9,33 @@ the same.
 
 ## Where a run pauses
 
-A run pauses between two top-level statements, never inside one. The
-evaluator runs a statement's instructions recursively, so
-the state of a statement that is running — the loop it is in, the method it
-called, the block it is evaluating — lives on the Go stack, which nothing
-can serialise. `^C` sets a flag; the interpreter reads it before each
-top-level statement and pauses there. A top-level statement that never
-ends, `loop do … end` or a call that does all the work, is never paused: a
-second `^C` ends the process.
+A run pauses before an instruction: inside a method, some calls deep,
+inside a `while` loop, a block a method yields to, a `rescue` or an
+`ensure` clause, as well as between two top-level statements. `^C` sets a
+flag, and the evaluator reads it before each instruction. A script whose
+one statement is a loop that never ends pauses in the loop.
 
-[ir.md](ir.md) is the plan that lifts this limit: an IR that protobuf
-carries, and an evaluator that keeps a run's state off the Go stack.
+What it takes is that the run's state is data. The evaluator keeps a run
+as a stack of activations, one per method or block that is running, each
+with its position, its value stack, its scope and its frame
+([ir.md](ir.md#the-activation-stack)), and the dump holds that stack. A
+builtin that calls back into the script, `list.each` its block or `puts`
+a `to_s`, is Go code in the middle of its work, which no dump holds: the
+evaluator runs such a call in a loop of its own, and a run pauses only
+while no such loop is running. So a pause that arrives inside the block
+of `each` takes effect when `each` returns. The builtins a script spends
+its time in become step functions, whose state is data too, group by
+group; until one has, it only delays a pause.
+
+The same holds for these, each for as long as it takes: a class body, an
+`initialize` that `new` called, a parameter's default, `super`, an
+operator a class defines, `Proc#call`, a `require` of a library written in
+cameo, and a call the host made into the program.
 
 The pause waits for every call `async` started, so their results travel
 settled in the dump. A promise the script or a host made by hand and has not
-settled cannot wait and is left out.
+settled cannot wait and is left out. A script that is waiting in `await`
+pauses when the promise settles.
 
 ## What a dump holds
 
@@ -33,7 +45,8 @@ The dump is the protobuf message `cameo.Dump`, written in
 | field | holds |
 |---|---|
 | `file`, `source` | the script's path and text |
-| `next`, `line` | the index of the top-level statement the run continues with, and its line |
+| `next`, `line` | the index of the top-level statement the run continues with or in, and the line of its next instruction |
+| `stack`, `scopes`, `frames` | for a run that paused inside a statement: its activations, and the scopes and frames they run in |
 | `variables` | the top-level variables, each as its name and its value in the envelope (`cameo.Value`, see [cameo.md](cameo.md#protobuf)); a variable bound to nil has a value too, an empty one |
 | `constants` | the top-level constants, the same way; one that is a class refers to the class instead |
 | `version` | the IR version of the dump's code |
@@ -115,3 +128,35 @@ A dump resumes on a cameo of its IR version: `version` says which, and a
 cameo of another version refuses the dump, as it refuses one written before
 the dump carried code. The dump still holds the script's text, which the
 resumed run parses for the statements after the pause point.
+
+## How a resumed run gets its activations back
+
+A run that paused inside a statement has its activations in `stack`, the
+outermost first: the statement, then each call in flight.
+
+| of an activation | the dump holds |
+|---|---|
+| its code | the proc of a unit, as a method names its code; the statement is `next` |
+| its position | a cursor per list it is inside: the index of the next instruction, which list of its instruction it is, and the phase the instruction is in |
+| its value stack | the operands of the expressions in flight, as the variables are held |
+| its scope and frame | an index into `scopes` and into `frames` |
+
+A `begin` that is in a rescue clause keeps the exception on its cursor, and
+one whose ensure clause runs keeps what the clause interrupted, a `return`
+with its value or an exception, so that it goes on when the clause ends.
+
+Scopes and frames are tables because they are shared. A block's activation
+runs in the frame of the method the block was written in: that is how its
+`return` finds the method and its `yield` the method's block. So a frame is
+in the dump once, and every activation of it has its index. A Proc that is
+a value, in a variable or on a value stack, names the frame it was written
+in the same way while that frame's call is running; once the call has
+ended it carries its binding, as a Proc does in any other message. Values
+need no table: they never change, so a copy is the value.
+
+A value in flight that the envelope cannot carry is nil after the resume,
+and a local is unbound; `missing` names each when the run pauses.
+
+A resumed run finds every activation's proc by unit and index and walks
+the cursors down its lists. A dump whose path does not fit the code, a
+cursor past the end of its list, is refused.

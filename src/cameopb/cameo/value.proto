@@ -51,6 +51,12 @@ message Closure {
   // proc of a Hash calls []. Such a proc has no unit and no binding.
   string symbol = 7;
   Value recv = 8;
+  // frame is set in the dump of a run that paused inside a statement, for
+  // a proc written in a frame whose call was running: the index of that
+  // frame among the dump's frames, plus one. The binding then holds the
+  // locals alone, and the proc's return, yield and super are that
+  // frame's after the resume.
+  uint32 frame = 9;
 }
 
 // Binding is what a closure's code runs in: the locals it reads, by

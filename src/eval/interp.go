@@ -47,6 +47,17 @@ type Interp struct {
 	// and one more for each call Go code makes into the evaluator while
 	// it runs.
 	loops int
+	// pausable is set while Run runs a statement of the script: a pause
+	// then stops the run before its next instruction, when one loop
+	// alone runs. frozen is the activations the run paused in, which
+	// Dump writes, and dumping their frames and scopes while it does.
+	// resuming is the frames and scopes of the dump a run resumes from
+	// while it is read, and resumed its activations, which Run continues.
+	pausable bool
+	frozen   []*machine
+	dumping  *stackDump
+	resuming *stackRestore
+	resumed  []*machine
 	// restored holds the classes of the dump the run resumed from, by the
 	// id the dump refers to them with; nil for a run that began at its
 	// start.
@@ -218,6 +229,11 @@ func (in *Interp) Run(file string, prog *syntax.Program) error {
 	in.file = file
 	in.code.compiled = CompiledFor(prog)
 	fr := in.topFrame()
+	if len(in.resumed) > 0 {
+		// A run that resumes inside a statement has the top level's
+		// frame from its dump.
+		fr = in.resumed[0].fr
+	}
 	in.dbgTop = &dbgFrame{name: "<main>", env: in.top, fr: fr}
 	if in.dbg != nil {
 		in.dbg.stack = []*dbgFrame{in.dbgTop}
@@ -225,16 +241,33 @@ func (in *Interp) Run(file string, prog *syntax.Program) error {
 	var v object.Value = object.Nil
 	p, err := in.program(file, prog)
 	for i := in.from; err == nil && i < len(prog.Body); i++ {
+		inside := len(in.resumed) > 0
 		if in.pause.Load() {
+			// Between two statements; or, for a run that resumed inside
+			// one and has not gone on yet, where it was.
 			in.paused, in.next, in.nextLine = true, i, prog.Body[i].Line()
+			if in.frozen, in.resumed = in.resumed, nil; inside {
+				in.nextLine = in.frozen[len(in.frozen)-1].line()
+			}
 			return ErrPaused
 		}
-		if in.dbg != nil {
+		if in.dbg != nil && !inside {
 			if err = in.dbg.line(prog.Body[i].Line(), in.top, fr); err != nil {
 				break
 			}
 		}
-		v, err = in.runList(p.unit, p.statements[i], in.top, fr)
+		in.pausable = true
+		if inside {
+			v, err = in.goOn()
+		} else {
+			v, err = in.runList(p.unit, p.statements[i], in.top, fr)
+		}
+		in.pausable = false
+		if errors.Is(err, ErrPaused) {
+			// Inside the statement: run froze the activations.
+			in.paused, in.next, in.nextLine = true, i, in.frozen[len(in.frozen)-1].line()
+			return ErrPaused
+		}
 	}
 	if err == nil {
 		in.last = v

@@ -174,8 +174,13 @@ func (in *Interp) EncodeProc(e *protogen.Encoder, v object.Value) (*cameopb.Clos
 		c.Code = unit
 	}
 	needs := in.code.usesOf(p.IR)
-	binding, err := in.encodeFrame(e, p.Frame, needs)
-	if err != nil {
+	// In the dump of a run that paused inside a statement, a proc written
+	// in a frame whose call is running refers to that frame.
+	var binding *cameopb.Binding
+	var err error
+	if c.Frame = in.dumping.frameOf(p.Frame); c.Frame != 0 {
+		binding = &cameopb.Binding{}
+	} else if binding, err = in.encodeFrame(e, p.Frame, needs); err != nil {
 		return nil, err
 	}
 	// The locals in sight, an inner one shadowing an outer one, of which
@@ -288,8 +293,13 @@ func (in *Interp) DecodeProc(d *protogen.Decoder, c *cameopb.Closure) (object.Va
 	if int(c.GetProc()) >= len(unit.GetProcs()) {
 		return object.Value{}, fmt.Errorf("unit %s has no proc %d", c.GetUnit(), c.GetProc())
 	}
-	fr, err := in.decodeFrame(d, c.GetBinding())
-	if err != nil {
+	var fr *Frame
+	if ref := c.GetFrame(); ref != 0 {
+		if in.resuming == nil || int(ref) > len(in.resuming.frames) {
+			return object.Value{}, fmt.Errorf("the Proc was written in frame %d of a paused run, which is not being resumed", ref-1)
+		}
+		fr = in.resuming.frames[ref-1]
+	} else if fr, err = in.decodeFrame(d, c.GetBinding()); err != nil {
 		return object.Value{}, err
 	}
 	env := &Env{captured: true}
