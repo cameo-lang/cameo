@@ -12,11 +12,14 @@ import (
 // activation back into cursors (cursorsAt), so a dump does not know of
 // flat code. doc/design/ir.md, "Flat code", has the design.
 //
-// A list is lowered when every instruction in it is one flat code runs:
-// IF, WHILE, AND, OR, SAFE and INTERP become jumps, and an instruction
-// without lists runs as it does from a cursor (machine.exec). A list
-// with any other instruction that holds lists, or with an async call or
-// an await, runs from cursors.
+// IF, WHILE, CASE, AND, OR, SAFE and INTERP become jumps, and an
+// instruction without lists runs as it does from a cursor (machine.exec).
+// Any other instruction that holds lists (BEGIN, CASE_IN, a REGEXP with
+// parts, defined? of an expression) runs from cursors inside the flat
+// code: it enters its lists as it always did, the activation runs them
+// from cursors until none is left, and goes on in its flat code. A list
+// with an async call or an await anywhere in it runs from cursors
+// altogether.
 
 // flatOp is what a flat instruction does.
 type flatOp uint8
@@ -65,6 +68,15 @@ const (
 	// the value on top to the string under it.
 	fInterp
 	fPart
+	// fWhen tests the conditions of a when of a CASE, which are on top
+	// as a list: with one that fits it drops them and the subject and
+	// goes on in the body; with none it drops them and goes to a, the
+	// next when. fElse drops the subject before the else of a CASE.
+	fWhen
+	fElse
+	// fTree runs src, which holds lists, as machine.exec does: it enters
+	// a list, and the activation runs from cursors until none is left.
+	fTree
 )
 
 // flatIns is one instruction of flat code.
@@ -81,6 +93,10 @@ type flatIns struct {
 	src *cameopb.Code
 	at  *flatList
 	idx int32
+	// loop is, for an fTree, the loop whose body it is in, an index into
+	// the loops of the flat code, -1 for none: where a break, next or
+	// redo out of its lists goes.
+	loop int32
 }
 
 // flatList is a list of the IR that flat code was lowered from: what a
@@ -100,9 +116,11 @@ type flatList struct {
 	level int32
 }
 
-// flatCode is a list lowered.
+// flatCode is a list lowered. loops is the loops of the list that hold an
+// fTree in their body.
 type flatCode struct {
-	code []flatIns
+	code  []flatIns
+	loops []*flatLoop
 }
 
 // lowerer lowers one list and the lists inside it.
@@ -115,12 +133,14 @@ type lowerer struct {
 	loops  []*flatLoop
 	levels int32
 	ok     bool
+	// trees is the loops an fTree is in the body of.
+	trees []*flatLoop
 }
 
 type flatLoop struct {
-	level      int32
-	cond, body int32
-	breaks     []int
+	level           int32
+	cond, body, end int32
+	breaks          []int
 }
 
 // lower returns code as flat code, or nil when an instruction in it runs
@@ -134,7 +154,7 @@ func lower(code []*cameopb.Code, syms *unitNames, body bool) *flatCode {
 	if !l.ok {
 		return nil
 	}
-	return &flatCode{code: l.out}
+	return &flatCode{code: l.out, loops: l.trees}
 }
 
 func (l *lowerer) emit(ins flatIns) int {
@@ -177,6 +197,8 @@ func (l *lowerer) list(at *flatList) {
 			l.out[test].a = l.here()
 		case cameopb.Op_WHILE:
 			l.while(at, c, idx, ins)
+		case cameopb.Op_CASE:
+			l.caseWhen(at, c, idx, ins)
 		case cameopb.Op_INTERP:
 			ins.op = fInterp
 			l.emit(ins)
@@ -229,8 +251,16 @@ func (l *lowerer) list(at *flatList) {
 				ins.op, ins.sym = fBinary, object.SymAdd+object.Sym(c.Op-cameopb.Op_BINARY_PLUS)
 			case len(c.Code) > 0:
 				// An instruction with lists that flat code has no jumps
-				// for: BEGIN, CASE, CASE_IN, a REGEXP with parts, defined?.
-				l.ok = false
+				// for: BEGIN, CASE_IN, a REGEXP with parts, defined?.
+				if awaits(c) {
+					l.ok = false
+					return
+				}
+				ins.op, ins.loop = fTree, -1
+				if len(l.loops) > 0 {
+					ins.loop = int32(len(l.trees))
+					l.trees = append(l.trees, l.loops[len(l.loops)-1])
+				}
 			}
 			l.emit(ins)
 		}
@@ -270,11 +300,56 @@ func (l *lowerer) while(at *flatList, c *cameopb.Code, idx int, ins flatIns) {
 	l.emit(flatIns{op: fPop})
 	l.emit(flatIns{op: fBack, a: loop.cond})
 	end := l.here()
-	l.out[test].a = end
+	l.out[test].a, loop.end = end, end
 	for _, at := range loop.breaks {
 		l.out[at].a = end
 	}
 	l.levels--
+}
+
+// caseWhen lowers a CASE at index idx of at: per when its conditions, a
+// test and its body, then the else. The subject, when the CASE has one,
+// stays on the stack until a body or the else is entered.
+func (l *lowerer) caseWhen(at *flatList, c *cameopb.Code, idx int, ins flatIns) {
+	last := len(c.Code) - 1
+	var ends []int
+	real := true
+	for i := 0; i < last; i += 2 {
+		start := l.here()
+		l.list(inner(at, c, idx, i, phaseConds, false))
+		if real && l.here() > start {
+			// The CASE starts where its first condition does.
+			real = false
+		}
+		test := l.emit(flatIns{op: fWhen, src: c})
+		l.list(inner(at, c, idx, i+1, phaseValue, true))
+		ends = append(ends, l.emit(flatIns{op: fJump}))
+		l.out[test].a = l.here()
+	}
+	// A CASE without a condition to start at starts at its else.
+	ins.op, ins.real = fElse, real
+	l.emit(ins)
+	l.list(inner(at, c, idx, last, phaseValue, true))
+	for _, end := range ends {
+		l.out[end].a = l.here()
+	}
+}
+
+// awaits reports whether c or an instruction in its lists is an async
+// call or an await.
+func awaits(c *cameopb.Code) bool {
+	switch c.Op {
+	case cameopb.Op_ASYNC, cameopb.Op_AWAIT, cameopb.Op_AWAIT_CALL, cameopb.Op_AWAIT_ALL:
+		return true
+	}
+	for _, seq := range c.Code {
+		for _, inner := range seq.GetCode() {
+			if awaits(inner) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // plainConstant returns the value of a CONST that is the same value each
@@ -404,6 +479,29 @@ func (m *machine) runFlat() error {
 				return err
 			}
 			yield = in.pausing.flag.Load()
+		case fWhen:
+			hit, err := m.caseHit(ins.src)
+			if err != nil {
+				return err
+			}
+			if !hit {
+				m.pc = int(ins.a)
+			}
+			yield = in.pausing.flag.Load()
+		case fElse:
+			if has(ins.src, cameopb.Flag_FLAG_SUBJECT) {
+				m.pop()
+			}
+		case fTree:
+			// The instruction entered a list, or did its work without
+			// one; with a list entered, run goes on from the cursors.
+			if err := m.exec(ins.src); err != nil {
+				return err
+			}
+			if len(m.cursors) > 0 || in.acts[len(in.acts)-1] != m {
+				return nil
+			}
+			yield = in.pausing.flag.Load()
 		default:
 			if err := m.exec(ins.src); err != nil {
 				return err
@@ -415,6 +513,40 @@ func (m *machine) runFlat() error {
 		}
 	}
 	return nil
+}
+
+// flatTakes continues the flat code of m after the completion err left
+// the lists an fTree entered: a break, next or redo goes to the loop the
+// fTree is in the body of. It returns nil when the loop took it.
+func (m *machine) flatTakes(err error) error {
+	ctl, ok := err.(*control)
+	if !ok || ctl.target != nil || m.pc == 0 {
+		return err
+	}
+	ins := &m.flat.code[m.pc-1]
+	if ins.op != fTree || ins.loop < 0 {
+		return err
+	}
+	loop := m.flat.loops[ins.loop]
+	switch ctl.kind {
+	case ctrlBreak:
+		m.stack = append(m.stack[:m.bases[loop.level]], ctl.value)
+		m.bases = m.bases[:loop.level]
+		m.pc = int(loop.end)
+		return nil
+	case ctrlNext, ctrlRedo:
+		m.stack = m.stack[:m.bases[loop.level]]
+		m.bases = m.bases[:loop.level+1]
+		if err := m.in.stopped(); err != nil {
+			return err
+		}
+		m.pc = int(loop.cond)
+		if ctl.kind == ctrlRedo {
+			m.pc = int(loop.body)
+		}
+		return nil
+	}
+	return err
 }
 
 // atReal reports whether the next flat instruction of m is one a run
@@ -430,6 +562,10 @@ func (m *machine) atReal() bool {
 // instruction that called. Any other is before its next instruction,
 // which is one a run pauses before.
 func (m *machine) cursorsAt(called bool) {
+	// An activation inside the lists of an fTree is after that
+	// instruction, and has the cursors of those lists already.
+	inside := append([]cursor(nil), m.cursors...)
+	called = called || len(inside) > 0
 	at := m.pc
 	if called {
 		at--
@@ -466,5 +602,6 @@ func (m *machine) cursorsAt(called bool) {
 		}
 		m.cursors = append(m.cursors, cur)
 	}
+	m.cursors = append(m.cursors, inside...)
 	m.flat, m.pc, m.bases = nil, 0, nil
 }

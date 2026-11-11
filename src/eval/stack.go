@@ -52,7 +52,7 @@ func (in *Interp) start(m *machine) (object.Value, error) {
 // atInstruction reports whether the activation's next step runs an
 // instruction, and not the end of a list.
 func (m *machine) atInstruction() bool {
-	if m.flat != nil {
+	if len(m.cursors) == 0 {
 		return m.atReal()
 	}
 	cur := &m.cursors[len(m.cursors)-1]
@@ -108,7 +108,7 @@ func (in *Interp) run(floor int) (object.Value, error) {
 			in.acts[len(in.acts)-1].push(v)
 			continue
 		}
-		if m.flat != nil && err == nil && m.pc < len(m.flat.code) {
+		if m.flat != nil && len(m.cursors) == 0 && err == nil && m.pc < len(m.flat.code) {
 			// Flat code runs until the activation ends, calls, or
 			// reaches an instruction a pause stops before.
 			if in.pausing.flag.Load() && in.canPause(m) && m.atReal() && in.freeze() {
@@ -147,6 +147,13 @@ func (in *Interp) run(floor int) (object.Value, error) {
 				continue
 			}
 			if err = m.unwind(err, 0); err == nil {
+				continue
+			}
+		}
+		// The lists an instruction of flat code entered were left: a
+		// break, next or redo goes to the loop the instruction is in.
+		if err != nil && m.flat != nil {
+			if err = m.flatTakes(err); err == nil {
 				continue
 			}
 		}
