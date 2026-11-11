@@ -1,0 +1,75 @@
+// The envelope: cameo.Value carries any value that can be serialised. It
+// is what async serialises, what the host API takes and returns, and what a
+// dump holds. doc/design/cameo.md, "Protobuf", describes it.
+syntax = "proto3";
+
+package cameo;
+
+option go_package = "github.com/cameo-lang/cameo/src/cameopb";
+
+// Value is one value. With no kind set it is nil. A symbol travels as a
+// string, and an integer beyond 64 bits as big_value, its decimal digits.
+message Value {
+  oneof kind {
+    bool bool_value = 1;
+    int64 int_value = 2;
+    double float_value = 3;
+    string string_value = 4;
+    bytes bytes_value = 5;
+    List list = 6;
+    Map map = 7;
+    Set set = 8;
+    Range range = 9;
+    Object object = 10;
+    Time time = 11;
+    Regexp regexp = 12;
+    string big_value = 13;
+  }
+}
+
+message List {
+  repeated Value items = 1;
+}
+
+message Set {
+  repeated Value items = 1;
+}
+
+// Map is a Hash: its entries in order, and its default value when it has
+// one. A Hash with a default proc cannot travel.
+message Map {
+  message Entry {
+    Value key = 1;
+    Value value = 2;
+  }
+  repeated Entry entries = 1;
+  Value default = 2;
+}
+
+message Range {
+  Value lo = 1;
+  Value hi = 2;
+  bool exclusive = 3;
+}
+
+// Object is an instance or an exception: its class by qualified name and
+// digest, and the wire form of the class's own message.
+message Object {
+  string class = 1;
+  string digest = 2;
+  bytes message = 3;
+}
+
+// Time is an instant, its UTC offset in seconds, and its zone: "UTC",
+// "local", the IANA name of a named zone, or none for a fixed offset.
+message Time {
+  int64 seconds = 1;
+  int32 nanos = 2;
+  int32 offset = 3;
+  string zone = 4;
+}
+
+message Regexp {
+  string source = 1;
+  int32 options = 2;
+}

@@ -158,7 +158,7 @@ func (r *Registry) ExceptionMessage(exc *object.Exception) (*dynamicpb.Message, 
 			}
 		case partValue:
 			if vm, err := enc.Message(v); err == nil {
-				msg.Set(fd, protoreflect.ValueOfMessage(vm))
+				msg.Set(fd, protoreflect.ValueOfMessage(vm.ProtoReflect()))
 			}
 		case partValues:
 			l, ok := v.AsList()
@@ -172,7 +172,7 @@ func (r *Registry) ExceptionMessage(exc *object.Exception) (*dynamicpb.Message, 
 					list = nil
 					break
 				}
-				list.Append(protoreflect.ValueOfMessage(em))
+				list.Append(protoreflect.ValueOfMessage(em.ProtoReflect()))
 			}
 			if list != nil {
 				msg.Set(fd, protoreflect.ValueOfList(list))
@@ -217,7 +217,7 @@ func (d *Decoder) Exception(cls *object.Class, msg protoreflect.Message) (*objec
 			// A value of a class this side does not have, such as the
 			// top-level self of another interpreter, is left out, as one
 			// the envelope cannot carry was.
-			x, err := d.value(pv.Message())
+			x, err := d.reflected(pv.Message())
 			if err != nil {
 				continue
 			}
@@ -227,7 +227,7 @@ func (d *Decoder) Exception(cls *object.Class, msg protoreflect.Message) (*objec
 			elems := make([]object.Value, list.Len())
 			var err error
 			for i := range elems {
-				if elems[i], err = d.value(list.Get(i).Message()); err != nil {
+				if elems[i], err = d.reflected(list.Get(i).Message()); err != nil {
 					break
 				}
 			}

@@ -16,6 +16,8 @@ src/cmd/cameo/    the cameo command
 src/stdlib/       the core classes' methods
 src/lib/<name>/   one of Ruby's libraries, named by its require path:
                   src/lib/json is json, src/lib/net/http is net/http
+src/cameopb/      cameo's own protobuf messages: .proto files under cameo/,
+                  and the Go code `make proto` generates, committed
 src/assert/       the assertions the tests use, vendored
 tests/            Go tests against the packages, as a caller uses them
 tests/integration/  shell tests that drive the built binary

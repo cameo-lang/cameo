@@ -619,6 +619,10 @@ compiles those files
 with `protoc` gets generated Go types whose wire form matches what the
 interpreter produces, so a message can be marshalled on one side and
 unmarshalled on the other without any cameo code in between.
+`cameo/value.proto` names cameo's own package, `src/cameopb`, as its Go
+package: a Go program that embeds cameo imports the envelope's types from
+there and does not generate them again, since protobuf-go registers a
+message name once per process.
 
 **Exceptions** are messages too: an exception class's message holds the
 exception's message, line and cause, what Ruby's exception of that class
@@ -793,7 +797,8 @@ One Go module, `github.com/cameo-lang/cameo`, with the packages under `src/`:
 | `lib` | Ruby's standard library as cameo builds it in: one Go package per library under `src/lib/<require path>`, registered in `lib.Libraries`; see [stdlib.md](../stdlib.md) |
 | `eval/async.go` | promises and the run's table of them, the per-scope list `await :all` reads, the worker interpreter a call runs in |
 | `eval/sched.go` | the queue of calls `async` started and the runner goroutines that take them |
-| `protogen` | descriptors from class declarations, `.proto` text, the `cameo.Value` envelope (`proto/cameo.proto`, compiled in) |
+| `protogen` | descriptors from class declarations, `.proto` text, values to and from the `cameo.Value` envelope |
+| `cameopb` | cameo's own messages: the `.proto` files under `src/cameopb/cameo` and the Go code `make proto` generates from them, committed |
 | `aot` | `cameo build`: Go source for the top-level methods it can type, which the interpreter calls in place of their bodies; see [aot.md](aot.md) |
 | `irb` | the read-eval-print loop of `cameo irb`, and the line editor it runs on a terminal; see [debugger.md](../debugger.md) |
 | `buildinfo` | the version, commit and date the binary was built from, for `cameo version` and `RUBY_ENGINE_VERSION` |
