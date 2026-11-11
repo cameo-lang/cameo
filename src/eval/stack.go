@@ -46,6 +46,25 @@ func (in *Interp) start(m *machine) (object.Value, error) {
 	return in.run(floor)
 }
 
+// atInstruction reports whether the activation's next step runs an
+// instruction, and not the end of a list.
+func (m *machine) atInstruction() bool {
+	cur := &m.cursors[len(m.cursors)-1]
+	return cur.next < len(cur.code)
+}
+
+// goOn runs the activations of the dump a run resumed from, from where
+// they paused, and returns the value of the statement they are in.
+func (in *Interp) goOn() (object.Value, error) {
+	in.acts, in.resumed = in.resumed, nil
+	in.loops++
+	defer func() {
+		in.loops--
+		in.acts = in.acts[:0]
+	}()
+	return in.run(0)
+}
+
 // pushAct makes m the activation that runs. site is the instruction of
 // the activation below that called, nil when Go code did.
 func (in *Interp) pushAct(m *machine, site *cameopb.Code) error {
@@ -66,6 +85,15 @@ func (in *Interp) run(floor int) (object.Value, error) {
 		m := in.acts[len(in.acts)-1]
 		if len(m.cursors) > 0 {
 			if err == nil {
+				// A pause stops the run here, before an instruction,
+				// when this loop is the only one: every activation is
+				// then on the stack, which Dump writes as it is. A list
+				// that is through ends first, so that a statement that
+				// is through pauses as one that has not begun.
+				if in.pausable && in.loops == 1 && in.pause.Load() && m.atInstruction() {
+					in.frozen = append([]*machine(nil), in.acts...)
+					return object.Value{}, ErrPaused
+				}
 				err = m.step()
 				continue
 			}

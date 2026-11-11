@@ -175,6 +175,16 @@ A script's recursion no longer rides on Go's stack, which ended the
 process at about a million calls: a call past 200,000 activations raises
 `SystemStackError`.
 
+With those two a run pauses inside a statement: before an instruction,
+when one loop alone is running (`eval/dumpstack.go`,
+[pause.md](pause.md#how-a-resumed-run-gets-its-activations-back)). The
+dump is as the section below describes it, with two differences that
+writing it showed. An activation's block is not in its message: a block's
+activation is of the block the frame below yielded to, so the resume
+takes the proc from there, and a `break` finds its call by comparing the
+very same proc. And a completion that is a `break` or a `return` names its
+target as a frame of the dump.
+
 ## The activation stack
 
 Stack A left one thing on the Go stack: where a run is. `machine.exec` calls

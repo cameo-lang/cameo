@@ -321,8 +321,14 @@ type Closure struct {
 	// symbol is set for a proc made from a symbol, `&:name`, which calls
 	// that method on its first argument; with recv set, on recv, as the
 	// proc of a Hash calls []. Such a proc has no unit and no binding.
-	Symbol        string `protobuf:"bytes,7,opt,name=symbol,proto3" json:"symbol,omitempty"`
-	Recv          *Value `protobuf:"bytes,8,opt,name=recv,proto3" json:"recv,omitempty"`
+	Symbol string `protobuf:"bytes,7,opt,name=symbol,proto3" json:"symbol,omitempty"`
+	Recv   *Value `protobuf:"bytes,8,opt,name=recv,proto3" json:"recv,omitempty"`
+	// frame is set in the dump of a run that paused inside a statement, for
+	// a proc written in a frame whose call was running: the index of that
+	// frame among the dump's frames, plus one. The binding then holds the
+	// locals alone, and the proc's return, yield and super are that
+	// frame's after the resume.
+	Frame         uint32 `protobuf:"varint,9,opt,name=frame,proto3" json:"frame,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -411,6 +417,13 @@ func (x *Closure) GetRecv() *Value {
 		return x.Recv
 	}
 	return nil
+}
+
+func (x *Closure) GetFrame() uint32 {
+	if x != nil {
+		return x.Frame
+	}
+	return 0
 }
 
 // Binding is what a closure's code runs in: the locals it reads, by
@@ -1136,7 +1149,7 @@ const file_cameo_value_proto_rawDesc = "" +
 	"\x06regexp\x18\f \x01(\v2\r.cameo.RegexpH\x00R\x06regexp\x12\x1d\n" +
 	"\tbig_value\x18\r \x01(\tH\x00R\bbigValue\x12*\n" +
 	"\aclosure\x18\x0e \x01(\v2\x0e.cameo.ClosureH\x00R\aclosureB\x06\n" +
-	"\x04kind\"\xeb\x01\n" +
+	"\x04kind\"\x81\x02\n" +
 	"\aClosure\x12\x12\n" +
 	"\x04unit\x18\x01 \x01(\tR\x04unit\x12\x12\n" +
 	"\x04proc\x18\x02 \x01(\rR\x04proc\x12\x1f\n" +
@@ -1145,7 +1158,8 @@ const file_cameo_value_proto_rawDesc = "" +
 	"\x06strict\x18\x05 \x01(\bR\x06strict\x12\x1b\n" +
 	"\tself_name\x18\x06 \x01(\tR\bselfName\x12\x16\n" +
 	"\x06symbol\x18\a \x01(\tR\x06symbol\x12 \n" +
-	"\x04recv\x18\b \x01(\v2\f.cameo.ValueR\x04recv\"\xff\x03\n" +
+	"\x04recv\x18\b \x01(\v2\f.cameo.ValueR\x04recv\x12\x14\n" +
+	"\x05frame\x18\t \x01(\rR\x05frame\"\xff\x03\n" +
 	"\aBinding\x12,\n" +
 	"\x06locals\x18\x01 \x03(\v2\x14.cameo.Binding.LocalR\x06locals\x12 \n" +
 	"\x04self\x18\x02 \x01(\v2\f.cameo.ValueR\x04self\x12\x1d\n" +

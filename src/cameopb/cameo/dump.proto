@@ -13,14 +13,15 @@ import "cameo/value.proto";
 // level held.
 message Dump {
   // Binding is one variable or constant. value is its value, set also for
-  // nil; a class is referred to in class instead, as Class describes; a
-  // value the envelope cannot carry has neither, and missing says what it
-  // was.
+  // nil; a class is referred to in class instead, as Class describes, and
+  // the top-level self is marked with main; a value the envelope cannot
+  // carry has none of them, and missing says what it was.
   message Binding {
     string name = 1;
     Value value = 2;
     string class = 3;
     string missing = 4;
+    bool main = 5;
   }
 
   // Promise is a settled promise: its result in value, or the exception it
@@ -77,10 +78,134 @@ message Dump {
   // cameo_top is set when the script included Cameo at the top level.
   bool cameo_top = 14;
   Class top = 15;
-  // missing says what of the classes the dump leaves out, one entry for
-  // each: a constant or an attribute whose value the envelope cannot
-  // carry, as a Binding's missing says for a variable.
+  // missing says what of the classes and of the stack the dump leaves
+  // out, one entry for each: a constant, an attribute, a local or a value
+  // in flight that the envelope cannot carry, as a Binding's missing says
+  // for a variable.
   repeated string missing = 16;
+
+  // stack is the activations the script was running when it paused
+  // inside a statement, the outermost first: the statement next names,
+  // then the calls in flight. It is empty for a run that paused between
+  // two statements. scopes and frames are what the activations run in;
+  // an activation, a scope and a closure refer to one by its index, plus
+  // one where zero says none.
+  repeated Activation stack = 17;
+  repeated Scope scopes = 18;
+  repeated Frame frames = 19;
+
+  // Activation is one running proc: where it is, and what it holds.
+  message Activation {
+    enum Kind {
+      // STATEMENT is the top-level statement the run paused in.
+      STATEMENT = 0;
+      // METHOD is a call of a method, BLOCK of a block.
+      METHOD = 1;
+      BLOCK = 2;
+    }
+    Kind kind = 1;
+    // unit and proc name the code of a method or a block, as a Closure
+    // names its code.
+    string unit = 2;
+    uint32 proc = 3;
+    // cursors are the lists the activation is inside, the outermost
+    // first: the proc's own list, then the list of an instruction of
+    // the list before.
+    repeated Cursor cursors = 4;
+    // stack is the value stack: the operands of the expressions in
+    // flight.
+    repeated Binding stack = 5;
+    // scope and frame are indexes into scopes and frames.
+    uint32 scope = 6;
+    uint32 frame = 7;
+    // line is the line of the activation's next instruction.
+    int32 line = 8;
+  }
+
+  // Cursor is a list of instructions an activation is inside. The list
+  // is one of the instruction the cursor before it ran last; the first
+  // cursor's is the proc's.
+  message Cursor {
+    // next is the index of the next instruction, list which list of its
+    // instruction this is, and phase what the instruction does when the
+    // list ends (eval/cursor.go).
+    uint32 next = 1;
+    uint32 list = 2;
+    uint32 phase = 3;
+    // base is the height of the value stack when the instruction
+    // started.
+    uint32 base = 4;
+    // statement is set when the next instruction starts a statement.
+    bool statement = 5;
+    // rescuing is, for a BEGIN, the exception its rescue clauses are
+    // tried for or one of them is handling; pending what its ensure
+    // clause interrupted.
+    Value rescuing = 6;
+    Completion pending = 7;
+  }
+
+  // Completion is what left a list early.
+  message Completion {
+    enum Kind {
+      EXCEPTION = 0;
+      BREAK = 1;
+      NEXT = 2;
+      RETURN = 3;
+      RETRY = 4;
+      REDO = 5;
+    }
+    Kind kind = 1;
+    // value is what a break, a next or a return carries; exception the
+    // exception.
+    Binding value = 2;
+    Value exception = 3;
+    int32 line = 4;
+    // target is the frame a return returns from, or the frame whose
+    // block a break left, plus one; zero for none.
+    uint32 target = 5;
+  }
+
+  // Scope is the local variables of an activation. A block's scope has
+  // the values the block captured as its parent.
+  message Scope {
+    // top marks the top level's scope, whose variables are the dump's
+    // variables.
+    bool top = 1;
+    repeated Binding locals = 2;
+    // parent is the scope around, plus one.
+    uint32 parent = 3;
+    // captured marks the values a block captured, and origin is the
+    // scope of the method the block was written in, plus one.
+    bool captured = 4;
+    uint32 origin = 5;
+    // promises are the ids of the promises async started in the scope.
+    repeated int64 promises = 6;
+  }
+
+  // Frame is what a method call runs in, and every block written in it:
+  // self, the method, its arguments and block, the classes around.
+  message Frame {
+    // top marks the frame of the top level.
+    bool top = 1;
+    Binding self = 2;
+    // method is the method, by the class that defines it, "" for the
+    // top level; none for a frame of the top level or a class body.
+    .cameo.Binding.Method method = 3;
+    reserved 4;
+    repeated Binding args = 5;
+    Value kw = 6;
+    Binding block = 7;
+    // lexical are the classes and modules around the code, innermost
+    // last; def_target the class a def in the frame defines on, "" for
+    // the top level.
+    repeated string lexical = 8;
+    string def_target = 9;
+    string file = 10;
+    // lambda marks the frame of a lambda's call; ended a frame whose
+    // call returned, which a block written in it outlived.
+    bool lambda = 11;
+    bool ended = 12;
+  }
 
   // Class is a class or a module as the run had made it.
   //

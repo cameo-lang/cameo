@@ -24,8 +24,8 @@ import (
 var commands = map[string]bool{"check": true, "proto": true, "ir": true, "build": true, "run": true, "resume": true, "inspect": true, "irb": true, "debug": true, "version": true, "--version": true, "--": true}
 
 const usage = `usage: cameo [--no-pause] [--io] <script.cameo> [args...]
-                                         run the script, with args in ARGV; ^C pauses it before its next
-                                         top-level statement and writes its state to a temporary file,
+                                         run the script, with args in ARGV; ^C pauses it where it is
+                                         and writes its state to a temporary file,
                                          or ends it with --no-pause. A script does no I/O unless --io
                                          allows every kind, or --io=network,file,popen the kinds named
        cameo [--no-pause] resume <dump>  continue the script a dump holds
