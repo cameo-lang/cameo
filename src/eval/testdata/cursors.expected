@@ -1,0 +1,46 @@
+mk 1
+to_s 1
+mk 2
+to_s 2
+L1 and L2
+body 1
+ensure 1
+ensure 2
+body 3
+ensure 3
+ensure 4
+400
+rescued t1
+rescued t2
+ensure
+"else"
+f ensure
+1
+g ensure
+[TypeError, "b", "a"]
+"small"
+"int"
+"has a"
+"other"
+"desc 2 1"
+"asc 1 2"
+"named x"
+"num 3"
+"none"
+nil
+"constant"
+nil
+"method"
+nil
+nil
+3
+"d"
+nil
+"a2c"
+"(?i-mx:x)y"
+3
+[-1, -2, -3]
+"r"
+deep ensure 1
+deep ensure 2
+2

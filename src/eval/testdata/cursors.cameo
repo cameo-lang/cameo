@@ -1,0 +1,109 @@
+class Loud
+  int :n
+  def to_s
+    puts "to_s #{n}"
+    "L#{n}"
+  end
+end
+def mk(n)
+  puts "mk #{n}"
+  Loud.new(n: n)
+end
+puts "#{mk(1)} and #{mk(2)}"
+i = 0
+r = while i < 10
+  i += 1
+  begin
+    next if i == 2
+    break i * 100 if i == 4
+    puts "body #{i}"
+  ensure
+    puts "ensure #{i}"
+  end
+end
+p r
+tries = 0
+v = begin
+  tries += 1
+  raise ArgumentError, "t#{tries}" if tries < 3
+  "done after #{tries}"
+rescue ArgumentError => e
+  puts "rescued #{e.message}"
+  retry
+else
+  "else"
+ensure
+  puts "ensure"
+end
+p v
+def f
+  begin
+    return 1
+  ensure
+    puts "f ensure"
+  end
+end
+p f
+def g
+  begin
+    raise "a"
+  rescue => e
+    raise TypeError, "b"
+  ensure
+    puts "g ensure"
+  end
+end
+begin
+  g
+rescue => e
+  p [e.class, e.message, e.cause.message]
+end
+def h(x)
+  case x
+  when 1, 2 then "small"
+  when Integer then "int"
+  when /a/ then "has a"
+  else "other"
+  end
+end
+p h(1), h(7), h("cat"), h(nil)
+def k(x)
+  case x
+  in [a, b] if a > b then "desc #{a} #{b}"
+  in [a, b] then "asc #{a} #{b}"
+  in {name: String => n} then "named #{n}"
+  in Integer | Float => n unless n < 0 then "num #{n}"
+  else "none"
+  end
+end
+p k([2, 1]), k([1, 2]), k({name: "x"}), k(3), k(-1)
+p defined?(Nope), defined?(String), defined?(nope.x), defined?(1.to_s), defined?(zzz)
+x = nil
+p x&.length, "abc"&.length, (x || "d"), (x && 1), /a#{1 + 1}c/.source, /#{/x/i}y/.source
+j = 0
+begin
+  j += 1
+end while j < 3
+p j
+n = 0
+out = []
+while n < 3
+  n += 1
+  out += [begin
+    Integer("x#{n}")
+  rescue ArgumentError
+    -n
+  end]
+end
+p out
+p (begin; raise "x"; rescue; "r"; ensure; "e"; end)
+def deep
+  [1, 2, 3].each do |a|
+    begin
+      return a if a == 2
+    ensure
+      puts "deep ensure #{a}"
+    end
+  end
+end
+p deep

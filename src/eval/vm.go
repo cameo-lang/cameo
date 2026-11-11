@@ -86,31 +86,36 @@ func (in *Interp) runProgram(file string, prog *syntax.Program, env *Env, fr *Fr
 }
 
 // machine runs the instructions of one activation: a method call, a block
-// call, a top-level statement.
+// call, a top-level statement. cursors is where it is: the lists it is
+// inside, outermost first (cursor.go).
 type machine struct {
-	in    *Interp
-	unit  *cameopb.Unit
-	env   *Env
-	fr    *Frame
-	stack []object.Value
+	in      *Interp
+	unit    *cameopb.Unit
+	env     *Env
+	fr      *Frame
+	stack   []object.Value
+	cursors []cursor
 }
 
 // runBody runs the body of a proc in env and fr and returns its value.
 // The debugger is told each statement's line, the first one's too.
 func (in *Interp) runBody(p *irProc, env *Env, fr *Frame) (object.Value, error) {
-	m := &machine{in: in, unit: p.unit, env: env, fr: fr}
-	if err := m.body(p.proc.GetCode()); err != nil {
-		return object.Value{}, err
-	}
-	return m.pop(), nil
+	return in.runCode(p.unit, p.proc.GetCode(), env, fr, true)
 }
 
 // runList runs a list that leaves one value, in env and fr, and returns
 // the value: a parameter's default, or a statement the caller told the
 // debugger about.
 func (in *Interp) runList(unit *cameopb.Unit, code []*cameopb.Code, env *Env, fr *Frame) (object.Value, error) {
+	return in.runCode(unit, code, env, fr, false)
+}
+
+// runCode runs a list as an activation of its own; body is set for a list
+// of statements.
+func (in *Interp) runCode(unit *cameopb.Unit, code []*cameopb.Code, env *Env, fr *Frame, body bool) (object.Value, error) {
 	m := &machine{in: in, unit: unit, env: env, fr: fr}
-	if err := m.list(code); err != nil {
+	m.cursors = append(m.cursors, cursor{code: code, statement: body})
+	if err := m.loop(0); err != nil {
 		return object.Value{}, err
 	}
 	return m.pop(), nil
@@ -144,29 +149,6 @@ func (m *machine) name(c *cameopb.Code, i int) string {
 }
 
 func has(c *cameopb.Code, f cameopb.Flag) bool { return c.Flags&uint64(f) != 0 }
-
-// body runs a list of statements, telling the debugger the line of each
-// before it runs.
-func (m *machine) body(code []*cameopb.Code) error { return m.run(code, true) }
-
-// list runs a list that is not a body: a condition, an argument. A
-// statement inside it, after a DROP, is still the debugger's.
-func (m *machine) list(code []*cameopb.Code) error { return m.run(code, false) }
-
-func (m *machine) run(code []*cameopb.Code, statement bool) error {
-	for _, c := range code {
-		if statement && m.in.dbg != nil {
-			if err := m.in.dbg.line(int(c.Line), m.env, m.fr); err != nil {
-				return err
-			}
-		}
-		statement = c.Op == cameopb.Op_DROP
-		if err := m.exec(c); err != nil {
-			return err
-		}
-	}
-	return nil
-}
 
 // exec runs one instruction.
 func (m *machine) exec(c *cameopb.Code) error {
@@ -249,16 +231,7 @@ func (m *machine) exec(c *cameopb.Code) error {
 		}
 		m.push(object.RangeValue(r))
 	case cameopb.Op_INTERP:
-		v, err := in.interpolate(len(c.Code), line, func(i int) (object.Value, error) {
-			if err := m.list(c.Code[i].GetCode()); err != nil {
-				return object.Value{}, err
-			}
-			return m.pop(), nil
-		})
-		if err != nil {
-			return err
-		}
-		m.push(v)
+		m.interp(c)
 	case cameopb.Op_LAMBDA:
 		p := &irProc{unit: m.unit, proc: m.unit.Procs[c.Args[0].GetProc()]}
 		m.push(procValue(&Proc{IR: p, Env: env.snapshot(), Frame: fr, Strict: has(c, cameopb.Flag_FLAG_STRICT)}))
@@ -266,7 +239,7 @@ func (m *machine) exec(c *cameopb.Code) error {
 		return m.send(c)
 	case cameopb.Op_SAFE:
 		if !m.top().IsNil() {
-			return m.list(c.Code[0].GetCode())
+			m.enter(c, 0, phaseValue, len(m.stack), false)
 		}
 	case cameopb.Op_BLOCK_GIVEN:
 		m.push(object.Bool(!fr.Block.IsZero()))
@@ -284,21 +257,22 @@ func (m *machine) exec(c *cameopb.Code) error {
 	case cameopb.Op_DROP, cameopb.Op_POP:
 		m.pop()
 	case cameopb.Op_IF:
+		branch := 1
 		if m.pop().Truthy() {
-			return m.body(c.Code[0].GetCode())
+			branch = 0
 		}
-		return m.body(c.Code[1].GetCode())
+		m.enter(c, branch, phaseValue, len(m.stack), true)
 	case cameopb.Op_WHILE:
 		return m.while(c)
 	case cameopb.Op_AND:
 		if m.top().Truthy() {
 			m.pop()
-			return m.list(c.Code[0].GetCode())
+			m.enter(c, 0, phaseValue, len(m.stack), false)
 		}
 	case cameopb.Op_OR:
 		if !m.top().Truthy() {
 			m.pop()
-			return m.list(c.Code[0].GetCode())
+			m.enter(c, 0, phaseValue, len(m.stack), false)
 		}
 	case cameopb.Op_NOT:
 		m.push(object.Bool(!m.pop().Truthy()))
@@ -317,9 +291,9 @@ func (m *machine) exec(c *cameopb.Code) error {
 	case cameopb.Op_RETRY:
 		return &control{kind: ctrlRetry, line: line}
 	case cameopb.Op_BEGIN:
-		return m.begin(c)
+		m.begin(c)
 	case cameopb.Op_CASE:
-		return m.caseWhen(c)
+		m.caseWhen(c)
 	case cameopb.Op_CASE_IN:
 		return m.caseIn(c)
 	case cameopb.Op_MATCH:
@@ -355,11 +329,7 @@ func (m *machine) exec(c *cameopb.Code) error {
 		assignNames(names, int(c.Args[1].GetInt()), values, env)
 		m.push(result)
 	case cameopb.Op_REGEXP:
-		v, err := m.regexp(c)
-		if err != nil {
-			return err
-		}
-		m.push(v)
+		return m.regexp(c)
 	case cameopb.Op_VAR_OR_CALL:
 		name := m.name(c, 0)
 		if v, ok := env.Get(name); ok {
@@ -378,35 +348,12 @@ func (m *machine) exec(c *cameopb.Code) error {
 			m.push(object.Nil)
 		}
 	case cameopb.Op_DEFINED_CONST:
-		base := len(m.stack)
-		if err := m.list(c.Code[0].GetCode()); err != nil {
-			if exc, ok := err.(*object.Exception); ok && exc.Cls.IsA(object.NameError) {
-				m.stack = m.stack[:base]
-				m.push(object.Nil)
-				return nil
-			}
-			return err
-		}
-		m.pop()
-		m.push(object.String("constant"))
+		m.enter(c, 0, phaseDefined, len(m.stack), false)
 	case cameopb.Op_DEFINED_METHOD:
-		recv := fr.Self
-		if recvCode := c.Code[0].GetCode(); len(recvCode) > 0 {
-			base := len(m.stack)
-			if err := m.list(recvCode); err != nil {
-				if _, ok := err.(*object.Exception); ok {
-					m.stack = m.stack[:base]
-					m.push(object.Nil)
-					return nil
-				}
-				return err
-			}
-			recv = m.pop()
-		}
-		if recv.Class().Lookup(m.name(c, 0)) != nil {
-			m.push(object.String("method"))
+		if len(c.Code[0].GetCode()) > 0 {
+			m.enter(c, 0, phaseDefined, len(m.stack), false)
 		} else {
-			m.push(object.Nil)
+			m.definedMethod(c, fr.Self)
 		}
 	case cameopb.Op_DEFINED_YIELD:
 		if fr.Block.IsZero() {
@@ -655,49 +602,4 @@ func (m *machine) send(c *cameopb.Code) error {
 	}
 	m.push(v)
 	return nil
-}
-
-// while runs a WHILE: while, until and their begin … end forms. A break,
-// next or redo out of the middle of an expression leaves the stack as it
-// was when the loop started.
-func (m *machine) while(c *cameopb.Code) error {
-	in := m.in
-	cond, body := c.Code[0].GetCode(), c.Code[1].GetCode()
-	base := len(m.stack)
-	for first := true; ; first = false {
-		if err := in.stopped(); err != nil {
-			return err
-		}
-		if !has(c, cameopb.Flag_FLAG_DO_WHILE) || !first {
-			if err := m.list(cond); err != nil {
-				return err
-			}
-			if !m.pop().Truthy() {
-				m.push(object.Nil)
-				return nil
-			}
-		}
-	pass:
-		err := m.body(body)
-		if err == nil {
-			m.pop()
-			continue
-		}
-		if ctl, ok := err.(*control); ok && ctl.target == nil {
-			m.stack = m.stack[:base]
-			switch ctl.kind {
-			case ctrlBreak:
-				m.push(ctl.value)
-				return nil
-			case ctrlNext:
-				continue
-			case ctrlRedo:
-				if err := in.stopped(); err != nil {
-					return err
-				}
-				goto pass
-			}
-		}
-		return err
-	}
 }
