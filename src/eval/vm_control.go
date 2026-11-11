@@ -5,31 +5,6 @@ import (
 	"github.com/cameo-lang/cameo/src/object"
 )
 
-// value runs a list that leaves one value and pops it.
-func (m *machine) value(code []*cameopb.Code) (object.Value, error) {
-	if err := m.list(code); err != nil {
-		return object.Value{}, err
-	}
-	return m.pop(), nil
-}
-
-// regexp runs a REGEXP: a regexp literal. One without interpolation is
-// made once per program.
-func (m *machine) regexp(c *cameopb.Code) (object.Value, error) {
-	in, options, line := m.in, int(c.Args[0].GetInt()), int(c.Line)
-	part := func(i int) (object.Value, error) { return m.value(c.Code[i].GetCode()) }
-	if has(c, cameopb.Flag_FLAG_STATIC) {
-		return in.code.literal(c, func() (object.Value, error) {
-			source, err := part(0)
-			if err != nil {
-				return object.Value{}, err
-			}
-			return in.newRegexp(source.Str(), options, line)
-		})
-	}
-	return in.interpolateRegexp(len(c.Code), options, line, part)
-}
-
 // define runs a CLASS or a MODULE: it binds the class or module to its
 // name and runs its body, a proc of the unit, in a scope and frame of its
 // own.
@@ -91,163 +66,6 @@ func (m *machine) field(c *cameopb.Code) error {
 	return nil
 }
 
-// begin runs a BEGIN: begin/rescue/else/ensure. Its lists are the body,
-// the else and the ensure, then the classes and the body of each rescue
-// clause.
-func (m *machine) begin(c *cameopb.Code) error {
-	base := len(m.stack)
-	err := m.rescued(c, base)
-	if !has(c, cameopb.Flag_FLAG_ENSURE) {
-		return err
-	}
-	if err != nil {
-		m.stack = m.stack[:base]
-	}
-	if ensureErr := m.body(c.Code[2].GetCode()); ensureErr != nil {
-		return ensureErr
-	}
-	m.pop()
-	return err
-}
-
-// rescued runs the body of a BEGIN with its rescue and else clauses, again
-// from the start after a retry. base is the height of the stack the BEGIN
-// started at, which an exception out of the middle of an expression
-// leaves it above.
-func (m *machine) rescued(c *cameopb.Code, base int) error {
-	in := m.in
-	for {
-		err := m.body(c.Code[0].GetCode())
-		if err == nil {
-			if has(c, cameopb.Flag_FLAG_ELSE) {
-				m.pop()
-				return m.body(c.Code[1].GetCode())
-			}
-			return nil
-		}
-		exc, ok := err.(*object.Exception)
-		if !ok {
-			return err
-		}
-		m.stack = m.stack[:base]
-		i, err := m.matchRescue(c, exc)
-		if err != nil {
-			return err
-		}
-		if i < 0 {
-			return exc
-		}
-		if in.rescuing != nil {
-			// Raised inside another rescue clause and rescued before it
-			// ends: it takes its cause where it is caught.
-			exc = caused(exc, in.rescuing).(*object.Exception)
-		}
-		if v := m.name(c, i); v != "" {
-			m.env.Set(v, object.ExceptionValue(exc))
-		}
-		outer := in.rescuing
-		in.rescuing = exc
-		err = m.body(c.Code[4+2*i].GetCode())
-		in.rescuing = outer
-		if err == nil {
-			return nil
-		}
-		if ctl, ok := err.(*control); ok && ctl.kind == ctrlRetry {
-			m.stack = m.stack[:base]
-			continue
-		}
-		return caused(err, exc)
-	}
-}
-
-// matchRescue finds the rescue clause of a BEGIN for an exception: its
-// index, or -1 when none fits. A clause's classes are evaluated when an
-// exception reaches it.
-func (m *machine) matchRescue(c *cameopb.Code, exc *object.Exception) (int, error) {
-	for i := 0; 3+2*i < len(c.Code); i++ {
-		classes := c.Code[3+2*i].GetCode()
-		if len(classes) == 0 {
-			if exc.Cls.IsA(object.StandardError) {
-				return i, nil
-			}
-			continue
-		}
-		v, err := m.value(classes)
-		if err != nil {
-			return -1, err
-		}
-		for _, cv := range v.List().Elems {
-			cls, ok := cv.AsClass()
-			if !ok {
-				return -1, m.in.raise(object.TypeError, 0, "class or module required for rescue clause")
-			}
-			if exc.Cls.IsA(cls) {
-				return i, nil
-			}
-		}
-	}
-	return -1, nil
-}
-
-// caseWhen runs a CASE: two lists per when, its conditions and its body,
-// then the else.
-func (m *machine) caseWhen(c *cameopb.Code) error {
-	var subject object.Value
-	if has(c, cameopb.Flag_FLAG_SUBJECT) {
-		subject = m.pop()
-	}
-	last := len(c.Code) - 1
-	for i := 0; i < last; i += 2 {
-		conds, err := m.value(c.Code[i].GetCode())
-		if err != nil {
-			return err
-		}
-		for _, cond := range conds.List().Elems {
-			hit := cond.Truthy()
-			if !subject.IsZero() {
-				if hit, err = m.in.caseEqual(cond, subject); err != nil {
-					return withLine(err, int(c.Line))
-				}
-			}
-			if hit {
-				return m.body(c.Code[i+1].GetCode())
-			}
-		}
-	}
-	return m.body(c.Code[last].GetCode())
-}
-
-// caseIn runs a CASE_IN: per clause a pattern, the kind of its guard and
-// two lists, the guard and the body; then the else, when it has one.
-func (m *machine) caseIn(c *cameopb.Code) error {
-	in, line := m.in, int(c.Line)
-	subject := m.pop()
-	for i := 0; 2*i < len(c.Args); i++ {
-		ok, err := m.match(c.Args[2*i].GetPattern(), subject, line)
-		if err != nil {
-			return err
-		}
-		if !ok {
-			continue
-		}
-		if guard := c.Args[2*i+1].GetInt(); guard != 0 {
-			g, err := m.value(c.Code[2*i].GetCode())
-			if err != nil {
-				return err
-			}
-			if g.Truthy() == (guard == 2) {
-				continue
-			}
-		}
-		return m.body(c.Code[2*i+1].GetCode())
-	}
-	if has(c, cameopb.Flag_FLAG_ELSE) {
-		return m.body(c.Code[len(c.Code)-1].GetCode())
-	}
-	s, _ := in.Inspect(subject)
-	return in.raise(object.NoMatchingPattern, line, "%s", s)
-}
-
 // match tests a pattern against a value, binding locals on the way. A
 // failed match may leave partial bindings, as in Ruby.
 func (m *machine) match(p *cameopb.Pattern, v object.Value, line int) (bool, error) {
@@ -255,7 +73,7 @@ func (m *machine) match(p *cameopb.Pattern, v object.Value, line int) (bool, err
 	name := func(i uint32) string { return m.unit.Names[i] }
 	switch k := p.GetKind().(type) {
 	case *cameopb.Pattern_Value:
-		pattern, err := m.value(k.Value.GetCode())
+		pattern, err := m.nested(k.Value.GetCode())
 		if err != nil {
 			return false, err
 		}
@@ -266,7 +84,7 @@ func (m *machine) match(p *cameopb.Pattern, v object.Value, line int) (bool, err
 		}
 		return true, nil
 	case *cameopb.Pattern_Const:
-		cls, err := m.value(k.Const.GetCode())
+		cls, err := m.nested(k.Const.GetCode())
 		if err != nil {
 			return false, err
 		}
@@ -401,7 +219,7 @@ func (m *machine) matchConst(c *cameopb.Seq, v object.Value) (bool, error) {
 	if c == nil {
 		return true, nil
 	}
-	cls, err := m.value(c.GetCode())
+	cls, err := m.nested(c.GetCode())
 	if err != nil {
 		return false, err
 	}

@@ -161,7 +161,10 @@ language and core examples had the same status on each, 3,938 rows without
 a difference, before the tree walker was removed.
 
 Stack B replaces the recursion with a stack of activations per interpreter,
-which the next section describes.
+which the next section describes. Its first part is built: inside one
+activation the lists of an instruction run on cursors (`eval/cursor.go`),
+and a completion unwinds them. A call still runs its activation through a
+call of the evaluator, and the expression inside a pattern its list.
 
 ## The activation stack
 
