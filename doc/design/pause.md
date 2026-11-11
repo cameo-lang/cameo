@@ -168,6 +168,14 @@ need no table: they never change, so a copy is the value.
 A value in flight that the envelope cannot carry is nil after the resume,
 and a local is unbound; `missing` names each when the run pauses.
 
+Some of what an activation holds it cannot go on without: the block of a
+builtin that is between two calls of it, the exception a rescue clause
+is handling. When one of those cannot travel there is no dump, and
+`Dump` says why. The run is not lost: `Run` on a program that paused goes
+on where it paused, between two statements or inside one. `cameo` does
+that when it cannot dump a script or cannot write the file: it says so
+and the script goes on, to be paused again by the next `^C`.
+
 A resumed run finds every activation's proc by unit and index and walks
 the cursors down its lists. A dump whose path does not fit the code, a
 cursor past the end of its list, is refused.
