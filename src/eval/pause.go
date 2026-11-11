@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/cameo-lang/cameo/src/cameopb"
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/protogen"
 	"github.com/cameo-lang/cameo/src/syntax"
@@ -29,11 +30,11 @@ func (in *Interp) Pause() { in.pause.Store(true) }
 // variables, the constants it assigned, and its promises. It waits for the
 // calls async started, so their results travel settled. Source is the
 // script's text, which the dump carries for the run that resumes it.
-func (in *Interp) Dump(source string) (*protogen.Dump, error) {
+func (in *Interp) Dump(source string) (*cameopb.Dump, error) {
 	if !in.paused {
 		return nil, errors.New("the script is not paused")
 	}
-	d := &protogen.Dump{File: in.file, Source: source, Next: in.next, Line: in.nextLine}
+	d := &cameopb.Dump{File: in.file, Source: source, Next: int32(in.next), Line: int32(in.nextLine)}
 	enc := in.Encoder()
 	in.top.each(func(name string, v object.Value) {
 		d.Variables = append(d.Variables, in.binding(enc, name, v))
@@ -63,8 +64,8 @@ func (in *Interp) Dump(source string) (*protogen.Dump, error) {
 }
 
 // binding is the dump's form of one variable or constant.
-func (in *Interp) binding(enc *protogen.Encoder, name string, v object.Value) protogen.Binding {
-	b := protogen.Binding{Name: name}
+func (in *Interp) binding(enc *protogen.Encoder, name string, v object.Value) *cameopb.Dump_Binding {
+	b := &cameopb.Dump_Binding{Name: name}
 	if cls, ok := v.AsClass(); ok {
 		b.Class = cls.QualifiedName()
 		return b
@@ -81,9 +82,9 @@ func (in *Interp) binding(enc *protogen.Encoder, name string, v object.Value) pr
 // settledPromises waits for every call async started and returns the
 // promises of the run, settled. A promise the host or the script made by
 // hand and has not settled is left out.
-func (in *Interp) settledPromises(enc *protogen.Encoder) ([]protogen.PromiseState, error) {
+func (in *Interp) settledPromises(enc *protogen.Encoder) ([]*cameopb.Dump_Promise, error) {
 	t := in.promises
-	var out []protogen.PromiseState
+	var out []*cameopb.Dump_Promise
 	for id := int64(1); id <= t.next.Load(); id++ {
 		p := t.get(id)
 		if p == nil {
@@ -99,9 +100,9 @@ func (in *Interp) settledPromises(enc *protogen.Encoder) ([]protogen.PromiseStat
 		if err != nil {
 			return nil, err
 		}
-		s := protogen.PromiseState{ID: id, Method: p.method, Awaited: awaited}
+		s := &cameopb.Dump_Promise{Id: id, Method: p.method, Awaited: awaited}
 		if exc != nil {
-			s.Failure = &protogen.Failure{Class: exc.Cls.QualifiedName(), Message: exc.Message, Line: exc.Line}
+			s.Failure = &cameopb.Dump_Failure{Class: exc.Cls.QualifiedName(), Message: exc.Message, Line: int32(exc.Line)}
 			// The whole exception, with its fields and cause, when the
 			// envelope carries it.
 			if data, err := enc.Encode(object.ExceptionValue(exc)); err == nil {
@@ -120,14 +121,15 @@ func (in *Interp) settledPromises(enc *protogen.Encoder) ([]protogen.PromiseStat
 // before the pause point — class, module, def, include and require — and
 // restores the variables, the constants and the promises. Run then runs
 // the statements from the pause point on.
-func (in *Interp) Resume(prog *syntax.Program, d *protogen.Dump) error {
-	if d.Next < 0 || d.Next > len(prog.Body) {
-		return fmt.Errorf("the dump continues at statement %d of %d", d.Next, len(prog.Body))
+func (in *Interp) Resume(prog *syntax.Program, d *cameopb.Dump) error {
+	next := int(d.Next)
+	if next < 0 || next > len(prog.Body) {
+		return fmt.Errorf("the dump continues at statement %d of %d", next, len(prog.Body))
 	}
 	in.file = d.File
 	in.code.compiled = CompiledFor(prog)
 	fr := in.topFrame()
-	for _, n := range prog.Body[:d.Next] {
+	for _, n := range prog.Body[:next] {
 		if !isDefinition(n) {
 			continue
 		}
@@ -164,7 +166,7 @@ func (in *Interp) Resume(prog *syntax.Program, d *protogen.Dump) error {
 	in.changedTop()
 	for _, s := range d.Promises {
 		if err := in.restorePromise(dec, s); err != nil {
-			return fmt.Errorf("promise %d: %w", s.ID, err)
+			return fmt.Errorf("promise %d: %w", s.Id, err)
 		}
 	}
 	if d.Rand != nil {
@@ -174,17 +176,17 @@ func (in *Interp) Resume(prog *syntax.Program, d *protogen.Dump) error {
 			return fmt.Errorf("the dump's random number state is not one this cameo reads: %w", err)
 		}
 	}
-	in.from = d.Next
+	in.from = next
 	return nil
 }
 
 // Restore reads a dump binding's value back, once Resume brought the
 // script's classes; false for a binding the dump left out.
-func (in *Interp) Restore(b protogen.Binding) (object.Value, bool, error) {
+func (in *Interp) Restore(b *cameopb.Dump_Binding) (object.Value, bool, error) {
 	return in.restore(in.Decoder(), b)
 }
 
-func (in *Interp) restore(dec *protogen.Decoder, b protogen.Binding) (object.Value, bool, error) {
+func (in *Interp) restore(dec *protogen.Decoder, b *cameopb.Dump_Binding) (object.Value, bool, error) {
 	switch {
 	case b.Class != "":
 		cls := in.classNamed(b.Class)
@@ -220,8 +222,8 @@ func (in *Interp) classNamed(name string) *object.Class {
 }
 
 // restorePromise puts a settled promise back into the run's table.
-func (in *Interp) restorePromise(dec *protogen.Decoder, s protogen.PromiseState) error {
-	p := &Promise{id: s.ID, method: s.Method, done: make(chan struct{})}
+func (in *Interp) restorePromise(dec *protogen.Decoder, s *cameopb.Dump_Promise) error {
+	p := &Promise{id: s.Id, method: s.Method, done: make(chan struct{})}
 	var result object.Value
 	var exc *object.Exception
 	if s.Failure != nil {
@@ -229,7 +231,7 @@ func (in *Interp) restorePromise(dec *protogen.Decoder, s protogen.PromiseState)
 		if cls == nil {
 			return fmt.Errorf("no class %s", s.Failure.Class)
 		}
-		exc = &object.Exception{Cls: cls, Message: s.Failure.Message, Line: s.Failure.Line, Fields: defaultFields(cls)}
+		exc = &object.Exception{Cls: cls, Message: s.Failure.Message, Line: int(s.Failure.Line), Fields: defaultFields(cls)}
 		if len(s.Value) > 0 {
 			v, err := dec.Decode(s.Value)
 			if err != nil {

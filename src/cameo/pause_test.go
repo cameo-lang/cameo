@@ -6,7 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cameo-lang/cameo/src/protogen"
+	"google.golang.org/protobuf/proto"
+
+	"github.com/cameo-lang/cameo/src/cameopb"
 )
 
 // pausing loads src with a host method Test.pause that asks the script to
@@ -233,12 +235,12 @@ func TestResumeNamesARandomStateItCannotRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	d, err := protogen.UnmarshalDump(dump.Data)
-	if err != nil {
+	d := &cameopb.Dump{}
+	if err := proto.Unmarshal(dump.Data, d); err != nil {
 		t.Fatal(err)
 	}
 	d.Rand = make([]byte, 20)
-	data, err := protogen.MarshalDump(d)
+	data, err := proto.Marshal(d)
 	if err != nil {
 		t.Fatal(err)
 	}
