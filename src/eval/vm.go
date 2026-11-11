@@ -625,6 +625,17 @@ func (m *machine) call(c *cameopb.Code, meth *object.Method, recv object.Value, 
 		}
 		return withLine(err, line)
 	}
+	// A block or a lambda a script wrote, called as a value with call,
+	// () or [], is the block's activation, as a yield to it is.
+	if m.inGo == 0 && meth != nil && meth.Owner == object.ProcClass && meth.Body == nil && callsProc(meth.Name) {
+		if p, ok := asProc(recv); ok && p.written() {
+			act, err := in.blockAct(p, args, kw, block)
+			if err == nil {
+				err = in.pushAct(act, c)
+			}
+			return withLine(err, line)
+		}
+	}
 	// A builtin that is a stepper, called with a block, is an activation
 	// too: its steps and its block's calls take turns in the loop.
 	if m.inGo == 0 && meth != nil && meth.Step != nil && !block.IsZero() && (!meth.Private || private) && (meth.Arity < 0 || len(args) == meth.Arity) {
