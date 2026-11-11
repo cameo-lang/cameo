@@ -401,7 +401,10 @@ func (in *Interp) invoke(m *object.Method, recv object.Value, args []object.Valu
 	if err := in.stopped(); err != nil {
 		return object.Value{}, err
 	}
-	def := m.Body.(*syntax.Def)
+	// The method runs on its IR when it was defined by the IR evaluator
+	// or all of it compiles, and on the tree walker otherwise; its
+	// parameters are bound from the same.
+	defName, ps, compiled, def := in.methodCode(m)
 	act := &activation{frame: Frame{
 		Self:    recv,
 		Method:  m,
@@ -418,19 +421,12 @@ func (in *Interp) invoke(m *object.Method, recv object.Value, args []object.Valu
 	} else {
 		fr.DefTarget = object.ObjectClass
 	}
-	if def.Name == "initialize" {
+	if defName == "initialize" {
 		if inst, ok := recv.AsInstance(); ok {
 			fr.Building = inst
 		} else if exc, ok := recv.AsException(); ok && exc.Building {
 			fr.BuildingExc = exc
 		}
-	}
-	// The method runs on its IR when all of it compiles, and on the tree
-	// walker otherwise; its parameters are bound from the same.
-	compiled := in.code.irDef(def)
-	ps := in.code.astParams(&def.Params)
-	if compiled != nil {
-		ps = in.code.irParams(compiled)
 	}
 	body := func() (object.Value, error) {
 		if compiled != nil {

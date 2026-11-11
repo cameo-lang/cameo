@@ -131,15 +131,12 @@ they are first called. The two evaluators share scopes, frames and procs,
 so code on one calls code on the other. `eval.TreeWalkerOnly` keeps a
 program on the tree walker, which the tests use to hold both to one output.
 
-What compiles so far: literals, variables, lists, maps, ranges, string
-interpolation, regexps, constants, calls with every kind of argument, `&.`,
-blocks and lambdas, `yield`, `if`, `while`, `&&`, `||`, `!`, `return`,
-`break`, `next`, `redo`, `begin`/`rescue`/`ensure` and `retry`, `case`/`when`,
-`case`/`in` with every pattern, `=>` and `in`, multiple assignment,
-`defined?`, `super`, `with`, and `async` and `await`. What does not yet:
-definitions (`def`, `class`, `module`, field declarations, `include`,
-`alias`). `cameo ir script.cameo` names the first form of a script that
-does not compile.
+Every form of the language compiles: `cameo ir script.cameo` prints the
+unit of any script the checker accepts, and a test holds the example
+corpus to compiling whole and reading back from its wire form. A script's
+top-level statements are still compiled one at a time, each into a unit of
+its own with the methods and blocks written in it; step 10 compiles a
+file into one unit.
 
 Stack B replaces the recursion with a frame stack per interpreter. A frame is
 a proc, a position (a path of indices into its nested lists), a value stack

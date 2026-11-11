@@ -71,10 +71,12 @@ test_ir_prints_the_instructions_a_script_compiles_to() {
   printf 'a = 1\nputs a + 2\n' > "$script"
   out=$("$CAMEO_BIN" ir "$script")
   assert_eq $'proc #0 <main>\n  CONST 1\n  STORE a\n  DROP\n  LOAD a\n  CONST 2\n  SEND + 1 operator\n  SEND puts 1 self' "$out"
-  printf 'class Point\nend\n' > "$script"
-  out=$("$CAMEO_BIN" ir "$script" 2>&1) || rc=$?
-  assert_eq 1 "$rc" "cameo ir on a form that does not compile yet"
-  assert_contains "$out" 'line 1: *syntax.ClassDef does not compile to the IR yet'
+  printf 'class Point\n  def norm = 1\nend\n' > "$script"
+  out=$("$CAMEO_BIN" ir "$script")
+  assert_contains "$out" $'proc #1 <class:Point>\n  DEF norm #2'
+  printf 'def foo(\n' > "$script"
+  "$CAMEO_BIN" ir "$script" >/dev/null 2>&1 || rc=$?
+  assert_eq 1 "$rc" "cameo ir on a script that does not parse"
 }
 
 test_unknown_command_fails() {

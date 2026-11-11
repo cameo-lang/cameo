@@ -46,7 +46,7 @@ puts a > 2 && b > 2, a > 5 || nil.inspect, !a
 	assert.Equals(t, walked, 0)
 }
 
-func TestAMethodRunsOnTheIRWhenItsDefinitionDoesNotCompileYet(t *testing.T) {
+func TestAMethodDefinitionRunsOnTheIR(t *testing.T) {
 	compiled, walked := onBoth(t, `def fib(n)
   if n < 2
     n
@@ -56,10 +56,94 @@ func TestAMethodRunsOnTheIRWhenItsDefinitionDoesNotCompileYet(t *testing.T) {
 end
 puts fib(15)
 `, "610\n")
-	// The def statement stays on the tree walker; the method's body and
-	// the puts statement run on the IR.
+	// Two statements: the def, whose unit holds the method's body, and
+	// the puts.
 	assert.Equals(t, compiled, 2)
-	assert.Equals(t, walked, 1)
+	assert.Equals(t, walked, 0)
+}
+
+func TestDefinitionsRunOnTheIR(t *testing.T) {
+	_, walked := onBoth(t, `module Shape
+  SIDES = 0
+  def describe = "#{self.class.name} with #{sides} sides"
+  def self.unit = 1
+end
+module Named
+  def label = "named #{name}"
+end
+class Polygon
+  include Shape
+  extend Named
+  attribute :registry, default: []
+  string :name
+  int :sides, default: 3
+  list :tags, of: :string
+  reserved 7, :legacy
+  self.registry = registry + ["polygon"]
+  def initialize(name, sides = 3)
+    self.name = name
+    self.sides = sides
+  end
+  def self.name = "Polygon"
+  def area = raise(NotImplementedError, "no area")
+  alias to_s describe
+end
+class Square < Polygon
+  ref :twin, Polygon
+  enum :kind, values: [:small, :large]
+  def initialize(name) = super(name, 4)
+  def area = sides * sides
+  def self.name = "Square"
+end
+class Shape::Circle
+  float :r
+  def initialize(r) = self.r = r
+end
+module Shape::Util
+  def self.double(x) = x * 2
+end
+s = Square.new("sq")
+puts s.describe, s.to_s, s.area, Square.label, Polygon.registry.inspect
+puts Square.ancestors.first(3).inspect, Shape.unit, Shape::SIDES
+puts Shape::Circle.new(1.5).r, Shape::Util.double(4)
+puts Square.fields.map { |f| f.to_s }.sort.inspect
+puts s.with(twin: Polygon.new("p"), kind: :large).inspect
+class Polygon
+  def corners = sides
+end
+puts Polygon.new("tri").corners, s.respond_to?(:corners)
+def top(x) = x + 1
+alias up top
+puts up(1)
+klass = Class.new(Polygon) do
+  def area = 42
+end
+puts klass.new("anon").area
+puts (def helper; end).inspect
+`, `Square with 4 sides
+Square with 4 sides
+16
+named Square
+["polygon"]
+[Square, Polygon, Shape]
+1
+0
+1.5
+8
+["kind", "name", "sides", "tags", "twin"]
+Square(name: "sq", sides: 4, tags: [], twin: Polygon(name: "p", sides: 3, tags: []), kind: :large)
+3
+false
+2
+42
+:helper
+`)
+	assert.Equals(t, walked, 0)
+	onBoth(t, "class A < 5\nend\n", "t.cameo:1: superclass must be a Class (an instance of Integer given) (TypeError)\n")
+	onBoth(t, "class A\n  int :x\n  int :x\nend\n", "t.cameo:3: field x is already declared in A (CameoError)\n")
+	onBoth(t, "class A\n  include Integer\nend\n", "t.cameo:2: wrong argument type class Integer (expected Module) (TypeError)\n")
+	onBoth(t, "s = \"a\\xffb\"\nputs s.bytes.inspect, s.encoding, s.valid_encoding?\n", "[97, 255, 98]\nUTF-8\nfalse\n")
+	onBoth(t, "class A\n  def boom = raise(\"in body\")\n  boom2\nend\nputs defined?(A).inspect\n", "t.cameo:3: undefined local variable or method 'boom2' for class A (NameError)\n")
 }
 
 func TestLoopsAndJumpsRunOnTheIR(t *testing.T) {
@@ -262,7 +346,7 @@ false
 6
 exact
 `)
-	assert.Equals(t, walked, 1)
+	assert.Equals(t, walked, 0)
 	onBoth(t, "case 5\nin String then 1\nend\n", "t.cameo:1: 5 (NoMatchingPatternError)\n")
 	onBoth(t, "x = {a: 1}\nx => {b:}\n", "t.cameo:2: {a: 1} (NoMatchingPatternError)\n")
 }
@@ -307,7 +391,7 @@ nil
 nil
 "yield"
 `)
-	assert.Equals(t, walked, 1)
+	assert.Equals(t, walked, 0)
 	onBoth(t, "Nope::X\n", "t.cameo:1: uninitialized constant Nope (NameError)\n")
 	onBoth(t, "x = 5\nx::Y\n", "t.cameo:2: an instance of Integer is not a class/module (TypeError)\n")
 	onBoth(t, "String = 1\n", "t.cameo:1: cannot reassign the builtin constant String (CameoError)\n")

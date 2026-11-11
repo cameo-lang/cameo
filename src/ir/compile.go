@@ -2,18 +2,20 @@ package ir
 
 import (
 	"fmt"
+	"unicode/utf8"
 
 	"github.com/cameo-lang/cameo/src/cameopb"
 	"github.com/cameo-lang/cameo/src/syntax"
 )
 
-// Unsupported is the error for a node the compiler does not compile yet.
-// While the IR is being built, the evaluator runs the method, block or
-// statement the node is in on the tree walker instead.
+// Unsupported is the error for a node the IR has no instruction for: a
+// splat outside a list or an argument list, which the checker refuses.
+// The evaluator runs the method, block or statement such a node is in on
+// the tree walker, which raises for it.
 type Unsupported struct{ Node syntax.Node }
 
 func (e *Unsupported) Error() string {
-	return fmt.Sprintf("line %d: %T does not compile to the IR yet", e.Node.Line(), e.Node)
+	return fmt.Sprintf("line %d: %T does not compile to the IR", e.Node.Line(), e.Node)
 }
 
 // Compile compiles a program into a unit: proc 0 is its top level.
@@ -233,6 +235,12 @@ func (c *compiler) expr(e *emitter, n syntax.Node) error {
 	case *syntax.Float:
 		e.emit(cameopb.Op_CONST, line, constArg(&cameopb.Value{Kind: &cameopb.Value_FloatValue{FloatValue: n.Value}}))
 	case *syntax.Str:
+		if !utf8.ValidString(n.Value) {
+			// A protobuf string is UTF-8; a literal with other bytes in
+			// it, "\xff", travels as bytes and is a String all the same.
+			e.emit(cameopb.Op_CONST, line, constArg(&cameopb.Value{Kind: &cameopb.Value_BytesValue{BytesValue: []byte(n.Value)}}))
+			break
+		}
 		e.emit(cameopb.Op_CONST, line, constArg(&cameopb.Value{Kind: &cameopb.Value_StringValue{StringValue: n.Value}}))
 	case *syntax.Sym:
 		e.emit(cameopb.Op_SYM, line, c.nameArg(n.Name))
@@ -420,10 +428,92 @@ func (c *compiler) expr(e *emitter, n syntax.Node) error {
 	case *syntax.AwaitAll:
 		c.needCameo(e, "await", n.Qualified, line)
 		e.emit(cameopb.Op_AWAIT_ALL, line).Flags = flag(cameopb.Flag_FLAG_QUALIFIED, n.Qualified)
+	case *syntax.Def:
+		index, err := c.proc(n.Name, &n.Params, n.Body, line, false)
+		if err != nil {
+			return err
+		}
+		e.emit(cameopb.Op_DEF, line, c.nameArg(n.Name), procArg(index)).Flags = flag(cameopb.Flag_FLAG_SINGLETON, n.Singleton)
+	case *syntax.ClassDef:
+		flags, err := c.scope(e, n.Scope)
+		if err != nil {
+			return err
+		}
+		if n.Super != nil {
+			if err := c.expr(e, n.Super); err != nil {
+				return err
+			}
+			flags |= uint64(cameopb.Flag_FLAG_SUPER)
+		}
+		index, err := c.proc("<class:"+n.Name+">", nil, n.Body, line, false)
+		if err != nil {
+			return err
+		}
+		e.emit(cameopb.Op_CLASS, line, c.nameArg(n.Name), procArg(index), c.nameArg(n.Digest)).Flags = flags
+	case *syntax.ModuleDef:
+		flags, err := c.scope(e, n.Scope)
+		if err != nil {
+			return err
+		}
+		index, err := c.proc("<module:"+n.Name+">", nil, n.Body, line, false)
+		if err != nil {
+			return err
+		}
+		e.emit(cameopb.Op_MODULE, line, c.nameArg(n.Name), procArg(index), c.nameArg(n.Digest)).Flags = flags
+	case *syntax.Alias:
+		e.emit(cameopb.Op_ALIAS, line, c.nameArg(n.New), c.nameArg(n.Old))
+	case *syntax.FieldDecl:
+		var flags uint64
+		if n.Type == "ref" {
+			if err := c.expr(e, n.Ref); err != nil {
+				return err
+			}
+			flags |= uint64(cameopb.Flag_FLAG_REF)
+		}
+		if n.Default != nil {
+			if err := c.expr(e, n.Default); err != nil {
+				return err
+			}
+			flags |= uint64(cameopb.Flag_FLAG_DEFAULT)
+		}
+		decl := &cameopb.FieldDecl{Type: n.Type, Names: n.Names, Number: n.Number, Of: n.Of, Key: n.Key, Value: n.Value, Values: n.Values}
+		e.emit(cameopb.Op_FIELD, line, &cameopb.Arg{Kind: &cameopb.Arg_Field{Field: decl}}).Flags = flags
+	case *syntax.AttrDecl:
+		var flags uint64
+		if n.Default != nil {
+			if err := c.expr(e, n.Default); err != nil {
+				return err
+			}
+			flags = uint64(cameopb.Flag_FLAG_DEFAULT)
+		}
+		var args []*cameopb.Arg
+		for _, name := range n.Names {
+			args = append(args, c.nameArg(name))
+		}
+		e.emit(cameopb.Op_ATTR, line, args...).Flags = flags
+	case *syntax.Reserved:
+		e.emit(cameopb.Op_RESERVED, line, &cameopb.Arg{Kind: &cameopb.Arg_Int{Int: n.Number}}, c.nameArg(n.Name))
+	case *syntax.Include:
+		if err := c.expr(e, n.Module); err != nil {
+			return err
+		}
+		e.emit(cameopb.Op_INCLUDE, line).Flags = flag(cameopb.Flag_FLAG_EXTEND, n.Extend)
 	default:
 		return &Unsupported{Node: n}
 	}
 	return nil
+}
+
+// scope compiles the module of `class A::B` or `module A::B`, when the
+// statement names one, and returns the flag that says it is on the stack.
+func (c *compiler) scope(e *emitter, scope syntax.Node) (uint64, error) {
+	if scope == nil {
+		return 0, nil
+	}
+	if err := c.expr(e, scope); err != nil {
+		return 0, err
+	}
+	return uint64(cameopb.Flag_FLAG_SCOPED), nil
 }
 
 // needCameo emits the check that Cameo is included, which a form written
