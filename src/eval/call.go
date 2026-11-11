@@ -15,6 +15,9 @@ func (in *Interp) evalCall(n *syntax.Call, env *Env, fr *Frame) (object.Value, e
 	if selfCall && n.Name == "block_given?" && len(n.Args) == 0 {
 		return object.Bool(!fr.Block.IsZero()), nil
 	}
+	if op := binaryOp(n.Name); op != nil && operatorCall(n) {
+		return in.evalOperator(n, op, env, fr)
+	}
 	if n.Recv != nil {
 		v, err := in.eval(n.Recv, env, fr)
 		if err != nil {
@@ -55,13 +58,41 @@ func (in *Interp) evalCall(n *syntax.Call, env *Env, fr *Frame) (object.Value, e
 	return v, withLine(err, n.Line())
 }
 
+// operatorCall reports whether n has the shape the operator fast path
+// takes: a receiver, one plain argument, nothing else. A safe call `&.`
+// is left to the ordinary path.
+func operatorCall(n *syntax.Call) bool {
+	if n.Recv == nil || len(n.Args) != 1 || n.Block != nil || n.BlockArg != nil || len(n.KwArgs) > 0 || n.Safe {
+		return false
+	}
+	_, splat := n.Args[0].(*syntax.Splat)
+	return !splat
+}
+
+// evalOperator evaluates an operator call that has a fast path: op on
+// the two operands, and the method when op does not cover them.
+func (in *Interp) evalOperator(n *syntax.Call, op func(a, b object.Value) object.Value, env *Env, fr *Frame) (object.Value, error) {
+	a, err := in.eval(n.Recv, env, fr)
+	if err != nil {
+		return object.Value{}, err
+	}
+	b, err := in.eval(n.Args[0], env, fr)
+	if err != nil {
+		return object.Value{}, err
+	}
+	if v := op(a, b); !v.IsZero() {
+		return v, nil
+	}
+	v, err := in.call(fr, a, n.Name, []object.Value{b}, nil, object.Value{}, false, n.Line())
+	return v, withLine(err, n.Line())
+}
+
 // binaryOp returns the fast path for an arithmetic or comparison operator
 // on two integers or two floats, or nil for any other name. The
 // fast path returns nil when the operands are not both integers or both
 // floats, and the call goes the ordinary way. It is sound because Integer
 // and Float are builtin classes, which a script can neither reopen nor
-// replace a method of, so `+` on an integer can only ever mean this. The
-// compiler reaches it after its raw integer path (compile.go).
+// replace a method of, so `+` on an integer can only ever mean this.
 func binaryOp(name string) func(a, b object.Value) object.Value {
 	switch name {
 	case "+":

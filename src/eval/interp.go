@@ -1,6 +1,5 @@
 // Package eval runs cameo programs: it walks the syntax package's AST over
-// the object package's values, and compiles a call to a closure the first
-// time it runs. The design is in doc/design/cameo.md.
+// the object package's values. The design is in doc/design/cameo.md.
 package eval
 
 import (
@@ -48,7 +47,7 @@ type Interp struct {
 	// changed. A worker's own top level is its snapshot's, which it never
 	// changes.
 	snap *topLevel
-	// code is the compiled program, shared with the workers.
+	// code is what the program's interpreters share; see code.go.
 	code *code
 	// rng is this interpreter's generator; see Rand.
 	rng *object.Random
