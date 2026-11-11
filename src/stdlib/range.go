@@ -223,60 +223,56 @@ func installRange() {
 		}
 		return object.Bool(rangesOverlap(ctx, r(self), args[0].Range())), nil
 	})
-	def(c, "each", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if block.IsZero() {
-			return sizedEnumerator(self, "each", nil, func(ctx object.Context, yield func(object.Value) error) error {
-				e, err := eachOf(ctx, self)
-				if err != nil {
+	// each over integers is a stepper that keeps the integer it yielded
+	// last, so a run pauses inside its block, also of a range without an
+	// end. A range of strings, or of a script's objects that have succ,
+	// is walked to its end in one step.
+	c.DefineStep("each", 0, func(ctx object.Context, call *object.Call, st []object.Value, got object.Got) (object.Step, error) {
+		self, block := call.Self, call.Block
+		next := r(self).Lo
+		if got.First {
+			if block.IsZero() {
+				return object.Done(sizedEnumerator(self, "each", nil, func(ctx object.Context, yield func(object.Value) error) error {
+					e, err := eachOf(ctx, self)
+					if err != nil {
+						return err
+					}
+					return e(ctx, yield)
+				}, func(ctx object.Context) (object.Value, error) {
+					return c.Methods["size"].Native(ctx, self, nil, nil, object.Value{})
+				})), nil
+			}
+			if seq, sym, _, ok := rangeStrings(r(self)); ok {
+				for s := range seq {
+					if _, err := ctx.Yield(block, strValue(s, sym)); err != nil {
+						return object.Step{}, err
+					}
+				}
+				return object.Done(self), nil
+			}
+			if r(self).Lo.Kind() == object.KindInstance {
+				err := eachBySucc(ctx, r(self), func(v object.Value) error {
+					_, err := ctx.Yield(block, v)
 					return err
-				}
-				return e(ctx, yield)
-			}, func(ctx object.Context) (object.Value, error) {
-				return c.Methods["size"].Native(ctx, self, nil, nil, object.Value{})
-			}), nil
-		}
-		if seq, sym, _, ok := rangeStrings(r(self)); ok {
-			for s := range seq {
-				if _, err := ctx.Yield(block, strValue(s, sym)); err != nil {
-					return object.Value{}, err
-				}
+				})
+				return object.Done(self), err
 			}
-			return self, nil
+			if !r(self).Lo.IsInteger() {
+				return object.Step{}, ctx.Raise(object.TypeError, "can't iterate from %s", KindName(object.OrNil(r(self).Lo)))
+			}
+		} else {
+			next = integerAdd(st[0], 1)
 		}
-		if r(self).Lo.Kind() == object.KindInstance {
-			err := eachBySucc(ctx, r(self), func(v object.Value) error {
-				_, err := ctx.Yield(block, v)
-				return err
-			})
-			return self, err
-		}
-		if !r(self).Lo.IsInteger() {
-			return object.Value{}, ctx.Raise(object.TypeError, "can't iterate from %s", KindName(object.OrNil(r(self).Lo)))
-		}
-		if r(self).Hi.IsZero() {
-			for i := r(self).Lo; ; {
-				if _, err := ctx.Yield(block, i); err != nil {
-					return object.Value{}, err
-				}
-				if x, ok := i.AsInt(); ok && x < math.MaxInt64 {
-					i = object.Int(x + 1)
-				} else {
-					i = object.BigInt(new(big.Int).Add(bigOf(i), big.NewInt(1)))
-				}
+		if !r(self).Hi.IsZero() {
+			_, hi, ok := intEnds(r(self))
+			if !ok {
+				return object.Step{}, ctx.Raise(object.TypeError, "can't iterate from %s", KindName(object.OrNil(r(self).Lo)))
+			}
+			if integerCmp(next, hi) > 0 {
+				return object.Done(self), nil
 			}
 		}
-		lo, hi, ok := intEnds(r(self))
-		if !ok {
-			return object.Value{}, ctx.Raise(object.TypeError, "can't iterate from %s", KindName(object.OrNil(r(self).Lo)))
-		}
-		err := eachInteger(lo, hi, 1, func(v object.Value) error {
-			_, err := ctx.Yield(block, v)
-			return err
-		})
-		if err != nil {
-			return object.Value{}, err
-		}
-		return self, nil
+		return object.Yield([]object.Value{next}, next), nil
 	})
 	// reverse_each walks a range down from an Integer end, without
 	// listing it first, and endlessly for a beginless one; any other

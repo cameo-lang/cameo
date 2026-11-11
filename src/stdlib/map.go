@@ -172,42 +172,57 @@ func installMap() {
 		}
 		return object.MapValue(b.Map()), nil
 	})
+	// The walks of a Hash (walk.go) go over its keys, and keep its values
+	// as a List in the first place of what they keep: keyed returns
+	// both, and pair the key and the value the block is called with.
+	keyed := func(ctx object.Context, call *object.Call) ([]object.Value, []object.Value, error) {
+		h := m(call.Self)
+		return h.Keys(), []object.Value{object.NewList(h.Values()...)}, nil
+	}
+	pair := func(st []object.Value, k object.Value, i int) []object.Value {
+		return []object.Value{k, st[walkKept].List().Elems[i]}
+	}
+	// select and reject gather the keys the block is true or false for.
 	filter := func(name string, keep bool) {
-		def(c, name, 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-			if block.IsZero() {
-				return blockless(self, name, nil, true), nil
-			}
-			b := object.NewMapBuilder()
-			for i, k := range m(self).Keys() {
-				v := m(self).Values()[i]
-				r, err := ctx.Yield(block, k, v)
-				if err != nil {
-					return object.Value{}, err
-				}
+		c.DefineStep(name, 0, walk{
+			elems: keyed,
+			yield: pair,
+			fold: func(ctx object.Context, st []object.Value, k, r object.Value) ([]object.Value, *object.Value, error) {
 				if r.Truthy() == keep {
+					st = append(st, k)
+				}
+				return st, nil, nil
+			},
+			done: func(ctx object.Context, call *object.Call, st []object.Value) (object.Value, error) {
+				h, b := m(call.Self), object.NewMapBuilder()
+				for _, k := range kept(st)[1:] {
+					v, _ := h.Get(k)
 					b.Set(k, v)
 				}
-			}
-			return object.MapValue(b.Map()), nil
-		})
+				return object.MapValue(b.Map()), nil
+			},
+		}.stepper(name, true))
 	}
 	filter("select", true)
 	filter("filter", true)
 	filter("reject", false)
-	def(c, "transform_values", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if block.IsZero() {
-			return blockless(self, "transform_values", nil, true), nil
-		}
-		b := object.NewMapBuilder()
-		for i, k := range m(self).Keys() {
-			r, err := ctx.Yield(block, m(self).Values()[i])
-			if err != nil {
-				return object.Value{}, err
+	// transform_values gathers the block's values, one for each key.
+	c.DefineStep("transform_values", 0, walk{
+		elems: keyed,
+		yield: func(st []object.Value, k object.Value, i int) []object.Value {
+			return []object.Value{st[walkKept].List().Elems[i]}
+		},
+		fold: func(ctx object.Context, st []object.Value, k, r object.Value) ([]object.Value, *object.Value, error) {
+			return append(st, r), nil, nil
+		},
+		done: func(ctx object.Context, call *object.Call, st []object.Value) (object.Value, error) {
+			b := object.NewMapBuilder()
+			for i, k := range st[walkElems].List().Elems {
+				b.Set(k, kept(st)[1+i])
 			}
-			b.Set(k, r)
-		}
-		return object.MapValue(b.Map()), nil
-	})
+			return object.MapValue(b.Map()), nil
+		},
+	}.stepper("transform_values", true))
 	def(c, "transform_keys", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		var mapping *object.Map
 		if len(args) == 1 {
@@ -284,43 +299,18 @@ func installMap() {
 		}
 		return object.MapValue(keepDefault(m(self), b.Map())), nil
 	})
-	eachPair := func(name string) {
-		def(c, name, 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-			if block.IsZero() {
-				return blockless(self, name, nil, true), nil
-			}
-			for i, k := range m(self).Keys() {
-				if _, err := ctx.Yield(block, k, m(self).Values()[i]); err != nil {
-					return object.Value{}, err
-				}
-			}
-			return self, nil
-		})
-	}
-	eachPair("each")
-	eachPair("each_pair")
-	def(c, "each_key", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if block.IsZero() {
-			return blockless(self, "each_key", nil, true), nil
-		}
-		for _, k := range m(self).Keys() {
-			if _, err := ctx.Yield(block, k); err != nil {
-				return object.Value{}, err
-			}
-		}
-		return self, nil
-	})
-	def(c, "each_value", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if block.IsZero() {
-			return blockless(self, "each_value", nil, true), nil
-		}
-		for _, v := range m(self).Values() {
-			if _, err := ctx.Yield(block, v); err != nil {
-				return object.Value{}, err
-			}
-		}
-		return self, nil
-	})
+	c.DefineStep("each", 0, walk{elems: keyed, yield: pair}.stepper("each", true))
+	c.DefineStep("each_pair", 0, walk{elems: keyed, yield: pair}.stepper("each_pair", true))
+	c.DefineStep("each_key", 0, walk{
+		elems: func(ctx object.Context, call *object.Call) ([]object.Value, []object.Value, error) {
+			return m(call.Self).Keys(), nil, nil
+		},
+	}.stepper("each_key", true))
+	c.DefineStep("each_value", 0, walk{
+		elems: func(ctx object.Context, call *object.Call) ([]object.Value, []object.Value, error) {
+			return m(call.Self).Values(), nil, nil
+		},
+	}.stepper("each_value", true))
 	def(c, "to_h", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if block.IsZero() {
 			return self, nil

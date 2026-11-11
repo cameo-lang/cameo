@@ -28,10 +28,13 @@ its time in become step functions, whose state is data too, group by
 group; until one has, it only delays a pause.
 
 The builtins that are step functions so far, inside whose block a run
-pauses at once: `Integer#times`, `upto` and `downto`; `loop`; `each` and
-`each_index` of a List; and, of a List or a Range, `each_with_index`,
-`each_with_object`, `map`, `flat_map`, `filter_map`, `select`, `reject`,
-`partition` and `find`, under each of their names. The dump
+pauses at once: `Integer#times`, `upto` and `downto`; `loop`; `each` of a
+List, a Hash, a Set and a Range of integers, and a List's `each_index`;
+of a List or a Range, `each_with_index`, `each_with_object`, `map`,
+`flat_map`, `filter_map`, `select`, `reject`, `partition` and `find`,
+under each of their names; a Hash's `each_pair`, `each_key`, `each_value`,
+`select`, `reject` and `transform_values`; a Set's `select` and `reject`.
+The dump
 holds such a builtin as an activation of its own, between the call that
 made it and its block: the method, the call it was made with, and what it
 keeps from one call of the block to the next, for `times` the number it

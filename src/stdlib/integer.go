@@ -460,9 +460,9 @@ func installInteger() {
 			}
 			next := self
 			if !got.First {
-				next = object.BigInt(new(big.Int).Add(bigOf(state[0]), big.NewInt(dir)))
+				next = integerAdd(state[0], dir)
 			}
-			if c := bigOf(next).Cmp(bigOf(to)); dir > 0 && c > 0 || dir < 0 && c < 0 {
+			if c := integerCmp(next, to); dir > 0 && c > 0 || dir < 0 && c < 0 {
 				return object.Done(self), nil
 			}
 			return object.Yield([]object.Value{next}, next), nil
@@ -750,6 +750,25 @@ func integerText(v object.Value, base int) string {
 		return strconv.FormatInt(x, base)
 	}
 	return v.Big().Text(base)
+}
+
+// integerCmp compares two Integers of either form: negative, zero or
+// positive as a is below, equal to or above b.
+func integerCmp(a, b object.Value) int {
+	if x, ok := a.AsInt(); ok {
+		if y, ok := b.AsInt(); ok {
+			return cmpInt(x, y)
+		}
+	}
+	return bigOf(a).Cmp(bigOf(b))
+}
+
+// integerAdd returns the Integer a plus d.
+func integerAdd(a object.Value, d int64) object.Value {
+	if x, ok := a.AsInt(); ok && (d > 0 && x <= math.MaxInt64-d || d < 0 && x >= math.MinInt64-d) {
+		return object.Int(x + d)
+	}
+	return object.BigInt(new(big.Int).Add(bigOf(a), big.NewInt(d)))
 }
 
 // eachInteger calls f with each integer from from to to, counting up for a
