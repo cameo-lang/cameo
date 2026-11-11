@@ -31,6 +31,8 @@ import (
 const tick = 10 * time.Millisecond
 
 type scheduler struct {
+	// pause is the run's pause: while one is asked for, the queue stands.
+	pause  *pauser
 	shards [16]queueShard
 	queued atomic.Int64
 	// runners counts the runners; limit is how many push starts.
@@ -142,6 +144,12 @@ func (s *scheduler) pop() (*Promise, *asyncCall) {
 // run is a runner: it runs queued calls until there are none.
 func (s *scheduler) run() {
 	for {
+		// With a pause asked for, the calls stay queued, for the dump: a
+		// runner takes no more.
+		if s.pause != nil && s.pause.flag.Load() {
+			s.runners.Add(-1)
+			return
+		}
 		p, c := s.pop()
 		if c == nil {
 			s.runners.Add(-1)
@@ -158,10 +166,19 @@ func (s *scheduler) run() {
 	}
 }
 
+// kick starts a runner for the calls that stayed queued through a pause.
+func (s *scheduler) kick() {
+	if s.queued.Load() > 0 {
+		s.runners.Add(1)
+		go s.run()
+		s.watch()
+	}
+}
+
 // waiting is called before a goroutine waits for a promise: with calls
 // queued, it starts a runner in its place.
 func (s *scheduler) waiting() {
-	if s.queued.Load() > 0 {
+	if s.queued.Load() > 0 && !(s.pause != nil && s.pause.flag.Load()) {
 		s.runners.Add(1)
 		go s.run()
 	}
@@ -177,6 +194,12 @@ func (s *scheduler) watch() {
 		last := s.taken.Load()
 		for {
 			time.Sleep(tick)
+			// A paused run's queue does not move; kick starts the
+			// watchdog again when the run goes on.
+			if s.pause != nil && s.pause.flag.Load() {
+				s.watching.Store(false)
+				return
+			}
 			if s.queued.Load() == 0 {
 				s.watching.Store(false)
 				// A call pushed after the check found the watchdog still

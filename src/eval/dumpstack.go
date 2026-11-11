@@ -40,6 +40,16 @@ func (sd *stackDump) buildingIn(v object.Value) uint32 {
 	return 0
 }
 
+// stackMsg is the stack of one interpreter as a dump holds it: the
+// script's, in the fields of the Dump, or a worker's, in a Worker. next
+// is the statement the script's first activation is in.
+type stackMsg struct {
+	stack  []*cameopb.Dump_Activation
+	scopes []*cameopb.Dump_Scope
+	frames []*cameopb.Dump_Frame
+	next   int
+}
+
 // stackFrames numbers the frames and scopes of the activations acts.
 func stackFrames(acts []*machine) *stackDump {
 	sd := &stackDump{frames: map[*Frame]uint32{}, scopes: map[*Env]uint32{}, building: map[*object.Instance]uint32{}}
@@ -97,7 +107,7 @@ func (sd *stackDump) frameOf(fr *Frame) uint32 {
 
 // dumpStack writes the activations the run paused in, with their frames
 // and scopes, into d.
-func (in *Interp) dumpStack(d *cameopb.Dump, enc *protogen.Encoder, classes *classDump) error {
+func (in *Interp) dumpStack(d *stackMsg, enc *protogen.Encoder, classes *classDump) error {
 	sd, acts := in.dumping, in.frozen
 	value := func(what string, v object.Value) *cameopb.Dump_Binding {
 		if v.IsZero() {
@@ -201,13 +211,16 @@ func (in *Interp) dumpStack(d *cameopb.Dump, enc *protogen.Encoder, classes *cla
 			}
 			a.Awaiting = aw
 		}
-		d.Stack = append(d.Stack, a)
+		d.stack = append(d.stack, a)
 	}
 	for i, fr := range sd.frameList {
 		if fr.BuildingExc != nil || fr.Reopened != nil {
 			return fmt.Errorf("frame %d is of an exception's initialize or a class body, which no pause is inside", i)
 		}
-		f := &cameopb.Dump_Frame{Top: fr == acts[0].fr, File: fr.File, Lambda: fr.Lambda, Ended: fr.ended}
+		// The top level's frame is the frame of the statement the
+		// script paused in; a worker's stack has none.
+		top := acts[0].kind == actList && fr == acts[0].fr
+		f := &cameopb.Dump_Frame{Top: top, File: fr.File, Lambda: fr.Lambda, Ended: fr.ended}
 		if inst := fr.Building; inst != nil && sd.building[inst] != uint32(i) {
 			f.BuildingOf = sd.building[inst] + 1
 		} else if inst != nil {
@@ -242,7 +255,7 @@ func (in *Interp) dumpStack(d *cameopb.Dump, enc *protogen.Encoder, classes *cla
 			f.Lexical = append(f.Lexical, classes.ref(cls))
 		}
 		f.DefTarget = classes.ref(fr.DefTarget)
-		d.Frames = append(d.Frames, f)
+		d.frames = append(d.frames, f)
 	}
 	for i, env := range sd.scopeList {
 		s := &cameopb.Dump_Scope{Top: env == in.top, Parent: sd.ref(env.parent), Captured: env.captured, Origin: sd.ref(env.scope)}
@@ -260,7 +273,7 @@ func (in *Interp) dumpStack(d *cameopb.Dump, enc *protogen.Encoder, classes *cla
 		for _, p := range env.promises {
 			s.Promises = append(s.Promises, p.id)
 		}
-		d.Scopes = append(d.Scopes, s)
+		d.scopes = append(d.scopes, s)
 	}
 	return nil
 }
@@ -410,19 +423,19 @@ type stackRestore struct {
 // restoreShells makes the frames and scopes of a dump, empty, before any
 // value of the dump is read: a closure among the values may refer to a
 // frame.
-func (in *Interp) restoreShells(dec *protogen.Decoder, d *cameopb.Dump) error {
-	if len(d.GetStack()) == 0 {
+func (in *Interp) restoreShells(dec *protogen.Decoder, d *stackMsg) error {
+	if len(d.stack) == 0 {
 		return nil
 	}
 	sr := &stackRestore{}
-	for _, f := range d.GetFrames() {
+	for _, f := range d.frames {
 		fr := &Frame{}
 		if f.GetTop() {
 			fr = in.topFrame()
 		}
 		sr.frames = append(sr.frames, fr)
 	}
-	for _, s := range d.GetScopes() {
+	for _, s := range d.scopes {
 		env := &Env{}
 		if s.GetTop() {
 			env = in.top
@@ -432,7 +445,7 @@ func (in *Interp) restoreShells(dec *protogen.Decoder, d *cameopb.Dump) error {
 	in.resuming = sr
 	// The instances that initializes are filling, which other values of
 	// the dump refer to by their frame.
-	for i, f := range d.GetFrames() {
+	for i, f := range d.frames {
 		if f.GetBuilding() == nil {
 			continue
 		}
@@ -448,7 +461,7 @@ func (in *Interp) restoreShells(dec *protogen.Decoder, d *cameopb.Dump) error {
 		inst.Message = nil
 		sr.frames[i].Building = inst
 	}
-	for i, f := range d.GetFrames() {
+	for i, f := range d.frames {
 		if ref := f.GetBuildingOf(); ref != 0 {
 			if int(ref) > len(sr.frames) || sr.frames[ref-1].Building == nil {
 				return fmt.Errorf("frame %d of the dump fills the instance of frame %d, which makes none", i, ref-1)
@@ -461,8 +474,7 @@ func (in *Interp) restoreShells(dec *protogen.Decoder, d *cameopb.Dump) error {
 
 // restoreStack fills the frames and scopes of a dump and makes its
 // activations, which Run continues.
-func (in *Interp) restoreStack(dec *protogen.Decoder, d *cameopb.Dump, script *program) error {
-	statements := script.statements
+func (in *Interp) restoreStack(dec *protogen.Decoder, d *stackMsg, script *program) error {
 	sr := in.resuming
 	if sr == nil {
 		return nil
@@ -492,7 +504,7 @@ func (in *Interp) restoreStack(dec *protogen.Decoder, d *cameopb.Dump, script *p
 		}
 		return nil, fmt.Errorf("no class %s", ref)
 	}
-	for i, f := range d.GetFrames() {
+	for i, f := range d.frames {
 		fr := sr.frames[i]
 		var err error
 		if f.GetSelf() != nil {
@@ -551,7 +563,7 @@ func (in *Interp) restoreStack(dec *protogen.Decoder, d *cameopb.Dump, script *p
 		}
 		fr.File, fr.Lambda, fr.ended = f.GetFile(), f.GetLambda(), f.GetEnded()
 	}
-	for i, s := range d.GetScopes() {
+	for i, s := range d.scopes {
 		env := sr.scopes[i]
 		var err error
 		if !s.GetTop() {
@@ -582,7 +594,7 @@ func (in *Interp) restoreStack(dec *protogen.Decoder, d *cameopb.Dump, script *p
 	// rescuing is the exception the innermost rescue clause so far is
 	// handling, as the run had it in Interp.rescuing.
 	var rescuing *object.Exception
-	for i, a := range d.GetStack() {
+	for i, a := range d.stack {
 		m := &machine{in: in}
 		var err error
 		// site is the instruction of the activation below that called;
@@ -644,10 +656,10 @@ func (in *Interp) restoreStack(dec *protogen.Decoder, d *cameopb.Dump, script *p
 		var code []*cameopb.Code
 		switch a.GetKind() {
 		case cameopb.Dump_Activation_STATEMENT:
-			if i != 0 || int(d.GetNext()) >= len(statements) {
+			if i != 0 || script == nil || d.next >= len(script.statements) {
 				return fmt.Errorf("activation %d of the dump is a statement the script does not have", i)
 			}
-			code = statements[d.GetNext()]
+			code = script.statements[d.next]
 			m.unit = script.unit
 		default:
 			known, ok := in.code.units.Load(a.GetUnit())

@@ -103,6 +103,34 @@ message Dump {
   repeated Scope scopes = 18;
   repeated Frame frames = 19;
 
+  // workers are the calls async started that were running when the run
+  // paused, each with the stack of the interpreter that ran it; calls the
+  // ones no worker had taken. The promise of each is in promises,
+  // pending.
+  repeated Worker workers = 20;
+  repeated Call calls = 21;
+
+  // Worker is a call async started, stopped where it was: the
+  // activations of its interpreter, outermost first, with the scopes
+  // and frames they run in, which their indexes are into.
+  message Worker {
+    int64 promise = 1;
+    repeated Activation stack = 2;
+    repeated Scope scopes = 3;
+    repeated Frame frames = 4;
+    // rand is the state of the worker's random number generator.
+    bytes rand = 5;
+  }
+
+  // Call is a call async started that no worker had taken.
+  message Call {
+    int64 promise = 1;
+    Binding recv = 2;
+    string method = 3;
+    repeated Binding args = 4;
+    Value kw = 5;
+  }
+
   // Activation is one running proc: where it is, and what it holds.
   message Activation {
     enum Kind {

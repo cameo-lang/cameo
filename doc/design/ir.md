@@ -402,18 +402,19 @@ waits. A pause wakes a waiter that can pause, which then stands where
 any activation stands before an instruction. The dump holds what it
 waits for, and the resumed run waits again.
 
-**Park, then freeze.** A worker that comes to an instruction it can
-pause before, with a pause asked for, parks: it stops there with its
-goroutine and says so. A waiter that cannot pause, since it is inside a
-nested loop, does not park. It marks the promise it waits for as needed,
-and the worker of a needed promise does not park, or goes on when it had
-parked, and passes the need on to what it awaits itself. So a chain of
-calls that something unpausable waits for runs to its end.
+**Freeze, and thaw when needed.** A worker that comes to an instruction
+it can pause before, with a pause asked for, freezes: it gives up its
+goroutine and keeps its stack of activations. A waiter that cannot pause,
+since it is inside a nested loop, marks the promise it waits for as
+needed. The worker of a needed promise does not freeze, or is thawed, on
+a goroutine of its own, when it had frozen, and it passes the need on to
+what it awaits itself. So a chain of calls that something unpausable
+waits for runs to its end. A call no worker took yet stays queued while a
+pause is asked for, unless something needs it, which then runs it.
 
-`Dump` waits until every call `async` started is settled or parked and
-not needed. Nothing is running then, so nothing can come to need a
-parked worker. It tells the parked workers to freeze, each gives up its
-goroutine and keeps its stack of activations, and the dump writes:
+`Dump` waits until every call `async` started is settled, queued, or
+frozen and not needed. Nothing is running then, so nothing can come to
+need a frozen worker, and the dump writes:
 
 | | in the dump |
 |---|---|

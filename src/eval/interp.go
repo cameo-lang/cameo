@@ -11,6 +11,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/cameo-lang/cameo/src/cameopb"
 	"github.com/cameo-lang/cameo/src/lib"
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/protogen"
@@ -54,10 +55,16 @@ type Interp struct {
 	// resuming is the frames and scopes of the dump a run resumes from
 	// while it is read, and resumed its activations, which Run continues.
 	pausable bool
-	frozen   []*machine
-	dumping  *stackDump
-	resuming *stackRestore
-	resumed  []*machine
+	// settles is, for a worker, the promise its call settles.
+	settles *Promise
+	// wakeCalls and wakeWorkers are the calls and the workers of the dump
+	// a run resumed from, until Run starts them (wake).
+	wakeCalls   []*cameopb.Dump_Call
+	wakeWorkers []*cameopb.Dump_Worker
+	frozen      []*machine
+	dumping     *stackDump
+	resuming    *stackRestore
+	resumed     []*machine
 	// restored holds the classes of the dump the run resumed from, by the
 	// id the dump refers to them with; nil for a run that began at its
 	// start.
@@ -217,6 +224,7 @@ func New(stdout, stderr io.Writer) *Interp {
 		states:    &libStates{m: map[string]any{}},
 	}
 	in.rng = object.NewRandom(object.NewSeed())
+	in.promises.calls.pause = in.pausing
 	return in
 }
 
@@ -235,7 +243,7 @@ func (in *Interp) Run(file string, prog *syntax.Program) error {
 		// A run that paused goes on where it paused when it is run again:
 		// its host did not want the dump, or could not have one.
 		in.paused = false
-		in.pausing.reset()
+		in.goOnPaused()
 		in.from, in.resumed, in.frozen = in.next, in.frozen, nil
 		if in.dbgTop != nil {
 			fr = in.dbgTop.fr
@@ -252,6 +260,10 @@ func (in *Interp) Run(file string, prog *syntax.Program) error {
 	}
 	var v object.Value = object.Nil
 	p, err := in.program(file, prog)
+	if err == nil && (in.wakeCalls != nil || in.wakeWorkers != nil) {
+		// A resumed run: the calls async had started go on with it.
+		err = in.wake()
+	}
 	for i := in.from; err == nil && i < len(prog.Body); i++ {
 		inside := len(in.resumed) > 0
 		if in.pausing.flag.Load() {
