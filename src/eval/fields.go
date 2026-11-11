@@ -16,23 +16,55 @@ import (
 // evalFieldDecl declares typed fields in a class body: each gets the
 // number its declaration gives, or the one protogen.FieldNumber derives
 // from its name, its default checked against its type, and a reader.
-func (in *Interp) evalFieldDecl(n *syntax.FieldDecl, env *Env, fr *Frame) (object.Value, error) {
-	cls := fr.DefTarget
-	if cls == nil || cls.IsModule || !isClassValue(fr.Self, cls) {
-		return object.Value{}, in.raise(object.CameoError, n.Line(), "%s :%s: a field belongs to a class body", n.Type, n.Names[0])
+func (in *Interp) evalFieldDecl(sn *syntax.FieldDecl, env *Env, fr *Frame) (object.Value, error) {
+	n := &fieldDecl{Type: sn.Type, Names: sn.Names, Number: sn.Number, Of: sn.Of, Key: sn.Key, Value: sn.Value, Values: sn.Values, line: sn.Line()}
+	if err := in.fieldTarget(n, fr); err != nil {
+		return object.Value{}, err
 	}
-	typ, err := in.fieldType(n, env, fr)
+	typ, err := in.fieldType(n, func() (object.Value, error) { return in.eval(sn.Ref, env, fr) }, fr)
 	if err != nil {
 		return object.Value{}, err
 	}
 	var def object.Value
-	if n.Default != nil {
-		v, err := in.eval(n.Default, env, fr)
+	if sn.Default != nil {
+		v, err := in.eval(sn.Default, env, fr)
 		if err != nil {
 			return object.Value{}, err
 		}
 		def = v
 	}
+	return in.declareFields(n, typ, def, fr)
+}
+
+// fieldDecl is a field declaration as its statement wrote it, but for the
+// class of a ref and the default, which are evaluated.
+type fieldDecl struct {
+	Type   string
+	Names  []string
+	Number int64
+	Of     string
+	Key    string
+	Value  string
+	Values []string
+	line   int
+}
+
+func (n *fieldDecl) Line() int { return n.line }
+
+// fieldTarget is the error for a field declared outside a class body, or
+// nil.
+func (in *Interp) fieldTarget(n *fieldDecl, fr *Frame) error {
+	cls := fr.DefTarget
+	if cls == nil || cls.IsModule || !isClassValue(fr.Self, cls) {
+		return in.raise(object.CameoError, n.Line(), "%s :%s: a field belongs to a class body", n.Type, n.Names[0])
+	}
+	return nil
+}
+
+// declareFields declares the fields of n in the class whose body fr runs,
+// with the type typ and the default def, the zero Value for none.
+func (in *Interp) declareFields(n *fieldDecl, typ *object.FieldType, def object.Value, fr *Frame) (object.Value, error) {
+	cls := fr.DefTarget
 	for _, name := range n.Names {
 		if i, exists := cls.FieldIndex[name]; exists {
 			if same, err := in.declaredBefore(cls, i, typ, def, n, fr); err != nil || same {
@@ -77,7 +109,7 @@ func (in *Interp) evalFieldDecl(n *syntax.FieldDecl, env *Env, fr *Frame) (objec
 // body reopening the class declares again, came from the class reopened
 // and the declaration gives it again: the same type, the same default,
 // and the same number when it names one.
-func (in *Interp) declaredBefore(cls *object.Class, i int, typ *object.FieldType, def object.Value, n *syntax.FieldDecl, fr *Frame) (bool, error) {
+func (in *Interp) declaredBefore(cls *object.Class, i int, typ *object.FieldType, def object.Value, n *fieldDecl, fr *Frame) (bool, error) {
 	f := cls.Fields[i]
 	if fr.Reopened == nil || f.Owner != cls || describeType(f.Type) != describeType(typ) || (n.Number != 0 && n.Number != f.Number) {
 		return false, nil
@@ -114,7 +146,7 @@ func reader(name string) object.NativeFn {
 // fieldNumber returns the number of field name: the one n declares, which
 // no field may hold and no reserved statement claim, or the one
 // protogen.FieldNumber derives from the name.
-func (in *Interp) fieldNumber(cls *object.Class, name string, n *syntax.FieldDecl) (int64, error) {
+func (in *Interp) fieldNumber(cls *object.Class, name string, n *fieldDecl) (int64, error) {
 	taken := func(number int64) bool {
 		for _, f := range cls.Fields {
 			if f.Number == number {
@@ -142,7 +174,7 @@ func (in *Interp) fieldNumber(cls *object.Class, name string, n *syntax.FieldDec
 
 // fieldType builds a field's type from its declaration, resolving the
 // classes it names now.
-func (in *Interp) fieldType(n *syntax.FieldDecl, env *Env, fr *Frame) (*object.FieldType, error) {
+func (in *Interp) fieldType(n *fieldDecl, ref func() (object.Value, error), fr *Frame) (*object.FieldType, error) {
 	if st := object.ScalarField(n.Type); st != nil {
 		return st, nil
 	}
@@ -162,7 +194,7 @@ func (in *Interp) fieldType(n *syntax.FieldDecl, env *Env, fr *Frame) (*object.F
 		}
 		t.Elem = elem
 	case "ref":
-		v, err := in.eval(n.Ref, env, fr)
+		v, err := ref()
 		if err != nil {
 			return nil, err
 		}
@@ -467,6 +499,22 @@ func article(noun string) string {
 }
 
 func (in *Interp) evalReserved(n *syntax.Reserved, fr *Frame) (object.Value, error) {
+	return in.reserve(reserved{Number: n.Number, Name: n.Name, line: n.Line()}, fr)
+}
+
+// reserved is what a reserved statement declares: a field number, and a
+// name or "".
+type reserved struct {
+	Number int64
+	Name   string
+	line   int
+}
+
+func (n reserved) Line() int { return n.line }
+
+// reserve keeps a field number, and a name when n has one, from the
+// fields of the class whose body fr runs.
+func (in *Interp) reserve(n reserved, fr *Frame) (object.Value, error) {
 	cls := fr.DefTarget
 	if cls == nil || cls.IsModule || !isClassValue(fr.Self, cls) {
 		return object.Value{}, in.raise(object.CameoError, n.Line(), "reserved belongs to a class body")
@@ -493,22 +541,52 @@ func (in *Interp) evalReserved(n *syntax.Reserved, fr *Frame) (object.Value, err
 }
 
 func (in *Interp) evalInclude(n *syntax.Include, env *Env, fr *Frame) (object.Value, error) {
+	if err := in.includeTarget(n.Extend, fr, n.Line()); err != nil {
+		return object.Value{}, err
+	}
+	v, err := in.eval(n.Module, env, fr)
+	if err != nil {
+		return object.Value{}, err
+	}
+	return in.include(v, n.Extend, fr, n.Line())
+}
+
+// topLevelInclude reports whether an include in fr is the top level's,
+// which takes Cameo alone; extend is never.
+func (in *Interp) topLevelInclude(extend bool, fr *Frame) bool {
+	return fr.DefTarget == in.mainClass && !extend
+}
+
+// includeTarget is the error for an include or extend outside a class or
+// module body and not at the top level, or nil.
+func (in *Interp) includeTarget(extend bool, fr *Frame, line int) error {
+	if in.topLevelInclude(extend, fr) {
+		return nil
+	}
+	if cls := fr.DefTarget; cls == nil || !isClassValue(fr.Self, cls) {
+		return in.raise(object.CameoError, line, "include belongs to a class or module body")
+	}
+	return nil
+}
+
+// include adds the module v to the class whose body fr runs, or with
+// extend to the class object; at the top level it takes Cameo.
+func (in *Interp) include(v object.Value, extend bool, fr *Frame, line int) (object.Value, error) {
+	if err := in.includeTarget(extend, fr, line); err != nil {
+		return object.Value{}, err
+	}
 	cls := fr.DefTarget
-	if cls == in.mainClass && !n.Extend {
+	if in.topLevelInclude(extend, fr) {
 		// At the top level include takes Cameo alone, and brings it to
 		// every method, as Ruby's top-level include brings a module to
 		// Object. Cameo::Runner belongs in the class that runs the work,
 		// where a Ruby program includes it too.
-		v, err := in.eval(n.Module, env, fr)
-		if err != nil {
-			return object.Value{}, err
-		}
 		mod, ok := v.AsClass()
 		if ok && mod == object.CameoRunnerModule {
-			return object.Value{}, in.raise(object.CameoError, n.Line(), "include Cameo::Runner belongs in the class that runs the work; at the top level include Cameo")
+			return object.Value{}, in.raise(object.CameoError, line, "include Cameo::Runner belongs in the class that runs the work; at the top level include Cameo")
 		}
 		if !ok || mod != object.CameoModule {
-			return object.Value{}, in.raise(object.CameoError, n.Line(), "include at the top level takes Cameo; another module belongs in a class or module body")
+			return object.Value{}, in.raise(object.CameoError, line, "include at the top level takes Cameo; another module belongs in a class or module body")
 		}
 		if !in.cameoTop {
 			in.mainClass.Include(object.CameoModule)
@@ -517,24 +595,17 @@ func (in *Interp) evalInclude(n *syntax.Include, env *Env, fr *Frame) (object.Va
 		}
 		return object.Nil, nil
 	}
-	if cls == nil || !isClassValue(fr.Self, cls) {
-		return object.Value{}, in.raise(object.CameoError, n.Line(), "include belongs to a class or module body")
-	}
-	v, err := in.eval(n.Module, env, fr)
-	if err != nil {
-		return object.Value{}, err
-	}
 	mod, ok := v.AsClass()
 	if !ok || !mod.IsModule {
-		return object.Value{}, in.raise(object.TypeError, n.Line(), "wrong argument type %s (expected Module)", typeName(v))
+		return object.Value{}, in.raise(object.TypeError, line, "wrong argument type %s (expected Module)", typeName(v))
 	}
 	if mod == cls || mod.IsA(cls) {
-		return object.Value{}, in.raise(object.ArgumentError, n.Line(), "cyclic include detected")
+		return object.Value{}, in.raise(object.ArgumentError, line, "cyclic include detected")
 	}
-	if n.Extend {
+	if extend {
 		if mod.Extended != nil {
 			if err := mod.Extended(in, cls); err != nil {
-				return object.Value{}, withLine(err, n.Line())
+				return object.Value{}, withLine(err, line)
 			}
 		}
 		cls.Extend(mod)
@@ -542,7 +613,7 @@ func (in *Interp) evalInclude(n *syntax.Include, env *Env, fr *Frame) (object.Va
 		cls.Include(mod)
 		if mod.Included != nil {
 			if err := mod.Included(in, cls); err != nil {
-				return object.Value{}, withLine(err, n.Line())
+				return object.Value{}, withLine(err, line)
 			}
 		}
 	}
@@ -746,12 +817,8 @@ func (in *Interp) inheritFields(cls, super *object.Class) error {
 // attribute its parent has, with a default of its own. The class must be
 // open: a declaration after the body ended is refused as a write is.
 func (in *Interp) evalAttrDecl(n *syntax.AttrDecl, env *Env, fr *Frame) (object.Value, error) {
-	cls := fr.DefTarget
-	if cls == nil || cls.IsModule || !isClassValue(fr.Self, cls) {
-		return object.Value{}, in.raise(object.CameoError, n.Line(), "attribute :%s: an attribute belongs to a class body", n.Names[0])
-	}
-	if !cls.Open {
-		return object.Value{}, in.raise(object.CameoError, n.Line(), "attribute :%s: %s is sealed: an attribute is declared while the class body runs", n.Names[0], cls.QualifiedName())
+	if err := in.attrTarget(n.Names, fr, n.Line()); err != nil {
+		return object.Value{}, err
 	}
 	def := object.Nil
 	if n.Default != nil {
@@ -761,21 +828,44 @@ func (in *Interp) evalAttrDecl(n *syntax.AttrDecl, env *Env, fr *Frame) (object.
 		}
 		def = v
 	}
-	for _, name := range n.Names {
+	return in.declareAttrs(n.Names, def, fr, n.Line())
+}
+
+// attrTarget is the error for an attribute declared outside a class body,
+// or after the body ended; nil otherwise.
+func (in *Interp) attrTarget(names []string, fr *Frame, line int) error {
+	cls := fr.DefTarget
+	if cls == nil || cls.IsModule || !isClassValue(fr.Self, cls) {
+		return in.raise(object.CameoError, line, "attribute :%s: an attribute belongs to a class body", names[0])
+	}
+	if !cls.Open {
+		return in.raise(object.CameoError, line, "attribute :%s: %s is sealed: an attribute is declared while the class body runs", names[0], cls.QualifiedName())
+	}
+	return nil
+}
+
+// declareAttrs declares the attributes names of the class whose body fr
+// runs, with the default def.
+func (in *Interp) declareAttrs(names []string, def object.Value, fr *Frame, line int) (object.Value, error) {
+	if err := in.attrTarget(names, fr, line); err != nil {
+		return object.Value{}, err
+	}
+	cls := fr.DefTarget
+	for _, name := range names {
 		if before, owner := attrDefault(cls, name); owner != nil {
 			switch {
 			case fr.Reopened != nil && object.Equal(before, def):
 				continue
 			case fr.Reopened != nil:
-				return object.Value{}, in.raise(object.CameoError, n.Line(), "attribute %s is already declared in %s with another default", name, cls.QualifiedName())
+				return object.Value{}, in.raise(object.CameoError, line, "attribute %s is already declared in %s with another default", name, cls.QualifiedName())
 			case owner == cls:
-				return object.Value{}, in.raise(object.CameoError, n.Line(), "attribute %s is already declared in %s", name, cls.QualifiedName())
+				return object.Value{}, in.raise(object.CameoError, line, "attribute %s is already declared in %s", name, cls.QualifiedName())
 			}
 			// A subclass declares an inherited attribute with a default
 			// of its own.
 		}
 		if m := cls.LookupSingleton(name); m != nil && m.Owner == cls {
-			return object.Value{}, in.raise(object.CameoError, n.Line(), "attribute %s: %s already defines a class method %s", name, cls.QualifiedName(), name)
+			return object.Value{}, in.raise(object.CameoError, line, "attribute %s: %s already defines a class method %s", name, cls.QualifiedName(), name)
 		}
 		cls.Attrs[name] = def
 		cls.AttrDefaults[name] = def

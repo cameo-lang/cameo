@@ -7,8 +7,13 @@ import (
 	"strings"
 	"testing"
 
+	"google.golang.org/protobuf/proto"
+
 	"github.com/cameo-lang/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/cameopb"
 	"github.com/cameo-lang/cameo/src/eval"
+	"github.com/cameo-lang/cameo/src/ir"
+	"github.com/cameo-lang/cameo/src/syntax"
 )
 
 // examplesDir is the corpus of scripts that specify the language, relative
@@ -121,16 +126,54 @@ proc #1 block(x)
 	if out.String() != want {
 		t.Fatalf("listing differs\n--- got ---\n%s--- want ---\n%s", out.String(), want)
 	}
-	class := filepath.Join(dir, "class.cameo")
-	if err := os.WriteFile(class, []byte("x = 1\nclass Point\nend\n"), 0o644); err != nil {
+	broken := filepath.Join(dir, "broken.cameo")
+	if err := os.WriteFile(broken, []byte("def foo(\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	err := irListing(class, &out)
-	if err == nil || !strings.Contains(err.Error(), "class.cameo: line 2: *syntax.ClassDef does not compile to the IR yet") {
-		t.Fatalf("cameo ir on a class: %v", err)
+	if status := run([]string{"ir", broken}); status != 1 {
+		t.Fatalf("exit status %d for a script that does not parse, want 1", status)
 	}
-	if status := run([]string{"ir", class}); status != 1 {
-		t.Fatalf("exit status %d for a script that does not compile, want 1", status)
+}
+
+// TestExamplesCompileToTheIR proves every example compiles to a unit, all
+// of it, and that the unit reads back from its wire form as it was
+// written: no form of the language the corpus uses is left to the tree
+// walker.
+func TestExamplesCompileToTheIR(t *testing.T) {
+	scripts, err := filepath.Glob(filepath.Join(examplesDir, "*.cameo"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	compiled := 0
+	for _, script := range scripts {
+		src, err := os.ReadFile(script)
+		if err != nil {
+			t.Fatal(err)
+		}
+		prog, err := syntax.Parse(script, string(src))
+		if err != nil {
+			// An example that must fail the checker has no IR.
+			continue
+		}
+		unit, err := ir.Compile(script, prog)
+		if err != nil {
+			t.Fatalf("%s: %v", script, err)
+		}
+		data, err := proto.Marshal(unit)
+		if err != nil {
+			t.Fatalf("%s: %v", script, err)
+		}
+		back := &cameopb.Unit{}
+		if err := proto.Unmarshal(data, back); err != nil {
+			t.Fatalf("%s: %v", script, err)
+		}
+		if ir.Listing(back) != ir.Listing(unit) {
+			t.Fatalf("%s: the unit reads back differently", script)
+		}
+		compiled++
+	}
+	if compiled == 0 {
+		t.Fatalf("no example compiled under %s", examplesDir)
 	}
 }
 

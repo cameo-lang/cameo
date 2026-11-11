@@ -338,17 +338,17 @@ func (d *Debugger) frameName(f *dbgFrame) string {
 	if strings.HasPrefix(f.name, "block in ") || f.fr == nil || f.fr.Method == nil {
 		return f.name
 	}
-	def, ok := f.fr.Method.Body.(*syntax.Def)
-	if !ok {
+	if f.fr.Method.Body == nil {
 		return f.name
 	}
+	_, ps, _, _ := d.in.methodCode(f.fr.Method)
 	var args []string
-	for _, p := range def.Params.Positional {
+	for _, p := range ps.Positional {
 		if v, ok := f.env.lookup(p.Name); ok {
 			args = append(args, p.Name+"="+d.inspect(v))
 		}
 	}
-	for _, p := range def.Params.Keywords {
+	for _, p := range ps.Keywords {
 		if v, ok := f.env.lookup(p.Name); ok {
 			args = append(args, p.Name+": "+d.inspect(v))
 		}

@@ -199,7 +199,9 @@ type Op int32
 
 const (
 	Op_OP_UNSPECIFIED Op = 0
-	// CONST(constant): -> value. An empty constant is nil.
+	// CONST(constant): -> value. An empty constant is nil. A bytes constant
+	// is a String whose bytes are not valid UTF-8, which a protobuf string
+	// cannot hold.
 	Op_CONST Op = 1
 	// SYM(name): -> symbol.
 	Op_SYM Op = 2

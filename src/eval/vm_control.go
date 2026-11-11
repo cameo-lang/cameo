@@ -30,6 +30,67 @@ func (m *machine) regexp(c *cameopb.Code) (object.Value, error) {
 	return in.interpolateRegexp(len(c.Code), options, line, part)
 }
 
+// define runs a CLASS or a MODULE: it binds the class or module to its
+// name and runs its body, a proc of the unit, in a scope and frame of its
+// own.
+func (m *machine) define(c *cameopb.Code) error {
+	in, fr, line := m.in, m.fr, int(c.Line)
+	var super object.Value
+	hasSuper := has(c, cameopb.Flag_FLAG_SUPER)
+	if hasSuper {
+		super = m.pop()
+	}
+	if has(c, cameopb.Flag_FLAG_SCOPED) {
+		scoped, err := in.frameIn(m.pop(), fr, line)
+		if err != nil {
+			return err
+		}
+		fr = scoped
+	}
+	decl := classDecl{Name: m.name(c, 0), Digest: m.name(c, 2), line: line}
+	p := &irProc{unit: m.unit, proc: m.unit.Procs[c.Args[1].GetProc()]}
+	body := func(env *Env, fr *Frame) (object.Value, error) { return in.runBody(p, env, fr) }
+	var v object.Value
+	var err error
+	if c.Op == cameopb.Op_CLASS {
+		v, err = in.defineClass(decl, super, hasSuper, body, fr)
+	} else {
+		v, err = in.defineModule(decl, body, fr)
+	}
+	if err != nil {
+		return err
+	}
+	m.push(v)
+	return nil
+}
+
+// field runs a FIELD: a typed field declaration of a class body.
+func (m *machine) field(c *cameopb.Code) error {
+	in, fr := m.in, m.fr
+	src := c.Args[0].GetField()
+	n := &fieldDecl{Type: src.GetType(), Names: src.GetNames(), Number: src.GetNumber(), Of: src.GetOf(), Key: src.GetKey(), Value: src.GetValue(), Values: src.GetValues(), line: int(c.Line)}
+	var def, ref object.Value
+	if has(c, cameopb.Flag_FLAG_DEFAULT) {
+		def = m.pop()
+	}
+	if has(c, cameopb.Flag_FLAG_REF) {
+		ref = m.pop()
+	}
+	if err := in.fieldTarget(n, fr); err != nil {
+		return err
+	}
+	typ, err := in.fieldType(n, func() (object.Value, error) { return ref, nil }, fr)
+	if err != nil {
+		return err
+	}
+	v, err := in.declareFields(n, typ, def, fr)
+	if err != nil {
+		return err
+	}
+	m.push(v)
+	return nil
+}
+
 // begin runs a BEGIN: begin/rescue/else/ensure. Its lists are the body,
 // the else and the ensure, then the classes and the body of each rescue
 // clause.
