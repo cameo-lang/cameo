@@ -48,10 +48,16 @@ func resumed(t *testing.T, src string) (before, after string, dump *Dump) {
 	}
 }
 
-// whole runs src without its pauses and returns what it printed.
+// whole runs src in one go, with a Test.pause that does nothing, and
+// returns what it printed.
 func whole(t *testing.T, src string) string {
 	t.Helper()
-	prog, out := pausing(t, strings.ReplaceAll(src, "Test.pause\n", ""))
+	var out bytes.Buffer
+	prog, err := Load("t.cameo", src, &out, &out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	prog.Module("Test").Def("pause", func([]any, map[string]any, *Block) (any, error) { return nil, nil })
 	if err := prog.Run(); err != nil {
 		t.Fatal(err)
 	}

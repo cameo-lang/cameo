@@ -26,6 +26,10 @@ type stackDump struct {
 func stackFrames(acts []*machine) *stackDump {
 	sd := &stackDump{frames: map[*Frame]uint32{}, scopes: map[*Env]uint32{}}
 	for _, m := range acts {
+		if m.kind == actStep {
+			// A builtin has neither.
+			continue
+		}
 		if _, ok := sd.frames[m.fr]; !ok {
 			sd.frames[m.fr] = uint32(len(sd.frameList))
 			sd.frameList = append(sd.frameList, m.fr)
@@ -82,8 +86,33 @@ func (in *Interp) dumpStack(d *cameopb.Dump, enc *protogen.Encoder, classes *cla
 	}
 	for i, m := range acts {
 		where := in.actName(m)
-		a := &cameopb.Dump_Activation{Scope: sd.scopes[m.env], Frame: sd.frames[m.fr], Line: int32(m.line())}
+		a := &cameopb.Dump_Activation{Line: int32(m.line())}
+		if m.kind != actStep {
+			a.Scope, a.Frame = sd.scopes[m.env], sd.frames[m.fr]
+		}
 		switch m.kind {
+		case actStep:
+			st := m.stepper
+			a.Kind = cameopb.Dump_Activation_BUILTIN
+			b := &cameopb.Dump_Builtin{Method: in.methodRef(classes, st.builtin), Rescue: st.rescue}
+			b.Self = value("self of "+where, st.call.Self)
+			for _, arg := range st.call.Args {
+				b.Args = append(b.Args, value("an argument of "+where, arg))
+			}
+			if st.call.Kw != nil {
+				kw, err := enc.Message(object.MapValue(st.call.Kw))
+				if err != nil {
+					return fmt.Errorf("the keywords of %s: %w", where, err)
+				}
+				b.Kw = kw
+			}
+			if b.Block = value("the block of "+where, st.call.Block); b.Block.Missing != "" {
+				return fmt.Errorf("the block of %s: %s", where, b.Block.Missing)
+			}
+			for _, v := range st.state {
+				b.State = append(b.State, value("what "+where+" keeps", v))
+			}
+			a.Builtin = b
 		case actMethod:
 			a.Kind = cameopb.Dump_Activation_METHOD
 			a.Unit, a.Proc = procRef(m.fr.Method.Body.(*irProc))
@@ -92,7 +121,7 @@ func (in *Interp) dumpStack(d *cameopb.Dump, enc *protogen.Encoder, classes *cla
 			a.Unit, a.Proc = procRef(m.proc.IR)
 			// A block's activation is of the block the frame below
 			// yielded to; the resume finds the proc there.
-			if i == 0 || blockTarget(acts[i-1].fr.Block) != any(m.proc) {
+			if i == 0 || blockTarget(acts[i-1].yields()) != any(m.proc) {
 				return fmt.Errorf("the block %s runs was not yielded to by the call below it", where)
 			}
 		default:
@@ -131,11 +160,7 @@ func (in *Interp) dumpStack(d *cameopb.Dump, enc *protogen.Encoder, classes *cla
 		what := fmt.Sprintf("of frame %d", i)
 		f.Self = value("self "+what, fr.Self)
 		if m := fr.Method; m != nil {
-			f.Method = &cameopb.Binding_Method{Name: m.Name}
-			if m.Owner != nil && m.Owner != in.mainClass {
-				f.Method.Owner = classes.ref(m.Owner)
-				f.Method.Singleton = m.Owner.SingletonMethods[m.Name] == m
-			}
+			f.Method = in.methodRef(classes, m)
 		}
 		for _, a := range fr.Args {
 			f.Args = append(f.Args, value("an argument "+what, a))
@@ -177,6 +202,44 @@ func (in *Interp) dumpStack(d *cameopb.Dump, enc *protogen.Encoder, classes *cla
 	return nil
 }
 
+// methodRef names the method m as a dump does: by the class that defines
+// it, "" for the top level, and whether it is a class method.
+func (in *Interp) methodRef(classes *classDump, m *object.Method) *cameopb.Binding_Method {
+	ref := &cameopb.Binding_Method{Name: m.Name}
+	if m.Owner != nil && m.Owner != in.mainClass {
+		ref.Owner = classes.ref(m.Owner)
+		ref.Singleton = m.Owner.SingletonMethods[m.Name] == m
+	}
+	return ref
+}
+
+// method finds the method a dump names with ref.
+func (in *Interp) method(ref *cameopb.Binding_Method) (*object.Method, error) {
+	owner := in.mainClass
+	if ref.GetOwner() != "" {
+		if owner = in.classRef(ref.GetOwner()); owner == nil {
+			return nil, fmt.Errorf("no class %s", ref.GetOwner())
+		}
+	}
+	m := owner.Methods[ref.GetName()]
+	if ref.GetSingleton() {
+		m = owner.SingletonMethods[ref.GetName()]
+	}
+	if m == nil {
+		return nil, fmt.Errorf("no method %s in %s", ref.GetName(), owner.QualifiedName())
+	}
+	return m, nil
+}
+
+// yields returns the block the activation yields to: the block of its
+// frame, or for a builtin the block it was called with.
+func (m *machine) yields() object.Value {
+	if m.kind == actStep {
+		return m.stepper.call.Block
+	}
+	return m.fr.Block
+}
+
 // procRef names the proc p as a dump does: the digest of its unit and its
 // index in the unit.
 func procRef(p *irProc) (string, uint32) {
@@ -192,6 +255,8 @@ func procRef(p *irProc) (string, uint32) {
 // the statement it is.
 func (in *Interp) actName(m *machine) string {
 	switch {
+	case m.kind == actStep:
+		return methodName(m.stepper.builtin, m.stepper.call.Self)
 	case m.kind == actMethod:
 		return methodName(m.fr.Method, m.fr.Self)
 	case m.kind == actBlock && m.fr.Method != nil:
@@ -205,6 +270,9 @@ func (in *Interp) actName(m *machine) string {
 // line is the line of the activation's next instruction: the innermost
 // list that has one.
 func (m *machine) line() int {
+	if len(m.cursors) == 0 {
+		return 0
+	}
 	for i := len(m.cursors) - 1; i >= 0; i-- {
 		if cur := m.cursors[i]; cur.next < len(cur.code) {
 			return int(cur.code[cur.next].Line)
@@ -427,6 +495,56 @@ func (in *Interp) restoreStack(dec *protogen.Decoder, d *cameopb.Dump, script *p
 	for i, a := range d.GetStack() {
 		m := &machine{in: in}
 		var err error
+		// site is the instruction of the activation below that called;
+		// a builtin calls its block from no instruction.
+		if i > 0 && acts[i-1].kind != actStep {
+			below := acts[i-1].cursors[len(acts[i-1].cursors)-1]
+			if below.next == 0 {
+				return fmt.Errorf("activation %d of the dump was called by no instruction", i)
+			}
+			m.site = below.code[below.next-1]
+		}
+		if a.GetKind() == cameopb.Dump_Activation_BUILTIN {
+			b := a.GetBuiltin()
+			meth, err := in.method(b.GetMethod())
+			if err != nil {
+				return fmt.Errorf("activation %d of the dump: %w", i, err)
+			}
+			if meth.Step == nil || i == 0 {
+				return fmt.Errorf("activation %d of the dump is inside %s, which this cameo cannot resume inside", i, meth.Name)
+			}
+			st := &stepping{builtin: meth, call: &object.Call{}, rescue: b.GetRescue()}
+			if st.call.Self, err = value(b.GetSelf()); err != nil {
+				return err
+			}
+			for _, arg := range b.GetArgs() {
+				v, err := value(arg)
+				if err != nil {
+					return err
+				}
+				st.call.Args = append(st.call.Args, v)
+			}
+			if b.GetKw() != nil {
+				kw, err := dec.Value(b.GetKw())
+				if err != nil {
+					return err
+				}
+				st.call.Kw = kw.Map()
+			}
+			if st.call.Block, err = value(b.GetBlock()); err != nil {
+				return err
+			}
+			for _, s := range b.GetState() {
+				v, err := value(s)
+				if err != nil {
+					return err
+				}
+				st.state = append(st.state, v)
+			}
+			m.kind, m.stepper = actStep, st
+			acts = append(acts, m)
+			continue
+		}
 		if m.fr, err = frame(a.GetFrame() + 1); err != nil {
 			return err
 		}
@@ -454,7 +572,7 @@ func (in *Interp) restoreStack(dec *protogen.Decoder, d *cameopb.Dump, script *p
 				if i == 0 {
 					return fmt.Errorf("activation 0 of the dump is a block")
 				}
-				p, ok := asProc(acts[i-1].fr.Block)
+				p, ok := asProc(acts[i-1].yields())
 				if !ok {
 					return fmt.Errorf("activation %d of the dump is a block, and the call below it has none", i)
 				}
@@ -505,14 +623,6 @@ func (in *Interp) restoreStack(dec *protogen.Decoder, d *cameopb.Dump, script *p
 				return fmt.Errorf("a value in flight in activation %d: %w", i, err)
 			}
 			m.stack = append(m.stack, v)
-		}
-		if i > 0 {
-			// The instruction of the activation below that called.
-			below := acts[i-1].cursors[len(acts[i-1].cursors)-1]
-			if below.next == 0 {
-				return fmt.Errorf("activation %d of the dump was called by no instruction", i)
-			}
-			m.site = below.code[below.next-1]
 		}
 		acts = append(acts, m)
 	}

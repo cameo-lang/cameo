@@ -106,18 +106,19 @@ func installKernel() {
 		return object.String(s), err
 	})
 	object.DefineFunction("sprintf", -1, object.Kernel.Methods["format"].Native)
-	object.DefineFunction("loop", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if err := NeedBlock(ctx, block, "loop"); err != nil {
-			return object.Value{}, err
+	// loop keeps nothing: it calls its block until the block raises
+	// StopIteration, which ends it.
+	object.DefineStepFunction("loop", 0, func(ctx object.Context, call *object.Call, state []object.Value, got object.Got) (object.Step, error) {
+		if err := NeedBlock(ctx, call.Block, "loop"); err != nil {
+			return object.Step{}, err
 		}
-		for {
-			if _, err := ctx.Yield(block); err != nil {
-				if exc, ok := err.(*object.Exception); ok && exc.Cls.IsA(object.StopIteration) {
-					return object.Nil, nil
-				}
-				return object.Value{}, err
+		if got.Raised != nil {
+			if got.Raised.Cls.IsA(object.StopIteration) {
+				return object.Done(object.Nil), nil
 			}
+			return object.Step{}, got.Raised
 		}
+		return object.Step{Rescue: true}, nil
 	})
 	object.DefineFunction("block_given?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		// The evaluator handles this for user methods; a native call site has

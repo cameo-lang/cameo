@@ -187,6 +187,14 @@ takes the proc from there, and a `break` finds its call by comparing the
 very same proc. And a completion that is a `break` or a `return` names its
 target as a frame of the dump.
 
+The step function is built too (`object/step.go`), with `Integer#times`,
+`upto`, `downto` and `loop` as the first. Its shape is the one below with
+two changes: a stepper gets what its call came to as a `Got`, which is the
+block's value or, for a stepper that asked with `Step.Rescue`, the
+exception the block raised — `loop` ends on `StopIteration` that way —
+and a stepper defined with `DefineStep` is a method Go can call as well,
+which runs every step to the end.
+
 ## The activation stack
 
 Stack A left one thing on the Go stack: where a run is. `machine.exec` calls
