@@ -60,15 +60,7 @@ func (in *Interp) dropped(recv object.Value, name string, line int) error {
 // mayMutate reports whether a call of name can be one of Ruby's mutators,
 // so that a compiled call site of any other name skips the check.
 func mayMutate(name string) bool {
-	if syntax.IsBang(name) || syntax.ReturnsCopy(name) {
-		return true
-	}
-	for _, table := range mutations {
-		if table[name] != nil {
-			return true
-		}
-	}
-	return false
+	return mutators[name] || syntax.IsBang(name) || syntax.ReturnsCopy(name)
 }
 
 // mutationFor is what name does to a value of cur's kind when it changes
@@ -174,6 +166,10 @@ func wantArgs(in *Interp, args []object.Value, n int, line int) error {
 }
 
 var mutations map[object.Kind]map[string]mutation
+
+// mutators is the name of every mutation of every kind, which mayMutate
+// reads on each call.
+var mutators map[string]bool
 
 func init() {
 	list := map[string]mutation{
@@ -449,6 +445,12 @@ func init() {
 	mutations = map[object.Kind]map[string]mutation{
 		object.KindList: list, object.KindString: str, object.KindMap: hash, object.KindSet: set,
 		object.KindBytes: str, object.KindASCII: str,
+	}
+	mutators = map[string]bool{}
+	for _, table := range mutations {
+		for name := range table {
+			mutators[name] = true
+		}
 	}
 }
 
