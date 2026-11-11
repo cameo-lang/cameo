@@ -5,7 +5,7 @@
 
 BINARY := bin/cameo
 
-.PHONY: default help prerequisites deps build tests integration-tests lint check conformance ruby-spec spec-status clean install proto proto-check
+.PHONY: default help prerequisites deps build tests integration-tests lint check ruby-spec spec-status clean install proto proto-check
 
 
 # Every test runs in UTC, the Go tests and the shell tests alike: a test
@@ -50,10 +50,6 @@ lint: prerequisites ## Run static checks
 	go vet ./...
 
 check: lint tests integration-tests ## Everything CI runs
-
-# Not part of check, which needs no tool but Go: this one needs a Ruby.
-conformance: prerequisites ## Run every example and CRuby case compiled and interpreted, and compare
-	ruby tests/conformance/run.rb
 
 # Not part of check: it needs a Ruby and a ruby/spec copy.
 spec-status: build ## Run ruby/spec's language and core, and rewrite specs/status.tsv
