@@ -50,35 +50,46 @@ func installEnumerable() {
 			return f(ctx, elems, itemKinds(self, elems), args, block)
 		})
 	}
-	withBlock("each_with_index", true, func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
-		for i, el := range elems {
-			if _, err := ctx.Yield(block, el, object.Int(i)); err != nil {
-				return object.Value{}, err
-			}
-		}
-		return object.NewList(elems...), nil
+	// walked defines a method that calls its block with the receiver's
+	// elements one after the other, as a stepper (walk.go), and without a
+	// block returns an enumerator, as withBlock's methods do.
+	walked := func(name string, sized bool, w walk) { e.DefineStep(name, -1, w.stepper(name, sized)) }
+	walked("each_with_index", true, walk{
+		yield: func(st []object.Value, el object.Value, i int) []object.Value {
+			return []object.Value{el, object.Int(i)}
+		},
+		done: func(ctx object.Context, call *object.Call, st []object.Value) (object.Value, error) {
+			return st[walkElems], nil
+		},
 	})
-	def(e, "each_with_object", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if len(args) != 1 {
-			return object.Value{}, ArgError(ctx, len(args), "1")
-		}
-		if block.IsZero() {
-			return withMemo(blockless(self, "each_with_object", args, true), self, args[0]), nil
-		}
-		elems, err := ToList(ctx, self)
-		if err != nil {
-			return object.Value{}, err
-		}
-		memo := args[0]
-		for _, el := range elems {
-			v, err := ctx.Yield(block, el, memo)
-			if err != nil {
-				return object.Value{}, err
+	// each_with_object keeps the memo: nothing mutates, so the block's
+	// value is the next memo.
+	withObject := walk{
+		elems: func(ctx object.Context, call *object.Call) ([]object.Value, []object.Value, error) {
+			elems, err := ToList(ctx, call.Self)
+			return elems, []object.Value{call.Args[0]}, err
+		},
+		yield: func(st []object.Value, el object.Value, i int) []object.Value {
+			return []object.Value{el, st[walkKept]}
+		},
+		fold: func(ctx object.Context, st []object.Value, el, v object.Value) ([]object.Value, *object.Value, error) {
+			st[walkKept] = v
+			return st, nil, nil
+		},
+		done: func(ctx object.Context, call *object.Call, st []object.Value) (object.Value, error) {
+			return st[walkKept], nil
+		},
+	}.stepper("each_with_object", true)
+	e.DefineStep("each_with_object", -1, func(ctx object.Context, call *object.Call, st []object.Value, got object.Got) (object.Step, error) {
+		if got.First {
+			if len(call.Args) != 1 {
+				return object.Step{}, ArgError(ctx, len(call.Args), "1")
 			}
-			// Nothing mutates, so the block's value is the next memo.
-			memo = v
+			if call.Block.IsZero() {
+				return object.Done(withMemo(blockless(call.Self, "each_with_object", call.Args, true), call.Self, call.Args[0])), nil
+			}
 		}
-		return memo, nil
+		return withObject(ctx, call, st, got)
 	})
 	// each_slice and each_cons check their size before they return an
 	// enumerator, as Ruby's do.
@@ -123,115 +134,86 @@ func installEnumerable() {
 		}
 		return yieldEach(ctx, windows, block)
 	})
-	mapped := func(ctx object.Context, elems []object.Value, block object.Value) ([]object.Value, error) {
-		out := make([]object.Value, 0, len(elems))
-		for _, el := range elems {
-			v, err := ctx.Yield(block, el)
-			if err != nil {
-				return nil, err
-			}
-			out = append(out, v)
-		}
-		return out, nil
+	// map gathers the block's values.
+	mapping := walk{
+		fold: func(ctx object.Context, st []object.Value, el, v object.Value) ([]object.Value, *object.Value, error) {
+			return append(st, v), nil, nil
+		},
+		done: gathered,
 	}
-	mapFn := func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
-		out, err := mapped(ctx, elems, block)
-		if err != nil {
-			return object.Value{}, err
-		}
-		return object.NewList(out...), nil
-	}
-	withBlock("map", true, mapFn)
-	withBlock("collect", true, mapFn)
-	flatMap := func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
-		out := []object.Value{}
-		for _, el := range elems {
-			v, err := ctx.Yield(block, el)
-			if err != nil {
-				return object.Value{}, err
-			}
+	walked("map", true, mapping)
+	walked("collect", true, mapping)
+	// flat_map gathers the elements of a list the block returns, and any
+	// other value itself.
+	flatMap := walk{
+		fold: func(ctx object.Context, st []object.Value, el, v object.Value) ([]object.Value, *object.Value, error) {
 			if l, ok := v.AsList(); ok {
-				out = append(out, l.Elems...)
-			} else {
-				out = append(out, v)
+				return append(st, l.Elems...), nil, nil
 			}
-		}
-		return object.NewList(out...), nil
+			return append(st, v), nil, nil
+		},
+		done: gathered,
 	}
-	withBlock("flat_map", true, flatMap)
-	withBlock("collect_concat", true, flatMap)
-	withBlock("filter_map", true, func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
-		out := []object.Value{}
-		for _, el := range elems {
-			v, err := ctx.Yield(block, el)
-			if err != nil {
-				return object.Value{}, err
-			}
+	walked("flat_map", true, flatMap)
+	walked("collect_concat", true, flatMap)
+	walked("filter_map", true, walk{
+		fold: func(ctx object.Context, st []object.Value, el, v object.Value) ([]object.Value, *object.Value, error) {
 			if v.Truthy() {
-				out = append(out, v)
+				st = append(st, v)
 			}
-		}
-		return object.NewList(out...), nil
+			return st, nil, nil
+		},
+		done: gathered,
 	})
-	selected := func(ctx object.Context, elems []object.Value, block object.Value, keep bool) ([]object.Value, error) {
-		out := []object.Value{}
-		for _, el := range elems {
-			v, err := ctx.Yield(block, el)
-			if err != nil {
-				return nil, err
-			}
-			if v.Truthy() == keep {
-				out = append(out, el)
-			}
+	// select gathers the elements the block is true for, reject the
+	// others.
+	selecting := func(keep bool) walk {
+		return walk{
+			fold: func(ctx object.Context, st []object.Value, el, v object.Value) ([]object.Value, *object.Value, error) {
+				if v.Truthy() == keep {
+					st = append(st, el)
+				}
+				return st, nil, nil
+			},
+			done: gathered,
 		}
-		return out, nil
 	}
-	selectFn := func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
-		out, err := selected(ctx, elems, block, true)
-		if err != nil {
-			return object.Value{}, err
-		}
-		return object.NewList(out...), nil
-	}
-	withBlock("select", true, selectFn)
-	withBlock("filter", true, selectFn)
-	withBlock("find_all", true, selectFn)
-	withBlock("reject", true, func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
-		out, err := selected(ctx, elems, block, false)
-		if err != nil {
-			return object.Value{}, err
-		}
-		return object.NewList(out...), nil
+	walked("select", true, selecting(true))
+	walked("filter", true, selecting(true))
+	walked("find_all", true, selecting(true))
+	walked("reject", true, selecting(false))
+	// partition keeps what the block said of each element, and sorts the
+	// elements by it when the walk is through.
+	walked("partition", true, walk{
+		fold: func(ctx object.Context, st []object.Value, el, v object.Value) ([]object.Value, *object.Value, error) {
+			return append(st, object.Bool(v.Truthy())), nil, nil
+		},
+		done: func(ctx object.Context, call *object.Call, st []object.Value) (object.Value, error) {
+			yes, no := []object.Value{}, []object.Value{}
+			for i, el := range st[walkElems].List().Elems {
+				if kept(st)[i].Truthy() {
+					yes = append(yes, el)
+				} else {
+					no = append(no, el)
+				}
+			}
+			return object.NewList(object.NewList(yes...), object.NewList(no...)), nil
+		},
 	})
-	withBlock("partition", true, func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
-		yes, no := []object.Value{}, []object.Value{}
-		for _, el := range elems {
-			v, err := ctx.Yield(block, el)
-			if err != nil {
-				return object.Value{}, err
-			}
+	// find ends at the first element the block is true for.
+	finding := walk{
+		fold: func(ctx object.Context, st []object.Value, el, v object.Value) ([]object.Value, *object.Value, error) {
 			if v.Truthy() {
-				yes = append(yes, el)
-			} else {
-				no = append(no, el)
+				return st, &el, nil
 			}
-		}
-		return object.NewList(object.NewList(yes...), object.NewList(no...)), nil
-	})
-	find := func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
-		for _, el := range elems {
-			v, err := ctx.Yield(block, el)
-			if err != nil {
-				return object.Value{}, err
-			}
-			if v.Truthy() {
-				return el, nil
-			}
-		}
-		return object.Nil, nil
+			return st, nil, nil
+		},
+		done: func(ctx object.Context, call *object.Call, st []object.Value) (object.Value, error) {
+			return object.Nil, nil
+		},
 	}
-	withBlock("find", false, find)
-	withBlock("detect", false, find)
+	walked("find", false, finding)
+	walked("detect", false, finding)
 	def(e, "find_index", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) == 0 && block.IsZero() {
 			return blockless(self, "find_index", nil, false), nil
@@ -979,7 +961,7 @@ func installUserEnumerable() {
 	sort.Strings(names)
 	for _, name := range names {
 		m := e.Methods[name]
-		native, name := m.Native, name
+		native, step, name := m.Native, m.Step, name
 		def(e, name, m.Arity, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			if self.Kind() != object.KindInstance {
 				return native(ctx, self, args, kw, block)
@@ -999,6 +981,18 @@ func installUserEnumerable() {
 			}
 			return r, err
 		})
+		// A method that is a stepper stays one for the receivers Go
+		// defines; on a script's object it runs to its end in one step.
+		if step != nil {
+			wrapped := e.Methods[name]
+			wrapped.Step = func(ctx object.Context, call *object.Call, st []object.Value, got object.Got) (object.Step, error) {
+				if call.Self.Kind() != object.KindInstance {
+					return step(ctx, call, st, got)
+				}
+				v, err := wrapped.Native(ctx, call.Self, call.Args, call.Kw, call.Block)
+				return object.Done(v), err
+			}
+		}
 	}
 }
 
