@@ -82,7 +82,8 @@ Every value is immutable. The kinds of value are:
 | an instance of a user class | the message that class declares |
 | an exception | the message its class is: its message, line and cause, what Ruby's exception of that class carries, and the fields the class declares; see [exceptions.md](exceptions.md) |
 | Proc | a closure: its code and the values it captured; see [ir.md](ir.md) |
-| Class, Enumerator, Random, Encoding, and an instance of a library's class (a Pathname, a Date, a URI) | not serialisable; see *Async* |
+| Enumerator | the call that made it: the receiver, the method, its arguments and, for a lazy one, its block; the reader makes it again |
+| Class, Random, Encoding, and an instance of a library's class (a Pathname, a Date, a URI) | not serialisable; see *Async* |
 
 Equality is structural everywhere: two lists with equal elements are `==`,
 two instances of one class with equal fields are `==` and hash alike. There
@@ -1114,7 +1115,14 @@ re-opened by accident:
     in. `lazy` gives an `Enumerator::Lazy`, whose `map`, `select`, `take`
     and the rest make another and do no work until `first`, `to_a`,
     `force` or `each` asks; a blockless `cycle` or `then` gives an eager
-    Enumerator. There is no external iteration (`next`, `peek`).
+    Enumerator. There is no external iteration (`next`, `peek`), so an
+    Enumerator has no position and never changes. That makes it
+    serialisable although it is Go code: it records the call that made it
+    (`object.Enumerator.Make`), and a message carries that call, which
+    the reader makes again. Reading a message makes no call but one of a
+    fixed list of builtins that make an enumerator and do nothing else
+    (`object.MakesEnumerator`); an enumerator a library makes, a
+    StringIO's `each_line`, records none and does not travel.
   - A user class that includes Enumerable and defines `each` gets
     Enumerable's methods. They run on an enumerator over its `each`, so
     `first`, `find`, `take_while` and `lazy` stop once they have their

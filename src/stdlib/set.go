@@ -153,7 +153,7 @@ func installSet() {
 				return divide(ctx, self, nil, nil, block)
 			}
 			e.Enumerator().Size = sizeOf(self)
-			return e, nil
+			return made(e, "divide", object.Value{}), nil
 		}
 		arity, err := ctx.Call(block, "arity")
 		if err != nil {

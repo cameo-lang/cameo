@@ -137,9 +137,9 @@ func installObject() {
 	then := func(name string) {
 		def(o, name, 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			if block.IsZero() {
-				return enumerator(false, self, name, nil, func(ctx object.Context, yield func(object.Value) error) error {
+				return made(enumerator(false, self, name, nil, func(ctx object.Context, yield func(object.Value) error) error {
 					return yield(self)
-				}), nil
+				}), name, object.Value{}), nil
 			}
 			return ctx.Yield(block, self)
 		})
@@ -157,12 +157,18 @@ func installObject() {
 			}
 			meth, args = name, args[1:]
 		}
-		return enumerator(false, self, meth, args, func(ctx object.Context, yield func(object.Value) error) error {
+		e := made(enumerator(false, self, meth, args, func(ctx object.Context, yield func(object.Value) error) error {
 			_, err := ctx.CallWith(self, meth, args, kw, ctx.Block(func(args []object.Value) (object.Value, error) {
 				return object.Nil, yield(yielded(args))
 			}))
 			return err
-		}), nil
+		}), "to_enum", object.Value{})
+		if kw != nil && len(kw.Keys()) > 0 {
+			// The keywords the method is called with are part of the
+			// call that makes the enumerator again, and of its inspect.
+			e.Enumerator().Kw = kw
+		}
+		return e, nil
 	}
 	def(o, "to_enum", -1, toEnum)
 	def(o, "enum_for", -1, toEnum)

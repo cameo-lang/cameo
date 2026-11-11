@@ -17,13 +17,13 @@ import (
 // arithSeq makes an arithmetic sequence value; recv, meth, args and kw are
 // the call that made it, for inspect.
 func arithSeq(recv object.Value, meth string, args []object.Value, kw *object.Map, s *object.ArithSeq) object.Value {
-	return object.EnumeratorValue(&object.Enumerator{
+	return made(object.EnumeratorValue(&object.Enumerator{
 		Recv: recv, Meth: meth, Args: args, Kw: kw, Arith: s,
 		Each: func(ctx object.Context, yield func(object.Value) error) error {
 			return arithEach(ctx, s, yield)
 		},
 		Size: func(ctx object.Context) (object.Value, error) { return arithSize(s), nil },
-	})
+	}), meth, object.Value{})
 }
 
 // arithInts reports a sequence that counts in Integers.

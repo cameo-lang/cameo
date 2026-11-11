@@ -702,7 +702,7 @@ func installEnumerable() {
 		if err != nil {
 			return object.Value{}, err
 		}
-		lazy := enumerator(true, self, "", nil, each)
+		lazy := made(enumerator(true, self, "", nil, each), "lazy", object.Value{})
 		// The lazy enumerator of an Array, Hash, Set or Range has its size.
 		switch self.Kind() {
 		case object.KindList, object.KindMap, object.KindSet, object.KindRange:
