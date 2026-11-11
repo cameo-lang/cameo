@@ -4,6 +4,7 @@ import (
 	"sort"
 	"unsafe"
 
+	"github.com/cameo-lang/cameo/src/cameopb"
 	"github.com/cameo-lang/cameo/src/object"
 )
 
@@ -221,6 +222,17 @@ type Proc struct {
 	// Go is set for a block a builtin makes: it runs the function with the
 	// block's arguments, and Block is nil.
 	Go func(args []object.Value) (object.Value, error)
+}
+
+// writtenProc makes the block that is proc index of unit, closed over env
+// and fr. The proc and its body are one allocation.
+func writtenProc(unit *cameopb.Unit, index uint32, env *Env, fr *Frame) *Proc {
+	w := &struct {
+		Proc
+		ir irProc
+	}{Proc: Proc{Env: env, Frame: fr}, ir: irProc{unit: unit, proc: unit.Procs[index]}}
+	w.IR = &w.ir
+	return &w.Proc
 }
 
 // procValue wraps a proc as a value; proc and asProc read it back.

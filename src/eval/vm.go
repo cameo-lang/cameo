@@ -133,7 +133,8 @@ func (in *Interp) runList(unit *cameopb.Unit, code []*cameopb.Code, env *Env, fr
 // runCode runs a list as an activation of its own; body is set for a list
 // of statements.
 func (in *Interp) runCode(unit *cameopb.Unit, code []*cameopb.Code, env *Env, fr *Frame, body bool) (object.Value, error) {
-	m := &machine{in: in, unit: unit, env: env, fr: fr}
+	m := in.machine()
+	m.unit, m.env, m.fr = unit, env, fr
 	m.cursors = append(m.cursors, cursor{code: code, statement: body})
 	return in.start(m)
 }
@@ -256,8 +257,9 @@ func (m *machine) exec(c *cameopb.Code) error {
 	case cameopb.Op_INTERP:
 		m.interp(c)
 	case cameopb.Op_LAMBDA:
-		p := &irProc{unit: m.unit, proc: m.unit.Procs[c.Args[0].GetProc()]}
-		m.push(procValue(&Proc{IR: p, Env: env.snapshot(), Frame: fr, Strict: has(c, cameopb.Flag_FLAG_STRICT)}))
+		p := writtenProc(m.unit, c.Args[0].GetProc(), env.snapshot(), fr)
+		p.Strict = has(c, cameopb.Flag_FLAG_STRICT)
+		m.push(procValue(p))
 	case cameopb.Op_SEND:
 		return m.send(c)
 	case cameopb.Op_SAFE:
@@ -577,18 +579,27 @@ func (m *machine) callArgs(c *cameopb.Code, i int) ([]object.Value, *object.Map)
 // copy of the values in sight, or for the body of a for loop over the
 // scope itself.
 func (m *machine) closure(index uint32) object.Value {
-	p := &irProc{unit: m.unit, proc: m.unit.Procs[index]}
 	env := m.env
-	if !p.proc.GetShared() {
+	if !m.unit.Procs[index].GetShared() {
 		env = env.snapshot()
 	}
-	return procValue(&Proc{IR: p, Env: env, Frame: m.fr})
+	return procValue(writtenProc(m.unit, index, env, m.fr))
 }
 
 // send runs a SEND: a method call.
 func (m *machine) send(c *cameopb.Code) error {
 	in, fr := m.in, m.fr
 	name, line := m.name(c, 0), int(c.Line)
+	if c.Flags == uint64(cameopb.Flag_FLAG_OPERATOR) {
+		// Two integers or two floats: the operands are read where they
+		// are, and no argument list is made.
+		n := len(m.stack)
+		if v := binaryOp(name)(m.stack[n-2], m.stack[n-1]); !v.IsZero() {
+			m.stack[n-2] = v
+			m.stack = m.stack[:n-1]
+			return nil
+		}
+	}
 	var block object.Value
 	if has(c, cameopb.Flag_FLAG_BLOCK_ARG) {
 		v, err := in.toProc(m.pop(), line)
@@ -604,10 +615,6 @@ func (m *machine) send(c *cameopb.Code) error {
 		recv = m.pop()
 	}
 	if has(c, cameopb.Flag_FLAG_OPERATOR) {
-		if v := binaryOp(name)(recv, args[0]); !v.IsZero() {
-			m.push(v)
-			return nil
-		}
 		// An operator a class defines is a call like any other.
 		return m.call(c, in.lookup(recv, name, false), recv, name, args, nil, object.Value{}, false, true, line)
 	}
