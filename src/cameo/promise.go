@@ -31,6 +31,17 @@ type Promise struct{ p *eval.Promise }
 // Promise makes a pending promise of the program.
 func (p *Program) Promise() *Promise { return &Promise{p.in.NewPromise()} }
 
+// PendingPromise returns the promise of the program with the id, for a
+// host to settle: one a resumed run brought back pending from its dump,
+// which the host that paused the run had made and not settled. It is nil
+// when the program has no promise of that id.
+func (p *Program) PendingPromise(id int64) *Promise {
+	if pr := p.in.PromiseOf(id); pr != nil {
+		return &Promise{pr}
+	}
+	return nil
+}
+
 // ID is the Integer the script awaits.
 func (p *Promise) ID() int64 { return p.p.ID() }
 

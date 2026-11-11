@@ -196,6 +196,10 @@ func InspectDump(data []byte) (string, error) {
 		if method == "" {
 			method = "promise"
 		}
+		if ps.Pending {
+			fmt.Fprintf(&b, "  %d %s pending\n", ps.Id, method)
+			continue
+		}
 		if ps.Failure != nil {
 			fmt.Fprintf(&b, "  %d %s raised %s (%s)\n", ps.Id, method, ps.Failure.Message, ps.Failure.Class)
 			continue

@@ -29,8 +29,9 @@ message Dump {
     uint32 building = 6;
   }
 
-  // Promise is a settled promise: its result in value, or the exception it
-  // failed with in failure, and in value too when the envelope carries it.
+  // Promise is a promise: settled, with its result in value, or the
+  // exception it failed with in failure, and in value too when the
+  // envelope carries it; or pending.
   message Promise {
     int64 id = 1;
     // method is the method async ran; none for a promise made by hand.
@@ -39,6 +40,9 @@ message Dump {
     Failure failure = 4;
     // awaited is set when the script awaited the promise before the pause.
     bool awaited = 5;
+    // pending is set for a promise that is not settled: one made by
+    // hand, which the script or the host settles after the resume.
+    bool pending = 6;
   }
 
   // Failure is the exception a promise failed with.
@@ -137,6 +141,22 @@ message Dump {
     // result is what the caller gets in place of the activation's own
     // value: the instance new made, for an initialize.
     Binding result = 11;
+    // awaiting is set for an activation that waits in an await.
+    Awaiting awaiting = 12;
+  }
+
+  // Awaiting is what an activation waits for in an await: promises, by
+  // id and in order, of which it has the results up to next.
+  message Awaiting {
+    repeated int64 promises = 1;
+    // single is set for an await of one promise, whose value is the
+    // promise's result and not a list.
+    bool single = 2;
+    uint32 next = 3;
+    repeated Binding results = 4;
+    // failed is the first failure among the promises it has, which the
+    // await raises once it has them all.
+    Value failed = 5;
   }
 
   // Builtin is a builtin that calls its block, between two of the calls:

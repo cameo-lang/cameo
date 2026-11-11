@@ -112,11 +112,23 @@ func (in *Interp) run(floor int) (object.Value, error) {
 				// then on the stack, which Dump writes as it is. A list
 				// that is through ends first, so that a statement that
 				// is through pauses as one that has not begun.
-				if in.pausable && in.loops == 1 && in.pause.Load() && m.atInstruction() {
+				if in.pausable && in.loops == 1 && in.pausing.flag.Load() && m.atInstruction() {
 					in.frozen = append([]*machine(nil), in.acts...)
 					return object.Value{}, ErrPaused
 				}
-				err = m.step()
+				// An activation that awaits goes on waiting: one of a
+				// resumed run, or of a run that went on after a pause.
+				if m.wait != nil {
+					err = m.awaited()
+				} else {
+					err = m.step()
+				}
+				// A pause woke the activation where it waits. It stands
+				// before an instruction, as far as a pause goes.
+				if err == ErrPaused && m.wait != nil {
+					in.frozen = append([]*machine(nil), in.acts...)
+					return object.Value{}, ErrPaused
+				}
 				continue
 			}
 			if err = m.unwind(err, 0); err == nil {

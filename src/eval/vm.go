@@ -109,6 +109,8 @@ type machine struct {
 	// result is what the caller gets in place of the activation's own
 	// value, when it is set: the instance new made, for an initialize.
 	result object.Value
+	// wait is what the activation awaits, while it does (await.go).
+	wait *awaiting
 	// inGo counts the lists the activation runs to their end inside an
 	// instruction (nested). A call made while it is not zero cannot go
 	// back to the loop, and runs in a loop of its own.
@@ -451,23 +453,27 @@ func (m *machine) exec(c *cameopb.Code) error {
 			m.push(object.Int(p.id))
 			return nil
 		}
-		v, err := in.awaitOne(p)
-		if err != nil {
-			return err
-		}
-		m.push(v)
+		return m.await(&awaiting{ps: []*Promise{p}, single: true})
 	case cameopb.Op_AWAIT:
-		v, err := in.await(m.pop(), line)
+		// One promise, or each of a list of them.
+		v := m.pop()
+		if l, ok := v.AsList(); ok {
+			w := &awaiting{ps: make([]*Promise, l.Len())}
+			for i := range w.ps {
+				var err error
+				if w.ps[i], err = in.promise(l.Elems[i], line); err != nil {
+					return err
+				}
+			}
+			return m.await(w)
+		}
+		p, err := in.promise(v, line)
 		if err != nil {
 			return err
 		}
-		m.push(v)
+		return m.await(&awaiting{ps: []*Promise{p}, single: true})
 	case cameopb.Op_AWAIT_ALL:
-		v, err := in.awaitAll(env)
-		if err != nil {
-			return err
-		}
-		m.push(v)
+		return m.await(&awaiting{ps: in.unawaited(env)})
 	case cameopb.Op_DEF:
 		body := &irProc{unit: m.unit, proc: m.unit.Procs[c.Args[1].GetProc()]}
 		v, err := in.defineMethod(m.name(c, 0), has(c, cameopb.Flag_FLAG_SINGLETON), body, fr, line)
