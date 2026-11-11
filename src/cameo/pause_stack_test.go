@@ -469,6 +469,49 @@ p list.inject(2) { |a, x| a * x }, (1..3).sum { |x| x * 0.5 }
 `)
 }
 
+// A run pauses inside an initialize that new called, and resumes there:
+// the instance it is filling has the fields set so far, the ones set
+// after the resume land in the same instance, and new returns it.
+func TestPauseInsideInitialize(t *testing.T) {
+	const src = `def mark(x)
+  Test.pause
+  x
+end
+class Point
+  int :x, :y
+  string :label
+  def initialize(x, y)
+    self.x = mark(x)
+    Test.pause
+    self.y = mark(y) + self.x
+    self.label = describe
+  end
+  def describe = "#{mark(x)},#{y}"
+end
+class Line
+  ref :from, Point
+  ref :to, Point
+  list :names, of: :string
+  def initialize(n)
+    self.from = Point.new(mark(n), 1)
+    self.names = [1, 2].map { |i| mark("p#{i}") }
+    self.to = Point.new(from.x + 1, mark(2))
+  end
+end
+p Point.new(1, 2)
+line = Line.new(5)
+p line, line.from.label, line.to == Point.new(6, 2)
+class Counter
+  int :n
+  def initialize(n = mark(3)) = self.n = n
+  def self.build = new
+end
+p Counter.build, Counter.new(4), [1, 2].map { |i| Point.new(i, mark(i)).label }
+`
+	everyPauseLands(t, src)
+	sameAsWhole(t, src)
+}
+
 // A run that paused goes on when it is run again, from where it paused:
 // what a host does with a script it could not dump. Here the block of
 // loop holds a StringIO, which no dump carries.

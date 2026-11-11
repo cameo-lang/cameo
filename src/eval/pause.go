@@ -176,8 +176,10 @@ func (in *Interp) Resume(prog *syntax.Program, d *cameopb.Dump) error {
 	}
 	// The frames of a run that paused inside a statement, before any
 	// value is read: a Proc among the values may refer to one.
-	in.restoreShells(d)
 	dec := in.Decoder()
+	if err := in.restoreShells(dec, d); err != nil {
+		return err
+	}
 	if err := in.restoreClassValues(dec, d.GetClasses()); err != nil {
 		return err
 	}
@@ -238,6 +240,11 @@ func (in *Interp) restore(dec *protogen.Decoder, b *cameopb.Dump_Binding) (objec
 	switch {
 	case b.Main:
 		return object.InstanceValue(in.main), true, nil
+	case b.Building != 0:
+		if in.resuming == nil || int(b.Building) > len(in.resuming.frames) || in.resuming.frames[b.Building-1].Building == nil {
+			return object.Value{}, false, fmt.Errorf("the dump has no instance being made in frame %d", b.Building-1)
+		}
+		return object.InstanceValue(in.resuming.frames[b.Building-1].Building), true, nil
 	case b.Class != "":
 		cls := in.classRef(b.Class)
 		if cls == nil {

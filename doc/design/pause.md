@@ -44,12 +44,12 @@ keeps from one call of the block to the next, for `times` the number it
 came to. A dump that is inside a builtin this cameo has no step function
 for is refused.
 
-The same holds for these, each for as long as it takes: a class body, an
-`initialize` that `new` called, a parameter's default, `super`, an
-operator a class defines, a `require` of a library written in cameo, and
-a call the host made into the program. A lambda or a proc called as a
-value, `f.call(x)`, `f.(x)` or `f[x]`, is no such case: it is an
-activation, as a block a method yields to is.
+The same holds for these, each for as long as it takes: a class body, the
+`initialize` of an exception, a parameter's default, `super`, an operator
+a class defines, a `require` of a library written in cameo, and a call
+the host made into the program. A lambda or a proc called as a value,
+`f.call(x)`, `f.(x)` or `f[x]`, is no such case: it is an activation, as a
+block a method yields to is. So is the `initialize` that `new` runs.
 
 The pause waits for every call `async` started, so their results travel
 settled in the dump. A promise the script or a host made by hand and has not
@@ -175,6 +175,15 @@ a value, in a variable or on a value stack, names the frame it was written
 in the same way while that frame's call is running; once the call has
 ended it carries its binding, as a Proc does in any other message. Values
 need no table: they never change, so a copy is the value.
+
+One value does change: the instance an `initialize` is filling, until the
+`initialize` ends. `self.x = …` there writes into the instance `new` will
+return. The dump holds such an instance once, in the frame of its
+`initialize`, with the fields set so far, and what else holds it — the
+frame's self, what the activation returns, a local or an argument that
+is it — refers to it by that frame. A copy of it inside another value, a
+list it was put in before it was done, is a copy after the resume, and
+does not see the fields set later.
 
 A value in flight that the envelope cannot carry is nil after the resume,
 and a local is unbound; `missing` names each when the run pauses.
