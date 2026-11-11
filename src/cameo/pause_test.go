@@ -36,7 +36,7 @@ include Cameo
 LIMIT = 3
 Alias = Point
 a = Point.new(x: 1, y: 2)
-f = ->(x) { x }
+f = [1].each
 job = async a, :x
 failed = async a, :boom
 puts "one"
@@ -71,7 +71,7 @@ func TestPauseDumpsAndResumeContinues(t *testing.T) {
 	if dump.Line != 15 {
 		t.Fatalf("paused before line %d, want 15", dump.Line)
 	}
-	if got, want := strings.Join(dump.Missing, ";"), "f (a Proc cannot be serialised)"; got != want {
+	if got, want := strings.Join(dump.Missing, ";"), "f (an Enumerator cannot be serialised)"; got != want {
 		t.Fatalf("missing %q, want %q", got, want)
 	}
 	var resumed bytes.Buffer
@@ -106,7 +106,7 @@ func TestInspectDumpShowsTheState(t *testing.T) {
 paused: before line 15
 variables:
   a = Point(x: 1, y: 2)
-  f = (a Proc cannot be serialised)
+  f = (an Enumerator cannot be serialised)
   job = 1
   failed = 2
 constants:

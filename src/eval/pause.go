@@ -35,7 +35,9 @@ func (in *Interp) Dump(source string) (*cameopb.Dump, error) {
 		return nil, errors.New("the script is not paused")
 	}
 	d := &cameopb.Dump{File: in.file, Source: source, Next: int32(in.next), Line: int32(in.nextLine)}
-	enc := in.Encoder()
+	// One encoder for the whole dump: a Proc travels as a closure, and the
+	// first closure of each unit carries the unit's code.
+	enc := in.ProcEncoder(true)
 	in.top.each(func(name string, v object.Value) {
 		d.Variables = append(d.Variables, in.binding(enc, name, v))
 	})
@@ -53,6 +55,9 @@ func (in *Interp) Dump(source string) (*cameopb.Dump, error) {
 		return nil, err
 	}
 	d.Promises = promises
+	for _, block := range in.exits.all() {
+		d.AtExit = append(d.AtExit, in.binding(enc, "", block))
+	}
 	for lib := range in.loaded {
 		d.Loaded = append(d.Loaded, lib)
 	}
@@ -171,6 +176,15 @@ func (in *Interp) Resume(prog *syntax.Program, d *cameopb.Dump) error {
 	for _, s := range d.Promises {
 		if err := in.restorePromise(dec, s); err != nil {
 			return fmt.Errorf("promise %d: %w", s.Id, err)
+		}
+	}
+	for i, b := range d.AtExit {
+		v, ok, err := in.restore(dec, b)
+		if err != nil {
+			return fmt.Errorf("at_exit block %d: %w", i+1, err)
+		}
+		if ok {
+			in.exits.push(v)
 		}
 	}
 	if d.Rand != nil {
