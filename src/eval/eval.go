@@ -1,45 +1,12 @@
 package eval
 
 import (
-	"strings"
-
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/stdlib"
 )
 
-// What several instructions of the IR evaluator (vm.go) share: string and
-// regexp interpolation, splats, destructuring and `===`.
-
-// interpolate concatenates the n parts of an interpolated string: part
-// evaluates each, which is converted with to_s before the next one is
-// evaluated.
-func (in *Interp) interpolate(n, line int, part func(i int) (object.Value, error)) (object.Value, error) {
-	var b strings.Builder
-	// The result takes the encoding its parts are compatible in, as
-	// Ruby's does: a binary part in UTF-8 text makes it binary.
-	// UTF-8 parts alone, the usual case, need no looking at.
-	kind := object.KindString
-	for i := 0; i < n; i++ {
-		v, err := part(i)
-		if err != nil {
-			return object.Value{}, err
-		}
-		s, err := in.ToS(v)
-		if err != nil {
-			return object.Value{}, withLine(err, line)
-		}
-		if pk := v.Kind(); v.IsString() && (pk != kind || kind != object.KindString) {
-			sofar := b.String()
-			next, ok := stdlib.CombineEncodings(kind, sofar == "", object.ASCIIOnly(sofar), pk, s == "", object.ASCIIOnly(s))
-			if !ok {
-				return object.Value{}, in.raise(object.CompatibilityError, line, "%s", stdlib.IncompatibleEncodings(kind, pk))
-			}
-			kind = next
-		}
-		b.WriteString(s)
-	}
-	return object.StringOf(kind, b.String()), nil
-}
+// What several instructions of the IR evaluator (vm.go) share: regexp
+// literals, splats, destructuring and `===`.
 
 // newRegexp makes the regexp of a literal from its source and options.
 func (in *Interp) newRegexp(source string, options, line int) (object.Value, error) {
@@ -48,30 +15,6 @@ func (in *Interp) newRegexp(source string, options, line int) (object.Value, err
 		return object.Value{}, withLine(stdlib.RegexpFailure(in, err, source), line)
 	}
 	return object.RegexpValue(re), nil
-}
-
-// interpolateRegexp makes a regexp of the n parts of a literal with
-// interpolation: part evaluates each, a regexp embeds as its to_s,
-// (?flags:source), as in Ruby, and any other value as its to_s before the
-// next part is evaluated.
-func (in *Interp) interpolateRegexp(n, options, line int, part func(i int) (object.Value, error)) (object.Value, error) {
-	var b strings.Builder
-	for i := 0; i < n; i++ {
-		v, err := part(i)
-		if err != nil {
-			return object.Value{}, err
-		}
-		if re, ok := v.AsRegexp(); ok {
-			b.WriteString(re.String())
-			continue
-		}
-		s, err := in.ToS(v)
-		if err != nil {
-			return object.Value{}, err
-		}
-		b.WriteString(s)
-	}
-	return in.newRegexp(b.String(), options, line)
 }
 
 // splat appends what `*v` stands for to out: the elements of a list, a
