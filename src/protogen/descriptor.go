@@ -70,9 +70,6 @@ func (r *Registry) file(cls *object.Class) (protoreflect.FileDescriptor, error) 
 		// A cached descriptor proves the class is a message.
 		return fd, nil
 	}
-	if err := NoMessage(cls); err != nil {
-		return nil, err
-	}
 	exception := exceptionParts(cls) != nil
 	if cls.Digest == "" && !exception || cls.IsModule {
 		// A library's class: its instances have no message to cross in.
@@ -84,9 +81,9 @@ func (r *Registry) file(cls *object.Class) (protoreflect.FileDescriptor, error) 
 		Syntax:  strPtr("proto3"),
 	}
 	resolver := &chain{}
-	if exception {
+	if exception || ownProc(cls) {
 		// An exception's cause, and the values Ruby's exceptions carry, are
-		// cameo.Values.
+		// cameo.Values; a proc field is a cameo.Closure.
 		env := envelope()
 		fdp.Dependency = append(fdp.Dependency, env.Path())
 		resolver.add(env)
@@ -209,8 +206,14 @@ func setType(fp *descriptorpb.FieldDescriptorProto, t *object.FieldType, cls *ob
 	case "ref":
 		fp.Type = descriptorpb.FieldDescriptorProto_TYPE_MESSAGE.Enum()
 		fp.TypeName = strPtr("." + fullName(t.Ref))
+	case "proc":
+		fp.Type = descriptorpb.FieldDescriptorProto_TYPE_MESSAGE.Enum()
+		fp.TypeName = strPtr("." + closureName)
 	}
 }
+
+// closureName is the message a proc field is.
+const closureName = "cameo.Closure"
 
 // chain resolves the files a class depends on, and what they depend on.
 type chain struct{ files []protoreflect.FileDescriptor }

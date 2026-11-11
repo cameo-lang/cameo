@@ -409,9 +409,10 @@ These are absent, and a script that uses one fails when it reaches it:
   ("Native" names what the Go binary defines; a host's registered class,
   whose fields a protobuf message gives, is one of those.)
 - A `proc` field, `proc :handler`, holds a block, and reads as nil without
-  one; a class with a `proc` field is no message: it has no `.proto`, and
-  `to_proto`, `to_value_proto`, a host, `async` and the pause dump refuse its
-  instances, naming the field, as they refuse a Proc.
+  one. In the class's message the field is a `cameo.Closure`, the code of
+  the block and the values it captured, so `to_proto`, `to_value_proto`, a
+  host, `async` and the pause dump carry an instance with its block, as
+  they carry a Proc.
 - Typed fields, with every class a protobuf message: `to_proto`,
   `from_proto`, and `Point.proto` for its `.proto` text. Every exception is
   a message too, of its message, line, cause and fields, and crosses to

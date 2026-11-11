@@ -215,6 +215,39 @@ func TestProtoCommand(t *testing.T) {
 	}
 }
 
+// TestProtoCommandWritesAProcFieldAsAClosure proves `cameo proto` writes a
+// class with a proc field, the field a closure of the envelope's file.
+func TestProtoCommandWritesAProcFieldAsAClosure(t *testing.T) {
+	script := filepath.Join(t.TempDir(), "routes.cameo")
+	src := "class Route\n  string :path, number: 1\n  proc :handler, number: 2\nend\nclass App\n  list :routes, of: Route, number: 1\nend\n"
+	if err := os.WriteFile(script, []byte(src), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var out bytes.Buffer
+	if err := protoFiles(script, "", &out); err != nil {
+		t.Fatal(err)
+	}
+	want := `// cameo.proto
+syntax = "proto3";
+
+package cameo;
+
+import "cameo/value.proto";
+
+message App {
+  repeated Route routes = 1;
+}
+
+message Route {
+  optional string path = 1;
+  optional cameo.Closure handler = 2;
+}
+`
+	if !strings.HasPrefix(out.String(), want) {
+		t.Fatalf("cameo proto wrote:\n%s\nwant it to start with:\n%s", out.String(), want)
+	}
+}
+
 // TestProtoCommandWritesAnExceptionClass proves `cameo proto` writes a
 // script's exception class as a message of its parts and its fields.
 func TestProtoCommandWritesAnExceptionClass(t *testing.T) {

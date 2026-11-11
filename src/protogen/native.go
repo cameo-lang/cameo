@@ -61,7 +61,17 @@ func fullName(cls *object.Class) string {
 // registered Go type for a native class, a dynamic message otherwise. It is
 // a copy the caller may change.
 func (r *Registry) GoMessage(inst *object.Instance) (proto.Message, error) {
-	msg, err := r.ToMessage(inst)
+	return r.goMessage(inst, nil)
+}
+
+// GoMessage is the message an instance is, as Go sees it, the procs of
+// its proc fields as closures through the encoder's codec.
+func (e *Encoder) GoMessage(inst *object.Instance) (proto.Message, error) {
+	return e.reg.goMessage(inst, e)
+}
+
+func (r *Registry) goMessage(inst *object.Instance, e *Encoder) (proto.Message, error) {
+	msg, err := r.toMessage(inst, e)
 	if err != nil {
 		return nil, err
 	}

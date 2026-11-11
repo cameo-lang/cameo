@@ -180,7 +180,7 @@ func (e *Encoder) Message(v object.Value) (*cameopb.Value, error) {
 		var err error
 		if exc, ok := v.AsException(); ok {
 			cls = exc.Cls
-			data, err = e.reg.MarshalException(exc)
+			data, err = e.reg.marshalException(exc, e)
 		} else {
 			inst := v.Instance()
 			if e.handles != nil {
@@ -193,7 +193,7 @@ func (e *Encoder) Message(v object.Value) (*cameopb.Value, error) {
 				}
 			}
 			cls = inst.Cls
-			data, err = e.reg.Marshal(inst)
+			data, err = e.reg.marshal(inst, e)
 		}
 		if err != nil {
 			return nil, err
@@ -284,8 +284,8 @@ func timeMessage(t time.Time) *cameopb.Time {
 }
 
 // NotSerialisable is the error for a value the envelope cannot carry: a
-// proc, a class, a Hash with a default proc, an instance of a class with
-// a proc field, or one of a class without fields, a library's. Kind
+// proc or a Hash with a default proc where the encoder has no codec for
+// procs, a class, an instance of a class without fields, a library's. Kind
 // names it with its article, "a Proc", for a message about what was done
 // with it; Class is the value's class, which a message in Ruby's words
 // names, and DefaultProc is set for the Hash; Why, when set, is the whole
@@ -467,7 +467,7 @@ func (d *Decoder) Value(msg *cameopb.Value) (object.Value, error) {
 			}
 			return object.ExceptionValue(exc), nil
 		}
-		inst, err := d.reg.Unmarshal(cls, data)
+		inst, err := d.reg.unmarshal(cls, data, d)
 		if err != nil {
 			return object.Value{}, err
 		}

@@ -108,7 +108,8 @@ The dump is the protobuf message `cameo.Dump`, written in
 
 A Proc is in the dump as a closure: the proc of a unit, and the values it
 captured ([ir.md](ir.md)). A resumed run calls it as the run that paused
-would have.
+would have. An instance that holds a Proc in a `proc` field is in the dump
+with it: the field of its message is that closure.
 
 A value the envelope cannot carry — an Enumerator, a Proc that captured
 one — has no value in the dump; its binding says why instead. `cameo`

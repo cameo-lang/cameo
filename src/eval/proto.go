@@ -152,7 +152,7 @@ func init() {
 			}
 			return object.ExceptionValue(exc), nil
 		}
-		inst, err := ctx.(*Interp).proto.Unmarshal(c, data)
+		inst, err := ctx.(*Interp).Decoder().Instance(c, data)
 		if err != nil {
 			return object.Value{}, ctx.Raise(object.ArgumentError, "%s", err.Error())
 		}
@@ -160,7 +160,7 @@ func init() {
 	})
 	object.ObjectClass.Define("to_proto", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if exc, ok := self.AsException(); ok {
-			data, err := ctx.(*Interp).proto.MarshalException(exc)
+			data, err := ctx.(*Interp).ProcEncoder(true).Exception(exc)
 			if err != nil {
 				return object.Value{}, ctx.Raise(object.CameoError, "%s", err.Error())
 			}
@@ -170,7 +170,9 @@ func init() {
 		if !ok || inst.Cls.Digest == "" || inst.Cls == ctx.(*Interp).mainClass {
 			return object.Value{}, ctx.Raise(object.TypeError, "%s is not an instance of a class with fields", typeName(self))
 		}
-		data, err := ctx.(*Interp).proto.Marshal(inst)
+		// The proc of a proc field goes with its code, for a reader that
+		// is another program.
+		data, err := ctx.(*Interp).ProcEncoder(true).Instance(inst)
 		if err != nil {
 			return object.Value{}, ctx.Raise(object.CameoError, "%s", err.Error())
 		}
