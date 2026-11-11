@@ -140,3 +140,27 @@ func TestMapShiftWalksForward(t *testing.T) {
 		t.Fatal("shift of an empty map")
 	}
 }
+
+func TestMapAddFillsAMapInPlace(t *testing.T) {
+	m := NewMapSized(2)
+	m.Add(String("a"), Int(1))
+	m.Add(String("b"), Int(2))
+	if got := keysOf(m); got != `s1:a=i1,s1:b=i2,` || m.Len() != 2 {
+		t.Fatalf("Add: %s", got)
+	}
+	// A repeated key keeps its place, as in a literal {a: 1, b: 2, a: 3}.
+	m.Add(String("a"), Int(3))
+	if got := keysOf(m); got != `s1:a=i3,s1:b=i2,` || m.Len() != 2 {
+		t.Fatalf("Add of a key it has: %s", got)
+	}
+	// More keys than the room it was made with.
+	m.Add(String("c"), Int(4))
+	if got := keysOf(m); got != `s1:a=i3,s1:b=i2,s1:c=i4,` {
+		t.Fatalf("Add past its size: %s", got)
+	}
+	// Once built, the map is immutable again: Put leaves it as it was.
+	p := m.Put(String("d"), Int(5))
+	if got := keysOf(m); got != `s1:a=i3,s1:b=i2,s1:c=i4,` || p.Len() != 4 {
+		t.Fatalf("Put after Add changed the map: %s", got)
+	}
+}
