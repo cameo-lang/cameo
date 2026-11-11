@@ -430,6 +430,28 @@ p [1, 2, 3].map(&double), [1, 2].each_with_object([]) { |x, memo| memo + [double
 	sameAsWhole(t, src)
 }
 
+// A run pauses inside a lambda written in a call of a lambda written in
+// a call of a lambda: the innermost reads what each level captured, and
+// reads it again after the resume, where each captured scope is the
+// parent of the next.
+func TestPauseInsideLambdasNestedInCalls(t *testing.T) {
+	const src = `def mark(x)
+  Test.pause
+  x
+end
+k = 100
+add = ->(a) { ->(b) { ->(c) { mark(a) + mark(b) + c + k } } }
+k = 0
+p add.(1).(2).(3)
+keep = add.(10)
+p keep.(20).(30), keep.(1).(1)
+rows = ->(x) { [1, 2].map { |y| [3, 4].map { |z| mark(x) * y * z } } }
+p rows.(2)
+`
+	everyPauseLands(t, src)
+	sameAsWhole(t, src)
+}
+
 // A run pauses inside the block of the methods that fold a list into one
 // value: inject, sum, count, any?, all?, none?, one?, take_while,
 // drop_while, group_by, each_slice, each_cons and reverse_each. The
