@@ -156,7 +156,7 @@ func (c *Class[T]) DefineClassMethod(name string, fn Func) *Class[T] {
 // instance of the native class, or of a class that inherits from it, whose
 // message has the same fields under another name.
 func (c conv) message(inst *object.Instance, prototype proto.Message) (proto.Message, error) {
-	msg, err := c.in.Proto().GoMessage(inst)
+	msg, err := c.in.ProcEncoder(true).GoMessage(inst)
 	if err != nil {
 		return nil, err
 	}

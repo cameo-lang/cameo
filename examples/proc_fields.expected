@@ -4,4 +4,9 @@ no route for POST /hi
 ["/hi", "/bye"]
 nil
 field handler of Route takes a Proc, not an instance of Integer
-App is no message: its field handler through Route is a proc, which cannot be serialised, so it has no .proto and its instances cannot cross to a host, to async or into a dump
+message Route {
+  optional string method = 45677;
+  optional string path = 36596;
+  optional cameo.Closure handler = 55264;
+}
+bye from /bye

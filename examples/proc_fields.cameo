@@ -1,8 +1,7 @@
 # A proc field holds a block, so a value can carry behaviour: a route and
-# its handler. A class with one is no message: it has no .proto, and its
-# instances cannot cross to a host, to async or into a dump, as a Proc
-# cannot. Everything else about it is a class's: typed, immutable, copied
-# with `with`.
+# its handler. Everything else about it is a class's: typed, immutable,
+# copied with `with`, and a message, in which the field is a closure: the
+# code of the block and the values it captured.
 class Route
   string :method, :path
   proc :handler
@@ -34,9 +33,8 @@ rescue TypeError => e
   puts e.message
 end
 
-# No message: to_proto and the class's proto say which field.
-begin
-  app.to_proto
-rescue CameoError => e
-  puts e.message
-end
+# The class is a message, and an app read back from its message answers
+# as the one it was written from.
+puts Route.proto
+stored = App.from_proto(app.to_proto)
+puts stored.call("GET", "/bye")
