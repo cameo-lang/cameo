@@ -628,12 +628,13 @@ func (x *Set) GetItems() []*Value {
 	return nil
 }
 
-// Map is a Hash: its entries in order, and its default value when it has
-// one. A Hash with a default proc cannot travel.
+// Map is a Hash: its entries in order, and its default when it has one, a
+// value or a proc that computes it.
 type Map struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Entries       []*Map_Entry           `protobuf:"bytes,1,rep,name=entries,proto3" json:"entries,omitempty"`
 	Default       *Value                 `protobuf:"bytes,2,opt,name=default,proto3" json:"default,omitempty"`
+	DefaultProc   *Closure               `protobuf:"bytes,3,opt,name=default_proc,json=defaultProc,proto3" json:"default_proc,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -678,6 +679,13 @@ func (x *Map) GetEntries() []*Map_Entry {
 func (x *Map) GetDefault() *Value {
 	if x != nil {
 		return x.Default
+	}
+	return nil
+}
+
+func (x *Map) GetDefaultProc() *Closure {
+	if x != nil {
+		return x.DefaultProc
 	}
 	return nil
 }
@@ -1164,10 +1172,11 @@ const file_cameo_value_proto_rawDesc = "" +
 	"\x04List\x12\"\n" +
 	"\x05items\x18\x01 \x03(\v2\f.cameo.ValueR\x05items\")\n" +
 	"\x03Set\x12\"\n" +
-	"\x05items\x18\x01 \x03(\v2\f.cameo.ValueR\x05items\"\xa6\x01\n" +
+	"\x05items\x18\x01 \x03(\v2\f.cameo.ValueR\x05items\"\xd9\x01\n" +
 	"\x03Map\x12*\n" +
 	"\aentries\x18\x01 \x03(\v2\x10.cameo.Map.EntryR\aentries\x12&\n" +
-	"\adefault\x18\x02 \x01(\v2\f.cameo.ValueR\adefault\x1aK\n" +
+	"\adefault\x18\x02 \x01(\v2\f.cameo.ValueR\adefault\x121\n" +
+	"\fdefault_proc\x18\x03 \x01(\v2\x0e.cameo.ClosureR\vdefaultProc\x1aK\n" +
 	"\x05Entry\x12\x1e\n" +
 	"\x03key\x18\x01 \x01(\v2\f.cameo.ValueR\x03key\x12\"\n" +
 	"\x05value\x18\x02 \x01(\v2\f.cameo.ValueR\x05value\"a\n" +
@@ -1239,16 +1248,17 @@ var file_cameo_value_proto_depIdxs = []int32{
 	0,  // 18: cameo.Set.items:type_name -> cameo.Value
 	12, // 19: cameo.Map.entries:type_name -> cameo.Map.Entry
 	0,  // 20: cameo.Map.default:type_name -> cameo.Value
-	0,  // 21: cameo.Range.lo:type_name -> cameo.Value
-	0,  // 22: cameo.Range.hi:type_name -> cameo.Value
-	0,  // 23: cameo.Binding.Local.value:type_name -> cameo.Value
-	0,  // 24: cameo.Map.Entry.key:type_name -> cameo.Value
-	0,  // 25: cameo.Map.Entry.value:type_name -> cameo.Value
-	26, // [26:26] is the sub-list for method output_type
-	26, // [26:26] is the sub-list for method input_type
-	26, // [26:26] is the sub-list for extension type_name
-	26, // [26:26] is the sub-list for extension extendee
-	0,  // [0:26] is the sub-list for field type_name
+	1,  // 21: cameo.Map.default_proc:type_name -> cameo.Closure
+	0,  // 22: cameo.Range.lo:type_name -> cameo.Value
+	0,  // 23: cameo.Range.hi:type_name -> cameo.Value
+	0,  // 24: cameo.Binding.Local.value:type_name -> cameo.Value
+	0,  // 25: cameo.Map.Entry.key:type_name -> cameo.Value
+	0,  // 26: cameo.Map.Entry.value:type_name -> cameo.Value
+	27, // [27:27] is the sub-list for method output_type
+	27, // [27:27] is the sub-list for method input_type
+	27, // [27:27] is the sub-list for extension type_name
+	27, // [27:27] is the sub-list for extension extendee
+	0,  // [0:27] is the sub-list for field type_name
 }
 
 func init() { file_cameo_value_proto_init() }

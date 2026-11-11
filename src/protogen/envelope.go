@@ -188,7 +188,16 @@ func (e *Encoder) mapMessage(m *object.Map) (*cameopb.Map, error) {
 	}
 	value, proc := m.Default()
 	if !proc.IsZero() {
-		return nil, &NotSerialisable{Kind: "a Hash with a default proc", Class: "Hash", DefaultProc: true}
+		// The default proc travels as any Proc does, where the encoder
+		// carries procs.
+		if e.procs == nil {
+			return nil, &NotSerialisable{Kind: "a Hash with a default proc", Class: "Hash", DefaultProc: true}
+		}
+		closure, err := e.procs.EncodeProc(e, proc)
+		if err != nil {
+			return nil, err
+		}
+		out.DefaultProc = closure
 	}
 	if !value.IsZero() {
 		dm, err := e.Message(value)
@@ -343,6 +352,16 @@ func (d *Decoder) Value(msg *cameopb.Value) (object.Value, error) {
 				return object.Value{}, err
 			}
 			out = out.WithDefault(value, object.Value{})
+		}
+		if closure := k.Map.GetDefaultProc(); closure != nil {
+			if d.procs == nil {
+				return object.Value{}, fmt.Errorf("the message holds a Hash with a default proc, which this reader does not decode")
+			}
+			proc, err := d.procs.DecodeProc(d, closure)
+			if err != nil {
+				return object.Value{}, err
+			}
+			out = out.WithDefault(object.Value{}, proc)
 		}
 		return object.MapValue(out), nil
 	case *cameopb.Value_Range:
