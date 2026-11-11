@@ -182,8 +182,8 @@ func (in *Interp) fieldType(n *fieldDecl, ref func() (object.Value, error), fr *
 	case "enum":
 		t.Enum = n.Values
 	case "proc":
-		// A proc field holds a block; a class with one is no message (see
-		// protogen.NoMessage).
+		// A proc field holds a block; in the class's message it is a
+		// cameo.Closure (protogen/proc.go).
 	}
 	return t, nil
 }

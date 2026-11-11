@@ -427,7 +427,7 @@ func (c conv) toValue(v any) (object.Value, error) {
 		return object.Int(v.ID()), nil
 	case proto.Message:
 		if cls := protogen.NativeClass(v.ProtoReflect().Descriptor().FullName()); cls != nil {
-			inst, err := c.in.Proto().FromMessage(cls, v.ProtoReflect())
+			inst, err := c.in.Decoder().InstanceOf(cls, v.ProtoReflect())
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -449,7 +449,7 @@ func (c conv) toValue(v any) (object.Value, error) {
 				}
 				return object.ExceptionValue(exc), nil
 			}
-			inst, err := c.in.Proto().Unmarshal(cls, data)
+			inst, err := c.in.Decoder().Instance(cls, data)
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -534,13 +534,15 @@ func (c conv) toGo(v object.Value) (any, error) {
 	case object.KindTime:
 		return v.Time(), nil
 	case object.KindException:
-		return c.in.Proto().ExceptionMessage(v.Exception())
+		return c.in.ProcEncoder(true).ExceptionMessage(v.Exception())
 	case object.KindInstance:
 		v := v.Instance()
 		if v.Cls.Digest == "" {
 			return v, nil
 		}
-		return c.in.Proto().GoMessage(v)
+		// The proc of a proc field goes to Go as a closure with its
+		// code, which comes back as the proc.
+		return c.in.ProcEncoder(true).GoMessage(v)
 	}
 	if v.IsNil() {
 		return nil, nil

@@ -992,12 +992,18 @@ re-opened by accident:
   was rejected, since 24 of the benchmark cases use them and the overflow
   checks would stay to raise instead.
 - **A `proc` field** holds a block, so a value can carry behaviour, such as
-  a route with its handler. A block cannot be serialised, so a class with a
-  `proc` field, or with a field that refers to such a class, is no message:
-  it has no `.proto`, `cameo proto` leaves it out, and its instances cannot
-  cross to a host, to `async` or into a dump, which is the rule a Proc
-  already has. Everything else about the class is a class's: the field is
-  typed, the value immutable, `with` copies it.
+  a route with its handler. In the class's message the field is a
+  `cameo.Closure` of the envelope's file: the proc of a unit the block
+  runs, and the values it captured ([ir.md](ir.md)). So the class has a
+  `.proto` like any other, and its instances cross to a host, to `async`
+  and into a dump with their blocks. The first closure of a message
+  carries the code for a reader that is another program, which is why the
+  closures of a map field are written and read in the order of their
+  keys, and why a subclass's instance in a field of its parent is written
+  from the parent's fields alone. A block that captured what cannot be
+  serialised, an Enumerator, keeps its instance from crossing, and the
+  error names the field. Everything else about the class is a class's:
+  the field is typed, the value immutable, `with` copies it.
 - **Classes are values** bound to their name: a second definition with the
   same body is the same class, and one with a different body reopens a
   copy of the class and rebinds the name to it, which leaves instances

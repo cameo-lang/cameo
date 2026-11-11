@@ -510,8 +510,10 @@ that is all cameo, and widens it from there.
 27. object: the save and restore hook for a library's state. Built for
     handles, with StringIO as the first (`object.StateHook`); what a
     library keeps on a class, Singleton's instance, has no hook yet.
-28. protogen: a class with a proc field is a message. Its closure is a
-    field of type `cameo.Closure` that names its code and does not carry
-    it; the envelope around the instance, or the dump, has the unit.
+28. protogen: a class with a proc field is a message. The field is a
+    `cameo.Closure`, written by the encoder the instance goes through: in
+    a dump it names its unit, which the dump has, and in a message for
+    another program the first closure of a unit carries the code, as
+    anywhere else in the envelope.
 29. aot: a compiled method leaves its call to the interpreter at a pause.
 30. debug: the debugger and irb read the activation stack.

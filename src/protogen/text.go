@@ -27,7 +27,7 @@ func File(pkg string, classes []*object.Class) string {
 	fmt.Fprintf(&b, "package %s;\n", pkg)
 	imports := map[string]bool{}
 	for _, cls := range classes {
-		if exceptionParts(cls) != nil {
+		if exceptionParts(cls) != nil || ownProc(cls) {
 			imports["cameo/value.proto"] = true
 		}
 		for _, dep := range refs(cls) {
@@ -61,9 +61,6 @@ func File(pkg string, classes []*object.Class) string {
 func Files(classes []*object.Class) map[string]string {
 	byPkg := map[string][]*object.Class{}
 	for _, cls := range classes {
-		if NoMessage(cls) != nil {
-			continue // a class with a proc field has no .proto
-		}
 		pkg := Package(cls)
 		byPkg[pkg] = append(byPkg[pkg], cls)
 	}
@@ -120,6 +117,9 @@ func typeName(t *object.FieldType, from *object.Class) string {
 			return fullName(t.Ref)
 		}
 		return t.Ref.Name
+	}
+	if t.Kind == "proc" {
+		return closureName
 	}
 	return scalarName(t.Kind)
 }

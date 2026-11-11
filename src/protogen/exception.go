@@ -119,12 +119,24 @@ func partText(p exceptionPart) string {
 // cannot be serialised, such as a NameError's receiver when it is a class,
 // is left unset.
 func (r *Registry) ExceptionMessage(exc *object.Exception) (*dynamicpb.Message, error) {
+	return r.exceptionMessage(exc, nil)
+}
+
+// exceptionMessage is ExceptionMessage for the encoder e, which encodes
+// the values its parts hold and the procs of its proc fields as it does
+// any other value; nil for a caller that has none, where the parts are
+// encoded without procs and an exception with a proc in a field cannot be
+// a message.
+func (r *Registry) exceptionMessage(exc *object.Exception, e *Encoder) (*dynamicpb.Message, error) {
 	md, err := r.Message(exc.Cls)
 	if err != nil {
 		return nil, err
 	}
 	msg := dynamicpb.NewMessage(md)
-	enc := NewEncoder(r)
+	enc := e
+	if enc == nil {
+		enc = NewEncoder(r)
+	}
 	for _, p := range exceptionParts(exc.Cls) {
 		fd := md.Fields().ByName(protoreflect.Name(p.name))
 		var v object.Value
@@ -179,19 +191,32 @@ func (r *Registry) ExceptionMessage(exc *object.Exception) (*dynamicpb.Message, 
 			}
 		}
 	}
-	if err := r.setFields(msg, md, exc.Cls, exc.Fields); err != nil {
+	if err := r.setFields(msg, md, exc.Cls, exc.Fields, e); err != nil {
 		return nil, err
 	}
 	return msg, nil
 }
 
-// MarshalException is the wire form of an exception.
-func (r *Registry) MarshalException(exc *object.Exception) ([]byte, error) {
-	msg, err := r.ExceptionMessage(exc)
+// marshalException is the wire form of an exception, for the encoder e.
+func (r *Registry) marshalException(exc *object.Exception, e *Encoder) ([]byte, error) {
+	msg, err := r.exceptionMessage(exc, e)
 	if err != nil {
 		return nil, err
 	}
 	return proto.Marshal(msg)
+}
+
+// Exception is the wire form of an exception: its class's message, what
+// its parts and its proc fields hold encoded as the encoder does any
+// value.
+func (e *Encoder) Exception(exc *object.Exception) ([]byte, error) {
+	return e.reg.marshalException(exc, e)
+}
+
+// ExceptionMessage is the message an exception is, as Exception is its
+// wire form.
+func (e *Encoder) ExceptionMessage(exc *object.Exception) (*dynamicpb.Message, error) {
+	return e.reg.exceptionMessage(exc, e)
 }
 
 // Exception reads an exception of class cls from its message, finding the
@@ -250,7 +275,7 @@ func (d *Decoder) Exception(cls *object.Class, msg protoreflect.Message) (*objec
 			exc.Attrs[p.name] = v
 		}
 	}
-	fields, err := d.reg.readFields(cls, msg)
+	fields, err := d.reg.readFields(cls, msg, d)
 	if err != nil {
 		return nil, err
 	}
