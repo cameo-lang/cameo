@@ -18,8 +18,8 @@ array1 = 10.times.flat_map do |i|
   pi[i...].chars.each_slice(10).map(&:join)
 end
 array2 = array1.map(&:reverse)
-array1.map!(&:to_i)
-array2.map!(&:to_i)
+array1 = array1.map(&:to_i)
+array2 = array2.map(&:to_i)
 a1 = array1[...10]
 a2 = array1[...100]
 a3 = array1

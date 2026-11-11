@@ -60,6 +60,24 @@ A failing case is filed under the first thing that stops it. Fixing that may
 uncover a second blocker, so a file can move from `stdlib/` to another
 directory rather than to `works/`.
 
+The script a case times is CRuby's. The code that only builds its data may
+differ: a YAML case's prelude, and the lines of a `.rb` benchmark before the
+loop it times. Where CRuby's version mutates in a way cameo refuses, a bang
+method or a block that assigns to a variable of the scope around it, it is
+rewritten to build the same value: `array1 = array1.map(&:to_i)` for
+`array1.map!(&:to_i)`, `each_with_object` for a hash filled in a block,
+and `except` for a run of `delete`s. CRuby's `except` copies the hash and
+deletes from the copy, so it leaves the same deleted entries behind. The
+cases rewritten so are the 161 `set--` cases in `works/`, `gc_hash1`,
+`hash_aref_array`, `hash_aref_dsym`, `hash_aref_fix`, `hash_first--*`,
+`hash_flatten`, `hash_ident_*`, `hash_keys`, `hash_to_proc`,
+`hash_values` and `vm_call_kw_and_kw_splat--*`. In `app_lc_fizzbuzz`,
+whose whole program is timed, `array.push(x)` is `array = array.push(x)`,
+which Ruby runs the same way, since `push` returns its receiver.
+
+A case whose timed script mutates, with a mutator, a bang method or a
+block that assigns to a variable around it, is under `unsupported/mutation/`.
+
 `bugs/` is empty: every case filed there has been fixed. A bare `Object`
 prints as `#<Object>`, without the address Ruby shows, since cameo values
 have no identity; the cases that print one count as working.

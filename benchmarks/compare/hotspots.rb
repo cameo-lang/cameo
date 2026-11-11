@@ -4,7 +4,7 @@
 # Runs compare.rb on the cases where cameo is furthest behind MRI, to time
 # work on them without the whole suite:
 #
-#   small hash literals built in a loop    hash_small8, hash_literal_small8, hash_small4
+#   small hash literals built in a loop    hash_literal_small8
 #   sorting that dispatches <=> per pair   array_sort_float, array_sort_block,
 #                                          array_sort_string
 #   method calls in deep recursion         app_tak, app_tarai, app_fib
@@ -17,7 +17,7 @@
 # The rows go to hotspots.tsv unless --out says otherwise.
 
 HOTSPOTS = %w[
-  hash_small8 hash_literal_small8 hash_small4
+  hash_literal_small8
   array_sort_float array_sort_block array_sort_string
   app_tak app_tarai app_fib
   loop_each--loop_each

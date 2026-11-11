@@ -29,7 +29,7 @@ def to_array(proc)
   array = []
 
   until to_boolean(IS_EMPTY[proc])
-    array.push(FIRST[proc])
+    array = array.push(FIRST[proc])
     proc = REST[proc]
   end
 
