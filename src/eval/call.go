@@ -233,6 +233,12 @@ func (in *Interp) call(fr *Frame, recv object.Value, name string, args []object.
 // wrote without a receiver or on self, as in Ruby, and send's and the
 // host's (call).
 func (in *Interp) dispatch(fr *Frame, recv object.Value, name string, args []object.Value, kw *object.Map, block object.Value, selfCall, vcall, private bool, line int) (object.Value, error) {
+	return in.dispatchTo(in.lookup(recv, name, selfCall), recv, name, args, kw, block, vcall, private, line)
+}
+
+// lookup finds the method a call of name on recv runs; nil when there is
+// none. selfCall marks a call written without a receiver.
+func (in *Interp) lookup(recv object.Value, name string, selfCall bool) *object.Method {
 	m := in.findMethod(recv, name)
 	if m == nil && selfCall {
 		m = in.mainClass.Methods[name]
@@ -241,6 +247,12 @@ func (in *Interp) dispatch(fr *Frame, recv object.Value, name string, args []obj
 			m = object.CameoModule.Lookup(name)
 		}
 	}
+	return m
+}
+
+// dispatchTo is dispatch once lookup found m, the method the call runs,
+// or nil.
+func (in *Interp) dispatchTo(m *object.Method, recv object.Value, name string, args []object.Value, kw *object.Map, block object.Value, vcall, private bool, line int) (object.Value, error) {
 	// A call on a receiver other than self is refused a function of
 	// Kernel, as Ruby refuses a private method.
 	if m != nil && m.Private && !private {
@@ -319,60 +331,11 @@ func blockName(d *Debugger, fr *Frame) string {
 
 // invoke runs a user method.
 func (in *Interp) invoke(m *object.Method, recv object.Value, args []object.Value, kw *object.Map, block object.Value, line int) (object.Value, error) {
-	if err := in.stopped(); err != nil {
+	act, err := in.methodAct(m, recv, args, kw, block, line)
+	if err != nil {
 		return object.Value{}, err
 	}
-	code := m.Body.(*irProc)
-	act := &activation{frame: Frame{
-		Self:    recv,
-		Method:  m,
-		Owner:   m.Owner,
-		Args:    args,
-		Kw:      kw,
-		Block:   block,
-		Lexical: m.Lexical,
-		File:    m.File,
-	}}
-	fr, env := &act.frame, &act.env
-	defer func() { fr.ended = true }()
-	if len(m.Lexical) > 0 {
-		fr.DefTarget = m.Lexical[len(m.Lexical)-1]
-	} else {
-		fr.DefTarget = object.ObjectClass
-	}
-	if code.proc.GetName() == "initialize" {
-		if inst, ok := recv.AsInstance(); ok {
-			fr.Building = inst
-		} else if exc, ok := recv.AsException(); ok && exc.Building {
-			fr.BuildingExc = exc
-		}
-	}
-	body := func() (object.Value, error) { return in.runBody(code, env, fr) }
-	v, err := object.Value{}, in.bindParams(in.code.irParams(code), args, kw, block, env, fr, true, m.Name, line)
-	if err == nil {
-		if in.dbg != nil {
-			in.dbg.enter(methodName(m, recv), env, fr)
-			v, err = body()
-			in.dbg.leave()
-		} else {
-			v, err = body()
-		}
-	}
-	if len(env.promises) > 0 {
-		in.promises.end(env.promises)
-	}
-	if err != nil {
-		if c, ok := err.(*control); ok {
-			switch {
-			case c.kind == ctrlReturn && c.target == fr:
-				return c.value, nil
-			case c.kind == ctrlBreak && c.target != nil && c.target == blockTarget(block):
-				return c.value, nil
-			}
-		}
-		return object.Value{}, in.inFile(err, fr)
-	}
-	return v, nil
+	return in.start(act)
 }
 
 // inFile records the source file an exception was raised in, once, at the
@@ -572,59 +535,11 @@ func (in *Interp) callBlock(block object.Value, args []object.Value, kw *object.
 		}
 		return in.call(nil, args[0], p.Sym, args[1:], kw, inner, false, 0)
 	}
-	env := NewEnv(p.Env)
-	fr := p.Frame
-	if p.Strict {
-		// A lambda's call is a frame of its own, where its return stops:
-		// it starts and ends with the call, whatever became of the
-		// method the lambda was written in.
-		copy := *p.Frame
-		copy.Lambda, copy.ended = true, false
-		fr = &copy
-		defer func() { copy.ended = true }()
-	}
-	if err := in.bindParams(in.code.irParams(p.IR), args, kw, inner, env, fr, p.Strict, "block", p.line()); err != nil {
+	act, err := in.blockAct(p, args, kw, inner)
+	if err != nil {
 		return object.Value{}, err
 	}
-	body := func() (object.Value, error) { return in.runBody(p.IR, env, fr) }
-	if in.dbg != nil {
-		in.dbg.enter(blockName(in.dbg, p.Frame), env, fr)
-		defer in.dbg.leave()
-	}
-	v, err := body()
-	for err != nil {
-		c, ok := err.(*control)
-		if !ok || c.kind != ctrlRedo || c.target != nil {
-			break
-		}
-		if err = in.stopped(); err == nil {
-			v, err = body()
-		}
-	}
-	if err != nil {
-		if c, ok := err.(*control); ok {
-			switch {
-			case c.kind == ctrlNext && c.target == nil:
-				return c.value, nil
-			case c.kind == ctrlBreak && c.target == nil:
-				if p.Strict {
-					return c.value, nil
-				}
-				c.target = p
-				return object.Value{}, c
-			case c.kind == ctrlReturn && p.Strict && c.target == p.Frame:
-				// A return inside a lambda body targets the lambda's own
-				// frame copy; the body saw the copy, so this is unreachable
-				// unless the return came from a nested block closed over
-				// the original frame. Treat it as the lambda's return.
-				return c.value, nil
-			case c.kind == ctrlReturn && p.Strict && c.target == fr:
-				return c.value, nil
-			}
-		}
-		return object.Value{}, in.inFile(err, fr)
-	}
-	return v, nil
+	return in.start(act)
 }
 
 // callSuper calls the method of fr's name in the next ancestor of the
