@@ -131,15 +131,15 @@ reviewer switching branches cannot disturb the run:
 ```sh
 make build && cp bin/cameo /tmp/cameo-final
 ruby specs/run.rb --cameo /tmp/cameo-final --ruby ruby --status /tmp/status.tsv --out /tmp/specout
-ruby tests/performance/run.rb
+benchmarks/compare/rerun.sh --only cameo
 ```
 
 The first is ruby/spec's coverage of core Ruby: what passes, what fails
 by design (`specs/runner/classify.rb` names the decisions), what is not
 done yet; it goes into `doc/coverage.md`, with `specs/status.tsv` updated.
-The library coverage is the plan page's tables. The second is the
-performance table for this machine, which goes into
-`tests/performance/README.md`. Run them one after the other: the
+The library coverage is the plan page's tables. The second times the
+interpreter on CRuby's benchmarks, for
+`benchmarks/compare/README.md`. Run them one after the other: the
 performance run wants the CPU to itself.
 
 ## 5. Finish

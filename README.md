@@ -65,8 +65,6 @@ cameo check script.cameo      # parse and check only, report every error with it
 cameo proto script.cameo      # the .proto files of the script's classes, one per package
 cameo proto script.cameo out/ # the same, written into out/
 cameo ir script.cameo         # the instructions the script compiles to; see doc/design/ir.md
-cameo build script.cameo out/ # compile the top-level Integer methods to Go: out/main.go runs the script
-cameo run script.cameo        # the same, built with go and run; needs Go and the cameo source cameo was built from
 cameo resume path/to/dump     # continue a script that ^C paused
 cameo inspect path/to/dump    # show where it paused and what its top level held
 cameo irb [script.cameo]      # evaluate lines typed in, at the top level of the script when one is given
@@ -99,9 +97,6 @@ a method, `backtrace`, `info`, `list`, `up`, `down`, and any expression,
 evaluated in the frame it stopped in. A script that requires `"debug"`
 stops at `debugger` and `binding.break` the same way.
 [doc/debugger.md](doc/debugger.md) has the commands.
-
-`cameo build` is the first step of ahead-of-time compilation; see
-[doc/design/aot.md](doc/design/aot.md).
 
 From Go:
 

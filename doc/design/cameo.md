@@ -811,10 +811,10 @@ One Go module, `github.com/cameo-lang/cameo`, with the packages under `src/`:
 | `eval/sched.go` | the queue of calls `async` started and the runner goroutines that take them |
 | `protogen` | descriptors from class declarations, `.proto` text, values to and from the `cameo.Value` envelope |
 | `cameopb` | cameo's own messages: the `.proto` files under `src/cameopb/cameo` and the Go code `make proto` generates from them, committed |
-| `ir` | the intermediate representation, whose messages are `cameo/ir.proto`: the compiler from the AST, and the listing of a unit; see [ir.md](ir.md) || `aot` | `cameo build`: Go source for the top-level methods it can type, which the interpreter calls in place of their bodies; see [aot.md](aot.md) |
+| `ir` | the intermediate representation, whose messages are `cameo/ir.proto`: the compiler from the AST, and the listing of a unit; see [ir.md](ir.md) |
 | `irb` | the read-eval-print loop of `cameo irb`, and the line editor it runs on a terminal; see [debugger.md](../debugger.md) |
 | `buildinfo` | the version, commit and date the binary was built from, for `cameo version` and `RUBY_ENGINE_VERSION` |
-| `cmd/cameo` | the binary: `cameo script.cameo`, `check`, `proto`, `build`, `run`, `debug`, `irb`, `resume` and `inspect` (see [pause.md](pause.md)), `version` |
+| `cmd/cameo` | the binary: `cameo script.cameo`, `check`, `proto`, `ir`, `debug`, `irb`, `resume` and `inspect` (see [pause.md](pause.md)), `version` |
 
 Tests are the example corpus first: `examples/<name>.cameo` beside
 `examples/<name>.expected`, run by `go test` which executes each script and

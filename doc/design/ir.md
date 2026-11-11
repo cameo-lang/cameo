@@ -155,7 +155,7 @@ of a unit is its top level, whose statements the run takes one at a time, so
 that it can pause between two of them. A method's body is a proc
 (`object.Method.Body` holds an `*irProc`), and so is a block's
 (`eval.Proc.IR`). The AST is the compiler's input and nothing else reads it
-at run time; `cameo build` compiles from it too, apart from the IR.
+at run time.
 
 The tree walker and the closure compiler it replaced are gone. While the
 IR was built in slices, both evaluators ran every test, and ruby/spec's
@@ -348,11 +348,6 @@ ever delays a pause. An Enumerator needs no stepper of its own: cameo has
 no `next`, so its `each` with a block is the method that made it, called
 with that block, and that method is the activation.
 
-A method `cameo build` compiled is Go code too, and a nested loop when it
-calls back. It is pure, so at a pause it leaves its call to the
-interpreter (`eval.ErrDeopt`), which runs the body again from its start as
-an activation.
-
 ### The dump
 
 A dump of a run that paused inside a statement adds the stacks to what
@@ -478,7 +473,8 @@ step took more than one.
    ranges, maps and strings.
 9. ir: compiles and runs definitions, `super`, `with`, `async` and `await`.
 10. eval: every program runs on the IR; the tree walker goes. The debugger
-    and irb move over. `cameo build` stays on the AST.
+    and irb move over. `cameo build`, the compiler of methods to Go that
+    existed then, stayed on the AST.
 11. eval: a frame knows when its call ended, and a `return` from a proc
     that outlived it raises `LocalJumpError`. A frame keeps pointing at its
     method and classes; the closure of step 12 names them when it is
@@ -541,8 +537,11 @@ that is all cameo, and widens it from there.
     another program the first closure of a unit carries the code, as
     anywhere else in the envelope.
 29. aot: a compiled method leaves its call to the interpreter at a pause.
-    It reads one flag for a stop and a pause, so the check costs what the
-    stop check did.
+    Built, and gone again with the compiler: `cameo build` compiled pure
+    methods over Integers and Floats to Go and left the rest of a script
+    to the interpreter, so it sped up few programs and was a second
+    implementation of the language to keep in step. It was removed after
+    this stack, and every method runs on the IR.
 30. debug: the debugger and irb read the activation stack. Done with
     step 20 in substance: every method and block activation tells the
     debugger when it starts and ends (`machine.debugged`), so stepping,
