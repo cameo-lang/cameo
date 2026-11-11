@@ -202,13 +202,7 @@ func (in *Interp) newInstance(cls *object.Class, args []object.Value, kw *object
 	if cls.Digest == "" && cls != object.ObjectClass {
 		return object.Value{}, in.raise(object.NoMethodError, 0, "undefined method 'new' for class %s: use a literal", cls.QualifiedName())
 	}
-	inst := &object.Instance{Cls: cls, Fields: make([]object.Value, len(cls.Fields))}
-	for i, f := range cls.Fields {
-		inst.Fields[i] = f.Default
-		if f.Default.IsZero() {
-			inst.Fields[i] = object.Empty(f.Type)
-		}
-	}
+	inst := allocate(cls)
 	if m := cls.Lookup("initialize"); m != nil && m.Body != nil {
 		if _, err := in.invoke(m, object.InstanceValue(inst), args, kw, block, 0); err != nil {
 			return object.Value{}, err
@@ -242,6 +236,36 @@ func (in *Interp) newInstance(cls *object.Class, args []object.Value, kw *object
 		}
 	}
 	return object.InstanceValue(inst), nil
+}
+
+// allocate makes an instance of cls with every field at its default.
+func allocate(cls *object.Class) *object.Instance {
+	inst := &object.Instance{Cls: cls, Fields: make([]object.Value, len(cls.Fields))}
+	for i, f := range cls.Fields {
+		inst.Fields[i] = f.Default
+		if f.Default.IsZero() {
+			inst.Fields[i] = object.Empty(f.Type)
+		}
+	}
+	return inst
+}
+
+// initializer returns the initialize a script defined for cls, when new
+// on cls is Class#new making an instance and running that method: the
+// case the evaluator runs as an activation. meth is the method the call
+// of new found.
+func (in *Interp) initializer(meth *object.Method, recv object.Value) *object.Method {
+	if meth == nil || meth.Owner != object.ClassClass || meth.Name != "new" || meth.Body != nil {
+		return nil
+	}
+	cls, ok := recv.AsClass()
+	if !ok || cls == object.ClassClass || cls.IsModule || (cls.Digest == "" && cls != object.ObjectClass) {
+		return nil
+	}
+	if init := cls.Lookup("initialize"); in.runs(init, true) {
+		return init
+	}
+	return nil
 }
 
 // hashProc is the proc of a hash: a lambda that returns hash[key].

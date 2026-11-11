@@ -242,11 +242,19 @@ func (in *Interp) leave(m *machine, v object.Value, err error) (object.Value, er
 			in.promises.end(m.env.promises)
 		}
 		if err == nil {
+			if !m.result.IsZero() {
+				return m.result, nil
+			}
 			return v, nil
 		}
 		if c, ok := err.(*control); ok {
 			switch {
 			case c.kind == ctrlReturn && c.target == fr:
+				// A return leaves an initialize as its end does: new
+				// returns the instance.
+				if !m.result.IsZero() {
+					return m.result, nil
+				}
 				return c.value, nil
 			case c.kind == ctrlBreak && c.target != nil && c.target == blockTarget(fr.Block):
 				return c.value, nil

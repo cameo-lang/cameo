@@ -363,12 +363,17 @@ func (x *Dump) GetFrames() []*Dump_Frame {
 // the top-level self is marked with main; a value the envelope cannot
 // carry has none of them, and missing says what it was.
 type Dump_Binding struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Value         *Value                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
-	Class         string                 `protobuf:"bytes,3,opt,name=class,proto3" json:"class,omitempty"`
-	Missing       string                 `protobuf:"bytes,4,opt,name=missing,proto3" json:"missing,omitempty"`
-	Main          bool                   `protobuf:"varint,5,opt,name=main,proto3" json:"main,omitempty"`
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Name    string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Value   *Value                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	Class   string                 `protobuf:"bytes,3,opt,name=class,proto3" json:"class,omitempty"`
+	Missing string                 `protobuf:"bytes,4,opt,name=missing,proto3" json:"missing,omitempty"`
+	Main    bool                   `protobuf:"varint,5,opt,name=main,proto3" json:"main,omitempty"`
+	// building marks the instance an initialize is filling: the frame
+	// of that initialize, plus one. The instance changes until its
+	// initialize ends, so the dump holds it once, in the frame, and
+	// what else holds it refers to it there.
+	Building      uint32 `protobuf:"varint,6,opt,name=building,proto3" json:"building,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -436,6 +441,13 @@ func (x *Dump_Binding) GetMain() bool {
 		return x.Main
 	}
 	return false
+}
+
+func (x *Dump_Binding) GetBuilding() uint32 {
+	if x != nil {
+		return x.Building
+	}
+	return 0
 }
 
 // Promise is a settled promise: its result in value, or the exception it
@@ -603,7 +615,10 @@ type Dump_Activation struct {
 	// block is the proc of a BLOCK that was called as a value, with
 	// call. One the activation below yielded to has none: it is the
 	// block of that activation's frame, or of its builtin.
-	Block         *Dump_Binding `protobuf:"bytes,10,opt,name=block,proto3" json:"block,omitempty"`
+	Block *Dump_Binding `protobuf:"bytes,10,opt,name=block,proto3" json:"block,omitempty"`
+	// result is what the caller gets in place of the activation's own
+	// value: the instance new made, for an initialize.
+	Result        *Dump_Binding `protobuf:"bytes,11,opt,name=result,proto3" json:"result,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -704,6 +719,13 @@ func (x *Dump_Activation) GetBuiltin() *Dump_Builtin {
 func (x *Dump_Activation) GetBlock() *Dump_Binding {
 	if x != nil {
 		return x.Block
+	}
+	return nil
+}
+
+func (x *Dump_Activation) GetResult() *Dump_Binding {
+	if x != nil {
+		return x.Result
 	}
 	return nil
 }
@@ -1104,8 +1126,10 @@ type Dump_Frame struct {
 	File      string   `protobuf:"bytes,10,opt,name=file,proto3" json:"file,omitempty"`
 	// lambda marks the frame of a lambda's call; ended a frame whose
 	// call returned, which a block written in it outlived.
-	Lambda        bool `protobuf:"varint,11,opt,name=lambda,proto3" json:"lambda,omitempty"`
-	Ended         bool `protobuf:"varint,12,opt,name=ended,proto3" json:"ended,omitempty"`
+	Lambda bool `protobuf:"varint,11,opt,name=lambda,proto3" json:"lambda,omitempty"`
+	Ended  bool `protobuf:"varint,12,opt,name=ended,proto3" json:"ended,omitempty"`
+	// building is the instance the frame's initialize is filling.
+	Building      *Value `protobuf:"bytes,13,opt,name=building,proto3" json:"building,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1215,6 +1239,13 @@ func (x *Dump_Frame) GetEnded() bool {
 		return x.Ended
 	}
 	return false
+}
+
+func (x *Dump_Frame) GetBuilding() *Value {
+	if x != nil {
+		return x.Building
+	}
+	return nil
 }
 
 // Class is a class or a module as the run had made it.
@@ -1675,7 +1706,7 @@ var File_cameo_dump_proto protoreflect.FileDescriptor
 
 const file_cameo_dump_proto_rawDesc = "" +
 	"\n" +
-	"\x10cameo/dump.proto\x12\x05cameo\x1a\x0ecameo/ir.proto\x1a\x11cameo/value.proto\"\xba\x1d\n" +
+	"\x10cameo/dump.proto\x12\x05cameo\x1a\x0ecameo/ir.proto\x1a\x11cameo/value.proto\"\xad\x1e\n" +
 	"\x04Dump\x12\x12\n" +
 	"\x04file\x18\x01 \x01(\tR\x04file\x12\x16\n" +
 	"\x06source\x18\x02 \x01(\tR\x06source\x12\x12\n" +
@@ -1696,13 +1727,14 @@ const file_cameo_dump_proto_rawDesc = "" +
 	"\amissing\x18\x10 \x03(\tR\amissing\x12,\n" +
 	"\x05stack\x18\x11 \x03(\v2\x16.cameo.Dump.ActivationR\x05stack\x12)\n" +
 	"\x06scopes\x18\x12 \x03(\v2\x11.cameo.Dump.ScopeR\x06scopes\x12)\n" +
-	"\x06frames\x18\x13 \x03(\v2\x11.cameo.Dump.FrameR\x06frames\x1a\x85\x01\n" +
+	"\x06frames\x18\x13 \x03(\v2\x11.cameo.Dump.FrameR\x06frames\x1a\xa1\x01\n" +
 	"\aBinding\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\"\n" +
 	"\x05value\x18\x02 \x01(\v2\f.cameo.ValueR\x05value\x12\x14\n" +
 	"\x05class\x18\x03 \x01(\tR\x05class\x12\x18\n" +
 	"\amissing\x18\x04 \x01(\tR\amissing\x12\x12\n" +
-	"\x04main\x18\x05 \x01(\bR\x04main\x1a\x9e\x01\n" +
+	"\x04main\x18\x05 \x01(\bR\x04main\x12\x1a\n" +
+	"\bbuilding\x18\x06 \x01(\rR\bbuilding\x1a\x9e\x01\n" +
 	"\aPromise\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x16\n" +
 	"\x06method\x18\x02 \x01(\tR\x06method\x12\"\n" +
@@ -1712,7 +1744,7 @@ const file_cameo_dump_proto_rawDesc = "" +
 	"\aFailure\x12\x14\n" +
 	"\x05class\x18\x01 \x01(\tR\x05class\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12\x12\n" +
-	"\x04line\x18\x03 \x01(\x05R\x04line\x1a\x93\x03\n" +
+	"\x04line\x18\x03 \x01(\x05R\x04line\x1a\xc0\x03\n" +
 	"\n" +
 	"Activation\x12/\n" +
 	"\x04kind\x18\x01 \x01(\x0e2\x1b.cameo.Dump.Activation.KindR\x04kind\x12\x12\n" +
@@ -1725,7 +1757,8 @@ const file_cameo_dump_proto_rawDesc = "" +
 	"\x04line\x18\b \x01(\x05R\x04line\x12-\n" +
 	"\abuiltin\x18\t \x01(\v2\x13.cameo.Dump.BuiltinR\abuiltin\x12)\n" +
 	"\x05block\x18\n" +
-	" \x01(\v2\x13.cameo.Dump.BindingR\x05block\"9\n" +
+	" \x01(\v2\x13.cameo.Dump.BindingR\x05block\x12+\n" +
+	"\x06result\x18\v \x01(\v2\x13.cameo.Dump.BindingR\x06result\"9\n" +
 	"\x04Kind\x12\r\n" +
 	"\tSTATEMENT\x10\x00\x12\n" +
 	"\n" +
@@ -1769,7 +1802,7 @@ const file_cameo_dump_proto_rawDesc = "" +
 	"\x06parent\x18\x03 \x01(\rR\x06parent\x12\x1a\n" +
 	"\bcaptured\x18\x04 \x01(\bR\bcaptured\x12\x16\n" +
 	"\x06origin\x18\x05 \x01(\rR\x06origin\x12\x1a\n" +
-	"\bpromises\x18\x06 \x03(\x03R\bpromises\x1a\xe4\x02\n" +
+	"\bpromises\x18\x06 \x03(\x03R\bpromises\x1a\x8e\x03\n" +
 	"\x05Frame\x12\x10\n" +
 	"\x03top\x18\x01 \x01(\bR\x03top\x12'\n" +
 	"\x04self\x18\x02 \x01(\v2\x13.cameo.Dump.BindingR\x04self\x12-\n" +
@@ -1783,7 +1816,8 @@ const file_cameo_dump_proto_rawDesc = "" +
 	"\x04file\x18\n" +
 	" \x01(\tR\x04file\x12\x16\n" +
 	"\x06lambda\x18\v \x01(\bR\x06lambda\x12\x14\n" +
-	"\x05ended\x18\f \x01(\bR\x05endedJ\x04\b\x04\x10\x05\x1a\xfe\x03\n" +
+	"\x05ended\x18\f \x01(\bR\x05ended\x12(\n" +
+	"\bbuilding\x18\r \x01(\v2\f.cameo.ValueR\bbuildingJ\x04\b\x04\x10\x05\x1a\xfe\x03\n" +
 	"\x05Class\x12\x0e\n" +
 	"\x02id\x18\x0e \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
@@ -1878,36 +1912,38 @@ var file_cameo_dump_proto_depIdxs = []int32{
 	3,  // 15: cameo.Dump.Activation.stack:type_name -> cameo.Dump.Binding
 	7,  // 16: cameo.Dump.Activation.builtin:type_name -> cameo.Dump.Builtin
 	3,  // 17: cameo.Dump.Activation.block:type_name -> cameo.Dump.Binding
-	18, // 18: cameo.Dump.Builtin.method:type_name -> cameo.Binding.Method
-	3,  // 19: cameo.Dump.Builtin.self:type_name -> cameo.Dump.Binding
-	3,  // 20: cameo.Dump.Builtin.args:type_name -> cameo.Dump.Binding
-	17, // 21: cameo.Dump.Builtin.kw:type_name -> cameo.Value
-	3,  // 22: cameo.Dump.Builtin.block:type_name -> cameo.Dump.Binding
-	3,  // 23: cameo.Dump.Builtin.state:type_name -> cameo.Dump.Binding
-	17, // 24: cameo.Dump.Cursor.rescuing:type_name -> cameo.Value
-	9,  // 25: cameo.Dump.Cursor.pending:type_name -> cameo.Dump.Completion
-	1,  // 26: cameo.Dump.Completion.kind:type_name -> cameo.Dump.Completion.Kind
-	3,  // 27: cameo.Dump.Completion.value:type_name -> cameo.Dump.Binding
-	17, // 28: cameo.Dump.Completion.exception:type_name -> cameo.Value
-	3,  // 29: cameo.Dump.Scope.locals:type_name -> cameo.Dump.Binding
-	3,  // 30: cameo.Dump.Frame.self:type_name -> cameo.Dump.Binding
-	18, // 31: cameo.Dump.Frame.method:type_name -> cameo.Binding.Method
-	3,  // 32: cameo.Dump.Frame.args:type_name -> cameo.Dump.Binding
-	17, // 33: cameo.Dump.Frame.kw:type_name -> cameo.Value
-	3,  // 34: cameo.Dump.Frame.block:type_name -> cameo.Dump.Binding
-	13, // 35: cameo.Dump.Class.fields:type_name -> cameo.Dump.Field
-	15, // 36: cameo.Dump.Class.methods:type_name -> cameo.Dump.Method
-	3,  // 37: cameo.Dump.Class.consts:type_name -> cameo.Dump.Binding
-	3,  // 38: cameo.Dump.Class.attrs:type_name -> cameo.Dump.Binding
-	3,  // 39: cameo.Dump.Class.attr_defaults:type_name -> cameo.Dump.Binding
-	14, // 40: cameo.Dump.Field.type:type_name -> cameo.Dump.FieldType
-	17, // 41: cameo.Dump.Field.default:type_name -> cameo.Value
-	14, // 42: cameo.Dump.FieldType.elem:type_name -> cameo.Dump.FieldType
-	43, // [43:43] is the sub-list for method output_type
-	43, // [43:43] is the sub-list for method input_type
-	43, // [43:43] is the sub-list for extension type_name
-	43, // [43:43] is the sub-list for extension extendee
-	0,  // [0:43] is the sub-list for field type_name
+	3,  // 18: cameo.Dump.Activation.result:type_name -> cameo.Dump.Binding
+	18, // 19: cameo.Dump.Builtin.method:type_name -> cameo.Binding.Method
+	3,  // 20: cameo.Dump.Builtin.self:type_name -> cameo.Dump.Binding
+	3,  // 21: cameo.Dump.Builtin.args:type_name -> cameo.Dump.Binding
+	17, // 22: cameo.Dump.Builtin.kw:type_name -> cameo.Value
+	3,  // 23: cameo.Dump.Builtin.block:type_name -> cameo.Dump.Binding
+	3,  // 24: cameo.Dump.Builtin.state:type_name -> cameo.Dump.Binding
+	17, // 25: cameo.Dump.Cursor.rescuing:type_name -> cameo.Value
+	9,  // 26: cameo.Dump.Cursor.pending:type_name -> cameo.Dump.Completion
+	1,  // 27: cameo.Dump.Completion.kind:type_name -> cameo.Dump.Completion.Kind
+	3,  // 28: cameo.Dump.Completion.value:type_name -> cameo.Dump.Binding
+	17, // 29: cameo.Dump.Completion.exception:type_name -> cameo.Value
+	3,  // 30: cameo.Dump.Scope.locals:type_name -> cameo.Dump.Binding
+	3,  // 31: cameo.Dump.Frame.self:type_name -> cameo.Dump.Binding
+	18, // 32: cameo.Dump.Frame.method:type_name -> cameo.Binding.Method
+	3,  // 33: cameo.Dump.Frame.args:type_name -> cameo.Dump.Binding
+	17, // 34: cameo.Dump.Frame.kw:type_name -> cameo.Value
+	3,  // 35: cameo.Dump.Frame.block:type_name -> cameo.Dump.Binding
+	17, // 36: cameo.Dump.Frame.building:type_name -> cameo.Value
+	13, // 37: cameo.Dump.Class.fields:type_name -> cameo.Dump.Field
+	15, // 38: cameo.Dump.Class.methods:type_name -> cameo.Dump.Method
+	3,  // 39: cameo.Dump.Class.consts:type_name -> cameo.Dump.Binding
+	3,  // 40: cameo.Dump.Class.attrs:type_name -> cameo.Dump.Binding
+	3,  // 41: cameo.Dump.Class.attr_defaults:type_name -> cameo.Dump.Binding
+	14, // 42: cameo.Dump.Field.type:type_name -> cameo.Dump.FieldType
+	17, // 43: cameo.Dump.Field.default:type_name -> cameo.Value
+	14, // 44: cameo.Dump.FieldType.elem:type_name -> cameo.Dump.FieldType
+	45, // [45:45] is the sub-list for method output_type
+	45, // [45:45] is the sub-list for method input_type
+	45, // [45:45] is the sub-list for extension type_name
+	45, // [45:45] is the sub-list for extension extendee
+	0,  // [0:45] is the sub-list for field type_name
 }
 
 func init() { file_cameo_dump_proto_init() }
