@@ -21,11 +21,49 @@ import (
 // exception class imports.
 func envelope() protoreflect.FileDescriptor { return cameopb.File_cameo_value_proto }
 
+// ProcCodec carries Procs through the envelope. A Proc is the evaluator's,
+// opaque here, so the evaluator is what turns one into a Closure message
+// and back.
+type ProcCodec interface {
+	EncodeProc(e *Encoder, v object.Value) (*cameopb.Closure, error)
+	DecodeProc(d *Decoder, c *cameopb.Closure) (object.Value, error)
+}
+
 // Encoder serialises values into the envelope.
-type Encoder struct{ reg *Registry }
+type Encoder struct {
+	reg *Registry
+	// procs encodes Procs; without it a Proc cannot be encoded.
+	procs ProcCodec
+	// carryUnits makes the first closure of a unit carry the unit's code,
+	// for a reader that does not have it; sent holds the digests of the
+	// units this encoder has carried.
+	carryUnits bool
+	sent       map[string]bool
+}
 
 // NewEncoder makes an encoder over the registry's classes.
 func NewEncoder(reg *Registry) *Encoder { return &Encoder{reg: reg} }
+
+// WithProcs returns the encoder set to encode Procs through codec. With
+// carryUnits set, the messages it makes carry the code their closures
+// refer to, each unit once, so that a program that never compiled the
+// code can run them; without, the reader must have the units already, as
+// a worker of the same program does.
+func (e *Encoder) WithProcs(codec ProcCodec, carryUnits bool) *Encoder {
+	e.procs, e.carryUnits, e.sent = codec, carryUnits, map[string]bool{}
+	return e
+}
+
+// CarryUnit reports whether a closure of the unit with the given digest
+// is to carry the unit's code: the first one this encoder makes, when it
+// carries units at all.
+func (e *Encoder) CarryUnit(digest string) bool {
+	if !e.carryUnits || e.sent[digest] {
+		return false
+	}
+	e.sent[digest] = true
+	return true
+}
 
 // Encode is the wire form of a value in the envelope. A Proc or a class
 // cannot be encoded. An exception travels as an Object, as an instance
@@ -107,6 +145,15 @@ func (e *Encoder) Message(v object.Value) (*cameopb.Value, error) {
 			return nil, err
 		}
 		return &cameopb.Value{Kind: &cameopb.Value_Object{Object: &cameopb.Object{Class: cls.QualifiedName(), Digest: cls.Digest, Message: data}}}, nil
+	case object.KindProc:
+		if e.procs == nil {
+			break
+		}
+		closure, err := e.procs.EncodeProc(e, v)
+		if err != nil {
+			return nil, err
+		}
+		return &cameopb.Value{Kind: &cameopb.Value_Closure{Closure: closure}}, nil
 	}
 	if v.IsNil() {
 		return &cameopb.Value{}, nil
@@ -206,11 +253,19 @@ type ClassResolver func(name, digest string) *object.Class
 type Decoder struct {
 	reg     *Registry
 	resolve ClassResolver
+	// procs decodes closures; without it a message with one is refused.
+	procs ProcCodec
 }
 
 // NewDecoder makes a decoder that finds classes through resolve.
 func NewDecoder(reg *Registry, resolve ClassResolver) *Decoder {
 	return &Decoder{reg: reg, resolve: resolve}
+}
+
+// WithProcs returns the decoder set to decode closures through codec.
+func (d *Decoder) WithProcs(codec ProcCodec) *Decoder {
+	d.procs = codec
+	return d
 }
 
 // Decode reads a value from its wire form.
@@ -331,6 +386,11 @@ func (d *Decoder) Value(msg *cameopb.Value) (object.Value, error) {
 			return object.Value{}, err
 		}
 		return object.InstanceValue(inst), nil
+	case *cameopb.Value_Closure:
+		if d.procs == nil {
+			return object.Value{}, fmt.Errorf("the message holds a Proc, which this reader does not decode")
+		}
+		return d.procs.DecodeProc(d, k.Closure)
 	}
 	return object.Value{}, fmt.Errorf("unknown envelope kind %T", msg.GetKind())
 }

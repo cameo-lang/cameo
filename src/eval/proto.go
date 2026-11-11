@@ -11,13 +11,21 @@ import (
 // classes, and encoders over them.
 func (in *Interp) Proto() *protogen.Registry { return in.proto }
 
-// Encoder serialises values into the envelope.
+// Encoder serialises values into the envelope. It refuses a Proc; see
+// ProcEncoder.
 func (in *Interp) Encoder() *protogen.Encoder { return protogen.NewEncoder(in.proto) }
+
+// ProcEncoder serialises values into the envelope, a Proc among them as a
+// closure (closure.go). With carryUnits set its messages carry the code
+// their closures run, for a reader that is another program.
+func (in *Interp) ProcEncoder(carryUnits bool) *protogen.Encoder {
+	return protogen.NewEncoder(in.proto).WithProcs(in, carryUnits)
+}
 
 // Decoder reads values from the envelope, finding classes by their qualified
 // name and digest among the interpreter's constants.
 func (in *Interp) Decoder() *protogen.Decoder {
-	return protogen.NewDecoder(in.proto, in.FindClass)
+	return protogen.NewDecoder(in.proto, in.FindClass).WithProcs(in)
 }
 
 // FindClass finds a loaded or registered class by qualified name
@@ -159,7 +167,7 @@ func init() {
 		return object.Bytes(data), nil
 	})
 	object.ObjectClass.Define("to_value_proto", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		data, err := ctx.(*Interp).Encoder().Encode(self)
+		data, err := ctx.(*Interp).ProcEncoder(true).Encode(self)
 		if err != nil {
 			return object.Value{}, ctx.Raise(object.TypeError, "%s", err.Error())
 		}

@@ -11,15 +11,13 @@ package cameo;
 
 option go_package = "github.com/cameo-lang/cameo/src/cameopb";
 
-import "cameo/value.proto";
-
 // Unit is the code of one source file: the script, or a library written
 // in cameo.
 message Unit {
   // version is the IR version the unit was compiled to; see ir.Version.
   uint32 version = 1;
-  // digest identifies the unit by its code, line numbers left out. A
-  // closure names the unit it belongs to by it.
+  // digest identifies the unit: a hash of its wire form with this field
+  // empty. A closure names the unit it belongs to by it.
   string digest = 2;
   string file = 3;
   // names are the names the instructions refer to by index: variables,
@@ -84,11 +82,26 @@ message Seq {
   repeated Code code = 1;
 }
 
+// Constant is a literal the source wrote: nil when no kind is set, a
+// boolean, a number or a string. An integer beyond 64 bits is big_value,
+// its decimal digits. A string that is not valid UTF-8, which a protobuf
+// string cannot hold, is bytes_value.
+message Constant {
+  oneof kind {
+    bool bool_value = 1;
+    int64 int_value = 2;
+    double float_value = 3;
+    string string_value = 4;
+    bytes bytes_value = 5;
+    string big_value = 6;
+  }
+}
+
 // Arg is one argument of an instruction.
 message Arg {
   oneof kind {
     // constant is a literal value.
-    Value constant = 1;
+    Constant constant = 1;
     // name is an index into the unit's names.
     uint32 name = 2;
     // proc is an index into the unit's procs.
@@ -247,9 +260,8 @@ enum Op {
 
   // Values.
 
-  // CONST(constant): -> value. An empty constant is nil. A bytes constant
-  // is a String whose bytes are not valid UTF-8, which a protobuf string
-  // cannot hold.
+  // CONST(constant): -> value. An empty constant is nil; a bytes constant
+  // is a String all the same.
   CONST = 1;
   // SYM(name): -> symbol.
   SYM = 2;

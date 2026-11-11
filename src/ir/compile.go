@@ -1,8 +1,12 @@
 package ir
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"unicode/utf8"
+
+	"google.golang.org/protobuf/proto"
 
 	"github.com/cameo-lang/cameo/src/cameopb"
 	"github.com/cameo-lang/cameo/src/syntax"
@@ -19,8 +23,29 @@ func (e *Unsupported) Error() string {
 // Compile compiles a program into a unit: proc 0 is its top level.
 func Compile(file string, prog *syntax.Program) (*cameopb.Unit, error) {
 	c := newCompiler(file)
-	_, err := c.proc("<main>", nil, prog.Body, prog.Line(), false)
-	return c.unit, err
+	if _, err := c.proc("<main>", nil, prog.Body, prog.Line(), false); err != nil {
+		return nil, err
+	}
+	digest, err := Digest(c.unit)
+	if err != nil {
+		return nil, err
+	}
+	c.unit.Digest = digest
+	return c.unit, nil
+}
+
+// Digest returns what identifies a unit: a hash of its wire form, with its
+// digest field left out. Two units with one digest are the same code from
+// the same file, line for line.
+func Digest(u *cameopb.Unit) (string, error) {
+	plain := proto.Clone(u).(*cameopb.Unit)
+	plain.Digest = ""
+	data, err := proto.MarshalOptions{Deterministic: true}.Marshal(plain)
+	if err != nil {
+		return "", err
+	}
+	sum := sha256.Sum256(data)
+	return hex.EncodeToString(sum[:8]), nil
 }
 
 // IsOperator reports whether a call of name with a receiver and one plain
@@ -63,7 +88,7 @@ func intArg(i int) *cameopb.Arg { return &cameopb.Arg{Kind: &cameopb.Arg_Int{Int
 
 func procArg(i uint32) *cameopb.Arg { return &cameopb.Arg{Kind: &cameopb.Arg_Proc{Proc: i}} }
 
-func constArg(v *cameopb.Value) *cameopb.Arg {
+func constArg(v *cameopb.Constant) *cameopb.Arg {
 	return &cameopb.Arg{Kind: &cameopb.Arg_Constant{Constant: v}}
 }
 
@@ -158,7 +183,7 @@ func (c *compiler) body(nodes []syntax.Node, line int) (*cameopb.Seq, error) {
 // for the expressions one construct was rewritten to.
 func (c *compiler) sequence(e *emitter, nodes []syntax.Node, line int, between cameopb.Op) error {
 	if len(nodes) == 0 {
-		e.emit(cameopb.Op_CONST, line, constArg(&cameopb.Value{}))
+		e.emit(cameopb.Op_CONST, line, constArg(&cameopb.Constant{}))
 		return nil
 	}
 	for i, n := range nodes {
@@ -185,7 +210,7 @@ func (c *compiler) value(n syntax.Node) (*cameopb.Seq, error) {
 // optional compiles an expression that may be absent, which is nil then.
 func (c *compiler) optional(e *emitter, n syntax.Node, line int) error {
 	if n == nil {
-		e.emit(cameopb.Op_CONST, line, constArg(&cameopb.Value{}))
+		e.emit(cameopb.Op_CONST, line, constArg(&cameopb.Constant{}))
 		return nil
 	}
 	return c.expr(e, n)
@@ -204,23 +229,23 @@ func (c *compiler) expr(e *emitter, n syntax.Node) error {
 	line := n.Line()
 	switch n := n.(type) {
 	case *syntax.Nil:
-		e.emit(cameopb.Op_CONST, line, constArg(&cameopb.Value{}))
+		e.emit(cameopb.Op_CONST, line, constArg(&cameopb.Constant{}))
 	case *syntax.Bool:
-		e.emit(cameopb.Op_CONST, line, constArg(&cameopb.Value{Kind: &cameopb.Value_BoolValue{BoolValue: n.Value}}))
+		e.emit(cameopb.Op_CONST, line, constArg(&cameopb.Constant{Kind: &cameopb.Constant_BoolValue{BoolValue: n.Value}}))
 	case *syntax.Int:
-		e.emit(cameopb.Op_CONST, line, constArg(&cameopb.Value{Kind: &cameopb.Value_IntValue{IntValue: n.Value}}))
+		e.emit(cameopb.Op_CONST, line, constArg(&cameopb.Constant{Kind: &cameopb.Constant_IntValue{IntValue: n.Value}}))
 	case *syntax.BigInt:
-		e.emit(cameopb.Op_CONST, line, constArg(&cameopb.Value{Kind: &cameopb.Value_BigValue{BigValue: n.Digits}}))
+		e.emit(cameopb.Op_CONST, line, constArg(&cameopb.Constant{Kind: &cameopb.Constant_BigValue{BigValue: n.Digits}}))
 	case *syntax.Float:
-		e.emit(cameopb.Op_CONST, line, constArg(&cameopb.Value{Kind: &cameopb.Value_FloatValue{FloatValue: n.Value}}))
+		e.emit(cameopb.Op_CONST, line, constArg(&cameopb.Constant{Kind: &cameopb.Constant_FloatValue{FloatValue: n.Value}}))
 	case *syntax.Str:
 		if !utf8.ValidString(n.Value) {
 			// A protobuf string is UTF-8; a literal with other bytes in
 			// it, "\xff", travels as bytes and is a String all the same.
-			e.emit(cameopb.Op_CONST, line, constArg(&cameopb.Value{Kind: &cameopb.Value_BytesValue{BytesValue: []byte(n.Value)}}))
+			e.emit(cameopb.Op_CONST, line, constArg(&cameopb.Constant{Kind: &cameopb.Constant_BytesValue{BytesValue: []byte(n.Value)}}))
 			break
 		}
-		e.emit(cameopb.Op_CONST, line, constArg(&cameopb.Value{Kind: &cameopb.Value_StringValue{StringValue: n.Value}}))
+		e.emit(cameopb.Op_CONST, line, constArg(&cameopb.Constant{Kind: &cameopb.Constant_StringValue{StringValue: n.Value}}))
 	case *syntax.Sym:
 		e.emit(cameopb.Op_SYM, line, c.nameArg(n.Name))
 	case *syntax.Self:
@@ -671,7 +696,7 @@ func (c *compiler) caseIn(e *emitter, n *syntax.CaseIn) error {
 func (c *compiler) defined(e *emitter, n *syntax.Defined) error {
 	line := n.Line()
 	text := func(s string) {
-		e.emit(cameopb.Op_CONST, line, constArg(&cameopb.Value{Kind: &cameopb.Value_StringValue{StringValue: s}}))
+		e.emit(cameopb.Op_CONST, line, constArg(&cameopb.Constant{Kind: &cameopb.Constant_StringValue{StringValue: s}}))
 	}
 	switch x := n.Expr.(type) {
 	case *syntax.Var:

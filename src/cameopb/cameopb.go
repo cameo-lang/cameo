@@ -11,7 +11,12 @@ package cameopb
 import _ "embed"
 
 // ValueProto is the text of cameo/value.proto, the envelope, which `cameo
-// proto` writes beside the .proto files of a script's classes.
+// proto` writes beside the .proto files of a script's classes, and IRProto
+// that of cameo/ir.proto, which the envelope imports for the code of a
+// closure.
 //
 //go:embed cameo/value.proto
 var ValueProto string
+
+//go:embed cameo/ir.proto
+var IRProto string

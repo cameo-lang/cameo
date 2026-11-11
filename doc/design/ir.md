@@ -87,28 +87,51 @@ message Unit   { uint32 version = 1; string digest = 2; string file = 3; repeate
 message Proc   { string name = 1; Params params = 2; repeated Code code = 3; int32 line = 4; bool shared = 5; }
 message Code   { Op op = 1; repeated Arg args = 2; repeated Seq code = 3; int32 line = 4; uint64 flags = 5; }
 message Seq    { repeated Code code = 1; }
-message Arg    { oneof kind { Value constant = 1; uint32 name = 2; uint32 proc = 3; int64 int = 4; Pattern pattern = 5; FieldDecl field = 6; } }
+message Arg    { oneof kind { Constant constant = 1; uint32 name = 2; uint32 proc = 3; int64 int = 4; Pattern pattern = 5; FieldDecl field = 6; } }
 ```
 
-The values of a run that refer to code, which `cameo.Value` gains in a
-later step:
+The IR depends on no value of a run: a literal is a `Constant`, and
+`cameo/ir.proto` imports nothing. `cameo/value.proto` imports it, for the
+value that refers to code, a Proc:
 
 ```proto
-message Closure { string unit = 1; uint32 proc = 2; Binding binding = 3; bool strict = 4; string self_name = 5; }
-message Binding { repeated Local locals = 1; Value self = 2; MethodRef method = 3; repeated string lexical = 4; uint64 frame = 5; }
+message Closure { string unit = 1; uint32 proc = 2; Unit code = 3; Binding binding = 4; bool strict = 5; string self_name = 6; string symbol = 7; Value recv = 8; }
+message Binding { repeated Local locals = 1; Value self = 2; string self_class = 3; Method method = 4; repeated string lexical = 5; string def_target = 6; string file = 7; repeated Value args = 8; Map kw = 9; Value block = 10; }
 ```
+
+`eval/closure.go` turns a Proc into a `Closure` and back, through
+`protogen.ProcCodec`.
 
 - **Names are indices** into the unit's table, as atoms are in Erlang's
   distribution header.
-- **A unit's digest** is the hash of its code without line numbers, as a
-  class's digest is today. A closure whose unit is missing from the message
-  that carries it is refused, as Erlang refuses a fun whose module differs.
-- **`self_name`** is set on a lambda that calls itself by the name it is
-  assigned to (`syntax.Assign.Forward`): the decoder binds the name to the
-  closure, so the message holds no cycle.
-- **`frame`** is the id of the frame the closure was made in, where its
-  `return` goes. When that frame is gone, or is not in the message, `return`
-  raises `LocalJumpError`, as Ruby's does for a proc whose method returned.
+- **A unit's digest** is a hash of its wire form. A closure names its unit
+  by it and its proc by index, as an Erlang fun names its module, index and
+  uniq. The first closure of a message that refers to a unit carries the
+  unit in `code`, when the encoder carries units at all; the reader keeps
+  it for the closures that follow, and checks that it hashes to the digest.
+  A closure whose unit is neither in the message nor in the program is
+  refused.
+- **The locals of a binding are the ones the code reads**, found by walking
+  the proc and the blocks written in it, not all that were in sight: a
+  local the code never names does not travel, and cannot stop the proc
+  from travelling. A local that holds a class travels as the class's name.
+- **`self_name`** is the local that holds the closure itself: a lambda that
+  calls itself by the name it is assigned to. The decoder binds it, so the
+  message holds no cycle.
+- **The frame travels by name**: self by value, or as a class's name, or
+  as nothing for the top-level self; the method the proc was written in as
+  its class and name; the lexical classes by name. The arguments and the
+  block of that method's call travel only when the code has a bare `super`
+  or a `yield`. No call is running the frame of a decoded proc, so its
+  `return` raises `LocalJumpError`, as Ruby's does for a proc whose method
+  returned.
+- **A proc a builtin made does not travel**: it is a Go function. A proc
+  made from a symbol does, as the symbol.
+- **A symbol in a binding reads back as a String**, as a symbol does
+  wherever a value crosses the envelope ([cameo.md](cameo.md#symbols)). A
+  proc that compares a captured value with a symbol compares differently
+  after it travelled. Whether the envelope should carry symbols, now that
+  it carries what a running program holds, is an open question.
 - **Every instruction carries its line**, for error messages and the
   debugger.
 - **Locals are addressed by name.** A binding is then names and values with

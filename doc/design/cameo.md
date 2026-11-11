@@ -375,7 +375,9 @@ Blocks and lambdas are written as Ruby's: `yield` calls a block, `&block`
 captures it as a Proc, `proc.call` and `proc.()` invoke it. `return`
 inside a block returns from the enclosing method, and raises
 `LocalJumpError` once that method has returned, as in Ruby; `break` and
-`next` behave as in Ruby. Procs are values but not serialisable, so they cannot cross `async`.
+`next` behave as in Ruby. A Proc is a value, and serialises as its code
+and the values it captured (`to_value_proto`, see [ir.md](ir.md)); `async`
+and the pause dump do not carry one yet.
 
 ### Blocks capture values
 
@@ -632,8 +634,10 @@ carries (a KeyError's key and receiver), and the fields the class declares;
 
 **The value envelope.** Values that are not instances — scalars, lists, maps,
 sets, ranges — travel in `cameo.Value`, a message with a `oneof` over the
-scalar kinds plus `List`, `Map`, `Set`, `Range`, `Time`, `Regexp` and `Object` (a
-class name and the packed message of an instance or an exception). A symbol travels as a string, see *Symbols*.
+scalar kinds plus `List`, `Map`, `Set`, `Range`, `Time`, `Regexp`, `Object` (a
+class name and the packed message of an instance or an exception) and
+`Closure` (a Proc: the proc of a unit of code and the binding it runs in, see
+[ir.md](ir.md)). A symbol travels as a string, see *Symbols*.
 A hash's default value travels with it; a hash with a default block cannot
 travel. It is what `async` serialises, what the
 Go host API takes and returns, and what `cameo proto` emits alongside the
