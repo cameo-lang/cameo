@@ -41,6 +41,8 @@ type Encoder struct {
 	sent       map[string]bool
 	// classes is told the class of every instance and exception encoded.
 	classes func(*object.Class)
+	// symbols makes a Symbol travel as one, and not as a String.
+	symbols bool
 }
 
 // NewEncoder makes an encoder over the registry's classes.
@@ -61,6 +63,15 @@ func (e *Encoder) WithProcs(codec ProcCodec, carryUnits bool) *Encoder {
 // classes beside the values, as a dump does.
 func (e *Encoder) WithClasses(seen func(*object.Class)) *Encoder {
 	e.classes = seen
+	return e
+}
+
+// WithSymbols returns the encoder set to write a Symbol as a symbol,
+// which reads back as one. A message for another program does not: there
+// a symbol is a string, the one form every reader has. A dump does, for
+// a run to resume with the values it had.
+func (e *Encoder) WithSymbols() *Encoder {
+	e.symbols = true
 	return e
 }
 
@@ -97,7 +108,12 @@ func (e *Encoder) Message(v object.Value) (*cameopb.Value, error) {
 		return &cameopb.Value{Kind: &cameopb.Value_BigValue{BigValue: v.Big().String()}}, nil
 	case object.KindFloat:
 		return &cameopb.Value{Kind: &cameopb.Value_FloatValue{FloatValue: float64(v.Float())}}, nil
-	case object.KindString, object.KindASCII, object.KindSymbol:
+	case object.KindSymbol:
+		if e.symbols {
+			return &cameopb.Value{Kind: &cameopb.Value_SymbolValue{SymbolValue: string(v.Str())}}, nil
+		}
+		return &cameopb.Value{Kind: &cameopb.Value_StringValue{StringValue: string(v.Str())}}, nil
+	case object.KindString, object.KindASCII:
 		return &cameopb.Value{Kind: &cameopb.Value_StringValue{StringValue: string(v.Str())}}, nil
 	case object.KindBytes:
 		return &cameopb.Value{Kind: &cameopb.Value_BytesValue{BytesValue: []byte(v.Bytes())}}, nil
@@ -331,6 +347,8 @@ func (d *Decoder) Value(msg *cameopb.Value) (object.Value, error) {
 		return object.Float(k.FloatValue), nil
 	case *cameopb.Value_StringValue:
 		return object.String(k.StringValue), nil
+	case *cameopb.Value_SymbolValue:
+		return object.Symbol(k.SymbolValue), nil
 	case *cameopb.Value_BytesValue:
 		return object.Bytes(append([]byte{}, k.BytesValue...)), nil
 	case *cameopb.Value_List:
