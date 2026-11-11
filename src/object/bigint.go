@@ -17,7 +17,7 @@ func BigInt(b *big.Int) Value {
 	if b.IsInt64() {
 		return Int(b.Int64())
 	}
-	return Value{kind: KindBig, p: unsafe.Pointer(b)}
+	return ptrValue(KindBig, unsafe.Pointer(b))
 }
 
 // Big returns the digits of a big integer; they must not be changed.
@@ -29,7 +29,7 @@ func (v Value) Big() *big.Int {
 // AsBigInt reads either form of an integer as a big.Int, which for a
 // KindBig is its own and must not be changed.
 func (v Value) AsBigInt() (*big.Int, bool) {
-	switch v.kind {
+	switch v.kind() {
 	case KindInt:
 		return big.NewInt(v.n), true
 	case KindBig:
@@ -39,7 +39,7 @@ func (v Value) AsBigInt() (*big.Int, bool) {
 }
 
 // IsInteger reports an Integer in either form.
-func (v Value) IsInteger() bool { return v.kind == KindInt || v.kind == KindBig }
+func (v Value) IsInteger() bool { return v.kind() == KindInt || v.kind() == KindBig }
 
 // BigToFloat is the float nearest b, ±Inf beyond the float range.
 func BigToFloat(b *big.Int) float64 {
@@ -59,7 +59,7 @@ func FloatToInteger(f float64) Value {
 // compareNumbers orders two numbers, either integer form or a float,
 // exactly; ok is false when either is NaN.
 func compareNumbers(a, b Value) (r int, ok bool) {
-	if a.kind == KindInt && b.kind == KindInt {
+	if a.kind() == KindInt && b.kind() == KindInt {
 		switch {
 		case a.n < b.n:
 			return -1, true
@@ -76,7 +76,7 @@ func compareNumbers(a, b Value) (r int, ok bool) {
 }
 
 func exactFloat(v Value) *big.Float {
-	switch v.kind {
+	switch v.kind() {
 	case KindInt:
 		return new(big.Float).SetInt64(v.n)
 	case KindBig:
@@ -101,7 +101,9 @@ func CompareNumbers(a, b Value) (int, bool) {
 	return compareNumbers(a, b)
 }
 
-func (v Value) isNumber() bool { return v.kind == KindInt || v.kind == KindBig || v.kind == KindFloat }
+func (v Value) isNumber() bool {
+	return v.kind() == KindInt || v.kind() == KindBig || v.kind() == KindFloat
+}
 
 // AddInt, SubInt and MulInt are 64-bit arithmetic that reports overflow,
 // where an Integer moves to its big form.

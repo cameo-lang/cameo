@@ -214,7 +214,7 @@ func Key(v Value) string {
 }
 
 func writeKey(b *strings.Builder, v Value) {
-	switch v.kind {
+	switch v.kind() {
 	case KindNone, KindNil:
 		b.WriteString("n")
 	case KindBool:
@@ -241,16 +241,16 @@ func writeKey(b *strings.Builder, v Value) {
 		// A string of ASCII alone is the same key in every encoding, as
 		// in Ruby; one with other bytes is its encoding's.
 		switch {
-		case v.kind == KindSymbol:
+		case v.kind() == KindSymbol:
 			b.WriteString("y")
-		case v.kind == KindString || ASCIIOnly(v.Str()):
+		case v.kind() == KindString || ASCIIOnly(v.Str()):
 			b.WriteString("s")
-		case v.kind == KindBytes:
+		case v.kind() == KindBytes:
 			b.WriteString("b")
 		default:
 			b.WriteString("a")
 		}
-		b.WriteString(strconv.Itoa(int(v.n)))
+		b.WriteString(strconv.Itoa(v.size()))
 		b.WriteByte(':')
 		b.WriteString(v.Str())
 	case KindList:
@@ -383,7 +383,7 @@ func writeKey(b *strings.Builder, v Value) {
 
 // OrNil returns v, or nil for the zero Value.
 func OrNil(v Value) Value {
-	if v.kind == KindNone {
+	if v.kind() == KindNone {
 		return Nil
 	}
 	return v
@@ -397,7 +397,7 @@ func Equal(a, b Value) bool {
 		if !b.isNumber() {
 			return false
 		}
-		if a.kind == KindInt && b.kind == KindInt {
+		if a.kind() == KindInt && b.kind() == KindInt {
 			return a.n == b.n
 		}
 		r, ok := compareNumbers(a, b)
@@ -406,10 +406,10 @@ func Equal(a, b Value) bool {
 	if a.IsString() && b.IsString() {
 		return Key(a) == Key(b)
 	}
-	if a.kind != b.kind || a.Class() != b.Class() {
+	if a.kind() != b.kind() || a.Class() != b.Class() {
 		return false
 	}
-	if a.kind == KindEnumerator {
+	if a.kind() == KindEnumerator {
 		// Arithmetic sequences compare their numbers with ==, as Ruby's
 		// do, while their Key, which hash and eql? read, tells 1 and 1.0
 		// apart.

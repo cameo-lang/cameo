@@ -29,7 +29,7 @@ const (
 )
 
 // RandomValue wraps a generator as a value.
-func RandomValue(r *Random) Value { return Value{kind: KindRandom, p: unsafe.Pointer(r)} }
+func RandomValue(r *Random) Value { return ptrValue(KindRandom, unsafe.Pointer(r)) }
 
 // Random returns the generator a Random handle names.
 func (v Value) Random() *Random {
@@ -40,7 +40,7 @@ func (v Value) Random() *Random {
 // AsRandom returns the generator of a Random handle, and false for any
 // other value.
 func (v Value) AsRandom() (*Random, bool) {
-	if v.kind != KindRandom {
+	if v.kind() != KindRandom {
 		return nil, false
 	}
 	return (*Random)(v.p), true

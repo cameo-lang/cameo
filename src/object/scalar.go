@@ -98,7 +98,7 @@ func (t *ScalarType) Fits(v Value) bool {
 	if t.Bits == 0 {
 		return v.IsInteger()
 	}
-	switch v.kind {
+	switch v.kind() {
 	case KindInt:
 		switch {
 		case t.Unsigned:
@@ -130,7 +130,7 @@ func (t *ScalarType) Range() string {
 
 // IntegerDigits is an Integer's decimal digits, the wire form of bignum.
 func IntegerDigits(v Value) string {
-	if v.kind == KindInt {
+	if v.kind() == KindInt {
 		return strconv.FormatInt(v.n, 10)
 	}
 	return v.Big().String()
@@ -158,7 +158,7 @@ func Uint64Integer(u uint64) Value {
 
 // IntegerUint64 is an Integer that Fits an unsigned type, as uint64.
 func IntegerUint64(v Value) uint64 {
-	if v.kind == KindInt {
+	if v.kind() == KindInt {
 		return uint64(v.n)
 	}
 	return v.Big().Uint64()
