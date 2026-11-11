@@ -282,6 +282,8 @@ CAMEO
 
 test_run_builds_and_runs_the_compiled_script() {
   local script out rc=0
+  # TinyGo records no build information, which cameo run finds the source by.
+  if [ -n "${CAMEO_TINYGO:-}" ]; then echo "  skipped: a TinyGo build has no cameo run"; return; fi
   script="$(mktemp -d)/fact.rb"
   cat >"$script" <<'CAMEO'
 def fact(n)

@@ -144,6 +144,29 @@ make install    # puts `cameo` into GOBIN
 The parser is `github.com/go-ruby-parser/parser`, a Ruby parser in pure Go.
 No cgo, no Ruby installation, no code generation.
 
+### TinyGo
+
+cameo also builds with [TinyGo](https://tinygo.org) 0.44, natively, for
+WASI and for bare-metal boards:
+
+```sh
+make tinygo            # bin/cameo-tinygo
+make tinygo-check      # the examples and the integration tests on it
+make tinygo-wasm       # bin/cameo.wasm, for WASI
+make tinygo-baremetal  # tinygo/firmware on an emulated RISC-V board, in QEMU
+```
+
+protobuf-go calls a part of `reflect` TinyGo lacks, so the build patches a
+copy of it ([tinygo/build.sh](tinygo/build.sh) says how); go.mod and the
+Go build are unchanged. CI runs all four.
+
+The TinyGo build runs every example, but it is slower than the Go build:
+two to three times on calls, and its goroutines share one core, so `async`
+gives no parallelism. `cameo run` needs the Go build. Its WASI module is a
+third the size of Go's, 7.8 MB stripped. A microcontroller is out of reach
+for now: hello world needs about 1.4 MB of RAM, where an ESP32 gives a
+TinyGo program 192 to 416 KB.
+
 ## Site
 
 [cameo-lang.github.io/cameo](https://cameo-lang.github.io/cameo/) is the

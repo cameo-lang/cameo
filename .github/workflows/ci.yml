@@ -31,3 +31,32 @@ jobs:
 
       - name: Integration tests
         run: make integration-tests
+
+  tinygo:
+    name: TinyGo build, examples, WASI, bare metal
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Install TinyGo and QEMU
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/tinygo.deb" https://github.com/tinygo-org/tinygo/releases/download/v0.44.0/tinygo_0.44.0_amd64.deb
+          sudo dpkg -i "$RUNNER_TEMP/tinygo.deb"
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq qemu-system-misc
+
+      - name: Dependencies
+        run: make deps
+
+      - name: Examples and integration tests on the TinyGo build
+        run: make tinygo-check
+
+      - name: WASI
+        run: make tinygo-wasm
+
+      - name: Bare metal, an emulated RISC-V board
+        run: make tinygo-baremetal
