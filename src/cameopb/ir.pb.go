@@ -199,9 +199,8 @@ type Op int32
 
 const (
 	Op_OP_UNSPECIFIED Op = 0
-	// CONST(constant): -> value. An empty constant is nil. A bytes constant
-	// is a String whose bytes are not valid UTF-8, which a protobuf string
-	// cannot hold.
+	// CONST(constant): -> value. An empty constant is nil; a bytes constant
+	// is a String all the same.
 	Op_CONST Op = 1
 	// SYM(name): -> symbol.
 	Op_SYM Op = 2
@@ -513,8 +512,8 @@ type Unit struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// version is the IR version the unit was compiled to; see ir.Version.
 	Version uint32 `protobuf:"varint,1,opt,name=version,proto3" json:"version,omitempty"`
-	// digest identifies the unit by its code, line numbers left out. A
-	// closure names the unit it belongs to by it.
+	// digest identifies the unit: a hash of its wire form with this field
+	// empty. A closure names the unit it belongs to by it.
 	Digest string `protobuf:"bytes,2,opt,name=digest,proto3" json:"digest,omitempty"`
 	File   string `protobuf:"bytes,3,opt,name=file,proto3" json:"file,omitempty"`
 	// names are the names the instructions refer to by index: variables,
@@ -878,6 +877,156 @@ func (x *Seq) GetCode() []*Code {
 	return nil
 }
 
+// Constant is a literal the source wrote: nil when no kind is set, a
+// boolean, a number or a string. An integer beyond 64 bits is big_value,
+// its decimal digits. A string that is not valid UTF-8, which a protobuf
+// string cannot hold, is bytes_value.
+type Constant struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to Kind:
+	//
+	//	*Constant_BoolValue
+	//	*Constant_IntValue
+	//	*Constant_FloatValue
+	//	*Constant_StringValue
+	//	*Constant_BytesValue
+	//	*Constant_BigValue
+	Kind          isConstant_Kind `protobuf_oneof:"kind"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Constant) Reset() {
+	*x = Constant{}
+	mi := &file_cameo_ir_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Constant) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Constant) ProtoMessage() {}
+
+func (x *Constant) ProtoReflect() protoreflect.Message {
+	mi := &file_cameo_ir_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Constant.ProtoReflect.Descriptor instead.
+func (*Constant) Descriptor() ([]byte, []int) {
+	return file_cameo_ir_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *Constant) GetKind() isConstant_Kind {
+	if x != nil {
+		return x.Kind
+	}
+	return nil
+}
+
+func (x *Constant) GetBoolValue() bool {
+	if x != nil {
+		if x, ok := x.Kind.(*Constant_BoolValue); ok {
+			return x.BoolValue
+		}
+	}
+	return false
+}
+
+func (x *Constant) GetIntValue() int64 {
+	if x != nil {
+		if x, ok := x.Kind.(*Constant_IntValue); ok {
+			return x.IntValue
+		}
+	}
+	return 0
+}
+
+func (x *Constant) GetFloatValue() float64 {
+	if x != nil {
+		if x, ok := x.Kind.(*Constant_FloatValue); ok {
+			return x.FloatValue
+		}
+	}
+	return 0
+}
+
+func (x *Constant) GetStringValue() string {
+	if x != nil {
+		if x, ok := x.Kind.(*Constant_StringValue); ok {
+			return x.StringValue
+		}
+	}
+	return ""
+}
+
+func (x *Constant) GetBytesValue() []byte {
+	if x != nil {
+		if x, ok := x.Kind.(*Constant_BytesValue); ok {
+			return x.BytesValue
+		}
+	}
+	return nil
+}
+
+func (x *Constant) GetBigValue() string {
+	if x != nil {
+		if x, ok := x.Kind.(*Constant_BigValue); ok {
+			return x.BigValue
+		}
+	}
+	return ""
+}
+
+type isConstant_Kind interface {
+	isConstant_Kind()
+}
+
+type Constant_BoolValue struct {
+	BoolValue bool `protobuf:"varint,1,opt,name=bool_value,json=boolValue,proto3,oneof"`
+}
+
+type Constant_IntValue struct {
+	IntValue int64 `protobuf:"varint,2,opt,name=int_value,json=intValue,proto3,oneof"`
+}
+
+type Constant_FloatValue struct {
+	FloatValue float64 `protobuf:"fixed64,3,opt,name=float_value,json=floatValue,proto3,oneof"`
+}
+
+type Constant_StringValue struct {
+	StringValue string `protobuf:"bytes,4,opt,name=string_value,json=stringValue,proto3,oneof"`
+}
+
+type Constant_BytesValue struct {
+	BytesValue []byte `protobuf:"bytes,5,opt,name=bytes_value,json=bytesValue,proto3,oneof"`
+}
+
+type Constant_BigValue struct {
+	BigValue string `protobuf:"bytes,6,opt,name=big_value,json=bigValue,proto3,oneof"`
+}
+
+func (*Constant_BoolValue) isConstant_Kind() {}
+
+func (*Constant_IntValue) isConstant_Kind() {}
+
+func (*Constant_FloatValue) isConstant_Kind() {}
+
+func (*Constant_StringValue) isConstant_Kind() {}
+
+func (*Constant_BytesValue) isConstant_Kind() {}
+
+func (*Constant_BigValue) isConstant_Kind() {}
+
 // Arg is one argument of an instruction.
 type Arg struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -896,7 +1045,7 @@ type Arg struct {
 
 func (x *Arg) Reset() {
 	*x = Arg{}
-	mi := &file_cameo_ir_proto_msgTypes[5]
+	mi := &file_cameo_ir_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -908,7 +1057,7 @@ func (x *Arg) String() string {
 func (*Arg) ProtoMessage() {}
 
 func (x *Arg) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_ir_proto_msgTypes[5]
+	mi := &file_cameo_ir_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -921,7 +1070,7 @@ func (x *Arg) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Arg.ProtoReflect.Descriptor instead.
 func (*Arg) Descriptor() ([]byte, []int) {
-	return file_cameo_ir_proto_rawDescGZIP(), []int{5}
+	return file_cameo_ir_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *Arg) GetKind() isArg_Kind {
@@ -931,7 +1080,7 @@ func (x *Arg) GetKind() isArg_Kind {
 	return nil
 }
 
-func (x *Arg) GetConstant() *Value {
+func (x *Arg) GetConstant() *Constant {
 	if x != nil {
 		if x, ok := x.Kind.(*Arg_Constant); ok {
 			return x.Constant
@@ -991,7 +1140,7 @@ type isArg_Kind interface {
 
 type Arg_Constant struct {
 	// constant is a literal value.
-	Constant *Value `protobuf:"bytes,1,opt,name=constant,proto3,oneof"`
+	Constant *Constant `protobuf:"bytes,1,opt,name=constant,proto3,oneof"`
 }
 
 type Arg_Name struct {
@@ -1049,7 +1198,7 @@ type Pattern struct {
 
 func (x *Pattern) Reset() {
 	*x = Pattern{}
-	mi := &file_cameo_ir_proto_msgTypes[6]
+	mi := &file_cameo_ir_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1061,7 +1210,7 @@ func (x *Pattern) String() string {
 func (*Pattern) ProtoMessage() {}
 
 func (x *Pattern) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_ir_proto_msgTypes[6]
+	mi := &file_cameo_ir_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1074,7 +1223,7 @@ func (x *Pattern) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Pattern.ProtoReflect.Descriptor instead.
 func (*Pattern) Descriptor() ([]byte, []int) {
-	return file_cameo_ir_proto_rawDescGZIP(), []int{6}
+	return file_cameo_ir_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *Pattern) GetKind() isPattern_Kind {
@@ -1233,7 +1382,7 @@ type FieldDecl struct {
 
 func (x *FieldDecl) Reset() {
 	*x = FieldDecl{}
-	mi := &file_cameo_ir_proto_msgTypes[7]
+	mi := &file_cameo_ir_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1245,7 +1394,7 @@ func (x *FieldDecl) String() string {
 func (*FieldDecl) ProtoMessage() {}
 
 func (x *FieldDecl) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_ir_proto_msgTypes[7]
+	mi := &file_cameo_ir_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1258,7 +1407,7 @@ func (x *FieldDecl) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FieldDecl.ProtoReflect.Descriptor instead.
 func (*FieldDecl) Descriptor() ([]byte, []int) {
-	return file_cameo_ir_proto_rawDescGZIP(), []int{7}
+	return file_cameo_ir_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *FieldDecl) GetType() string {
@@ -1323,7 +1472,7 @@ type Params_Positional struct {
 
 func (x *Params_Positional) Reset() {
 	*x = Params_Positional{}
-	mi := &file_cameo_ir_proto_msgTypes[8]
+	mi := &file_cameo_ir_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1335,7 +1484,7 @@ func (x *Params_Positional) String() string {
 func (*Params_Positional) ProtoMessage() {}
 
 func (x *Params_Positional) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_ir_proto_msgTypes[8]
+	mi := &file_cameo_ir_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1383,7 +1532,7 @@ type Params_Keyword struct {
 
 func (x *Params_Keyword) Reset() {
 	*x = Params_Keyword{}
-	mi := &file_cameo_ir_proto_msgTypes[9]
+	mi := &file_cameo_ir_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1395,7 +1544,7 @@ func (x *Params_Keyword) String() string {
 func (*Params_Keyword) ProtoMessage() {}
 
 func (x *Params_Keyword) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_ir_proto_msgTypes[9]
+	mi := &file_cameo_ir_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1442,7 +1591,7 @@ type Pattern_Local struct {
 
 func (x *Pattern_Local) Reset() {
 	*x = Pattern_Local{}
-	mi := &file_cameo_ir_proto_msgTypes[10]
+	mi := &file_cameo_ir_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1454,7 +1603,7 @@ func (x *Pattern_Local) String() string {
 func (*Pattern_Local) ProtoMessage() {}
 
 func (x *Pattern_Local) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_ir_proto_msgTypes[10]
+	mi := &file_cameo_ir_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1467,7 +1616,7 @@ func (x *Pattern_Local) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Pattern_Local.ProtoReflect.Descriptor instead.
 func (*Pattern_Local) Descriptor() ([]byte, []int) {
-	return file_cameo_ir_proto_rawDescGZIP(), []int{6, 0}
+	return file_cameo_ir_proto_rawDescGZIP(), []int{7, 0}
 }
 
 func (x *Pattern_Local) GetName() uint32 {
@@ -1488,7 +1637,7 @@ type Pattern_As struct {
 
 func (x *Pattern_As) Reset() {
 	*x = Pattern_As{}
-	mi := &file_cameo_ir_proto_msgTypes[11]
+	mi := &file_cameo_ir_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1500,7 +1649,7 @@ func (x *Pattern_As) String() string {
 func (*Pattern_As) ProtoMessage() {}
 
 func (x *Pattern_As) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_ir_proto_msgTypes[11]
+	mi := &file_cameo_ir_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1513,7 +1662,7 @@ func (x *Pattern_As) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Pattern_As.ProtoReflect.Descriptor instead.
 func (*Pattern_As) Descriptor() ([]byte, []int) {
-	return file_cameo_ir_proto_rawDescGZIP(), []int{6, 1}
+	return file_cameo_ir_proto_rawDescGZIP(), []int{7, 1}
 }
 
 func (x *Pattern_As) GetSub() *Pattern {
@@ -1544,7 +1693,7 @@ type Pattern_Array struct {
 
 func (x *Pattern_Array) Reset() {
 	*x = Pattern_Array{}
-	mi := &file_cameo_ir_proto_msgTypes[12]
+	mi := &file_cameo_ir_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1556,7 +1705,7 @@ func (x *Pattern_Array) String() string {
 func (*Pattern_Array) ProtoMessage() {}
 
 func (x *Pattern_Array) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_ir_proto_msgTypes[12]
+	mi := &file_cameo_ir_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1569,7 +1718,7 @@ func (x *Pattern_Array) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Pattern_Array.ProtoReflect.Descriptor instead.
 func (*Pattern_Array) Descriptor() ([]byte, []int) {
-	return file_cameo_ir_proto_rawDescGZIP(), []int{6, 2}
+	return file_cameo_ir_proto_rawDescGZIP(), []int{7, 2}
 }
 
 func (x *Pattern_Array) GetConst() *Seq {
@@ -1622,7 +1771,7 @@ type Pattern_Hash struct {
 
 func (x *Pattern_Hash) Reset() {
 	*x = Pattern_Hash{}
-	mi := &file_cameo_ir_proto_msgTypes[13]
+	mi := &file_cameo_ir_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1634,7 +1783,7 @@ func (x *Pattern_Hash) String() string {
 func (*Pattern_Hash) ProtoMessage() {}
 
 func (x *Pattern_Hash) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_ir_proto_msgTypes[13]
+	mi := &file_cameo_ir_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1647,7 +1796,7 @@ func (x *Pattern_Hash) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Pattern_Hash.ProtoReflect.Descriptor instead.
 func (*Pattern_Hash) Descriptor() ([]byte, []int) {
-	return file_cameo_ir_proto_rawDescGZIP(), []int{6, 3}
+	return file_cameo_ir_proto_rawDescGZIP(), []int{7, 3}
 }
 
 func (x *Pattern_Hash) GetConst() *Seq {
@@ -1695,7 +1844,7 @@ type Pattern_Either struct {
 
 func (x *Pattern_Either) Reset() {
 	*x = Pattern_Either{}
-	mi := &file_cameo_ir_proto_msgTypes[14]
+	mi := &file_cameo_ir_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1707,7 +1856,7 @@ func (x *Pattern_Either) String() string {
 func (*Pattern_Either) ProtoMessage() {}
 
 func (x *Pattern_Either) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_ir_proto_msgTypes[14]
+	mi := &file_cameo_ir_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1720,7 +1869,7 @@ func (x *Pattern_Either) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Pattern_Either.ProtoReflect.Descriptor instead.
 func (*Pattern_Either) Descriptor() ([]byte, []int) {
-	return file_cameo_ir_proto_rawDescGZIP(), []int{6, 4}
+	return file_cameo_ir_proto_rawDescGZIP(), []int{7, 4}
 }
 
 func (x *Pattern_Either) GetAlts() []*Pattern {
@@ -1743,7 +1892,7 @@ type Pattern_Search struct {
 
 func (x *Pattern_Search) Reset() {
 	*x = Pattern_Search{}
-	mi := &file_cameo_ir_proto_msgTypes[15]
+	mi := &file_cameo_ir_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1755,7 +1904,7 @@ func (x *Pattern_Search) String() string {
 func (*Pattern_Search) ProtoMessage() {}
 
 func (x *Pattern_Search) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_ir_proto_msgTypes[15]
+	mi := &file_cameo_ir_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1768,7 +1917,7 @@ func (x *Pattern_Search) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Pattern_Search.ProtoReflect.Descriptor instead.
 func (*Pattern_Search) Descriptor() ([]byte, []int) {
-	return file_cameo_ir_proto_rawDescGZIP(), []int{6, 5}
+	return file_cameo_ir_proto_rawDescGZIP(), []int{7, 5}
 }
 
 func (x *Pattern_Search) GetConst() *Seq {
@@ -1809,7 +1958,7 @@ type Pattern_Hash_Entry struct {
 
 func (x *Pattern_Hash_Entry) Reset() {
 	*x = Pattern_Hash_Entry{}
-	mi := &file_cameo_ir_proto_msgTypes[16]
+	mi := &file_cameo_ir_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1821,7 +1970,7 @@ func (x *Pattern_Hash_Entry) String() string {
 func (*Pattern_Hash_Entry) ProtoMessage() {}
 
 func (x *Pattern_Hash_Entry) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_ir_proto_msgTypes[16]
+	mi := &file_cameo_ir_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1834,7 +1983,7 @@ func (x *Pattern_Hash_Entry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Pattern_Hash_Entry.ProtoReflect.Descriptor instead.
 func (*Pattern_Hash_Entry) Descriptor() ([]byte, []int) {
-	return file_cameo_ir_proto_rawDescGZIP(), []int{6, 3, 0}
+	return file_cameo_ir_proto_rawDescGZIP(), []int{7, 3, 0}
 }
 
 func (x *Pattern_Hash_Entry) GetKey() uint32 {
@@ -1855,7 +2004,7 @@ var File_cameo_ir_proto protoreflect.FileDescriptor
 
 const file_cameo_ir_proto_rawDesc = "" +
 	"\n" +
-	"\x0ecameo/ir.proto\x12\x05cameo\x1a\x11cameo/value.proto\"\x85\x01\n" +
+	"\x0ecameo/ir.proto\x12\x05cameo\"\x85\x01\n" +
 	"\x04Unit\x12\x18\n" +
 	"\aversion\x18\x01 \x01(\rR\aversion\x12\x16\n" +
 	"\x06digest\x18\x02 \x01(\tR\x06digest\x12\x12\n" +
@@ -1899,9 +2048,20 @@ const file_cameo_ir_proto_rawDesc = "" +
 	"\x04line\x18\x04 \x01(\x05R\x04line\x12\x14\n" +
 	"\x05flags\x18\x05 \x01(\x04R\x05flags\"&\n" +
 	"\x03Seq\x12\x1f\n" +
-	"\x04code\x18\x01 \x03(\v2\v.cameo.CodeR\x04code\"\xcf\x01\n" +
-	"\x03Arg\x12*\n" +
-	"\bconstant\x18\x01 \x01(\v2\f.cameo.ValueH\x00R\bconstant\x12\x14\n" +
+	"\x04code\x18\x01 \x03(\v2\v.cameo.CodeR\x04code\"\xdc\x01\n" +
+	"\bConstant\x12\x1f\n" +
+	"\n" +
+	"bool_value\x18\x01 \x01(\bH\x00R\tboolValue\x12\x1d\n" +
+	"\tint_value\x18\x02 \x01(\x03H\x00R\bintValue\x12!\n" +
+	"\vfloat_value\x18\x03 \x01(\x01H\x00R\n" +
+	"floatValue\x12#\n" +
+	"\fstring_value\x18\x04 \x01(\tH\x00R\vstringValue\x12!\n" +
+	"\vbytes_value\x18\x05 \x01(\fH\x00R\n" +
+	"bytesValue\x12\x1d\n" +
+	"\tbig_value\x18\x06 \x01(\tH\x00R\bbigValueB\x06\n" +
+	"\x04kind\"\xd2\x01\n" +
+	"\x03Arg\x12-\n" +
+	"\bconstant\x18\x01 \x01(\v2\x0f.cameo.ConstantH\x00R\bconstant\x12\x14\n" +
 	"\x04name\x18\x02 \x01(\rH\x00R\x04name\x12\x14\n" +
 	"\x04proc\x18\x03 \x01(\rH\x00R\x04proc\x12\x12\n" +
 	"\x03int\x18\x04 \x01(\x03H\x00R\x03int\x12*\n" +
@@ -2090,7 +2250,7 @@ func file_cameo_ir_proto_rawDescGZIP() []byte {
 }
 
 var file_cameo_ir_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_cameo_ir_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_cameo_ir_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_cameo_ir_proto_goTypes = []any{
 	(Flag)(0),                  // 0: cameo.Flag
 	(Op)(0),                    // 1: cameo.Op
@@ -2099,53 +2259,53 @@ var file_cameo_ir_proto_goTypes = []any{
 	(*Params)(nil),             // 4: cameo.Params
 	(*Code)(nil),               // 5: cameo.Code
 	(*Seq)(nil),                // 6: cameo.Seq
-	(*Arg)(nil),                // 7: cameo.Arg
-	(*Pattern)(nil),            // 8: cameo.Pattern
-	(*FieldDecl)(nil),          // 9: cameo.FieldDecl
-	(*Params_Positional)(nil),  // 10: cameo.Params.Positional
-	(*Params_Keyword)(nil),     // 11: cameo.Params.Keyword
-	(*Pattern_Local)(nil),      // 12: cameo.Pattern.Local
-	(*Pattern_As)(nil),         // 13: cameo.Pattern.As
-	(*Pattern_Array)(nil),      // 14: cameo.Pattern.Array
-	(*Pattern_Hash)(nil),       // 15: cameo.Pattern.Hash
-	(*Pattern_Either)(nil),     // 16: cameo.Pattern.Either
-	(*Pattern_Search)(nil),     // 17: cameo.Pattern.Search
-	(*Pattern_Hash_Entry)(nil), // 18: cameo.Pattern.Hash.Entry
-	(*Value)(nil),              // 19: cameo.Value
+	(*Constant)(nil),           // 7: cameo.Constant
+	(*Arg)(nil),                // 8: cameo.Arg
+	(*Pattern)(nil),            // 9: cameo.Pattern
+	(*FieldDecl)(nil),          // 10: cameo.FieldDecl
+	(*Params_Positional)(nil),  // 11: cameo.Params.Positional
+	(*Params_Keyword)(nil),     // 12: cameo.Params.Keyword
+	(*Pattern_Local)(nil),      // 13: cameo.Pattern.Local
+	(*Pattern_As)(nil),         // 14: cameo.Pattern.As
+	(*Pattern_Array)(nil),      // 15: cameo.Pattern.Array
+	(*Pattern_Hash)(nil),       // 16: cameo.Pattern.Hash
+	(*Pattern_Either)(nil),     // 17: cameo.Pattern.Either
+	(*Pattern_Search)(nil),     // 18: cameo.Pattern.Search
+	(*Pattern_Hash_Entry)(nil), // 19: cameo.Pattern.Hash.Entry
 }
 var file_cameo_ir_proto_depIdxs = []int32{
 	3,  // 0: cameo.Unit.procs:type_name -> cameo.Proc
 	4,  // 1: cameo.Proc.params:type_name -> cameo.Params
 	5,  // 2: cameo.Proc.code:type_name -> cameo.Code
-	10, // 3: cameo.Params.positional:type_name -> cameo.Params.Positional
-	11, // 4: cameo.Params.keywords:type_name -> cameo.Params.Keyword
+	11, // 3: cameo.Params.positional:type_name -> cameo.Params.Positional
+	12, // 4: cameo.Params.keywords:type_name -> cameo.Params.Keyword
 	1,  // 5: cameo.Code.op:type_name -> cameo.Op
-	7,  // 6: cameo.Code.args:type_name -> cameo.Arg
+	8,  // 6: cameo.Code.args:type_name -> cameo.Arg
 	6,  // 7: cameo.Code.code:type_name -> cameo.Seq
 	5,  // 8: cameo.Seq.code:type_name -> cameo.Code
-	19, // 9: cameo.Arg.constant:type_name -> cameo.Value
-	8,  // 10: cameo.Arg.pattern:type_name -> cameo.Pattern
-	9,  // 11: cameo.Arg.field:type_name -> cameo.FieldDecl
+	7,  // 9: cameo.Arg.constant:type_name -> cameo.Constant
+	9,  // 10: cameo.Arg.pattern:type_name -> cameo.Pattern
+	10, // 11: cameo.Arg.field:type_name -> cameo.FieldDecl
 	6,  // 12: cameo.Pattern.value:type_name -> cameo.Seq
-	12, // 13: cameo.Pattern.bind:type_name -> cameo.Pattern.Local
+	13, // 13: cameo.Pattern.bind:type_name -> cameo.Pattern.Local
 	6,  // 14: cameo.Pattern.const:type_name -> cameo.Seq
-	13, // 15: cameo.Pattern.binding:type_name -> cameo.Pattern.As
-	14, // 16: cameo.Pattern.list:type_name -> cameo.Pattern.Array
-	15, // 17: cameo.Pattern.map:type_name -> cameo.Pattern.Hash
-	16, // 18: cameo.Pattern.alt:type_name -> cameo.Pattern.Either
-	17, // 19: cameo.Pattern.find:type_name -> cameo.Pattern.Search
+	14, // 15: cameo.Pattern.binding:type_name -> cameo.Pattern.As
+	15, // 16: cameo.Pattern.list:type_name -> cameo.Pattern.Array
+	16, // 17: cameo.Pattern.map:type_name -> cameo.Pattern.Hash
+	17, // 18: cameo.Pattern.alt:type_name -> cameo.Pattern.Either
+	18, // 19: cameo.Pattern.find:type_name -> cameo.Pattern.Search
 	6,  // 20: cameo.Params.Positional.default:type_name -> cameo.Seq
 	6,  // 21: cameo.Params.Keyword.default:type_name -> cameo.Seq
-	8,  // 22: cameo.Pattern.As.sub:type_name -> cameo.Pattern
+	9,  // 22: cameo.Pattern.As.sub:type_name -> cameo.Pattern
 	6,  // 23: cameo.Pattern.Array.const:type_name -> cameo.Seq
-	8,  // 24: cameo.Pattern.Array.pre:type_name -> cameo.Pattern
-	8,  // 25: cameo.Pattern.Array.post:type_name -> cameo.Pattern
+	9,  // 24: cameo.Pattern.Array.pre:type_name -> cameo.Pattern
+	9,  // 25: cameo.Pattern.Array.post:type_name -> cameo.Pattern
 	6,  // 26: cameo.Pattern.Hash.const:type_name -> cameo.Seq
-	18, // 27: cameo.Pattern.Hash.entries:type_name -> cameo.Pattern.Hash.Entry
-	8,  // 28: cameo.Pattern.Either.alts:type_name -> cameo.Pattern
+	19, // 27: cameo.Pattern.Hash.entries:type_name -> cameo.Pattern.Hash.Entry
+	9,  // 28: cameo.Pattern.Either.alts:type_name -> cameo.Pattern
 	6,  // 29: cameo.Pattern.Search.const:type_name -> cameo.Seq
-	8,  // 30: cameo.Pattern.Search.mid:type_name -> cameo.Pattern
-	8,  // 31: cameo.Pattern.Hash.Entry.value:type_name -> cameo.Pattern
+	9,  // 30: cameo.Pattern.Search.mid:type_name -> cameo.Pattern
+	9,  // 31: cameo.Pattern.Hash.Entry.value:type_name -> cameo.Pattern
 	32, // [32:32] is the sub-list for method output_type
 	32, // [32:32] is the sub-list for method input_type
 	32, // [32:32] is the sub-list for extension type_name
@@ -2158,9 +2318,16 @@ func file_cameo_ir_proto_init() {
 	if File_cameo_ir_proto != nil {
 		return
 	}
-	file_cameo_value_proto_init()
 	file_cameo_ir_proto_msgTypes[2].OneofWrappers = []any{}
 	file_cameo_ir_proto_msgTypes[5].OneofWrappers = []any{
+		(*Constant_BoolValue)(nil),
+		(*Constant_IntValue)(nil),
+		(*Constant_FloatValue)(nil),
+		(*Constant_StringValue)(nil),
+		(*Constant_BytesValue)(nil),
+		(*Constant_BigValue)(nil),
+	}
+	file_cameo_ir_proto_msgTypes[6].OneofWrappers = []any{
 		(*Arg_Constant)(nil),
 		(*Arg_Name)(nil),
 		(*Arg_Proc)(nil),
@@ -2168,7 +2335,7 @@ func file_cameo_ir_proto_init() {
 		(*Arg_Pattern)(nil),
 		(*Arg_Field)(nil),
 	}
-	file_cameo_ir_proto_msgTypes[6].OneofWrappers = []any{
+	file_cameo_ir_proto_msgTypes[7].OneofWrappers = []any{
 		(*Pattern_Value)(nil),
 		(*Pattern_Bind)(nil),
 		(*Pattern_Const)(nil),
@@ -2178,16 +2345,16 @@ func file_cameo_ir_proto_init() {
 		(*Pattern_Alt)(nil),
 		(*Pattern_Find)(nil),
 	}
-	file_cameo_ir_proto_msgTypes[12].OneofWrappers = []any{}
 	file_cameo_ir_proto_msgTypes[13].OneofWrappers = []any{}
-	file_cameo_ir_proto_msgTypes[15].OneofWrappers = []any{}
+	file_cameo_ir_proto_msgTypes[14].OneofWrappers = []any{}
+	file_cameo_ir_proto_msgTypes[16].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_cameo_ir_proto_rawDesc), len(file_cameo_ir_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   17,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -17,8 +17,15 @@ type code struct {
 	// literals holds the value of an Integer literal beyond 64 bits and
 	// of a Regexp literal without interpolation, by instruction.
 	literals sync.Map // *cameopb.Code -> object.Value
+	// units holds the units of the program by digest: the ones it
+	// compiled and the ones a closure it decoded carried. A closure names
+	// its code by the digest.
+	units sync.Map // string -> *cameopb.Unit
 	// params holds the parameter lists bindParams reads, by proc.
 	params sync.Map // *cameopb.Proc -> *params
+	// uses holds what each proc needs of its binding to travel; see
+	// closure.go.
+	uses sync.Map // *cameopb.Proc -> *uses
 	// compiled is the Go implementation `cameo build` made of the
 	// program's top-level methods, nil when it made none; see
 	// RegisterCompiled.

@@ -52,8 +52,13 @@ values.each do |v|
   puts "#{got.inspect} #{got == v || (v == :sym && got == "sym")}"
 end
 
+# A Proc travels as its code and the values it captured.
+factor = 2
+double = ->(x) { x * factor }
+puts from_value_proto(double.to_value_proto).call(21)
+
 begin
-  -> {}.to_value_proto
+  [1].each.to_value_proto
 rescue TypeError => e
   puts e.message
 end

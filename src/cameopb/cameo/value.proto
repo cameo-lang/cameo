@@ -7,6 +7,8 @@ package cameo;
 
 option go_package = "github.com/cameo-lang/cameo/src/cameopb";
 
+import "cameo/ir.proto";
+
 // Value is one value. With no kind set it is nil. A symbol travels as a
 // string, and an integer beyond 64 bits as big_value, its decimal digits.
 message Value {
@@ -24,7 +26,69 @@ message Value {
     Time time = 11;
     Regexp regexp = 12;
     string big_value = 13;
+    Closure closure = 14;
   }
+}
+
+// Closure is a Proc: a block or a lambda a script wrote, as the proc of a
+// unit it runs and the binding it runs in; or a proc made from a symbol.
+message Closure {
+  // unit is the digest of the unit, proc the index of the proc in it.
+  string unit = 1;
+  uint32 proc = 2;
+  // code is the unit itself, on the first closure of a message that
+  // refers to it; a reader keeps it for the closures that follow.
+  Unit code = 3;
+  Binding binding = 4;
+  // strict is set for a lambda: its arguments are counted, and its return
+  // returns from it.
+  bool strict = 5;
+  // self_name is the local of the binding that holds the closure itself:
+  // a lambda that calls itself by the name it is assigned to.
+  string self_name = 6;
+  // symbol is set for a proc made from a symbol, `&:name`, which calls
+  // that method on its first argument; with recv set, on recv, as the
+  // proc of a Hash calls []. Such a proc has no unit and no binding.
+  string symbol = 7;
+  Value recv = 8;
+}
+
+// Binding is what a closure's code runs in: the locals it reads, by
+// value, and the frame it was written in.
+message Binding {
+  // Local is one variable: its value, or the class it names.
+  message Local {
+    string name = 1;
+    Value value = 2;
+    string class = 3;
+  }
+  // Method names the method the closure was written in, which a super
+  // inside it continues from: the class that defines it by its qualified
+  // name, "" for the top level, and whether it is a class method.
+  message Method {
+    string owner = 1;
+    string name = 2;
+    bool singleton = 3;
+  }
+  repeated Local locals = 1;
+  // self is the receiver: a value, a class by its qualified name, or
+  // neither for the top-level self.
+  Value self = 2;
+  string self_class = 3;
+  Method method = 4;
+  // lexical is the chain of classes and modules around the code,
+  // innermost last, by qualified name; def_target the class a def inside
+  // the closure defines on, "" for the top level.
+  repeated string lexical = 5;
+  string def_target = 6;
+  // file is the library the code is from, "" for the script.
+  string file = 7;
+  // args, kw and block are those of the call of the method the closure
+  // was written in, carried when the closure's code has a bare super or a
+  // yield, which use them.
+  repeated Value args = 8;
+  Map kw = 9;
+  Value block = 10;
 }
 
 message List {

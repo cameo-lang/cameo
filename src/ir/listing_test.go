@@ -11,7 +11,7 @@ import (
 
 func nameArg(i uint32) *cameopb.Arg { return &cameopb.Arg{Kind: &cameopb.Arg_Name{Name: i}} }
 func intConst(i int64) *cameopb.Arg {
-	return &cameopb.Arg{Kind: &cameopb.Arg_Constant{Constant: &cameopb.Value{Kind: &cameopb.Value_IntValue{IntValue: i}}}}
+	return &cameopb.Arg{Kind: &cameopb.Arg_Constant{Constant: &cameopb.Constant{Kind: &cameopb.Constant_IntValue{IntValue: i}}}}
 }
 
 // doubleAll is `def double_all(list) = list.map { |x| x * 2 }`, written

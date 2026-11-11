@@ -155,25 +155,25 @@ func (l *lister) arg(a *cameopb.Arg) string {
 }
 
 // constant renders a literal value as Ruby's inspect does.
-func constant(v *cameopb.Value) string {
+func constant(v *cameopb.Constant) string {
 	switch k := v.GetKind().(type) {
 	case nil:
 		return "nil"
-	case *cameopb.Value_BoolValue:
+	case *cameopb.Constant_BoolValue:
 		return strconv.FormatBool(k.BoolValue)
-	case *cameopb.Value_IntValue:
+	case *cameopb.Constant_IntValue:
 		return strconv.FormatInt(k.IntValue, 10)
-	case *cameopb.Value_BigValue:
+	case *cameopb.Constant_BigValue:
 		return k.BigValue
-	case *cameopb.Value_FloatValue:
+	case *cameopb.Constant_FloatValue:
 		s := strconv.FormatFloat(k.FloatValue, 'g', -1, 64)
 		if !strings.ContainsAny(s, ".eEIN") {
 			s += ".0"
 		}
 		return s
-	case *cameopb.Value_StringValue:
+	case *cameopb.Constant_StringValue:
 		return strconv.Quote(k.StringValue)
-	case *cameopb.Value_BytesValue:
+	case *cameopb.Constant_BytesValue:
 		return "b" + strconv.Quote(string(k.BytesValue))
 	}
 	return fmt.Sprintf("<%T>", v.GetKind())
