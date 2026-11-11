@@ -14,7 +14,9 @@ import (
 //
 // A block captures values, not variables: when a block is written, the
 // variables it sees are copied into a captured scope (snapshot), and that
-// is the scope its calls run in. A rebinding in the enclosing scope after
+// is the scope its calls run in. A captured scope is never rebound in,
+// so a block written inside a call of another block shares that block's
+// captured scope as the parent of its own. A rebinding in the enclosing scope after
 // that is invisible to the block, and a rebinding inside the block lands
 // in the call's own scope, so it is gone when the call returns. Nothing
 // observes a variable from outside its scope, which is what an immutable
@@ -120,13 +122,34 @@ func (e *Env) Set(name string, v object.Value) {
 	e.bind(name, v)
 }
 
-// snapshot copies every variable the scope sees into a captured scope, the
+// snapshot copies the variables the scope sees into a captured scope, the
 // values they have now, an inner binding shadowing an outer one. A block
-// closes over the snapshot, not the scope.
+// closes over the snapshot, not the scope. The variables of a captured
+// scope the scope sits in are not copied: nothing rebinds them, so the
+// snapshot has that scope as its parent and reads them there.
 func (e *Env) snapshot() *Env {
-	s := &Env{captured: true, scope: methodScope(e)}
-	e.copyInto(s)
+	s := &Env{captured: true}
+	if s.parent = e.copyLive(s); s.parent != nil && s.parent.scope != nil {
+		s.scope = s.parent.scope
+	} else {
+		s.scope = methodScope(e)
+	}
 	return s
+}
+
+// copyLive binds in s the variables of this scope and of its parents up
+// to the first captured one, the outermost first so that an inner binding
+// wins. It returns that captured scope, nil when there is none.
+func (e *Env) copyLive(s *Env) *Env {
+	if e.captured {
+		return e
+	}
+	var captured *Env
+	if e.parent != nil {
+		captured = e.parent.copyLive(s)
+	}
+	e.copyOwn(s)
+	return captured
 }
 
 // copyInto binds the variables of this scope and its parents in s, the
@@ -135,11 +158,18 @@ func (e *Env) copyInto(s *Env) {
 	if e.parent != nil {
 		e.parent.copyInto(s)
 	}
+	e.copyOwn(s)
+}
+
+// copyOwn binds the variables of this scope alone in s.
+func (e *Env) copyOwn(s *Env) {
 	for i := 0; i < e.n; i++ {
 		s.bind(e.names[i], e.values[i])
 	}
-	for name, v := range e.more {
-		s.bind(name, v)
+	if e.more != nil {
+		for name, v := range e.more {
+			s.bind(name, v)
+		}
 	}
 }
 
