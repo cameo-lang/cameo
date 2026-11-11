@@ -45,11 +45,13 @@ came to. A dump that is inside a builtin this cameo has no step function
 for is refused.
 
 The same holds for these, each for as long as it takes: a class body, the
-`initialize` of an exception, a parameter's default, `super`, an operator
-a class defines, a `require` of a library written in cameo, and a call
-the host made into the program. A lambda or a proc called as a value,
-`f.call(x)`, `f.(x)` or `f[x]`, is no such case: it is an activation, as a
-block a method yields to is. So is the `initialize` that `new` runs.
+`initialize` of an exception, a parameter's default, a method a builtin
+calls on a script's object (`to_s` under `puts`, `<=>` under `sort`), a
+`require` of a library written in cameo, and a call the host made into
+the program. A lambda or a proc called as a value, `f.call(x)`, `f.(x)` or
+`f[x]`, is no such case: it is an activation, as a block a method yields
+to is. So are the `initialize` that `new` runs, a method `super` calls,
+and an operator a class defines, `a + b` or `a == b`.
 
 The pause waits for every call `async` started, so their results travel
 settled in the dump. A promise the script or a host made by hand and has not

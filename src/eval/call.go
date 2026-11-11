@@ -545,14 +545,27 @@ func (in *Interp) callBlock(block object.Value, args []object.Value, kw *object.
 // callSuper calls the method of fr's name in the next ancestor of the
 // class that defines fr's method.
 func (in *Interp) callSuper(fr *Frame, args []object.Value, kw *object.Map, block object.Value, line int) (object.Value, error) {
-	var m *object.Method
+	return in.callSuperTo(in.superMethod(fr), fr, args, kw, block, line)
+}
+
+// superMethod finds the method a super in fr calls: the one of fr's name
+// in the next ancestor of the class that defines fr's method; nil when
+// there is none.
+func (in *Interp) superMethod(fr *Frame) *object.Method {
 	if cls, ok := fr.Self.AsClass(); ok && fr.Method.Owner.SingletonMethods[fr.Method.Name] == fr.Method {
-		for k := cls.Super; k != nil && m == nil; k = k.Super {
-			m = k.LookupSingleton(fr.Method.Name)
+		for k := cls.Super; k != nil; k = k.Super {
+			if m := k.LookupSingleton(fr.Method.Name); m != nil {
+				return m
+			}
 		}
-	} else {
-		m = fr.Self.Class().LookupAfter(fr.Owner, fr.Method.Name)
+		return nil
 	}
+	return fr.Self.Class().LookupAfter(fr.Owner, fr.Method.Name)
+}
+
+// callSuperTo is callSuper once superMethod found m, the method the super
+// calls, or nil.
+func (in *Interp) callSuperTo(m *object.Method, fr *Frame, args []object.Value, kw *object.Map, block object.Value, line int) (object.Value, error) {
 	if m == nil {
 		if fr.Method.Name == "initialize" {
 			return object.Nil, nil

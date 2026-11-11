@@ -512,6 +512,53 @@ p Counter.build, Counter.new(4), [1, 2].map { |i| Point.new(i, mark(i)).label }
 	sameAsWhole(t, src)
 }
 
+// A run pauses inside a method a super called and inside an operator a
+// class defines, and resumes there. An initialize that a super in
+// another initialize called fills the same instance after the resume.
+func TestPauseInsideSuperAndOperators(t *testing.T) {
+	const src = `def mark(x)
+  Test.pause
+  x
+end
+class Base
+  int :id
+  string :name
+  def initialize(id)
+    self.id = mark(id)
+  end
+  def describe(extra) = "base #{mark(id)} #{extra}"
+  def self.make(id) = new(mark(id))
+end
+class Named < Base
+  def initialize(id, name)
+    super(id + 1)
+    Test.pause
+    self.name = mark(name)
+  end
+  def describe(extra) = "named #{name}: " + super(mark(extra))
+  def self.make(id) = super(mark(id) * 2)
+end
+n = Named.new(1, "n")
+p n, n.describe("x")
+p (Named.make(3) rescue "needs a name")
+class Money
+  int :cents
+  def +(other) = Money.new(cents: mark(cents) + other.cents)
+  def ==(other) = mark(cents) == other.cents
+  def <=>(other) = mark(cents) <=> other.cents
+  def -@ = Money.new(cents: -mark(cents))
+  def [](i) = mark(cents.digits[i])
+  def to_s = "$#{cents}"
+end
+a = Money.new(cents: 150)
+b = Money.new(cents: 275)
+puts a + b, a == b, a != b, (a <=> b), -a, b[1]
+puts [a, b].map { |m| m + a }.map(&:to_s).inspect
+`
+	everyPauseLands(t, src)
+	sameAsWhole(t, src)
+}
+
 // A run that paused goes on when it is run again, from where it paused:
 // what a host does with a script it could not dump. Here the block of
 // loop holds a StringIO, which no dump carries.
