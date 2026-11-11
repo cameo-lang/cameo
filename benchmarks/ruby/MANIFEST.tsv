@@ -322,6 +322,7 @@ unsupported/mutation	array_join_regression--reg_nested.rb	benchmark/array_join_r
 unsupported/mutation	array_join_regression--reg_nonstring_int.rb	benchmark/array_join_regression.yml, entry reg_nonstring_int	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/mutation	array_join_regression--reg_tail_multibyte.rb	benchmark/array_join_regression.yml, entry reg_tail_multibyte	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/mutation	array_join_regression--reg_utf16.rb	benchmark/array_join_regression.yml, entry reg_utf16	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	bighash.rb	benchmark/bighash.rb	a block that assigns to a variable of the scope around it, in the timed script
 unsupported/mutation	buffer_each--array.each.rb	benchmark/buffer_each.yml, entry array.each	index assignment on a non-local
 unsupported/mutation	buffer_each--buffer.each.rb	benchmark/buffer_each.yml, entry buffer.each	index assignment on a non-local
 unsupported/mutation	buffer_each--buffer.each_byte.rb	benchmark/buffer_each.yml, entry buffer.each_byte	index assignment on a non-local
@@ -330,13 +331,61 @@ unsupported/mutation	buffer_get--buffer.get_value.rb	benchmark/buffer_get.yml, e
 unsupported/mutation	buffer_get--buffer.get_values.rb	benchmark/buffer_get.yml, entry buffer.get_values	index assignment on a non-local
 unsupported/mutation	buffer_get--string.unpack.rb	benchmark/buffer_get.yml, entry string.unpack	index assignment on a non-local
 unsupported/mutation	buffer_get--string.unpack1.rb	benchmark/buffer_get.yml, entry string.unpack1	index assignment on a non-local
+unsupported/mutation	gc_hash2.rb	benchmark/gc/hash2.rb	a block that assigns to a variable of the scope around it, in the timed script
 unsupported/mutation	hash_aref_dsym_long.rb	benchmark/hash_aref_dsym_long.rb	Random.new (a generator object changes as it draws)
 unsupported/mutation	hash_aref_flo.rb	benchmark/hash_aref_flo.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/mutation	hash_aref_miss.rb	benchmark/hash_aref_miss.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/mutation	hash_aref_str.rb	benchmark/hash_aref_str.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/mutation	hash_ident_flo.rb	benchmark/hash_ident_flo.rb	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	hash_long.rb	benchmark/hash_long.rb	a block that assigns to a variable of the scope around it, in the timed script
+unsupported/mutation	hash_shift.rb	benchmark/hash_shift.rb	a block that assigns to a variable of the scope around it, in the timed script
+unsupported/mutation	hash_shift_u16.rb	benchmark/hash_shift_u16.rb	a block that assigns to a variable of the scope around it, in the timed script
+unsupported/mutation	hash_shift_u24.rb	benchmark/hash_shift_u24.rb	a block that assigns to a variable of the scope around it, in the timed script
+unsupported/mutation	hash_shift_u32.rb	benchmark/hash_shift_u32.rb	a block that assigns to a variable of the scope around it, in the timed script
+unsupported/mutation	hash_small2.rb	benchmark/hash_small2.rb	a block that assigns to a variable of the scope around it, in the timed script
+unsupported/mutation	hash_small4.rb	benchmark/hash_small4.rb	a block that assigns to a variable of the scope around it, in the timed script
+unsupported/mutation	hash_small8.rb	benchmark/hash_small8.rb	a block that assigns to a variable of the scope around it, in the timed script
+unsupported/mutation	kernel_tap--kernel_tap.rb	benchmark/kernel_tap.yml, entry kernel_tap	a block that assigns to a variable of the scope around it, in the timed script
+unsupported/mutation	set--add.rb	benchmark/set.yml, entry add	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--add_exist.rb	benchmark/set.yml, entry add_exist	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--addq.rb	benchmark/set.yml, entry addq	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--addq_exist.rb	benchmark/set.yml, entry addq_exist	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--clear.rb	benchmark/set.yml, entry clear	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--collect_0.rb	benchmark/set.yml, entry collect_0	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--collect_10.rb	benchmark/set.yml, entry collect_10	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--collect_100.rb	benchmark/set.yml, entry collect_100	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--collect_1000.rb	benchmark/set.yml, entry collect_1000	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--delete.rb	benchmark/set.yml, entry delete	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--delete_if_0.rb	benchmark/set.yml, entry delete_if_0	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--delete_if_10.rb	benchmark/set.yml, entry delete_if_10	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--delete_if_100.rb	benchmark/set.yml, entry delete_if_100	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--delete_if_1000.rb	benchmark/set.yml, entry delete_if_1000	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--delete_not_exist.rb	benchmark/set.yml, entry delete_not_exist	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--deleteq.rb	benchmark/set.yml, entry deleteq	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--deleteq_not_exist.rb	benchmark/set.yml, entry deleteq_not_exist	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--flattenb.rb	benchmark/set.yml, entry flattenb	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--keep_if_0.rb	benchmark/set.yml, entry keep_if_0	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--keep_if_10.rb	benchmark/set.yml, entry keep_if_10	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--keep_if_100.rb	benchmark/set.yml, entry keep_if_100	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--keep_if_1000.rb	benchmark/set.yml, entry keep_if_1000	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/mutation	set--merge_enum.rb	benchmark/set.yml, entry merge_enum	mutation on a temporary (a mutator called on a copy or a literal, not a local)
 unsupported/mutation	set--merge_set.rb	benchmark/set.yml, entry merge_set	mutation on a temporary (a mutator called on a copy or a literal, not a local)
+unsupported/mutation	set--reject_0.rb	benchmark/set.yml, entry reject_0	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--reject_10.rb	benchmark/set.yml, entry reject_10	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--reject_100.rb	benchmark/set.yml, entry reject_100	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--reject_1000.rb	benchmark/set.yml, entry reject_1000	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--replace_0.rb	benchmark/set.yml, entry replace_0	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--replace_10.rb	benchmark/set.yml, entry replace_10	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--replace_100.rb	benchmark/set.yml, entry replace_100	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--replace_1000.rb	benchmark/set.yml, entry replace_1000	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--reset_0.rb	benchmark/set.yml, entry reset_0	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--reset_10.rb	benchmark/set.yml, entry reset_10	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--reset_100.rb	benchmark/set.yml, entry reset_100	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--reset_1000.rb	benchmark/set.yml, entry reset_1000	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--select_0.rb	benchmark/set.yml, entry select_0	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--select_10.rb	benchmark/set.yml, entry select_10	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--select_100.rb	benchmark/set.yml, entry select_100	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	set--select_1000.rb	benchmark/set.yml, entry select_1000	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/mutation	set--subtract_enum.rb	benchmark/set.yml, entry subtract_enum	mutation on a temporary (a mutator called on a copy or a literal, not a local)
 unsupported/mutation	set--subtract_same_enum.rb	benchmark/set.yml, entry subtract_same_enum	mutation on a temporary (a mutator called on a copy or a literal, not a local)
 unsupported/mutation	set--subtract_same_set.rb	benchmark/set.yml, entry subtract_same_set	mutation on a temporary (a mutator called on a copy or a literal, not a local)
@@ -344,6 +393,18 @@ unsupported/mutation	set--subtract_set.rb	benchmark/set.yml, entry subtract_set	
 unsupported/mutation	string_capitalize--capitalize_-1.rb	benchmark/string_capitalize.yml, entry capitalize_-1	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/mutation	string_capitalize--capitalize_-100.rb	benchmark/string_capitalize.yml, entry capitalize_-100	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/mutation	string_capitalize--capitalize_-1000.rb	benchmark/string_capitalize.yml, entry capitalize_-1000	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	string_gsub--escape.rb	benchmark/string_gsub.yml, entry escape	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	string_gsub--escape_bin.rb	benchmark/string_gsub.yml, entry escape_bin	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	string_gsub--escape_utf8.rb	benchmark/string_gsub.yml, entry escape_utf8	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	string_gsub--escape_utf8_bin.rb	benchmark/string_gsub.yml, entry escape_utf8_bin	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	string_gsub--gsub_no_match_shared.rb	benchmark/string_gsub.yml, entry gsub_no_match_shared	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	string_gsub--sub_no_match_shared.rb	benchmark/string_gsub.yml, entry sub_no_match_shared	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	string_scrub--scrub_known_invalid.rb	benchmark/string_scrub.yml, entry scrub_known_invalid	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	string_scrub--scrub_known_valid.rb	benchmark/string_scrub.yml, entry scrub_known_valid	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	string_scrub--scrub_unknown_and_invalid_coderange.rb	benchmark/string_scrub.yml, entry scrub_unknown_and_invalid_coderange	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	string_scrub--scrub_unknown_and_invalid_coderange_worst_case.rb	benchmark/string_scrub.yml, entry scrub_unknown_and_invalid_coderange_worst_case	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	string_scrub--scrub_unknown_but_valid_coderange.rb	benchmark/string_scrub.yml, entry scrub_unknown_but_valid_coderange	mutation (<<, push, pop, shift, delete, concat, bang methods)
+unsupported/mutation	string_scrub--scrub_unknown_but_valid_coderange_worst_case.rb	benchmark/string_scrub.yml, entry scrub_unknown_but_valid_coderange_worst_case	mutation (<<, push, pop, shift, delete, concat, bang methods)
 unsupported/mutation	string_slice--regexp-long.rb	benchmark/string_slice.yml, entry regexp-long	mutation on a temporary (a mutator called on a copy or a literal, not a local)
 unsupported/mutation	string_slice--regexp-short.rb	benchmark/string_slice.yml, entry regexp-short	mutation on a temporary (a mutator called on a copy or a literal, not a local)
 unsupported/mutation	string_slice--string-long.rb	benchmark/string_slice.yml, entry string-long	mutation (<<, push, pop, shift, delete, concat, bang methods)
@@ -567,7 +628,6 @@ works	array_sort_int--ary10000.sort.rb	benchmark/array_sort_int.yml, entry ary10
 works	array_sort_int--ary2.sort.rb	benchmark/array_sort_int.yml, entry ary2.sort	
 works	array_values_at_int.rb	benchmark/array_values_at_int.rb	
 works	array_values_at_range.rb	benchmark/array_values_at_range.rb	
-works	bighash.rb	benchmark/bighash.rb	
 works	cgi_escape_html--cgi_escape_html_0.rb	benchmark/cgi_escape_html.yml, entry cgi_escape_html_0	
 works	cgi_escape_html--cgi_escape_html_1.rb	benchmark/cgi_escape_html.yml, entry cgi_escape_html_1	
 works	cgi_escape_html--cgi_escape_html_2.rb	benchmark/cgi_escape_html.yml, entry cgi_escape_html_2	
@@ -671,7 +731,6 @@ works	float_predicate--float_positive_.rb	benchmark/float_predicate.yml, entry f
 works	float_predicate--float_zero_.rb	benchmark/float_predicate.yml, entry float_zero_	
 works	float_to_s--to_s.rb	benchmark/float_to_s.yml, entry to_s	
 works	gc_hash1.rb	benchmark/gc/hash1.rb	
-works	gc_hash2.rb	benchmark/gc/hash2.rb	
 works	gc_null.rb	benchmark/gc/null.rb	
 works	hash_ar_aref--hit_first.rb	benchmark/hash_ar_aref.yml, entry hit_first	
 works	hash_ar_aref--hit_fourth.rb	benchmark/hash_ar_aref.yml, entry hit_fourth	
@@ -697,14 +756,6 @@ works	hash_keys.rb	benchmark/hash_keys.rb
 works	hash_literal_small2.rb	benchmark/hash_literal_small2.rb	
 works	hash_literal_small4.rb	benchmark/hash_literal_small4.rb	
 works	hash_literal_small8.rb	benchmark/hash_literal_small8.rb	
-works	hash_long.rb	benchmark/hash_long.rb	
-works	hash_shift.rb	benchmark/hash_shift.rb	
-works	hash_shift_u16.rb	benchmark/hash_shift_u16.rb	
-works	hash_shift_u24.rb	benchmark/hash_shift_u24.rb	
-works	hash_shift_u32.rb	benchmark/hash_shift_u32.rb	
-works	hash_small2.rb	benchmark/hash_small2.rb	
-works	hash_small4.rb	benchmark/hash_small4.rb	
-works	hash_small8.rb	benchmark/hash_small8.rb	
 works	hash_to_proc.rb	benchmark/hash_to_proc.rb	
 works	hash_values.rb	benchmark/hash_values.rb	
 works	int_to_s--big_100digit.rb	benchmark/int_to_s.yml, entry big_100digit	
@@ -728,7 +779,6 @@ works	kernel_clone--clone_true.rb	benchmark/kernel_clone.yml, entry clone_true
 works	kernel_float--float.rb	benchmark/kernel_float.yml, entry float	
 works	kernel_float--float_false.rb	benchmark/kernel_float.yml, entry float_false	
 works	kernel_float--float_true.rb	benchmark/kernel_float.yml, entry float_true	
-works	kernel_tap--kernel_tap.rb	benchmark/kernel_tap.yml, entry kernel_tap	
 works	kernel_then--kernel_then.rb	benchmark/kernel_then.yml, entry kernel_then	
 works	kernel_then--kernel_then_enum.rb	benchmark/kernel_then.yml, entry kernel_then_enum	
 works	kernel_then--kernel_yield_self.rb	benchmark/kernel_then.yml, entry kernel_yield_self	
@@ -815,10 +865,6 @@ works	range_reverse_each--Fixnum_1M.rb	benchmark/range_reverse_each.yml, entry F
 works	regexp_dup--dup.rb	benchmark/regexp_dup.yml, entry dup	
 works	regexp_new--regexp.rb	benchmark/regexp_new.yml, entry regexp	
 works	regexp_new--string.rb	benchmark/regexp_new.yml, entry string	
-works	set--add.rb	benchmark/set.yml, entry add	
-works	set--add_exist.rb	benchmark/set.yml, entry add_exist	
-works	set--addq.rb	benchmark/set.yml, entry addq	
-works	set--addq_exist.rb	benchmark/set.yml, entry addq_exist	
 works	set--amp_0.rb	benchmark/set.yml, entry amp_0	
 works	set--amp_10.rb	benchmark/set.yml, entry amp_10	
 works	set--amp_100.rb	benchmark/set.yml, entry amp_100	
@@ -835,27 +881,14 @@ works	set--classify_0.rb	benchmark/set.yml, entry classify_0
 works	set--classify_10.rb	benchmark/set.yml, entry classify_10	
 works	set--classify_100.rb	benchmark/set.yml, entry classify_100	
 works	set--classify_1000.rb	benchmark/set.yml, entry classify_1000	
-works	set--clear.rb	benchmark/set.yml, entry clear	
 works	set--clone_0.rb	benchmark/set.yml, entry clone_0	
 works	set--clone_10.rb	benchmark/set.yml, entry clone_10	
 works	set--clone_100.rb	benchmark/set.yml, entry clone_100	
 works	set--clone_1000.rb	benchmark/set.yml, entry clone_1000	
-works	set--collect_0.rb	benchmark/set.yml, entry collect_0	
-works	set--collect_10.rb	benchmark/set.yml, entry collect_10	
-works	set--collect_100.rb	benchmark/set.yml, entry collect_100	
-works	set--collect_1000.rb	benchmark/set.yml, entry collect_1000	
 works	set--compare_by_identity_0.rb	benchmark/set.yml, entry compare_by_identity_0	
 works	set--compare_by_identity_10.rb	benchmark/set.yml, entry compare_by_identity_10	
 works	set--compare_by_identity_100.rb	benchmark/set.yml, entry compare_by_identity_100	
 works	set--compare_by_identity_1000.rb	benchmark/set.yml, entry compare_by_identity_1000	
-works	set--delete.rb	benchmark/set.yml, entry delete	
-works	set--delete_if_0.rb	benchmark/set.yml, entry delete_if_0	
-works	set--delete_if_10.rb	benchmark/set.yml, entry delete_if_10	
-works	set--delete_if_100.rb	benchmark/set.yml, entry delete_if_100	
-works	set--delete_if_1000.rb	benchmark/set.yml, entry delete_if_1000	
-works	set--delete_not_exist.rb	benchmark/set.yml, entry delete_not_exist	
-works	set--deleteq.rb	benchmark/set.yml, entry deleteq	
-works	set--deleteq_not_exist.rb	benchmark/set.yml, entry deleteq_not_exist	
 works	set--disjoint_0.rb	benchmark/set.yml, entry disjoint_0	
 works	set--disjoint_10.rb	benchmark/set.yml, entry disjoint_10	
 works	set--disjoint_100.rb	benchmark/set.yml, entry disjoint_100	
@@ -891,7 +924,6 @@ works	set--eq_same_10.rb	benchmark/set.yml, entry eq_same_10
 works	set--eq_same_100.rb	benchmark/set.yml, entry eq_same_100	
 works	set--eq_same_1000.rb	benchmark/set.yml, entry eq_same_1000	
 works	set--flatten.rb	benchmark/set.yml, entry flatten	
-works	set--flattenb.rb	benchmark/set.yml, entry flattenb	
 works	set--include_false_0.rb	benchmark/set.yml, entry include_false_0	
 works	set--include_false_10.rb	benchmark/set.yml, entry include_false_10	
 works	set--include_false_100.rb	benchmark/set.yml, entry include_false_100	
@@ -916,10 +948,6 @@ works	set--join_arg_0.rb	benchmark/set.yml, entry join_arg_0
 works	set--join_arg_10.rb	benchmark/set.yml, entry join_arg_10	
 works	set--join_arg_100.rb	benchmark/set.yml, entry join_arg_100	
 works	set--join_arg_1000.rb	benchmark/set.yml, entry join_arg_1000	
-works	set--keep_if_0.rb	benchmark/set.yml, entry keep_if_0	
-works	set--keep_if_10.rb	benchmark/set.yml, entry keep_if_10	
-works	set--keep_if_100.rb	benchmark/set.yml, entry keep_if_100	
-works	set--keep_if_1000.rb	benchmark/set.yml, entry keep_if_1000	
 works	set--minus_0.rb	benchmark/set.yml, entry minus_0	
 works	set--minus_10.rb	benchmark/set.yml, entry minus_10	
 works	set--minus_100.rb	benchmark/set.yml, entry minus_100	
@@ -954,22 +982,6 @@ works	set--proper_superset_1000.rb	benchmark/set.yml, entry proper_superset_1000
 works	set--proper_superset_false_10.rb	benchmark/set.yml, entry proper_superset_false_10	
 works	set--proper_superset_false_100.rb	benchmark/set.yml, entry proper_superset_false_100	
 works	set--proper_superset_false_1000.rb	benchmark/set.yml, entry proper_superset_false_1000	
-works	set--reject_0.rb	benchmark/set.yml, entry reject_0	
-works	set--reject_10.rb	benchmark/set.yml, entry reject_10	
-works	set--reject_100.rb	benchmark/set.yml, entry reject_100	
-works	set--reject_1000.rb	benchmark/set.yml, entry reject_1000	
-works	set--replace_0.rb	benchmark/set.yml, entry replace_0	
-works	set--replace_10.rb	benchmark/set.yml, entry replace_10	
-works	set--replace_100.rb	benchmark/set.yml, entry replace_100	
-works	set--replace_1000.rb	benchmark/set.yml, entry replace_1000	
-works	set--reset_0.rb	benchmark/set.yml, entry reset_0	
-works	set--reset_10.rb	benchmark/set.yml, entry reset_10	
-works	set--reset_100.rb	benchmark/set.yml, entry reset_100	
-works	set--reset_1000.rb	benchmark/set.yml, entry reset_1000	
-works	set--select_0.rb	benchmark/set.yml, entry select_0	
-works	set--select_10.rb	benchmark/set.yml, entry select_10	
-works	set--select_100.rb	benchmark/set.yml, entry select_100	
-works	set--select_1000.rb	benchmark/set.yml, entry select_1000	
 works	set--size_0.rb	benchmark/set.yml, entry size_0	
 works	set--size_10.rb	benchmark/set.yml, entry size_10	
 works	set--size_100.rb	benchmark/set.yml, entry size_100	
@@ -1052,12 +1064,6 @@ works	string_dup--dup.rb	benchmark/string_dup.yml, entry dup
 works	string_dup--uplus.rb	benchmark/string_dup.yml, entry uplus	
 works	string_fstring--fstring_random.rb	benchmark/string_fstring.yml, entry fstring_random	
 works	string_fstring--fstring_same.rb	benchmark/string_fstring.yml, entry fstring_same	
-works	string_gsub--escape.rb	benchmark/string_gsub.yml, entry escape	
-works	string_gsub--escape_bin.rb	benchmark/string_gsub.yml, entry escape_bin	
-works	string_gsub--escape_utf8.rb	benchmark/string_gsub.yml, entry escape_utf8	
-works	string_gsub--escape_utf8_bin.rb	benchmark/string_gsub.yml, entry escape_utf8_bin	
-works	string_gsub--gsub_no_match_shared.rb	benchmark/string_gsub.yml, entry gsub_no_match_shared	
-works	string_gsub--sub_no_match_shared.rb	benchmark/string_gsub.yml, entry sub_no_match_shared	
 works	string_index.rb	benchmark/string_index.rb	
 works	string_inspect--inspect_ascii.rb	benchmark/string_inspect.yml, entry inspect_ascii	
 works	string_inspect--inspect_binary.rb	benchmark/string_inspect.yml, entry inspect_binary	
@@ -1091,12 +1097,6 @@ works	string_rpartition--rpartition-nonascii100.rb	benchmark/string_rpartition.y
 works	string_rpartition--rpartition-nonascii1000.rb	benchmark/string_rpartition.yml, entry rpartition-nonascii1000	
 works	string_scan_re.rb	benchmark/string_scan_re.rb	
 works	string_scan_str.rb	benchmark/string_scan_str.rb	
-works	string_scrub--scrub_known_invalid.rb	benchmark/string_scrub.yml, entry scrub_known_invalid	
-works	string_scrub--scrub_known_valid.rb	benchmark/string_scrub.yml, entry scrub_known_valid	
-works	string_scrub--scrub_unknown_and_invalid_coderange.rb	benchmark/string_scrub.yml, entry scrub_unknown_and_invalid_coderange	
-works	string_scrub--scrub_unknown_and_invalid_coderange_worst_case.rb	benchmark/string_scrub.yml, entry scrub_unknown_and_invalid_coderange_worst_case	
-works	string_scrub--scrub_unknown_but_valid_coderange.rb	benchmark/string_scrub.yml, entry scrub_unknown_but_valid_coderange	
-works	string_scrub--scrub_unknown_but_valid_coderange_worst_case.rb	benchmark/string_scrub.yml, entry scrub_unknown_but_valid_coderange_worst_case	
 works	string_split--re_chars-1.rb	benchmark/string_split.yml, entry re_chars-1	
 works	string_split--re_chars-10.rb	benchmark/string_split.yml, entry re_chars-10	
 works	string_split--re_chars-100.rb	benchmark/string_split.yml, entry re_chars-100	

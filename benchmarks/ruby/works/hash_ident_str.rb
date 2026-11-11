@@ -1,4 +1,3 @@
-h = {}.compare_by_identity
 strs = ('a'..'z').to_a
-strs.each { |s| h[s] = s }
+h = strs.each_with_object({}.compare_by_identity) { |s, acc| acc[s] = s }
 200_000.times { strs.each { |s| h[s] } }

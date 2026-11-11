@@ -6,7 +6,7 @@ description: Run cameo's benchmarks on a temporary 16-core Hetzner server - the 
 # Benchmarks on a Hetzner server
 
 A laptop has too few cores, and cores of two speeds, to show how `async`
-scales, and too much going on to time 852 cases quietly. A dedicated
+scales, and too much going on to time 791 cases quietly. A dedicated
 16-core server does both. It costs about €0.53 an hour and a full run takes
 about an hour and a half.
 
