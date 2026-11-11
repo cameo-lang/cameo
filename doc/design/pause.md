@@ -33,8 +33,11 @@ List, a Hash, a Set and a Range of integers, and a List's `each_index`;
 of a List or a Range, `each_with_index`, `each_with_object`, `map`,
 `flat_map`, `filter_map`, `select`, `reject`, `partition` and `find`,
 under each of their names; a Hash's `each_pair`, `each_key`, `each_value`,
-`select`, `reject` and `transform_values`; a Set's `select` and `reject`.
-The dump
+`select`, `reject` and `transform_values`; a Set's `select` and `reject`;
+and, called with a block alone, `inject`, `sum`, `count`, `any?`, `all?`,
+`none?`, `one?`, `take_while`, `drop_while`, `group_by`, `each_slice`,
+`each_cons` and `reverse_each`. A Hash and a Set have the ones of these
+they take from Enumerable. The dump
 holds such a builtin as an activation of its own, between the call that
 made it and its block: the method, the call it was made with, and what it
 keeps from one call of the block to the next, for `times` the number it

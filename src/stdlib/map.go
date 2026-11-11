@@ -375,6 +375,10 @@ func installMap() {
 	def(c, "find_all", 0, object.Enumerable.Methods["find_all"].Native)
 	def(c, "to_set", 0, object.Enumerable.Methods["to_set"].Native)
 	def(c, "first", -1, object.Enumerable.Methods["first"].Native)
+	// The ones of these that are steppers in Enumerable are steppers
+	// here: a run pauses inside their block.
+	foldsOf(c, "count", "any?", "sum", "find", "map", "flat_map", "filter_map", "group_by", "partition",
+		"each_with_object", "each_with_index", "reduce", "inject", "all?", "none?", "find_all")
 	// default is the default value, or with a key the default for that key,
 	// which a default proc computes.
 	def(c, "default", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {

@@ -26,6 +26,7 @@ func Install() {
 	installException()
 	installClass()
 	installEnumerable()
+	installFolds()
 	installList()
 	installMap()
 	installSet()
