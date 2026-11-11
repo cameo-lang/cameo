@@ -296,6 +296,63 @@ func TestCompileAssignmentForms(t *testing.T) {
 `)
 }
 
+func TestCompileSuperWithAndAsync(t *testing.T) {
+	prog, err := syntax.Parse("t.cameo", `def go(a, &b)
+  super
+  super(a, k: 1) { 2 }
+  x = a.with(n: 1)
+  p = async a, :run, 1
+  await p
+  await a, :run
+  Cameo.await :all
+end
+`)
+	assert.NoError(t, err)
+	unit, err := CompileDef("t.cameo", prog.Body[0].(*syntax.Def))
+	assert.NoError(t, err)
+	assert.Equals(t, Listing(unit), `proc #0 go(a, &b)
+  NEED_METHOD
+  SUPER 0 forward
+  DROP
+  NEED_METHOD
+  LOAD a
+  MAP
+  CONST 1
+  SYM k
+  MAP_SET
+  SUPER 1 #1 kw block
+  DROP
+  LOAD a
+  MAP
+  CONST 1
+  SYM n
+  MAP_SET
+  SEND with 0 a kw
+  STORE x
+  DROP
+  NEED_CAMEO async
+  LOAD a
+  SYM run
+  CONST 1
+  ASYNC 1
+  STORE p
+  DROP
+  NEED_CAMEO await
+  LOAD p
+  AWAIT
+  DROP
+  NEED_CAMEO await
+  LOAD a
+  SYM run
+  AWAIT_CALL 0
+  DROP
+  AWAIT_ALL qualified
+
+proc #1 block
+  CONST 2
+`)
+}
+
 func TestCompileReportsWhatItDoesNotCompileYet(t *testing.T) {
 	prog, err := syntax.Parse("t.cameo", "x = 1\nclass Point\nend\n")
 	assert.NoError(t, err)

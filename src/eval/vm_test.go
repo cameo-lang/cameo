@@ -313,6 +313,76 @@ nil
 	onBoth(t, "String = 1\n", "t.cameo:1: cannot reassign the builtin constant String (CameoError)\n")
 }
 
+func TestSuperWithAndAsyncRunOnTheIR(t *testing.T) {
+	compiled, _ := onBoth(t, `class Animal
+  string :name
+  def initialize(name) = self.name = name
+  def speak(loud = false, *rest, punct: ".", &blk)
+    s = "#{name} speaks#{punct}"
+    s = s.upcase if loud
+    blk ? blk.call(s) : s
+  end
+  def describe(prefix, punct: ".") = "#{prefix} #{name}#{punct}" + (block_given? ? yield : "")
+  def self.kinds = ["animal"]
+end
+class Dog < Animal
+  def speak(loud = false, *rest, punct: "!", &blk) = "dog: " + super
+  def twice(&blk) = super() rescue "no twice above"
+  def describe(prefix) = super("good", punct: "?") { " (block)" }
+  def self.kinds = super + ["dog"]
+end
+d = Dog.new("rex")
+puts d.speak, d.speak(true), d.speak { |s| "<#{s}>" }
+puts d.describe("x"), d.twice, Dog.kinds.inspect
+e = d.with(name: "max")
+puts e.name, d.name
+h = {a: 1}
+h[:b] = 2
+l = [1, 2]
+l[0] = 9
+e.name = "bo"
+puts h.inspect, l.inspect, e.name
+include Cameo
+class Work
+  def sq(x, by: 1) = x * x * by
+  def boom = raise(ArgumentError, "boom")
+end
+w = Work.new
+a = async w, :sq, 3
+b = async w, :sq, 4, by: 2
+puts await(a), await([a, b]).inspect
+puts await(w, :sq, 5)
+c = Cameo.async w, :sq, 6
+puts Cameo.await(c), (await :all).inspect
+begin
+  await async(w, :boom)
+rescue ArgumentError => err
+  puts "failed: #{err.message}"
+end
+`, `dog: rex speaks.
+dog: REX SPEAKS.
+dog: <rex speaks.>
+good rex? (block)
+no twice above
+["animal", "dog"]
+max
+rex
+{a: 1, b: 2}
+[9, 2]
+bo
+9
+[9, 32]
+25
+36
+[]
+failed: boom
+`)
+	assert.True(t, compiled >= 20, "%d units ran on the IR", compiled)
+	onBoth(t, "def f = super\nf\n", "t.cameo:1: super: no superclass method 'f' for main (NoMethodError)\n")
+	onBoth(t, "class W\n  def go = 1\nend\nx = async W.new, :go\n", "t.cameo:4: async comes from the Cameo module: include Cameo, or call Cameo.async (NoMethodError)\n")
+	onBoth(t, "include Cameo\nx = async 1, 2\n", "t.cameo:2: async names the method by a symbol, not an instance of Integer (TypeError)\n")
+}
+
 func TestErrorsOnTheIRNameTheirLine(t *testing.T) {
 	onBoth(t, `def f(x)
   x + nope

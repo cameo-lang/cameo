@@ -746,6 +746,12 @@ func (in *Interp) evalSuper(n *syntax.Super, env *Env, fr *Frame) (object.Value,
 			return object.Value{}, err
 		}
 	}
+	return in.callSuper(fr, args, kw, block, n.Line())
+}
+
+// callSuper calls the method of fr's name in the next ancestor of the
+// class that defines fr's method.
+func (in *Interp) callSuper(fr *Frame, args []object.Value, kw *object.Map, block object.Value, line int) (object.Value, error) {
 	var m *object.Method
 	if cls, ok := fr.Self.AsClass(); ok && fr.Method.Owner.SingletonMethods[fr.Method.Name] == fr.Method {
 		for k := cls.Super; k != nil && m == nil; k = k.Super {
@@ -758,18 +764,18 @@ func (in *Interp) evalSuper(n *syntax.Super, env *Env, fr *Frame) (object.Value,
 		if fr.Method.Name == "initialize" {
 			return object.Nil, nil
 		}
-		return object.Value{}, in.raise(object.NoMethodError, n.Line(), "super: no superclass method '%s' for %s", fr.Method.Name, typeName(fr.Self))
+		return object.Value{}, in.raise(object.NoMethodError, line, "super: no superclass method '%s' for %s", fr.Method.Name, typeName(fr.Self))
 	}
 	if m.Native != nil && (m.Body == nil || in.interpreted == 0) {
 		v, err := m.Native(in, fr.Self, args, kw, block)
 		if err != ErrDeopt || m.Body == nil {
-			return v, withLine(err, n.Line())
+			return v, withLine(err, line)
 		}
-		v, err = in.reinvoke(m, fr.Self, args, kw, block, n.Line())
-		return v, withLine(err, n.Line())
+		v, err = in.reinvoke(m, fr.Self, args, kw, block, line)
+		return v, withLine(err, line)
 	}
-	v, err := in.invoke(m, fr.Self, args, kw, block, n.Line())
-	return v, withLine(err, n.Line())
+	v, err := in.invoke(m, fr.Self, args, kw, block, line)
+	return v, withLine(err, line)
 }
 
 // blockTarget is what a break out of block targets: the proc itself, as
