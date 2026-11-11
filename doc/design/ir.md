@@ -160,26 +160,202 @@ IR was built in slices, both evaluators ran every test, and ruby/spec's
 language and core examples had the same status on each, 3,938 rows without
 a difference, before the tree walker was removed.
 
-Stack B replaces the recursion with a frame stack per interpreter. A frame is
-a proc, a position (a path of indices into its nested lists), a value stack
-and a binding. A call of a cameo method pushes a frame; a builtin that calls
-a block is a step function:
+Stack B replaces the recursion with a stack of activations per interpreter,
+which the next section describes.
+
+## The activation stack
+
+Stack A left one thing on the Go stack: where a run is. `machine.exec` calls
+itself for the lists inside an instruction, `Interp.invoke` calls
+`runBody` for a method, a builtin calls `callBlock` for its block, and a
+`rescue`, a `break` and a `return` travel as Go errors through all of
+them. Stack B moves that state into data, one piece at a time, with the run
+able to pause wherever the pieces built so far cover it.
+
+### An activation
+
+An **activation** is one proc that is running: a method call, a block call,
+a class body, the top level.
+
+| part | is |
+|---|---|
+| the proc | a unit and a proc index, as a method and a closure name their code |
+| the position | a **cursor** per list the activation is inside, outermost first |
+| the value stack | the operands of the expression in flight |
+| the scope | the local variables, `eval.Env` |
+| the frame | self, the method, the block, the lexical classes: `eval.Frame`, as today |
+| the return | what the caller does with the result |
+
+A cursor is a list of instructions and the index of the next one. The
+first cursor is the proc's own list. An instruction that holds lists, `IF`,
+`WHILE`, `BEGIN`, `CASE`, `INTERP`, does not call the evaluator for them:
+it pushes a cursor for the list it enters and returns. When a list ends the
+evaluator pops its cursor and asks the instruction that owns it what comes
+next, with the **phase** the cursor was pushed in: `WHILE` after its
+condition pops the value and enters the body or leaves, after its body
+enters the condition again. So a cursor is three numbers, the index of the
+next instruction, the list of its owner it runs, and the phase, and the
+position of an activation is a path of them. Nothing else of an instruction
+in flight is hidden: what `CASE` compares against and what `INTERP` has
+built so far are on the value stack.
+
+`BEGIN` keeps two things on its cursor beside the numbers: the exception a
+`rescue` clause is handling, which `raise` without arguments and `cause`
+read, and, while an `ensure` clause runs, what the clause interrupted — a
+value, an exception, a `break` — which goes on when the clause ends.
+
+An interpreter has one stack of activations: the script's interpreter, and
+each worker an `async` call runs in.
+
+### Calls, returns and unwinding
+
+A `SEND` whose method a script defined pushes an activation and returns to
+the loop; so do `YIELD` and `Proc#call` for a block a script wrote. The
+parameters are bound before the first instruction, and a default that is
+code runs as a list of the new activation, with a phase per parameter.
+When the proc's list ends, the activation is popped and its value handed to
+the return of the activation below: pushed on its value stack, usually, and
+for the calls that do more, a step of the instruction that called — `SEND`
+rebinding the receiver's variable for `list << x`, `CLASS` binding the
+class once its body ran.
+
+What leaves a list early is a **completion**: an exception, `break`,
+`next`, `redo`, `retry`, `return`, `throw`. The evaluator unwinds for it,
+cursor by cursor and activation by activation, instead of returning a Go
+error through its callers:
+
+- a `WHILE` cursor takes `break`, `next` and `redo`
+- a `BEGIN` cursor in its body takes an exception one of its clauses
+  rescues, a `BEGIN` cursor in a clause takes `retry`, and one with an
+  `ensure` clause runs it, keeping the completion
+- a block's activation takes `next`; the activation that passed the block
+  takes `break`; the activation of the method the block was written in
+  takes `return`
+- `catch` takes the `throw` of its tag
+
+An activation that is popped on the way marks its frame as ended, as a
+return does.
+
+### Builtins, and where a run can pause
+
+A builtin is a Go function, and one that calls a block or a method calls
+back into the evaluator: `List#each` its block, `puts` a `to_s`, `sort` a
+`<=>`. Today that call runs the block to its end on the Go stack. It keeps
+working: the evaluator pushes the activation and runs its loop, nested,
+until that activation returns. But a run cannot pause inside a nested
+loop, since the builtin's own state, how far `each` has come, is in Go
+variables.
+
+So the rule for a pause is: **a run pauses before an instruction when no
+nested loop is running.** `^C` sets the flag as before; the loop reads it
+before each instruction, and pauses or carries on to the next instruction
+that qualifies. A script that spends its time in its own methods and
+`while` loops pauses at once. One inside `list.each { … }` pauses when
+`each` returns, until `each` is a step function.
+
+A **step function** is a builtin written so that its state is data:
 
 ```go
-// A Step runs a builtin up to its next call of the block. result is what
-// the block returned to the previous step, and state what that step kept.
-type Step func(ctx Context, state, result Value) (call *BlockCall, next Value, done Value, err error)
+// A Stepper runs a builtin up to its next call into cameo code. state is
+// what the previous step kept, nil on the first; result is what the
+// call it asked for returned.
+type Stepper func(ctx Context, call *Call, state []Value, result Value) (Step, error)
+
+// A Step is what a stepper wants next: Yield calls the block with Args
+// and comes back with its result and State; Done ends the builtin with
+// Value.
+type Step struct {
+	Done  bool
+	Value Value
+	Args  []Value
+	State []Value
+}
 ```
 
-The evaluator calls the step, runs the block as a frame of its own, and calls
-the step again with the block's result. Between two steps the builtin's state
-is a cameo value in its frame. A pause stops every interpreter, the script's
-and each worker's, at its next instruction, and the dump carries their frame
-stacks, the calls `async` queued and the promises that are pending.
+`List#each` keeps one number, the index of the next element. The evaluator
+gives a step function an activation of its own, without code: the builtin's
+class and name, the receiver, the arguments, the block, and the state. It
+calls the step, pushes the block's activation, and calls the step again
+with the result. No nested loop runs, so a run pauses inside the block,
+and the dump holds how far the builtin came. A `break` out of the block
+unwinds through the builtin's activation; a builtin that must clean up,
+`File.open` closing its file, says so in its step and is called once more
+with the completion.
 
-A method `cameo build` compiled is pure: at a pause it leaves its call to the
-interpreter (`eval.ErrDeopt`), which runs the body again from its start as a
-frame that can pause.
+Builtins become step functions in groups, the ones a script spends its time
+in first: `Integer#times` and `loop`, then `each`, `map` and the rest of
+List, Hash, Range and Set, then Enumerable over a script's own `each`, and
+so on. Each group widens where a run pauses and changes nothing else, and a
+builtin that never becomes one, because it calls back for an instant, only
+ever delays a pause. An Enumerator is the same idea turned around: `next`
+runs the stepper of the method it enumerates one step.
+
+A method `cameo build` compiled is Go code too, and a nested loop when it
+calls back. It is pure, so at a pause it leaves its call to the
+interpreter (`eval.ErrDeopt`), which runs the body again from its start as
+an activation.
+
+### The dump
+
+A dump of a run that paused inside a statement adds the stacks to what
+step 16 carries:
+
+```proto
+message Stack {
+  repeated Activation activations = 1;   // outermost first
+  // what the interpreter is for: the script, or the call async started
+  int64 promise = 2;
+}
+
+message Activation {
+  string unit = 1;             // the proc, as in a Closure
+  uint32 proc = 2;
+  repeated Cursor cursors = 3;
+  repeated Value stack = 4;
+  uint32 scope = 5;            // an entry of Dump.scopes
+  uint32 frame = 6;            // an entry of Dump.frames
+  // for a step function instead of a proc: its class and name, the call
+  // and the state
+  Builtin builtin = 7;
+}
+
+message Cursor {
+  uint32 next = 1;             // index of the next instruction
+  uint32 list = 2;             // which list of the owning instruction
+  uint32 phase = 3;
+  Value rescuing = 4;          // BEGIN: the exception a clause handles
+  Completion pending = 5;      // BEGIN: what its ensure clause interrupted
+}
+```
+
+Scopes and frames are tables of the dump, referred to by index, because
+they are shared: a block's activation and the activation of the method it
+was written in have one frame, which is how the block's `return` finds the
+method and its `yield` the method's block; a `for` body shares the scope
+of the code around it. A closure that is a value in such a dump names the
+frame it was written in by its index while that frame's call is running,
+so that its `return` still works after the resume, and carries its binding
+as a closure does today once the call ended. Values need no table: they
+never change, so a copy is the value. An instance that `initialize` is
+still filling is the exception, and is in the frame.
+
+The pause still waits for nothing it can stop instead. Each worker stops
+at its next instruction that qualifies and its stack is dumped under the
+promise it will settle; a call `async` queued and no worker took yet is
+dumped as the call. A promise the host is to settle stays pending in the
+dump, and the host settles it after the resume, by its id.
+
+A resumed run rebuilds the stacks: every activation finds its proc by
+unit and index, its cursors by walking the path, and a step function by
+its class and name. A cameo that no longer has a builtin a dump is inside
+refuses the dump.
+
+### What stays on the Go stack
+
+The host calling into a program (`Program.Call`) is a nested loop of the
+host's making, and a run does not pause inside it. Neither does it inside
+the debugger's prompt or a builtin that is no step function. These are the
+places a pause is late; none makes a dump wrong.
 
 ## The stack of pull requests
 
@@ -216,26 +392,39 @@ step took more than one.
 16. pause: a dump carries classes, modules, constants and methods; resume
     runs no definition again. The dump has an IR version.
 17. protogen: a Hash with a default proc travels.
-18. protogen: a class with a proc field is a message.
 
 In 7 to 9 a method or block that uses an instruction not built yet stays on
 the tree walker, whole, and the examples run on both evaluators with their
 output compared.
 
+Step 16 took a second pull request, for the class of an instance that was
+made before its class was reopened.
+
 **Stack B: a run pauses at any instruction**
 
-19. doc: the frame stack and the step function, in this document.
-20. eval: calls between cameo methods and blocks run on a frame stack.
-21. object: the step function, with `Integer#times`, `upto`, `downto` and
+The order puts a run that pauses inside a statement first, for the code
+that is all cameo, and widens it from there.
+
+18. doc: the activation stack and the step function, in this document.
+19. eval: the lists inside an instruction run on cursors: an activation's
+    position is data, and a completion unwinds its cursors.
+20. eval: calls between cameo methods and blocks push activations on one
+    stack per interpreter; completions unwind activations.
+21. pause: a run pauses before any instruction with no nested loop
+    running; the dump carries the script's stack, its scopes and frames.
+22. object: the step function, with `Integer#times`, `upto`, `downto` and
     `loop` as the first.
-22. Builtins as step functions, one pull request per group: List, Hash,
+23. Builtins as step functions, one pull request per group: List, Hash,
     Range and Set, Enumerable over a script's `each`, String and the rest of
     the core, then the libraries.
-23. Enumerators as step functions.
-24. pause: a run pauses at any instruction; the dump carries the frame
-    stacks of the script and the workers and the calls `async` queued.
-25. cameo: pending host promises in the dump, and the host API that settles
+24. Enumerators as step functions.
+25. pause: the workers stop too; the dump carries their stacks and the
+    calls `async` queued.
+26. cameo: pending host promises in the dump, and the host API that settles
     them after resume.
-26. object: the save and restore hook for a library's state.
-27. aot: a compiled method leaves its call to the interpreter at a pause.
-28. debug: the debugger and irb read the frame stack.
+27. object: the save and restore hook for a library's state.
+28. protogen: a class with a proc field is a message. Its closure is a
+    field of type `cameo.Closure` that names its code and does not carry
+    it; the envelope around the instance, or the dump, has the unit.
+29. aot: a compiled method leaves its call to the interpreter at a pause.
+30. debug: the debugger and irb read the activation stack.
