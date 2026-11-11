@@ -54,7 +54,12 @@ func (in *Interp) FindClass(name, digest string) *object.Class {
 		return cls
 	}
 	// A class a Go host registered is a constant beside the builtin ones.
-	return find(object.ObjectClass.Consts)
+	if cls := find(object.ObjectClass.Consts); cls != nil {
+		return cls
+	}
+	// A class of the dump the run resumed from that its name is no longer
+	// bound to, under the id the dump gave it (classDump.ref).
+	return in.restored[name+"@"+digest]
 }
 
 // Classes lists every user class the script defined, in definition order of
