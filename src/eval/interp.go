@@ -40,6 +40,13 @@ type Interp struct {
 	// run can wait for the calls async started and report the failures
 	// nobody awaited.
 	promises *promises
+	// acts is the activations the interpreter is running, the innermost
+	// last (stack.go).
+	acts []*machine
+	// loops counts the loops running the activations: one for the run,
+	// and one more for each call Go code makes into the evaluator while
+	// it runs.
+	loops int
 	// restored holds the classes of the dump the run resumed from, by the
 	// id the dump refers to them with; nil for a run that began at its
 	// start.
