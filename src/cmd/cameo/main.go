@@ -11,7 +11,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/cameo-lang/cameo/src/aot"
 	"github.com/cameo-lang/cameo/src/cameo"
 	"github.com/cameo-lang/cameo/src/ir"
 	"github.com/cameo-lang/cameo/src/syntax"
@@ -21,7 +20,7 @@ import (
 // commands are the words cameo takes before a script's path, which a
 // script cannot be named by; "--" too, so a mistyped command prints the
 // usage instead of opening a file by that name.
-var commands = map[string]bool{"check": true, "proto": true, "ir": true, "build": true, "run": true, "resume": true, "inspect": true, "irb": true, "debug": true, "version": true, "--version": true, "--": true}
+var commands = map[string]bool{"check": true, "proto": true, "ir": true, "resume": true, "inspect": true, "irb": true, "debug": true, "version": true, "--version": true, "--": true}
 
 const usage = `usage: cameo [--no-pause] [--io] <script.cameo> [args...]
                                          run the script, with args in ARGV; ^C pauses it where it is
@@ -39,12 +38,7 @@ const usage = `usage: cameo [--no-pause] [--io] <script.cameo> [args...]
                                          run the script under the debugger, stopped before its first statement
        cameo check <script.cameo>        parse and check the script, report every error
        cameo proto <script.cameo> [dir]  print the .proto files of the script's classes, or write them into dir
-       cameo ir <script.cameo>           print the script's IR, the instructions it compiles to
-       cameo build <script.cameo> <dir> [package]
-                                         compile the script's top-level methods that it can to Go: into
-                                         dir/main.go, a program that runs the script, or dir/<package>.go,
-                                         a package a host imports
-       cameo run <script.cameo>          compile the script as cameo build does, build the program with go, and run it`
+       cameo ir <script.cameo>           print the script's IR, the instructions it compiles to`
 
 func main() {
 	tuneGC()
@@ -121,18 +115,6 @@ flags:
 			return 1
 		}
 		return 0
-	case (len(args) == 3 || len(args) == 4) && args[0] == "build":
-		pkg := "main"
-		if len(args) == 4 {
-			pkg = args[3]
-		}
-		if err := build(args[1], args[2], pkg, os.Stderr); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return 1
-		}
-		return 0
-	case len(args) == 2 && args[0] == "run":
-		return runCompiled(args[1], os.Stdout, os.Stderr)
 	case len(args) == 2 && args[0] == "resume":
 		return resume(args[1], io, pause, ignoreMutations, os.Stdout, os.Stderr)
 	case (len(args) == 1 || len(args) == 2) && args[0] == "irb":
@@ -234,42 +216,5 @@ func protoFiles(path, dir string, out io.Writer) error {
 		}
 		fmt.Fprintln(out, target)
 	}
-	return nil
-}
-
-// build compiles the script at path into dir/main.go, or dir/<pkg>.go for
-// a package other than main, and reports to out
-// which methods run as Go, and why the others do not.
-func build(path, dir, pkg string, out io.Writer) error {
-	src, err := os.ReadFile(path)
-	if err != nil {
-		return fmt.Errorf("cameo: %w", err)
-	}
-	res, err := aot.Build(path, string(src), aot.Options{Package: pkg})
-	if err != nil {
-		return err
-	}
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return err
-	}
-	target := filepath.Join(dir, "main.go")
-	if pkg != "main" {
-		target = filepath.Join(dir, pkg+".go")
-	}
-	if err := os.WriteFile(target, res.Go, 0o644); err != nil {
-		return err
-	}
-	for _, name := range res.Compiled {
-		fmt.Fprintf(out, "compiled %s\n", name)
-	}
-	left := make([]string, 0, len(res.Left))
-	for name := range res.Left {
-		left = append(left, name)
-	}
-	sort.Strings(left)
-	for _, name := range left {
-		fmt.Fprintf(out, "interpreted %s: %s\n", name, res.Left[name])
-	}
-	fmt.Fprintln(out, target)
 	return nil
 }

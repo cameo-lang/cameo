@@ -12,14 +12,13 @@
 # Categories are matched in order and the first match wins, and the review
 # lists them in the same order. The categories a review reads first come
 # first, so they exclude with "!" what a narrower category further down
-# takes: the Go that cameo build wrote into examples/aot is Generated, which
+# takes: the Go that make proto wrote into src/cameopb is Generated, which
 # comes last.
 
 project:
   name: cameo
   description: >
-    A small language with Ruby's syntax, run by an interpreter written in Go,
-    with a compiler of its scripts' methods to Go.
+    A small language with Ruby's syntax, run by an interpreter written in Go.
 
 diffbase: main
 
@@ -31,8 +30,6 @@ categories:
       - "/README.md"
       - "/CLAUDE.md"
       - "!*_test.go"
-      - "!examples/aot/*/*.go"
-      - "!examples/aot/*.expected"
       - "!doc/gh_pages/**/*"
   - name: Interpreter
     patterns:
@@ -45,18 +42,6 @@ categories:
       - "/src/eval/**/*_test.go"
       - "/src/object/**/*_test.go"
       - "/src/syntax/**/*_test.go"
-  - name: Compiler
-    patterns:
-      - "/src/aot/**/*"
-      - "!*_test.go"
-  - name: Compiler tests
-    patterns:
-      - "/src/aot/**/*_test.go"
-      - "/examples/aot/*_test.go"
-      - "/examples/aot/*.expected"
-      - "/tests/conformance/**/*"
-      - "/tests/performance/**/*"
-      - "/tests/performance_test.go"
   - name: Standard library
     patterns:
       - "/src/stdlib/**/*"
@@ -76,6 +61,7 @@ categories:
   - name: Source
     patterns:
       - "/src/**/*"
+      - "!src/cameopb/*.pb.go"
   - name: Benchmarks
     patterns:
       - "/benchmarks/**/*"
@@ -101,7 +87,7 @@ categories:
       - "/.gitignore"
   - name: Generated
     patterns:
-      - "examples/aot/*/*.go"
+      - "src/cameopb/*.pb.go"
 
 # The editor a file opens in from the local review.
 editor:
