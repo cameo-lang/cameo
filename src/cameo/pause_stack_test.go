@@ -358,6 +358,42 @@ p list.each_slice(2).map { |pair| mark(pair) }
 `)
 }
 
+// A run pauses inside the block of the walks a Hash, a Set and a Range
+// have of their own: each over all three, a Hash's each_pair, each_key,
+// each_value, select, reject and transform_values, a Set's select and
+// reject. A Range's each keeps the integer it came to, also when the
+// range has no end or is past 64 bits.
+func TestPauseInsideTheWalksOfAHashASetAndARange(t *testing.T) {
+	const src = `def mark(x)
+  Test.pause
+  x
+end
+h = {a: 1, "b" => 2, 3 => [4]}
+h.each { |k, v| p [mark(k), v] }
+h.each_pair { |k, v| p [k, mark(v)] }
+h.each_key { |k| p mark(k) }
+h.each_value { |v| p mark(v) }
+p h.select { |k, v| mark(v) != 2 }, h.filter { |k, v| mark(k) == :a }
+p h.reject { |k, v| mark(v) == 2 }
+p h.transform_values { |v| [mark(v)] }
+s = Set[3, 1, 2]
+s.each { |x| p mark(x) }
+p s.select { |x| mark(x) > 1 }, s.reject { |x| mark(x) > 1 }, s.filter { |x| mark(x).odd? }
+(1..3).each { |i| p mark(i) }
+(1...3).each { |i| p mark(i) }
+p (5..).each { |i| break mark(i) * 2 if i == 7 }
+big = 2**64
+(big..big + 1).each { |i| p mark(i) - big }
+p (1..0).each { |i| mark(i) }, (3..1).each { |i| mark(i) }
+p h.each { |k, v| break mark(k) }
+`
+	everyPauseLands(t, src)
+	sameAsWhole(t, src+`("a".."c").each { |c| p mark(c) }
+p (1..3).each.map { |i| i * 2 }, h.each_key.to_a, s.each.to_a
+p h.each_with_index.map { |(k, v), i| [k, i] }
+`)
+}
+
 // A run that paused goes on when it is run again, from where it paused:
 // what a host does with a script it could not dump. Here the block of
 // loop holds a StringIO, which no dump carries.
