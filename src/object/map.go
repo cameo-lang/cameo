@@ -21,6 +21,22 @@ type Map struct {
 // NewMap makes an empty map.
 func NewMap() *Map { return &Map{version: version{span: newSpan()}} }
 
+// NewMapSized makes an empty map with room for n keys, for a map that is
+// to be filled with Add.
+func NewMapSized(n int) *Map {
+	t := &table{entries: make([]entry, 0, n), index: make(map[string]int32, n)}
+	return &Map{version: version{span: span{t: t}}}
+}
+
+// Add sets k to v in m itself. It is for a map nothing else holds yet, as
+// a map literal is while it is evaluated: every other map is immutable,
+// and a change makes a copy with Put.
+func (m *Map) Add(k, v Value) {
+	m.span.appendLocked(Key(k), k, v, false)
+	m.t.live = m.len
+	m.pairs.Store(nil)
+}
+
 func (m *Map) derive(s span) *Map {
 	return &Map{version: version{span: s}, dflt: m.dflt, dfltProc: m.dfltProc}
 }
