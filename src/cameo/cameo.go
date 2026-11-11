@@ -140,7 +140,9 @@ func (p *Program) Terminal(e *readline.Editor) {
 func (p *Program) File() string { return p.file }
 
 // Run evaluates the script once; its classes stay loaded for Call. It
-// returns ErrPaused when Pause asked it to pause.
+// returns ErrPaused when Pause asked it to pause. Run on a program that
+// paused goes on where it paused: a host that could not dump the script,
+// or did not want to, loses nothing.
 func (p *Program) Run() error {
 	p.ran = true
 	err := p.in.Run(p.file, p.prog)
