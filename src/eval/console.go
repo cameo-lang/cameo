@@ -23,14 +23,12 @@ func (in *Interp) Eval(file string, prog *syntax.Program) (object.Value, error) 
 }
 
 // runStatements runs statements with env and fr and returns the last
-// value; a return among them ends them with its value. A snippet's
-// statements run once, so their thunks are not kept, as a script's are;
-// the methods and classes they define are, as any.
+// value; a return among them ends them with its value.
 func (in *Interp) runStatements(body []syntax.Node, env *Env, fr *Frame) (object.Value, error) {
 	var v object.Value = object.Nil
 	for _, n := range body {
 		var err error
-		if v, err = in.code.compile(n)(in, env, fr); err != nil {
+		if v, err = in.eval(n, env, fr); err != nil {
 			if c, ok := err.(*control); ok && c.kind == ctrlReturn {
 				return c.value, nil
 			}

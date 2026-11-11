@@ -370,8 +370,7 @@ func (in *Interp) invoke(m *object.Method, recv object.Value, args []object.Valu
 	if err := in.stopped(); err != nil {
 		return object.Value{}, err
 	}
-	cd := m.Body.(*compiledDef)
-	def := cd.def
+	def := m.Body.(*syntax.Def)
 	act := &activation{frame: Frame{
 		Self:    recv,
 		Method:  m,
@@ -399,10 +398,10 @@ func (in *Interp) invoke(m *object.Method, recv object.Value, args []object.Valu
 	if err == nil {
 		if in.dbg != nil {
 			in.dbg.enter(methodName(m, recv), env, fr)
-			v, err = cd.body(in, env, fr)
+			v, err = in.evalBody(def.Body, env, fr)
 			in.dbg.leave()
 		} else {
-			v, err = cd.body(in, env, fr)
+			v, err = in.evalBody(def.Body, env, fr)
 		}
 	}
 	if len(env.promises) > 0 {
@@ -629,19 +628,19 @@ func (in *Interp) callBlock(block object.Value, args []object.Value, kw *object.
 	if err := in.bindParams(&p.Block.Params, args, kw, inner, env, fr, p.Strict, "block", p.Block.Line()); err != nil {
 		return object.Value{}, err
 	}
-	body := in.code.body(p.Block, p.Block.Body)
+	body := p.Block.Body
 	if in.dbg != nil {
 		in.dbg.enter(blockName(in.dbg, p.Frame), env, fr)
 		defer in.dbg.leave()
 	}
-	v, err := body(in, env, fr)
+	v, err := in.evalBody(body, env, fr)
 	for err != nil {
 		c, ok := err.(*control)
 		if !ok || c.kind != ctrlRedo || c.target != nil {
 			break
 		}
 		if err = in.stopped(); err == nil {
-			v, err = body(in, env, fr)
+			v, err = in.evalBody(body, env, fr)
 		}
 	}
 	if err != nil {
