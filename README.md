@@ -64,6 +64,7 @@ cameo script.cameo            # run; an uncaught exception prints script:line: m
 cameo check script.cameo      # parse and check only, report every error with its line
 cameo proto script.cameo      # the .proto files of the script's classes, one per package
 cameo proto script.cameo out/ # the same, written into out/
+cameo ir script.cameo         # the instructions the script compiles to; see doc/design/ir.md
 cameo build script.cameo out/ # compile the top-level Integer methods to Go: out/main.go runs the script
 cameo run script.cameo        # the same, built with go and run; needs Go and the cameo source cameo was built from
 cameo resume path/to/dump     # continue a script that ^C paused

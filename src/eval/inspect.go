@@ -446,10 +446,10 @@ func (in *Interp) procInspect(p *Proc) string {
 	switch {
 	case p.Sym != "" && p.Recv.IsZero():
 		return "#<Proc:(&" + object.SymbolInspect(p.Sym) + ") (lambda)>"
-	case p.Block != nil && p.Strict:
-		return "#<Proc:" + in.file + ":" + strconv.Itoa(p.Block.Line()) + " (lambda)>"
-	case p.Block != nil:
-		return "#<Proc:" + in.file + ":" + strconv.Itoa(p.Block.Line()) + ">"
+	case p.written() && p.Strict:
+		return "#<Proc:" + in.file + ":" + strconv.Itoa(p.line()) + " (lambda)>"
+	case p.written():
+		return "#<Proc:" + in.file + ":" + strconv.Itoa(p.line()) + ">"
 	case p.Strict:
 		return "#<Proc (lambda)>"
 	}

@@ -28,7 +28,7 @@ func (in *Interp) runStatements(body []syntax.Node, env *Env, fr *Frame) (object
 	var v object.Value = object.Nil
 	for _, n := range body {
 		var err error
-		if v, err = in.eval(n, env, fr); err != nil {
+		if v, err = in.evalTop(n, env, fr); err != nil {
 			if c, ok := err.(*control); ok && c.kind == ctrlReturn {
 				return c.value, nil
 			}
