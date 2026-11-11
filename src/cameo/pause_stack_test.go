@@ -1,6 +1,7 @@
 package cameo
 
 import (
+	"bytes"
 	"errors"
 	"strings"
 	"testing"
@@ -9,6 +10,54 @@ import (
 
 	"github.com/cameo-lang/cameo/src/cameopb"
 )
+
+// everyPauseLands proves a run of src pauses once for each call of
+// Test.pause: no pause is held off until a builtin returns, where one
+// pause would stand for the calls made inside the builtin.
+func everyPauseLands(t *testing.T, src string) {
+	t.Helper()
+	calls := 0
+	var out bytes.Buffer
+	prog, err := Load("t.cameo", src, &out, &out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	prog.Module("Test").Def("pause", func([]any, map[string]any, *Block) (any, error) {
+		calls++
+		return nil, nil
+	})
+	if err := prog.Run(); err != nil {
+		t.Fatal(err)
+	}
+	pauses := 0
+	prog, _ = pausing(t, src)
+	for {
+		err := prog.Run()
+		if !errors.Is(err, ErrPaused) {
+			if err != nil {
+				t.Fatal(err)
+			}
+			break
+		}
+		pauses++
+		dump, err := prog.Dump()
+		if err != nil {
+			t.Fatal(err)
+		}
+		cont, err := Resume(dump.Data, &out, &out)
+		if err != nil {
+			t.Fatal(err)
+		}
+		cont.Module("Test").Def("pause", func([]any, map[string]any, *Block) (any, error) {
+			cont.Pause()
+			return nil, nil
+		})
+		prog = cont
+	}
+	if pauses != calls || calls == 0 {
+		t.Fatalf("the script called Test.pause %d times and paused %d times", calls, pauses)
+	}
+}
 
 // stackOf reads the activations of a dump.
 func stackOf(t *testing.T, dump *Dump) *cameopb.Dump {
@@ -228,6 +277,7 @@ end
 p 2.times.to_a, 4.times.map { |i| i + 1 }
 `
 	dump := sameAsWhole(t, src)
+	everyPauseLands(t, src)
 	text, err := InspectDump(dump.Data)
 	if err != nil {
 		t.Fatal(err)
@@ -240,6 +290,72 @@ p 2.times.to_a, 4.times.map { |i| i + 1 }
 	if !strings.Contains(text, want) {
 		t.Fatalf("inspect:\n%s\nwant in it:\n%s", text, want)
 	}
+}
+
+// A run pauses inside the block of a walk over a List or a Range, and
+// the walk goes on with what it had gathered: each and each_index,
+// each_with_index, each_with_object, map, flat_map, filter_map, select,
+// reject, partition and find. A Hash and a Set have walks of their own
+// for most of these, which still hold a pause off; the second script
+// goes through them too, for what they compute.
+func TestPauseInsideTheBlockOfAWalk(t *testing.T) {
+	// Every one of these pauses inside the block: none waits for the
+	// walk to return.
+	everyPauseLands(t, `def mark(x)
+  Test.pause
+  x
+end
+list = [3, 1, 2]
+list.each { |x| mark(x) }
+list.each_index { |i| mark(i) }
+list.each_with_index { |x, i| mark(x) }
+list.each_with_object([]) { |x, memo| memo + [mark(x)] }
+list.map { |x| mark(x) }
+list.collect { |x| mark(x) }
+list.flat_map { |x| [mark(x)] }
+list.filter_map { |x| mark(x) }
+list.select { |x| mark(x) > 1 }
+list.filter { |x| mark(x) > 1 }
+list.find_all { |x| mark(x) > 1 }
+list.reject { |x| mark(x) > 1 }
+list.partition { |x| mark(x) > 1 }
+list.find { |x| mark(x) == 2 }
+list.detect { |x| mark(x) == 9 }
+(1..3).map { |x| mark(x) }
+list.map { |x| [x].map { |y| 2.times { mark(y) } } }
+`)
+	sameAsWhole(t, `def mark(x)
+  Test.pause
+  x
+end
+list = [3, 1, 2]
+list.each { |x| puts mark(x) }
+list.each_index { |i| puts mark(i) }
+p list.each_with_index { |x, i| puts "#{mark(x)} at #{i}" }
+p list.each_with_object([]) { |x, memo| memo + [mark(x) * 2] }
+p list.map { |x| mark(x) + 1 }, list.collect { |x| mark(x).to_s }
+p list.flat_map { |x| [mark(x), [x]] }, list.filter_map { |x| mark(x) * 2 if x > 1 }
+p list.select { |x| mark(x) > 1 }, list.reject { |x| mark(x) > 1 }, list.filter { |x| mark(x).odd? }
+p list.partition { |x| mark(x) > 1 }
+p list.find { |x| mark(x) < 3 }, list.detect { |x| mark(x) > 5 }
+p (1..4).map { |x| mark(x) * x }, (1..4).select { |x| mark(x).even? }
+p({a: 1, b: 2}.map { |k, v| [mark(k), v] }, {a: 1, b: 2}.find { |k, v| mark(v) == 2 })
+p Set[1, 2].map { |x| mark(x) + 10 }
+p list.map { |x| [x, x + 1].map { |y| mark(y) * 10 } }
+p list.each { |x| break mark(x) if x == 1 }
+p list.map { |x| next 0 if mark(x) == 1; x }
+r = list.map do |x|
+  begin
+    raise "odd" if mark(x).odd?
+    x
+  rescue => e
+    mark(e.message)
+  end
+end
+p r
+p list.each_with_index.map { |x, i| x * i }, list.map.with_index { |x, i| [i, x] }
+p list.each_slice(2).map { |pair| mark(pair) }
+`)
 }
 
 // A run that paused goes on when it is run again, from where it paused:

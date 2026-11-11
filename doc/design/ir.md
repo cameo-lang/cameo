@@ -195,6 +195,15 @@ exception the block raised — `loop` ends on `StopIteration` that way —
 and a stepper defined with `DefineStep` is a method Go can call as well,
 which runs every step to the end.
 
+Most builtins that call a block walk a list of elements and make their
+value of what the block returns. `stdlib/walk.go` is that as one stepper
+with three parts a builtin fills in: what the block is called with, how
+the block's value is folded into what the walk keeps, and the value when
+the walk is through. `map` is four lines of it. The state is the
+elements, the index, and what was gathered, in one slice that grows in
+place, so a walk over a million elements costs what the loop it replaced
+did.
+
 ## The activation stack
 
 Stack A left one thing on the Go stack: where a run is. `machine.exec` calls

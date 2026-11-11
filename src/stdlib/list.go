@@ -60,28 +60,12 @@ func installList() {
 	def(c, "empty?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Bool(list(self).Len() == 0), nil
 	})
-	def(c, "each", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if block.IsZero() {
-			return blockless(self, "each", nil, true), nil
-		}
-		for _, e := range elems(self) {
-			if _, err := ctx.Yield(block, e); err != nil {
-				return object.Value{}, err
-			}
-		}
-		return self, nil
-	})
-	def(c, "each_index", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if block.IsZero() {
-			return blockless(self, "each_index", nil, true), nil
-		}
-		for i := range elems(self) {
-			if _, err := ctx.Yield(block, object.Int(i)); err != nil {
-				return object.Value{}, err
-			}
-		}
-		return self, nil
-	})
+	// each and each_index are walks (walk.go): a run pauses inside their
+	// block.
+	c.DefineStep("each", 0, walk{}.stepper("each", true))
+	c.DefineStep("each_index", 0, walk{
+		yield: func(st []object.Value, el object.Value, i int) []object.Value { return []object.Value{object.Int(i)} },
+	}.stepper("each_index", true))
 	def(c, "[]", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return listIndex(ctx, list(self), args)
 	})
