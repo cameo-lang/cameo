@@ -116,7 +116,7 @@ type ArithSeq struct {
 }
 
 // EnumeratorValue wraps an enumerator as a value.
-func EnumeratorValue(e *Enumerator) Value { return Value{kind: KindEnumerator, p: unsafe.Pointer(e)} }
+func EnumeratorValue(e *Enumerator) Value { return ptrValue(KindEnumerator, unsafe.Pointer(e)) }
 
 func (v Value) Enumerator() *Enumerator {
 	v.must(KindEnumerator)
@@ -124,7 +124,7 @@ func (v Value) Enumerator() *Enumerator {
 }
 
 func (v Value) AsEnumerator() (*Enumerator, bool) {
-	if v.kind != KindEnumerator {
+	if v.kind() != KindEnumerator {
 		return nil, false
 	}
 	return (*Enumerator)(v.p), true
