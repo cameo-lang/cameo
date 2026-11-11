@@ -1,7 +1,7 @@
 # cameo against three other Rubies
 
 [compare.rb](compare.rb) runs cameo's supported subset of CRuby's
-benchmarks, the 852 files of [../ruby/works](../ruby/works), on four Rubies:
+benchmarks, the 791 files of [../ruby/works](../ruby/works), on four Rubies:
 
 | Ruby | What it is |
 |---|---|
@@ -48,6 +48,31 @@ EPYC-Milan vCPUs), mri being CRuby 3.4.11 and cameo 65b0249 (see
 of every time were mri 0.038 s, cameo 0.006 s, warmruby 0.715 s and rbgo
 0.064 s.
 
+The run is older than two of cameo's rules: a block cannot assign to a
+variable of the scope around it, and a bang method of Ruby's core is
+refused. It timed the 852 cases `works/` held then, and
+[results.tsv](results.tsv) still has a row for each, and the summary below
+counts all of them. Two groups of those rows are stale:
+
+- 61 rows are of cases now under
+  [../ruby/unsupported/mutation](../ruby/unsupported/mutation), whose timed
+  script mutates: `bighash`, `gc_hash2`, `hash_long`, the four
+  `hash_shift` cases, `hash_small2`, `hash_small4`, `hash_small8`,
+  `kernel_tap--kernel_tap`, the six `string_gsub--` and six
+  `string_scrub--` cases, and 38 `set--` cases (`add`, `add_exist`,
+  `addq`, `addq_exist`, `clear`, `delete`, `delete_not_exist`, `deleteq`,
+  `deleteq_not_exist`, `flattenb`, and each size of `collect`,
+  `delete_if`, `keep_if`, `reject`, `replace`, `reset` and `select`).
+- 12 rows are of `.rb` cases that now build their data without mutation.
+  A `.rb` case is timed whole, so its time includes that build:
+  `app_lc_fizzbuzz`, `gc_hash1`, `hash_aref_array`, `hash_aref_dsym`,
+  `hash_aref_fix`, `hash_flatten`, `hash_ident_num`, `hash_ident_str`,
+  `hash_ident_sym`, `hash_keys`, `hash_to_proc` and `hash_values`.
+
+The other 161 `set--` cases, the two `hash_first--` cases and the eight
+`vm_call_kw_and_kw_splat--` cases changed only in their prelude, which the
+harness does not time, so their rows still hold.
+
 | | mri | cameo | warmruby | rbgo |
 |---|---|---|---|---|
 | ran cleanly | 843 | 852 | 838 | 815 |
@@ -83,6 +108,10 @@ Of the cases MRI takes at least 0.1 s, cameo is slowest on
   6×),
 - sorting with a block (`array_sort_block` 7×); sorting floats, which needs
   no dispatch, takes 109% (`array_sort_float`).
+
+`hash_small8` and `hash_small4` are under `unsupported/mutation/` now, and
+`hash_aref_fix`, `hash_ident_str` and `hash_ident_sym` build their hash
+differently (see above).
 
 [hotspots.rb](hotspots.rb) runs the slow cases alone, and one of cameo's
 own, [cases/array_sort_string.rb](cases/array_sort_string.rb): the suite

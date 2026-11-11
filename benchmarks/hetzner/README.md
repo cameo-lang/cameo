@@ -11,7 +11,7 @@ the procedure, from creating the server to deleting it.
 - [fib/run.sh](fib/run.sh) times Fibonacci on cameo binaries at 1, 4 and
   16 cores, and on every CRuby in `/opt`.
   [fib/results.tsv](fib/results.tsv) has the last run.
-- [../compare](../compare) is the suite of 852 CRuby benchmarks; its
+- [../compare](../compare) is the suite of 791 CRuby benchmarks; its
   README has the last run's summary.
 
 ## The fib scripts

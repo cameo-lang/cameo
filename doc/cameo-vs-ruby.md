@@ -17,16 +17,16 @@ says why; its *Decisions taken* records the choices made explicitly.
 ## How compatible, measured
 
 **CRuby's benchmark suite.** [benchmarks/ruby](../benchmarks/ruby) holds the
-1318 cases of CRuby's `benchmark/` that cameo may legally carry. 852 of them
+1318 cases of CRuby's `benchmark/` that cameo may legally carry. 791 of them
 run under cameo with Ruby's output. The others, by the first thing that stops
 each:
 
 | Cases | Reason |
 |---|---|
+| 119 | mutation: a mutator or bang method, or a block that assigns to a variable around it |
 | 52 | metaprogramming: `eval`, `define_method`, `class_eval`, `instance_variable_set` |
 | 61 | instance variables |
 | 59 | `attr_*` accessors |
-| 58 | mutation of something other than a local variable |
 | 33 | GC and VM introspection |
 | 32 | `Module.new` |
 | 31 | the file system |
