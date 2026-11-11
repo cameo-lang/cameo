@@ -76,11 +76,11 @@ func (b *MapBuilder) Value() Value { return MapValue(b.Map()) }
 func (m *Map) Len() int { return m.len }
 
 // Get returns the value for k, and false when absent.
-func (m *Map) Get(k Value) (Value, bool) { return m.get(Key(k)) }
+func (m *Map) Get(k Value) (Value, bool) { return m.lookup(k) }
 
 // Has reports whether k is a key.
 func (m *Map) Has(k Value) bool {
-	_, ok := m.get(Key(k))
+	_, ok := m.lookup(k)
 	return ok
 }
 
@@ -170,7 +170,7 @@ func (s *Set) Len() int { return s.len }
 
 // Has reports whether e is a member.
 func (s *Set) Has(e Value) bool {
-	_, ok := s.get(Key(e))
+	_, ok := s.lookup(e)
 	return ok
 }
 
@@ -222,6 +222,44 @@ func (s *Set) Difference(o *Set) *Set {
 // Keyed is a Message that counts in its instance's identity as a key: a
 // delegator's wrapped object. KeyValue is the value that counts.
 type Keyed interface{ KeyValue() Value }
+
+// lookup returns the value for the key k. The key of an integer, a
+// symbol or a short string is built in a buffer of the call, so that a
+// lookup of one allocates nothing.
+func (v *span) lookup(k Value) (Value, bool) {
+	var buf [quickKeySize]byte
+	if key, ok := quickKey(buf[:0], k); ok {
+		return v.getBytes(key)
+	}
+	return v.get(Key(k))
+}
+
+// quickKeySize is the room of a key that quickKey builds.
+const quickKeySize = 64
+
+// quickKey appends to buf what Key returns for an integer, a symbol or a
+// UTF-8 string, and reports false for any other value and for one whose
+// key does not fit in quickKeySize bytes.
+func quickKey(buf []byte, v Value) ([]byte, bool) {
+	if i, ok := v.AsInt(); ok {
+		return strconv.AppendInt(append(buf, 'i'), i, 10), true
+	}
+	var tag byte
+	switch v.kind() {
+	case KindSymbol:
+		tag = 'y'
+	case KindString:
+		tag = 's'
+	default:
+		return nil, false
+	}
+	s := v.Str()
+	if len(s) > quickKeySize-24 {
+		return nil, false
+	}
+	buf = strconv.AppendInt(append(buf, tag), int64(len(s)), 10)
+	return append(append(buf, ':'), s...), true
+}
 
 func Key(v Value) string {
 	var b strings.Builder
