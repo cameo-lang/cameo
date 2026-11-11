@@ -110,9 +110,6 @@ type Interp struct {
 	rescuing *object.Exception
 	// last is the value of the last top-level expression Run evaluated.
 	last object.Value
-	// interpreted counts the calls of compiled methods running on the
-	// interpreter, which their own calls do too; see reinvoke.
-	interpreted int
 	// pausing is the run's pause, which Pause asks for and the run's
 	// workers share; paused is set once Run returned ErrPaused, with
 	// next the index of the top-level statement the run continues with
@@ -239,7 +236,6 @@ var installOnce sync.Once
 // exception, or nil.
 func (in *Interp) Run(file string, prog *syntax.Program) error {
 	in.file = file
-	in.code.compiled = CompiledFor(prog)
 	fr := in.topFrame()
 	if in.paused {
 		// A run that paused goes on where it paused when it is run again:

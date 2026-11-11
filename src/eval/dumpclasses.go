@@ -515,13 +515,6 @@ func (in *Interp) restoreMethods(cls *object.Class, c *cameopb.Dump_Class, alias
 			cls.SetSingletonMethod(m)
 			continue
 		}
-		// A method cameo build compiled runs as Go, as when it was
-		// defined (defineMethod).
-		key := m.Name
-		if cls != in.mainClass {
-			key = cls.QualifiedName() + "#" + m.Name
-		}
-		m.Native = in.code.compiled[key]
 		cls.SetMethod(m)
 	}
 	return nil

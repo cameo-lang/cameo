@@ -137,10 +137,9 @@ type Field struct {
 }
 
 // Method is a method: a native one implemented in Go, or a user one whose
-// body the evaluator runs. Body is the evaluator's representation (a
-// *syntax.Def), which this package does not interpret. A user method that
-// `cameo build` compiled has both: Native runs it, and Body takes the calls
-// Native leaves to the interpreter.
+// body the evaluator runs. Body is the evaluator's representation, the
+// proc of a unit, which this package does not interpret. A method has
+// one of the two.
 type Method struct {
 	Name   string
 	Owner  *Class
