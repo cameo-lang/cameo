@@ -6,86 +6,7 @@ import (
 	"strings"
 
 	"github.com/cameo-lang/cameo/src/object"
-	"github.com/cameo-lang/cameo/src/syntax"
 )
-
-func (in *Interp) evalCall(n *syntax.Call, env *Env, fr *Frame) (object.Value, error) {
-	recv := fr.Self
-	selfCall := n.Recv == nil
-	if selfCall && n.Name == "block_given?" && len(n.Args) == 0 {
-		return object.Bool(!fr.Block.IsZero()), nil
-	}
-	if op := binaryOp(n.Name); op != nil && operatorCall(n) {
-		return in.evalOperator(n, op, env, fr)
-	}
-	if n.Recv != nil {
-		v, err := in.eval(n.Recv, env, fr)
-		if err != nil {
-			return object.Value{}, err
-		}
-		recv = v
-		if n.Safe && recv.IsNil() {
-			return object.Nil, nil
-		}
-	}
-	args, kw, err := in.evalCallArgs(n.Args, n.KwArgs, env, fr, n.Line())
-	if err != nil {
-		return object.Value{}, err
-	}
-	var block object.Value
-	switch {
-	case n.Block != nil:
-		block = procValue(&Proc{Block: n.Block, Env: blockEnv(n.Block, env), Frame: fr})
-	case n.BlockArg != nil:
-		v, err := in.eval(n.BlockArg, env, fr)
-		if err != nil {
-			return object.Value{}, err
-		}
-		block, err = in.toProc(v, n.Line())
-		if err != nil {
-			return object.Value{}, err
-		}
-	}
-	if !selfCall && mayMutate(n.Name) {
-		if v, handled, err := in.mutating(fr, recv, syntax.RecvName(n.Recv), n.Name, args, kw, block, n.Rebinds, n.Line()); handled {
-			return v, err
-		}
-	}
-	v, err := in.dispatch(fr, recv, n.Name, args, kw, block, selfCall, n.VCall, selfCall || isSelf(n.Recv), n.Line())
-	if err == nil && !selfCall && n.Dropped {
-		err = in.dropped(recv, n.Name, n.Line())
-	}
-	return v, withLine(err, n.Line())
-}
-
-// operatorCall reports whether n has the shape the operator fast path
-// takes: a receiver, one plain argument, nothing else. A safe call `&.`
-// is left to the ordinary path.
-func operatorCall(n *syntax.Call) bool {
-	if n.Recv == nil || len(n.Args) != 1 || n.Block != nil || n.BlockArg != nil || len(n.KwArgs) > 0 || n.Safe {
-		return false
-	}
-	_, splat := n.Args[0].(*syntax.Splat)
-	return !splat
-}
-
-// evalOperator evaluates an operator call that has a fast path: op on
-// the two operands, and the method when op does not cover them.
-func (in *Interp) evalOperator(n *syntax.Call, op func(a, b object.Value) object.Value, env *Env, fr *Frame) (object.Value, error) {
-	a, err := in.eval(n.Recv, env, fr)
-	if err != nil {
-		return object.Value{}, err
-	}
-	b, err := in.eval(n.Args[0], env, fr)
-	if err != nil {
-		return object.Value{}, err
-	}
-	if v := op(a, b); !v.IsZero() {
-		return v, nil
-	}
-	v, err := in.call(fr, a, n.Name, []object.Value{b}, nil, object.Value{}, false, n.Line())
-	return v, withLine(err, n.Line())
-}
 
 // binaryOp returns the fast path for an arithmetic or comparison operator
 // on two integers or two floats, or nil for any other name. The
@@ -401,10 +322,7 @@ func (in *Interp) invoke(m *object.Method, recv object.Value, args []object.Valu
 	if err := in.stopped(); err != nil {
 		return object.Value{}, err
 	}
-	// The method runs on its IR when it was defined by the IR evaluator
-	// or all of it compiles, and on the tree walker otherwise; its
-	// parameters are bound from the same.
-	defName, ps, compiled, def := in.methodCode(m)
+	code := m.Body.(*irProc)
 	act := &activation{frame: Frame{
 		Self:    recv,
 		Method:  m,
@@ -421,20 +339,15 @@ func (in *Interp) invoke(m *object.Method, recv object.Value, args []object.Valu
 	} else {
 		fr.DefTarget = object.ObjectClass
 	}
-	if defName == "initialize" {
+	if code.proc.GetName() == "initialize" {
 		if inst, ok := recv.AsInstance(); ok {
 			fr.Building = inst
 		} else if exc, ok := recv.AsException(); ok && exc.Building {
 			fr.BuildingExc = exc
 		}
 	}
-	body := func() (object.Value, error) {
-		if compiled != nil {
-			return in.runBody(compiled, env, fr)
-		}
-		return in.evalBody(def.Body, env, fr)
-	}
-	v, err := object.Value{}, in.bindParams(ps, args, kw, block, env, fr, true, m.Name, line)
+	body := func() (object.Value, error) { return in.runBody(code, env, fr) }
+	v, err := object.Value{}, in.bindParams(in.code.irParams(code), args, kw, block, env, fr, true, m.Name, line)
 	if err == nil {
 		if in.dbg != nil {
 			in.dbg.enter(methodName(m, recv), env, fr)
@@ -665,16 +578,10 @@ func (in *Interp) callBlock(block object.Value, args []object.Value, kw *object.
 		copy.Lambda = true
 		fr = &copy
 	}
-	ps, compiled := in.procCode(p)
-	if err := in.bindParams(ps, args, kw, inner, env, fr, p.Strict, "block", p.line()); err != nil {
+	if err := in.bindParams(in.code.irParams(p.IR), args, kw, inner, env, fr, p.Strict, "block", p.line()); err != nil {
 		return object.Value{}, err
 	}
-	body := func() (object.Value, error) {
-		if compiled != nil {
-			return in.runBody(compiled, env, fr)
-		}
-		return in.evalBody(p.Block.Body, env, fr)
-	}
+	body := func() (object.Value, error) { return in.runBody(p.IR, env, fr) }
 	if in.dbg != nil {
 		in.dbg.enter(blockName(in.dbg, p.Frame), env, fr)
 		defer in.dbg.leave()
@@ -715,36 +622,6 @@ func (in *Interp) callBlock(block object.Value, args []object.Value, kw *object.
 	return v, nil
 }
 
-func (in *Interp) evalSuper(n *syntax.Super, env *Env, fr *Frame) (object.Value, error) {
-	if fr.Method == nil {
-		return object.Value{}, in.raise(object.LocalJumpError, n.Line(), "super called outside of method")
-	}
-	var args []object.Value
-	var kw *object.Map
-	var block object.Value = fr.Block
-	if n.Forward {
-		args, kw = fr.Args, fr.Kw
-	} else {
-		var err error
-		args, kw, err = in.evalCallArgs(n.Args, n.KwArgs, env, fr, n.Line())
-		if err != nil {
-			return object.Value{}, err
-		}
-	}
-	if n.Block != nil {
-		block = procValue(&Proc{Block: n.Block, Env: blockEnv(n.Block, env), Frame: fr})
-	} else if n.BlockArg != nil {
-		v, err := in.eval(n.BlockArg, env, fr)
-		if err != nil {
-			return object.Value{}, err
-		}
-		if block, err = in.toProc(v, n.Line()); err != nil {
-			return object.Value{}, err
-		}
-	}
-	return in.callSuper(fr, args, kw, block, n.Line())
-}
-
 // callSuper calls the method of fr's name in the next ancestor of the
 // class that defines fr's method.
 func (in *Interp) callSuper(fr *Frame, args []object.Value, kw *object.Map, block object.Value, line int) (object.Value, error) {
@@ -781,11 +658,4 @@ func blockTarget(block object.Value) any {
 		return p
 	}
 	return nil
-}
-
-// isSelf reports whether recv is self written out: a call on it reaches a
-// function of Kernel, as a call on self reaches a private method in Ruby.
-func isSelf(recv syntax.Node) bool {
-	_, ok := recv.(*syntax.Self)
-	return ok
 }

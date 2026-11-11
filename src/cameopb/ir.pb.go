@@ -325,6 +325,9 @@ const (
 	Op_CASE_IN Op = 63
 	// MATCH(pattern): subject -> nil, or with TEST a boolean.
 	Op_MATCH Op = 64
+	// POP: value ->. Discards a value inside a statement: between the
+	// expressions one construct of the source is rewritten to.
+	Op_POP Op = 65
 	// DEF(name, proc): -> the name as a symbol.
 	Op_DEF Op = 70
 	// CLASS(name, proc body, name digest): [scope] [super] -> class.
@@ -400,6 +403,7 @@ var (
 		62: "CASE",
 		63: "CASE_IN",
 		64: "MATCH",
+		65: "POP",
 		70: "DEF",
 		71: "CLASS",
 		72: "MODULE",
@@ -464,6 +468,7 @@ var (
 		"CASE":           62,
 		"CASE_IN":        63,
 		"MATCH":          64,
+		"POP":            65,
 		"DEF":            70,
 		"CLASS":          71,
 		"MODULE":         72,
@@ -1995,7 +2000,7 @@ const file_cameo_ir_proto_rawDesc = "" +
 	"\fFLAG_DEFAULT\x10\x80\x80\x80 \x12\x0f\n" +
 	"\bFLAG_REF\x10\x80\x80\x80@\x12\x10\n" +
 	"\bFLAG_TOP\x10\x80\x80\x80\x80\x01\x12\x13\n" +
-	"\vFLAG_STATIC\x10\x80\x80\x80\x80\x02*\x87\x06\n" +
+	"\vFLAG_STATIC\x10\x80\x80\x80\x80\x02*\x90\x06\n" +
 	"\x02Op\x12\x12\n" +
 	"\x0eOP_UNSPECIFIED\x10\x00\x12\t\n" +
 	"\x05CONST\x10\x01\x12\a\n" +
@@ -2061,6 +2066,7 @@ const file_cameo_ir_proto_rawDesc = "" +
 	"\x04CASE\x10>\x12\v\n" +
 	"\aCASE_IN\x10?\x12\t\n" +
 	"\x05MATCH\x10@\x12\a\n" +
+	"\x03POP\x10A\x12\a\n" +
 	"\x03DEF\x10F\x12\t\n" +
 	"\x05CLASS\x10G\x12\n" +
 	"\n" +

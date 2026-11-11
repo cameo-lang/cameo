@@ -313,7 +313,7 @@ func (in *Interp) require(name object.Value) (object.Value, error) {
 		}
 		fr := in.topFrame()
 		fr.File = file
-		if _, err := in.runStatements(prog.Body, in.top, fr); err != nil {
+		if _, err := in.runProgram(file, prog, in.top, fr); err != nil {
 			delete(in.loaded, s)
 			// The library's error, with the library's file and line,
 			// which the script's own report would misname.

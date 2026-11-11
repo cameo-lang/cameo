@@ -104,17 +104,6 @@ func uninitialized(scope *object.Class, name, shown string, line int) error {
 		Attrs: map[string]object.Value{"name": object.Symbol(name), "receiver": object.ClassValue(scope)}}
 }
 
-func (in *Interp) evalScopedConst(n *syntax.ScopedConst, env *Env, fr *Frame) (object.Value, error) {
-	if n.Scope == nil {
-		return in.topConst(n.Name, n.Line())
-	}
-	v, err := in.eval(n.Scope, env, fr)
-	if err != nil {
-		return object.Value{}, err
-	}
-	return in.scopedConst(v, n.Name, n.Line())
-}
-
 // topConst is `::Name`: the top-level constant name.
 func (in *Interp) topConst(name string, line int) (object.Value, error) {
 	if v, ok := in.consts[name]; ok {
@@ -190,25 +179,15 @@ func (in *Interp) newClass(args []object.Value, block object.Value) (object.Valu
 	if !ok || !p.written() {
 		return object.Value{}, in.raise(object.TypeError, 0, "Class.new takes a literal block")
 	}
-	ps, compiled := in.procCode(p)
-	if p.IR != nil {
-		cls.Digest = "new:" + p.IR.proc.GetDigest()
-	} else {
-		cls.Digest = "new:" + syntax.Digest(p.Block)
-	}
+	cls.Digest = "new:" + p.IR.proc.GetDigest()
 	env := NewEnv(p.Env)
-	if len(ps.Positional) > 0 {
+	if ps := in.code.irParams(p.IR); len(ps.Positional) > 0 {
 		env.Define(ps.Positional[0].Name, object.ClassValue(cls))
 	}
 	lexical := append(append([]*object.Class{}, p.Frame.Lexical...), cls)
 	bodyFrame := &Frame{Self: object.ClassValue(cls), Lexical: lexical, DefTarget: cls, File: p.Frame.File}
 	cls.Open = true
-	var err error
-	if compiled != nil {
-		_, err = in.runBody(compiled, env, bodyFrame)
-	} else {
-		_, err = in.evalBody(p.Block.Body, env, bodyFrame)
-	}
+	_, err := in.runBody(p.IR, env, bodyFrame)
 	cls.Open = false
 	if err != nil {
 		return object.Value{}, err
@@ -233,24 +212,10 @@ func (in *Interp) bindConst(fr *Frame, name string, v object.Value) {
 	}
 }
 
-func (in *Interp) evalDef(n *syntax.Def, fr *Frame) (object.Value, error) {
-	return in.defineMethod(n.Name, n.Singleton, n, fr, n.Line())
-}
-
-// sameBody reports whether a and b are the same definition of a method: a
-// *syntax.Def, or the proc of a unit.
-func sameBody(a, b any) bool {
-	if pa, ok := a.(*irProc); ok {
-		pb, ok := b.(*irProc)
-		return ok && pa.proc == pb.proc
-	}
-	return a == b
-}
-
 // defineMethod defines the method name on the class a def in fr defines
-// on, or with singleton set as a class method of it. body is the method's
-// definition: a *syntax.Def the tree walker runs, or an *irProc.
-func (in *Interp) defineMethod(name string, singleton bool, body any, fr *Frame, line int) (object.Value, error) {
+// on, or with singleton set as a class method of it. body is the proc of
+// the method's body, which a user method's Body holds.
+func (in *Interp) defineMethod(name string, singleton bool, body *irProc, fr *Frame, line int) (object.Value, error) {
 	target := fr.DefTarget
 	if target == nil {
 		target = in.mainClass
@@ -262,8 +227,10 @@ func (in *Interp) defineMethod(name string, singleton bool, body any, fr *Frame,
 	// A second def of a name replaces the first, as in Ruby. The same
 	// definition evaluated again, as a loop around it does, changes nothing,
 	// and leaves the method caches as they are.
-	if existing, ok := table[name]; ok && existing.Owner == target && existing.Body != nil && sameBody(existing.Body, body) {
-		return object.Symbol(name), nil
+	if existing, ok := table[name]; ok && existing.Owner == target && existing.Body != nil {
+		if before, ok := existing.Body.(*irProc); ok && before.proc == body.proc {
+			return object.Symbol(name), nil
+		}
 	}
 	if existing, ok := table[name]; ok && existing.Native != nil && existing.Body == nil && existing.Owner == target {
 		if _, isField := target.FieldIndex[name]; isField {
@@ -296,38 +263,6 @@ func (in *Interp) defineMethod(name string, singleton bool, body any, fr *Frame,
 	return object.Symbol(name), nil
 }
 
-// methodCode returns what a call of the user method m runs: the name it
-// was defined under, its parameter list, and its IR, nil when it runs on
-// the tree walker, whose definition def then is.
-func (in *Interp) methodCode(m *object.Method) (name string, ps *params, compiled *irProc, def *syntax.Def) {
-	if p, ok := m.Body.(*irProc); ok {
-		return p.proc.GetName(), in.code.irParams(p), p, nil
-	}
-	def = m.Body.(*syntax.Def)
-	if compiled = in.code.irDef(def); compiled != nil {
-		return def.Name, in.code.irParams(compiled), compiled, def
-	}
-	return def.Name, in.code.astParams(&def.Params), nil, def
-}
-
-// evalClassDef binds a class to its name and runs its body. A class
-// already bound to the name is reopened: the body runs on a copy, which
-// replaces it, so instances made before keep the class they were made
-// with. The definition that last ran on the class, evaluated again,
-// returns the class as it is. The name is bound to the class while its
-// body runs, as in Ruby, and back to what it was when the body raises.
-func (in *Interp) evalClassDef(n *syntax.ClassDef, env *Env, fr *Frame) (object.Value, error) {
-	var super object.Value
-	if n.Super != nil {
-		v, err := in.eval(n.Super, env, fr)
-		if err != nil {
-			return object.Value{}, err
-		}
-		super = v
-	}
-	return in.defineClass(classDecl{Name: n.Name, Digest: n.Digest, line: n.Line()}, super, n.Super != nil, in.astBody(n.Body), fr)
-}
-
 // classDecl is what a class or module statement declares: the name, the
 // digest of the definition, and its line.
 type classDecl struct {
@@ -340,11 +275,6 @@ func (d classDecl) Line() int { return d.line }
 // bodyFn runs the body of a class or module in the scope and frame made
 // for it.
 type bodyFn func(env *Env, fr *Frame) (object.Value, error)
-
-// astBody is the body of a definition the tree walker runs.
-func (in *Interp) astBody(body []syntax.Node) bodyFn {
-	return func(env *Env, fr *Frame) (object.Value, error) { return in.evalBody(body, env, fr) }
-}
 
 // defineClass is evalClassDef once the superclass is evaluated: v, when
 // hasSuper says the statement names one.
@@ -399,12 +329,6 @@ func (in *Interp) defineClass(n classDecl, v object.Value, hasSuper bool, body b
 		return object.Value{}, err
 	}
 	return object.ClassValue(cls), nil
-}
-
-// evalModuleDef binds a module to its name and runs its body, reopening
-// a module already bound to the name as evalClassDef reopens a class.
-func (in *Interp) evalModuleDef(n *syntax.ModuleDef, env *Env, fr *Frame) (object.Value, error) {
-	return in.defineModule(classDecl{Name: n.Name, Digest: n.Digest, line: n.Line()}, in.astBody(n.Body), fr)
 }
 
 // defineModule binds the module n declares to its name and runs its body.
@@ -549,71 +473,6 @@ func (in *Interp) evalClassBody(cls, reopened *object.Class, body bodyFn, fr *Fr
 	return err
 }
 
-// defined is `defined?(expr)`: what kind of thing expr names, in Ruby's
-// words, or nil when it names nothing. It evaluates no more than it must:
-// a constant to see that it resolves, a call's receiver but not the call.
-func (in *Interp) defined(n syntax.Node, env *Env, fr *Frame) (object.Value, error) {
-	missing := func(err error) bool {
-		exc, ok := err.(*object.Exception)
-		return ok && exc.Cls.IsA(object.NameError)
-	}
-	switch n := n.(type) {
-	case *syntax.Var:
-		if _, ok := env.Get(n.Name); ok {
-			return object.String("local-variable"), nil
-		}
-		return object.Nil, nil
-	case *syntax.Const, *syntax.ScopedConst:
-		if _, err := in.eval(n, env, fr); err != nil {
-			if missing(err) {
-				return object.Nil, nil
-			}
-			return object.Value{}, err
-		}
-		return object.String("constant"), nil
-	case *syntax.Call:
-		recv := fr.Self
-		if n.Recv != nil {
-			v, err := in.eval(n.Recv, env, fr)
-			if err != nil {
-				if _, ok := err.(*object.Exception); ok {
-					return object.Nil, nil
-				}
-				return object.Value{}, err
-			}
-			recv = v
-		}
-		if recv.Class().Lookup(n.Name) != nil {
-			return object.String("method"), nil
-		}
-		return object.Nil, nil
-	case *syntax.Yield:
-		if fr.Block.IsZero() {
-			return object.Nil, nil
-		}
-		return object.String("yield"), nil
-	case *syntax.Self:
-		return object.String("self"), nil
-	case *syntax.Assign, *syntax.FieldAssign, *syntax.ConstAssign, *syntax.MultiAssign:
-		return object.String("assignment"), nil
-	}
-	return object.String("expression"), nil
-}
-
-// scopedFrame is the frame `class A::B` defines B in: fr with module A as
-// its innermost lexical scope, so B becomes A's constant. A nil scope
-// leaves fr as it is.
-func (in *Interp) scopedFrame(scope syntax.Node, env *Env, fr *Frame, line int) (*Frame, error) {
-	if scope == nil {
-		return fr, nil
-	}
-	v, err := in.eval(scope, env, fr)
-	if err != nil {
-		return nil, err
-	}
-	return in.frameIn(v, fr, line)
-}
-
 // frameIn is scopedFrame once the scope is evaluated to v.
 func (in *Interp) frameIn(v object.Value, fr *Frame, line int) (*Frame, error) {
 	mod, ok := v.AsClass()
@@ -635,12 +494,6 @@ func (in *Interp) frameIn(v object.Value, fr *Frame, line int) (*Frame, error) {
 	out := *fr
 	out.Lexical = append(append([]*object.Class{}, fr.Lexical...), mod)
 	return &out, nil
-}
-
-// evalAlias gives a method a second name, in the class being defined or at
-// the top level. The new name must be free: a method is defined once.
-func (in *Interp) evalAlias(n *syntax.Alias, fr *Frame) (object.Value, error) {
-	return in.alias(n.New, n.Old, fr, n.Line())
 }
 
 // alias gives the method old the second name name.

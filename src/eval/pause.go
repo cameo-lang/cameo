@@ -129,11 +129,15 @@ func (in *Interp) Resume(prog *syntax.Program, d *cameopb.Dump) error {
 	in.file = d.File
 	in.code.compiled = CompiledFor(prog)
 	fr := in.topFrame()
-	for _, n := range prog.Body[:next] {
+	p, err := in.program(d.File, prog)
+	if err != nil {
+		return err
+	}
+	for i, n := range prog.Body[:next] {
 		if !isDefinition(n) {
 			continue
 		}
-		if _, err := in.eval(n, in.top, fr); err != nil {
+		if _, err := in.runList(p.unit, p.statements[i], in.top, fr); err != nil {
 			return err
 		}
 	}

@@ -10,8 +10,6 @@ import (
 
 // Unsupported is the error for a node the IR has no instruction for: a
 // splat outside a list or an argument list, which the checker refuses.
-// The evaluator runs the method, block or statement such a node is in on
-// the tree walker, which raises for it.
 type Unsupported struct{ Node syntax.Node }
 
 func (e *Unsupported) Error() string {
@@ -22,29 +20,6 @@ func (e *Unsupported) Error() string {
 func Compile(file string, prog *syntax.Program) (*cameopb.Unit, error) {
 	c := newCompiler(file)
 	_, err := c.proc("<main>", nil, prog.Body, prog.Line(), false)
-	return c.unit, err
-}
-
-// CompileDef compiles a method into a unit of its own: proc 0 is its body.
-func CompileDef(file string, def *syntax.Def) (*cameopb.Unit, error) {
-	c := newCompiler(file)
-	_, err := c.proc(def.Name, &def.Params, def.Body, def.Line(), false)
-	return c.unit, err
-}
-
-// CompileBlock compiles a block into a unit of its own: proc 0 is its
-// body.
-func CompileBlock(file string, b *syntax.Block) (*cameopb.Unit, error) {
-	c := newCompiler(file)
-	_, err := c.block(b)
-	return c.unit, err
-}
-
-// CompileStatement compiles one statement into a unit of its own: proc 0
-// evaluates it and leaves its value.
-func CompileStatement(file string, n syntax.Node) (*cameopb.Unit, error) {
-	c := newCompiler(file)
-	_, err := c.proc("<main>", nil, []syntax.Node{n}, n.Line(), false)
 	return c.unit, err
 }
 
@@ -171,20 +146,24 @@ func (e *emitter) seq() *cameopb.Seq { return &cameopb.Seq{Code: e.code} }
 // one, nil when there are none. A DROP ends each statement but the last.
 func (c *compiler) body(nodes []syntax.Node, line int) (*cameopb.Seq, error) {
 	e := &emitter{}
-	if err := c.statements(e, nodes, line); err != nil {
+	if err := c.sequence(e, nodes, line, cameopb.Op_DROP); err != nil {
 		return nil, err
 	}
 	return e.seq(), nil
 }
 
-func (c *compiler) statements(e *emitter, nodes []syntax.Node, line int) error {
+// sequence compiles expressions that run one after the other and leave
+// the value of the last one, nil when there are none. between discards
+// the value of each but the last: DROP for the statements of a body, POP
+// for the expressions one construct was rewritten to.
+func (c *compiler) sequence(e *emitter, nodes []syntax.Node, line int, between cameopb.Op) error {
 	if len(nodes) == 0 {
 		e.emit(cameopb.Op_CONST, line, constArg(&cameopb.Value{}))
 		return nil
 	}
 	for i, n := range nodes {
 		if i > 0 {
-			e.emit(cameopb.Op_DROP, n.Line())
+			e.emit(between, n.Line())
 		}
 		if err := c.expr(e, n); err != nil {
 			return err
@@ -342,7 +321,7 @@ func (c *compiler) expr(e *emitter, n syntax.Node) error {
 		}
 		e.emit(cameopb.Op_NOT, line)
 	case *syntax.Seq:
-		return c.statements(e, n.Body, line)
+		return c.sequence(e, n.Body, line, cameopb.Op_POP)
 	case *syntax.Begin:
 		return c.begin(e, n)
 	case *syntax.Retry:
