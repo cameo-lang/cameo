@@ -52,7 +52,8 @@ puts io.closed?, (io.gets rescue "closed")
 // A handle whose library has no way to save it is named when the run
 // pauses, as any value the envelope cannot carry.
 func TestAHandleWithoutAHookIsNamed(t *testing.T) {
-	prog, _ := pausing(t, `e = [1, 2].each
+	prog, _ := pausing(t, `require "strscan"
+e = StringScanner.new("a b")
 Test.pause
 puts 1
 `)
@@ -63,7 +64,7 @@ puts 1
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := strings.Join(dump.Missing, ";"); !strings.Contains(got, "e (an Enumerator cannot be serialised)") {
+	if got := strings.Join(dump.Missing, ";"); !strings.Contains(got, "e (StringScanner is not a class with fields)") {
 		t.Fatalf("missing: %s", got)
 	}
 }

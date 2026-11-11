@@ -632,6 +632,19 @@ func (m *machine) send(c *cameopb.Code) error {
 // made here and its value pushed.
 func (m *machine) call(c *cameopb.Code, meth *object.Method, recv object.Value, name string, args []object.Value, kw *object.Map, block object.Value, vcall, private bool, line int) error {
 	in := m.in
+	// each with a block, on an enumerator an iterating method made when
+	// it was called without one, is that method called with the block
+	// (stdlib's enumFor). Where the method runs as an activation, a
+	// script's or a stepper, it is called here as the script would have
+	// called it, and not from inside Enumerator#each.
+	if m.inGo == 0 && meth != nil && meth.Owner == object.EnumeratorClass && meth.Name == "each" && !block.IsZero() && len(args) == 0 {
+		if e, ok := recv.AsEnumerator(); ok && e.Call != nil && e.Make != "" && e.Make == e.Meth {
+			made := in.lookup(e.Recv, e.Make, false)
+			if in.runs(made, true) || made != nil && made.Step != nil && (made.Arity < 0 || len(e.Args) == made.Arity) {
+				return m.call(c, made, e.Recv, e.Make, e.Args, nil, block, false, true, line)
+			}
+		}
+	}
 	if m.inGo == 0 && in.runs(meth, private) {
 		act, err := in.methodAct(meth, recv, args, kw, block, line)
 		if err == nil {

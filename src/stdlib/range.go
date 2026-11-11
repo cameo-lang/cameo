@@ -232,7 +232,7 @@ func installRange() {
 		next := r(self).Lo
 		if got.First {
 			if block.IsZero() {
-				return object.Done(sizedEnumerator(self, "each", nil, func(ctx object.Context, yield func(object.Value) error) error {
+				return object.Done(made(sizedEnumerator(self, "each", nil, func(ctx object.Context, yield func(object.Value) error) error {
 					e, err := eachOf(ctx, self)
 					if err != nil {
 						return err
@@ -240,7 +240,7 @@ func installRange() {
 					return e(ctx, yield)
 				}, func(ctx object.Context) (object.Value, error) {
 					return c.Methods["size"].Native(ctx, self, nil, nil, object.Value{})
-				})), nil
+				}), "each", object.Value{})), nil
 			}
 			if seq, sym, _, ok := rangeStrings(r(self)); ok {
 				for s := range seq {
@@ -282,9 +282,9 @@ func installRange() {
 			return rangeReverseEach(ctx, r(self), yield)
 		}
 		if block.IsZero() {
-			return sizedEnumerator(self, "reverse_each", nil, walk, func(ctx object.Context) (object.Value, error) {
+			return made(sizedEnumerator(self, "reverse_each", nil, walk, func(ctx object.Context) (object.Value, error) {
 				return rangeReverseSize(ctx, r(self))
-			}), nil
+			}), "reverse_each", object.Value{}), nil
 		}
 		err := walk(ctx, func(v object.Value) error {
 			_, err := ctx.Yield(block, v)

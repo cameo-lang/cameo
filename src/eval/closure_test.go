@@ -49,7 +49,7 @@ func called(t *testing.T, in *Interp, v object.Value, args ...object.Value) stri
 func TestAProcTravelsWithTheValuesItCaptured(t *testing.T) {
 	writer, _ := ran(t, `factor = 3
 names = ["a", "b"]
-unused = [1].each
+unused = Random.new(1)
 scale = ->(x) { names.map { |n| n * (x * factor) } }
 `)
 	data, err := writer.ProcEncoder(true).Encode(local(t, writer, "scale"))
@@ -63,8 +63,8 @@ scale = ->(x) { names.map { |n| n * (x * factor) } }
 	assert.True(t, p.Strict, "a lambda reads back as a lambda")
 
 	// The message carries the unit once, and of the locals in sight only
-	// the two the code reads: unused is an Enumerator, which cannot
-	// travel, and does not stop the proc.
+	// the two the code reads: unused is a Random, which cannot travel,
+	// and does not stop the proc.
 	msg := &cameopb.Value{}
 	assert.NoError(t, proto.Unmarshal(data, msg))
 	closure := msg.GetClosure()
@@ -150,13 +150,13 @@ puts from_value_proto([up, make].to_value_proto).map { |f| f.lambda? }.inspect
 }
 
 func TestAProcSaysWhatKeepsItFromTravelling(t *testing.T) {
-	writer, _ := ran(t, `each = [1].each
-reads = -> { each.next }
+	writer, _ := ran(t, `dice = Random.new(1)
+reads = -> { dice.rand }
 builtin = 5.method(:+).to_proc rescue nil
 `)
 	_, err := writer.ProcEncoder(true).Encode(local(t, writer, "reads"))
-	assert.True(t, err != nil, "a proc that reads an Enumerator was encoded")
-	assert.Equals(t, err.Error(), "a Proc that captured each, an Enumerator cannot be serialised")
+	assert.True(t, err != nil, "a proc that reads a Random was encoded")
+	assert.Equals(t, err.Error(), "a Proc that captured dice, a Random cannot be serialised")
 
 	_, err = writer.Encoder().Encode(local(t, writer, "reads"))
 	assert.True(t, err != nil, "the encoder without procs encoded one")

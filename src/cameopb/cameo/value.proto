@@ -35,7 +35,30 @@ message Value {
     // alone: its index among the dump's handles, plus one. No other
     // message carries a handle.
     uint32 handle = 16;
+    Enumerator enumerator = 17;
   }
+}
+
+// Enumerator is an Enumerator as the call that made it, which makes it
+// again where it is read: values never change, so the call returns an
+// enumerator with the same elements.
+message Enumerator {
+  // recv is the receiver of the call, method its name, args, kw and
+  // block what it was called with: `[1, 2].each_slice(2)`,
+  // `(1..).lazy.map { ... }`.
+  Value recv = 1;
+  string method = 2;
+  repeated Value args = 3;
+  Map kw = 4;
+  Closure block = 5;
+  // to_enum is set for an enumerator `to_enum` or `enum_for` made:
+  // method is then the method it enumerates, the first argument of
+  // to_enum.
+  bool to_enum = 6;
+  // of is set instead of recv and method for an enumerator that combines
+  // others, "chain" or "product", and parts are those.
+  string of = 7;
+  repeated Value parts = 8;
 }
 
 // Closure is a Proc: a block or a lambda a script wrote, as the proc of a

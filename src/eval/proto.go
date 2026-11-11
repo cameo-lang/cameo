@@ -1,6 +1,7 @@
 package eval
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/cameo-lang/cameo/src/object"
@@ -25,12 +26,35 @@ func (in *Interp) ProcEncoder(carryUnits bool) *protogen.Encoder {
 // Decoder reads values from the envelope, finding classes by their qualified
 // name and digest among the interpreter's constants.
 func (in *Interp) Decoder() *protogen.Decoder {
-	dec := protogen.NewDecoder(in.proto, in.FindClass).WithProcs(in)
+	dec := protogen.NewDecoder(in.proto, in.FindClass).WithProcs(in).WithEnumerators(in.makeEnumerator)
 	if in.handles != nil {
 		// A run that resumed from a dump reads its handles.
 		dec.WithHandles(func(ref uint32) (object.Value, error) { return in.handle(dec, ref) })
 	}
 	return dec
+}
+
+// makeEnumerator makes an enumerator again by the call its message names
+// (protogen.EnumeratorMaker). Reading a message runs none of a script's
+// code: the method is one Go implements, and it gets a block only where
+// it keeps the block for later, on a lazy enumerator. The decoder has
+// checked that the method is one that makes enumerators.
+func (in *Interp) makeEnumerator(recv object.Value, name string, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	var m *object.Method
+	if cls, ok := recv.AsClass(); ok {
+		m = cls.LookupSingleton(name)
+	} else {
+		m = recv.Class().Lookup(name)
+	}
+	if m == nil || m.Native == nil {
+		return object.Value{}, fmt.Errorf("%s has no builtin method %s", typeName(recv), name)
+	}
+	if !block.IsZero() {
+		if e, ok := recv.AsEnumerator(); !ok || !e.Lazy {
+			return object.Value{}, fmt.Errorf("%s of %s takes no block in a message", name, typeName(recv))
+		}
+	}
+	return m.Native(in, recv, args, kw, block)
 }
 
 // FindClass finds a loaded or registered class by qualified name

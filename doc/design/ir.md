@@ -45,7 +45,7 @@ copy that the envelope can carry.
 | Procs | A Proc crosses `async`, travels to a Go host, is a field of a message, and travels as a Hash's default. | Each restriction existed because a Proc could not be serialised. |
 | Classes | The dump carries classes, modules, constants and methods. Resume runs no definition again. | A pause inside a class body, and a method a condition defined, cannot be had by running definitions again. |
 | Builtins that call blocks | Resumable step functions in Go: the state between two calls of the block is a cameo value. | No Go frame is live while a block runs, so the stack is all cameo frames. A cameo block cannot accumulate into an outer variable, so these builtins cannot be written in cameo. |
-| Enumerators | Step functions too. | An external enumerator's position survives a pause. |
+| Enumerators | In a message as the call that made them. `each` with a block runs the method that made the enumerator, as an activation where it is a step function. | cameo has no external iteration (`next`), so an enumerator has no position to keep: it is the receiver, the method and the arguments, which are values. |
 | Host promises | A promise the host has not settled is pending in the dump; the host settles it after resume. `cameo resume`, which has no host, fails it with an exception a script can rescue. | I/O in flight cannot be dumped, and waiting for it makes a pause as slow as the slowest request. |
 | Library state | A library may register how the Go state it keeps for a run (`Context.State`) is saved and restored. State without that is lost, and the pause names it. | Most libraries keep none. |
 
@@ -207,6 +207,19 @@ elements, the index, and what was gathered, in one slice that grows in
 place, so a walk over a million elements costs what the loop it replaced
 did.
 
+An Enumerator is Go code that produces elements, and still a value a
+message carries. cameo has no external iteration, so an enumerator has no
+position: it is what `[1, 2].each_slice(2)` returns, and that call says
+all of it. An enumerator records the call that made it, and the envelope
+carries the receiver, the method, the arguments and, for a lazy one, the
+block (`protogen/enumerator.go`); the reader makes the call again. So
+that a message cannot have a reader run what it likes, the call must be
+one of a fixed list of builtins that make an enumerator and do nothing
+else, the method must be one Go implements, and it gets a block only on
+a lazy enumerator, which keeps the block for later. A test calls every
+method of the core's values without a block and fails for an enumerator
+that does not read back.
+
 ## The activation stack
 
 Stack A left one thing on the Go stack: where a run is. `machine.exec` calls
@@ -331,8 +344,9 @@ in first: `Integer#times` and `loop`, then `each`, `map` and the rest of
 List, Hash, Range and Set, then Enumerable over a script's own `each`, and
 so on. Each group widens where a run pauses and changes nothing else, and a
 builtin that never becomes one, because it calls back for an instant, only
-ever delays a pause. An Enumerator is the same idea turned around: `next`
-runs the stepper of the method it enumerates one step.
+ever delays a pause. An Enumerator needs no stepper of its own: cameo has
+no `next`, so its `each` with a block is the method that made it, called
+with that block, and that method is the activation.
 
 A method `cameo build` compiled is Go code too, and a nested loop when it
 calls back. It is pure, so at a pause it leaves its call to the
@@ -502,7 +516,12 @@ that is all cameo, and widens it from there.
 23. Builtins as step functions, one pull request per group: List, Hash,
     Range and Set, Enumerable over a script's `each`, String and the rest of
     the core, then the libraries.
-24. Enumerators as step functions.
+24. Enumerators: an Enumerator travels as the call that made it, through
+    the envelope, `async` and a dump, and its `each` with a block runs
+    the method that made it as an activation. Not a step function of its
+    own, as first planned: without `next` there is no position to keep.
+    An enumerator over the `each` of a script's object still lists its
+    elements in a nested loop.
 25. pause: the workers stop too; the dump carries their stacks and the
     calls `async` queued.
 26. cameo: pending host promises in the dump, and the host API that settles
