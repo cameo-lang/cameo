@@ -112,22 +112,30 @@ func InspectDump(data []byte) (string, error) {
 		for i := len(d.Stack) - 1; i > 0; i-- {
 			a := d.Stack[i]
 			name := "the top level"
-			if int(a.Frame) < len(d.Frames) {
-				if m := d.Frames[a.Frame].Method; m != nil {
-					switch {
-					case m.Owner == "":
-						name = m.Name
-					case m.Singleton:
-						name = m.Owner + "." + m.Name
-					default:
-						name = m.Owner + "#" + m.Name
-					}
-				}
+			var m *cameopb.Binding_Method
+			if a.Kind == cameopb.Dump_Activation_BUILTIN {
+				m = a.Builtin.GetMethod()
+			} else if int(a.Frame) < len(d.Frames) {
+				m = d.Frames[a.Frame].Method
 			}
-			if a.Kind == cameopb.Dump_Activation_BLOCK {
-				name = "a block in " + name
+			switch {
+			case m == nil:
+			case m.Owner == "":
+				name = m.Name
+			case m.Singleton:
+				name = m.Owner + "." + m.Name
+			default:
+				name = m.Owner + "#" + m.Name
 			}
-			fmt.Fprintf(&b, "  %s, line %d\n", name, a.Line)
+			switch a.Kind {
+			case cameopb.Dump_Activation_BLOCK:
+				fmt.Fprintf(&b, "  a block in %s, line %d\n", name, a.Line)
+			case cameopb.Dump_Activation_BUILTIN:
+				// A builtin is between two calls of its block.
+				fmt.Fprintf(&b, "  %s\n", name)
+			default:
+				fmt.Fprintf(&b, "  %s, line %d\n", name, a.Line)
+			}
 		}
 	}
 	bindings := func(title string, bindings []*cameopb.Dump_Binding) error {

@@ -383,22 +383,26 @@ func installInteger() {
 	def(c, "infinite?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Nil, nil
 	})
-	def(c, "times", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+	// times keeps the number it yielded last.
+	c.DefineStep("times", 0, func(ctx object.Context, call *object.Call, state []object.Value, got object.Got) (object.Step, error) {
+		self := call.Self
 		n, err := WantInt(ctx, self, "")
 		if err != nil {
-			return object.Value{}, err
+			return object.Step{}, err
 		}
-		if block.IsZero() {
-			return enumFor(self, "times", nil, func(ctx object.Context) (object.Value, error) {
+		if call.Block.IsZero() {
+			return object.Done(enumFor(self, "times", nil, func(ctx object.Context) (object.Value, error) {
 				return object.Int(max(n, 0)), nil
-			}), nil
+			})), nil
 		}
-		for i := int64(0); i < n; i++ {
-			if _, err := ctx.Yield(block, object.Int(i)); err != nil {
-				return object.Value{}, err
-			}
+		i := int64(0)
+		if !got.First {
+			i = state[0].Int() + 1
 		}
-		return self, nil
+		if i >= n {
+			return object.Done(self), nil
+		}
+		return object.Yield([]object.Value{object.Int(i)}, object.Int(i)), nil
 	})
 	bits := func(name string, f func(and, mask *big.Int) bool) {
 		def(c, name, 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -419,20 +423,22 @@ func installInteger() {
 	bits("allbits?", func(and, mask *big.Int) bool { return and.Cmp(mask) == 0 })
 	bits("anybits?", func(and, mask *big.Int) bool { return and.Sign() != 0 })
 	bits("nobits?", func(and, mask *big.Int) bool { return and.Sign() == 0 })
+	// upto and downto keep the number they yielded last.
 	step := func(name string, dir int64) {
-		def(c, name, 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		c.DefineStep(name, 1, func(ctx object.Context, call *object.Call, state []object.Value, got object.Got) (object.Step, error) {
+			self, args := call.Self, call.Args
 			to := args[0]
 			if !to.IsInteger() {
 				if to.Kind() != object.KindFloat {
-					return object.Value{}, compareError(ctx, self, to)
+					return object.Step{}, compareError(ctx, self, to)
 				}
 				to = object.FloatToInteger(math.Floor(to.Float()))
 				if dir < 0 {
 					to = object.FloatToInteger(math.Ceil(args[0].Float()))
 				}
 			}
-			if block.IsZero() {
-				return enumFor(self, name, args, func(ctx object.Context) (object.Value, error) {
+			if call.Block.IsZero() {
+				return object.Done(enumFor(self, name, args, func(ctx object.Context) (object.Value, error) {
 					// The size is (to - self) * dir + 1, and 0 below 1.
 					d, err := ctx.Call(to, "-", self)
 					if err != nil {
@@ -450,16 +456,16 @@ func installInteger() {
 						return object.Int(0), err
 					}
 					return d, nil
-				}), nil
+				})), nil
 			}
-			err := eachInteger(self, to, dir, func(i object.Value) error {
-				_, err := ctx.Yield(block, i)
-				return err
-			})
-			if err != nil {
-				return object.Value{}, err
+			next := self
+			if !got.First {
+				next = object.BigInt(new(big.Int).Add(bigOf(state[0]), big.NewInt(dir)))
 			}
-			return self, nil
+			if c := bigOf(next).Cmp(bigOf(to)); dir > 0 && c > 0 || dir < 0 && c < 0 {
+				return object.Done(self), nil
+			}
+			return object.Yield([]object.Value{next}, next), nil
 		})
 	}
 	step("upto", 1)

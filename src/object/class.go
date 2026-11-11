@@ -160,6 +160,10 @@ type Method struct {
 	// AliasOf is the name the method has in Owner, when a script's alias
 	// gave it the name it has here.
 	AliasOf string
+	// Step is set for a native method that calls its block and is written
+	// as a stepper (step.go): the evaluator runs it a step at a time,
+	// where Native runs it to its end.
+	Step Stepper
 }
 
 // NativeFn implements a method in Go. kw is nil when no keyword arguments

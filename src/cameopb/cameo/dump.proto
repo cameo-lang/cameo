@@ -102,6 +102,10 @@ message Dump {
       // METHOD is a call of a method, BLOCK of a block.
       METHOD = 1;
       BLOCK = 2;
+      // BUILTIN is a call of a builtin that is a stepper, which is
+      // between two calls of its block: the activation above it. It has
+      // builtin, and no code, scope or frame.
+      BUILTIN = 3;
     }
     Kind kind = 1;
     // unit and proc name the code of a method or a block, as a Closure
@@ -120,6 +124,23 @@ message Dump {
     uint32 frame = 7;
     // line is the line of the activation's next instruction.
     int32 line = 8;
+    Builtin builtin = 9;
+  }
+
+  // Builtin is a builtin that calls its block, between two of the calls:
+  // the method, the call it was made with, and what it keeps from one
+  // call of the block to the next (object.Stepper).
+  message Builtin {
+    // method names the builtin by the class that defines it.
+    .cameo.Binding.Method method = 1;
+    Binding self = 2;
+    repeated Binding args = 3;
+    Value kw = 4;
+    Binding block = 5;
+    repeated Binding state = 6;
+    // rescue is set when the builtin takes an exception its block
+    // raises.
+    bool rescue = 7;
   }
 
   // Cursor is a list of instructions an activation is inside. The list

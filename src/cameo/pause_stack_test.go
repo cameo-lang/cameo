@@ -192,6 +192,56 @@ p from_value_proto(mode.to_value_proto)
 `)
 }
 
+// A run pauses inside the block of a builtin that is a stepper, and the
+// builtin goes on where it was: times, upto and downto with the number
+// they came to, loop with nothing. A break out of the block and a
+// StopIteration still end the builtin after the resume.
+func TestPauseInsideTheBlockOfAStepper(t *testing.T) {
+	const src = `def squares(n)
+  n.times do |i|
+    Test.pause if i == 2
+    puts i * i
+  end
+end
+p squares(5)
+r = 3.times { |i| Test.pause }
+p r
+1.upto(4) { |i| Test.pause if i == 3; puts "up #{i}" }
+p 10.downto(7) { |i| Test.pause; break i * 2 if i == 8 }
+big = 2**70
+big.upto(big + 2) { |i| Test.pause; p i - big }
+srand(7)
+r = loop do
+  Test.pause
+  x = rand(5)
+  raise StopIteration if x == 0
+  puts "tick #{x}"
+end
+p r
+p (loop { Test.pause; break :out })
+3.times do |i|
+  2.times do |j|
+    Test.pause
+    puts "#{i}.#{j}"
+  end
+end
+p 2.times.to_a, 4.times.map { |i| i + 1 }
+`
+	dump := sameAsWhole(t, src)
+	text, err := InspectDump(dump.Data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The first pause: in the block of times, in squares.
+	want := "paused: before line 4\ninside:\n  a block in squares, line 4\n  Integer#times\n  squares, line 2\n"
+	if len(dump.Missing) != 0 {
+		t.Fatalf("the dump left out %v", dump.Missing)
+	}
+	if !strings.Contains(text, want) {
+		t.Fatalf("inspect:\n%s\nwant in it:\n%s", text, want)
+	}
+}
+
 // A statement that never ends pauses, which before it never did.
 func TestALoopThatNeverEndsPauses(t *testing.T) {
 	prog, out := pausing(t, `i = 0

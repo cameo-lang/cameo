@@ -55,6 +55,29 @@ twice { |x| Probe.state }
 		"4 activations, 2 loops\n")
 }
 
+// A builtin that is a stepper is an activation between its block's
+// calls: its block runs in the one loop, where the block of a builtin
+// that is none runs in a loop of its own. Called from Go, as an
+// Enumerator calls it, a stepper runs to its end.
+func TestAStepperAndItsBlockTakeTurnsInOneLoop(t *testing.T) {
+	got := probed(t, `2.times { |i| Probe.state if i == 1 }
+1.upto(1) { 3.downto(3) { loop { Probe.state; break } } }
+[1].each { 1.times { Probe.state } }
+p 3.times.map { |i| i * 2 }, 2.upto(4).to_a
+p 5.times { |i| break i * 10 if i == 2 }
+p (loop { raise StopIteration })
+p (1.times { raise "out" } rescue "rescued")
+`)
+	assert.Equals(t, got,
+		// The statement, times, its block.
+		"3 activations, 1 loops\n"+
+			// The statement, then three builtins, each with its block.
+			"7 activations, 1 loops\n"+
+			// each calls its block from Go; times is a stepper inside it.
+			"4 activations, 2 loops\n"+
+			"[0, 2, 4]\n[2, 3, 4]\n20\nnil\n\"rescued\"\n")
+}
+
 // A script recurses as deep as its memory, not as Go's stack, goes: far
 // past where a call of the evaluator per call ended the process, up to
 // the depth where a call raises.

@@ -104,6 +104,8 @@ type machine struct {
 	site *cameopb.Code
 	// debugged is set when the debugger was told of the activation.
 	debugged bool
+	// stepper is what an actStep is of.
+	stepper *stepping
 	// inGo counts the lists the activation runs to their end inside an
 	// instruction (nested). A call made while it is not zero cannot go
 	// back to the loop, and runs in a loop of its own.
@@ -622,6 +624,11 @@ func (m *machine) call(c *cameopb.Code, meth *object.Method, recv object.Value, 
 			err = in.pushAct(act, c)
 		}
 		return withLine(err, line)
+	}
+	// A builtin that is a stepper, called with a block, is an activation
+	// too: its steps and its block's calls take turns in the loop.
+	if m.inGo == 0 && meth != nil && meth.Step != nil && !block.IsZero() && (!meth.Private || private) && (meth.Arity < 0 || len(args) == meth.Arity) {
+		return withLine(in.pushAct(in.stepAct(meth, recv, args, kw, block), c), line)
 	}
 	v, err := in.dispatchTo(meth, recv, name, args, kw, block, vcall, private, line)
 	// A call whose value is dropped did nothing when Ruby's changes the
