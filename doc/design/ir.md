@@ -181,7 +181,10 @@ step took more than one.
 9. ir: compiles and runs definitions, `super`, `with`, `async` and `await`.
 10. eval: every program runs on the IR; the tree walker goes. The debugger
     and irb move over. `cameo build` stays on the AST.
-11. eval: a frame names its method and classes, and has an id.
+11. eval: a frame knows when its call ended, and a `return` from a proc
+    that outlived it raises `LocalJumpError`. A frame keeps pointing at its
+    method and classes; the closure of step 12 names them when it is
+    encoded.
 12. protogen: `cameo.Value` carries a closure, with its binding and a table
     of units.
 13. async: a Proc crosses to a worker.

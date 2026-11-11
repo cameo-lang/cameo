@@ -334,6 +334,7 @@ func (in *Interp) invoke(m *object.Method, recv object.Value, args []object.Valu
 		File:    m.File,
 	}}
 	fr, env := &act.frame, &act.env
+	defer func() { fr.ended = true }()
 	if len(m.Lexical) > 0 {
 		fr.DefTarget = m.Lexical[len(m.Lexical)-1]
 	} else {
@@ -574,9 +575,13 @@ func (in *Interp) callBlock(block object.Value, args []object.Value, kw *object.
 	env := NewEnv(p.Env)
 	fr := p.Frame
 	if p.Strict {
+		// A lambda's call is a frame of its own, where its return stops:
+		// it starts and ends with the call, whatever became of the
+		// method the lambda was written in.
 		copy := *p.Frame
-		copy.Lambda = true
+		copy.Lambda, copy.ended = true, false
 		fr = &copy
+		defer func() { copy.ended = true }()
 	}
 	if err := in.bindParams(in.code.irParams(p.IR), args, kw, inner, env, fr, p.Strict, "block", p.line()); err != nil {
 		return object.Value{}, err
