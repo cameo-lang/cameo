@@ -20,7 +20,9 @@ type params struct {
 // param is one positional parameter: required (Default nil, Splat false),
 // optional (Default set) or the one splat.
 type param struct {
-	Name    string
+	Name string
+	// sym is Name interned, set for a parameter of a proc of a unit.
+	sym     object.Sym
 	Default defaultFn
 	Splat   bool
 }
@@ -51,7 +53,7 @@ func (c *code) irParams(p *irProc) *params {
 		}
 	}
 	for _, sp := range src.GetPositional() {
-		out.Positional = append(out.Positional, param{Name: unit.Names[sp.GetName()], Splat: sp.GetSplat(), Default: deflt(sp.GetDefault())})
+		out.Positional = append(out.Positional, param{Name: unit.Names[sp.GetName()], sym: object.Intern(unit.Names[sp.GetName()]), Splat: sp.GetSplat(), Default: deflt(sp.GetDefault())})
 	}
 	for _, sk := range src.GetKeywords() {
 		out.Keywords = append(out.Keywords, kwParam{Name: unit.Names[sk.GetName()], Default: deflt(sk.GetDefault())})
@@ -112,4 +114,25 @@ func (p *params) arity(strict bool) int {
 		return -(required + 1)
 	}
 	return required
+}
+
+// symsOf returns the names of unit as Syms, index for index. The run's
+// interpreters share the list of a unit, and each keeps the one it asked
+// for last.
+func (in *Interp) symsOf(unit *cameopb.Unit) []object.Sym {
+	if unit == in.symsUnit {
+		return in.symsList
+	}
+	var list []object.Sym
+	if known, ok := in.code.syms.Load(unit); ok {
+		list = known.([]object.Sym)
+	} else {
+		list = make([]object.Sym, len(unit.Names))
+		for i, name := range unit.Names {
+			list[i] = object.Intern(name)
+		}
+		in.code.syms.Store(unit, list)
+	}
+	in.symsUnit, in.symsList = unit, list
+	return list
 }

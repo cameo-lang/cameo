@@ -53,6 +53,10 @@ type Interp struct {
 	paramsBy   map[*cameopb.Unit][]*params
 	paramsUnit *cameopb.Unit
 	paramsList []*params
+	// symsUnit and symsList are the unit whose names were asked for as
+	// Syms last, and those Syms (symsOf).
+	symsUnit *cameopb.Unit
+	symsList []object.Sym
 	// loops counts the loops running the activations: one for the run,
 	// and one more for each call Go code makes into the evaluator while
 	// it runs.

@@ -96,8 +96,11 @@ func (in *Interp) runProgram(file string, prog *syntax.Program, env *Env, fr *Fr
 // call, a top-level statement. cursors is where it is: the lists it is
 // inside, outermost first (cursor.go).
 type machine struct {
-	in      *Interp
-	unit    *cameopb.Unit
+	in   *Interp
+	unit *cameopb.Unit
+	// syms is the names of unit as Syms, read when the first instruction
+	// asks for one (sym).
+	syms    []object.Sym
 	env     *Env
 	fr      *Frame
 	stack   []object.Value
@@ -173,6 +176,14 @@ func (m *machine) name(c *cameopb.Code, i int) string {
 	return m.unit.Names[c.Args[i].GetName()]
 }
 
+// sym is the name argument i of c as a Sym.
+func (m *machine) sym(c *cameopb.Code, i int) object.Sym {
+	if m.syms == nil {
+		m.syms = m.in.symsOf(m.unit)
+	}
+	return m.syms[c.Args[i].GetName()]
+}
+
 func has(c *cameopb.Code, f cameopb.Flag) bool { return c.Flags&uint64(f) != 0 }
 
 // exec runs one instruction.
@@ -191,19 +202,19 @@ func (m *machine) exec(c *cameopb.Code) error {
 	case cameopb.Op_SELF:
 		m.push(fr.Self)
 	case cameopb.Op_LOAD:
-		if v, ok := env.Get(m.name(c, 0)); ok {
+		if v, ok := env.GetSym(m.sym(c, 0)); ok {
 			m.push(v)
 		} else {
 			m.push(object.Nil)
 		}
 	case cameopb.Op_STORE:
-		name, v := m.name(c, 0), m.top()
-		env.Set(name, v)
+		name, v := m.sym(c, 0), m.top()
+		env.SetSym(name, v)
 		if has(c, cameopb.Flag_FLAG_FORWARD) {
 			// The lambda reads its own name, which was unbound when
 			// it captured its scope: fill it in now.
 			if p, ok := asProc(v); ok && p.Env != nil {
-				p.Env.bind(name, v)
+				p.Env.bindSym(name, v)
 			}
 		}
 	case cameopb.Op_GETCONST:
@@ -365,14 +376,14 @@ func (m *machine) exec(c *cameopb.Code) error {
 	case cameopb.Op_REGEXP:
 		return m.regexp(c)
 	case cameopb.Op_VAR_OR_CALL:
-		name := m.name(c, 0)
-		if v, ok := env.Get(name); ok {
+		if v, ok := env.GetSym(m.sym(c, 0)); ok {
 			m.push(v)
 			return nil
 		}
+		name := m.name(c, 0)
 		return m.call(c, in.lookup(fr.Self, name, true), fr.Self, name, nil, nil, object.Value{}, true, true, line)
 	case cameopb.Op_DEFINED_LOCAL:
-		if _, ok := env.Get(m.name(c, 0)); ok {
+		if _, ok := env.GetSym(m.sym(c, 0)); ok {
 			m.push(object.String("local-variable"))
 		} else {
 			m.push(object.Nil)
@@ -589,18 +600,18 @@ func (m *machine) closure(index uint32) object.Value {
 
 // send runs a SEND: a method call.
 func (m *machine) send(c *cameopb.Code) error {
-	in, fr := m.in, m.fr
-	name, line := m.name(c, 0), int(c.Line)
 	if c.Flags == uint64(cameopb.Flag_FLAG_OPERATOR) {
 		// Two integers or two floats: the operands are read where they
 		// are, and no argument list is made.
 		n := len(m.stack)
-		if v := binaryOp(name)(m.stack[n-2], m.stack[n-1]); !v.IsZero() {
+		if v := binary(m.sym(c, 0), m.stack[n-2], m.stack[n-1]); !v.IsZero() {
 			m.stack[n-2] = v
 			m.stack = m.stack[:n-1]
 			return nil
 		}
 	}
+	in, fr := m.in, m.fr
+	name, line := m.name(c, 0), int(c.Line)
 	var block object.Value
 	if has(c, cameopb.Flag_FLAG_BLOCK_ARG) {
 		v, err := in.toProc(m.pop(), line)

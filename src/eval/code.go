@@ -23,6 +23,8 @@ type code struct {
 	units sync.Map // string -> *cameopb.Unit
 	// params holds the parameter lists bindParams reads, by proc.
 	params sync.Map // *cameopb.Proc -> *params
+	// syms holds the names of each unit as Syms (symsOf).
+	syms sync.Map // *cameopb.Unit -> []object.Sym
 	// uses holds what each proc needs of its binding to travel; see
 	// closure.go.
 	uses sync.Map // *cameopb.Proc -> *uses
