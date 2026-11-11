@@ -234,43 +234,58 @@ func (in *Interp) bindConst(fr *Frame, name string, v object.Value) {
 }
 
 func (in *Interp) evalDef(n *syntax.Def, fr *Frame) (object.Value, error) {
+	return in.defineMethod(n.Name, n.Singleton, n, fr, n.Line())
+}
+
+// sameBody reports whether a and b are the same definition of a method: a
+// *syntax.Def, or the proc of a unit.
+func sameBody(a, b any) bool {
+	if pa, ok := a.(*irProc); ok {
+		pb, ok := b.(*irProc)
+		return ok && pa.proc == pb.proc
+	}
+	return a == b
+}
+
+// defineMethod defines the method name on the class a def in fr defines
+// on, or with singleton set as a class method of it. body is the method's
+// definition: a *syntax.Def the tree walker runs, or an *irProc.
+func (in *Interp) defineMethod(name string, singleton bool, body any, fr *Frame, line int) (object.Value, error) {
 	target := fr.DefTarget
 	if target == nil {
 		target = in.mainClass
 	}
 	table := target.Methods
-	if n.Singleton {
+	if singleton {
 		table = target.SingletonMethods
 	}
 	// A second def of a name replaces the first, as in Ruby. The same
 	// definition evaluated again, as a loop around it does, changes nothing,
 	// and leaves the method caches as they are.
-	if existing, ok := table[n.Name]; ok && existing.Owner == target && existing.Body != nil {
-		if def, ok := existing.Body.(*syntax.Def); ok && def == n {
-			return object.Symbol(n.Name), nil
-		}
+	if existing, ok := table[name]; ok && existing.Owner == target && existing.Body != nil && sameBody(existing.Body, body) {
+		return object.Symbol(name), nil
 	}
-	if existing, ok := table[n.Name]; ok && existing.Native != nil && existing.Body == nil && existing.Owner == target {
-		if _, isField := target.FieldIndex[n.Name]; isField {
-			return object.Value{}, in.raise(object.CameoError, n.Line(), "def %s: %s is a field of %s, and fields read themselves", n.Name, n.Name, target.QualifiedName())
+	if existing, ok := table[name]; ok && existing.Native != nil && existing.Body == nil && existing.Owner == target {
+		if _, isField := target.FieldIndex[name]; isField {
+			return object.Value{}, in.raise(object.CameoError, line, "def %s: %s is a field of %s, and fields read themselves", name, name, target.QualifiedName())
 		}
-		if _, isAttr := target.AttrDefaults[n.Name]; isAttr && n.Singleton {
-			return object.Value{}, in.raise(object.CameoError, n.Line(), "def self.%s: %s is an attribute of %s, and attributes read themselves", n.Name, n.Name, target.QualifiedName())
+		if _, isAttr := target.AttrDefaults[name]; isAttr && singleton {
+			return object.Value{}, in.raise(object.CameoError, line, "def self.%s: %s is an attribute of %s, and attributes read themselves", name, name, target.QualifiedName())
 		}
-		return object.Value{}, in.raise(object.CameoError, n.Line(), "cannot replace the builtin method %s of %s", n.Name, target.Name)
+		return object.Value{}, in.raise(object.CameoError, line, "cannot replace the builtin method %s of %s", name, target.Name)
 	}
-	m := &object.Method{Name: n.Name, Owner: target, Body: n, Arity: -1, Lexical: fr.Lexical, File: fr.File}
+	m := &object.Method{Name: name, Owner: target, Body: body, Arity: -1, Lexical: fr.Lexical, File: fr.File}
 	// A method `cameo build` compiled runs as Go, and keeps its body for
 	// the calls the Go code leaves to the interpreter: a top-level method
 	// by its name, a class's as Class#name.
-	if !n.Singleton {
-		key := n.Name
+	if !singleton {
+		key := name
 		if target != in.mainClass {
-			key = target.QualifiedName() + "#" + n.Name
+			key = target.QualifiedName() + "#" + name
 		}
 		m.Native = in.code.compiled[key]
 	}
-	if n.Singleton {
+	if singleton {
 		target.SetSingletonMethod(m)
 	} else {
 		target.SetMethod(m)
@@ -278,7 +293,21 @@ func (in *Interp) evalDef(n *syntax.Def, fr *Frame) (object.Value, error) {
 	if target == in.mainClass {
 		in.changedTop()
 	}
-	return object.Symbol(n.Name), nil
+	return object.Symbol(name), nil
+}
+
+// methodCode returns what a call of the user method m runs: the name it
+// was defined under, its parameter list, and its IR, nil when it runs on
+// the tree walker, whose definition def then is.
+func (in *Interp) methodCode(m *object.Method) (name string, ps *params, compiled *irProc, def *syntax.Def) {
+	if p, ok := m.Body.(*irProc); ok {
+		return p.proc.GetName(), in.code.irParams(p), p, nil
+	}
+	def = m.Body.(*syntax.Def)
+	if compiled = in.code.irDef(def); compiled != nil {
+		return def.Name, in.code.irParams(compiled), compiled, def
+	}
+	return def.Name, in.code.astParams(&def.Params), nil, def
 }
 
 // evalClassDef binds a class to its name and runs its body. A class
@@ -288,13 +317,41 @@ func (in *Interp) evalDef(n *syntax.Def, fr *Frame) (object.Value, error) {
 // returns the class as it is. The name is bound to the class while its
 // body runs, as in Ruby, and back to what it was when the body raises.
 func (in *Interp) evalClassDef(n *syntax.ClassDef, env *Env, fr *Frame) (object.Value, error) {
-	table := in.constTable(fr)
-	var super *object.Class
+	var super object.Value
 	if n.Super != nil {
 		v, err := in.eval(n.Super, env, fr)
 		if err != nil {
 			return object.Value{}, err
 		}
+		super = v
+	}
+	return in.defineClass(classDecl{Name: n.Name, Digest: n.Digest, line: n.Line()}, super, n.Super != nil, in.astBody(n.Body), fr)
+}
+
+// classDecl is what a class or module statement declares: the name, the
+// digest of the definition, and its line.
+type classDecl struct {
+	Name, Digest string
+	line         int
+}
+
+func (d classDecl) Line() int { return d.line }
+
+// bodyFn runs the body of a class or module in the scope and frame made
+// for it.
+type bodyFn func(env *Env, fr *Frame) (object.Value, error)
+
+// astBody is the body of a definition the tree walker runs.
+func (in *Interp) astBody(body []syntax.Node) bodyFn {
+	return func(env *Env, fr *Frame) (object.Value, error) { return in.evalBody(body, env, fr) }
+}
+
+// defineClass is evalClassDef once the superclass is evaluated: v, when
+// hasSuper says the statement names one.
+func (in *Interp) defineClass(n classDecl, v object.Value, hasSuper bool, body bodyFn, fr *Frame) (object.Value, error) {
+	table := in.constTable(fr)
+	var super *object.Class
+	if hasSuper {
 		cls, ok := v.AsClass()
 		if !ok || cls.IsModule {
 			return object.Value{}, in.raise(object.TypeError, n.Line(), "superclass must be a Class (%s given)", typeName(v))
@@ -338,7 +395,7 @@ func (in *Interp) evalClassDef(n *syntax.ClassDef, env *Env, fr *Frame) (object.
 			return object.Value{}, withLine(err, n.Line())
 		}
 	}
-	if err := in.evalBound(cls, existing, n.Body, env, fr, previous, bound); err != nil {
+	if err := in.evalBound(cls, existing, body, fr, previous, bound); err != nil {
 		return object.Value{}, err
 	}
 	return object.ClassValue(cls), nil
@@ -347,6 +404,11 @@ func (in *Interp) evalClassDef(n *syntax.ClassDef, env *Env, fr *Frame) (object.
 // evalModuleDef binds a module to its name and runs its body, reopening
 // a module already bound to the name as evalClassDef reopens a class.
 func (in *Interp) evalModuleDef(n *syntax.ModuleDef, env *Env, fr *Frame) (object.Value, error) {
+	return in.defineModule(classDecl{Name: n.Name, Digest: n.Digest, line: n.Line()}, in.astBody(n.Body), fr)
+}
+
+// defineModule binds the module n declares to its name and runs its body.
+func (in *Interp) defineModule(n classDecl, body bodyFn, fr *Frame) (object.Value, error) {
 	table := in.constTable(fr)
 	previous, bound := table[n.Name]
 	existing, _ := previous.AsClass()
@@ -359,7 +421,7 @@ func (in *Interp) evalModuleDef(n *syntax.ModuleDef, env *Env, fr *Frame) (objec
 			// would one a script defined: see libraryOpens.
 			mod := native.Copy()
 			mod.Digest = "+" + n.Digest
-			if err := in.evalBound(mod, native, n.Body, env, fr, previous, bound); err != nil {
+			if err := in.evalBound(mod, native, body, fr, previous, bound); err != nil {
 				return object.Value{}, err
 			}
 			return object.ClassValue(mod), nil
@@ -385,7 +447,7 @@ func (in *Interp) evalModuleDef(n *syntax.ModuleDef, env *Env, fr *Frame) (objec
 			mod.Lexical = fr.Lexical[len(fr.Lexical)-1]
 		}
 	}
-	if err := in.evalBound(mod, existing, n.Body, env, fr, previous, bound); err != nil {
+	if err := in.evalBound(mod, existing, body, fr, previous, bound); err != nil {
 		return object.Value{}, err
 	}
 	return object.ClassValue(mod), nil
@@ -436,9 +498,9 @@ func ranLast(cls *object.Class, digest string) bool {
 // had from reopened as fields the body may declare again. When the body
 // raises, the name is bound to previous again, or to nothing when it
 // was not bound.
-func (in *Interp) evalBound(cls, reopened *object.Class, body []syntax.Node, env *Env, fr *Frame, previous object.Value, bound bool) error {
+func (in *Interp) evalBound(cls, reopened *object.Class, body bodyFn, fr *Frame, previous object.Value, bound bool) error {
 	in.bindConst(fr, cls.Name, object.ClassValue(cls))
-	if err := in.evalClassBody(cls, reopened, body, env, fr); err != nil {
+	if err := in.evalClassBody(cls, reopened, body, fr); err != nil {
 		if bound {
 			in.bindConst(fr, cls.Name, previous)
 		} else {
@@ -471,7 +533,7 @@ func hostDefined(v object.Value) bool {
 // evalClassBody runs a class or module body with the class as self and as
 // the target of def, and with the class added to the lexical scopes.
 // reopened is the class cls is a copy of, or nil.
-func (in *Interp) evalClassBody(cls, reopened *object.Class, body []syntax.Node, env *Env, fr *Frame) error {
+func (in *Interp) evalClassBody(cls, reopened *object.Class, body bodyFn, fr *Frame) error {
 	lexical := append(append([]*object.Class{}, fr.Lexical...), cls)
 	bodyFrame := &Frame{Self: object.ClassValue(cls), Lexical: lexical, DefTarget: cls, Reopened: reopened, File: fr.File}
 	bodyEnv := NewEnv(nil)
@@ -483,7 +545,7 @@ func (in *Interp) evalClassBody(cls, reopened *object.Class, body []syntax.Node,
 		in.dbg.enter("<class:"+cls.Name+">", bodyEnv, bodyFrame)
 		defer in.dbg.leave()
 	}
-	_, err := in.evalBody(body, bodyEnv, bodyFrame)
+	_, err := body(bodyEnv, bodyFrame)
 	return err
 }
 
@@ -549,6 +611,11 @@ func (in *Interp) scopedFrame(scope syntax.Node, env *Env, fr *Frame, line int) 
 	if err != nil {
 		return nil, err
 	}
+	return in.frameIn(v, fr, line)
+}
+
+// frameIn is scopedFrame once the scope is evaluated to v.
+func (in *Interp) frameIn(v object.Value, fr *Frame, line int) (*Frame, error) {
 	mod, ok := v.AsClass()
 	if !ok {
 		return nil, in.raise(object.TypeError, line, "%s is not a class/module", typeName(v))
@@ -573,16 +640,21 @@ func (in *Interp) scopedFrame(scope syntax.Node, env *Env, fr *Frame, line int) 
 // evalAlias gives a method a second name, in the class being defined or at
 // the top level. The new name must be free: a method is defined once.
 func (in *Interp) evalAlias(n *syntax.Alias, fr *Frame) (object.Value, error) {
+	return in.alias(n.New, n.Old, fr, n.Line())
+}
+
+// alias gives the method old the second name name.
+func (in *Interp) alias(name, old string, fr *Frame, line int) (object.Value, error) {
 	target := fr.DefTarget
-	m := target.Lookup(n.Old)
+	m := target.Lookup(old)
 	if m == nil {
-		return object.Value{}, in.raise(object.NameError, n.Line(), "undefined method '%s' for %s", n.Old, target.QualifiedName())
+		return object.Value{}, in.raise(object.NameError, line, "undefined method '%s' for %s", old, target.QualifiedName())
 	}
-	if _, taken := target.Methods[n.New]; taken {
-		return object.Value{}, in.raise(object.CameoError, n.Line(), "method %s is already defined in %s", n.New, target.QualifiedName())
+	if _, taken := target.Methods[name]; taken {
+		return object.Value{}, in.raise(object.CameoError, line, "method %s is already defined in %s", name, target.QualifiedName())
 	}
 	alias := *m
-	alias.Name = n.New
+	alias.Name = name
 	target.SetMethod(&alias)
 	if target == in.mainClass {
 		in.changedTop()

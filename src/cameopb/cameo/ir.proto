@@ -247,7 +247,9 @@ enum Op {
 
   // Values.
 
-  // CONST(constant): -> value. An empty constant is nil.
+  // CONST(constant): -> value. An empty constant is nil. A bytes constant
+  // is a String whose bytes are not valid UTF-8, which a protobuf string
+  // cannot hold.
   CONST = 1;
   // SYM(name): -> symbol.
   SYM = 2;

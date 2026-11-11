@@ -353,11 +353,69 @@ proc #1 block
 `)
 }
 
-func TestCompileReportsWhatItDoesNotCompileYet(t *testing.T) {
-	prog, err := syntax.Parse("t.cameo", "x = 1\nclass Point\nend\n")
-	assert.NoError(t, err)
-	_, err = Compile("t.cameo", prog)
+func TestCompileDefinitions(t *testing.T) {
+	assert.Equals(t, listing(t, `module Geo
+  class Point < Base
+    include Comparable
+    attribute :count, default: 0
+    int :x, :y, default: 0
+    ref :origin, Point
+    reserved 9, :old
+    def self.zero = new
+    def norm = x
+    alias size norm
+  end
+end
+class Geo::Line
+end
+`), `proc #0 <main>
+  MODULE Geo #1 42f25bd4201e79a3
+  DROP
+  GETCONST Geo
+  CLASS Line #5 073d4ac4aec98f4c scoped
+
+proc #1 <module:Geo>
+  GETCONST Base
+  CLASS Point #2 be8b26eda1bcb341 super
+
+proc #2 <class:Point>
+  GETCONST Comparable
+  INCLUDE
+  DROP
+  CONST 0
+  ATTR count default
+  DROP
+  CONST 0
+  FIELD (int :x :y) default
+  DROP
+  GETCONST Point
+  FIELD (ref :origin) ref
+  DROP
+  RESERVED 9 old
+  DROP
+  DEF zero #3 singleton
+  DROP
+  DEF norm #4
+  DROP
+  ALIAS size norm
+
+proc #3 zero
+  SEND new 0 self vcall
+
+proc #4 norm
+  SEND x 0 self vcall
+
+proc #5 <class:Line>
+  CONST nil
+`)
+}
+
+// A splat outside a list is the one node the IR has no instruction for;
+// the checker refuses it, so only a tree built by hand has one.
+func TestCompileReportsANodeItHasNoInstructionFor(t *testing.T) {
+	prog := &syntax.Program{Body: []syntax.Node{&syntax.Splat{Pos: syntax.Pos{L: 3}, Value: &syntax.Nil{}}}}
+	_, err := Compile("t.cameo", prog)
 	var unsupported *Unsupported
 	assert.True(t, errors.As(err, &unsupported), "Compile returned %v", err)
-	assert.Equals(t, err.Error(), "line 2: *syntax.ClassDef does not compile to the IR yet")
+	assert.Equals(t, err.Error(), "line 3: *syntax.Splat does not compile to the IR")
 }

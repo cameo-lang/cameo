@@ -494,6 +494,49 @@ func (m *machine) exec(c *cameopb.Code) error {
 			return err
 		}
 		m.push(v)
+	case cameopb.Op_DEF:
+		body := &irProc{unit: m.unit, proc: m.unit.Procs[c.Args[1].GetProc()]}
+		v, err := in.defineMethod(m.name(c, 0), has(c, cameopb.Flag_FLAG_SINGLETON), body, fr, line)
+		if err != nil {
+			return err
+		}
+		m.push(v)
+	case cameopb.Op_CLASS, cameopb.Op_MODULE:
+		return m.define(c)
+	case cameopb.Op_ALIAS:
+		v, err := in.alias(m.name(c, 0), m.name(c, 1), fr, line)
+		if err != nil {
+			return err
+		}
+		m.push(v)
+	case cameopb.Op_FIELD:
+		return m.field(c)
+	case cameopb.Op_ATTR:
+		def := object.Nil
+		if has(c, cameopb.Flag_FLAG_DEFAULT) {
+			def = m.pop()
+		}
+		names := make([]string, len(c.Args))
+		for i := range names {
+			names[i] = m.name(c, i)
+		}
+		v, err := in.declareAttrs(names, def, fr, line)
+		if err != nil {
+			return err
+		}
+		m.push(v)
+	case cameopb.Op_RESERVED:
+		v, err := in.reserve(reserved{Number: c.Args[0].GetInt(), Name: m.name(c, 1), line: line}, fr)
+		if err != nil {
+			return err
+		}
+		m.push(v)
+	case cameopb.Op_INCLUDE:
+		v, err := in.include(m.pop(), has(c, cameopb.Flag_FLAG_EXTEND), fr, line)
+		if err != nil {
+			return err
+		}
+		m.push(v)
 	case cameopb.Op_SETCONST:
 		return in.defineConst(m.name(c, 0), m.top(), fr, line)
 	case cameopb.Op_FIELD_SET:
@@ -518,6 +561,9 @@ func (m *machine) constant(c *cameopb.Code) (object.Value, error) {
 		return object.Float(k.FloatValue), nil
 	case *cameopb.Value_StringValue:
 		return object.String(k.StringValue), nil
+	case *cameopb.Value_BytesValue:
+		// A string literal that is not valid UTF-8; see ir.proto.
+		return object.String(string(k.BytesValue)), nil
 	case *cameopb.Value_BigValue:
 		return m.in.code.literal(c, func() (object.Value, error) {
 			b, _ := new(big.Int).SetString(k.BigValue, 10)
