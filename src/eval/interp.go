@@ -229,6 +229,16 @@ func (in *Interp) Run(file string, prog *syntax.Program) error {
 	in.file = file
 	in.code.compiled = CompiledFor(prog)
 	fr := in.topFrame()
+	if in.paused {
+		// A run that paused goes on where it paused when it is run again:
+		// its host did not want the dump, or could not have one.
+		in.paused = false
+		in.pause.Store(false)
+		in.from, in.resumed, in.frozen = in.next, in.frozen, nil
+		if in.dbgTop != nil {
+			fr = in.dbgTop.fr
+		}
+	}
 	if len(in.resumed) > 0 {
 		// A run that resumes inside a statement has the top level's
 		// frame from its dump.

@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 
 	"github.com/cameo-lang/cameo/src/cameo"
 	"github.com/cameo-lang/cameo/src/syntax"
@@ -90,21 +91,31 @@ func inspect(path string, out io.Writer) error {
 func runProgram(prog *cameo.Program, allowIO []string, pause bool, stderr io.Writer) int {
 	// The command is the host: a script it runs may do the I/O --io named.
 	prog.AllowHostIO(allowIO...)
+	// pausing is set from the ^C that pauses the script until its dump is
+	// written, or it goes on because it has none.
+	var pausing atomic.Bool
 	if pause {
 		interrupts := make(chan os.Signal, 2)
 		signal.Notify(interrupts, os.Interrupt)
 		defer signal.Stop(interrupts)
 		go func() {
-			<-interrupts
-			prog.Pause()
-			fmt.Fprintln(stderr, "cameo: pausing; press ^C again to end the script")
-			<-interrupts
-			os.Exit(130)
+			for range interrupts {
+				if pausing.Swap(true) {
+					os.Exit(130)
+				}
+				prog.Pause()
+				fmt.Fprintln(stderr, "cameo: pausing; press ^C again to end the script")
+			}
 		}()
 	}
 	err := prog.Run()
-	if errors.Is(err, cameo.ErrPaused) {
-		return writeDump(prog, stderr)
+	for errors.Is(err, cameo.ErrPaused) {
+		if status, written := writeDump(prog, stderr); written {
+			return status
+		}
+		// The script goes on, and a ^C pauses it again.
+		pausing.Store(false)
+		err = prog.Run()
 	}
 	if status, ok := cameo.ExitStatus(err); ok {
 		return status
@@ -122,30 +133,30 @@ func runProgram(prog *cameo.Program, allowIO []string, pause bool, stderr io.Wri
 }
 
 // writeDump writes the paused program's dump to a temporary file and
-// says where, and how to resume it.
-func writeDump(prog *cameo.Program, stderr io.Writer) int {
+// says where, and how to resume it. It reports written unset when there
+// is no dump, since the script cannot be dumped where it paused or the
+// file cannot be written: the script then goes on.
+func writeDump(prog *cameo.Program, stderr io.Writer) (status int, written bool) {
 	dump, err := prog.Dump()
 	if err != nil {
-		fmt.Fprintln(stderr, "cameo: cannot dump the script:", err)
-		return 1
+		fmt.Fprintf(stderr, "cameo: cannot dump the script: %v\ncameo: the script goes on\n", err)
+		return 0, false
 	}
 	base := strings.TrimSuffix(filepath.Base(prog.File()), filepath.Ext(prog.File()))
 	f, err := os.CreateTemp("", "cameo-"+base+"-*.dump")
-	if err != nil {
-		fmt.Fprintln(stderr, "cameo: cannot write the dump:", err)
-		return 1
-	}
-	_, err = f.Write(dump.Data)
-	if closeErr := f.Close(); err == nil {
-		err = closeErr
+	if err == nil {
+		_, err = f.Write(dump.Data)
+		if closeErr := f.Close(); err == nil {
+			err = closeErr
+		}
 	}
 	if err != nil {
-		fmt.Fprintln(stderr, "cameo: cannot write the dump:", err)
-		return 1
+		fmt.Fprintf(stderr, "cameo: cannot write the dump: %v\ncameo: the script goes on\n", err)
+		return 0, false
 	}
 	for _, missing := range dump.Missing {
 		fmt.Fprintf(stderr, "cameo: %s is not in the dump\n", missing)
 	}
 	fmt.Fprintf(stderr, "cameo: paused before line %d of %s\ncameo: resume with: cameo resume %s\n", dump.Line, prog.File(), f.Name())
-	return statusPaused
+	return statusPaused, true
 }

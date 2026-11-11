@@ -242,6 +242,44 @@ p 2.times.to_a, 4.times.map { |i| i + 1 }
 	}
 }
 
+// A run that paused goes on when it is run again, from where it paused:
+// what a host does with a script it could not dump. Here the block of
+// loop holds a StringIO, which no dump carries.
+func TestARunGoesOnWhenItIsRunAgain(t *testing.T) {
+	const src = `require "stringio"
+def drain(io)
+  loop do
+    c = io.getc
+    break if c.nil?
+    Test.pause if c == "b"
+    puts "read #{c}"
+  end
+  "drained"
+end
+puts drain(StringIO.new("abc"))
+x = 1
+Test.pause
+puts x + 1
+`
+	prog, out := pausing(t, src)
+	if err := prog.Run(); !errors.Is(err, ErrPaused) {
+		t.Fatalf("Run returned %v, want ErrPaused", err)
+	}
+	if _, err := prog.Dump(); err == nil || !strings.Contains(err.Error(), "a StringIO cannot be serialised") {
+		t.Fatalf("Dump of a run inside a block that holds a StringIO: %v", err)
+	}
+	// Inside the statement, then between two statements, then to the end.
+	if err := prog.Run(); !errors.Is(err, ErrPaused) {
+		t.Fatalf("the second Run returned %v, want ErrPaused", err)
+	}
+	if err := prog.Run(); err != nil {
+		t.Fatal(err)
+	}
+	if got, want := out.String(), whole(t, src); got != want {
+		t.Fatalf("paused and run again the script printed\n%s\nand in one run\n%s", got, want)
+	}
+}
+
 // A statement that never ends pauses, which before it never did.
 func TestALoopThatNeverEndsPauses(t *testing.T) {
 	prog, out := pausing(t, `i = 0
