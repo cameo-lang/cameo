@@ -378,7 +378,7 @@ inside a block returns from the enclosing method, and raises
 `LocalJumpError` once that method has returned, as in Ruby; `break` and
 `next` behave as in Ruby. A Proc is a value, and serialises as its code
 and the values it captured (see [ir.md](ir.md)): it crosses `async` and
-`to_value_proto`. The pause dump does not carry one yet.
+`to_value_proto`, and a pause dump carries it.
 
 ### Blocks capture values
 

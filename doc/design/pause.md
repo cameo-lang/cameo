@@ -39,13 +39,21 @@ The dump is the protobuf message `cameo.Dump`, written in
 | `promises` | every promise, settled: its id, the method `async` ran, and its result or the exception it failed with |
 | `loaded` | the libraries `require` loaded |
 | `rand` | the state of the random number generator, so a seeded script draws on as if it had not paused |
+| `at_exit` | the blocks `at_exit` registered, in order, which a resumed run runs when it ends |
 
-A value the envelope cannot carry — a Proc, an Enumerator, a Hash with a
-default proc — has no value in the dump; its binding says why instead.
-`cameo` names each when it pauses, `cameo inspect` lists them, and a
-resumed run does not have them: reading such a variable raises `NameError`.
-The blocks `at_exit` registered are not in the dump either: a resumed run
-ends without running them.
+A Proc is in the dump as a closure: its code, which the dump carries once
+per unit, and the values it captured ([ir.md](ir.md)). A resumed run
+calls it as the run that paused would have.
+
+A value the envelope cannot carry — an Enumerator, a Hash with a default
+proc, a Proc that captured one of them — has no value in the dump; its
+binding says why instead. `cameo` names each when it pauses, `cameo
+inspect` lists them, and a resumed run does not have them: reading such a
+variable raises `NameError`, and such an `at_exit` block does not run.
+
+A symbol in the dump reads back as a String, as a symbol does wherever a
+value crosses the envelope: a resumed run that compares a variable with
+`:name` compares a String.
 
 ## How a resumed run gets its classes back
 

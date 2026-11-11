@@ -43,7 +43,10 @@ type Dump struct {
 	// loaded names the libraries require loaded.
 	Loaded []string `protobuf:"bytes,8,rep,name=loaded,proto3" json:"loaded,omitempty"`
 	// rand is the state of the random number generator.
-	Rand          []byte `protobuf:"bytes,9,opt,name=rand,proto3" json:"rand,omitempty"`
+	Rand []byte `protobuf:"bytes,9,opt,name=rand,proto3" json:"rand,omitempty"`
+	// at_exit are the blocks at_exit registered, in the order they were
+	// registered; a binding without a name.
+	AtExit        []*Dump_Binding `protobuf:"bytes,10,rep,name=at_exit,json=atExit,proto3" json:"at_exit,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -137,6 +140,13 @@ func (x *Dump) GetLoaded() []string {
 func (x *Dump) GetRand() []byte {
 	if x != nil {
 		return x.Rand
+	}
+	return nil
+}
+
+func (x *Dump) GetAtExit() []*Dump_Binding {
+	if x != nil {
+		return x.AtExit
 	}
 	return nil
 }
@@ -357,7 +367,7 @@ var File_cameo_dump_proto protoreflect.FileDescriptor
 
 const file_cameo_dump_proto_rawDesc = "" +
 	"\n" +
-	"\x10cameo/dump.proto\x12\x05cameo\x1a\x11cameo/value.proto\"\x80\x05\n" +
+	"\x10cameo/dump.proto\x12\x05cameo\x1a\x11cameo/value.proto\"\xae\x05\n" +
 	"\x04Dump\x12\x12\n" +
 	"\x04file\x18\x01 \x01(\tR\x04file\x12\x16\n" +
 	"\x06source\x18\x02 \x01(\tR\x06source\x12\x12\n" +
@@ -367,7 +377,9 @@ const file_cameo_dump_proto_rawDesc = "" +
 	"\tconstants\x18\x06 \x03(\v2\x13.cameo.Dump.BindingR\tconstants\x12/\n" +
 	"\bpromises\x18\a \x03(\v2\x13.cameo.Dump.PromiseR\bpromises\x12\x16\n" +
 	"\x06loaded\x18\b \x03(\tR\x06loaded\x12\x12\n" +
-	"\x04rand\x18\t \x01(\fR\x04rand\x1aq\n" +
+	"\x04rand\x18\t \x01(\fR\x04rand\x12,\n" +
+	"\aat_exit\x18\n" +
+	" \x03(\v2\x13.cameo.Dump.BindingR\x06atExit\x1aq\n" +
 	"\aBinding\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\"\n" +
 	"\x05value\x18\x02 \x01(\v2\f.cameo.ValueR\x05value\x12\x14\n" +
@@ -408,14 +420,15 @@ var file_cameo_dump_proto_depIdxs = []int32{
 	1, // 0: cameo.Dump.variables:type_name -> cameo.Dump.Binding
 	1, // 1: cameo.Dump.constants:type_name -> cameo.Dump.Binding
 	2, // 2: cameo.Dump.promises:type_name -> cameo.Dump.Promise
-	4, // 3: cameo.Dump.Binding.value:type_name -> cameo.Value
-	4, // 4: cameo.Dump.Promise.value:type_name -> cameo.Value
-	3, // 5: cameo.Dump.Promise.failure:type_name -> cameo.Dump.Failure
-	6, // [6:6] is the sub-list for method output_type
-	6, // [6:6] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	1, // 3: cameo.Dump.at_exit:type_name -> cameo.Dump.Binding
+	4, // 4: cameo.Dump.Binding.value:type_name -> cameo.Value
+	4, // 5: cameo.Dump.Promise.value:type_name -> cameo.Value
+	3, // 6: cameo.Dump.Promise.failure:type_name -> cameo.Dump.Failure
+	7, // [7:7] is the sub-list for method output_type
+	7, // [7:7] is the sub-list for method input_type
+	7, // [7:7] is the sub-list for extension type_name
+	7, // [7:7] is the sub-list for extension extendee
+	0, // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_cameo_dump_proto_init() }
