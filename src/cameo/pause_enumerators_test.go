@@ -46,3 +46,35 @@ p evens.class, down.size, (pairs + held[1]).to_a
 		t.Fatalf("the dump left out %v", dump.Missing)
 	}
 }
+
+// each with a block, on an enumerator an iterating method made, runs
+// that method with the block as an activation: a pause lands inside the
+// block, where before it waited for the enumeration to end. The method
+// is one that is a step function; an enumerator over the each of a
+// script's object still runs to its end first.
+func TestARunPausesInsideTheEachOfAnEnumerator(t *testing.T) {
+	const src = `slices = [1, 2, 3, 4, 5].each_slice(2)
+p(slices.each do |pair|
+  Test.pause
+  p pair
+end)
+p([1, 2].map.each do |x|
+  Test.pause
+  x * 10
+end)
+p(3.times.each do |i|
+  Test.pause
+  puts "time #{i}"
+end)
+p((1..3).each_with_index.each do |x, i|
+  Test.pause
+  puts "#{x} at #{i}"
+end)
+p(Set.new([1, 2]).select.each do |x|
+  Test.pause
+  x > 1
+end)
+`
+	sameAsWhole(t, src)
+	everyPauseLands(t, src)
+}
