@@ -8,6 +8,17 @@ package object
 // its dump holds how far the builtin came. doc/design/ir.md, "Builtins,
 // and where a run can pause", has the design.
 
+// StateHook puts a handle through a dump. A handle is a library's value
+// that changes, a StringIO, whose state is the library's own Go data: no
+// envelope carries it. Save returns what a handle holds as a value the
+// envelope does carry, and Restore makes a handle of that value again.
+// The dump keeps a handle once, however many variables hold it, so they
+// hold one handle after the resume too.
+type StateHook struct {
+	Save    func(ctx Context, handle Value) (Value, error)
+	Restore func(ctx Context, state Value) (Value, error)
+}
+
 // Call is the call a stepper was made with.
 type Call struct {
 	Self  Value

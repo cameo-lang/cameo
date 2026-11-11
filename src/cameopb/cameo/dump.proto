@@ -110,6 +110,18 @@ message Dump {
   repeated Worker workers = 20;
   repeated Call calls = 21;
 
+  // handles are the library values that change which the run held: a
+  // StringIO. Each is here once, and a value that is one refers to it by
+  // its index, so what held one handle holds one after the resume.
+  repeated Handle handles = 22;
+
+  // Handle is one such value: its class, and its state as the class's
+  // library saved it.
+  message Handle {
+    string class = 1;
+    Value state = 2;
+  }
+
   // Worker is a call async started, stopped where it was: the
   // activations of its interpreter, outermost first, with the scopes
   // and frames they run in, which their indexes are into.

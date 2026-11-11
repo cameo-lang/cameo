@@ -55,6 +55,8 @@ type Interp struct {
 	// resuming is the frames and scopes of the dump a run resumes from
 	// while it is read, and resumed its activations, which Run continues.
 	pausable bool
+	// handles is the handles of the dump a run resumed from (handles.go).
+	handles *handleTable
 	// settles is, for a worker, the promise its call settles.
 	settles *Promise
 	// wakeCalls and wakeWorkers are the calls and the workers of the dump

@@ -507,7 +507,9 @@ that is all cameo, and widens it from there.
     calls `async` queued.
 26. cameo: pending host promises in the dump, and the host API that settles
     them after resume.
-27. object: the save and restore hook for a library's state.
+27. object: the save and restore hook for a library's state. Built for
+    handles, with StringIO as the first (`object.StateHook`); what a
+    library keeps on a class, Singleton's instance, has no hook yet.
 28. protogen: a class with a proc field is a message. Its closure is a
     field of type `cameo.Closure` that names its code and does not carry
     it; the envelope around the instance, or the dump, has the unit.

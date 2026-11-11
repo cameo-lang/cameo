@@ -31,6 +31,10 @@ message Value {
     // values it had. In every other message a symbol is a string_value,
     // and reads back as a String.
     string symbol_value = 15;
+    // handle is a library's value that changes, a StringIO, in a dump
+    // alone: its index among the dump's handles, plus one. No other
+    // message carries a handle.
+    uint32 handle = 16;
   }
 }
 

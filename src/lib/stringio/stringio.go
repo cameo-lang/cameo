@@ -247,9 +247,66 @@ func newSIO(ctx object.Context, args []object.Value) (*sio, error) {
 	return s, nil
 }
 
+// save is what a StringIO holds, for a dump (object.StateHook): its
+// string, where it stands in it, and how it is open.
+func save(ctx object.Context, handle object.Value) (object.Value, error) {
+	s := sioOf(handle)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	flags := func(pairs ...any) object.Value {
+		b := object.NewMapBuilder()
+		for i := 0; i < len(pairs); i += 2 {
+			b.Set(object.String(pairs[i].(string)), pairs[i+1].(object.Value))
+		}
+		return object.MapValue(b.Map())
+	}
+	return flags(
+		"string", object.Bytes(append([]byte{}, s.buf...)),
+		"kind", object.Int(int64(s.kind)),
+		"pos", object.Int(int64(s.pos)),
+		"lineno", object.Int(int64(s.lineno)),
+		"readable", object.Bool(s.readable),
+		"writable", object.Bool(s.writable),
+		"appends", object.Bool(s.appends),
+		"closed_read", object.Bool(s.closedR),
+		"closed_write", object.Bool(s.closedW),
+	), nil
+}
+
+// restore makes a StringIO of what save returned.
+func restore(ctx object.Context, state object.Value) (object.Value, error) {
+	m, ok := state.AsMap()
+	if !ok {
+		return object.Value{}, ctx.Raise(object.TypeError, "the state of a StringIO is a Hash")
+	}
+	get := func(key string) object.Value {
+		v, _ := m.Get(object.String(key))
+		return v
+	}
+	num := func(key string) int {
+		n, _ := get(key).AsInt()
+		return int(n)
+	}
+	s := &sio{
+		buf:      append([]byte{}, get("string").Str()...),
+		kind:     object.Kind(num("kind")),
+		pos:      num("pos"),
+		lineno:   num("lineno"),
+		readable: get("readable").Truthy(),
+		writable: get("writable").Truthy(),
+		appends:  get("appends").Truthy(),
+		closedR:  get("closed_read").Truthy(),
+		closedW:  get("closed_write").Truthy(),
+	}
+	return object.InstanceValue(&object.Instance{Cls: class, Message: s}), nil
+}
+
 // Install defines StringIO. lib.Install calls it once.
 func Install() {
 	c := class
+	// A StringIO goes through a pause dump with its string and its
+	// position.
+	c.State = &object.StateHook{Save: save, Restore: restore}
 	object.DefineNative("StringIO", object.ClassValue(c))
 	c.Consts["VERSION"] = object.String("3.1.2")
 	c.Consts["MAX_LENGTH"] = object.Int(int64(1<<62 - 1))

@@ -46,6 +46,7 @@ type Value struct {
 	//	*Value_BigValue
 	//	*Value_Closure
 	//	*Value_SymbolValue
+	//	*Value_Handle
 	Kind          isValue_Kind `protobuf_oneof:"kind"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -223,6 +224,15 @@ func (x *Value) GetSymbolValue() string {
 	return ""
 }
 
+func (x *Value) GetHandle() uint32 {
+	if x != nil {
+		if x, ok := x.Kind.(*Value_Handle); ok {
+			return x.Handle
+		}
+	}
+	return 0
+}
+
 type isValue_Kind interface {
 	isValue_Kind()
 }
@@ -290,6 +300,13 @@ type Value_SymbolValue struct {
 	SymbolValue string `protobuf:"bytes,15,opt,name=symbol_value,json=symbolValue,proto3,oneof"`
 }
 
+type Value_Handle struct {
+	// handle is a library's value that changes, a StringIO, in a dump
+	// alone: its index among the dump's handles, plus one. No other
+	// message carries a handle.
+	Handle uint32 `protobuf:"varint,16,opt,name=handle,proto3,oneof"`
+}
+
 func (*Value_BoolValue) isValue_Kind() {}
 
 func (*Value_IntValue) isValue_Kind() {}
@@ -319,6 +336,8 @@ func (*Value_BigValue) isValue_Kind() {}
 func (*Value_Closure) isValue_Kind() {}
 
 func (*Value_SymbolValue) isValue_Kind() {}
+
+func (*Value_Handle) isValue_Kind() {}
 
 // Closure is a Proc: a block or a lambda a script wrote, as the proc of a
 // unit it runs and the binding it runs in; or a proc made from a symbol.
@@ -1146,7 +1165,7 @@ var File_cameo_value_proto protoreflect.FileDescriptor
 
 const file_cameo_value_proto_rawDesc = "" +
 	"\n" +
-	"\x11cameo/value.proto\x12\x05cameo\x1a\x0ecameo/ir.proto\"\xa8\x04\n" +
+	"\x11cameo/value.proto\x12\x05cameo\x1a\x0ecameo/ir.proto\"\xc2\x04\n" +
 	"\x05Value\x12\x1f\n" +
 	"\n" +
 	"bool_value\x18\x01 \x01(\bH\x00R\tboolValue\x12\x1d\n" +
@@ -1168,7 +1187,8 @@ const file_cameo_value_proto_rawDesc = "" +
 	"\x06regexp\x18\f \x01(\v2\r.cameo.RegexpH\x00R\x06regexp\x12\x1d\n" +
 	"\tbig_value\x18\r \x01(\tH\x00R\bbigValue\x12*\n" +
 	"\aclosure\x18\x0e \x01(\v2\x0e.cameo.ClosureH\x00R\aclosure\x12#\n" +
-	"\fsymbol_value\x18\x0f \x01(\tH\x00R\vsymbolValueB\x06\n" +
+	"\fsymbol_value\x18\x0f \x01(\tH\x00R\vsymbolValue\x12\x18\n" +
+	"\x06handle\x18\x10 \x01(\rH\x00R\x06handleB\x06\n" +
 	"\x04kind\"\x81\x02\n" +
 	"\aClosure\x12\x12\n" +
 	"\x04unit\x18\x01 \x01(\tR\x04unit\x12\x12\n" +
@@ -1317,6 +1337,7 @@ func file_cameo_value_proto_init() {
 		(*Value_BigValue)(nil),
 		(*Value_Closure)(nil),
 		(*Value_SymbolValue)(nil),
+		(*Value_Handle)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

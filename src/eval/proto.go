@@ -25,7 +25,12 @@ func (in *Interp) ProcEncoder(carryUnits bool) *protogen.Encoder {
 // Decoder reads values from the envelope, finding classes by their qualified
 // name and digest among the interpreter's constants.
 func (in *Interp) Decoder() *protogen.Decoder {
-	return protogen.NewDecoder(in.proto, in.FindClass).WithProcs(in)
+	dec := protogen.NewDecoder(in.proto, in.FindClass).WithProcs(in)
+	if in.handles != nil {
+		// A run that resumed from a dump reads its handles.
+		dec.WithHandles(func(ref uint32) (object.Value, error) { return in.handle(dec, ref) })
+	}
+	return dec
 }
 
 // FindClass finds a loaded or registered class by qualified name
