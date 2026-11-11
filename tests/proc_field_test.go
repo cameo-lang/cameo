@@ -131,17 +131,17 @@ include Cameo
 class W
   def run(route) = 1
 end
-each = [1].each
-r = Route.new(handler: proc { each.next })
+dice = Random.new(1)
+r = Route.new(handler: proc { dice.rand })
 [-> { r.to_proto }, -> { r.to_value_proto }, -> { async(W.new, :run, r) }].each do |f|
   f.call
 rescue CameoError, TypeError => e
   puts e.message
 end
 `)
-	assert.Equals(t, out, `Route.handler: a Proc that captured each, an Enumerator cannot be serialised
-Route.handler: a Proc that captured each, an Enumerator cannot be serialised
-a Proc that captured each, an Enumerator cannot be passed to async
+	assert.Equals(t, out, `Route.handler: a Proc that captured dice, a Random cannot be serialised
+Route.handler: a Proc that captured dice, a Random cannot be serialised
+a Proc that captured dice, a Random cannot be passed to async
 `)
 }
 

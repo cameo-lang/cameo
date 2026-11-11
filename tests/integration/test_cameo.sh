@@ -263,21 +263,21 @@ promises: none'
 }
 
 # A script that cannot be dumped where it pauses, inside a block that holds
-# an Enumerator, is told so and goes on to its end.
+# a Random, is told so and goes on to its end.
 test_interrupt_of_a_script_that_cannot_be_dumped_lets_it_go_on() {
   local script out rc=0
   script="$(mktemp -d)/held.cameo"
   cat >"$script" <<'CAMEO'
-words = ["held", "too"].each
+dice = Random.new(2)
 t = Time.now
 puts "before"
-loop { break if Time.now - t > 2 && words.size == 2 }
+loop { break if Time.now - t > 2 && dice.seed == 2 }
 puts "after"
 CAMEO
   out=$(interrupt_after 0.5 "$CAMEO_BIN" "$script") || rc=$?
   assert_eq 0 "$rc" "the script ends as if it had not been interrupted; output: $out"
   assert_contains "$out" "cameo: cannot dump the script:"
-  assert_contains "$out" "an Enumerator cannot be serialised"
+  assert_contains "$out" "a Random cannot be serialised"
   assert_contains "$out" $'cameo: the script goes on\nafter'
 }
 

@@ -111,7 +111,11 @@ captured ([ir.md](ir.md)). A resumed run calls it as the run that paused
 would have. An instance that holds a Proc in a `proc` field is in the dump
 with it: the field of its message is that closure.
 
-A value the envelope cannot carry — an Enumerator, a Proc that captured
+An Enumerator is in the dump as the call that made it, `[1, 2].each_slice(2)`
+or a lazy chain with its blocks, and the resumed run makes it again
+([cameo.md](cameo.md)). It has no position: cameo has no `next`.
+
+A value the envelope cannot carry — a Random, a Proc that captured
 one — has no value in the dump; its binding says why instead. `cameo`
 names each when it pauses, `cameo inspect` lists them, and a resumed run
 does not have them: reading such a variable raises `NameError`, and such
@@ -223,8 +227,8 @@ handles through a dump gives their class a hook, `object.StateHook`:
 and `Restore` makes a handle of it again. The dump keeps each handle once,
 in `handles`, and a value that is one refers to it by its index, so two
 variables, a list and a Proc that held one StringIO hold one after the
-resume. StringIO has the hook. A handle of a class without it, an
-Enumerator or a File, is left out and named like any value the envelope
+resume. StringIO has the hook. A handle of a class without it, a
+StringScanner or a File, is left out and named like any value the envelope
 cannot carry.
 
 A value in flight that the envelope cannot carry is nil after the resume,

@@ -57,8 +57,12 @@ factor = 2
 double = ->(x) { x * factor }
 puts from_value_proto(double.to_value_proto).call(21)
 
+# An Enumerator travels as the call that made it.
+evens = (1..).lazy.select(&:even?).map { |x| x * factor }
+puts from_value_proto(evens.to_value_proto).first(3).inspect
+
 begin
-  [1].each.to_value_proto
+  Random.new(1).to_value_proto
 rescue TypeError => e
   puts e.message
 end

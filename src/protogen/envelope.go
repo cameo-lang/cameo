@@ -211,6 +211,12 @@ func (e *Encoder) Message(v object.Value) (*cameopb.Value, error) {
 			return nil, err
 		}
 		return &cameopb.Value{Kind: &cameopb.Value_Closure{Closure: closure}}, nil
+	case object.KindEnumerator:
+		en, err := e.enumerator(v.Enumerator())
+		if err != nil {
+			return nil, err
+		}
+		return &cameopb.Value{Kind: &cameopb.Value_Enumerator{Enumerator: en}}, nil
 	}
 	if v.IsNil() {
 		return &cameopb.Value{}, nil
@@ -324,6 +330,9 @@ type Decoder struct {
 	// handles returns the handle a reference names, for the reader of a
 	// dump; without it a message with one is refused.
 	handles func(uint32) (object.Value, error)
+	// enumerators makes an enumerator again from the call that made it;
+	// without it a message with one is refused.
+	enumerators EnumeratorMaker
 }
 
 // NewDecoder makes a decoder that finds classes through resolve.
@@ -477,6 +486,8 @@ func (d *Decoder) Value(msg *cameopb.Value) (object.Value, error) {
 			return object.Value{}, fmt.Errorf("the message holds a Proc, which this reader does not decode")
 		}
 		return d.procs.DecodeProc(d, k.Closure)
+	case *cameopb.Value_Enumerator:
+		return d.enumerator(k.Enumerator)
 	}
 	return object.Value{}, fmt.Errorf("unknown envelope kind %T", msg.GetKind())
 }

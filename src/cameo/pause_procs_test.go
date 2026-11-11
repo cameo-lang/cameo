@@ -55,9 +55,9 @@ puts scale.lambda?, scale.arity
 // A proc that cannot travel is left out of the dump with the reason, as
 // any other value is.
 func TestADumpNamesAProcItLeavesOut(t *testing.T) {
-	prog, _ := pausing(t, `each = [1].each
-reads = -> { each.next }
-at_exit { each.next }
+	prog, _ := pausing(t, `dice = Random.new(1)
+reads = -> { dice.rand }
+at_exit { dice.rand }
 Test.pause
 puts 1
 `)
@@ -66,7 +66,7 @@ puts 1
 	dump, err := prog.Dump()
 	assert.NoError(t, err)
 	assert.Equals(t, strings.Join(dump.Missing, ";"),
-		"each (an Enumerator cannot be serialised);"+
-			"reads (a Proc that captured each, an Enumerator cannot be serialised);"+
-			"an at_exit block (a Proc that captured each, an Enumerator cannot be serialised)")
+		"dice (a Random cannot be serialised);"+
+			"reads (a Proc that captured dice, a Random cannot be serialised);"+
+			"an at_exit block (a Proc that captured dice, a Random cannot be serialised)")
 }

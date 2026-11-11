@@ -47,6 +47,7 @@ type Value struct {
 	//	*Value_Closure
 	//	*Value_SymbolValue
 	//	*Value_Handle
+	//	*Value_Enumerator
 	Kind          isValue_Kind `protobuf_oneof:"kind"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -233,6 +234,15 @@ func (x *Value) GetHandle() uint32 {
 	return 0
 }
 
+func (x *Value) GetEnumerator() *Enumerator {
+	if x != nil {
+		if x, ok := x.Kind.(*Value_Enumerator); ok {
+			return x.Enumerator
+		}
+	}
+	return nil
+}
+
 type isValue_Kind interface {
 	isValue_Kind()
 }
@@ -307,6 +317,10 @@ type Value_Handle struct {
 	Handle uint32 `protobuf:"varint,16,opt,name=handle,proto3,oneof"`
 }
 
+type Value_Enumerator struct {
+	Enumerator *Enumerator `protobuf:"bytes,17,opt,name=enumerator,proto3,oneof"`
+}
+
 func (*Value_BoolValue) isValue_Kind() {}
 
 func (*Value_IntValue) isValue_Kind() {}
@@ -338,6 +352,119 @@ func (*Value_Closure) isValue_Kind() {}
 func (*Value_SymbolValue) isValue_Kind() {}
 
 func (*Value_Handle) isValue_Kind() {}
+
+func (*Value_Enumerator) isValue_Kind() {}
+
+// Enumerator is an Enumerator as the call that made it, which makes it
+// again where it is read: values never change, so the call returns an
+// enumerator with the same elements.
+type Enumerator struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// recv is the receiver of the call, method its name, args, kw and
+	// block what it was called with: `[1, 2].each_slice(2)`,
+	// `(1..).lazy.map { ... }`.
+	Recv   *Value   `protobuf:"bytes,1,opt,name=recv,proto3" json:"recv,omitempty"`
+	Method string   `protobuf:"bytes,2,opt,name=method,proto3" json:"method,omitempty"`
+	Args   []*Value `protobuf:"bytes,3,rep,name=args,proto3" json:"args,omitempty"`
+	Kw     *Map     `protobuf:"bytes,4,opt,name=kw,proto3" json:"kw,omitempty"`
+	Block  *Closure `protobuf:"bytes,5,opt,name=block,proto3" json:"block,omitempty"`
+	// to_enum is set for an enumerator `to_enum` or `enum_for` made:
+	// method is then the method it enumerates, the first argument of
+	// to_enum.
+	ToEnum bool `protobuf:"varint,6,opt,name=to_enum,json=toEnum,proto3" json:"to_enum,omitempty"`
+	// of is set instead of recv and method for an enumerator that combines
+	// others, "chain" or "product", and parts are those.
+	Of            string   `protobuf:"bytes,7,opt,name=of,proto3" json:"of,omitempty"`
+	Parts         []*Value `protobuf:"bytes,8,rep,name=parts,proto3" json:"parts,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Enumerator) Reset() {
+	*x = Enumerator{}
+	mi := &file_cameo_value_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Enumerator) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Enumerator) ProtoMessage() {}
+
+func (x *Enumerator) ProtoReflect() protoreflect.Message {
+	mi := &file_cameo_value_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Enumerator.ProtoReflect.Descriptor instead.
+func (*Enumerator) Descriptor() ([]byte, []int) {
+	return file_cameo_value_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *Enumerator) GetRecv() *Value {
+	if x != nil {
+		return x.Recv
+	}
+	return nil
+}
+
+func (x *Enumerator) GetMethod() string {
+	if x != nil {
+		return x.Method
+	}
+	return ""
+}
+
+func (x *Enumerator) GetArgs() []*Value {
+	if x != nil {
+		return x.Args
+	}
+	return nil
+}
+
+func (x *Enumerator) GetKw() *Map {
+	if x != nil {
+		return x.Kw
+	}
+	return nil
+}
+
+func (x *Enumerator) GetBlock() *Closure {
+	if x != nil {
+		return x.Block
+	}
+	return nil
+}
+
+func (x *Enumerator) GetToEnum() bool {
+	if x != nil {
+		return x.ToEnum
+	}
+	return false
+}
+
+func (x *Enumerator) GetOf() string {
+	if x != nil {
+		return x.Of
+	}
+	return ""
+}
+
+func (x *Enumerator) GetParts() []*Value {
+	if x != nil {
+		return x.Parts
+	}
+	return nil
+}
 
 // Closure is a Proc: a block or a lambda a script wrote, as the proc of a
 // unit it runs and the binding it runs in; or a proc made from a symbol.
@@ -373,7 +500,7 @@ type Closure struct {
 
 func (x *Closure) Reset() {
 	*x = Closure{}
-	mi := &file_cameo_value_proto_msgTypes[1]
+	mi := &file_cameo_value_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -385,7 +512,7 @@ func (x *Closure) String() string {
 func (*Closure) ProtoMessage() {}
 
 func (x *Closure) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_value_proto_msgTypes[1]
+	mi := &file_cameo_value_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -398,7 +525,7 @@ func (x *Closure) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Closure.ProtoReflect.Descriptor instead.
 func (*Closure) Descriptor() ([]byte, []int) {
-	return file_cameo_value_proto_rawDescGZIP(), []int{1}
+	return file_cameo_value_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Closure) GetUnit() string {
@@ -493,7 +620,7 @@ type Binding struct {
 
 func (x *Binding) Reset() {
 	*x = Binding{}
-	mi := &file_cameo_value_proto_msgTypes[2]
+	mi := &file_cameo_value_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -505,7 +632,7 @@ func (x *Binding) String() string {
 func (*Binding) ProtoMessage() {}
 
 func (x *Binding) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_value_proto_msgTypes[2]
+	mi := &file_cameo_value_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -518,7 +645,7 @@ func (x *Binding) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Binding.ProtoReflect.Descriptor instead.
 func (*Binding) Descriptor() ([]byte, []int) {
-	return file_cameo_value_proto_rawDescGZIP(), []int{2}
+	return file_cameo_value_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Binding) GetLocals() []*Binding_Local {
@@ -600,7 +727,7 @@ type List struct {
 
 func (x *List) Reset() {
 	*x = List{}
-	mi := &file_cameo_value_proto_msgTypes[3]
+	mi := &file_cameo_value_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -612,7 +739,7 @@ func (x *List) String() string {
 func (*List) ProtoMessage() {}
 
 func (x *List) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_value_proto_msgTypes[3]
+	mi := &file_cameo_value_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -625,7 +752,7 @@ func (x *List) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use List.ProtoReflect.Descriptor instead.
 func (*List) Descriptor() ([]byte, []int) {
-	return file_cameo_value_proto_rawDescGZIP(), []int{3}
+	return file_cameo_value_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *List) GetItems() []*Value {
@@ -644,7 +771,7 @@ type Set struct {
 
 func (x *Set) Reset() {
 	*x = Set{}
-	mi := &file_cameo_value_proto_msgTypes[4]
+	mi := &file_cameo_value_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -656,7 +783,7 @@ func (x *Set) String() string {
 func (*Set) ProtoMessage() {}
 
 func (x *Set) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_value_proto_msgTypes[4]
+	mi := &file_cameo_value_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -669,7 +796,7 @@ func (x *Set) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Set.ProtoReflect.Descriptor instead.
 func (*Set) Descriptor() ([]byte, []int) {
-	return file_cameo_value_proto_rawDescGZIP(), []int{4}
+	return file_cameo_value_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Set) GetItems() []*Value {
@@ -692,7 +819,7 @@ type Map struct {
 
 func (x *Map) Reset() {
 	*x = Map{}
-	mi := &file_cameo_value_proto_msgTypes[5]
+	mi := &file_cameo_value_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -704,7 +831,7 @@ func (x *Map) String() string {
 func (*Map) ProtoMessage() {}
 
 func (x *Map) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_value_proto_msgTypes[5]
+	mi := &file_cameo_value_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -717,7 +844,7 @@ func (x *Map) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Map.ProtoReflect.Descriptor instead.
 func (*Map) Descriptor() ([]byte, []int) {
-	return file_cameo_value_proto_rawDescGZIP(), []int{5}
+	return file_cameo_value_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *Map) GetEntries() []*Map_Entry {
@@ -752,7 +879,7 @@ type Range struct {
 
 func (x *Range) Reset() {
 	*x = Range{}
-	mi := &file_cameo_value_proto_msgTypes[6]
+	mi := &file_cameo_value_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -764,7 +891,7 @@ func (x *Range) String() string {
 func (*Range) ProtoMessage() {}
 
 func (x *Range) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_value_proto_msgTypes[6]
+	mi := &file_cameo_value_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -777,7 +904,7 @@ func (x *Range) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Range.ProtoReflect.Descriptor instead.
 func (*Range) Descriptor() ([]byte, []int) {
-	return file_cameo_value_proto_rawDescGZIP(), []int{6}
+	return file_cameo_value_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *Range) GetLo() *Value {
@@ -814,7 +941,7 @@ type Object struct {
 
 func (x *Object) Reset() {
 	*x = Object{}
-	mi := &file_cameo_value_proto_msgTypes[7]
+	mi := &file_cameo_value_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -826,7 +953,7 @@ func (x *Object) String() string {
 func (*Object) ProtoMessage() {}
 
 func (x *Object) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_value_proto_msgTypes[7]
+	mi := &file_cameo_value_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -839,7 +966,7 @@ func (x *Object) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Object.ProtoReflect.Descriptor instead.
 func (*Object) Descriptor() ([]byte, []int) {
-	return file_cameo_value_proto_rawDescGZIP(), []int{7}
+	return file_cameo_value_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *Object) GetClass() string {
@@ -877,7 +1004,7 @@ type Time struct {
 
 func (x *Time) Reset() {
 	*x = Time{}
-	mi := &file_cameo_value_proto_msgTypes[8]
+	mi := &file_cameo_value_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -889,7 +1016,7 @@ func (x *Time) String() string {
 func (*Time) ProtoMessage() {}
 
 func (x *Time) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_value_proto_msgTypes[8]
+	mi := &file_cameo_value_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -902,7 +1029,7 @@ func (x *Time) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Time.ProtoReflect.Descriptor instead.
 func (*Time) Descriptor() ([]byte, []int) {
-	return file_cameo_value_proto_rawDescGZIP(), []int{8}
+	return file_cameo_value_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *Time) GetSeconds() int64 {
@@ -943,7 +1070,7 @@ type Regexp struct {
 
 func (x *Regexp) Reset() {
 	*x = Regexp{}
-	mi := &file_cameo_value_proto_msgTypes[9]
+	mi := &file_cameo_value_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -955,7 +1082,7 @@ func (x *Regexp) String() string {
 func (*Regexp) ProtoMessage() {}
 
 func (x *Regexp) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_value_proto_msgTypes[9]
+	mi := &file_cameo_value_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -968,7 +1095,7 @@ func (x *Regexp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Regexp.ProtoReflect.Descriptor instead.
 func (*Regexp) Descriptor() ([]byte, []int) {
-	return file_cameo_value_proto_rawDescGZIP(), []int{9}
+	return file_cameo_value_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *Regexp) GetSource() string {
@@ -997,7 +1124,7 @@ type Binding_Local struct {
 
 func (x *Binding_Local) Reset() {
 	*x = Binding_Local{}
-	mi := &file_cameo_value_proto_msgTypes[10]
+	mi := &file_cameo_value_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1009,7 +1136,7 @@ func (x *Binding_Local) String() string {
 func (*Binding_Local) ProtoMessage() {}
 
 func (x *Binding_Local) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_value_proto_msgTypes[10]
+	mi := &file_cameo_value_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1022,7 +1149,7 @@ func (x *Binding_Local) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Binding_Local.ProtoReflect.Descriptor instead.
 func (*Binding_Local) Descriptor() ([]byte, []int) {
-	return file_cameo_value_proto_rawDescGZIP(), []int{2, 0}
+	return file_cameo_value_proto_rawDescGZIP(), []int{3, 0}
 }
 
 func (x *Binding_Local) GetName() string {
@@ -1060,7 +1187,7 @@ type Binding_Method struct {
 
 func (x *Binding_Method) Reset() {
 	*x = Binding_Method{}
-	mi := &file_cameo_value_proto_msgTypes[11]
+	mi := &file_cameo_value_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1072,7 +1199,7 @@ func (x *Binding_Method) String() string {
 func (*Binding_Method) ProtoMessage() {}
 
 func (x *Binding_Method) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_value_proto_msgTypes[11]
+	mi := &file_cameo_value_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1085,7 +1212,7 @@ func (x *Binding_Method) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Binding_Method.ProtoReflect.Descriptor instead.
 func (*Binding_Method) Descriptor() ([]byte, []int) {
-	return file_cameo_value_proto_rawDescGZIP(), []int{2, 1}
+	return file_cameo_value_proto_rawDescGZIP(), []int{3, 1}
 }
 
 func (x *Binding_Method) GetOwner() string {
@@ -1119,7 +1246,7 @@ type Map_Entry struct {
 
 func (x *Map_Entry) Reset() {
 	*x = Map_Entry{}
-	mi := &file_cameo_value_proto_msgTypes[12]
+	mi := &file_cameo_value_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1131,7 +1258,7 @@ func (x *Map_Entry) String() string {
 func (*Map_Entry) ProtoMessage() {}
 
 func (x *Map_Entry) ProtoReflect() protoreflect.Message {
-	mi := &file_cameo_value_proto_msgTypes[12]
+	mi := &file_cameo_value_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1144,7 +1271,7 @@ func (x *Map_Entry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Map_Entry.ProtoReflect.Descriptor instead.
 func (*Map_Entry) Descriptor() ([]byte, []int) {
-	return file_cameo_value_proto_rawDescGZIP(), []int{5, 0}
+	return file_cameo_value_proto_rawDescGZIP(), []int{6, 0}
 }
 
 func (x *Map_Entry) GetKey() *Value {
@@ -1165,7 +1292,7 @@ var File_cameo_value_proto protoreflect.FileDescriptor
 
 const file_cameo_value_proto_rawDesc = "" +
 	"\n" +
-	"\x11cameo/value.proto\x12\x05cameo\x1a\x0ecameo/ir.proto\"\xc2\x04\n" +
+	"\x11cameo/value.proto\x12\x05cameo\x1a\x0ecameo/ir.proto\"\xf7\x04\n" +
 	"\x05Value\x12\x1f\n" +
 	"\n" +
 	"bool_value\x18\x01 \x01(\bH\x00R\tboolValue\x12\x1d\n" +
@@ -1188,8 +1315,22 @@ const file_cameo_value_proto_rawDesc = "" +
 	"\tbig_value\x18\r \x01(\tH\x00R\bbigValue\x12*\n" +
 	"\aclosure\x18\x0e \x01(\v2\x0e.cameo.ClosureH\x00R\aclosure\x12#\n" +
 	"\fsymbol_value\x18\x0f \x01(\tH\x00R\vsymbolValue\x12\x18\n" +
-	"\x06handle\x18\x10 \x01(\rH\x00R\x06handleB\x06\n" +
-	"\x04kind\"\x81\x02\n" +
+	"\x06handle\x18\x10 \x01(\rH\x00R\x06handle\x123\n" +
+	"\n" +
+	"enumerator\x18\x11 \x01(\v2\x11.cameo.EnumeratorH\x00R\n" +
+	"enumeratorB\x06\n" +
+	"\x04kind\"\xf7\x01\n" +
+	"\n" +
+	"Enumerator\x12 \n" +
+	"\x04recv\x18\x01 \x01(\v2\f.cameo.ValueR\x04recv\x12\x16\n" +
+	"\x06method\x18\x02 \x01(\tR\x06method\x12 \n" +
+	"\x04args\x18\x03 \x03(\v2\f.cameo.ValueR\x04args\x12\x1a\n" +
+	"\x02kw\x18\x04 \x01(\v2\n" +
+	".cameo.MapR\x02kw\x12$\n" +
+	"\x05block\x18\x05 \x01(\v2\x0e.cameo.ClosureR\x05block\x12\x17\n" +
+	"\ato_enum\x18\x06 \x01(\bR\x06toEnum\x12\x0e\n" +
+	"\x02of\x18\a \x01(\tR\x02of\x12\"\n" +
+	"\x05parts\x18\b \x03(\v2\f.cameo.ValueR\x05parts\"\x81\x02\n" +
 	"\aClosure\x12\x12\n" +
 	"\x04unit\x18\x01 \x01(\tR\x04unit\x12\x12\n" +
 	"\x04proc\x18\x02 \x01(\rR\x04proc\x12\x1f\n" +
@@ -1263,56 +1404,63 @@ func file_cameo_value_proto_rawDescGZIP() []byte {
 	return file_cameo_value_proto_rawDescData
 }
 
-var file_cameo_value_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_cameo_value_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_cameo_value_proto_goTypes = []any{
 	(*Value)(nil),          // 0: cameo.Value
-	(*Closure)(nil),        // 1: cameo.Closure
-	(*Binding)(nil),        // 2: cameo.Binding
-	(*List)(nil),           // 3: cameo.List
-	(*Set)(nil),            // 4: cameo.Set
-	(*Map)(nil),            // 5: cameo.Map
-	(*Range)(nil),          // 6: cameo.Range
-	(*Object)(nil),         // 7: cameo.Object
-	(*Time)(nil),           // 8: cameo.Time
-	(*Regexp)(nil),         // 9: cameo.Regexp
-	(*Binding_Local)(nil),  // 10: cameo.Binding.Local
-	(*Binding_Method)(nil), // 11: cameo.Binding.Method
-	(*Map_Entry)(nil),      // 12: cameo.Map.Entry
-	(*Unit)(nil),           // 13: cameo.Unit
+	(*Enumerator)(nil),     // 1: cameo.Enumerator
+	(*Closure)(nil),        // 2: cameo.Closure
+	(*Binding)(nil),        // 3: cameo.Binding
+	(*List)(nil),           // 4: cameo.List
+	(*Set)(nil),            // 5: cameo.Set
+	(*Map)(nil),            // 6: cameo.Map
+	(*Range)(nil),          // 7: cameo.Range
+	(*Object)(nil),         // 8: cameo.Object
+	(*Time)(nil),           // 9: cameo.Time
+	(*Regexp)(nil),         // 10: cameo.Regexp
+	(*Binding_Local)(nil),  // 11: cameo.Binding.Local
+	(*Binding_Method)(nil), // 12: cameo.Binding.Method
+	(*Map_Entry)(nil),      // 13: cameo.Map.Entry
+	(*Unit)(nil),           // 14: cameo.Unit
 }
 var file_cameo_value_proto_depIdxs = []int32{
-	3,  // 0: cameo.Value.list:type_name -> cameo.List
-	5,  // 1: cameo.Value.map:type_name -> cameo.Map
-	4,  // 2: cameo.Value.set:type_name -> cameo.Set
-	6,  // 3: cameo.Value.range:type_name -> cameo.Range
-	7,  // 4: cameo.Value.object:type_name -> cameo.Object
-	8,  // 5: cameo.Value.time:type_name -> cameo.Time
-	9,  // 6: cameo.Value.regexp:type_name -> cameo.Regexp
-	1,  // 7: cameo.Value.closure:type_name -> cameo.Closure
-	13, // 8: cameo.Closure.code:type_name -> cameo.Unit
-	2,  // 9: cameo.Closure.binding:type_name -> cameo.Binding
-	0,  // 10: cameo.Closure.recv:type_name -> cameo.Value
-	10, // 11: cameo.Binding.locals:type_name -> cameo.Binding.Local
-	0,  // 12: cameo.Binding.self:type_name -> cameo.Value
-	11, // 13: cameo.Binding.method:type_name -> cameo.Binding.Method
-	0,  // 14: cameo.Binding.args:type_name -> cameo.Value
-	5,  // 15: cameo.Binding.kw:type_name -> cameo.Map
-	0,  // 16: cameo.Binding.block:type_name -> cameo.Value
-	0,  // 17: cameo.List.items:type_name -> cameo.Value
-	0,  // 18: cameo.Set.items:type_name -> cameo.Value
-	12, // 19: cameo.Map.entries:type_name -> cameo.Map.Entry
-	0,  // 20: cameo.Map.default:type_name -> cameo.Value
-	1,  // 21: cameo.Map.default_proc:type_name -> cameo.Closure
-	0,  // 22: cameo.Range.lo:type_name -> cameo.Value
-	0,  // 23: cameo.Range.hi:type_name -> cameo.Value
-	0,  // 24: cameo.Binding.Local.value:type_name -> cameo.Value
-	0,  // 25: cameo.Map.Entry.key:type_name -> cameo.Value
-	0,  // 26: cameo.Map.Entry.value:type_name -> cameo.Value
-	27, // [27:27] is the sub-list for method output_type
-	27, // [27:27] is the sub-list for method input_type
-	27, // [27:27] is the sub-list for extension type_name
-	27, // [27:27] is the sub-list for extension extendee
-	0,  // [0:27] is the sub-list for field type_name
+	4,  // 0: cameo.Value.list:type_name -> cameo.List
+	6,  // 1: cameo.Value.map:type_name -> cameo.Map
+	5,  // 2: cameo.Value.set:type_name -> cameo.Set
+	7,  // 3: cameo.Value.range:type_name -> cameo.Range
+	8,  // 4: cameo.Value.object:type_name -> cameo.Object
+	9,  // 5: cameo.Value.time:type_name -> cameo.Time
+	10, // 6: cameo.Value.regexp:type_name -> cameo.Regexp
+	2,  // 7: cameo.Value.closure:type_name -> cameo.Closure
+	1,  // 8: cameo.Value.enumerator:type_name -> cameo.Enumerator
+	0,  // 9: cameo.Enumerator.recv:type_name -> cameo.Value
+	0,  // 10: cameo.Enumerator.args:type_name -> cameo.Value
+	6,  // 11: cameo.Enumerator.kw:type_name -> cameo.Map
+	2,  // 12: cameo.Enumerator.block:type_name -> cameo.Closure
+	0,  // 13: cameo.Enumerator.parts:type_name -> cameo.Value
+	14, // 14: cameo.Closure.code:type_name -> cameo.Unit
+	3,  // 15: cameo.Closure.binding:type_name -> cameo.Binding
+	0,  // 16: cameo.Closure.recv:type_name -> cameo.Value
+	11, // 17: cameo.Binding.locals:type_name -> cameo.Binding.Local
+	0,  // 18: cameo.Binding.self:type_name -> cameo.Value
+	12, // 19: cameo.Binding.method:type_name -> cameo.Binding.Method
+	0,  // 20: cameo.Binding.args:type_name -> cameo.Value
+	6,  // 21: cameo.Binding.kw:type_name -> cameo.Map
+	0,  // 22: cameo.Binding.block:type_name -> cameo.Value
+	0,  // 23: cameo.List.items:type_name -> cameo.Value
+	0,  // 24: cameo.Set.items:type_name -> cameo.Value
+	13, // 25: cameo.Map.entries:type_name -> cameo.Map.Entry
+	0,  // 26: cameo.Map.default:type_name -> cameo.Value
+	2,  // 27: cameo.Map.default_proc:type_name -> cameo.Closure
+	0,  // 28: cameo.Range.lo:type_name -> cameo.Value
+	0,  // 29: cameo.Range.hi:type_name -> cameo.Value
+	0,  // 30: cameo.Binding.Local.value:type_name -> cameo.Value
+	0,  // 31: cameo.Map.Entry.key:type_name -> cameo.Value
+	0,  // 32: cameo.Map.Entry.value:type_name -> cameo.Value
+	33, // [33:33] is the sub-list for method output_type
+	33, // [33:33] is the sub-list for method input_type
+	33, // [33:33] is the sub-list for extension type_name
+	33, // [33:33] is the sub-list for extension extendee
+	0,  // [0:33] is the sub-list for field type_name
 }
 
 func init() { file_cameo_value_proto_init() }
@@ -1338,6 +1486,7 @@ func file_cameo_value_proto_init() {
 		(*Value_Closure)(nil),
 		(*Value_SymbolValue)(nil),
 		(*Value_Handle)(nil),
+		(*Value_Enumerator)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -1345,7 +1494,7 @@ func file_cameo_value_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_cameo_value_proto_rawDesc), len(file_cameo_value_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   13,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

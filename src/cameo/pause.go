@@ -42,7 +42,7 @@ type Dump struct {
 	// Line is the line of the statement the script continues with.
 	Line int
 	// Missing names the variables and constants the dump leaves out,
-	// each with what it held: "f (an Enumerator cannot be serialised)".
+	// each with what it held: "f (a Random cannot be serialised)".
 	Missing []string
 }
 

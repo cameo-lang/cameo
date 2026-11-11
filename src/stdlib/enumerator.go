@@ -117,6 +117,17 @@ func enumerator(lazy bool, recv object.Value, meth string, args []object.Value, 
 	return object.EnumeratorValue(&object.Enumerator{Lazy: lazy, Each: e, Recv: recv, Meth: meth, Args: args})
 }
 
+// made records in the enumerator v the call that makes it again, the
+// method name on its receiver with its arguments and block, and returns
+// v. That call is what the enumerator is in a message
+// (object.Enumerator.Make), so only a method that returns this
+// enumerator for these arguments, without a block of its own to run,
+// may say so.
+func made(v object.Value, name string, block object.Value) object.Value {
+	v.Enumerator().Made(name, block)
+	return v
+}
+
 // sizedEnumerator makes an eager enumerator value whose size is known
 // without enumerating it.
 func sizedEnumerator(recv object.Value, meth string, args []object.Value, e each, size func(ctx object.Context) (object.Value, error)) object.Value {
@@ -134,7 +145,7 @@ func enumFor(self object.Value, name string, args []object.Value, size func(ctx 
 	call := func(ctx object.Context, block object.Value) (object.Value, error) {
 		return ctx.CallWith(self, name, args, nil, block)
 	}
-	return object.EnumeratorValue(&object.Enumerator{
+	return made(object.EnumeratorValue(&object.Enumerator{
 		Each: func(ctx object.Context, yield func(object.Value) error) error {
 			_, err := call(ctx, ctx.Block(func(args []object.Value) (object.Value, error) {
 				return object.Nil, yield(yielded(args))
@@ -142,7 +153,7 @@ func enumFor(self object.Value, name string, args []object.Value, size func(ctx 
 			return err
 		},
 		Call: call, Recv: self, Meth: name, Args: args, Size: size,
-	})
+	}), name, object.Value{})
 }
 
 // sizeOf returns how Enumerator#size counts the elements of self: an
@@ -397,7 +408,7 @@ func installEnumerator() {
 		if en(self).Lazy {
 			return self, nil
 		}
-		return enumerator(true, self, "", nil, en(self).Each), nil
+		return made(enumerator(true, self, "", nil, en(self).Each), "lazy", object.Value{}), nil
 	})
 	def(c, "size", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if size := en(self).Size; size != nil {
@@ -431,9 +442,9 @@ func installLazy() {
 				}
 			}
 			parent := self.Enumerator().Each
-			return enumerator(true, self, name, args, func(ctx object.Context, yield func(object.Value) error) error {
+			return made(enumerator(true, self, name, args, func(ctx object.Context, yield func(object.Value) error) error {
 				return parent(ctx, start(ctx, args, blk, yield))
-			}), nil
+			}), name, blk), nil
 		})
 	}
 	mapping := func(ctx object.Context, args []object.Value, block object.Value, yield func(object.Value) error) func(object.Value) error {
@@ -601,7 +612,7 @@ func installLazy() {
 			return object.Value{}, err
 		}
 		parent := self.Enumerator().Each
-		return enumerator(true, self, "take", args, func(ctx object.Context, yield func(object.Value) error) error {
+		return made(enumerator(true, self, "take", args, func(ctx object.Context, yield func(object.Value) error) error {
 			if n == 0 {
 				return nil
 			}
@@ -611,14 +622,14 @@ func installLazy() {
 				return taken >= n, yield(v)
 			})
 			return err
-		}), nil
+		}), "take", object.Value{}), nil
 	})
 	def(c, "take_while", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if err := NeedBlock(ctx, block, "take_while"); err != nil {
 			return object.Value{}, err
 		}
 		parent := self.Enumerator().Each
-		return enumerator(true, self, "take_while", nil, func(ctx object.Context, yield func(object.Value) error) error {
+		return made(enumerator(true, self, "take_while", nil, func(ctx object.Context, yield func(object.Value) error) error {
 			_, err := until(ctx, parent, func(v object.Value) (bool, error) {
 				r, err := ctx.Yield(block, v)
 				if err != nil || !r.Truthy() {
@@ -627,7 +638,7 @@ func installLazy() {
 				return false, yield(v)
 			})
 			return err
-		}), nil
+		}), "take_while", block), nil
 	})
 	def(c, "drop", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		n, err := count(ctx, args, "drop")
@@ -635,7 +646,7 @@ func installLazy() {
 			return object.Value{}, err
 		}
 		parent := self.Enumerator().Each
-		return enumerator(true, self, "drop", args, func(ctx object.Context, yield func(object.Value) error) error {
+		return made(enumerator(true, self, "drop", args, func(ctx object.Context, yield func(object.Value) error) error {
 			seen := int64(0)
 			return parent(ctx, func(v object.Value) error {
 				if seen < n {
@@ -644,7 +655,7 @@ func installLazy() {
 				}
 				return yield(v)
 			})
-		}), nil
+		}), "drop", object.Value{}), nil
 	})
 	// zip pairs each element with the elements at the same place in its
 	// arguments, nil past their end; an argument that is not an array is
@@ -701,7 +712,7 @@ func installLazy() {
 			})
 		})
 		if block.IsZero() {
-			return zipped, nil
+			return made(zipped, "zip", object.Value{}), nil
 		}
 		// With a block zip is eager, as Ruby's is: it calls the block with
 		// each row and returns nil.
@@ -718,9 +729,9 @@ func installLazy() {
 				return object.Value{}, err
 			}
 			parent := self.Enumerator().Each
-			return enumerator(true, self, name, args, func(ctx object.Context, yield func(object.Value) error) error {
+			return made(enumerator(true, self, name, args, func(ctx object.Context, yield func(object.Value) error) error {
 				return slice(ctx, parent, yield)
-			}), nil
+			}), name, block), nil
 		})
 	}
 	def(c, "chunk", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -729,9 +740,9 @@ func installLazy() {
 		}
 		chunk := chunker(ctx, block)
 		parent := self.Enumerator().Each
-		return enumerator(true, self, "chunk", nil, func(ctx object.Context, yield func(object.Value) error) error {
+		return made(enumerator(true, self, "chunk", nil, func(ctx object.Context, yield func(object.Value) error) error {
 			return chunk(ctx, parent, yield)
-		}), nil
+		}), "chunk", block), nil
 	})
 	def(c, "find_all", -1, c.Methods["select"].Native)
 	def(c, "force", 0, object.EnumeratorClass.Methods["to_a"].Native)
@@ -744,7 +755,7 @@ func installLazy() {
 				return object.Value{}, ctx.Raise(object.NotImplementedErr, "to_enum of a lazy enumerator takes no method but each")
 			}
 		}
-		return enumerator(true, self, "each", nil, self.Enumerator().Each), nil
+		return made(enumerator(true, self, "each", nil, self.Enumerator().Each), "to_enum", object.Value{}), nil
 	}
 	def(c, "to_enum", -1, toEnum)
 	def(c, "enum_for", -1, toEnum)
@@ -752,7 +763,7 @@ func installLazy() {
 		return self, nil
 	})
 	def(c, "eager", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return enumerator(false, self, "each", nil, self.Enumerator().Each), nil
+		return made(enumerator(false, self, "each", nil, self.Enumerator().Each), "eager", object.Value{}), nil
 	})
 }
 

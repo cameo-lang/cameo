@@ -561,16 +561,16 @@ puts [a, b].map { |m| m + a }.map(&:to_s).inspect
 
 // A run that paused goes on when it is run again, from where it paused:
 // what a host does with a script it could not dump. Here the block of
-// times holds an Enumerator, which no dump carries.
+// times holds a Random, which no dump carries.
 func TestARunGoesOnWhenItIsRunAgain(t *testing.T) {
-	const src = `def drain(words)
+	const src = `def drain(dice)
   3.times do |i|
     Test.pause if i == 1
-    puts "read #{i} of #{words.size}"
+    puts "read #{i} of #{dice.seed + 1}"
   end
   "drained"
 end
-puts drain(["a", "b"].each)
+puts drain(Random.new(1))
 x = 1
 Test.pause
 puts x + 1
@@ -579,8 +579,8 @@ puts x + 1
 	if err := prog.Run(); !errors.Is(err, ErrPaused) {
 		t.Fatalf("Run returned %v, want ErrPaused", err)
 	}
-	if _, err := prog.Dump(); err == nil || !strings.Contains(err.Error(), "an Enumerator cannot be serialised") {
-		t.Fatalf("Dump of a run inside a block that holds an Enumerator: %v", err)
+	if _, err := prog.Dump(); err == nil || !strings.Contains(err.Error(), "a Random cannot be serialised") {
+		t.Fatalf("Dump of a run inside a block that holds a Random: %v", err)
 	}
 	// Inside the statement, then between two statements, then to the end.
 	if err := prog.Run(); !errors.Is(err, ErrPaused) {
@@ -632,9 +632,9 @@ puts i
 func TestPauseNamesWhatAStackCannotCarry(t *testing.T) {
 	prog, _ := pausing(t, `def wait(e)
   Test.pause
-  e.size
+  e.seed
 end
-p wait([1, 2].each)
+p wait(Random.new(1))
 `)
 	if err := prog.Run(); !errors.Is(err, ErrPaused) {
 		t.Fatalf("Run returned %v, want ErrPaused", err)
@@ -644,7 +644,7 @@ p wait([1, 2].each)
 		t.Fatal(err)
 	}
 	got := strings.Join(dump.Missing, ";")
-	if !strings.Contains(got, "e of scope 1 (an Enumerator cannot be serialised)") {
+	if !strings.Contains(got, "e of scope 1 (a Random cannot be serialised)") {
 		t.Fatalf("missing: %s", got)
 	}
 }
