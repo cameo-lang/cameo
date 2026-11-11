@@ -32,17 +32,9 @@ func installSet() {
 	def(c, "member?", 1, has)
 	def(c, "===", 1, has)
 	def(c, "contain?", 1, has)
-	def(c, "each", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if block.IsZero() {
-			return blockless(self, "each", nil, true), nil
-		}
-		for _, e := range set(self).Elems() {
-			if _, err := ctx.Yield(block, e); err != nil {
-				return object.Value{}, err
-			}
-		}
-		return self, nil
-	})
+	// each, select and reject are walks (walk.go): a run pauses inside
+	// their block.
+	c.DefineStep("each", 0, walk{}.stepper("each", true))
 	def(c, "add", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		out := set(self)
 		for _, a := range args {
@@ -220,22 +212,17 @@ func installSet() {
 	predicate([]string{"intersect?"}, func(a, b *object.Set) bool { return a.Intersection(b).Len() > 0 })
 	predicate([]string{"=="}, func(a, b *object.Set) bool { return a.Len() == b.Len() && subset(a, b) })
 	filter := func(name string, keep bool) {
-		def(c, name, 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-			if block.IsZero() {
-				return blockless(self, name, nil, true), nil
-			}
-			out := []object.Value{}
-			for _, e := range set(self).Elems() {
-				r, err := ctx.Yield(block, e)
-				if err != nil {
-					return object.Value{}, err
-				}
+		c.DefineStep(name, 0, walk{
+			fold: func(ctx object.Context, st []object.Value, e, r object.Value) ([]object.Value, *object.Value, error) {
 				if r.Truthy() == keep {
-					out = append(out, e)
+					st = append(st, e)
 				}
-			}
-			return object.SetValue(object.NewSet(out...)), nil
-		})
+				return st, nil, nil
+			},
+			done: func(ctx object.Context, call *object.Call, st []object.Value) (object.Value, error) {
+				return object.SetValue(object.NewSet(append([]object.Value{}, kept(st)...)...)), nil
+			},
+		}.stepper(name, true))
 	}
 	filter("select", true)
 	filter("filter", true)
