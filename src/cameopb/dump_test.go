@@ -15,14 +15,15 @@ const earlierDump = "12077075747320310a1801320f1a0a47656f3a3a506f696e740a01503a0
 
 // A dump written before dump.proto reads as the same dump: the field
 // numbers are the ones it had, with a missing binding, a class binding, a
-// failed promise and the generator's state all kept.
+// failed promise and the generator's state all kept. It held a value as
+// the bytes of its envelope, which read as the message they are.
 func TestDumpReadsItsEarlierWireForm(t *testing.T) {
 	want := &Dump{
 		File: "x.cameo", Source: "puts 1\n", Next: 1, Line: 2,
-		Variables: []*Dump_Binding{{Name: "a", Value: []byte{0x10, 0x01}}, {Name: "f", Missing: "a Proc cannot be serialised"}},
+		Variables: []*Dump_Binding{{Name: "a", Value: &Value{Kind: &Value_IntValue{IntValue: 1}}}, {Name: "f", Missing: "a Proc cannot be serialised"}},
 		Constants: []*Dump_Binding{{Name: "P", Class: "Geo::Point"}},
 		Promises: []*Dump_Promise{
-			{Id: 1, Method: "x", Value: []byte{0x10, 0x02}, Awaited: true},
+			{Id: 1, Method: "x", Value: &Value{Kind: &Value_IntValue{IntValue: 2}}, Awaited: true},
 			{Id: 2, Method: "boom", Failure: &Dump_Failure{Class: "ArgumentError", Message: "boom", Line: 3}},
 		},
 		Loaded: []string{"json", "set"},
