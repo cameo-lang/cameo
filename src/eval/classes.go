@@ -106,28 +106,39 @@ func uninitialized(scope *object.Class, name, shown string, line int) error {
 
 func (in *Interp) evalScopedConst(n *syntax.ScopedConst, env *Env, fr *Frame) (object.Value, error) {
 	if n.Scope == nil {
-		if v, ok := in.consts[n.Name]; ok {
-			return v, nil
-		}
-		if v, ok := object.ObjectClass.Consts[n.Name]; ok {
-			return v, nil
-		}
-		return object.Value{}, uninitialized(object.ObjectClass, n.Name, n.Name, n.Line())
+		return in.topConst(n.Name, n.Line())
 	}
 	v, err := in.eval(n.Scope, env, fr)
 	if err != nil {
 		return object.Value{}, err
 	}
+	return in.scopedConst(v, n.Name, n.Line())
+}
+
+// topConst is `::Name`: the top-level constant name.
+func (in *Interp) topConst(name string, line int) (object.Value, error) {
+	if v, ok := in.consts[name]; ok {
+		return v, nil
+	}
+	if v, ok := object.ObjectClass.Consts[name]; ok {
+		return v, nil
+	}
+	return object.Value{}, uninitialized(object.ObjectClass, name, name, line)
+}
+
+// scopedConst is `Scope::Name`: the constant name of the class or module
+// v, or of one of its ancestors.
+func (in *Interp) scopedConst(v object.Value, name string, line int) (object.Value, error) {
 	scope, ok := v.AsClass()
 	if !ok {
-		return object.Value{}, in.raise(object.TypeError, n.Line(), "%s is not a class/module", typeName(v))
+		return object.Value{}, in.raise(object.TypeError, line, "%s is not a class/module", typeName(v))
 	}
 	for _, a := range scope.Ancestors() {
-		if v, ok := a.Consts[n.Name]; ok {
+		if v, ok := a.Consts[name]; ok {
 			return v, nil
 		}
 	}
-	return object.Value{}, uninitialized(scope, n.Name, scope.QualifiedName()+"::"+n.Name, n.Line())
+	return object.Value{}, uninitialized(scope, name, scope.QualifiedName()+"::"+name, line)
 }
 
 // defineConst binds a constant in the innermost lexical scope. A constant

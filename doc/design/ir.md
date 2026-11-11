@@ -132,10 +132,14 @@ so code on one calls code on the other. `eval.TreeWalkerOnly` keeps a
 program on the tree walker, which the tests use to hold both to one output.
 
 What compiles so far: literals, variables, lists, maps, ranges, string
-interpolation, constants by name, calls with every kind of argument, `&.`,
+interpolation, regexps, constants, calls with every kind of argument, `&.`,
 blocks and lambdas, `yield`, `if`, `while`, `&&`, `||`, `!`, `return`,
-`break`, `next` and `redo`. `cameo ir script.cameo` names the first form of
-a script that does not.
+`break`, `next`, `redo`, `begin`/`rescue`/`ensure` and `retry`, `case`/`when`,
+`case`/`in` with every pattern, `=>` and `in`, multiple assignment and
+`defined?`. What does not yet: definitions (`def`, `class`, `module`, field
+declarations, `include`, `alias`), `super`, `with`, and `async` and `await`.
+`cameo ir script.cameo` names the first form of a script that does not
+compile.
 
 Stack B replaces the recursion with a frame stack per interpreter. A frame is
 a proc, a position (a path of indices into its nested lists), a value stack

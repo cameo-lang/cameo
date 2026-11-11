@@ -184,6 +184,118 @@ proc #2 block
 `)
 }
 
+func TestCompileBeginCarriesItsClausesAsLists(t *testing.T) {
+	assert.Equals(t, listing(t, `x = begin
+  work
+rescue TypeError, KeyError => e
+  retry
+rescue
+  2
+else
+  3
+ensure
+  done
+end
+`), `proc #0 <main>
+  BEGIN e "" else ensure
+    body:
+      SEND work 0 self vcall
+    else:
+      CONST 3
+    ensure:
+      SEND done 0 self vcall dropped
+    rescue 0 classes:
+      GETCONST TypeError
+      GETCONST KeyError
+      LIST 2
+    rescue 0:
+      RETRY
+    rescue 1 classes:
+    rescue 1:
+      CONST 2
+  STORE x
+`)
+}
+
+func TestCompileCaseAndPatterns(t *testing.T) {
+	assert.Equals(t, listing(t, `v = 1
+a = case v
+    when 1, 2 then :low
+    else :high
+    end
+b = case v
+    in Integer => n if n > 0 then n
+    in [x, *rest] then x
+    in {k: String, **nil} then 0
+    end
+`), `proc #0 <main>
+  CONST 1
+  STORE v
+  DROP
+  LOAD v
+  CASE else subject
+    when 0 conds:
+      CONST 1
+      CONST 2
+      LIST 2
+    when 0:
+      SYM low
+    else:
+      SYM high
+  STORE a
+  DROP
+  LOAD v
+  CASE_IN … => n 1 [x, *rest] 0 {k: …, **nil} 0
+    in 0 guard:
+      LOAD n
+      CONST 0
+      SEND > 1 operator
+    in 0:
+      LOAD n
+    in 1 guard:
+    in 1:
+      LOAD x
+    in 2 guard:
+    in 2:
+      CONST 0
+  STORE b
+`)
+}
+
+func TestCompileAssignmentForms(t *testing.T) {
+	assert.Equals(t, listing(t, "a, *b = 1, 2\nLIMIT = 3\nx = ::LIMIT\ny = Math::PI\nz = /a#{x}/i\nw = /lit/\nd = defined?(a)\n"), `proc #0 <main>
+  CONST 1
+  CONST 2
+  LIST 2
+  MULTI_ASSIGN 2 1 a b
+  DROP
+  CONST 3
+  SETCONST LIMIT
+  DROP
+  SCOPED LIMIT top
+  STORE x
+  DROP
+  GETCONST Math
+  SCOPED PI
+  STORE y
+  DROP
+  REGEXP 1
+    0:
+      CONST "a"
+    1:
+      VAR_OR_CALL x
+  STORE z
+  DROP
+  REGEXP 0 static
+    0:
+      CONST "lit"
+  STORE w
+  DROP
+  DEFINED_LOCAL a
+  STORE d
+`)
+}
+
 func TestCompileReportsWhatItDoesNotCompileYet(t *testing.T) {
 	prog, err := syntax.Parse("t.cameo", "x = 1\nclass Point\nend\n")
 	assert.NoError(t, err)

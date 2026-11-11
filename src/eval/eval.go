@@ -290,21 +290,32 @@ func (in *Interp) interpolate(n, line int, part func(i int) (object.Value, error
 // made once and kept; one with it is made on every evaluation, where a
 // regexp interpolated embeds as its to_s, (?flags:source), as in Ruby.
 func (in *Interp) evalRegexp(n *syntax.Regexp, env *Env, fr *Frame) (object.Value, error) {
-	build := func(source string) (object.Value, error) {
-		re, err := object.NewRegexp(source, n.Options)
-		if err != nil {
-			return object.Value{}, withLine(stdlib.RegexpFailure(in, err, source), n.Line())
-		}
-		return object.RegexpValue(re), nil
-	}
 	if len(n.Parts) == 1 {
 		if s, ok := n.Parts[0].(*syntax.Str); ok {
-			return in.code.literal(n, func() (object.Value, error) { return build(s.Value) })
+			return in.code.literal(n, func() (object.Value, error) { return in.newRegexp(s.Value, n.Options, n.Line()) })
 		}
 	}
+	return in.interpolateRegexp(len(n.Parts), n.Options, n.Line(), func(i int) (object.Value, error) {
+		return in.eval(n.Parts[i], env, fr)
+	})
+}
+
+// newRegexp makes the regexp of a literal from its source and options.
+func (in *Interp) newRegexp(source string, options, line int) (object.Value, error) {
+	re, err := object.NewRegexp(source, options)
+	if err != nil {
+		return object.Value{}, withLine(stdlib.RegexpFailure(in, err, source), line)
+	}
+	return object.RegexpValue(re), nil
+}
+
+// interpolateRegexp makes a regexp of the n parts of a literal with
+// interpolation: part evaluates each, a regexp embeds as its to_s, and
+// any other value as its to_s before the next part is evaluated.
+func (in *Interp) interpolateRegexp(n, options, line int, part func(i int) (object.Value, error)) (object.Value, error) {
 	var b strings.Builder
-	for _, p := range n.Parts {
-		v, err := in.eval(p, env, fr)
+	for i := 0; i < n; i++ {
+		v, err := part(i)
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -318,7 +329,7 @@ func (in *Interp) evalRegexp(n *syntax.Regexp, env *Env, fr *Frame) (object.Valu
 		}
 		b.WriteString(s)
 	}
-	return build(b.String())
+	return in.newRegexp(b.String(), options, line)
 }
 
 // evalWhile evaluates while, until and their begin … end forms.
