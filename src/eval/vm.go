@@ -247,25 +247,31 @@ func (m *machine) exec(c *cameopb.Code) error {
 		}
 		m.push(object.NewList(elems...))
 	case cameopb.Op_MAP:
-		m.push(object.MapValue(object.NewMap()))
+		// The argument is how many keys the literal names, absent in a
+		// dump from before it was added.
+		n := 0
+		if len(c.Args) > 0 {
+			n = int(c.Args[0].GetInt())
+		}
+		m.push(object.MapValue(object.NewMapSized(n)))
 	case cameopb.Op_MAP_SET:
+		// The map MAP made is on this stack alone until the literal is
+		// done, so it is filled in place.
 		k := m.pop()
 		v := m.pop()
-		mp := m.pop().Map()
-		m.push(object.MapValue(mp.Put(k, v)))
+		m.top().Map().Add(k, v)
 	case cameopb.Op_MAP_MERGE:
 		v := m.pop()
-		mp := m.pop().Map()
+		mp := m.top().Map()
 		if !v.IsNil() {
 			other, ok := v.AsMap()
 			if !ok {
 				return in.raise(object.TypeError, line, "no implicit conversion of %s into Map", typeName(v))
 			}
 			for i, k := range other.Keys() {
-				mp = mp.Put(k, other.Values()[i])
+				mp.Add(k, other.Values()[i])
 			}
 		}
-		m.push(object.MapValue(mp))
 	case cameopb.Op_RANGE:
 		r := &object.Range{Exclusive: has(c, cameopb.Flag_FLAG_EXCLUSIVE)}
 		if has(c, cameopb.Flag_FLAG_HI) {

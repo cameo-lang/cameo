@@ -895,7 +895,14 @@ func (c *compiler) args(e *emitter, nodes []syntax.Node, line int, asList bool) 
 // mapEntries compiles the entries of a map literal, or of keyword
 // arguments, into one map. An entry's value is evaluated before its key.
 func (c *compiler) mapEntries(e *emitter, entries []syntax.MapEntry, line int) error {
-	e.emit(cameopb.Op_MAP, line)
+	keys := 0
+	for _, entry := range entries {
+		if entry.Key != nil {
+			keys++
+		}
+	}
+	// MAP's argument is the room the map makes for its keys.
+	e.emit(cameopb.Op_MAP, line, intArg(keys))
 	for _, entry := range entries {
 		if err := c.expr(e, entry.Value); err != nil {
 			return err

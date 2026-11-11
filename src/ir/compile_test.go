@@ -65,13 +65,13 @@ func TestCompileBuildsAListWithASplatPieceByPiece(t *testing.T) {
 
 func TestCompileAMapEvaluatesEachValueBeforeItsKey(t *testing.T) {
 	assert.Equals(t, listing(t, "h = {a: 1}\ng = {\"k\" => 2, **h}\n"), `proc #0 <main>
-  MAP
+  MAP 1
   CONST 1
   SYM a
   MAP_SET
   STORE h
   DROP
-  MAP
+  MAP 1
   CONST 2
   CONST "k"
   MAP_SET
@@ -143,7 +143,7 @@ e = "#{b} and #{c}"
   LIST 0
   LOAD a
   SPLAT
-  MAP
+  MAP 1
   CONST 1
   SYM k
   MAP_SET
@@ -315,14 +315,14 @@ proc #1 go(a, &b)
   DROP
   NEED_METHOD
   LOAD a
-  MAP
+  MAP 1
   CONST 1
   SYM k
   MAP_SET
   SUPER 1 #2 kw block
   DROP
   LOAD a
-  MAP
+  MAP 1
   CONST 1
   SYM n
   MAP_SET
