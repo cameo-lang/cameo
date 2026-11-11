@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/cameo-lang/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/eval"
 )
 
 // examplesDir is the corpus of scripts that specify the language, relative
@@ -51,6 +52,85 @@ func TestExamples(t *testing.T) {
 				t.Fatalf("output differs\n--- got ---\n%s--- want ---\n%s", stdout.String(), expected)
 			}
 		})
+	}
+}
+
+// TestExamplesOnTheTreeWalker runs the corpus with the IR evaluator off.
+// TestExamples runs what compiles on the IR, so the two together hold both
+// evaluators to the expected output while the IR is being built.
+func TestExamplesOnTheTreeWalker(t *testing.T) {
+	eval.TreeWalkerOnly.Store(true)
+	defer eval.TreeWalkerOnly.Store(false)
+	scripts, err := filepath.Glob(filepath.Join(examplesDir, "*.cameo"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	ran := 0
+	for _, script := range scripts {
+		name := filepath.Base(script)
+		if _, isPending := pending[name]; isPending {
+			continue
+		}
+		expected, err := os.ReadFile(strings.TrimSuffix(script, ".cameo") + ".expected")
+		if err != nil {
+			t.Fatalf("%s: missing expected output: %v", name, err)
+		}
+		var stdout, stderr bytes.Buffer
+		if err := cameo.RunFile(script, &stdout, &stderr); err != nil {
+			t.Fatalf("%s failed: %v\nstdout so far:\n%s", name, err, stdout.String())
+		}
+		if stdout.String() != string(expected) {
+			t.Fatalf("%s: output differs\n--- got ---\n%s--- want ---\n%s", name, stdout.String(), expected)
+		}
+		ran++
+	}
+	if ran == 0 {
+		t.Fatalf("no example scripts ran under %s", examplesDir)
+	}
+}
+
+// TestIRPrintsAListing proves cameo ir prints the instructions a script
+// compiles to, and fails on a form the compiler does not compile yet,
+// naming it and its line.
+func TestIRPrintsAListing(t *testing.T) {
+	dir := t.TempDir()
+	script := filepath.Join(dir, "double.cameo")
+	if err := os.WriteFile(script, []byte("list = [1, 2]\nputs list.map { |x| x * 2 }.inspect\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var out bytes.Buffer
+	if err := irListing(script, &out); err != nil {
+		t.Fatal(err)
+	}
+	want := `proc #0 <main>
+  CONST 1
+  CONST 2
+  LIST 2
+  STORE list
+  DROP
+  LOAD list
+  SEND map 0 #1 list block
+  SEND inspect 0
+  SEND puts 1 self
+
+proc #1 block(x)
+  LOAD x
+  CONST 2
+  SEND * 1 operator
+`
+	if out.String() != want {
+		t.Fatalf("listing differs\n--- got ---\n%s--- want ---\n%s", out.String(), want)
+	}
+	rescue := filepath.Join(dir, "rescue.cameo")
+	if err := os.WriteFile(rescue, []byte("x = 1\nbegin\n  x\nrescue\n  2\nend\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	err := irListing(rescue, &out)
+	if err == nil || !strings.Contains(err.Error(), "rescue.cameo: line 2: *syntax.Begin does not compile to the IR yet") {
+		t.Fatalf("cameo ir on a begin: %v", err)
+	}
+	if status := run([]string{"ir", rescue}); status != 1 {
+		t.Fatalf("exit status %d for a script that does not compile, want 1", status)
 	}
 }
 

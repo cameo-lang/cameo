@@ -235,9 +235,10 @@ const (
 	Op_MAP_MERGE Op = 15
 	// RANGE: [lo] [hi] -> range, each bound popped when its flag is set.
 	Op_RANGE Op = 16
-	// INTERP(int n): n values -> string of their to_s, concatenated.
+	// INTERP{part...}: -> string. Each part leaves a value, which is
+	// converted with to_s before the next part runs.
 	Op_INTERP Op = 17
-	// REGEXP(int n, int options): n values -> regexp of their sources,
+	// REGEXP(int options){part...}: -> regexp of the parts' sources,
 	// concatenated.
 	Op_REGEXP Op = 18
 	// VAR_OR_CALL(name): -> the local of that name, or the method's result.
@@ -254,8 +255,8 @@ const (
 	// DEFINED_YIELD: -> "yield" or nil.
 	Op_DEFINED_YIELD Op = 24
 	// SEND(name, int argc, [proc], [name recv_local]): [recv] args [kw]
-	// [block] -> result. recv_local is the local the receiver was read
-	// from, which a mutating call rebinds.
+	// [block] -> result. recv_local is the local or constant the receiver
+	// was read from, which the error of a mutating call names.
 	Op_SEND Op = 30
 	// SAFE{rest}: recv -> nil when recv is nil; else runs rest, which ends
 	// in the SEND on recv.
@@ -279,9 +280,16 @@ const (
 	Op_AWAIT_ALL Op = 39
 	// WITH: target key value -> copy of target with key set to value.
 	Op_WITH Op = 40
-	// MULTI_ASSIGN(int argc, int splat, names...): values -> value. splat is
-	// the index of the *name, or -1.
+	// MULTI_ASSIGN(int count, int splat, names...): list -> value. The list
+	// holds the values of the right side, count is how many expressions it
+	// was written as, and splat the index of the *name, or -1.
 	Op_MULTI_ASSIGN Op = 41
+	// NEED_BLOCK: raises LocalJumpError unless the method was given a block.
+	// It comes before the arguments of a YIELD.
+	Op_NEED_BLOCK Op = 42
+	// NEED_METHOD: raises LocalJumpError outside of a method. It comes
+	// before the arguments of a SUPER.
+	Op_NEED_METHOD Op = 43
 	// DROP: value ->. Ends a statement; the next instruction starts one.
 	Op_DROP Op = 50
 	// IF{then, else}: cond -> value.
@@ -373,6 +381,8 @@ var (
 		39: "AWAIT_ALL",
 		40: "WITH",
 		41: "MULTI_ASSIGN",
+		42: "NEED_BLOCK",
+		43: "NEED_METHOD",
 		50: "DROP",
 		51: "IF",
 		52: "WHILE",
@@ -435,6 +445,8 @@ var (
 		"AWAIT_ALL":      39,
 		"WITH":           40,
 		"MULTI_ASSIGN":   41,
+		"NEED_BLOCK":     42,
+		"NEED_METHOD":    43,
 		"DROP":           50,
 		"IF":             51,
 		"WHILE":          52,
@@ -584,7 +596,10 @@ type Proc struct {
 	Line   int32   `protobuf:"varint,4,opt,name=line,proto3" json:"line,omitempty"`
 	// shared marks the body of a for loop, which runs in the scope around
 	// it; any other block runs in a copy of the values it captured.
-	Shared        bool `protobuf:"varint,5,opt,name=shared,proto3" json:"shared,omitempty"`
+	Shared bool `protobuf:"varint,5,opt,name=shared,proto3" json:"shared,omitempty"`
+	// digest is set on the block of a call of new: Class.new identifies the
+	// class it builds from a block by it.
+	Digest        string `protobuf:"bytes,6,opt,name=digest,proto3" json:"digest,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -652,6 +667,13 @@ func (x *Proc) GetShared() bool {
 		return x.Shared
 	}
 	return false
+}
+
+func (x *Proc) GetDigest() string {
+	if x != nil {
+		return x.Digest
+	}
+	return ""
 }
 
 // Params is the parameter list of a method, block or lambda. Names are
@@ -1832,13 +1854,14 @@ const file_cameo_ir_proto_rawDesc = "" +
 	"\x06digest\x18\x02 \x01(\tR\x06digest\x12\x12\n" +
 	"\x04file\x18\x03 \x01(\tR\x04file\x12\x14\n" +
 	"\x05names\x18\x04 \x03(\tR\x05names\x12!\n" +
-	"\x05procs\x18\x05 \x03(\v2\v.cameo.ProcR\x05procs\"\x8e\x01\n" +
+	"\x05procs\x18\x05 \x03(\v2\v.cameo.ProcR\x05procs\"\xa6\x01\n" +
 	"\x04Proc\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12%\n" +
 	"\x06params\x18\x02 \x01(\v2\r.cameo.ParamsR\x06params\x12\x1f\n" +
 	"\x04code\x18\x03 \x03(\v2\v.cameo.CodeR\x04code\x12\x12\n" +
 	"\x04line\x18\x04 \x01(\x05R\x04line\x12\x16\n" +
-	"\x06shared\x18\x05 \x01(\bR\x06shared\"\x83\x03\n" +
+	"\x06shared\x18\x05 \x01(\bR\x06shared\x12\x16\n" +
+	"\x06digest\x18\x06 \x01(\tR\x06digest\"\x83\x03\n" +
 	"\x06Params\x128\n" +
 	"\n" +
 	"positional\x18\x01 \x03(\v2\x18.cameo.Params.PositionalR\n" +
@@ -1970,7 +1993,7 @@ const file_cameo_ir_proto_rawDesc = "" +
 	"\fFLAG_DEFAULT\x10\x80\x80\x80 \x12\x0f\n" +
 	"\bFLAG_REF\x10\x80\x80\x80@\x12\x10\n" +
 	"\bFLAG_TOP\x10\x80\x80\x80\x80\x01\x12\x13\n" +
-	"\vFLAG_STATIC\x10\x80\x80\x80\x80\x02*\xe6\x05\n" +
+	"\vFLAG_STATIC\x10\x80\x80\x80\x80\x02*\x87\x06\n" +
 	"\x02Op\x12\x12\n" +
 	"\x0eOP_UNSPECIFIED\x10\x00\x12\t\n" +
 	"\x05CONST\x10\x01\x12\a\n" +
@@ -2016,7 +2039,10 @@ const file_cameo_ir_proto_rawDesc = "" +
 	"AWAIT_CALL\x10&\x12\r\n" +
 	"\tAWAIT_ALL\x10'\x12\b\n" +
 	"\x04WITH\x10(\x12\x10\n" +
-	"\fMULTI_ASSIGN\x10)\x12\b\n" +
+	"\fMULTI_ASSIGN\x10)\x12\x0e\n" +
+	"\n" +
+	"NEED_BLOCK\x10*\x12\x0f\n" +
+	"\vNEED_METHOD\x10+\x12\b\n" +
 	"\x04DROP\x102\x12\x06\n" +
 	"\x02IF\x103\x12\t\n" +
 	"\x05WHILE\x104\x12\a\n" +

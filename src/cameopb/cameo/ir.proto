@@ -41,6 +41,9 @@ message Proc {
   // shared marks the body of a for loop, which runs in the scope around
   // it; any other block runs in a copy of the values it captured.
   bool shared = 5;
+  // digest is set on the block of a call of new: Class.new identifies the
+  // class it builds from a block by it.
+  string digest = 6;
 }
 
 // Params is the parameter list of a method, block or lambda. Names are
@@ -280,9 +283,10 @@ enum Op {
   MAP_MERGE = 15;
   // RANGE: [lo] [hi] -> range, each bound popped when its flag is set.
   RANGE = 16;
-  // INTERP(int n): n values -> string of their to_s, concatenated.
+  // INTERP{part...}: -> string. Each part leaves a value, which is
+  // converted with to_s before the next part runs.
   INTERP = 17;
-  // REGEXP(int n, int options): n values -> regexp of their sources,
+  // REGEXP(int options){part...}: -> regexp of the parts' sources,
   // concatenated.
   REGEXP = 18;
   // VAR_OR_CALL(name): -> the local of that name, or the method's result.
@@ -302,8 +306,8 @@ enum Op {
   // Calls.
 
   // SEND(name, int argc, [proc], [name recv_local]): [recv] args [kw]
-  // [block] -> result. recv_local is the local the receiver was read
-  // from, which a mutating call rebinds.
+  // [block] -> result. recv_local is the local or constant the receiver
+  // was read from, which the error of a mutating call names.
   SEND = 30;
   // SAFE{rest}: recv -> nil when recv is nil; else runs rest, which ends
   // in the SEND on recv.
@@ -327,9 +331,16 @@ enum Op {
   AWAIT_ALL = 39;
   // WITH: target key value -> copy of target with key set to value.
   WITH = 40;
-  // MULTI_ASSIGN(int argc, int splat, names...): values -> value. splat is
-  // the index of the *name, or -1.
+  // MULTI_ASSIGN(int count, int splat, names...): list -> value. The list
+  // holds the values of the right side, count is how many expressions it
+  // was written as, and splat the index of the *name, or -1.
   MULTI_ASSIGN = 41;
+  // NEED_BLOCK: raises LocalJumpError unless the method was given a block.
+  // It comes before the arguments of a YIELD.
+  NEED_BLOCK = 42;
+  // NEED_METHOD: raises LocalJumpError outside of a method. It comes
+  // before the arguments of a SUPER.
+  NEED_METHOD = 43;
 
   // Control flow.
 

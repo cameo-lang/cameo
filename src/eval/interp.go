@@ -222,7 +222,7 @@ func (in *Interp) Run(file string, prog *syntax.Program) error {
 				break
 			}
 		}
-		if v, err = in.eval(prog.Body[i], in.top, fr); err != nil {
+		if v, err = in.evalTop(prog.Body[i], in.top, fr); err != nil {
 			break
 		}
 	}

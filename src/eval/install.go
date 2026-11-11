@@ -49,7 +49,7 @@ func installStdlib() {
 		return object.Bool(proc(self).Strict), nil
 	})
 	procClass.Define("arity", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Int(proc(self).Arity()), nil
+		return object.Int(ctx.(*Interp).arity(proc(self))), nil
 	})
 	// A symbol's proc calls the method of that name on its first argument,
 	// as &:name does.

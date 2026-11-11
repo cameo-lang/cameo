@@ -176,18 +176,28 @@ func (in *Interp) newClass(args []object.Value, block object.Value) (object.Valu
 		return object.ClassValue(cls), nil
 	}
 	p, ok := asProc(block)
-	if !ok || p.Block == nil {
+	if !ok || !p.written() {
 		return object.Value{}, in.raise(object.TypeError, 0, "Class.new takes a literal block")
 	}
-	cls.Digest = "new:" + syntax.Digest(p.Block)
+	ps, compiled := in.procCode(p)
+	if p.IR != nil {
+		cls.Digest = "new:" + p.IR.proc.GetDigest()
+	} else {
+		cls.Digest = "new:" + syntax.Digest(p.Block)
+	}
 	env := NewEnv(p.Env)
-	if len(p.Block.Params.Positional) > 0 {
-		env.Define(p.Block.Params.Positional[0].Name, object.ClassValue(cls))
+	if len(ps.Positional) > 0 {
+		env.Define(ps.Positional[0].Name, object.ClassValue(cls))
 	}
 	lexical := append(append([]*object.Class{}, p.Frame.Lexical...), cls)
 	bodyFrame := &Frame{Self: object.ClassValue(cls), Lexical: lexical, DefTarget: cls, File: p.Frame.File}
 	cls.Open = true
-	_, err := in.evalBody(p.Block.Body, env, bodyFrame)
+	var err error
+	if compiled != nil {
+		_, err = in.runBody(compiled, env, bodyFrame)
+	} else {
+		_, err = in.evalBody(p.Block.Body, env, bodyFrame)
+	}
 	cls.Open = false
 	if err != nil {
 		return object.Value{}, err

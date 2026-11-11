@@ -13,6 +13,7 @@ import (
 
 	"github.com/cameo-lang/cameo/src/aot"
 	"github.com/cameo-lang/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/ir"
 	"github.com/cameo-lang/cameo/src/syntax"
 	"golang.org/x/term"
 )
@@ -20,7 +21,7 @@ import (
 // commands are the words cameo takes before a script's path, which a
 // script cannot be named by; "--" too, so a mistyped command prints the
 // usage instead of opening a file by that name.
-var commands = map[string]bool{"check": true, "proto": true, "build": true, "run": true, "resume": true, "inspect": true, "irb": true, "debug": true, "version": true, "--version": true, "--": true}
+var commands = map[string]bool{"check": true, "proto": true, "ir": true, "build": true, "run": true, "resume": true, "inspect": true, "irb": true, "debug": true, "version": true, "--version": true, "--": true}
 
 const usage = `usage: cameo [--no-pause] [--io] <script.cameo> [args...]
                                          run the script, with args in ARGV; ^C pauses it before its next
@@ -38,6 +39,7 @@ const usage = `usage: cameo [--no-pause] [--io] <script.cameo> [args...]
                                          run the script under the debugger, stopped before its first statement
        cameo check <script.cameo>        parse and check the script, report every error
        cameo proto <script.cameo> [dir]  print the .proto files of the script's classes, or write them into dir
+       cameo ir <script.cameo>           print the script's IR, the instructions it compiles to
        cameo build <script.cameo> <dir> [package]
                                          compile the script's top-level methods that it can to Go: into
                                          dir/main.go, a program that runs the script, or dir/<package>.go,
@@ -113,6 +115,12 @@ flags:
 			return 1
 		}
 		return 0
+	case len(args) == 2 && args[0] == "ir":
+		if err := irListing(args[1], os.Stdout); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 1
+		}
+		return 0
 	case (len(args) == 3 || len(args) == 4) && args[0] == "build":
 		pkg := "main"
 		if len(args) == 4 {
@@ -165,6 +173,26 @@ func check(path string) error {
 		return fmt.Errorf("cameo: %w", err)
 	}
 	_, err = syntax.Parse(path, string(src))
+	return err
+}
+
+// irListing prints the IR of the script at path: the unit it compiles to,
+// one instruction per line. It fails on a script that uses a form the
+// compiler does not compile yet, naming the form and its line.
+func irListing(path string, out io.Writer) error {
+	src, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("cameo: %w", err)
+	}
+	prog, err := syntax.Parse(path, string(src))
+	if err != nil {
+		return err
+	}
+	unit, err := ir.Compile(path, prog)
+	if err != nil {
+		return fmt.Errorf("%s: %w", path, err)
+	}
+	_, err = io.WriteString(out, ir.Listing(unit))
 	return err
 }
 

@@ -250,25 +250,34 @@ func (in *Interp) evalOptional(n syntax.Node, env *Env, fr *Frame) (object.Value
 // evalInterp evaluates an interpolated string: its parts, each converted
 // with to_s, concatenated.
 func (in *Interp) evalInterp(n *syntax.Interp, env *Env, fr *Frame) (object.Value, error) {
+	return in.interpolate(len(n.Parts), n.Line(), func(i int) (object.Value, error) {
+		return in.eval(n.Parts[i], env, fr)
+	})
+}
+
+// interpolate concatenates the n parts of an interpolated string: part
+// evaluates each, which is converted with to_s before the next one is
+// evaluated.
+func (in *Interp) interpolate(n, line int, part func(i int) (object.Value, error)) (object.Value, error) {
 	var b strings.Builder
 	// The result takes the encoding its parts are compatible in, as
 	// Ruby's does: a binary part in UTF-8 text makes it binary.
 	// UTF-8 parts alone, the usual case, need no looking at.
 	kind := object.KindString
-	for _, part := range n.Parts {
-		v, err := in.eval(part, env, fr)
+	for i := 0; i < n; i++ {
+		v, err := part(i)
 		if err != nil {
 			return object.Value{}, err
 		}
 		s, err := in.ToS(v)
 		if err != nil {
-			return object.Value{}, withLine(err, n.Line())
+			return object.Value{}, withLine(err, line)
 		}
 		if pk := v.Kind(); v.IsString() && (pk != kind || kind != object.KindString) {
 			sofar := b.String()
 			next, ok := stdlib.CombineEncodings(kind, sofar == "", object.ASCIIOnly(sofar), pk, s == "", object.ASCIIOnly(s))
 			if !ok {
-				return object.Value{}, in.raise(object.CompatibilityError, n.Line(), "%s", stdlib.IncompatibleEncodings(kind, pk))
+				return object.Value{}, in.raise(object.CompatibilityError, line, "%s", stdlib.IncompatibleEncodings(kind, pk))
 			}
 			kind = next
 		}
@@ -411,33 +420,8 @@ func (in *Interp) evalArgs(nodes []syntax.Node, env *Env, fr *Frame) ([]object.V
 			if err != nil {
 				return nil, err
 			}
-			switch v.Kind() {
-			case object.KindList:
-				v := v.List()
-				out = append(out, v.Elems...)
-			case object.KindSet:
-				v := v.Set()
-				out = append(out, v.Elems()...)
-			case object.KindRange:
-				v := v.Range()
-				list, err := in.rangeToList(v, s.Line())
-				if err != nil {
-					return nil, err
-				}
-				out = append(out, list.Elems...)
-			case object.KindEnumerator:
-				err := v.Enumerator().Each(in, func(el object.Value) error {
-					out = append(out, el)
-					return nil
-				})
-				if err != nil {
-					return nil, err
-				}
-			default:
-				if v.IsNil() {
-					continue
-				}
-				out = append(out, v)
+			if out, err = in.splat(out, v, s.Line()); err != nil {
+				return nil, err
 			}
 			continue
 		}
@@ -448,6 +432,34 @@ func (in *Interp) evalArgs(nodes []syntax.Node, env *Env, fr *Frame) ([]object.V
 		out = append(out, v)
 	}
 	return out, nil
+}
+
+// splat appends what `*v` stands for to out: the elements of a list, a
+// set, a range or an enumerator, nothing for nil, and any other value
+// itself.
+func (in *Interp) splat(out []object.Value, v object.Value, line int) ([]object.Value, error) {
+	switch v.Kind() {
+	case object.KindList:
+		return append(out, v.List().Elems...), nil
+	case object.KindSet:
+		return append(out, v.Set().Elems()...), nil
+	case object.KindRange:
+		list, err := in.rangeToList(v.Range(), line)
+		if err != nil {
+			return nil, err
+		}
+		return append(out, list.Elems...), nil
+	case object.KindEnumerator:
+		err := v.Enumerator().Each(in, func(el object.Value) error {
+			out = append(out, el)
+			return nil
+		})
+		return out, err
+	}
+	if v.IsNil() {
+		return out, nil
+	}
+	return append(out, v), nil
 }
 
 // evalMap builds a map from literal entries, merging double splats.

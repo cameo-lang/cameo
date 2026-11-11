@@ -122,6 +122,21 @@ listings.
 Stack A runs the IR with a recursive evaluator, so a run still pauses between
 top-level statements, but its dump carries procs, classes and methods.
 
+**While the IR is being built**, both evaluators run. `eval/vm.go` runs a
+method, a block or a top-level statement on the IR when the compiler
+(`ir/compile.go`) compiles all of it, and the tree walker runs it otherwise:
+a top-level statement that does not compile, a `class` for instance, runs
+on the tree walker, and the methods it defines are compiled one by one when
+they are first called. The two evaluators share scopes, frames and procs,
+so code on one calls code on the other. `eval.TreeWalkerOnly` keeps a
+program on the tree walker, which the tests use to hold both to one output.
+
+What compiles so far: literals, variables, lists, maps, ranges, string
+interpolation, constants by name, calls with every kind of argument, `&.`,
+blocks and lambdas, `yield`, `if`, `while`, `&&`, `||`, `!`, `return`,
+`break`, `next` and `redo`. `cameo ir script.cameo` names the first form of
+a script that does not.
+
 Stack B replaces the recursion with a frame stack per interpreter. A frame is
 a proc, a position (a path of indices into its nested lists), a value stack
 and a binding. A call of a cameo method pushes a frame; a builtin that calls
