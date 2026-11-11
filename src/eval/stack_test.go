@@ -43,14 +43,14 @@ def twice = each_one { |x| yield(x) }
 Probe.state
 down(3)
 twice { |x| Probe.state }
-[1].each { |x| down(1) }
+"a".gsub("a") { |x| down(1) }
 `)
 	assert.Equals(t, got, "1 activations, 1 loops\n"+
 		// The statement, then down(3) to down(0).
 		"5 activations, 1 loops\n"+
 		// The statement, twice, each_one, its block, the block of twice.
 		"5 activations, 1 loops\n"+
-		// The statement; then, in the loop each runs its block in, the
+		// The statement; then, in the loop gsub runs its block in, the
 		// block, down(1) and down(0).
 		"4 activations, 2 loops\n")
 }
@@ -62,7 +62,8 @@ twice { |x| Probe.state }
 func TestAStepperAndItsBlockTakeTurnsInOneLoop(t *testing.T) {
 	got := probed(t, `2.times { |i| Probe.state if i == 1 }
 1.upto(1) { 3.downto(3) { loop { Probe.state; break } } }
-[1].each { 1.times { Probe.state } }
+"a".gsub("a") { 1.times { Probe.state } }
+[1].each { [2].map { |x| [x].select { Probe.state } } }
 p 3.times.map { |i| i * 2 }, 2.upto(4).to_a
 p 5.times { |i| break i * 10 if i == 2 }
 p (loop { raise StopIteration })
@@ -73,8 +74,10 @@ p (1.times { raise "out" } rescue "rescued")
 		"3 activations, 1 loops\n"+
 			// The statement, then three builtins, each with its block.
 			"7 activations, 1 loops\n"+
-			// each calls its block from Go; times is a stepper inside it.
+			// gsub calls its block from Go; times is a stepper inside it.
 			"4 activations, 2 loops\n"+
+			// The walks of a List are steppers too.
+			"7 activations, 1 loops\n"+
 			"[0, 2, 4]\n[2, 3, 4]\n20\nnil\n\"rescued\"\n")
 }
 

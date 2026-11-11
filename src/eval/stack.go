@@ -195,6 +195,11 @@ func (in *Interp) stepOn(m *machine, err error) (v object.Value, called bool, _ 
 	for {
 		s, err := st.builtin.Step(in, st.call, st.state, st.got)
 		if err != nil {
+			// A step that called the block itself, from Go, may come
+			// back with the block's break.
+			if c, ok := err.(*control); ok && c.kind == ctrlBreak && c.target != nil && c.target == blockTarget(block) {
+				return c.value, false, nil
+			}
 			return object.Value{}, false, err
 		}
 		if s.Done {
