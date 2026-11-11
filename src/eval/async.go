@@ -349,7 +349,8 @@ func (in *Interp) startCall(recv object.Value, method string, args []object.Valu
 	if !in.RespondsTo(recv, method) {
 		return nil, in.raise(object.NoMethodError, line, "undefined method '%s' for %s", method, typeName(recv))
 	}
-	enc := in.Encoder()
+	// A worker of this program has the units its closures refer to.
+	enc := in.ProcEncoder(false)
 	encode := func(v object.Value) ([]byte, error) {
 		data, err := enc.Encode(v)
 		var ns *protogen.NotSerialisable
@@ -409,12 +410,12 @@ type asyncCall struct {
 
 // run makes the call and settles p with its result.
 func (c *asyncCall) run(p *Promise) {
-	result, exc := c.w.runCall(c.recv, c.method, c.args, c.kw)
+	result, later, exc := c.w.runCall(c.recv, c.method, c.args, c.kw)
 	if exc != nil {
 		p.settle(object.Value{}, exc, nil)
 		return
 	}
-	p.settle(result, nil, nil)
+	p.settle(result, nil, later)
 }
 
 // topLevel is a copy of an interpreter's top level: its constants, its
@@ -497,23 +498,23 @@ func (in *Interp) worker() *Interp {
 }
 
 // runCall decodes the receiver and the arguments, and calls the method.
-func (w *Interp) runCall(recvC crossing, method string, argC []crossing, kwData []byte) (object.Value, *object.Exception) {
+func (w *Interp) runCall(recvC crossing, method string, argC []crossing, kwData []byte) (object.Value, func(*Interp) (object.Value, error), *object.Exception) {
 	dec := w.Decoder()
 	recv, err := recvC.value(dec)
 	if err != nil {
-		return object.Value{}, w.raise(object.TypeError, 0, "%s", err.Error()).(*object.Exception)
+		return object.Value{}, nil, w.raise(object.TypeError, 0, "%s", err.Error()).(*object.Exception)
 	}
 	args := make([]object.Value, len(argC))
 	for i, c := range argC {
 		if args[i], err = c.value(dec); err != nil {
-			return object.Value{}, w.raise(object.TypeError, 0, "%s", err.Error()).(*object.Exception)
+			return object.Value{}, nil, w.raise(object.TypeError, 0, "%s", err.Error()).(*object.Exception)
 		}
 	}
 	var kw *object.Map
 	if kwData != nil {
 		v, err := dec.Decode(kwData)
 		if err != nil {
-			return object.Value{}, w.raise(object.TypeError, 0, "%s", err.Error()).(*object.Exception)
+			return object.Value{}, nil, w.raise(object.TypeError, 0, "%s", err.Error()).(*object.Exception)
 		}
 		// Keywords are symbols, which travelled as strings.
 		if m, ok := v.AsMap(); ok {
@@ -531,17 +532,14 @@ func (w *Interp) runCall(recvC crossing, method string, argC []crossing, kwData 
 	result, callErr := w.call(fr, recv, method, args, kw, object.Value{}, false, 0)
 	if callErr != nil {
 		if exc, ok := callErr.(*object.Exception); ok {
-			return object.Value{}, exc
+			return object.Value{}, nil, exc
 		}
 		if c, ok := callErr.(*control); ok {
-			return object.Value{}, w.raise(object.LocalJumpError, c.line, "%s from a worker", c.kind).(*object.Exception)
+			return object.Value{}, nil, w.raise(object.LocalJumpError, c.line, "%s from a worker", c.kind).(*object.Exception)
 		}
-		return object.Value{}, w.raise(object.CameoError, 0, "%s", callErr.Error()).(*object.Exception)
+		return object.Value{}, nil, w.raise(object.CameoError, 0, "%s", callErr.Error()).(*object.Exception)
 	}
-	if exc := w.travels(result, "a worker returned"); exc != nil {
-		return object.Value{}, exc
-	}
-	return result, nil
+	return w.handOver(result, "a worker returned")
 }
 
 // crossing is a value on its way to a worker: the value itself when it
@@ -595,21 +593,29 @@ func scriptDefined(cls *object.Class) bool {
 	return cls.Digest != "" && !strings.HasPrefix(cls.Digest, "host:")
 }
 
-// travels is nil when v can cross to another interpreter, the exception to
-// raise when it cannot: a Proc or a class stays where it was made.
-func (in *Interp) travels(v object.Value, what string) *object.Exception {
+// handOver readies v for the interpreter that awaits it. A value without a
+// Proc is handed over as it is: values never change. A Proc's binding
+// belongs to the interpreter that made it, its self and its classes, so a
+// value that holds one is handed over as a function that reads it from
+// its wire form in the interpreter that awaits. The exception is the one
+// to raise for a value that cannot cross: a class, or a Proc a builtin
+// made; what begins its message.
+func (in *Interp) handOver(v object.Value, what string) (object.Value, func(*Interp) (object.Value, error), *object.Exception) {
 	if in.readsBackAsIs(v) {
-		return nil
+		return v, nil, nil
 	}
-	_, err := in.Encoder().Encode(v)
+	if _, err := in.Encoder().Encode(v); err == nil {
+		return v, nil, nil
+	}
+	data, err := in.ProcEncoder(false).Encode(v)
 	if err == nil {
-		return nil
+		return object.Value{}, func(reader *Interp) (object.Value, error) { return reader.Decoder().Decode(data) }, nil
 	}
 	var ns *protogen.NotSerialisable
 	if errors.As(err, &ns) {
-		return in.raise(object.TypeError, 0, "%s %s, which cannot be passed back", what, ns.Kind).(*object.Exception)
+		return object.Value{}, nil, in.raise(object.TypeError, 0, "%s %s, which cannot be passed back", what, ns.Kind).(*object.Exception)
 	}
-	return in.raise(object.TypeError, 0, "%s", err.Error()).(*object.Exception)
+	return object.Value{}, nil, in.raise(object.TypeError, 0, "%s", err.Error()).(*object.Exception)
 }
 
 // installCameo defines the methods of Cameo besides async and await:
@@ -631,10 +637,11 @@ func installCameo() {
 		if err != nil {
 			return object.Value{}, err
 		}
-		if exc := in.travels(args[1], "resolve got"); exc != nil {
+		v, later, exc := in.handOver(args[1], "resolve got")
+		if exc != nil {
 			return object.Value{}, exc
 		}
-		if !p.settle(args[1], nil, nil) {
+		if !p.settle(v, nil, later) {
 			return object.Value{}, in.raise(object.ArgumentError, 0, "promise %d is settled already", p.id)
 		}
 		return args[0], nil

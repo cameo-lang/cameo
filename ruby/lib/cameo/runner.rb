@@ -110,12 +110,21 @@ module Cameo
       end
 
       # copy is a copy of value that shares nothing with it, as a value that
-      # crosses to a cameo worker is; a Proc, a Method, a class or a module
-      # stays where it was made.
+      # crosses to a cameo worker is; a Method, a class or a module stays
+      # where it was made. A Proc crosses as it is, in a list or a hash too:
+      # cameo sends its code and the values it captured, and Ruby has no
+      # copy of one, so here a proc that changes a variable around it
+      # changes it for the caller too.
       def copy(value, what)
         case value
-        when Proc, Method, Module
+        when Proc
+          return value
+        when Method, Module
           raise TypeError, format(what, kind(value))
+        when Array
+          return value.map { |v| copy(v, what) } if value.instance_of?(Array)
+        when Hash
+          return value.to_h { |k, v| [copy(k, what), copy(v, what)] } if value.instance_of?(Hash) && value.default_proc.nil? && value.default.nil?
         end
         Marshal.load(Marshal.dump(value))
       rescue TypeError => e
