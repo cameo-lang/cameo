@@ -83,9 +83,6 @@ type pauser struct {
 	ch     chan struct{}
 	cond   *sync.Cond
 	frozen map[*Promise]*Interp
-	// stop is the run's stop, whose interrupt flag a pause sets too, for
-	// compiled code; nil for a pauser no run has.
-	stop *stopper
 }
 
 func newPauser() *pauser {
@@ -215,9 +212,6 @@ func (p *pauser) ask() {
 	if !p.flag.Swap(true) {
 		close(p.ch)
 	}
-	if p.stop != nil {
-		p.stop.interrupt.Store(true)
-	}
 }
 
 // reset takes the pause back, for a run that goes on.
@@ -226,10 +220,6 @@ func (p *pauser) reset() {
 	defer p.mu.Unlock()
 	if p.flag.Swap(false) {
 		p.ch = make(chan struct{})
-	}
-	if p.stop != nil {
-		// A run that was stopped meanwhile stays interrupted.
-		p.stop.interrupt.Store(p.stop.flag.Load())
 	}
 }
 

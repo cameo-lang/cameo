@@ -396,9 +396,8 @@ func callsProc(name string) bool {
 }
 
 // runs reports whether a call of the method m is an activation the loop
-// runs: m is one a script defined, and not one `cameo build` compiled
-// that runs as Go. private says whether the call reaches a function of
-// Kernel.
+// runs: m is one a script defined. private says whether the call reaches
+// a function of Kernel.
 func (in *Interp) runs(m *object.Method, private bool) bool {
-	return m != nil && m.Body != nil && (m.Native == nil || in.interpreted > 0) && (!m.Private || private)
+	return m != nil && m.Body != nil && (!m.Private || private)
 }

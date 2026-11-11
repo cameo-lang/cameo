@@ -110,9 +110,6 @@ type Interp struct {
 	rescuing *object.Exception
 	// last is the value of the last top-level expression Run evaluated.
 	last object.Value
-	// interpreted counts the calls of compiled methods running on the
-	// interpreter, which their own calls do too; see reinvoke.
-	interpreted int
 	// pausing is the run's pause, which Pause asks for and the run's
 	// workers share; paused is set once Run returned ErrPaused, with
 	// next the index of the top-level statement the run continues with
@@ -182,10 +179,6 @@ type stopper struct {
 	flag atomic.Bool
 	once sync.Once
 	chs  [shards]chan struct{}
-	// interrupt is set while the run is stopped or asked to pause: the
-	// one flag compiled code reads at every call and loop pass
-	// (InterruptFlag). Interrupted then says which it is.
-	interrupt atomic.Bool
 }
 
 func newStopper() *stopper {
@@ -198,7 +191,6 @@ func newStopper() *stopper {
 
 func (s *stopper) stop() {
 	s.flag.Store(true)
-	s.interrupt.Store(true)
 	s.once.Do(func() {
 		for _, ch := range s.chs {
 			close(ch)
@@ -232,7 +224,6 @@ func New(stdout, stderr io.Writer) *Interp {
 	}
 	in.rng = object.NewRandom(object.NewSeed())
 	in.promises.calls.pause = in.pausing
-	in.pausing.stop = in.stop
 	return in
 }
 
@@ -245,7 +236,6 @@ var installOnce sync.Once
 // exception, or nil.
 func (in *Interp) Run(file string, prog *syntax.Program) error {
 	in.file = file
-	in.code.compiled = CompiledFor(prog)
 	fr := in.topFrame()
 	if in.paused {
 		// A run that paused goes on where it paused when it is run again:

@@ -276,14 +276,11 @@ func (in *Interp) dispatchTo(m *object.Method, recv object.Value, name string, a
 		}
 		return object.Value{}, in.noMethod(recv, name, args, vcall, line)
 	}
-	if m.Native != nil && (m.Body == nil || in.interpreted == 0) {
+	if m.Native != nil {
 		if m.Arity >= 0 && len(args) != m.Arity {
 			return object.Value{}, in.raise(object.ArgumentError, line, "wrong number of arguments (given %d, expected %d)", len(args), m.Arity)
 		}
 		v, err := m.Native(in, recv, args, kw, block)
-		if err == ErrDeopt && m.Body != nil {
-			return in.reinvoke(m, recv, args, kw, block, line)
-		}
 		if err != nil {
 			if c, ok := err.(*control); ok && c.kind == ctrlBreak && c.target != nil && c.target == blockTarget(block) {
 				return c.value, nil
@@ -292,16 +289,6 @@ func (in *Interp) dispatchTo(m *object.Method, recv object.Value, name string, a
 		}
 		return v, nil
 	}
-	return in.invoke(m, recv, args, kw, block, line)
-}
-
-// reinvoke runs the body of a compiled method that left the call to the
-// interpreter, and every compiled method it calls on the interpreter too:
-// the call that left once would leave again at every level below, and
-// start that level over each time.
-func (in *Interp) reinvoke(m *object.Method, recv object.Value, args []object.Value, kw *object.Map, block object.Value, line int) (object.Value, error) {
-	in.interpreted++
-	defer func() { in.interpreted-- }()
 	return in.invoke(m, recv, args, kw, block, line)
 }
 
@@ -572,12 +559,8 @@ func (in *Interp) callSuperTo(m *object.Method, fr *Frame, args []object.Value, 
 		}
 		return object.Value{}, in.raise(object.NoMethodError, line, "super: no superclass method '%s' for %s", fr.Method.Name, typeName(fr.Self))
 	}
-	if m.Native != nil && (m.Body == nil || in.interpreted == 0) {
+	if m.Native != nil {
 		v, err := m.Native(in, fr.Self, args, kw, block)
-		if err != ErrDeopt || m.Body == nil {
-			return v, withLine(err, line)
-		}
-		v, err = in.reinvoke(m, fr.Self, args, kw, block, line)
 		return v, withLine(err, line)
 	}
 	v, err := in.invoke(m, fr.Self, args, kw, block, line)
