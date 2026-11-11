@@ -1,6 +1,7 @@
 package protogen
 
 import (
+	"encoding/hex"
 	"math/big"
 	"strings"
 	"testing"
@@ -9,6 +10,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
+	"github.com/cameo-lang/cameo/src/assert"
 	"github.com/cameo-lang/cameo/src/object"
 )
 
@@ -157,6 +159,42 @@ func TestEnvelopeRoundTrip(t *testing.T) {
 	}
 	if _, err := enc.Encode(object.ClassValue(object.ProcClass)); err == nil {
 		t.Fatal("a class cannot be encoded")
+	}
+}
+
+// The envelope's wire form is fixed by its field numbers: bytes another
+// program wrote, or an older cameo, must still read. The bytes here are
+// what the encoder wrote while the envelope's descriptor was built by hand,
+// before value.proto. Protobuf fixes no order of fields, so what the
+// encoder writes now is held to reading back, not to these bytes.
+func TestEnvelopeReadsItsEarlierWireForm(t *testing.T) {
+	reg := NewRegistry()
+	enc, dec := NewEncoder(reg), NewDecoder(reg, nil)
+	cases := []struct {
+		v    object.Value
+		wire string
+	}{
+		{object.Nil, ""},
+		{object.True, "0801"},
+		{object.Int(7), "1007"},
+		{object.String("s"), "220173"},
+		{object.Bytes([]byte("b")), "2a0162"},
+		{object.NewList(object.Int(1), object.String("a")), "32090a0210010a03220161"},
+		{object.MapValue(object.MapOf(object.String("k"), object.Int(1))), "3a0b0a09120210010a0322016b"},
+		{object.RangeValue(&object.Range{Lo: object.Int(1), Hi: object.Int(3), Exclusive: true}), "4a0a0a021001120210031801"},
+	}
+	for _, c := range cases {
+		raw, err := hex.DecodeString(c.wire)
+		assert.NoError(t, err)
+		back, err := dec.Decode(raw)
+		assert.NoError(t, err)
+		assert.Equals(t, object.Key(back), object.Key(c.v), "reading %s", c.wire)
+
+		data, err := enc.Encode(c.v)
+		assert.NoError(t, err)
+		again, err := dec.Decode(data)
+		assert.NoError(t, err)
+		assert.Equals(t, object.Key(again), object.Key(c.v), "writing %s", object.Key(c.v))
 	}
 }
 

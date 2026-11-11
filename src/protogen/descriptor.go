@@ -87,10 +87,7 @@ func (r *Registry) file(cls *object.Class) (protoreflect.FileDescriptor, error) 
 	if exception {
 		// An exception's cause, and the values Ruby's exceptions carry, are
 		// cameo.Values.
-		env, err := envelope()
-		if err != nil {
-			return nil, err
-		}
+		env := envelope()
 		fdp.Dependency = append(fdp.Dependency, env.Path())
 		resolver.add(env)
 	}

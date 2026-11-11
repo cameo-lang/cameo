@@ -142,7 +142,10 @@ make install    # puts `cameo` into GOBIN
 ```
 
 The parser is `github.com/go-ruby-parser/parser`, a Ruby parser in pure Go.
-No cgo, no Ruby installation, no code generation.
+No cgo and no Ruby installation. The Go code of cameo's own protobuf
+messages is generated and committed ([src/cameopb](src/cameopb)), so a build
+needs Go alone; `make proto` regenerates it after a `.proto` file changed,
+with the `protoc` release it fetches.
 
 ## Site
 

@@ -5,7 +5,7 @@
 
 BINARY := bin/cameo
 
-.PHONY: default help prerequisites deps build tests integration-tests lint check conformance ruby-spec spec-status clean install
+.PHONY: default help prerequisites deps build tests integration-tests lint check conformance ruby-spec spec-status clean install proto proto-check
 
 
 # Every test runs in UTC, the Go tests and the shell tests alike: a test
@@ -62,6 +62,39 @@ spec-status: build ## Run ruby/spec's language and core, and rewrite specs/statu
 # Not part of check either: it clones or pulls github.com/ruby/spec.
 ruby-spec: ## Clone ruby/spec into ruby-spec/ of the main repository, or pull it
 	ruby specs/checkout.rb
+
+# The messages of src/cameopb are written in .proto files and their Go code
+# is generated and committed, so building cameo needs Go alone. Changing a
+# .proto needs this target, which fetches the protoc release it pins;
+# protoc-gen-go is built at the version of protobuf-go in go.mod.
+PROTOC_VERSION := 33.0
+PROTOC_OS := $(if $(filter Darwin,$(shell uname -s)),osx,linux)
+PROTOC_ARCH := $(if $(filter arm64 aarch64,$(shell uname -m)),aarch_64,x86_64)
+PROTOC_DIR := bin/protoc-$(PROTOC_VERSION)
+PROTOC := $(PROTOC_DIR)/bin/protoc
+PROTO_FILES := $(wildcard src/cameopb/cameo/*.proto)
+
+$(PROTOC):
+	@command -v curl >/dev/null 2>&1 && command -v unzip >/dev/null 2>&1 || { \
+	  echo "make proto needs curl and unzip to fetch protoc $(PROTOC_VERSION)." >&2; exit 1; }
+	mkdir -p $(PROTOC_DIR)
+	curl -sSfL -o $(PROTOC_DIR)/protoc.zip \
+	  https://github.com/protocolbuffers/protobuf/releases/download/v$(PROTOC_VERSION)/protoc-$(PROTOC_VERSION)-$(PROTOC_OS)-$(PROTOC_ARCH).zip
+	unzip -q -o $(PROTOC_DIR)/protoc.zip -d $(PROTOC_DIR)
+	rm $(PROTOC_DIR)/protoc.zip
+
+proto: prerequisites $(PROTOC) ## Generate the Go code of the messages in src/cameopb from their .proto files
+	go build -o bin/protoc-gen-go google.golang.org/protobuf/cmd/protoc-gen-go
+	$(PROTOC) --plugin=protoc-gen-go=bin/protoc-gen-go -I src/cameopb \
+	  --go_out=src/cameopb --go_opt=module=github.com/cameo-lang/cameo/src/cameopb \
+	  $(patsubst src/cameopb/%,%,$(PROTO_FILES))
+
+# Not part of check, which needs no tool but Go; CI runs it as a step.
+proto-check: proto ## Fail when the committed Go code of src/cameopb differs from what make proto generates
+	@git diff --exit-code -- src/cameopb || { \
+	  echo "src/cameopb is not what its .proto files generate: run make proto and commit the result." >&2; exit 1; }
+	@untracked=$$(git ls-files --others --exclude-standard -- src/cameopb); if [ -n "$$untracked" ]; then \
+	  echo "make proto wrote files that are not committed: $$untracked" >&2; exit 1; fi
 
 install: prerequisites ## Install the cameo binary into GOBIN (or ~/go/bin)
 	go install ./src/cmd/cameo
