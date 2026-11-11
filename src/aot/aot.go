@@ -1335,11 +1335,11 @@ const mainFunc = `func main() {
 `
 
 // stateType is what every compiled call carries: the run it belongs to,
-// its stop flag, which every call and loop pass reads, and the classes it
-// constructs, found once.
+// its interrupt flag, which every call and loop pass reads, and the
+// classes it constructs, found once.
 const stateType = `// state is one call from the interpreter into compiled code: the run it
-// belongs to, the flag set when the run is stopped, and the classes the
-// call constructed instances of.
+// belongs to, the flag set when the run is stopped or asked to pause, and
+// the classes the call constructed instances of.
 type state struct {
 	ctx     object.Context
 	stop    *atomic.Bool
@@ -1381,7 +1381,7 @@ func (g *gen) entry(m *method) string {
 	fmt.Fprintf(&b, "// call_%s is %s as a method: it runs with the arguments it takes and no\n// block, on int64 while the Integers fit and on *big.Int once one does not,\n// and leaves every other call to the interpreter.\n", name, m.key)
 	fmt.Fprintf(&b, "func call_%s(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {\n", name)
 	fmt.Fprintf(&b, "\tif len(args) != %d || kw != nil || !(block.IsZero() || block.IsNil()) {\n\t\treturn object.Value{}, eval.ErrDeopt\n\t}\n", n)
-	b.WriteString("\ts := &state{ctx: ctx, stop: eval.StopFlag(ctx)}\n")
+	b.WriteString("\ts := &state{ctx: ctx, stop: eval.InterruptFlag(ctx)}\n")
 	var small, large, fits []string
 	if m.owner != nil {
 		b.WriteString("\tself_, ok := self.AsInstance()\n\tif !ok {\n\t\treturn object.Value{}, eval.ErrDeopt\n\t}\n")

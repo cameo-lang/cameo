@@ -79,9 +79,7 @@ func (g *gen) function(m *method, big bool) string {
 	if m.owner != nil {
 		f.line("_ = self")
 	}
-	f.line("if s.stop.Load() {")
-	f.line("\treturn %s, eval.ErrStopped", f.zero())
-	f.line("}")
+	f.pass("s.stop")
 	if v := f.body(d.Body, true); v != "" {
 		f.line("return %s, nil", v)
 	}
@@ -652,7 +650,7 @@ func (f *fn) bindParam(name, value string, t typ) {
 	f.line("_ = v_%s", name)
 }
 
-// stopFlag declares a local that holds the run's stop flag for a loop, so
+// stopFlag declares a local that holds the run's interrupt flag for a loop, so
 // that a pass reads the flag alone and not the state first: the body may
 // pass the state to a call, after which Go would read it again.
 func (f *fn) stopFlag() string {
@@ -661,11 +659,16 @@ func (f *fn) stopFlag() string {
 	return stop
 }
 
-// pass writes the stop check of one loop pass: a read of the run's stop
-// flag, which costs a load where reading the clock costs a call.
+// pass writes the check of one call or loop pass: a read of the run's
+// interrupt flag, which costs a load where reading the clock costs a
+// call. Once the flag is set, eval.Interrupted says how the call ends: a
+// run that was stopped ends it, one asked to pause leaves it to the
+// interpreter, which pauses in the method's body.
 func (f *fn) pass(stop string) {
 	f.line("if %s.Load() {", stop)
-	f.line("\treturn %s, eval.ErrStopped", f.zero())
+	f.line("\tif err := eval.Interrupted(s.ctx); err != nil {")
+	f.line("\t\treturn %s, err", f.zero())
+	f.line("\t}")
 	f.line("}")
 }
 

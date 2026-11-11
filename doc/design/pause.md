@@ -27,6 +27,12 @@ of `each` takes effect when `each` returns. The builtins a script spends
 its time in become step functions, whose state is data too, group by
 group; until one has, it only delays a pause.
 
+A method `cameo build` compiled is Go code as well, and it does not
+delay a pause: at its next call or loop pass it leaves the call, and the
+interpreter starts the method's body as an activation and pauses there
+([aot.md](aot.md)). What the method had computed is computed again after
+the resume.
+
 The builtins that are step functions so far, inside whose block a run
 pauses at once: `Integer#times`, `upto` and `downto`; `loop`; `each` of a
 List, a Hash, a Set and a Range of integers, and a List's `each_index`;

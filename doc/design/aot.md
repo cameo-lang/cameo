@@ -162,9 +162,17 @@ accumulator is the fold's value. A fold over an Array, a `reduce` without
 an initial value, a `sum` of Floats, whose interpreter adds them
 compensated, and a block that breaks are left to the interpreter.
 
-A compiled method reads the run's stop flag, an `atomic.Bool`, at every
-call and loop pass, as the interpreter does, so `RunContext` stops a run
-inside compiled code at its next call or pass. A loop holds the flag in a
+A compiled method reads the run's interrupt flag, an `atomic.Bool`, at
+every call and loop pass, as the interpreter does, so `RunContext` stops a
+run inside compiled code at its next call or pass. The flag is set for a
+run that is stopped and for one that is asked to pause, and once it is
+set the method asks `eval.Interrupted` which: a stopped run ends the
+call, and a pause that can land where the interpreter called the method
+makes it leave the call (`eval.ErrDeopt`). The interpreter then starts
+the method's body as an activation and pauses in it, so a dump holds the
+call; the method is pure, so starting over repeats nothing anyone could
+see. The methods that body calls run as Go again, also after a resume.
+A loop holds the flag in a
 local, so a pass reads the flag alone. On an Apple M4 the read costs 0.25
 ns where reading the clock costs 12 to 28 ns, which is why the check reads
 no clock. It replaced a count of calls on the state, checked every 4096,

@@ -106,8 +106,8 @@ func init() {
 }
 
 // state is one call from the interpreter into compiled code: the run it
-// belongs to, the flag set when the run is stopped, and the classes the
-// call constructed instances of.
+// belongs to, the flag set when the run is stopped or asked to pause, and
+// the classes the call constructed instances of.
 type state struct {
 	ctx     object.Context
 	stop    *atomic.Bool
@@ -142,7 +142,9 @@ var (
 
 func fn_below(s *state, v_lo int64, v_hi int64) (int64, error) {
 	if s.stop.Load() {
-		return 0, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return 0, err
+		}
 	}
 	t1 := v_lo
 	t2 := v_hi
@@ -150,7 +152,9 @@ func fn_below(s *state, v_lo int64, v_hi int64) (int64, error) {
 	t5 := s.stop
 	for t4 := t1; t4 < t2; t4++ {
 		if t5.Load() {
-			return 0, eval.ErrStopped
+			if err := eval.Interrupted(s.ctx); err != nil {
+				return 0, err
+			}
 		}
 		v_c := t3
 		_ = v_c
@@ -167,7 +171,9 @@ func fn_below(s *state, v_lo int64, v_hi int64) (int64, error) {
 
 func big_below(s *state, v_lo *big.Int, v_hi *big.Int) (*big.Int, error) {
 	if s.stop.Load() {
-		return nil, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return nil, err
+		}
 	}
 	t1 := v_lo
 	t2 := v_hi
@@ -175,7 +181,9 @@ func big_below(s *state, v_lo *big.Int, v_hi *big.Int) (*big.Int, error) {
 	t5 := s.stop
 	for t4 := new(big.Int).Set(t1); t4.Cmp(t2) < 0; t4 = new(big.Int).Add(t4, big_1) {
 		if t5.Load() {
-			return nil, eval.ErrStopped
+			if err := eval.Interrupted(s.ctx); err != nil {
+				return nil, err
+			}
 		}
 		v_c := t3
 		_ = v_c
@@ -194,7 +202,7 @@ func call_below(ctx object.Context, self object.Value, args []object.Value, kw *
 	if len(args) != 2 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
+	s := &state{ctx: ctx, stop: eval.InterruptFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInt()
 	a1, ok1 := args[1].AsInt()
@@ -224,7 +232,9 @@ func call_below(ctx object.Context, self object.Value, args []object.Value, kw *
 
 func fn_countdown(s *state, v_n int64) (int64, error) {
 	if s.stop.Load() {
-		return 0, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return 0, err
+		}
 	}
 	t1 := v_n
 	t2 := int64(1)
@@ -235,7 +245,9 @@ func fn_countdown(s *state, v_n int64) (int64, error) {
 	}
 	for t4 := t1; t4 >= t2; t4-- {
 		if t5.Load() {
-			return 0, eval.ErrStopped
+			if err := eval.Interrupted(s.ctx); err != nil {
+				return 0, err
+			}
 		}
 		v_c := t3
 		_ = v_c
@@ -256,7 +268,9 @@ func fn_countdown(s *state, v_n int64) (int64, error) {
 
 func big_countdown(s *state, v_n *big.Int) (*big.Int, error) {
 	if s.stop.Load() {
-		return nil, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return nil, err
+		}
 	}
 	t1 := v_n
 	t2 := big_1
@@ -264,7 +278,9 @@ func big_countdown(s *state, v_n *big.Int) (*big.Int, error) {
 	t5 := s.stop
 	for t4 := new(big.Int).Set(t1); t4.Cmp(t2) >= 0; t4 = new(big.Int).Sub(t4, big_1) {
 		if t5.Load() {
-			return nil, eval.ErrStopped
+			if err := eval.Interrupted(s.ctx); err != nil {
+				return nil, err
+			}
 		}
 		v_c := t3
 		_ = v_c
@@ -284,7 +300,7 @@ func call_countdown(ctx object.Context, self object.Value, args []object.Value, 
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
+	s := &state{ctx: ctx, stop: eval.InterruptFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
@@ -309,13 +325,17 @@ func call_countdown(ctx object.Context, self object.Value, args []object.Value, 
 
 func fn_early(s *state, v_n int64) (int64, error) {
 	if s.stop.Load() {
-		return 0, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return 0, err
+		}
 	}
 	t1 := v_n
 	t3 := s.stop
 	for t2 := int64(0); t2 < t1; t2++ {
 		if t3.Load() {
-			return 0, eval.ErrStopped
+			if err := eval.Interrupted(s.ctx); err != nil {
+				return 0, err
+			}
 		}
 		v_i := t2
 		_ = v_i
@@ -332,13 +352,17 @@ func fn_early(s *state, v_n int64) (int64, error) {
 
 func big_early(s *state, v_n *big.Int) (*big.Int, error) {
 	if s.stop.Load() {
-		return nil, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return nil, err
+		}
 	}
 	t1 := v_n
 	t3 := s.stop
 	for t2 := new(big.Int); t2.Cmp(t1) < 0; t2 = new(big.Int).Add(t2, big_1) {
 		if t3.Load() {
-			return nil, eval.ErrStopped
+			if err := eval.Interrupted(s.ctx); err != nil {
+				return nil, err
+			}
 		}
 		v_i := t2
 		_ = v_i
@@ -357,7 +381,7 @@ func call_early(ctx object.Context, self object.Value, args []object.Value, kw *
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
+	s := &state{ctx: ctx, stop: eval.InterruptFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
@@ -382,14 +406,18 @@ func call_early(ctx object.Context, self object.Value, args []object.Value, kw *
 
 func fn_moved(s *state, v_n int64) (int64, error) {
 	if s.stop.Load() {
-		return 0, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return 0, err
+		}
 	}
 	t1 := v_n
 	t2 := int64(0)
 	t4 := s.stop
 	for t3 := int64(0); t3 < t1; t3++ {
 		if t4.Load() {
-			return 0, eval.ErrStopped
+			if err := eval.Interrupted(s.ctx); err != nil {
+				return 0, err
+			}
 		}
 		v_s := t2
 		_ = v_s
@@ -411,14 +439,18 @@ func fn_moved(s *state, v_n int64) (int64, error) {
 
 func big_moved(s *state, v_n *big.Int) (*big.Int, error) {
 	if s.stop.Load() {
-		return nil, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return nil, err
+		}
 	}
 	t1 := v_n
 	t2 := big_0
 	t4 := s.stop
 	for t3 := new(big.Int); t3.Cmp(t1) < 0; t3 = new(big.Int).Add(t3, big_1) {
 		if t4.Load() {
-			return nil, eval.ErrStopped
+			if err := eval.Interrupted(s.ctx); err != nil {
+				return nil, err
+			}
 		}
 		v_s := t2
 		_ = v_s
@@ -439,7 +471,7 @@ func call_moved(ctx object.Context, self object.Value, args []object.Value, kw *
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
+	s := &state{ctx: ctx, stop: eval.InterruptFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
@@ -464,14 +496,18 @@ func call_moved(ctx object.Context, self object.Value, args []object.Value, kw *
 
 func fn_own(s *state, v_n int64) (int64, error) {
 	if s.stop.Load() {
-		return 0, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return 0, err
+		}
 	}
 	t1 := v_n
 	t2 := int64(0)
 	t4 := s.stop
 	for t3 := int64(0); t3 < t1; t3++ {
 		if t4.Load() {
-			return 0, eval.ErrStopped
+			if err := eval.Interrupted(s.ctx); err != nil {
+				return 0, err
+			}
 		}
 		v_s := t2
 		_ = v_s
@@ -495,14 +531,18 @@ func fn_own(s *state, v_n int64) (int64, error) {
 
 func big_own(s *state, v_n *big.Int) (*big.Int, error) {
 	if s.stop.Load() {
-		return nil, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return nil, err
+		}
 	}
 	t1 := v_n
 	t2 := big_0
 	t4 := s.stop
 	for t3 := new(big.Int); t3.Cmp(t1) < 0; t3 = new(big.Int).Add(t3, big_1) {
 		if t4.Load() {
-			return nil, eval.ErrStopped
+			if err := eval.Interrupted(s.ctx); err != nil {
+				return nil, err
+			}
 		}
 		v_s := t2
 		_ = v_s
@@ -525,7 +565,7 @@ func call_own(ctx object.Context, self object.Value, args []object.Value, kw *ob
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
+	s := &state{ctx: ctx, stop: eval.InterruptFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
@@ -550,13 +590,17 @@ func call_own(ctx object.Context, self object.Value, args []object.Value, kw *ob
 
 func fn_receiver(s *state, v_n int64) (int64, error) {
 	if s.stop.Load() {
-		return 0, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return 0, err
+		}
 	}
 	t1 := v_n
 	t3 := s.stop
 	for t2 := int64(0); t2 < t1; t2++ {
 		if t3.Load() {
-			return 0, eval.ErrStopped
+			if err := eval.Interrupted(s.ctx); err != nil {
+				return 0, err
+			}
 		}
 	}
 	var v_m int64
@@ -570,7 +614,9 @@ func fn_receiver(s *state, v_n int64) (int64, error) {
 	}
 	for t6 := t4; t6 <= t5; t6++ {
 		if t7.Load() {
-			return 0, eval.ErrStopped
+			if err := eval.Interrupted(s.ctx); err != nil {
+				return 0, err
+			}
 		}
 	}
 	var v_k int64
@@ -585,13 +631,17 @@ func fn_receiver(s *state, v_n int64) (int64, error) {
 
 func big_receiver(s *state, v_n *big.Int) (*big.Int, error) {
 	if s.stop.Load() {
-		return nil, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return nil, err
+		}
 	}
 	t1 := v_n
 	t3 := s.stop
 	for t2 := new(big.Int); t2.Cmp(t1) < 0; t2 = new(big.Int).Add(t2, big_1) {
 		if t3.Load() {
-			return nil, eval.ErrStopped
+			if err := eval.Interrupted(s.ctx); err != nil {
+				return nil, err
+			}
 		}
 	}
 	var v_m *big.Int
@@ -602,7 +652,9 @@ func big_receiver(s *state, v_n *big.Int) (*big.Int, error) {
 	t7 := s.stop
 	for t6 := new(big.Int).Set(t4); t6.Cmp(t5) <= 0; t6 = new(big.Int).Add(t6, big_1) {
 		if t7.Load() {
-			return nil, eval.ErrStopped
+			if err := eval.Interrupted(s.ctx); err != nil {
+				return nil, err
+			}
 		}
 	}
 	var v_k *big.Int
@@ -619,7 +671,7 @@ func call_receiver(ctx object.Context, self object.Value, args []object.Value, k
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
+	s := &state{ctx: ctx, stop: eval.InterruptFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
@@ -644,7 +696,9 @@ func call_receiver(ctx object.Context, self object.Value, args []object.Value, k
 
 func fn_squares(s *state, v_lo int64, v_hi int64) (int64, error) {
 	if s.stop.Load() {
-		return 0, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return 0, err
+		}
 	}
 	t1 := v_lo
 	t2 := v_hi
@@ -655,7 +709,9 @@ func fn_squares(s *state, v_lo int64, v_hi int64) (int64, error) {
 	}
 	for t4 := t1; t4 <= t2; t4++ {
 		if t5.Load() {
-			return 0, eval.ErrStopped
+			if err := eval.Interrupted(s.ctx); err != nil {
+				return 0, err
+			}
 		}
 		v_s := t3
 		_ = v_s
@@ -676,7 +732,9 @@ func fn_squares(s *state, v_lo int64, v_hi int64) (int64, error) {
 
 func big_squares(s *state, v_lo *big.Int, v_hi *big.Int) (*big.Int, error) {
 	if s.stop.Load() {
-		return nil, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return nil, err
+		}
 	}
 	t1 := v_lo
 	t2 := v_hi
@@ -684,7 +742,9 @@ func big_squares(s *state, v_lo *big.Int, v_hi *big.Int) (*big.Int, error) {
 	t5 := s.stop
 	for t4 := new(big.Int).Set(t1); t4.Cmp(t2) <= 0; t4 = new(big.Int).Add(t4, big_1) {
 		if t5.Load() {
-			return nil, eval.ErrStopped
+			if err := eval.Interrupted(s.ctx); err != nil {
+				return nil, err
+			}
 		}
 		v_s := t3
 		_ = v_s
@@ -704,7 +764,7 @@ func call_squares(ctx object.Context, self object.Value, args []object.Value, kw
 	if len(args) != 2 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
+	s := &state{ctx: ctx, stop: eval.InterruptFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInt()
 	a1, ok1 := args[1].AsInt()
@@ -734,14 +794,18 @@ func call_squares(ctx object.Context, self object.Value, args []object.Value, kw
 
 func fn_sum(s *state, v_n int64) (int64, error) {
 	if s.stop.Load() {
-		return 0, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return 0, err
+		}
 	}
 	t1 := v_n
 	t2 := int64(0)
 	t4 := s.stop
 	for t3 := int64(0); t3 < t1; t3++ {
 		if t4.Load() {
-			return 0, eval.ErrStopped
+			if err := eval.Interrupted(s.ctx); err != nil {
+				return 0, err
+			}
 		}
 		v_s := t2
 		_ = v_s
@@ -758,14 +822,18 @@ func fn_sum(s *state, v_n int64) (int64, error) {
 
 func big_sum(s *state, v_n *big.Int) (*big.Int, error) {
 	if s.stop.Load() {
-		return nil, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return nil, err
+		}
 	}
 	t1 := v_n
 	t2 := big_0
 	t4 := s.stop
 	for t3 := new(big.Int); t3.Cmp(t1) < 0; t3 = new(big.Int).Add(t3, big_1) {
 		if t4.Load() {
-			return nil, eval.ErrStopped
+			if err := eval.Interrupted(s.ctx); err != nil {
+				return nil, err
+			}
 		}
 		v_s := t2
 		_ = v_s
@@ -784,7 +852,7 @@ func call_sum(ctx object.Context, self object.Value, args []object.Value, kw *ob
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
+	s := &state{ctx: ctx, stop: eval.InterruptFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
@@ -809,7 +877,9 @@ func call_sum(ctx object.Context, self object.Value, args []object.Value, kw *ob
 
 func fn_triangle(s *state, v_n int64) (int64, error) {
 	if s.stop.Load() {
-		return 0, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return 0, err
+		}
 	}
 	t1 := int64(1)
 	t2 := v_n
@@ -820,7 +890,9 @@ func fn_triangle(s *state, v_n int64) (int64, error) {
 	}
 	for t4 := t1; t4 <= t2; t4++ {
 		if t5.Load() {
-			return 0, eval.ErrStopped
+			if err := eval.Interrupted(s.ctx); err != nil {
+				return 0, err
+			}
 		}
 		v_t := t3
 		_ = v_t
@@ -837,7 +909,9 @@ func fn_triangle(s *state, v_n int64) (int64, error) {
 
 func big_triangle(s *state, v_n *big.Int) (*big.Int, error) {
 	if s.stop.Load() {
-		return nil, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return nil, err
+		}
 	}
 	t1 := big_1
 	t2 := v_n
@@ -845,7 +919,9 @@ func big_triangle(s *state, v_n *big.Int) (*big.Int, error) {
 	t5 := s.stop
 	for t4 := new(big.Int).Set(t1); t4.Cmp(t2) <= 0; t4 = new(big.Int).Add(t4, big_1) {
 		if t5.Load() {
-			return nil, eval.ErrStopped
+			if err := eval.Interrupted(s.ctx); err != nil {
+				return nil, err
+			}
 		}
 		v_t := t3
 		_ = v_t
@@ -864,7 +940,7 @@ func call_triangle(ctx object.Context, self object.Value, args []object.Value, k
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
+	s := &state{ctx: ctx, stop: eval.InterruptFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
@@ -889,7 +965,9 @@ func call_triangle(ctx object.Context, self object.Value, args []object.Value, k
 
 func fn_wide(s *state, v_n int64) (int64, error) {
 	if s.stop.Load() {
-		return 0, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return 0, err
+		}
 	}
 	t2, err := sub(v_n, 2)
 	if err != nil {
@@ -908,7 +986,9 @@ func fn_wide(s *state, v_n int64) (int64, error) {
 	}
 	for t6 := t1; t6 <= t3; t6++ {
 		if t7.Load() {
-			return 0, eval.ErrStopped
+			if err := eval.Interrupted(s.ctx); err != nil {
+				return 0, err
+			}
 		}
 		v_i := t6
 		_ = v_i
@@ -921,7 +1001,9 @@ func fn_wide(s *state, v_n int64) (int64, error) {
 
 func big_wide(s *state, v_n *big.Int) (*big.Int, error) {
 	if s.stop.Load() {
-		return nil, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return nil, err
+		}
 	}
 	t2 := new(big.Int).Sub(v_n, big_2)
 	t1 := t2
@@ -931,7 +1013,9 @@ func big_wide(s *state, v_n *big.Int) (*big.Int, error) {
 	t7 := s.stop
 	for t6 := new(big.Int).Set(t1); t6.Cmp(t3) <= 0; t6 = new(big.Int).Add(t6, big_1) {
 		if t7.Load() {
-			return nil, eval.ErrStopped
+			if err := eval.Interrupted(s.ctx); err != nil {
+				return nil, err
+			}
 		}
 		v_i := t6
 		_ = v_i
@@ -949,7 +1033,7 @@ func call_wide(ctx object.Context, self object.Value, args []object.Value, kw *o
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
+	s := &state{ctx: ctx, stop: eval.InterruptFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {

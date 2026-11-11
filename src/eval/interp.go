@@ -182,6 +182,10 @@ type stopper struct {
 	flag atomic.Bool
 	once sync.Once
 	chs  [shards]chan struct{}
+	// interrupt is set while the run is stopped or asked to pause: the
+	// one flag compiled code reads at every call and loop pass
+	// (InterruptFlag). Interrupted then says which it is.
+	interrupt atomic.Bool
 }
 
 func newStopper() *stopper {
@@ -194,6 +198,7 @@ func newStopper() *stopper {
 
 func (s *stopper) stop() {
 	s.flag.Store(true)
+	s.interrupt.Store(true)
 	s.once.Do(func() {
 		for _, ch := range s.chs {
 			close(ch)
@@ -227,6 +232,7 @@ func New(stdout, stderr io.Writer) *Interp {
 	}
 	in.rng = object.NewRandom(object.NewSeed())
 	in.promises.calls.pause = in.pausing
+	in.pausing.stop = in.stop
 	return in
 }
 

@@ -60,6 +60,45 @@ func StopFlag(ctx object.Context) *atomic.Bool {
 	return new(atomic.Bool)
 }
 
+// InterruptFlag returns the flag that is set while the run ctx belongs to
+// is stopped or asked to pause. A compiled method reads it at every call
+// and loop pass, which costs a load, and asks Interrupted what to do once
+// it is set. A ctx that is not a run gets a flag that is never set.
+func InterruptFlag(ctx object.Context) *atomic.Bool {
+	if in, ok := ctx.(*Interp); ok {
+		return &in.stop.interrupt
+	}
+	return new(atomic.Bool)
+}
+
+// Interrupted tells a compiled method that found the interrupt flag set
+// how its call ends: with ErrStopped for a run that was stopped, with
+// ErrDeopt for one asked to pause where the interpreter can pause, which
+// then runs the method's body as an activation and pauses in it, and
+// with nil where the method goes on: a pause that cannot land here, in a
+// call a builtin made, waits for that builtin as it does on the
+// interpreter.
+func Interrupted(ctx object.Context) error {
+	in, ok := ctx.(*Interp)
+	if !ok {
+		return nil
+	}
+	if in.stop.flag.Load() {
+		return ErrStopped
+	}
+	if in.leavesForPause() {
+		return ErrDeopt
+	}
+	return nil
+}
+
+// leavesForPause reports whether a compiled method leaves its call for a
+// pause: the run was asked to pause, and the activation that called the
+// method could pause where it is.
+func (in *Interp) leavesForPause() bool {
+	return in.pausing.flag.Load() && len(in.acts) > 0 && in.canPause(in.acts[len(in.acts)-1])
+}
+
 // ClassNamed returns the class a top-level constant of the script names,
 // nil when there is no such constant or it is not a class. Compiled code
 // finds the class it constructs this way, once per call into it.

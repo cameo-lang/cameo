@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"math/big"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -14,6 +16,7 @@ import (
 	"github.com/cameo-lang/cameo/examples/aot/blocks"
 	"github.com/cameo-lang/cameo/examples/aot/classes"
 	"github.com/cameo-lang/cameo/examples/aot/construction"
+	"github.com/cameo-lang/cameo/examples/aot/relay"
 	"github.com/cameo-lang/cameo/examples/aot/spin"
 	"github.com/cameo-lang/cameo/src/aot"
 	"github.com/cameo-lang/cameo/src/cameo"
@@ -35,6 +38,7 @@ var examples = []struct {
 	{"classes", classes.File, classes.Script},
 	{"construction", construction.File, construction.Script},
 	{"spin", spin.File, spin.Script},
+	{"relay", relay.File, relay.Script},
 }
 
 // TestCompiledExamplesPrintWhatRubyPrints runs each example twice, with
@@ -45,7 +49,7 @@ func TestCompiledExamplesPrintWhatRubyPrints(t *testing.T) {
 		t.Run(ex.name, func(t *testing.T) {
 			want, err := os.ReadFile(ex.name + ".expected")
 			if errors.Is(err, os.ErrNotExist) {
-				t.Skip("the example does not end")
+				t.Skip("the example does not end, or runs for minutes on the interpreter")
 			}
 			if err != nil {
 				t.Fatal(err)
@@ -117,6 +121,81 @@ func TestCompiledLoopsStop(t *testing.T) {
 		}
 	case <-time.After(10 * time.Second):
 		t.Fatal("the compiled loop did not stop")
+	}
+}
+
+// pausedInCompiledCode runs the script until a pause asked for while its
+// compiled methods run lands, and returns the program.
+func pausedInCompiledCode(t *testing.T, file, script string, out *bytes.Buffer) *cameo.Program {
+	t.Helper()
+	prog, err := cameo.Load(file, script, out, out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	go func() {
+		time.Sleep(20 * time.Millisecond)
+		prog.Pause()
+	}()
+	done := make(chan error, 1)
+	go func() { done <- prog.Run() }()
+	select {
+	case err := <-done:
+		if !errors.Is(err, cameo.ErrPaused) {
+			t.Fatalf("Run returned %v, want ErrPaused: the pause did not land in the compiled methods", err)
+		}
+	case <-time.After(30 * time.Second):
+		t.Fatal("the compiled methods did not leave their call for the pause")
+	}
+	return prog
+}
+
+// TestCompiledLoopsPause pauses a run in a compiled loop that never ends:
+// the method leaves its call, and the dump holds it as an activation of
+// the interpreter.
+func TestCompiledLoopsPause(t *testing.T) {
+	var out bytes.Buffer
+	prog := pausedInCompiledCode(t, spin.File, spin.Script, &out)
+	dump, err := prog.Dump()
+	if err != nil {
+		t.Fatal(err)
+	}
+	text, err := cameo.InspectDump(dump.Data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(text, "inside:\n  spin, line 4\n") {
+		t.Fatalf("the dump does not show the call of spin as an activation:\n%s", text)
+	}
+}
+
+// TestCompiledMethodsPauseAndResume pauses a run inside compiled methods
+// that call each other, and resumes its dump: the method the interpreter
+// called starts over as an activation, the ones it calls run as Go again,
+// and the run prints what it prints unpaused.
+func TestCompiledMethodsPauseAndResume(t *testing.T) {
+	var out bytes.Buffer
+	prog := pausedInCompiledCode(t, relay.File, relay.Script, &out)
+	dump, err := prog.Dump()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(dump.Missing) != 0 {
+		t.Fatalf("the dump left out %v", dump.Missing)
+	}
+	cont, err := cameo.Resume(dump.Data, &out, &out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := cont.Run(); err != nil {
+		t.Fatal(err)
+	}
+	// 20 laps of the sum of i % 7 for i from 1 to ten million.
+	var lap int64
+	for i := int64(1); i <= 10_000_000; i++ {
+		lap += i % 7
+	}
+	if got, want := out.String(), fmt.Sprintf("%d\n", 20*lap); got != want {
+		t.Fatalf("paused and resumed the script printed %q, want %q", got, want)
 	}
 }
 

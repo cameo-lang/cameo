@@ -535,4 +535,6 @@ that is all cameo, and widens it from there.
     another program the first closure of a unit carries the code, as
     anywhere else in the envelope.
 29. aot: a compiled method leaves its call to the interpreter at a pause.
+    It reads one flag for a stop and a pause, so the check costs what the
+    stop check did.
 30. debug: the debugger and irb read the activation stack.

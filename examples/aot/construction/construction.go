@@ -95,8 +95,8 @@ func init() {
 }
 
 // state is one call from the interpreter into compiled code: the run it
-// belongs to, the flag set when the run is stopped, and the classes the
-// call constructed instances of.
+// belongs to, the flag set when the run is stopped or asked to pause, and
+// the classes the call constructed instances of.
 type state struct {
 	ctx     object.Context
 	stop    *atomic.Bool
@@ -130,7 +130,9 @@ var (
 func fn_Vec__norm2(s *state, self *object.Instance) (float64, error) {
 	_ = self
 	if s.stop.Load() {
-		return 0, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return 0, err
+		}
 	}
 	t1, err := fieldFloat(self, 0)
 	if err != nil {
@@ -154,7 +156,9 @@ func fn_Vec__norm2(s *state, self *object.Instance) (float64, error) {
 func big_Vec__norm2(s *state, self *object.Instance) (float64, error) {
 	_ = self
 	if s.stop.Load() {
-		return 0, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return 0, err
+		}
 	}
 	t1, err := fieldFloat(self, 0)
 	if err != nil {
@@ -182,7 +186,7 @@ func call_Vec__norm2(ctx object.Context, self object.Value, args []object.Value,
 	if len(args) != 0 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
+	s := &state{ctx: ctx, stop: eval.InterruptFlag(ctx)}
 	self_, ok := self.AsInstance()
 	if !ok {
 		return object.Value{}, eval.ErrDeopt
@@ -207,7 +211,9 @@ func call_Vec__norm2(ctx object.Context, self object.Value, args []object.Value,
 func fn_Vec__plus(s *state, self *object.Instance, v_other *object.Instance) (*object.Instance, error) {
 	_ = self
 	if s.stop.Load() {
-		return nil, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return nil, err
+		}
 	}
 	t1, err := fieldFloat(self, 0)
 	if err != nil {
@@ -246,7 +252,9 @@ func fn_Vec__plus(s *state, self *object.Instance, v_other *object.Instance) (*o
 func big_Vec__plus(s *state, self *object.Instance, v_other *object.Instance) (*object.Instance, error) {
 	_ = self
 	if s.stop.Load() {
-		return nil, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return nil, err
+		}
 	}
 	t1, err := fieldFloat(self, 0)
 	if err != nil {
@@ -289,7 +297,7 @@ func call_Vec__plus(ctx object.Context, self object.Value, args []object.Value, 
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
+	s := &state{ctx: ctx, stop: eval.InterruptFlag(ctx)}
 	self_, ok := self.AsInstance()
 	if !ok {
 		return object.Value{}, eval.ErrDeopt
@@ -317,7 +325,9 @@ func call_Vec__plus(ctx object.Context, self object.Value, args []object.Value, 
 func fn_Vec__scaled(s *state, self *object.Instance, v_k int64) (*object.Instance, error) {
 	_ = self
 	if s.stop.Load() {
-		return nil, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return nil, err
+		}
 	}
 	t1, err := fieldFloat(self, 0)
 	if err != nil {
@@ -348,7 +358,9 @@ func fn_Vec__scaled(s *state, self *object.Instance, v_k int64) (*object.Instanc
 func big_Vec__scaled(s *state, self *object.Instance, v_k *big.Int) (*object.Instance, error) {
 	_ = self
 	if s.stop.Load() {
-		return nil, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return nil, err
+		}
 	}
 	t1, err := fieldFloat(self, 0)
 	if err != nil {
@@ -383,7 +395,7 @@ func call_Vec__scaled(ctx object.Context, self object.Value, args []object.Value
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
+	s := &state{ctx: ctx, stop: eval.InterruptFlag(ctx)}
 	self_, ok := self.AsInstance()
 	if !ok {
 		return object.Value{}, eval.ErrDeopt
@@ -411,7 +423,9 @@ func call_Vec__scaled(ctx object.Context, self object.Value, args []object.Value
 
 func fn_build(s *state, v_n int64) (*object.Instance, error) {
 	if s.stop.Load() {
-		return nil, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return nil, err
+		}
 	}
 	t1, err := add(v_n, 1)
 	if err != nil {
@@ -437,7 +451,9 @@ func fn_build(s *state, v_n int64) (*object.Instance, error) {
 
 func big_build(s *state, v_n *big.Int) (*object.Instance, error) {
 	if s.stop.Load() {
-		return nil, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return nil, err
+		}
 	}
 	t1 := new(big.Int).Add(v_n, big_1)
 	var t2 *object.Instance
@@ -465,7 +481,7 @@ func call_build(ctx object.Context, self object.Value, args []object.Value, kw *
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
+	s := &state{ctx: ctx, stop: eval.InterruptFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
@@ -490,7 +506,9 @@ func call_build(ctx object.Context, self object.Value, args []object.Value, kw *
 
 func fn_doubled(s *state, v_n int64) (float64, error) {
 	if s.stop.Load() {
-		return 0, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return 0, err
+		}
 	}
 	var t1 *object.Instance
 	{
@@ -520,7 +538,9 @@ func fn_doubled(s *state, v_n int64) (float64, error) {
 
 func big_doubled(s *state, v_n *big.Int) (float64, error) {
 	if s.stop.Load() {
-		return 0, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return 0, err
+		}
 	}
 	var t1 *object.Instance
 	{
@@ -552,7 +572,7 @@ func call_doubled(ctx object.Context, self object.Value, args []object.Value, kw
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
+	s := &state{ctx: ctx, stop: eval.InterruptFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
@@ -577,7 +597,9 @@ func call_doubled(ctx object.Context, self object.Value, args []object.Value, kw
 
 func fn_make(s *state, v_n int64) (float64, error) {
 	if s.stop.Load() {
-		return 0, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return 0, err
+		}
 	}
 	var t1 *object.Instance
 	{
@@ -640,7 +662,9 @@ func fn_make(s *state, v_n int64) (float64, error) {
 
 func big_make(s *state, v_n *big.Int) (float64, error) {
 	if s.stop.Load() {
-		return 0, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return 0, err
+		}
 	}
 	var t1 *object.Instance
 	{
@@ -708,7 +732,7 @@ func call_make(ctx object.Context, self object.Value, args []object.Value, kw *o
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
+	s := &state{ctx: ctx, stop: eval.InterruptFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
@@ -733,7 +757,9 @@ func call_make(ctx object.Context, self object.Value, args []object.Value, kw *o
 
 func fn_shrink(s *state, v_n int64) (int64, error) {
 	if s.stop.Load() {
-		return 0, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return 0, err
+		}
 	}
 	var t1 *object.Instance
 	{
@@ -763,7 +789,9 @@ func fn_shrink(s *state, v_n int64) (int64, error) {
 
 func big_shrink(s *state, v_n *big.Int) (*big.Int, error) {
 	if s.stop.Load() {
-		return nil, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return nil, err
+		}
 	}
 	var t1 *object.Instance
 	{
@@ -795,7 +823,7 @@ func call_shrink(ctx object.Context, self object.Value, args []object.Value, kw 
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
+	s := &state{ctx: ctx, stop: eval.InterruptFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
@@ -820,7 +848,9 @@ func call_shrink(ctx object.Context, self object.Value, args []object.Value, kw 
 
 func fn_walk(s *state, v_n int64) (float64, error) {
 	if s.stop.Load() {
-		return 0, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return 0, err
+		}
 	}
 	var t1 *object.Instance
 	{
@@ -860,7 +890,9 @@ func fn_walk(s *state, v_n int64) (float64, error) {
 	t10 := s.stop
 	for t9 := int64(0); t9 < t4; t9++ {
 		if t10.Load() {
-			return 0, eval.ErrStopped
+			if err := eval.Interrupted(s.ctx); err != nil {
+				return 0, err
+			}
 		}
 		v_v := t5
 		_ = v_v
@@ -892,7 +924,9 @@ func fn_walk(s *state, v_n int64) (float64, error) {
 
 func big_walk(s *state, v_n *big.Int) (float64, error) {
 	if s.stop.Load() {
-		return 0, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return 0, err
+		}
 	}
 	var t1 *object.Instance
 	{
@@ -932,7 +966,9 @@ func big_walk(s *state, v_n *big.Int) (float64, error) {
 	t10 := s.stop
 	for t9 := new(big.Int); t9.Cmp(t4) < 0; t9 = new(big.Int).Add(t9, big_1) {
 		if t10.Load() {
-			return 0, eval.ErrStopped
+			if err := eval.Interrupted(s.ctx); err != nil {
+				return 0, err
+			}
 		}
 		v_v := t5
 		_ = v_v
@@ -969,7 +1005,7 @@ func call_walk(ctx object.Context, self object.Value, args []object.Value, kw *o
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
+	s := &state{ctx: ctx, stop: eval.InterruptFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {

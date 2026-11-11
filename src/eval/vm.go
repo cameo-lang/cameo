@@ -675,6 +675,27 @@ func (m *machine) call(c *cameopb.Code, meth *object.Method, recv object.Value, 
 			return withLine(err, line)
 		}
 	}
+	// A method `cameo build` compiled runs as Go. Asked to pause it
+	// leaves the call, and its body becomes the activation the pause
+	// lands in; the method is pure, so starting it over repeats nothing.
+	if m.inGo == 0 && meth != nil && meth.Native != nil && meth.Body != nil && in.interpreted == 0 && (!meth.Private || private) && (meth.Arity < 0 || len(args) == meth.Arity) {
+		v, err := meth.Native(in, recv, args, kw, block)
+		if err == ErrDeopt {
+			if in.leavesForPause() {
+				act, err := in.methodAct(meth, recv, args, kw, block, line)
+				if err == nil {
+					err = in.pushAct(act, c)
+				}
+				return withLine(err, line)
+			}
+			v, err = in.reinvoke(meth, recv, args, kw, block, line)
+		}
+		if err != nil {
+			return withLine(err, line)
+		}
+		m.push(v)
+		return nil
+	}
 	// A builtin that is a stepper, called with a block, is an activation
 	// too: its steps and its block's calls take turns in the loop.
 	if m.inGo == 0 && meth != nil && meth.Step != nil && !block.IsZero() && (!meth.Private || private) && (meth.Arity < 0 || len(args) == meth.Arity) {

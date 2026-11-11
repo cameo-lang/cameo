@@ -37,8 +37,8 @@ func init() {
 }
 
 // state is one call from the interpreter into compiled code: the run it
-// belongs to, the flag set when the run is stopped, and the classes the
-// call constructed instances of.
+// belongs to, the flag set when the run is stopped or asked to pause, and
+// the classes the call constructed instances of.
 type state struct {
 	ctx     object.Context
 	stop    *atomic.Bool
@@ -69,12 +69,16 @@ var (
 
 func fn_spin(s *state, v_n int64) (int64, error) {
 	if s.stop.Load() {
-		return 0, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return 0, err
+		}
 	}
 	t1 := s.stop
 	for {
 		if t1.Load() {
-			return 0, eval.ErrStopped
+			if err := eval.Interrupted(s.ctx); err != nil {
+				return 0, err
+			}
 		}
 		if !(v_n > 0) {
 			break
@@ -94,12 +98,16 @@ func fn_spin(s *state, v_n int64) (int64, error) {
 
 func big_spin(s *state, v_n *big.Int) (*big.Int, error) {
 	if s.stop.Load() {
-		return nil, eval.ErrStopped
+		if err := eval.Interrupted(s.ctx); err != nil {
+			return nil, err
+		}
 	}
 	t1 := s.stop
 	for {
 		if t1.Load() {
-			return nil, eval.ErrStopped
+			if err := eval.Interrupted(s.ctx); err != nil {
+				return nil, err
+			}
 		}
 		if !(v_n.Cmp(big_0) > 0) {
 			break
@@ -118,7 +126,7 @@ func call_spin(ctx object.Context, self object.Value, args []object.Value, kw *o
 	if len(args) != 1 || kw != nil || !(block.IsZero() || block.IsNil()) {
 		return object.Value{}, eval.ErrDeopt
 	}
-	s := &state{ctx: ctx, stop: eval.StopFlag(ctx)}
+	s := &state{ctx: ctx, stop: eval.InterruptFlag(ctx)}
 	_ = self
 	a0, ok0 := args[0].AsInt()
 	if ok0 {
