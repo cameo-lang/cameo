@@ -315,21 +315,6 @@ CAMEO
   assert_contains "$out" $'(rdbg) \n2'
 }
 
-test_run_builds_and_runs_the_compiled_script() {
-  local script out rc=0
-  script="$(mktemp -d)/fact.rb"
-  cat >"$script" <<'CAMEO'
-def fact(n)
-  n < 2 ? 1 : n * fact(n - 1)
-end
-puts fact(25)
-raise "done"
-CAMEO
-  out=$(cd "$(dirname "$script")" && "$CAMEO_BIN" run fact.rb 2>&1) || rc=$?
-  assert_eq 1 "$rc" "an uncaught exception does not fail cameo run"
-  assert_eq $'15511210043330985984000000\nfact.rb:5: done (RuntimeError)' "$out"
-}
-
 # A call of one of Ruby's mutators raises: cameo deviates from Ruby and
 # never changes or rebinds the receiver. --ignore-mutation-errors makes the
 # call return Ruby's result on a copy, the receiver left as it was.

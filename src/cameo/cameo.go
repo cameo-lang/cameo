@@ -586,8 +586,7 @@ var builtinExceptions = sync.OnceValue(func() []*object.Class {
 // allows that one library: AllowIO("network") lets every library that
 // reaches the network act, AllowIO("file") File.read and File.open, and
 // AllowIO("all") any I/O. The
-// cameo command and a program cameo build wrote allow what their --io
-// flag names. Call it before Run.
+// cameo command allows what its --io flag names. Call it before Run.
 func (p *Program) AllowIO(what ...string) { p.in.AllowIO(what...) }
 
 // FileSystem gives the script fsys to read and write files in, through
@@ -602,8 +601,8 @@ func (p *Program) FileSystem(fsys afero.Fs, dir string) { p.in.SetFileSystem(fsy
 
 // AllowHostIO allows what AllowIO does, and gives file I/O, when what
 // allows it, the machine's file system, with relative paths from the
-// working directory: what the cameo command and a program cameo build
-// wrote do with their --io flags. A program that embeds cameo calls
+// working directory: what the cameo command does with its --io flag. A
+// program that embeds cameo calls
 // AllowIO and FileSystem instead, with the files it means to share.
 func (p *Program) AllowHostIO(what ...string) {
 	p.AllowIO(what...)
@@ -621,7 +620,7 @@ func (p *Program) AllowHostIO(what ...string) {
 var IOKinds = []string{"network", "file", "popen"}
 
 // ParseIOFlags reads the --io flags at the front of a command line, as the
-// cameo command and a program cameo build wrote take them: --io allows
+// cameo command takes them: --io allows
 // every kind of I/O, --io=network,file,popen the kinds named. It returns
 // what AllowIO takes and the arguments left, or an error naming a kind it
 // does not know.
