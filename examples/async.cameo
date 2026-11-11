@@ -37,7 +37,7 @@ rescue ArgumentError => e
 end
 
 begin
-  async w, :times, -> { 1 }
+  async w, :times, Integer
 rescue TypeError => e
   puts "not serialisable: #{e.message}"
 end

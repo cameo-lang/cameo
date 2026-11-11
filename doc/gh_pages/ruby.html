@@ -479,8 +479,9 @@ returns the call's <em>promise</em> at once: an Integer that names the
 result to come. <code>await</code> returns the result, or raises the
 exception the call raised. It takes a promise, a list of them, or
 <code>:all</code>, every call the current method started and has not
-awaited. A call shares no memory with the script that started it, so a
-Proc, a class or a block cannot be passed to one.</p>
+awaited. A call shares no memory with the script that started it: its
+arguments are copied, a Proc among them with the values it captured, and a
+class cannot be passed to one.</p>
 
 <pre class="cameo"><code>include Cameo
 

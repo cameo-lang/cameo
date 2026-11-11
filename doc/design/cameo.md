@@ -81,7 +81,8 @@ Every value is immutable. The kinds of value are:
 | Time | in `cameo.Value`, a `Time` message: seconds, nanoseconds, UTC offset and zone; there is no field type for it yet |
 | an instance of a user class | the message that class declares |
 | an exception | the message its class is: its message, line and cause, what Ruby's exception of that class carries, and the fields the class declares; see [exceptions.md](exceptions.md) |
-| Class, Proc, Enumerator, Random, Encoding, and an instance of a library's class (a Pathname, a Date, a URI) | not serialisable; see *Async* |
+| Proc | a closure: its code and the values it captured; see [ir.md](ir.md) |
+| Class, Enumerator, Random, Encoding, and an instance of a library's class (a Pathname, a Date, a URI) | not serialisable; see *Async* |
 
 Equality is structural everywhere: two lists with equal elements are `==`,
 two instances of one class with equal fields are `==` and hash alike. There
@@ -376,8 +377,8 @@ captures it as a Proc, `proc.call` and `proc.()` invoke it. `return`
 inside a block returns from the enclosing method, and raises
 `LocalJumpError` once that method has returned, as in Ruby; `break` and
 `next` behave as in Ruby. A Proc is a value, and serialises as its code
-and the values it captured (`to_value_proto`, see [ir.md](ir.md)); `async`
-and the pause dump do not carry one yet.
+and the values it captured (see [ir.md](ir.md)): it crosses `async` and
+`to_value_proto`. The pause dump does not carry one yet.
 
 ### Blocks capture values
 
@@ -484,10 +485,11 @@ interpreter state, over copies of the arguments, and returns the call's
 promise. `async` and `await` are intrinsics, not methods, so `async xxx,
 :yyy, *args` needs no parentheses. The receiver, the method name and the
 arguments are serialised through the protobuf value envelope at the `async`
-call, and deserialised on the other side; a Proc, a Class, a block, a
+call, and deserialised on the other side; a Class, a
 handle such as a Random, or an instance of a library's class such as a
 Date among them is a `TypeError` at the `async` call site, not inside the
-job.
+job. A Proc among them crosses as its code and the values it captured; a
+proc a builtin made, `5.method(:+).to_proc`, does not.
 The receiver is a value (any serialisable value, including an instance of a
 class), and the method is looked up on its class in the worker. Classes are
 shared by every worker: the class table is built when the script loads and is
@@ -527,8 +529,10 @@ caller that receives one may still await it, and one nobody awaits is
 waited for when the run ends, with its failure written to standard error.
 `cameo` exits when the script's top-level scope finishes and every call
 `async` started has. A call's result has to be able to travel back, so a
-method that returns a Proc or a class to a worker raises a `TypeError` there;
-`resolve` takes the same values.
+method that returns a class to a worker raises a `TypeError` there;
+`resolve` takes the same values. A Proc a worker returns is read from its
+wire form by the script that awaits it, so its self and its classes are
+that script's.
 
 A worker has no handle to its parent and no shared memory; what it sends
 back is its return value and the promises it settles. Starting calls from

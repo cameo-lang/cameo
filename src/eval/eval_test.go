@@ -678,7 +678,7 @@ end
 		"include Cameo\np = promise\nresolve(p, 1)\nresolve(p, 2)\n": "promise 1 is settled already (ArgumentError)",
 		"include Cameo\nawait 7\n":                                   "no promise 7 (ArgumentError)",
 		"include Cameo\nawait \"x\"\n":                               "a promise is the Integer async or promise returned, not an instance of String (TypeError)",
-		"include Cameo\nresolve(promise, -> { 1 })\n":                "resolve got a Proc, which cannot be passed back (TypeError)",
+		"include Cameo\nresolve(promise, String)\n":                  "resolve got a Class, which cannot be passed back (TypeError)",
 	} {
 		expectError(t, src, want)
 	}

@@ -60,8 +60,8 @@ top level is refused on both. <code>Cameo.async</code> and
   and the arguments, and returns its promise at once. The call runs on a
   worker: an interpreter of its own, on a goroutine Go schedules over the
   cores. Nothing the call does reaches the caller's values, and its result
-  comes back as a copy. A Proc, a class or a block cannot be passed, since
-  they cannot be copied.</dd>
+  comes back as a copy. A Proc is passed with the values it captured; a
+  class cannot be passed, since it cannot be copied.</dd>
 
   <dt><code>await promise</code></dt>
   <dd>waits for the promise and returns its result, or raises the exception
@@ -424,7 +424,7 @@ puts Shop.new.ship(order)</code></pre>
 <pre class="output"><code>A-17 to Berlin: 7499 cents, 1800 g</code></pre>
 <h3 id="07_copies">copies</h3>
 
-<p>A call that async starts gets copies of its receiver and its arguments, and its result comes back as a copy: nothing a worker does reaches the caller's values. A Proc or a class cannot be copied, so it cannot be passed.</p>
+<p>A call that async starts gets copies of its receiver and its arguments, and its result comes back as a copy: nothing a worker does reaches the caller's values. A Proc crosses too, with the values it captured. A class cannot be copied, so it cannot be passed.</p>
 
 <pre class="cameo"><code>require "cameo/runner"
 
@@ -435,13 +435,21 @@ class Editor
     list + [item]
   end
 
+  def each_changed(list, change)
+    list.map { |item| change.call(item) }
+  end
+
   def demo
     list = [1, 2]
     longer = await self, :append, list, 3
     puts "the worker's: #{longer.inspect}, the caller's: #{list.inspect}"
 
+    factor = 10
+    scaled = await self, :each_changed, list, -&gt;(item) { item * factor }
+    puts "changed by a proc: #{scaled.inspect}"
+
     begin
-      async self, :append, list, -&gt; { 4 }
+      async self, :append, list, String
     rescue TypeError =&gt; e
       puts e.message
     end
@@ -450,7 +458,8 @@ end
 
 Editor.new.demo</code></pre>
 <pre class="output"><code>the worker's: [1, 2, 3], the caller's: [1, 2]
-a Proc cannot be passed to async</code></pre>
+changed by a proc: [10, 20]
+a Class cannot be passed to async</code></pre>
 <h3 id="08_top_level">top level</h3>
 
 <p>Cameo::Runner belongs in the class that runs the work. The top level refuses it, on cameo and on Ruby alike; a script that wants async at the top level includes Cameo, which only cameo has.</p>
@@ -481,8 +490,10 @@ $ ruby -I ruby/lib examples/async/02_fan_out.rb
 
 <p>On Ruby, <code>async</code> copies the receiver and the arguments with
 <code>Marshal</code>, as cameo copies them, and runs the call on a thread
-of its own; a Proc, a Method, a class or a module cannot be copied, as in
-cameo. The result comes back as a copy, and a failure raises again where
+of its own; a Method, a class or a module cannot be copied, as in
+cameo. A Proc is passed as it is: cameo sends its code and the values it
+captured, and Ruby has no copy of one, so on Ruby a proc that changes a
+variable around it changes it for the caller too. The result comes back as a copy, and a failure raises again where
 the call is awaited. <code>await :all</code> collects the calls the current
 method started, which the library tells from the caller's location.</p>
 

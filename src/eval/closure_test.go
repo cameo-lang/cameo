@@ -167,6 +167,33 @@ builtin = 5.method(:+).to_proc rescue nil
 	assert.Equals(t, err.Error(), "a Proc a builtin made cannot be serialised")
 }
 
+// A proc is an argument of an async call and its result like any other
+// value: the worker gets the proc with what it captured, and what a worker
+// made is called by the script that awaits it.
+func TestProcsCrossToAWorkerAndBack(t *testing.T) {
+	_, out := ran(t, `include Cameo
+class Work
+  def apply(f, xs) = xs.map { |x| f.(x) }
+  def adder(n) = ->(x) { x + n }
+  def twice(&blk) = blk
+  def compose(f, g:) = ->(x) { g.(f.(x)) }
+end
+w = Work.new
+factor = 3
+scale = ->(x) { x * factor }
+puts await(w, :apply, scale, [1, 2]).inspect
+add = await(w, :adder, 10)
+puts add.(5), add.lambda?
+both = await(w, :compose, scale, g: add)
+puts both.(2)
+pr = promise
+resolve(pr, ->(x) { x.to_s * factor })
+puts await(pr).(7)
+puts await([async(w, :adder, 1), async(w, :adder, 2)]).map { |f| f.(0) }.inspect
+`)
+	assert.Equals(t, out.String(), "[3, 6]\n15\ntrue\n16\n777\n[1, 2]\n")
+}
+
 // A symbol a proc captured reads back as a String, as a symbol does
 // wherever a value crosses the envelope (doc/design/cameo.md, "Symbols").
 func TestASymbolAProcCapturedReadsBackAsAString(t *testing.T) {
