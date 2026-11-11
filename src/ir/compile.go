@@ -48,16 +48,28 @@ func Digest(u *cameopb.Unit) (string, error) {
 	return hex.EncodeToString(sum[:8]), nil
 }
 
+// binaryOps is the instruction of each arithmetic and comparison
+// operator, which the evaluator computes on two Integers or two Floats
+// without a method call.
+var binaryOps = map[string]cameopb.Op{
+	"+":  cameopb.Op_BINARY_PLUS,
+	"-":  cameopb.Op_BINARY_MINUS,
+	"*":  cameopb.Op_BINARY_TIMES,
+	"/":  cameopb.Op_BINARY_DIVIDE,
+	"%":  cameopb.Op_BINARY_MODULO,
+	"<":  cameopb.Op_BINARY_LT,
+	"<=": cameopb.Op_BINARY_LE,
+	">":  cameopb.Op_BINARY_GT,
+	">=": cameopb.Op_BINARY_GE,
+	"==": cameopb.Op_BINARY_EQ,
+	"!=": cameopb.Op_BINARY_NE,
+}
+
 // IsOperator reports whether a call of name with a receiver and one plain
-// argument is compiled with the operator flag: the arithmetic and
-// comparison operators, which the evaluator computes on two Integers or
-// two Floats without a method call.
+// argument is compiled to a BINARY_ instruction.
 func IsOperator(name string) bool {
-	switch name {
-	case "+", "-", "*", "/", "%", "<", "<=", ">", ">=", "==", "!=":
-		return true
-	}
-	return false
+	_, ok := binaryOps[name]
+	return ok
 }
 
 type compiler struct {
@@ -971,7 +983,7 @@ func (c *compiler) send(e *emitter, n *syntax.Call) error {
 		if err := c.expr(e, n.Args[0]); err != nil {
 			return err
 		}
-		e.emit(cameopb.Op_SEND, line, c.nameArg(n.Name), intArg(1)).Flags = uint64(cameopb.Flag_FLAG_OPERATOR)
+		e.emit(binaryOps[n.Name], line)
 		return nil
 	}
 	argc, flags, err := c.callArgs(e, n.Args, n.KwArgs, line)

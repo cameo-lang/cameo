@@ -74,8 +74,13 @@ proc #1 double_all(list)
 proc #2 block(x)
   LOAD x
   CONST 2
-  SEND * 1 operator
+  BINARY_TIMES
 ```
+
+`BINARY_TIMES` is `*` with a receiver and one plain argument, both on the
+stack. Each arithmetic and comparison operator has such an instruction:
+on two Integers or two Floats the evaluator computes the result, and on
+anything else it calls the method `*`, as a `SEND` does.
 
 `SEND map 0 #2 block` calls `map` with no arguments and the literal block
 proc #2: the call makes the closure, a copy of the locals in sight. A

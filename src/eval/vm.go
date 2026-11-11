@@ -289,6 +289,10 @@ func (m *machine) exec(c *cameopb.Code) error {
 		m.push(procValue(p))
 	case cameopb.Op_SEND:
 		return m.send(c)
+	case cameopb.Op_BINARY_PLUS, cameopb.Op_BINARY_MINUS, cameopb.Op_BINARY_TIMES, cameopb.Op_BINARY_DIVIDE,
+		cameopb.Op_BINARY_MODULO, cameopb.Op_BINARY_LT, cameopb.Op_BINARY_LE, cameopb.Op_BINARY_GT,
+		cameopb.Op_BINARY_GE, cameopb.Op_BINARY_EQ, cameopb.Op_BINARY_NE:
+		return m.binary(c)
 	case cameopb.Op_SAFE:
 		if !m.top().IsNil() {
 			m.enter(c, 0, phaseValue, len(m.stack), false)
@@ -613,18 +617,30 @@ func (m *machine) closure(index uint32) object.Value {
 	return procValue(writtenProc(m.unit, index, env, m.fr))
 }
 
+// binaryNames is the name of each operator a BINARY_ instruction runs,
+// by its distance from BINARY_PLUS; the Syms from SymAdd on are in the
+// same order.
+var binaryNames = [...]string{"+", "-", "*", "/", "%", "<", "<=", ">", ">=", "==", "!="}
+
+// binary runs a BINARY_ instruction: an operator on the two values on top
+// of the stack. Two integers or two floats are computed where they are;
+// an operator a class defines is a call like any other.
+func (m *machine) binary(c *cameopb.Code) error {
+	i := c.Op - cameopb.Op_BINARY_PLUS
+	op := object.SymAdd + object.Sym(i)
+	n := len(m.stack)
+	if v := binary(op, m.stack[n-2], m.stack[n-1]); !v.IsZero() {
+		m.stack[n-2] = v
+		m.stack = m.stack[:n-1]
+		return nil
+	}
+	args := m.popN(1)
+	recv := m.pop()
+	return m.call(c, m.in.lookupSym(recv, op, false), recv, binaryNames[i], args, nil, object.Value{}, false, true, int(c.Line))
+}
+
 // send runs a SEND: a method call.
 func (m *machine) send(c *cameopb.Code) error {
-	if c.Flags == uint64(cameopb.Flag_FLAG_OPERATOR) {
-		// Two integers or two floats: the operands are read where they
-		// are, and no argument list is made.
-		n := len(m.stack)
-		if v := binary(m.sym(c, 0), m.stack[n-2], m.stack[n-1]); !v.IsZero() {
-			m.stack[n-2] = v
-			m.stack = m.stack[:n-1]
-			return nil
-		}
-	}
 	in, fr := m.in, m.fr
 	name, line := m.name(c, 0), int(c.Line)
 	var block object.Value
@@ -640,10 +656,6 @@ func (m *machine) send(c *cameopb.Code) error {
 	recv := fr.Self
 	if !selfCall {
 		recv = m.pop()
-	}
-	if has(c, cameopb.Flag_FLAG_OPERATOR) {
-		// An operator a class defines is a call like any other.
-		return m.call(c, in.lookupSym(recv, m.sym(c, 0), false), recv, name, args, nil, object.Value{}, false, true, line)
 	}
 	recvName := "x"
 	for _, a := range c.Args[2:] {
