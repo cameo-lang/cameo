@@ -106,6 +106,9 @@ type machine struct {
 	debugged bool
 	// stepper is what an actStep is of.
 	stepper *stepping
+	// result is what the caller gets in place of the activation's own
+	// value, when it is set: the instance new made, for an initialize.
+	result object.Value
 	// inGo counts the lists the activation runs to their end inside an
 	// instruction (nested). A call made while it is not zero cannot go
 	// back to the loop, and runs in a loop of its own.
@@ -621,6 +624,18 @@ func (m *machine) call(c *cameopb.Code, meth *object.Method, recv object.Value, 
 	if m.inGo == 0 && in.runs(meth, private) {
 		act, err := in.methodAct(meth, recv, args, kw, block, line)
 		if err == nil {
+			err = in.pushAct(act, c)
+		}
+		return withLine(err, line)
+	}
+	// new on a class whose initialize a script defined makes the instance
+	// and runs initialize as an activation, whose caller gets the
+	// instance.
+	if init := in.initializer(meth, recv); init != nil && m.inGo == 0 {
+		inst := object.InstanceValue(allocate(recv.Cls()))
+		act, err := in.methodAct(init, inst, args, kw, block, line)
+		if err == nil {
+			act.result = inst
 			err = in.pushAct(act, c)
 		}
 		return withLine(err, line)

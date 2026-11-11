@@ -20,11 +20,29 @@ type stackDump struct {
 	frameList []*Frame
 	scopes    map[*Env]uint32
 	scopeList []*Env
+	// building holds the instances the frames' initializes are filling,
+	// each with the index of its frame: an instance that still changes
+	// is in the dump once, and referred to there.
+	building map[*object.Instance]uint32
+}
+
+// buildingIn returns the index, plus one, of the frame whose initialize
+// is filling the instance v is, and zero when v is no such instance.
+func (sd *stackDump) buildingIn(v object.Value) uint32 {
+	if sd == nil {
+		return 0
+	}
+	if inst, ok := v.AsInstance(); ok {
+		if i, ok := sd.building[inst]; ok {
+			return i + 1
+		}
+	}
+	return 0
 }
 
 // stackFrames numbers the frames and scopes of the activations acts.
 func stackFrames(acts []*machine) *stackDump {
-	sd := &stackDump{frames: map[*Frame]uint32{}, scopes: map[*Env]uint32{}}
+	sd := &stackDump{frames: map[*Frame]uint32{}, scopes: map[*Env]uint32{}, building: map[*object.Instance]uint32{}}
 	for _, m := range acts {
 		if m.kind == actStep {
 			// A builtin has neither.
@@ -33,6 +51,9 @@ func stackFrames(acts []*machine) *stackDump {
 		if _, ok := sd.frames[m.fr]; !ok {
 			sd.frames[m.fr] = uint32(len(sd.frameList))
 			sd.frameList = append(sd.frameList, m.fr)
+			if m.fr.Building != nil {
+				sd.building[m.fr.Building] = sd.frames[m.fr]
+			}
 		}
 		sd.scope(m.env)
 	}
@@ -156,13 +177,26 @@ func (in *Interp) dumpStack(d *cameopb.Dump, enc *protogen.Encoder, classes *cla
 		for _, v := range m.stack {
 			a.Stack = append(a.Stack, value("a value in flight in "+where, v))
 		}
+		if !m.result.IsZero() {
+			a.Result = value("what "+where+" returns", m.result)
+		}
 		d.Stack = append(d.Stack, a)
 	}
 	for i, fr := range sd.frameList {
-		if fr.Building != nil || fr.BuildingExc != nil || fr.Reopened != nil {
-			return fmt.Errorf("frame %d is of an initialize or a class body, which no pause is inside", i)
+		if fr.BuildingExc != nil || fr.Reopened != nil {
+			return fmt.Errorf("frame %d is of an exception's initialize or a class body, which no pause is inside", i)
 		}
 		f := &cameopb.Dump_Frame{Top: fr == acts[0].fr, File: fr.File, Lambda: fr.Lambda, Ended: fr.ended}
+		if inst := fr.Building; inst != nil {
+			// The instance as it is now. Its message is not kept on it:
+			// its initialize goes on filling it.
+			msg, err := enc.Message(object.InstanceValue(inst))
+			inst.Message = nil
+			if err != nil {
+				return fmt.Errorf("the instance frame %d is making: %w", i, err)
+			}
+			f.Building = msg
+		}
 		what := fmt.Sprintf("of frame %d", i)
 		f.Self = value("self "+what, fr.Self)
 		if m := fr.Method; m != nil {
@@ -353,9 +387,9 @@ type stackRestore struct {
 // restoreShells makes the frames and scopes of a dump, empty, before any
 // value of the dump is read: a closure among the values may refer to a
 // frame.
-func (in *Interp) restoreShells(d *cameopb.Dump) {
+func (in *Interp) restoreShells(dec *protogen.Decoder, d *cameopb.Dump) error {
 	if len(d.GetStack()) == 0 {
-		return
+		return nil
 	}
 	sr := &stackRestore{}
 	for _, f := range d.GetFrames() {
@@ -373,6 +407,25 @@ func (in *Interp) restoreShells(d *cameopb.Dump) {
 		sr.scopes = append(sr.scopes, env)
 	}
 	in.resuming = sr
+	// The instances that initializes are filling, which other values of
+	// the dump refer to by their frame.
+	for i, f := range d.GetFrames() {
+		if f.GetBuilding() == nil {
+			continue
+		}
+		v, err := dec.Value(f.GetBuilding())
+		if err != nil {
+			return fmt.Errorf("the instance frame %d is making: %w", i, err)
+		}
+		inst, ok := v.AsInstance()
+		if !ok {
+			return fmt.Errorf("frame %d of the dump is making what is no instance", i)
+		}
+		// Its initialize goes on filling it: no message is kept on it.
+		inst.Message = nil
+		sr.frames[i].Building = inst
+	}
+	return nil
 }
 
 // restoreStack fills the frames and scopes of a dump and makes its
@@ -635,6 +688,11 @@ func (in *Interp) restoreStack(dec *protogen.Decoder, d *cameopb.Dump, script *p
 				return fmt.Errorf("a value in flight in activation %d: %w", i, err)
 			}
 			m.stack = append(m.stack, v)
+		}
+		if a.GetResult() != nil {
+			if m.result, err = value(a.GetResult()); err != nil {
+				return fmt.Errorf("what activation %d returns: %w", i, err)
+			}
 		}
 		acts = append(acts, m)
 	}

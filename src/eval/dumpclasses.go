@@ -99,6 +99,9 @@ func (cd *classDump) binding(enc *protogen.Encoder, name string, v object.Value)
 		b.Main = true
 		return b
 	}
+	if b.Building = cd.in.dumping.buildingIn(v); b.Building != 0 {
+		return b
+	}
 	if cls, ok := v.AsClass(); ok {
 		if b.Class = cd.ref(cls); b.Class == "" {
 			b.Missing = "a class no constant names"
