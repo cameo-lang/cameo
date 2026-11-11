@@ -389,6 +389,46 @@ promise it will settle; a call `async` queued and no worker took yet is
 dumped as the call. A promise the host is to settle stays pending in the
 dump, and the host settles it after the resume, by its id.
 
+### Workers and await at a pause
+
+A run with `async` is several interpreters, each on a goroutine of its
+own or, when the one that awaits a call takes it, on the awaiter's. They
+stop in two steps, so that none is stopped while another needs it.
+
+**Waiting is state.** An `await` does not hold its activation inside an
+instruction: the instruction says what the activation waits for — the
+promises, which of them it has, the results so far — and the activation
+waits. A pause wakes a waiter that can pause, which then stands where
+any activation stands before an instruction. The dump holds what it
+waits for, and the resumed run waits again.
+
+**Park, then freeze.** A worker that comes to an instruction it can
+pause before, with a pause asked for, parks: it stops there with its
+goroutine and says so. A waiter that cannot pause, since it is inside a
+nested loop, does not park. It marks the promise it waits for as needed,
+and the worker of a needed promise does not park, or goes on when it had
+parked, and passes the need on to what it awaits itself. So a chain of
+calls that something unpausable waits for runs to its end.
+
+`Dump` waits until every call `async` started is settled or parked and
+not needed. Nothing is running then, so nothing can come to need a
+parked worker. It tells the parked workers to freeze, each gives up its
+goroutine and keeps its stack of activations, and the dump writes:
+
+| | in the dump |
+|---|---|
+| a call that settled | its promise, with the result or the failure, as today |
+| a call that froze | its promise, pending, and the worker's stack with its scopes and frames |
+| a call no worker took | its promise, pending, and the call: receiver, method, arguments |
+| a promise made by hand | pending; the script or the host settles it after the resume |
+
+The resume makes every pending promise again under its id, queues the
+calls that were queued, and gives each frozen stack an interpreter and a
+goroutine that goes on in it and settles its promise. A worker's top
+level is the one the resumed run has: a worker that was started before
+the script defined a method later sees that method after a resume, where
+in the run that paused it would not have.
+
 A resumed run rebuilds the stacks: every activation finds its proc by
 unit and index, its cursors by walking the path, and a step function by
 its class and name. A cameo that no longer has a builtin a dump is inside

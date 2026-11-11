@@ -213,6 +213,10 @@ func (t *promises) get(id int64) *Promise {
 // goroutine and hands the script by its ID.
 func (in *Interp) NewPromise() *Promise { return in.promises.add("") }
 
+// PromiseOf returns the promise of the run with the id; nil when there is
+// none.
+func (in *Interp) PromiseOf(id int64) *Promise { return in.promises.get(id) }
+
 // waitStarted waits for every promise async started, in start order, and
 // writes the failures nobody awaited to standard error.
 func (in *Interp) waitStarted() error {
@@ -322,6 +326,12 @@ func (in *Interp) awaitEach(ps []*Promise) (object.Value, error) {
 // awaitAll waits for the promises of the method scope env is in that are
 // not awaited yet.
 func (in *Interp) awaitAll(env *Env) (object.Value, error) {
+	return in.awaitEach(in.unawaited(env))
+}
+
+// unawaited returns the promises of the method scope env is in that
+// nothing awaited yet.
+func (in *Interp) unawaited(env *Env) []*Promise {
 	var pending []*Promise
 	for _, p := range methodScope(env).promises {
 		p.mu.Lock()
@@ -330,7 +340,7 @@ func (in *Interp) awaitAll(env *Env) (object.Value, error) {
 		}
 		p.mu.Unlock()
 	}
-	return in.awaitEach(pending)
+	return pending
 }
 
 // asyncMethod is the name of the method async is to call, which m gives.
@@ -481,6 +491,7 @@ func (in *Interp) worker() *Interp {
 		cameoTop:             top.cameoTop,
 		code:                 in.code,
 		stop:                 in.stop,
+		pausing:              in.pausing,
 		allowIO:              in.allowIO,
 		fsys:                 in.fsys,
 		fsDir:                in.fsDir,
