@@ -54,32 +54,44 @@ copy that the envelope can carry.
 A **unit** is the code of one source file: the script, or a library written in
 cameo. It holds a table of names and a list of **procs**. A proc is one body:
 the top level, a method, a block, a lambda, a class body. An instruction has
-an operation, arguments, and for control flow nested instruction lists.
+an operation, arguments, flags, and for control flow nested instruction
+lists. The messages and the operations, each with what it pops and pushes,
+are in [src/cameopb/cameo/ir.proto](../../src/cameopb/cameo/ir.proto);
+`ir.Listing` prints a unit:
 
 ```ruby
 def double_all(list) = list.map { |x| x * 2 }
 ```
 
 ```
-proc #0 double_all(list)
-  LOAD   list
-  PROC   #1            ; a closure: proc #1 and a copy of the locals in sight
-  SEND   map 0 block
-proc #1 |x|
-  LOAD   x
-  CONST  2
-  SEND   * 1
+proc #0 <main>
+  DEF double_all #1
+
+proc #1 double_all(list)
+  LOAD list
+  SEND map 0 #2 block
+
+proc #2 block(x)
+  LOAD x
+  CONST 2
+  SEND * 1 operator
 ```
+
+`SEND map 0 #2 block` calls `map` with no arguments and the literal block
+proc #2: the call makes the closure, a copy of the locals in sight. A
+statement ends in `DROP`, which discards its value, so the instruction
+after a `DROP` starts a statement; that is where the debugger stops.
 
 ```proto
-message Unit   { string digest = 1; string file = 2; repeated string names = 3; repeated Proc procs = 4; }
-message Proc   { Params params = 1; repeated Code code = 2; int32 line = 3; }
-message Code   { Op op = 1; repeated Arg args = 2; repeated Seq code = 3; int32 line = 4; }
+message Unit   { uint32 version = 1; string digest = 2; string file = 3; repeated string names = 4; repeated Proc procs = 5; }
+message Proc   { string name = 1; Params params = 2; repeated Code code = 3; int32 line = 4; bool shared = 5; }
+message Code   { Op op = 1; repeated Arg args = 2; repeated Seq code = 3; int32 line = 4; uint64 flags = 5; }
 message Seq    { repeated Code code = 1; }
-message Arg    { oneof kind { Value constant = 1; uint32 name = 2; uint32 proc = 3; int64 int = 4; Pattern pattern = 5; } }
+message Arg    { oneof kind { Value constant = 1; uint32 name = 2; uint32 proc = 3; int64 int = 4; Pattern pattern = 5; FieldDecl field = 6; } }
 ```
 
-The values of a run that refer to code:
+The values of a run that refer to code, which `cameo.Value` gains in a
+later step:
 
 ```proto
 message Closure { string unit = 1; uint32 proc = 2; Binding binding = 3; bool strict = 4; string self_name = 5; }
@@ -134,7 +146,9 @@ frame that can pause.
 ## The stack of pull requests
 
 Branches are `ir/NN-<topic>`, each based on the one before, the first on
-`main`. Every pull request leaves `make check` green.
+`main`. Every pull request leaves `make check` green. A branch's number
+counts pull requests, so it runs ahead of the step numbers below where a
+step took more than one.
 
 **Stack A: an IR, and procs, methods and classes that serialise**
 
