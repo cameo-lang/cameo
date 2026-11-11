@@ -34,7 +34,7 @@ The dump is the protobuf message `cameo.Dump`, written in
 |---|---|
 | `file`, `source` | the script's path and text |
 | `next`, `line` | the index of the top-level statement the run continues with, and its line |
-| `variables` | the top-level variables, each as its name and its value in the envelope wire form (`cameo.Value`, see [cameo.md](cameo.md#protobuf)) |
+| `variables` | the top-level variables, each as its name and its value in the envelope (`cameo.Value`, see [cameo.md](cameo.md#protobuf)); a variable bound to nil has a value too, an empty one |
 | `constants` | the constants the script assigned, the same way; a class is named instead |
 | `promises` | every promise, settled: its id, the method `async` ran, and its result or the exception it failed with |
 | `loaded` | the libraries `require` loaded |
