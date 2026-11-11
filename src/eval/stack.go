@@ -52,6 +52,9 @@ func (in *Interp) start(m *machine) (object.Value, error) {
 // atInstruction reports whether the activation's next step runs an
 // instruction, and not the end of a list.
 func (m *machine) atInstruction() bool {
+	if m.flat != nil {
+		return m.atReal()
+	}
 	cur := &m.cursors[len(m.cursors)-1]
 	return cur.next < len(cur.code)
 }
@@ -105,6 +108,16 @@ func (in *Interp) run(floor int) (object.Value, error) {
 			in.acts[len(in.acts)-1].push(v)
 			continue
 		}
+		if m.flat != nil && err == nil && m.pc < len(m.flat.code) {
+			// Flat code runs until the activation ends, calls, or
+			// reaches an instruction a pause stops before.
+			if in.pausing.flag.Load() && in.canPause(m) && m.atReal() && in.freeze() {
+				return object.Value{}, ErrPaused
+			}
+			if err = m.runFlat(); err != nil || in.acts[len(in.acts)-1] != m || m.pc < len(m.flat.code) {
+				continue
+			}
+		}
 		if len(m.cursors) > 0 {
 			if err == nil {
 				// A pause stops the run here, before an instruction,
@@ -143,8 +156,9 @@ func (in *Interp) run(floor int) (object.Value, error) {
 		if err == nil {
 			v = m.pop()
 		}
-		if v, err = in.leave(m, v, err); len(m.cursors) > 0 {
+		if v, err = in.leave(m, v, err); m.again {
 			// A redo: the block runs again.
+			m.again = false
 			continue
 		}
 		in.acts = in.acts[:len(in.acts)-1]
@@ -277,7 +291,9 @@ func (in *Interp) leave(m *machine, v object.Value, err error) (object.Value, er
 		if c, ok := err.(*control); ok && c.kind == ctrlRedo && c.target == nil {
 			if err = in.stopped(); err == nil {
 				m.stack = m.stack[:0]
-				m.cursors = append(m.cursors, cursor{code: p.IR.proc.GetCode(), statement: true})
+				m.flat, m.bases = nil, nil
+				m.startAt(in.flatOfProc(p.IR), p.IR.proc.GetCode(), true)
+				m.again = true
 				return object.Value{}, nil
 			}
 		}
@@ -349,7 +365,7 @@ func (in *Interp) methodAct(m *object.Method, recv object.Value, args []object.V
 		_, err = in.leave(act, object.Value{}, err)
 		return nil, err
 	}
-	act.cursors = append(act.cursors, cursor{code: code.proc.GetCode(), statement: true})
+	act.startAt(in.flatOfProc(code), code.proc.GetCode(), true)
 	if in.dbg != nil {
 		in.dbg.enter(methodName(m, recv), env, fr)
 		act.debugged = true
@@ -384,7 +400,7 @@ func (in *Interp) blockAct(p *Proc, args []object.Value, kw *object.Map, inner o
 	}
 	act := in.machine()
 	act.unit, act.env, act.fr, act.kind, act.proc = p.IR.unit, env, fr, actBlock, p
-	act.cursors = append(act.cursors, cursor{code: p.IR.proc.GetCode(), statement: true})
+	act.startAt(in.flatOfProc(p.IR), p.IR.proc.GetCode(), true)
 	if in.dbg != nil {
 		in.dbg.enter(blockName(in.dbg, p.Frame), env, fr)
 		act.debugged = true

@@ -170,6 +170,13 @@ func (in *Interp) quiet() {
 // dump, and reports true: the interpreter stops. A worker whose promise
 // something needs does not freeze.
 func (in *Interp) freeze() bool {
+	// What is frozen runs from cursors: a dump writes cursors, and a
+	// run that goes on continues from them.
+	for i, m := range in.acts {
+		if m.flat != nil {
+			m.cursorsAt(i < len(in.acts)-1)
+		}
+	}
 	acts := append([]*machine(nil), in.acts...)
 	if !in.isWorker {
 		in.frozen = acts

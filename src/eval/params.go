@@ -83,11 +83,13 @@ func (in *Interp) paramsOf(p *irProc) *params {
 		if !ok {
 			if in.paramsBy == nil {
 				in.paramsBy = map[*cameopb.Unit][]*params{}
+				in.flatBy = map[*cameopb.Unit][]lowered{}
 			}
 			list = make([]*params, len(p.unit.Procs))
 			in.paramsBy[p.unit] = list
+			in.flatBy[p.unit] = make([]lowered, len(p.unit.Procs))
 		}
-		in.paramsUnit, in.paramsList = p.unit, list
+		in.paramsUnit, in.paramsList, in.flatList = p.unit, list, in.flatBy[p.unit]
 	}
 	if ps := in.paramsList[p.index]; ps != nil {
 		return ps
@@ -144,4 +146,38 @@ func (in *Interp) symsOf(unit *cameopb.Unit) *unitNames {
 	}
 	in.symsUnit, in.symsList = unit, names
 	return names
+}
+
+// flatOfProc returns the flat code of the proc p, nil when it runs from
+// cursors. The interpreter keeps what it lowered by unit and index.
+func (in *Interp) flatOfProc(p *irProc) *flatCode {
+	in.paramsOf(p)
+	if f := &in.flatList[p.index]; f.lowered {
+		return f.code
+	}
+	code := in.flatOf(p.unit, p.proc.GetCode(), true)
+	in.flatList[p.index] = lowered{code: code, lowered: true}
+	return code
+}
+
+// lowered is the flat code of a list, nil for a list that runs from
+// cursors, once lowering was tried.
+type lowered struct {
+	code    *flatCode
+	lowered bool
+}
+
+// flatOf returns the flat code of the list code of unit, nil when it runs
+// from cursors. The run's interpreters share what was lowered, by the
+// list's first instruction.
+func (in *Interp) flatOf(unit *cameopb.Unit, code []*cameopb.Code, body bool) *flatCode {
+	if len(code) == 0 {
+		return nil
+	}
+	if known, ok := in.code.flat.Load(code[0]); ok {
+		return known.(*flatCode)
+	}
+	flat := lower(code, in.symsOf(unit), body)
+	actual, _ := in.code.flat.LoadOrStore(code[0], flat)
+	return actual.(*flatCode)
 }

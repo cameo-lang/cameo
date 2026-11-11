@@ -387,6 +387,18 @@ func (m *machine) interp(c *cameopb.Code) {
 // interpPart adds part i of an INTERP, whose value is on the stack, to
 // the string under it, and enters the next part.
 func (m *machine) interpPart(c *cameopb.Code, i int) error {
+	if err := m.interpAdd(c); err != nil {
+		return err
+	}
+	if i+1 < len(c.Code) {
+		m.enter(c, i+1, phasePart, len(m.stack), false)
+	}
+	return nil
+}
+
+// interpAdd adds the value on top of the stack to the string under it,
+// as a part of the INTERP c.
+func (m *machine) interpAdd(c *cameopb.Code) error {
 	in, line := m.in, int(c.Line)
 	v := m.pop()
 	sofar := m.pop()
@@ -406,9 +418,6 @@ func (m *machine) interpPart(c *cameopb.Code, i int) error {
 		kind = next
 	}
 	m.push(object.StringOf(kind, sofar.Str()+s))
-	if i+1 < len(c.Code) {
-		m.enter(c, i+1, phasePart, len(m.stack), false)
-	}
 	return nil
 }
 
