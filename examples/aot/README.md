@@ -11,7 +11,7 @@ generated package differs from what `cameo build` writes now.
 | [blocks.rb](blocks.rb) | `times`, `upto`, `downto` and `each` over a Range as Go loops, with `break`, `next`, `return`, a local of the block's own, a parameter the body sets, and bounds beyond 64 bits; `reduce`, `sum` and `count` over them as loops with an accumulator |
 | [classes.rb](classes.rb) | methods of classes with typed fields: field reads as typed loads, a parameter typed by the field read on it, direct calls on instances, a child class with its parent's fields, `ref`, `bool` and `bignum` fields; the expected output is the interpreter's, since the field declarations are cameo's |
 | [construction.rb](construction.rb) | `Class.new` through an initialize that sets fields alone, and by keywords without one; an Integer converted for a Float field, defaults, a value that does not fit left to the interpreter to raise; the expected output is the interpreter's |
-| [floats.rb](floats.rb) | Float literals and locals, arithmetic with Integers, exact comparisons of the two, `to_f` and `to_i`, a Float result found through recursion, and Integers past 64 bits beside Floats |
+| [floats.rb](floats.rb) | Float literals and locals, arithmetic with Integers, exact comparisons of the two, `to_f` and `to_i`, a `reduce` whose accumulator is a Float, a Float result found through recursion, and Integers past 64 bits beside Floats |
 | [spin.rb](spin.rb) | a compiled loop that never ends, which a host's `RunContext` stops and a host's `Pause` pauses |
 | [relay.rb](relay.rb) | compiled methods that call each other for a fifth of a second, which a host pauses and resumes from the dump; it has no expected output, since the interpreter alone takes minutes for it |
 

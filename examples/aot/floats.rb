@@ -8,9 +8,7 @@ def half(n)
 end
 
 def mean(n)
-  s = 0.0
-  1.upto(n) { |i| s += i }
-  s / n
+  (1..n).reduce(0.0) { |s, i| s + i } / n
 end
 
 def ratio(a, b)

@@ -16,6 +16,7 @@ import (
 	"github.com/cameo-lang/cameo/examples/aot/blocks"
 	"github.com/cameo-lang/cameo/examples/aot/classes"
 	"github.com/cameo-lang/cameo/examples/aot/construction"
+	"github.com/cameo-lang/cameo/examples/aot/floats"
 	"github.com/cameo-lang/cameo/examples/aot/relay"
 	"github.com/cameo-lang/cameo/examples/aot/spin"
 	"github.com/cameo-lang/cameo/src/aot"
@@ -37,6 +38,7 @@ var examples = []struct {
 	{"blocks", blocks.File, blocks.Script},
 	{"classes", classes.File, classes.Script},
 	{"construction", construction.File, construction.Script},
+	{"floats", floats.File, floats.Script},
 	{"spin", spin.File, spin.Script},
 	{"relay", relay.File, relay.Script},
 }
