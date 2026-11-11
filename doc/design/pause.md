@@ -101,6 +101,7 @@ The dump is the protobuf message `cameo.Dump`, written in
 | `cameo_top` | whether the script included `Cameo` at the top level |
 | `promises` | every promise: its id, the method `async` ran, and its result or the exception it failed with; or that it is pending, for one made by hand and for a call that had not ended |
 | `workers`, `calls` | the calls `async` started that had not ended: a worker's activations with their scopes and frames, for one that was running, and the receiver, method and arguments, for one no worker had taken |
+| `handles` | the library values that change which the run held, a StringIO, each once, as its class and what its library saved of it |
 | `loaded` | the libraries `require` loaded |
 | `rand` | the state of the random number generator, so a seeded script draws on as if it had not paused |
 | `at_exit` | the blocks `at_exit` registered, in order, which a resumed run runs when it ends |
@@ -212,6 +213,18 @@ frame's self, what the activation returns, a local or an argument that
 is it — refers to it by that frame. A copy of it inside another value, a
 list it was put in before it was done, is a copy after the resume, and
 does not see the fields set later.
+
+A **handle** is the other kind of value that changes: a library's object
+whose state is the library's own Go data, a StringIO with its string and
+its position. No envelope carries one. A library that can put its
+handles through a dump gives their class a hook, `object.StateHook`:
+`Save` returns what a handle holds as a value the envelope does carry,
+and `Restore` makes a handle of it again. The dump keeps each handle once,
+in `handles`, and a value that is one refers to it by its index, so two
+variables, a list and a Proc that held one StringIO hold one after the
+resume. StringIO has the hook. A handle of a class without it, an
+Enumerator or a File, is left out and named like any value the envelope
+cannot carry.
 
 A value in flight that the envelope cannot carry is nil after the resume,
 and a local is unbound; `missing` names each when the run pauses.

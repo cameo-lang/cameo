@@ -43,6 +43,10 @@ type Encoder struct {
 	classes func(*object.Class)
 	// symbols makes a Symbol travel as one, and not as a String.
 	symbols bool
+	// handles returns the index, plus one, an instance has among the
+	// handles of the dump being written, when it is a handle; zero for
+	// any other instance.
+	handles func(*object.Instance) (uint32, error)
 }
 
 // NewEncoder makes an encoder over the registry's classes.
@@ -64,6 +68,21 @@ func (e *Encoder) WithProcs(codec ProcCodec, carryUnits bool) *Encoder {
 func (e *Encoder) WithClasses(seen func(*object.Class)) *Encoder {
 	e.classes = seen
 	return e
+}
+
+// WithHandles returns the encoder set to write an instance that index
+// says is a handle as a reference to it: a dump's encoder, which keeps
+// the handles beside the values.
+func (e *Encoder) WithHandles(index func(*object.Instance) (uint32, error)) *Encoder {
+	e.handles = index
+	return e
+}
+
+// WithHandles returns the decoder set to read a reference to a handle
+// through handle, which a dump's reader gives it.
+func (d *Decoder) WithHandles(handle func(uint32) (object.Value, error)) *Decoder {
+	d.handles = handle
+	return d
 }
 
 // WithSymbols returns the encoder set to write a Symbol as a symbol,
@@ -164,6 +183,15 @@ func (e *Encoder) Message(v object.Value) (*cameopb.Value, error) {
 			data, err = e.reg.MarshalException(exc)
 		} else {
 			inst := v.Instance()
+			if e.handles != nil {
+				ref, err := e.handles(inst)
+				if err != nil {
+					return nil, err
+				}
+				if ref != 0 {
+					return &cameopb.Value{Kind: &cameopb.Value_Handle{Handle: ref}}, nil
+				}
+			}
 			cls = inst.Cls
 			data, err = e.reg.Marshal(inst)
 		}
@@ -293,6 +321,9 @@ type Decoder struct {
 	resolve ClassResolver
 	// procs decodes closures; without it a message with one is refused.
 	procs ProcCodec
+	// handles returns the handle a reference names, for the reader of a
+	// dump; without it a message with one is refused.
+	handles func(uint32) (object.Value, error)
 }
 
 // NewDecoder makes a decoder that finds classes through resolve.
@@ -349,6 +380,11 @@ func (d *Decoder) Value(msg *cameopb.Value) (object.Value, error) {
 		return object.String(k.StringValue), nil
 	case *cameopb.Value_SymbolValue:
 		return object.Symbol(k.SymbolValue), nil
+	case *cameopb.Value_Handle:
+		if d.handles == nil {
+			return object.Value{}, fmt.Errorf("the message refers to handle %d of a dump, and is not read as part of one", k.Handle-1)
+		}
+		return d.handles(k.Handle)
 	case *cameopb.Value_BytesValue:
 		return object.Bytes(append([]byte{}, k.BytesValue...)), nil
 	case *cameopb.Value_List:

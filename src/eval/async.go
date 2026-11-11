@@ -546,6 +546,7 @@ func (in *Interp) worker() *Interp {
 		code:                 in.code,
 		stop:                 in.stop,
 		pausing:              in.pausing,
+		handles:              in.handles,
 		allowIO:              in.allowIO,
 		fsys:                 in.fsys,
 		fsDir:                in.fsDir,
