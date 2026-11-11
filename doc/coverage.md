@@ -118,6 +118,6 @@ leaves it out.
 
 ## Performance
 
-[tests/performance](../tests/performance) holds the scripts and this
-Mac's table: the interpreter against CRuby 3.4.1 without YJIT, and
-`cameo build`'s programs against CRuby with YJIT.
+[benchmarks/compare](../benchmarks/compare) times the interpreter on
+CRuby's own benchmarks against CRuby, warmruby and rbgo, and holds the
+table.
