@@ -131,7 +131,7 @@ func (in *Interp) Resume(prog *syntax.Program, d *protogen.Dump) error {
 		if !isDefinition(n) {
 			continue
 		}
-		if _, err := in.code.expr(n)(in, in.top, fr); err != nil {
+		if _, err := in.eval(n, in.top, fr); err != nil {
 			return err
 		}
 	}

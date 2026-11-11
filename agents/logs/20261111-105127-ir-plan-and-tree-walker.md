@@ -20,7 +20,7 @@ the closure compiler goes, so that one evaluator is ported to the IR.
 - [x] Read the evaluator, the scopes, procs, async, the dump and the envelope
 - [x] Open questions put to the human, fourteen, all answered
 - [x] `doc/design/ir.md`: the decisions, the IR, the stack of pull requests
-- [ ] eval: the tree walker evaluates every node but calls
+- [x] eval: the tree walker evaluates every node but calls
 - [ ] eval: the tree walker evaluates calls; `compile.go` goes
 
 ## Obstacles

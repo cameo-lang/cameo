@@ -1,6 +1,6 @@
-// Package eval runs cameo programs: it compiles the syntax package's AST
-// into closures, one per node, and runs them over the object package's
-// values. The design is in doc/design/cameo.md.
+// Package eval runs cameo programs: it walks the syntax package's AST over
+// the object package's values, and compiles a call to a closure the first
+// time it runs. The design is in doc/design/cameo.md.
 package eval
 
 import (
@@ -223,7 +223,7 @@ func (in *Interp) Run(file string, prog *syntax.Program) error {
 				break
 			}
 		}
-		if v, err = in.code.expr(prog.Body[i])(in, in.top, fr); err != nil {
+		if v, err = in.eval(prog.Body[i], in.top, fr); err != nil {
 			break
 		}
 	}
