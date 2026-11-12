@@ -133,6 +133,10 @@ type machine struct {
 	debugged bool
 	// stepper is what an actStep is of.
 	stepper *stepping
+	// held is set while a stepper keeps the machine for the next call of
+	// its block (stepping.act): it is then not released when its
+	// activation ends.
+	held bool
 	// result is what the caller gets in place of the activation's own
 	// value, when it is set: the instance new made, for an initialize.
 	result object.Value

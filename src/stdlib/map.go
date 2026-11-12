@@ -179,8 +179,8 @@ func installMap() {
 		h := m(call.Self)
 		return h.Keys(), []object.Value{object.NewList(h.Values()...)}, nil
 	}
-	pair := func(st []object.Value, k object.Value, i int) []object.Value {
-		return []object.Value{k, st[walkKept].List().Elems[i]}
+	pair := func(st []object.Value, k object.Value, i int, into []object.Value) []object.Value {
+		return append(into, k, st[walkKept].List().Elems[i])
 	}
 	// select and reject gather the keys the block is true or false for.
 	filter := func(name string, keep bool) {
@@ -209,8 +209,8 @@ func installMap() {
 	// transform_values gathers the block's values, one for each key.
 	c.DefineStep("transform_values", 0, walk{
 		elems: keyed,
-		yield: func(st []object.Value, k object.Value, i int) []object.Value {
-			return []object.Value{st[walkKept].List().Elems[i]}
+		yield: func(st []object.Value, k object.Value, i int, into []object.Value) []object.Value {
+			return append(into, st[walkKept].List().Elems[i])
 		},
 		fold: func(ctx object.Context, st []object.Value, k, r object.Value) ([]object.Value, *object.Value, error) {
 			return append(st, r), nil, nil

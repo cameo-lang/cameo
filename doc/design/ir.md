@@ -458,6 +458,37 @@ unwinds through the builtin's activation; a builtin that must clean up,
 `File.open` closing its file, says so in its step and is called once more
 with the completion.
 
+A step costs little more than the block it calls:
+
+- The arguments of the block are not a slice made for the call. A walk
+  over a list hands the block the element as the list holds it, and a
+  builtin that counts hands it its state, the one value it keeps
+  (`object.YieldKept`). The evaluator reads the arguments before the
+  next step, and copies them for a block that is Go code.
+- The calls of the block run on one activation when a call leaves
+  nothing behind: the block's parameters are required ones alone, and
+  its scope and frame are the machine's own. The stepper's activation
+  keeps that machine, binds the parameters anew for each call and unsets
+  the block's other variables (`blockAgain`).
+- Such a call runs from the stepper's own loop, on the stack of
+  activations as any call: flat code until the block ends or calls. A
+  block that ended hands its value to the next step; one that called,
+  or was left by a completion, or a run that is asked to pause, goes on
+  in the loop of `run`. So a run pauses inside the block as before.
+
+- A stepper whose steps are all alike says so with its first step, and
+  the evaluator does the rest itself (`stepped`), with no call of the
+  stepper per element. A **walk** (`object.Walk`) calls the block with
+  the elements of a list and takes what it returns: `each`, `map`,
+  `select`, the walks of a Hash. A **count** (`object.Count`) calls it
+  with the Integers up or down to a last one: `times`, `upto`, `downto`,
+  a range of Integers. The evaluator keeps the index, or the Integer, as
+  a number of its own and not as a value in the state; it writes the
+  number into the state where the state is read: for a dump, for a fold
+  that reads the index, and when the walk is through. A dump is
+  therefore what it was, and a resumed run, which has the state alone,
+  calls the stepper for every step.
+
 Builtins become step functions in groups, the ones a script spends its time
 in first: `Integer#times` and `loop`, then `each`, `map` and the rest of
 List, Hash, Range and Set, then Enumerable over a script's own `each`, and

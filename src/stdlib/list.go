@@ -64,7 +64,9 @@ func installList() {
 	// block.
 	c.DefineStep("each", 0, walk{}.stepper("each", true))
 	c.DefineStep("each_index", 0, walk{
-		yield: func(st []object.Value, el object.Value, i int) []object.Value { return []object.Value{object.Int(i)} },
+		yield: func(st []object.Value, el object.Value, i int, into []object.Value) []object.Value {
+			return append(into, object.Int(i))
+		},
 	}.stepper("each_index", true))
 	def(c, "[]", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return listIndex(ctx, list(self), args)

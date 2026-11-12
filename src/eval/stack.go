@@ -94,10 +94,13 @@ func (in *Interp) run(floor int) (object.Value, error) {
 			// the block or ends the builtin.
 			v, called, stepErr := in.stepOn(m, err)
 			if called {
-				err = nil
+				// The block's activation runs next, or is left by the
+				// completion its first instructions ended with.
+				err = stepErr
 				continue
 			}
 			in.acts = in.acts[:len(in.acts)-1]
+			in.letGo(m.stepper)
 			if err = stepErr; len(in.acts) == floor {
 				return v, err
 			}
@@ -195,6 +198,155 @@ type stepping struct {
 	state   []object.Value
 	got     object.Got
 	rescue  bool
+	// proc is the block when a script wrote it, with its parameters and
+	// its flat code, which are looked up at its first call.
+	proc *Proc
+	ps   *params
+	flat *flatCode
+	// act is the activation of the block's last call, which its next
+	// call runs on (blockAgain); nil when the block's calls each take
+	// an activation, which plainly is set for once it was found so.
+	act     *machine
+	plainly bool
+	// walk or count is set when the evaluator does the stepper's steps
+	// itself (object.Walk, object.Count), from the second on. elems
+	// and i are then the walk's elements and the index of the one the
+	// block was called with last, n the Integer a count called it with
+	// last, and arg the room for the block's arguments. The state
+	// holds neither while the steps go on: written puts them there.
+	walk  *object.Walk
+	count *object.Count
+	elems []object.Value
+	i     int
+	n     int64
+	arg   [2]object.Value
+}
+
+// written puts into the stepper's state what the evaluator keeps as
+// numbers of its own while it does the steps: for a dump, and for the
+// stepper when it is called on.
+func (st *stepping) written() {
+	switch {
+	case st.walk != nil:
+		st.state[object.WalkIndex] = object.Int(int64(st.i))
+	case st.count != nil:
+		st.state[0] = object.Int(st.n)
+	}
+}
+
+// stepped does the next step of a stepper whose steps the evaluator
+// does itself: it takes what the block returned and returns what the
+// block is called with next, or done with the builtin's value. more is
+// set when the stepper is to be called on instead.
+func (in *Interp) stepped(st *stepping) (yield []object.Value, done, more bool, v object.Value, err error) {
+	if c := st.count; c != nil {
+		if c.By > 0 && st.n >= c.Last || c.By < 0 && st.n <= c.Last {
+			if c.More {
+				st.written()
+				st.count = nil
+				return nil, false, true, object.Value{}, nil
+			}
+			return nil, true, false, st.call.Self, nil
+		}
+		st.n += c.By
+		st.arg[0] = object.Int(st.n)
+		return st.arg[:1:1], false, false, object.Value{}, nil
+	}
+	w := st.walk
+	if w.Fold != nil {
+		if w.Indexed {
+			st.written()
+		}
+		next, stop, err := w.Fold(in, st.state, st.elems[st.i], st.got.Value)
+		if err != nil {
+			return nil, false, false, object.Value{}, err
+		}
+		if stop != nil {
+			return nil, true, false, *stop, nil
+		}
+		st.state = next
+	}
+	st.i++
+	if st.i >= len(st.elems) {
+		if w.Done == nil {
+			return nil, true, false, st.call.Self, nil
+		}
+		st.written()
+		v, err := w.Done(in, st.call, st.state)
+		return nil, true, false, v, err
+	}
+	if w.Yield != nil {
+		return w.Yield(st.state, st.elems[st.i], st.i, st.arg[:0]), false, false, object.Value{}, nil
+	}
+	return st.elems[st.i : st.i+1 : st.i+1], false, false, object.Value{}, nil
+}
+
+// keeps reports whether the calls of the block the stepper st calls can
+// run on one activation, the one act its first call made, for the
+// arguments args. They can when a call leaves nothing behind that
+// outlives it: its scope and its frame are the machine's own (contained
+// parameters), it is no lambda, and it binds required parameters alone.
+func (in *Interp) keeps(st *stepping, act *machine, args []object.Value) bool {
+	ps := st.ps
+	return !st.plainly && ps.contained && ps.plain && ps.layout != nil && !st.proc.Strict && in.dbg == nil &&
+		act.flat != nil && act.flat == st.flat && act.env == &act.own.env && act.env.layout == ps.layout && fits(ps, args)
+}
+
+// fits reports whether binding args to the required parameters of ps
+// is one argument to one parameter, with arguments left over dropped,
+// as a block does: not too few, and not one list for several.
+func fits(ps *params, args []object.Value) bool {
+	n := len(ps.Positional)
+	return len(args) >= n && (n <= 1 || len(args) != 1)
+}
+
+// blockAgain makes the activation the stepper st keeps ready for a call
+// of its block with args, and returns it; nil when it keeps none, or
+// the one it kept is not as a call that ended leaves it, which the
+// stepper then lets go of for good.
+func (in *Interp) blockAgain(st *stepping, args []object.Value) *machine {
+	m := st.act
+	if m == nil {
+		return nil
+	}
+	env := &m.own.env
+	if m.flat != st.flat || len(m.cursors) != 0 || m.inGo != 0 || m.wait != nil || m.again || in.dbg != nil ||
+		env.more != nil || env.captured || len(env.promises) != 0 || env.layout != st.ps.layout || !fits(st.ps, args) {
+		st.act, st.plainly, m.held = nil, true, false
+		return nil
+	}
+	// The variables of the block that are no parameters are unset
+	// again; the parameters are bound anew.
+	if ps := st.ps.Positional; len(env.slots) == 1 && len(ps) == 1 {
+		env.slots[0] = args[0]
+	} else {
+		if len(env.slots) > len(ps) {
+			clear(env.slots)
+		}
+		for i := range ps {
+			env.slots[ps[i].slot] = args[i]
+		}
+	}
+	// What a call left on its stack is cleared when the machine is
+	// released; a call that ended with its value left nothing.
+	if len(m.stack) > 0 {
+		m.stack = m.stack[:0]
+	}
+	if len(m.tries) > 0 {
+		clear(m.tries)
+		m.tries = m.tries[:0]
+	}
+	m.bases, m.pc = m.bases[:0], 0
+	return m
+}
+
+// letGo releases the activation the stepper st kept, when the builtin
+// ended.
+func (in *Interp) letGo(st *stepping) {
+	if m := st.act; m != nil {
+		st.act, m.held = nil, false
+		in.release(m)
+	}
 }
 
 // stepAct makes the activation of a call of the builtin meth, which is a
@@ -231,7 +383,16 @@ func (in *Interp) stepOn(m *machine, err error) (v object.Value, called bool, _ 
 		st.got.Raised = exc
 	}
 	for {
-		s, err := st.builtin.Step(in, st.call, st.state, st.got)
+		var s object.Step
+		var err error
+		if st.walk != nil || st.count != nil {
+			var more bool
+			if s.Yield, s.Done, more, s.Value, err = in.stepped(st); more {
+				continue
+			}
+		} else if s, err = st.builtin.Step(in, st.call, st.state, st.got); err == nil && !s.Done {
+			st.state, st.rescue, st.got = s.State, s.Rescue, object.Got{}
+		}
 		if err != nil {
 			// A step that called the block itself, from Go, may come
 			// back with the block's break.
@@ -243,11 +404,50 @@ func (in *Interp) stepOn(m *machine, err error) (v object.Value, called bool, _ 
 		if s.Done {
 			return s.Value, false, nil
 		}
-		st.state, st.rescue, st.got = s.State, s.Rescue, object.Got{}
 		// A block a script wrote becomes the activation that runs; any
 		// other is called here, and the stepper goes on with its value.
-		if p, ok := asProc(block); ok && p.written() {
-			act, err := in.blockAct(p, s.Yield, nil, object.Value{})
+		if st.proc == nil {
+			if p, ok := asProc(block); ok && p.written() {
+				st.proc, st.ps, st.flat = p, in.paramsOf(p.IR), in.flatOfProc(p.IR)
+			}
+		}
+		// A stepper whose steps are all alike says so at its first:
+		// the steps after it are the evaluator's, for a block a script
+		// wrote and a stepper that asks for no exception of it.
+		if st.proc != nil && !s.Rescue {
+			switch {
+			case s.Walk != nil:
+				st.walk, st.elems = s.Walk, st.state[object.WalkElems].List().Elems
+				st.i = int(st.state[object.WalkIndex].Int())
+			case s.Count != nil:
+				st.count, st.n = s.Count, st.state[0].Int()
+			}
+		}
+		if p := st.proc; p != nil {
+			var act *machine
+			var err error
+			if act = in.blockAgain(st, s.Yield); act != nil {
+				if err = in.stopped(); err == nil && len(in.acts) < maxDepth && !in.pausing.flag.Load() {
+					// The call runs here, as the loop of run would run
+					// it: an activation on the stack, and flat code
+					// until it ends or calls. One that ended with its
+					// value is done, and the stepper takes its next
+					// step; any other is where run goes on, with the
+					// activation the call made or the completion that
+					// left the instruction.
+					act.site = nil
+					in.acts = append(in.acts, act)
+					err := act.runFlat()
+					if err == nil && in.acts[len(in.acts)-1] == act && act.pc == len(act.flat.code) && len(act.cursors) == 0 {
+						in.acts = in.acts[:len(in.acts)-1]
+						st.got.Value = act.pop()
+						continue
+					}
+					return object.Value{}, true, err
+				}
+			} else if act, err = in.blockActOf(p, st.ps, st.flat, s.Yield, nil, object.Value{}); err == nil && in.keeps(st, act, s.Yield) {
+				st.act, act.held = act, true
+			}
 			if err == nil {
 				err = in.pushAct(act, nil)
 			}
@@ -256,7 +456,9 @@ func (in *Interp) stepOn(m *machine, err error) (v object.Value, called bool, _ 
 			}
 			return in.stepOn(m, err)
 		}
-		value, err := in.callBlock(block, s.Yield, nil, object.Value{})
+		// Go code may keep the arguments it is called with, and the next
+		// step may write them (object.YieldKept): it gets a copy.
+		value, err := in.callBlock(block, append([]object.Value(nil), s.Yield...), nil, object.Value{})
 		if err != nil {
 			return in.stepOn(m, err)
 		}
@@ -499,10 +701,17 @@ func (in *Interp) methodAct(m *object.Method, recv object.Value, args []object.V
 // blockAct makes the activation of a call of the block or lambda p, which
 // a script wrote, with its parameters bound.
 func (in *Interp) blockAct(p *Proc, args []object.Value, kw *object.Map, inner object.Value) (*machine, error) {
+	ps := in.paramsOf(p.IR)
+	return in.blockActOf(p, ps, in.flatOfProc(p.IR), args, kw, inner)
+}
+
+// blockActOf is blockAct for a block whose parameters ps and flat code
+// flat the caller has: a stepper, which calls one block many times.
+func (in *Interp) blockActOf(p *Proc, ps *params, flat *flatCode, args []object.Value, kw *object.Map, inner object.Value) (*machine, error) {
 	if err := in.stopped(); err != nil {
 		return nil, err
 	}
-	fr, ps := p.Frame, in.paramsOf(p.IR)
+	fr := p.Frame
 	// The scope of a call that keeps neither its frame nor its scope
 	// is the machine's own, as a method's is (methodAct).
 	act := in.machine()
@@ -529,7 +738,7 @@ func (in *Interp) blockAct(p *Proc, args []object.Value, kw *object.Map, inner o
 		return nil, err
 	}
 	act.unit, act.env, act.fr, act.kind, act.proc = p.IR.unit, env, fr, actBlock, p
-	act.startAt(in.flatOfProc(p.IR), p.IR.proc.GetCode(), true)
+	act.startAt(flat, p.IR.proc.GetCode(), true)
 	if in.dbg != nil {
 		in.dbg.enter(blockName(in.dbg, p.Frame), env, fr)
 		act.debugged = true
