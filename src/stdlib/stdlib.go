@@ -45,8 +45,11 @@ func Install() {
 	// After Enumerable and Enumerator: it wraps Enumerable's methods.
 	installUserEnumerable()
 	// The methods read for it: each uses its arguments and returns.
-	borrows(object.MapClass, "[]", "key?", "has_key?", "include?", "member?")
-	borrows(object.ListClass, "[]", "at")
+	borrows(object.MapClass, "[]", "key?", "has_key?", "include?", "member?", "fetch", "key", "dig", "values_at")
+	borrows(object.ListClass, "[]", "at", "fetch", "dig", "index", "last", "join", "values_at")
+	borrows(object.Enumerable, "include?", "first")
+	borrows(object.StringClass, "[]", "slice", "+", "*", "%", "==", "<=>", "=~", "tr", "split",
+		"include?", "start_with?", "end_with?", "delete_prefix", "delete_suffix", "count")
 }
 
 // borrows marks the methods names of c as ones that do not keep the
