@@ -113,7 +113,12 @@ func installEnumerable() {
 			if err != nil {
 				return object.Value{}, err
 			}
-			return f(ctx, elems, n, block)
+			// With a block they return the receiver, as Ruby's do
+			// since 3.1.
+			if _, err := f(ctx, elems, n, block); err != nil {
+				return object.Value{}, err
+			}
+			return self, nil
 		})
 	}
 	sliced("each_slice", func(size, n int64) int64 { return (size + n - 1) / n }, func(ctx object.Context, elems []object.Value, n int, block object.Value) (object.Value, error) {
@@ -615,8 +620,18 @@ func installEnumerable() {
 		}
 		return self, nil
 	})
-	withBlock("each_entry", true, func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
-		return yieldEach(ctx, elems, block)
+	def(e, "each_entry", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		if block.IsZero() {
+			return blockless(self, "each_entry", args, true), nil
+		}
+		elems, err := ToList(ctx, self)
+		if err != nil {
+			return object.Value{}, err
+		}
+		if _, err := yieldEach(ctx, elems, block); err != nil {
+			return object.Value{}, err
+		}
+		return self, nil
 	})
 	withBlock("chunk", true, func(ctx object.Context, elems []object.Value, args []object.Value, block object.Value) (object.Value, error) {
 		out := []object.Value{}
