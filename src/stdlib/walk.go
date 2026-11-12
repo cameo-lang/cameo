@@ -25,6 +25,10 @@ type walk struct {
 	// done returns the builtin's value once the walk is through; nil
 	// returns the receiver.
 	done func(ctx object.Context, call *object.Call, st []object.Value) (object.Value, error)
+	// fills is set when fold keeps one value per element: the state is
+	// then made with room for them all, and gathered returns it as the
+	// list without a copy.
+	fills bool
 }
 
 // The places of a walk's state.
@@ -59,7 +63,13 @@ func (w walk) stepper(name string, sized bool) object.Stepper {
 			if err != nil {
 				return object.Step{}, err
 			}
-			st = append([]object.Value{object.NewList(elems...), object.Int(0)}, start...)
+			room := 0
+			if w.fills {
+				room = len(elems)
+			}
+			st = make([]object.Value, walkKept, walkKept+len(start)+room)
+			st[walkElems], st[walkIndex] = object.NewList(elems...), object.Int(0)
+			st = append(st, start...)
 		} else {
 			i = int(st[walkIndex].Int())
 			if w.fold != nil {
@@ -92,6 +102,15 @@ func (w walk) stepper(name string, sized bool) object.Stepper {
 
 // gathered is the done of a walk whose value is the list of what it
 // gathered.
+//
+// The state is the walk's own and the walk is over, so a state that is
+// full is the list as it stands: no script saw it while the walk ran,
+// and none can change it after. One with room left is copied, so that
+// the list does not keep the room.
 func gathered(ctx object.Context, call *object.Call, st []object.Value) (object.Value, error) {
-	return object.NewList(append([]object.Value{}, kept(st)...)...), nil
+	got := kept(st)
+	if len(got) > 0 && cap(got) == len(got) {
+		return object.NewList(got...), nil
+	}
+	return object.NewList(append([]object.Value{}, got...)...), nil
 }
