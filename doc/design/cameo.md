@@ -458,6 +458,59 @@ rescue HTTPError => e
 end
 ```
 
+### Tail calls
+
+A call whose value is the value of the method, block or lambda it is
+written in is a **tail call**, and does not keep the call that makes it
+on the stack. A method that ends by calling itself, or two that end by
+calling each other, run as a loop: any depth, no `SystemStackError`.
+
+```ruby
+def count(n, acc = 0)
+  return acc if n == 0
+  count(n - 1, acc + 1)      # a tail call
+end
+count(10_000_000)            # 10000000
+
+def sum(n) = n == 0 ? 0 : n + sum(n - 1)   # no tail call: + runs after it
+```
+
+This is part of the language, not an optimisation a script may or may
+not get: a script can rely on it. Which calls are tail calls is decided
+when the script is compiled:
+
+- the last expression of a method, a block or a lambda;
+- through `if`/`unless`, the ternary, `case`/`when`, `case`/`in`, and the
+  right side of `&&`, `||` and `&.`, when that expression is in such a
+  position itself;
+- the value given to `return` in a method;
+- the body of a `begin` … `end` without clauses, and the `else` of a
+  `begin` without an `ensure`.
+
+These are not tail calls, and keep their caller:
+
+- a call that passes a block, `list.each { … }` or `f(&blk)`: the block
+  may `return` from the method it is written in;
+- a call in the body of a `begin` with a `rescue` or an `ensure`, and a
+  call in a `rescue` clause: the clause or the `ensure` runs after it;
+- a call whose value is used, an operator (`a + b` is no call here),
+  `super` and `yield`;
+- a call at the top level or in a class body.
+
+Two things differ from Ruby, which keeps every call:
+
+- A dump and the debugger do not show a call that made a tail call.
+  `cameo --keep-tail-frames` (`Program.KeepTailFrames` from Go) keeps
+  such calls on the stack, the last 256 of a row of them, at times up to a
+  quarter more; older ones are dropped, so a loop of tail calls still runs in a stack that
+  does not grow. The debugger keeps them in the same way without being
+  asked.
+- A `proc` whose `return` runs after its method made a tail call raises
+  `LocalJumpError`, as it does for any method that has ended: `def f;
+  pr = proc { return 1 }; g(pr); end` returns from `f` in Ruby when `g`
+  calls `pr`. Passing it as a block, `g(&pr)`, keeps `f`, and the
+  `return` works.
+
 ## Async
 
 Concurrency is the Cameo module's, which a script includes, at the top level

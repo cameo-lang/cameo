@@ -342,4 +342,38 @@ test_bang_methods_are_refused_with_the_flag_too() {
   assert_contains "$out" "This is not supported, use x = x.compact instead"
 }
 
+# A tail call keeps no call on the stack, so a method that ends by calling
+# itself runs at any depth. With --keep-tail-frames the calls stay, 256 in
+# a row, and a paused script's dump shows them.
+test_tail_calls_keep_no_frame_unless_asked() {
+  local script out rc=0 dump
+  script="$(mktemp -d)/tail.cameo"
+  cat >"$script" <<'CAMEO'
+def count(n, acc)
+  return acc if n == 0
+  count(n - 1, acc + 1)
+end
+p count(1_000_000, 0)
+def spin(n, t)
+  return n if Time.now - t > 2
+  spin(n + 1, t)
+end
+p spin(0, Time.now) > 0
+CAMEO
+  out=$(interrupt_after 0.5 "$CAMEO_BIN" "$script") || rc=$?
+  assert_eq 3 "$rc" "a paused script exits 3; output: $out"
+  assert_contains "$out" "1000000"
+  dump=$(sed -n 's/^cameo: resume with: cameo resume //p' <<<"$out")
+  assert_eq 1 "$("$CAMEO_BIN" inspect "$dump" | grep -c '^  spin, line')"
+  assert_eq "true" "$("$CAMEO_BIN" resume "$dump" 2>&1)"
+  rc=0
+  out=$(interrupt_after 0.5 "$CAMEO_BIN" --keep-tail-frames "$script") || rc=$?
+  assert_eq 3 "$rc" "a paused script exits 3; output: $out"
+  dump=$(sed -n 's/^cameo: resume with: cameo resume //p' <<<"$out")
+  local kept
+  kept=$("$CAMEO_BIN" inspect "$dump" | grep -c '^  spin, line')
+  [ "$kept" -ge 257 ] && [ "$kept" -le 321 ] || fail "expected 257 to 321 calls of spin, got $kept"
+  assert_eq "true" "$("$CAMEO_BIN" --keep-tail-frames resume "$dump" 2>&1)"
+}
+
 run_tests

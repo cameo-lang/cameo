@@ -402,6 +402,15 @@ These are absent, and a script that uses one fails when it reaches it:
 
 ## Only in cameo
 
+- Tail calls keep no frame: a call whose value is the value of the
+  method, block or lambda it is in replaces its caller on the stack, so a
+  method that ends by calling itself runs as a loop at any depth. A call
+  that passes a block, one under a `rescue` or an `ensure`, `super` and
+  `yield` keep their caller. A dump and the debugger do not show the
+  replaced calls unless `cameo --keep-tail-frames` keeps them (the last
+  256 of a row), and a `proc` that returns after its method made a tail call
+  raises `LocalJumpError`. [design/cameo.md](design/cameo.md#tail-calls)
+  has the rules.
 - `Cameo::Native::Name` is every class and module the Go binary binds at
   the top level, the core, the libraries and the classes a Go host
   registers, bound there as well as at the top level:

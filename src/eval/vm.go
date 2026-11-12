@@ -138,6 +138,11 @@ type machine struct {
 	result object.Value
 	// wait is what the activation awaits, while it does (await.go).
 	wait *awaiting
+	// passing is set when the activation made a tail call and was kept
+	// (Interp.tailFrames): all it does yet is hand on the value. row is
+	// then how many such activations there are in a row up to it.
+	passing bool
+	row     int
 	// inGo counts the lists the activation runs to their end inside an
 	// instruction (nested). A call made while it is not zero cannot go
 	// back to the loop, and runs in a loop of its own.
@@ -738,7 +743,7 @@ func (m *machine) send(c *cameopb.Code) error {
 
 // sendPlain is the flags of a SEND that sendContained may run: a call
 // with positional arguments alone and no block.
-const sendPlain = uint64(cameopb.Flag_FLAG_SELF | cameopb.Flag_FLAG_VCALL | cameopb.Flag_FLAG_PRIVATE)
+const sendPlain = uint64(cameopb.Flag_FLAG_SELF | cameopb.Flag_FLAG_VCALL | cameopb.Flag_FLAG_PRIVATE | cameopb.Flag_FLAG_TAIL)
 
 // sendContained runs a SEND with positional arguments alone when it
 // calls a method a script defined whose calls keep neither their frame
@@ -767,8 +772,23 @@ func (m *machine) sendContained(c *cameopb.Code) (bool, error) {
 		return false, nil
 	}
 	code := meth.Body.(*irProc)
-	if ps := in.paramsOf(code); !ps.contained || !ps.plain || len(ps.Positional) != argc {
+	ps := in.paramsOf(code)
+	if !ps.contained || !ps.plain || len(ps.Positional) != argc {
 		return false, nil
+	}
+	if has(c, cameopb.Flag_FLAG_TAIL) && m.kind != actList {
+		// A tail call: the call that makes it does not stay, and its
+		// stack, where the arguments are, goes with it. A method whose
+		// frame and scope are the machine's own runs the method it
+		// calls in them; any other tail call copies its arguments.
+		if in.tailFrames > 0 {
+			return false, nil
+		}
+		flat := in.flatOfProc(code)
+		if m.kind != actMethod || m.fr != &m.own.frame || m.flat == nil || len(m.cursors) > 0 || flat == nil {
+			return false, nil
+		}
+		return true, withLine(m.tailLoop(meth, code, ps, flat, recv, argc), int(c.Line))
 	}
 	args := m.stack[n-argc : n : n]
 	m.stack = m.stack[:base]
@@ -778,6 +798,39 @@ func (m *machine) sendContained(c *cameopb.Code) (bool, error) {
 		err = in.pushAct(act, c)
 	}
 	return true, withLine(err, line)
+}
+
+// tailLoop runs a tail call of the method meth, with the argc values on
+// top of the stack, in the activation m itself: a method whose frame and
+// scope are the machine's own. The arguments move to the bottom of the
+// stack, where the frame reads them, the frame and the scope become the
+// ones of the new call, and the activation goes on at the start of the
+// method's flat code. A method that calls itself in tail position is a
+// loop.
+func (m *machine) tailLoop(meth *object.Method, code *irProc, ps *params, flat *flatCode, recv object.Value, argc int) error {
+	in := m.in
+	if err := in.stopped(); err != nil {
+		return err
+	}
+	n := len(m.stack)
+	copy(m.stack, m.stack[n-argc:n])
+	clear(m.stack[argc:n])
+	m.stack = m.stack[:argc]
+	args := m.stack[:argc:argc]
+	env := &m.own.env
+	if s := env.slots; cap(s) > cap(m.spare) && cap(s) <= maxKeptStack {
+		m.spare = s
+	}
+	clear(m.spare[:cap(m.spare)])
+	*env = Env{}
+	in.frame(&m.own.frame, meth, recv, args, nil, object.Value{}, code)
+	m.lay(env, ps.layout)
+	for i := range ps.Positional {
+		env.slots[ps.Positional[i].slot] = args[i]
+	}
+	m.unit, m.syms = code.unit, nil
+	m.flat, m.pc, m.bases, m.tries = flat, 0, m.bases[:0], m.tries[:0]
+	return nil
 }
 
 // call calls the method meth, which lookup found for name on recv, for
@@ -802,7 +855,7 @@ func (m *machine) call(c *cameopb.Code, meth *object.Method, recv object.Value, 
 	if m.inGo == 0 && in.runs(meth, private) {
 		act, err := in.methodAct(meth, recv, args, kw, block, line)
 		if err == nil {
-			err = in.pushAct(act, c)
+			err = in.pushCall(m, act, c)
 		}
 		return withLine(err, line)
 	}
@@ -814,7 +867,7 @@ func (m *machine) call(c *cameopb.Code, meth *object.Method, recv object.Value, 
 		act, err := in.methodAct(init, inst, args, kw, block, line)
 		if err == nil {
 			act.result = inst
-			err = in.pushAct(act, c)
+			err = in.pushCall(m, act, c)
 		}
 		return withLine(err, line)
 	}
@@ -824,7 +877,7 @@ func (m *machine) call(c *cameopb.Code, meth *object.Method, recv object.Value, 
 		if p, ok := asProc(recv); ok && p.written() {
 			act, err := in.blockAct(p, args, kw, block)
 			if err == nil {
-				err = in.pushAct(act, c)
+				err = in.pushCall(m, act, c)
 			}
 			return withLine(err, line)
 		}

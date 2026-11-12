@@ -91,41 +91,45 @@ const (
 	Flag_FLAG_TOP Flag = 268435456
 	// REGEXP: no part is interpolated, so the regexp is made once.
 	Flag_FLAG_STATIC Flag = 536870912
+	// SEND: a tail call. Its value is the value of the method, block or
+	// lambda it is in, which does not stay on the stack while it runs.
+	Flag_FLAG_TAIL Flag = 1073741824
 )
 
 // Enum value maps for Flag.
 var (
 	Flag_name = map[int32]string{
-		0:         "FLAG_NONE",
-		1:         "FLAG_SELF",
-		2:         "FLAG_ARGV",
-		4:         "FLAG_KW",
-		8:         "FLAG_BLOCK_ARG",
-		16:        "FLAG_BLOCK",
-		32:        "FLAG_VCALL",
-		64:        "FLAG_DROPPED",
-		128:       "FLAG_REBINDS",
-		512:       "FLAG_PRIVATE",
-		1024:      "FLAG_FORWARD",
-		2048:      "FLAG_STRICT",
-		4096:      "FLAG_EXCLUSIVE",
-		8192:      "FLAG_LO",
-		16384:     "FLAG_HI",
-		32768:     "FLAG_DO_WHILE",
-		65536:     "FLAG_ELSE",
-		131072:    "FLAG_ENSURE",
-		262144:    "FLAG_SUBJECT",
-		524288:    "FLAG_TEST",
-		1048576:   "FLAG_SINGLETON",
-		2097152:   "FLAG_SCOPED",
-		4194304:   "FLAG_SUPER",
-		8388608:   "FLAG_EXTEND",
-		16777216:  "FLAG_INDEX",
-		33554432:  "FLAG_QUALIFIED",
-		67108864:  "FLAG_DEFAULT",
-		134217728: "FLAG_REF",
-		268435456: "FLAG_TOP",
-		536870912: "FLAG_STATIC",
+		0:          "FLAG_NONE",
+		1:          "FLAG_SELF",
+		2:          "FLAG_ARGV",
+		4:          "FLAG_KW",
+		8:          "FLAG_BLOCK_ARG",
+		16:         "FLAG_BLOCK",
+		32:         "FLAG_VCALL",
+		64:         "FLAG_DROPPED",
+		128:        "FLAG_REBINDS",
+		512:        "FLAG_PRIVATE",
+		1024:       "FLAG_FORWARD",
+		2048:       "FLAG_STRICT",
+		4096:       "FLAG_EXCLUSIVE",
+		8192:       "FLAG_LO",
+		16384:      "FLAG_HI",
+		32768:      "FLAG_DO_WHILE",
+		65536:      "FLAG_ELSE",
+		131072:     "FLAG_ENSURE",
+		262144:     "FLAG_SUBJECT",
+		524288:     "FLAG_TEST",
+		1048576:    "FLAG_SINGLETON",
+		2097152:    "FLAG_SCOPED",
+		4194304:    "FLAG_SUPER",
+		8388608:    "FLAG_EXTEND",
+		16777216:   "FLAG_INDEX",
+		33554432:   "FLAG_QUALIFIED",
+		67108864:   "FLAG_DEFAULT",
+		134217728:  "FLAG_REF",
+		268435456:  "FLAG_TOP",
+		536870912:  "FLAG_STATIC",
+		1073741824: "FLAG_TAIL",
 	}
 	Flag_value = map[string]int32{
 		"FLAG_NONE":      0,
@@ -158,6 +162,7 @@ var (
 		"FLAG_REF":       134217728,
 		"FLAG_TOP":       268435456,
 		"FLAG_STATIC":    536870912,
+		"FLAG_TAIL":      1073741824,
 	}
 )
 
@@ -2159,7 +2164,7 @@ const file_cameo_ir_proto_rawDesc = "" +
 	"\x02of\x18\x04 \x01(\tR\x02of\x12\x10\n" +
 	"\x03key\x18\x05 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x06 \x01(\tR\x05value\x12\x16\n" +
-	"\x06values\x18\a \x03(\tR\x06values*\xa9\x04\n" +
+	"\x06values\x18\a \x03(\tR\x06values*\xbc\x04\n" +
 	"\x04Flag\x12\r\n" +
 	"\tFLAG_NONE\x10\x00\x12\r\n" +
 	"\tFLAG_SELF\x10\x01\x12\r\n" +
@@ -2194,7 +2199,8 @@ const file_cameo_ir_proto_rawDesc = "" +
 	"\fFLAG_DEFAULT\x10\x80\x80\x80 \x12\x0f\n" +
 	"\bFLAG_REF\x10\x80\x80\x80@\x12\x10\n" +
 	"\bFLAG_TOP\x10\x80\x80\x80\x80\x01\x12\x13\n" +
-	"\vFLAG_STATIC\x10\x80\x80\x80\x80\x02*\xc5\a\n" +
+	"\vFLAG_STATIC\x10\x80\x80\x80\x80\x02\x12\x11\n" +
+	"\tFLAG_TAIL\x10\x80\x80\x80\x80\x04*\xc5\a\n" +
 	"\x02Op\x12\x12\n" +
 	"\x0eOP_UNSPECIFIED\x10\x00\x12\t\n" +
 	"\x05CONST\x10\x01\x12\a\n" +
