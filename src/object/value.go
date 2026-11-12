@@ -568,11 +568,15 @@ func Same(a, b Value) bool { return a.n == b.n && a.p == b.p }
 
 // Objects.
 
-// List is an immutable sequence. Elems is never changed after construction.
+// List is an immutable sequence. Elems is never changed after construction,
+// and has no capacity beyond its length when the list is grown.
 type List struct {
 	Elems []Value
 	// kinds caches Kinds; see there.
 	kinds uint32
+	// grown is set for a list Append made, which is the List of a grown
+	// (append.go).
+	grown bool
 }
 
 // NewList makes a list of elems; the slice is owned by the list afterwards.

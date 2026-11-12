@@ -177,10 +177,10 @@ func init() {
 			if err := wantArgs(in, args, 1, line); err != nil {
 				return object.Value{}, err
 			}
-			return concatLists(listOf(cur), args), nil
+			return object.Append(cur.List(), args...), nil
 		}),
 		"push": returnsSelf(func(in *Interp, fr *Frame, cur object.Value, args []object.Value, block object.Value, line int) (object.Value, error) {
-			return concatLists(listOf(cur), args), nil
+			return object.Append(cur.List(), args...), nil
 		}),
 		"unshift": returnsSelf(func(in *Interp, fr *Frame, cur object.Value, args []object.Value, block object.Value, line int) (object.Value, error) {
 			return concatLists(args, listOf(cur)), nil
