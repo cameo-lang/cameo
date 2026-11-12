@@ -133,6 +133,9 @@ type machine struct {
 	debugged bool
 	// stepper is what an actStep is of.
 	stepper *stepping
+	// sofar is the room the string so far of an INTERP is in, between
+	// two of its parts (interpAdd).
+	sofar []byte
 	// held is set while a stepper keeps the machine for the next call of
 	// its block (stepping.act): it is then not released when its
 	// activation ends.
