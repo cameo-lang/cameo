@@ -183,6 +183,11 @@ type Method struct {
 	// as a stepper (step.go): the evaluator runs it a step at a time,
 	// where Native runs it to its end.
 	Step Stepper
+	// Borrows is set for a native method that does not keep the slice
+	// of its arguments once it returned, though it may keep the values:
+	// the evaluator then calls it with the arguments where they are on
+	// its stack, and makes no slice for them.
+	Borrows bool
 }
 
 // NativeFn implements a method in Go. kw is nil when no keyword arguments
