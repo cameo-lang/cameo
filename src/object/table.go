@@ -17,13 +17,20 @@ import (
 type table struct {
 	mu      sync.RWMutex
 	entries []entry
-	index   map[string]int32
+	// index finds a key by its canonical form (Key), and ints a key
+	// that is an integer by its number: such a key has no canonical
+	// form made for it. Each is made when the first key goes into it,
+	// for hint keys.
+	index map[string]int32
+	ints  map[int64]int32
+	hint  int
 	// live counts the keys present at the tip, to know when the log is
 	// mostly superseded entries and should be compacted.
 	live int
 }
 
-// An entry sets a key to a value, or deletes it. prev is the key's
+// An entry sets a key to a value, or deletes it. k is the canonical form
+// of the key, empty for an integer. prev is the key's
 // previous entry and start the entry its current life began at: a key's
 // place in the order is where it was last added after being absent.
 type entry struct {
@@ -46,7 +53,27 @@ type span struct {
 	head int32
 }
 
-func newSpan() span { return span{t: &table{index: map[string]int32{}}} }
+func newSpan() span { return span{t: &table{}} }
+
+// canon returns the canonical form of the key v as a table keeps it:
+// none for an integer, which the table finds by its number.
+func canon(v Value) string {
+	if v.p == mark(KindInt) {
+		return ""
+	}
+	return Key(v)
+}
+
+// find returns the latest entry in the whole table of the key whose
+// canonical form is k.
+func (t *table) find(k string, key Value) (int32, bool) {
+	if key.p == mark(KindInt) {
+		p, ok := t.ints[key.n]
+		return p, ok
+	}
+	p, ok := t.index[k]
+	return p, ok
+}
 
 // version is a map's or a set's view of a table.
 type version struct {
@@ -57,8 +84,8 @@ type version struct {
 
 // latest is the key's entry within the first n, or -1. The caller holds
 // the lock.
-func (t *table) latest(k string, n int32) int32 {
-	p, ok := t.index[k]
+func (t *table) latest(k string, key Value, n int32) int32 {
+	p, ok := t.find(k, key)
 	if !ok {
 		return -1
 	}
@@ -71,14 +98,15 @@ func (t *table) latest(k string, n int32) int32 {
 	return p
 }
 
-// get returns the value for k, and whether the key is present.
-func (v *span) get(k string) (Value, bool) {
+// get returns the value for the key whose canonical form is k, and
+// whether the key is present.
+func (v *span) get(k string, key Value) (Value, bool) {
 	if v.len == 0 {
 		return Value{}, false
 	}
 	v.t.mu.RLock()
 	defer v.t.mu.RUnlock()
-	p := v.t.latest(k, v.n)
+	p := v.t.latest(k, key, v.n)
 	if p < 0 || v.t.entries[p].gone {
 		return Value{}, false
 	}
@@ -120,7 +148,7 @@ func (v *version) with(k string, key, val Value, del bool) span {
 		keys, vals := v.keysAndValues()
 		fresh := newSpan()
 		for i, kk := range keys {
-			fresh.appendLocked(Key(kk), kk, vals[i], false)
+			fresh.appendLocked(canon(kk), kk, vals[i], false)
 		}
 		fresh.appendLocked(k, key, val, del)
 		fresh.t.live = fresh.len
@@ -137,7 +165,7 @@ func (v *version) with(k string, key, val Value, del bool) span {
 // table locked or not yet shared.
 func (v *span) appendLocked(k string, key, val Value, del bool) {
 	t := v.t
-	prev := t.latest(k, v.n)
+	prev := t.latest(k, key, v.n)
 	present := prev >= 0 && !t.entries[prev].gone
 	switch {
 	case del && !present:
@@ -151,7 +179,17 @@ func (v *span) appendLocked(k string, key, val Value, del bool) {
 		start = t.entries[prev].start
 	}
 	t.entries = append(t.entries, entry{k: k, key: key, val: val, prev: prev, start: start, gone: del})
-	t.index[k] = pos
+	if key.p == mark(KindInt) {
+		if t.ints == nil {
+			t.ints = make(map[int64]int32, t.hint)
+		}
+		t.ints[key.n] = pos
+	} else {
+		if t.index == nil {
+			t.index = make(map[string]int32, t.hint)
+		}
+		t.index[k] = pos
+	}
 	v.n = pos + 1
 	switch {
 	case del:
@@ -171,7 +209,7 @@ func (v *span) first() (key, val Value, pos int32, ok bool) {
 		if e.start != i || e.gone {
 			continue
 		}
-		p := v.t.latest(e.k, v.n)
+		p := v.t.latest(e.k, e.key, v.n)
 		if l := &v.t.entries[p]; l.start == i && !l.gone {
 			return e.key, l.val, i, true
 		}
@@ -193,7 +231,7 @@ func (v *version) keysAndValues() ([]Value, []Value) {
 		if e.start != i || e.gone {
 			continue
 		}
-		p := v.t.latest(e.k, v.n)
+		p := v.t.latest(e.k, e.key, v.n)
 		if l := &v.t.entries[p]; l.start == i && !l.gone {
 			keys = append(keys, e.key)
 			vals = append(vals, l.val)
