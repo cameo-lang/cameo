@@ -72,6 +72,11 @@ type Class struct {
 // stands still and every lookup cache stays valid.
 var generation atomic.Uint64
 
+// Generation is the count of changes to any class's methods or
+// ancestry: what was looked up under one generation holds while the
+// count is the same.
+func Generation() uint64 { return generation.Load() }
+
 // lookupCache is what a class has for lookups under one generation:
 // its ancestors, and the instance methods resolved so far by name, with
 // nil for a name no ancestor defines. A cache is never modified once

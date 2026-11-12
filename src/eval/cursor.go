@@ -1,6 +1,8 @@
 package eval
 
 import (
+	"unsafe"
+
 	"github.com/cameo-lang/cameo/src/cameopb"
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/stdlib"
@@ -387,7 +389,7 @@ func (m *machine) interp(c *cameopb.Code) {
 // interpPart adds part i of an INTERP, whose value is on the stack, to
 // the string under it, and enters the next part.
 func (m *machine) interpPart(c *cameopb.Code, i int) error {
-	if err := m.interpAdd(c); err != nil {
+	if err := m.interpAdd(c, i+1 == len(c.Code)); err != nil {
 		return err
 	}
 	if i+1 < len(c.Code) {
@@ -398,7 +400,13 @@ func (m *machine) interpPart(c *cameopb.Code, i int) error {
 
 // interpAdd adds the value on top of the stack to the string under it,
 // as a part of the INTERP c.
-func (m *machine) interpAdd(c *cameopb.Code) error {
+//
+// The string so far is the machine's own until the INTERP is through:
+// no script has it. It is kept in room that the next part is written
+// into, so that an INTERP of n parts copies each part once and not the
+// string so far n times. last says that v is the INTERP's last part:
+// the string then keeps the room, and the machine lets go of it.
+func (m *machine) interpAdd(c *cameopb.Code, last bool) error {
 	in, line := m.in, int(c.Line)
 	v := m.pop()
 	sofar := m.pop()
@@ -417,7 +425,25 @@ func (m *machine) interpAdd(c *cameopb.Code) error {
 		}
 		kind = next
 	}
-	m.push(object.StringOf(kind, sofar.Str()+s))
+	prev := sofar.Str()
+	switch {
+	case len(prev) == 0 && last:
+		// One part: the string is the part.
+		m.push(object.StringOf(kind, s))
+		return nil
+	case len(prev) > 0 && len(prev) == len(m.sofar) && unsafe.StringData(prev) == unsafe.SliceData(m.sofar):
+		// The string so far is the one the part before left in the
+		// room: this part goes behind it.
+		m.sofar = append(m.sofar, s...)
+	default:
+		// The first part, or a string so far that is not in the room:
+		// the INTERP of a part came between, or a resume.
+		m.sofar = append(append(make([]byte, 0, max(2*(len(prev)+len(s)), 32)), prev...), s...)
+	}
+	m.push(object.StringOf(kind, unsafe.String(unsafe.SliceData(m.sofar), len(m.sofar))))
+	if last {
+		m.sofar = nil
+	}
 	return nil
 }
 

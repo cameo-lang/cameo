@@ -133,6 +133,9 @@ type machine struct {
 	debugged bool
 	// stepper is what an actStep is of.
 	stepper *stepping
+	// sofar is the room the string so far of an INTERP is in, between
+	// two of its parts (interpAdd).
+	sofar []byte
 	// held is set while a stepper keeps the machine for the next call of
 	// its block (stepping.act): it is then not released when its
 	// activation ends.
@@ -747,7 +750,11 @@ func (m *machine) send(c *cameopb.Code) error {
 
 // sendPlain is the flags of a SEND that sendContained may run: a call
 // with positional arguments alone and no block.
-const sendPlain = uint64(cameopb.Flag_FLAG_SELF | cameopb.Flag_FLAG_VCALL | cameopb.Flag_FLAG_PRIVATE | cameopb.Flag_FLAG_TAIL)
+//
+// A call whose value is dropped is one of them: what the general call
+// checks for it (dropped) is a mutator's name on a receiver, and
+// sendContained leaves every call of such a name to the general call.
+const sendPlain = uint64(cameopb.Flag_FLAG_SELF | cameopb.Flag_FLAG_VCALL | cameopb.Flag_FLAG_PRIVATE | cameopb.Flag_FLAG_TAIL | cameopb.Flag_FLAG_DROPPED)
 
 // sendContained runs a SEND with positional arguments alone when it
 // calls a builtin that keeps no slice of its arguments

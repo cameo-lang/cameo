@@ -152,6 +152,20 @@ func installFolds() {
 			return object.MapValue(groups.Map()), nil
 		},
 	})
+	// sort_by gathers the keys and sorts once the walk is through.
+	stepped("sort_by", always, walk{
+		fold: func(ctx object.Context, st []object.Value, el, v object.Value) ([]object.Value, *object.Value, error) {
+			return append(st, v), nil, nil
+		},
+		fills: true,
+		done: func(ctx object.Context, call *object.Call, st []object.Value) (object.Value, error) {
+			sorted, err := sortByKeys(ctx, st[walkElems].List().Elems, kept(st))
+			if err != nil {
+				return object.Value{}, err
+			}
+			return object.NewList(sorted...), nil
+		},
+	})
 	// each_slice and each_cons walk the slices and the windows, and
 	// return the receiver, as Ruby's do since 3.1.
 	parts := func(cut func(elems []object.Value, n int) []object.Value) walk {
