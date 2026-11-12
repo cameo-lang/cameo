@@ -1,7 +1,7 @@
 # Task: Cut the allocation of a call and of a block's capture
 
 **Started:** 2026-11-11 22:51:46
-**Ended:** 2026-11-12 01:30:00
+**Ended:** 2026-11-12 04:00:00
 **Strategy:** Performance
 **Status:** Completed
 **Complexity:** Medium
@@ -34,6 +34,11 @@ CRuby on the benchmarks.
 - [x] An instruction per arithmetic and comparison operator, the SEND
       form removed, IR version 2 (#373)
 - [x] A Value of two words, 16 bytes where it was 24 (#374)
+- [x] Flat code: a proc lowered to jumps when it is first called, CASE
+      as jumps, BEGIN and pattern matches from cursors in place (#375)
+- [x] Follow-ups the comparison found: reading a payload kind with one
+      comparison (#376), a map lookup without its key's string (#377),
+      to_s by its Sym (#378)
 
 ## Obstacles
 - **Issue:** a CPU profile from runtime/pprof on macOS showed the
@@ -76,9 +81,16 @@ changed the times by 0 to 4%, the operator instructions by 2 to 5%. The
 Value of 16 bytes took 37% off hash_literal_small8, 22% off
 array_values_at_range, 10% off hash_aref_fix and 6% off app_fib.
 
-Follow-up: the cost per instruction of the loop in run, step and exec.
-A scope of a block's call that nothing kept could be reused as the
-machine is.
+With flat code and the follow-ups, the same comparison on the top of the
+stack (6c797869): 220% of CRuby in the geometric mean where main has
+231%; 95% of main's time, faster than main in 487 of 780 cases, and
+109% on the 48 cases CRuby takes 0.1 s or more for. No output differs
+from CRuby's.
+
+Follow-up: BEGIN as jumps (vm_ensure takes twice main's time), a call
+that does not allocate its frame, scope and argument list (app_fib is
+6.7 times CRuby's time), and the block calls of times and for
+(loop_times and loop_for take 1.5 times main's time).
 
 ## Insights
 - The evaluator of the ir/ stack costs more per instruction than
