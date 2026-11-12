@@ -344,7 +344,15 @@ func (in *Interp) methodAct(m *object.Method, recv object.Value, args []object.V
 		return nil, err
 	}
 	code := m.Body.(*irProc)
-	bound := &activation{frame: Frame{
+	act, ps := in.machine(), in.paramsOf(code)
+	// The frame and the scope of a call that keeps neither are the
+	// machine's own, which the next call it runs uses again. Under a
+	// debugger, which keeps both while it shows them, they are not.
+	bound := &act.own
+	if !ps.contained || in.dbg != nil {
+		bound = &activation{}
+	}
+	bound.frame = Frame{
 		Self:    recv,
 		Method:  m,
 		Owner:   m.Owner,
@@ -353,7 +361,7 @@ func (in *Interp) methodAct(m *object.Method, recv object.Value, args []object.V
 		Block:   block,
 		Lexical: m.Lexical,
 		File:    m.File,
-	}}
+	}
 	fr, env := &bound.frame, &bound.env
 	if len(m.Lexical) > 0 {
 		fr.DefTarget = m.Lexical[len(m.Lexical)-1]
@@ -367,10 +375,8 @@ func (in *Interp) methodAct(m *object.Method, recv object.Value, args []object.V
 			fr.BuildingExc = exc
 		}
 	}
-	act := in.machine()
 	act.unit, act.env, act.fr, act.kind = code.unit, env, fr, actMethod
-	ps := in.paramsOf(code)
-	env.lay(ps.layout)
+	act.lay(env, ps.layout)
 	if err := in.bindParams(ps, args, kw, block, env, fr, true, m.Name, line); err != nil {
 		_, err = in.leave(act, object.Value{}, err)
 		return nil, err
@@ -389,27 +395,32 @@ func (in *Interp) blockAct(p *Proc, args []object.Value, kw *object.Map, inner o
 	if err := in.stopped(); err != nil {
 		return nil, err
 	}
-	var env *Env
 	fr, ps := p.Frame, in.paramsOf(p.IR)
+	// The scope of a call that keeps neither its frame nor its scope
+	// is the machine's own, as a method's is (methodAct).
+	act := in.machine()
+	bound := &act.own
+	if !ps.contained || in.dbg != nil {
+		bound = &activation{}
+	}
+	env := &bound.env
+	env.parent = p.Env
 	if p.Strict {
 		// A lambda's call is a frame of its own, where its return stops:
 		// it starts and ends with the call, whatever became of the
 		// method the lambda was written in.
-		bound := &activation{frame: *p.Frame}
+		bound.frame = *p.Frame
 		bound.frame.Lambda, bound.frame.ended = true, false
-		bound.env.parent = p.Env
-		fr, env = &bound.frame, &bound.env
-		env.lay(ps.layout)
-	} else {
-		env = newEnvOf(p.Env, ps.layout)
+		fr = &bound.frame
 	}
+	act.lay(env, ps.layout)
 	if err := in.bindParams(ps, args, kw, inner, env, fr, p.Strict, "block", p.line()); err != nil {
 		if p.Strict {
 			fr.ended = true
 		}
+		in.release(act)
 		return nil, err
 	}
-	act := in.machine()
 	act.unit, act.env, act.fr, act.kind, act.proc = p.IR.unit, env, fr, actBlock, p
 	act.startAt(in.flatOfProc(p.IR), p.IR.proc.GetCode(), true)
 	if in.dbg != nil {
