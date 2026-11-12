@@ -87,3 +87,15 @@ func TestAppendFromManyGoroutines(t *testing.T) {
 		}
 	}
 }
+
+// YieldKept keeps the value in the state it is given and calls the
+// block with that state, so a builtin that counts makes one slice.
+func TestYieldKeptWritesTheStateItIsGiven(t *testing.T) {
+	first := YieldKept(nil, Int(1))
+	assert.Equals(t, first.Yield[0].Int(), int64(1))
+	assert.Equals(t, cap(first.Yield), 1)
+	next := YieldKept(first.State, Int(2))
+	assert.Equals(t, next.State[0].Int(), int64(2))
+	assert.True(t, &next.State[0] == &first.State[0])
+	assert.Equals(t, int(testing.AllocsPerRun(100, func() { YieldKept(first.State, Int(3)) })), 0)
+}

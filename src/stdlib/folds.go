@@ -47,8 +47,8 @@ func installFolds() {
 			}
 			return elems[1:], []object.Value{elems[0]}, nil
 		},
-		yield: func(st []object.Value, el object.Value, i int) []object.Value {
-			return []object.Value{st[walkKept], el}
+		yield: func(st []object.Value, el object.Value, i int, into []object.Value) []object.Value {
+			return append(into, st[walkKept], el)
 		},
 		fold: func(ctx object.Context, st []object.Value, el, v object.Value) ([]object.Value, *object.Value, error) {
 			st[walkKept] = v
@@ -116,6 +116,7 @@ func installFolds() {
 		done: gathered,
 	})
 	stepped("drop_while", always, walk{
+		indexed: true,
 		fold: func(ctx object.Context, st []object.Value, el, v object.Value) ([]object.Value, *object.Value, error) {
 			if !v.Truthy() {
 				rest := object.NewList(append([]object.Value{}, st[walkElems].List().Elems[st[walkIndex].Int():]...)...)

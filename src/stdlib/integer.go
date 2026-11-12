@@ -402,7 +402,11 @@ func installInteger() {
 		if i >= n {
 			return object.Done(self), nil
 		}
-		return object.Yield([]object.Value{object.Int(i)}, object.Int(i)), nil
+		s := object.YieldKept(state, object.Int(i))
+		if got.First {
+			s.Count = &object.Count{Last: n - 1, By: 1}
+		}
+		return s, nil
 	})
 	bits := func(name string, f func(and, mask *big.Int) bool) {
 		def(c, name, 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -465,7 +469,11 @@ func installInteger() {
 			if c := integerCmp(next, to); dir > 0 && c > 0 || dir < 0 && c < 0 {
 				return object.Done(self), nil
 			}
-			return object.Yield([]object.Value{next}, next), nil
+			s := object.YieldKept(state, next)
+			if last, ok := to.AsInt(); ok && got.First && next.Kind() == object.KindInt {
+				s.Count = &object.Count{Last: last, By: dir}
+			}
+			return s, nil
 		})
 	}
 	step("upto", 1)

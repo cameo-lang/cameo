@@ -16,8 +16,9 @@ type walk struct {
 	// nothing.
 	elems func(ctx object.Context, call *object.Call) (elems, start []object.Value, err error)
 	// yield returns what the block is called with for the element el at
-	// index i; nil calls it with the element.
-	yield func(st []object.Value, el object.Value, i int) []object.Value
+	// index i, appended to into, which is empty; nil calls it with the
+	// element.
+	yield func(st []object.Value, el object.Value, i int, into []object.Value) []object.Value
 	// fold takes the block's value v for the element el into the state
 	// and returns the state; nil keeps nothing. Returning stop ends the
 	// walk with that value.
@@ -29,14 +30,15 @@ type walk struct {
 	// then made with room for them all, and gathered returns it as the
 	// list without a copy.
 	fills bool
+	// indexed is set when fold reads the index in the state.
+	indexed bool
 }
 
 // The places of a walk's state.
 const (
-	walkElems = iota
-	walkIndex
-	// walkKept is where what the builtin gathers starts.
-	walkKept
+	walkElems = object.WalkElems
+	walkIndex = object.WalkIndex
+	walkKept  = object.WalkKept
 )
 
 // kept is what a walk has gathered: the state after its elements and its
@@ -47,13 +49,17 @@ func kept(st []object.Value) []object.Value { return st[walkKept:] }
 // what blockless returns, an enumerator, which sized gives the
 // receiver's size.
 func (w walk) stepper(name string, sized bool) object.Stepper {
+	// What the steps after the first do, for an evaluator that does
+	// them itself.
+	steps := &object.Walk{Yield: w.yield, Fold: w.fold, Indexed: w.indexed, Done: w.done}
 	return func(ctx object.Context, call *object.Call, st []object.Value, got object.Got) (object.Step, error) {
 		i := 0
+		var elems []object.Value
 		if got.First {
 			if call.Block.IsZero() {
 				return object.Done(blockless(call.Self, name, call.Args, sized)), nil
 			}
-			var elems, start []object.Value
+			var start []object.Value
 			var err error
 			if w.elems != nil {
 				elems, start, err = w.elems(ctx, call)
@@ -72,8 +78,9 @@ func (w walk) stepper(name string, sized bool) object.Stepper {
 			st = append(st, start...)
 		} else {
 			i = int(st[walkIndex].Int())
+			elems = st[walkElems].List().Elems
 			if w.fold != nil {
-				next, stop, err := w.fold(ctx, st, st[walkElems].List().Elems[i], got.Value)
+				next, stop, err := w.fold(ctx, st, elems[i], got.Value)
 				if err != nil {
 					return object.Step{}, err
 				}
@@ -84,7 +91,6 @@ func (w walk) stepper(name string, sized bool) object.Stepper {
 			}
 			i++
 		}
-		elems := st[walkElems].List().Elems
 		if i >= len(elems) {
 			if w.done == nil {
 				return object.Done(call.Self), nil
@@ -94,9 +100,11 @@ func (w walk) stepper(name string, sized bool) object.Stepper {
 		}
 		st[walkIndex] = object.Int(i)
 		if w.yield != nil {
-			return object.Yield(st, w.yield(st, elems[i], i)...), nil
+			return object.Step{Yield: w.yield(st, elems[i], i, nil), State: st, Walk: steps}, nil
 		}
-		return object.Yield(st, elems[i]), nil
+		// The element as the list holds it is the block's arguments: the
+		// evaluator reads them and keeps no slice of them.
+		return object.Step{Yield: elems[i : i+1 : i+1], State: st, Walk: steps}, nil
 	}
 }
 

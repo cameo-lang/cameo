@@ -128,6 +128,7 @@ func (in *Interp) dumpStack(d *stackMsg, enc *protogen.Encoder, classes *classDu
 		switch m.kind {
 		case actStep:
 			st := m.stepper
+			st.written()
 			a.Kind = cameopb.Dump_Activation_BUILTIN
 			b := &cameopb.Dump_Builtin{Method: in.methodRef(classes, st.builtin), Rescue: st.rescue}
 			b.Self = value("self of "+where, st.call.Self)
