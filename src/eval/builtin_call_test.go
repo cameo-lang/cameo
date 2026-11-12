@@ -98,6 +98,53 @@ func TestBorrowingBuiltinsAreMarked(t *testing.T) {
 	for _, name := range []string{"[]", "at"} {
 		assert.True(t, object.ListClass.Methods[name].Borrows, "Array#"+name)
 	}
-	assert.True(t, !object.ListClass.Methods["fetch"].Borrows)
-	assert.True(t, !object.MapClass.Methods["fetch"].Borrows)
+	for _, name := range []string{"[]", "split", "include?", "%"} {
+		assert.True(t, object.StringClass.Methods[name].Borrows, "String#"+name)
+	}
+	assert.True(t, object.Enumerable.Methods["first"].Borrows)
+	// A method that makes an enumerator of its arguments keeps them.
+	assert.True(t, !object.Enumerable.Methods["each_slice"].Borrows)
+	assert.True(t, !object.StringClass.Methods["sub"].Borrows)
+}
+
+// The builtins of hashes, arrays, enumerables and strings that are
+// called with their arguments on the stack return what they did: with
+// one argument and with several, a list they make of their arguments'
+// values after later calls used the stack again, and the errors they
+// raise.
+func TestMoreBuiltinsCalledWithBorrowedArguments(t *testing.T) {
+	expectOutput(t, `h = { a: 1, "b" => [2, { c: 3 }], 4 => :four }
+l = [5, [6, [7]], "x", :y, 8]
+s = "hello, world"
+keep = []
+keep += [h.fetch(:a), h.fetch(:zz, 0), h.key(1), h.dig("b", 1, :c), h.values_at(:a, 4, :no)]
+keep += [l.fetch(1), l.fetch(9, :none), l.dig(1, 1, 0), l.index("x"), l.last(2), l.last, l.join("-"), l.values_at(0, -1, 9)]
+keep += [l.include?(:y), l.include?(0), l.first(2), l.first, (1..5).include?(3), (1..5).first(2)]
+keep += [s[0], s[1, 3], s[0..4], s[-5..], s["wor"], s[/l+/], s.slice(7, 5), s + "!", s * 2, "%05d|%s" % [42, :z], "%x" % 255]
+keep += [s == "hello, world", s <=> "help", s =~ /wor/, s.tr("lo", "01"), s.split(", "), s.split, s.split("", 3)]
+keep += [s.include?("lo, w"), s.start_with?("he", "x"), s.end_with?("ld"), s.delete_prefix("hello"), s.delete_suffix("world"), s.count("lo")]
+p keep
+# The values of earlier calls are as they were after later calls reused the stack.
+a = l.values_at(0, 4)
+b = h.values_at(:a, 4)
+c = l.first(3)
+p a, b, c, [l.last(2), l.values_at(1), h.values_at("b")]
+begin
+  h.fetch(:missing)
+rescue KeyError => e
+  p e.message
+end
+begin
+  s + 1
+rescue TypeError => e
+  p e.message
+end
+`, `[1, 0, :a, 3, [1, :four, nil], [6, [7]], :none, 7, 2, [:y, 8], 8, "5-6-7-x-y-8", [5, 8, nil], true, false, [5, [6, [7]]], 5, true, [1, 2], "h", "ell", "hello", "world", "wor", "ll", "world", "hello, world!", "hello, worldhello, world", "00042|z", "ff", true, -1, 7, "he001, w1r0d", ["hello", "world"], ["hello,", "world"], ["h", "e", "llo, world"], true, true, true, ", world", "hello, ", 5]
+[5, 8]
+[1, :four]
+[5, [6, [7]], "x"]
+[[:y, 8], [[6, [7]]], [[2, {c: 3}]]]
+"key not found: :missing"
+"no implicit conversion of Integer into String"
+`)
 }

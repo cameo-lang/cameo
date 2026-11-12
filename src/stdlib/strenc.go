@@ -138,6 +138,9 @@ func InstallStringEncodings() {
 			}
 			return relabel(v, k, fromLatin1), nil
 		})
+		// The wrapper hands the arguments on or copies them, so it keeps
+		// their slice no more than the method does.
+		c.Methods[name].Borrows = m.Borrows
 	}
 	// Case changes in ASCII alone outside UTF-8.
 	asciiOnly := func(name string, f func(string) string) {
