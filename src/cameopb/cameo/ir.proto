@@ -247,6 +247,10 @@ enum Flag {
   // SCOPED: `::Name`; no scope is popped.
   FLAG_TOP = 0x10000000;
   // REGEXP: no part is interpolated, so the regexp is made once.
+  // LIST, MAP: every element, key and value is a literal, so the list or
+  // the map is one value. The elements of the LIST are the CONST and SYM
+  // before it; the entries of the MAP are the instructions after it, a
+  // value, a key and a MAP_SET for each.
   FLAG_STATIC = 0x20000000;
   // SEND: a tail call. Its value is the value of the method, block or
   // lambda it is in, which does not stay on the stack while it runs.

@@ -290,6 +290,7 @@ it in one array, with jumps where the IR has lists.
 | `CASE` | per when its conditions, a test, its body; then the else |
 | `INTERP{part...}` | each part, and an instruction that adds it to the string |
 | an instruction without lists | itself, run by `machine.exec` as from a cursor |
+| a `LIST` or a `MAP` of literals (`FLAG_STATIC`) | one constant: the list or the map is made when the code is lowered, and every run of the code has it, since values do not change |
 | `BEGIN` | its body, its else, per rescue clause its classes, a test and its body, then its ensure |
 | `CASE_IN`, a `REGEXP` with parts, `defined?` of an expression | itself: it enters its list, and the activation runs from cursors until none is left |
 

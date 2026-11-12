@@ -271,12 +271,46 @@ func inner(at *flatList, c *cameopb.Code, idx, i int, ph phase, body bool) *flat
 
 // list lowers the instructions of at.
 func (l *lowerer) list(at *flatList) {
+	// skip is how many instructions after this one are a part of it
+	// already: the entries of a map that is one value.
+	skip := 0
 	for idx, c := range at.code {
 		if !l.ok {
 			return
 		}
+		if skip > 0 {
+			skip--
+			continue
+		}
 		ins := flatIns{real: true, src: c, at: at, idx: int32(idx)}
 		switch c.Op {
+		case cameopb.Op_SYM:
+			ins.op, ins.val = fConst, object.Symbol(l.syms.syms[c.Args[0].GetName()].String())
+			l.emit(ins)
+		case cameopb.Op_LIST:
+			// A list of literals (FLAG_STATIC) is one value, made here:
+			// values do not change, so every run of the code has the
+			// same list. It takes the place of its first element, where
+			// a jump to the list's start arrives.
+			if n := int(c.Args[0].GetInt()); has(c, cameopb.Flag_FLAG_STATIC) && l.literals(at, idx, n) {
+				elems := make([]object.Value, n)
+				for i, e := range l.out[len(l.out)-n:] {
+					elems[i] = e.val
+				}
+				if n > 0 {
+					ins = l.out[len(l.out)-n]
+					l.out = l.out[:len(l.out)-n]
+				}
+				ins.op, ins.val = fConst, object.NewList(elems...)
+			}
+			l.emit(ins)
+		case cameopb.Op_MAP:
+			// A map of literals likewise, with its entries after it.
+			if m, n := l.staticMap(at, idx); m != nil {
+				ins.op, ins.val = fConst, object.MapValue(m)
+				skip = n
+			}
+			l.emit(ins)
 		case cameopb.Op_IF:
 			if len(c.Code) != 2 {
 				l.ok = false
@@ -511,6 +545,58 @@ func awaits(c *cameopb.Code) bool {
 		}
 	}
 	return false
+}
+
+// literals reports whether the n instructions lowered last are the
+// constants of the n instructions before idx in at: the elements of a
+// list of literals.
+func (l *lowerer) literals(at *flatList, idx, n int) bool {
+	if n > idx || n > len(l.out) {
+		return false
+	}
+	for i, e := range l.out[len(l.out)-n:] {
+		if e.op != fConst || e.at != at || int(e.idx) != idx-n+i {
+			return false
+		}
+	}
+	return true
+}
+
+// staticMap returns the map a MAP of literals at idx in at makes
+// (FLAG_STATIC), and how many instructions after the MAP are its
+// entries: a value, a key and a MAP_SET for each. It returns nil for
+// any other MAP.
+func (l *lowerer) staticMap(at *flatList, idx int) (*object.Map, int) {
+	c := at.code[idx]
+	if !has(c, cameopb.Flag_FLAG_STATIC) || len(c.Args) == 0 {
+		return nil, 0
+	}
+	n := int(c.Args[0].GetInt())
+	entries := at.code[idx+1:]
+	if len(entries) < 3*n {
+		return nil, 0
+	}
+	m := object.NewMapSized(n)
+	for i := 0; i < n; i++ {
+		v, ok := l.literal(entries[3*i])
+		k, kok := l.literal(entries[3*i+1])
+		if !ok || !kok || entries[3*i+2].Op != cameopb.Op_MAP_SET {
+			return nil, 0
+		}
+		m.Add(k, v)
+	}
+	return m, 3 * n
+}
+
+// literal returns the value of a CONST or a SYM.
+func (l *lowerer) literal(c *cameopb.Code) (object.Value, bool) {
+	switch c.Op {
+	case cameopb.Op_CONST:
+		return plainConstant(c)
+	case cameopb.Op_SYM:
+		return object.Symbol(l.syms.syms[c.Args[0].GetName()].String()), true
+	}
+	return object.Value{}, false
 }
 
 // plainConstant returns the value of a CONST that is the same value each
