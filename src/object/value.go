@@ -128,8 +128,8 @@ type Value struct {
 //   - nil, a boolean, an integer and a float have their payload in n, all
 //     64 bits of it, and p points at the mark of their kind, an element of
 //     kindMarks: the address says the kind;
-//   - a string or a symbol has its bytes at p and its length in the low 56
-//     bits of n; one of no bytes has the mark of its kind at p;
+//   - a string or a symbol has its bytes at p and its length in the low 55
+//     bits of n, and asciiBit above them; one of no bytes has the mark of its kind at p;
 //   - every other kind has its object at p;
 //   - the top byte of n is the kind of whatever has no mark at p.
 //
@@ -139,7 +139,11 @@ var kindMarks [256]byte
 
 const (
 	kindShift = 56
-	lenMask   = 1<<kindShift - 1
+	// asciiBit is set in n for a UTF-8 string that is known to hold
+	// ASCII alone, whose characters are then its bytes. It says nothing
+	// when it is unset: most strings are never looked at.
+	asciiBit = 1 << (kindShift - 1)
+	lenMask  = asciiBit - 1
 )
 
 // mark returns the mark of kind k. A kind that lives in the payload is
@@ -285,6 +289,34 @@ func Symbol(name string) Value {
 // changed afterwards.
 func Bytes(b []byte) Value {
 	return strValue(KindBytes, int64(len(b)), unsafe.Pointer(unsafe.SliceData(b)))
+}
+
+// ASCIIString makes a UTF-8 string of s, which the caller knows to hold
+// ASCII alone: digits, a string made of such strings. Its length in
+// characters, and what else depends on where its characters are, is
+// then read off its bytes.
+func ASCIIString(s string) Value {
+	v := String(s)
+	if len(s) > 0 {
+		v.n |= asciiBit
+	}
+	return v
+}
+
+// Literal makes a UTF-8 string of s and looks whether it holds ASCII
+// alone: for a string that is made once and read often, a literal of a
+// script.
+func Literal(s string) Value {
+	if ASCIIOnly(s) {
+		return ASCIIString(s)
+	}
+	return String(s)
+}
+
+// KnownASCII reports a UTF-8 string that is known to hold ASCII alone.
+// False says nothing: the string may still be ASCII.
+func (v Value) KnownASCII() bool {
+	return v.n&asciiBit != 0 && v.kind() == KindString || v.p == mark(KindString)
 }
 
 // StringOf makes a string of s in the encoding kind names: KindString
@@ -564,7 +596,14 @@ func (v Value) AsException() (*Exception, bool) {
 
 // Same reports identity: the same kind and the same payload. Two strings
 // are the same only when they share their bytes.
-func Same(a, b Value) bool { return a.n == b.n && a.p == b.p }
+func Same(a, b Value) bool {
+	if a.p != b.p {
+		return false
+	}
+	// Two strings that share their bytes are the same whether or not
+	// one of them is known to be ASCII.
+	return a.n == b.n || (a.n^b.n) == asciiBit && a.IsString()
+}
 
 // Objects.
 

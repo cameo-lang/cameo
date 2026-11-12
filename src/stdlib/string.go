@@ -17,6 +17,9 @@ func installString() {
 		if !ok {
 			return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into String", KindName(args[0]))
 		}
+		if self.KnownASCII() && args[0].KnownASCII() {
+			return object.ASCIIString(str(self) + string(o)), nil
+		}
 		return object.String(str(self) + string(o)), nil
 	})
 	def(c, "*", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -26,6 +29,9 @@ func installString() {
 		}
 		if n < 0 {
 			return object.Value{}, ctx.Raise(object.ArgumentError, "negative argument")
+		}
+		if self.KnownASCII() {
+			return object.ASCIIString(strings.Repeat(str(self), int(n))), nil
 		}
 		return object.String(strings.Repeat(str(self), int(n))), nil
 	})
@@ -53,6 +59,10 @@ func installString() {
 	def(c, "eql?", 1, c.Methods["=="].Native)
 	def(c, "===", 1, c.Methods["=="].Native)
 	def(c, "length", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		// The characters of a string known to be ASCII are its bytes.
+		if self.KnownASCII() {
+			return object.Int(len(str(self))), nil
+		}
 		return object.Int(utf8.RuneCountInString(str(self))), nil
 	})
 	def(c, "size", 0, c.Methods["length"].Native)
