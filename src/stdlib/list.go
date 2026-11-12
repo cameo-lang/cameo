@@ -150,7 +150,7 @@ func installList() {
 		return object.ListValue(concat(elems(self), o.Elems)), nil
 	})
 	def(c, "append", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.ListValue(concat(elems(self), args)), nil
+		return object.Append(list(self), args...), nil
 	})
 	def(c, "prepend", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.ListValue(concat(args, elems(self))), nil

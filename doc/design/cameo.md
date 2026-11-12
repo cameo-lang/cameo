@@ -1248,6 +1248,13 @@ re-opened by accident:
   - Maps and sets are versions of an append-only table (`object/table.go`),
     so a copy with one more key costs O(1) and building a map key by key
     is linear, not quadratic.
+  - A list that `<<`, `push` or `append` makes has room behind its last
+    element (`object/append.go`), and the next of them on that list
+    writes there instead of copying the elements, so building a list
+    element by element is linear too. Appending to a list a second time
+    copies, as do `prepend` and `list + other`. `map` makes its list at
+    its full length and fills it as the block returns; no script has the
+    list before `map` returns.
 - **Ruby's standard library** is built in one library at a time, each a Go
   package under `src/lib/<require path>`, in the order and with the
   statuses [stdlib.md](../stdlib.md) records. A library is computation on

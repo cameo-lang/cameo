@@ -139,7 +139,8 @@ func installEnumerable() {
 		fold: func(ctx object.Context, st []object.Value, el, v object.Value) ([]object.Value, *object.Value, error) {
 			return append(st, v), nil, nil
 		},
-		done: gathered,
+		done:  gathered,
+		fills: true,
 	}
 	walked("map", true, mapping)
 	walked("collect", true, mapping)
