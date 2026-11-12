@@ -31,6 +31,11 @@ const (
 	// the value on top to it.
 	fLoad
 	fStore
+	// fLoadSlot and fStoreSlot are fLoad and fStore of the variable in
+	// slot a of the layout the code was lowered for, when the scope has
+	// that layout; they go by the name otherwise.
+	fLoadSlot
+	fStoreSlot
 	// fConst pushes val.
 	fConst
 	// fBinary runs the operator sym on the two values on top.
@@ -137,6 +142,9 @@ type flatList struct {
 type flatCode struct {
 	code   []flatIns
 	scopes []flatScope
+	// layout is the layout of the scope the code was lowered for, nil
+	// when it reads every variable by name.
+	layout *layout
 }
 
 // flatScope is a place a completion goes through on its way out of flat
@@ -176,7 +184,12 @@ type try struct {
 // lowerer lowers one list and the lists inside it.
 type lowerer struct {
 	syms *unitNames
-	out  []flatIns
+	// lay is the layout of the scope the code runs in, nil for none;
+	// top is that scope when its layout is its own, which the lowerer
+	// adds the names of the code to.
+	lay *layout
+	top *Env
+	out []flatIns
 	// scopes is the scopes of the code so far, and scope the one the
 	// next instruction is in, -1 for none.
 	scopes []flatScope
@@ -195,16 +208,19 @@ type flatLoop struct {
 
 // lower returns code as flat code, or nil when an instruction in it runs
 // from cursors alone.
-func lower(code []*cameopb.Code, syms *unitNames, body bool) *flatCode {
+func lower(code []*cameopb.Code, syms *unitNames, body bool, lay *layout, top *Env) *flatCode {
 	if len(code) == 0 {
 		return nil
 	}
-	l := &lowerer{syms: syms, ok: true, scope: -1}
+	l := &lowerer{syms: syms, lay: lay, top: top, ok: true, scope: -1}
 	l.list(&flatList{code: code, body: body, level: -1, try: -1})
 	if !l.ok {
 		return nil
 	}
-	return &flatCode{code: l.out, scopes: l.scopes}
+	if top != nil {
+		lay = top.layout
+	}
+	return &flatCode{code: l.out, scopes: l.scopes, layout: lay}
 }
 
 func (l *lowerer) emit(ins flatIns) int {
@@ -231,6 +247,18 @@ func (l *lowerer) jumpLoop() *flatLoop {
 		return nil
 	}
 	return l.scopes[l.scope].loop
+}
+
+// slot is the slot of name in the layout the code is lowered for, -1
+// when it has none.
+func (l *lowerer) slot(name object.Sym) int32 {
+	if l.top != nil {
+		return int32(l.top.reserve(name))
+	}
+	if l.lay == nil {
+		return -1
+	}
+	return int32(l.lay.slot(name))
 }
 
 // here is the index of the next instruction emitted.
@@ -309,10 +337,16 @@ func (l *lowerer) list(at *flatList) {
 			l.ok = false
 		case cameopb.Op_LOAD:
 			ins.op, ins.sym = fLoad, l.syms.syms[c.Args[0].GetName()]
+			if slot := l.slot(ins.sym); slot >= 0 {
+				ins.op, ins.a = fLoadSlot, slot
+			}
 			l.emit(ins)
 		case cameopb.Op_STORE:
 			if !has(c, cameopb.Flag_FLAG_FORWARD) {
 				ins.op, ins.sym = fStore, l.syms.syms[c.Args[0].GetName()]
+				if slot := l.slot(ins.sym); slot >= 0 {
+					ins.op, ins.a = fStoreSlot, slot
+				}
 			}
 			l.emit(ins)
 		case cameopb.Op_CONST:
@@ -498,7 +532,7 @@ func plainConstant(c *cameopb.Code) (object.Value, bool) {
 // and the next instruction is one a run pauses before. It returns the
 // completion that leaves the activation.
 func (m *machine) runFlat() error {
-	in, code := m.in, m.flat.code
+	in, code, lay := m.in, m.flat.code, m.flat.layout
 	yield, started := in.pausing.flag.Load(), false
 	for m.pc < len(code) {
 		ins := &code[m.pc]
@@ -516,6 +550,23 @@ func (m *machine) runFlat() error {
 			}
 		case fStore:
 			m.env.SetSym(ins.sym, m.stack[len(m.stack)-1])
+		case fLoadSlot:
+			e := m.env
+			if e.layout == lay {
+				if v := e.slots[ins.a]; !v.IsZero() {
+					m.stack = append(m.stack, v)
+					continue
+				}
+			}
+			m.stack = append(m.stack, m.loadSlot(ins))
+		case fStoreSlot:
+			// A scope inside a captured one, or inside none, binds its
+			// own variables alone.
+			if e := m.env; e.layout == lay && (e.parent == nil || e.parent.captured) {
+				e.slots[ins.a] = m.stack[len(m.stack)-1]
+			} else {
+				e.SetSym(ins.sym, m.stack[len(m.stack)-1])
+			}
 		case fConst:
 			m.stack = append(m.stack, ins.val)
 		case fBinary:
@@ -649,6 +700,29 @@ func (m *machine) runFlat() error {
 		}
 	}
 	return nil
+}
+
+// loadSlot reads the variable of an fLoadSlot the scope of m does not
+// hold in the slot: from the scope a block captured, which has the
+// layout of the block too, or by name from the scopes around; nil when
+// it is unbound.
+func (m *machine) loadSlot(ins *flatIns) object.Value {
+	e := m.env
+	if e.layout == m.flat.layout {
+		// The scope does not hold the name: its slot is empty.
+		if e = e.parent; e != nil && e.layout == m.flat.layout {
+			if v := e.slots[ins.a]; !v.IsZero() {
+				return v
+			}
+			e = e.parent
+		}
+	}
+	if e != nil {
+		if v, ok := e.GetSym(ins.sym); ok {
+			return v
+		}
+	}
+	return object.Nil
 }
 
 // flatTakes finds the scope of the flat code of m that takes the

@@ -70,3 +70,93 @@ shadow = ->(k) { -> { k } }
 puts shadow.(7).()
 `, "6\n[[60], [120]]\n120\n7\n")
 }
+
+func syms(names ...string) []object.Sym {
+	out := make([]object.Sym, len(names))
+	for i, name := range names {
+		out[i] = object.Intern(name)
+	}
+	return out
+}
+
+// A scope without the layout of a proc gives each name it binds a slot
+// of its own layout, beyond the ones it holds inline and beyond the
+// number a layout is looked through for.
+func TestScopeGrowsItsOwnLayout(t *testing.T) {
+	e := NewEnv(nil)
+	_, ok := e.Get("a")
+	assert.True(t, !ok)
+	names := []string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"}
+	for i, name := range names {
+		e.Define(name, object.Int(int64(i)))
+	}
+	e.Set("c", object.Int(30))
+	for i, name := range names {
+		v, ok := e.Get(name)
+		assert.True(t, ok)
+		want := int64(i)
+		if name == "c" {
+			want = 30
+		}
+		assert.Equals(t, v.Int(), want)
+	}
+	assert.True(t, e.own && e.layout.index != nil)
+	var seen []string
+	e.each(func(name string, _ object.Value) { seen = append(seen, name) })
+	assert.Equals(t, seen, names)
+}
+
+// A scope with the layout of a proc holds the names of the layout in
+// slots, where an empty slot is an unbound name, and any other name in
+// a map.
+func TestScopeOfAProcLayout(t *testing.T) {
+	l := newLayout(syms("a", "b", "a"))
+	assert.Equals(t, len(l.names), 2)
+	e := newEnvOf(nil, l)
+	_, ok := e.Get("b")
+	assert.True(t, !ok)
+	e.Define("b", object.Int(2))
+	e.Define("other", object.Int(3))
+	assert.Equals(t, e.slots[1].Int(), int64(2))
+	assert.True(t, e.layout == l && !e.own && len(l.names) == 2)
+	v, ok := e.Get("other")
+	assert.True(t, ok && v.Int() == 3)
+	var seen []string
+	e.each(func(name string, _ object.Value) { seen = append(seen, name) })
+	assert.Equals(t, seen, []string{"b", "other"})
+	// A slot reserved at the top level holds nothing until it is bound.
+	top := NewEnv(nil)
+	assert.Equals(t, top.reserve(object.Intern("x")), 0)
+	_, ok = top.Get("x")
+	assert.True(t, !ok)
+	assert.Equals(t, e.reserve(object.Intern("nowhere")), -1)
+}
+
+// capture copies the variables a block reads, the innermost binding of
+// each, from the scopes up to the first captured one, which becomes the
+// parent.
+func TestCaptureCopiesWhatABlockReads(t *testing.T) {
+	outer := NewEnv(nil)
+	outer.Define("a", object.Int(1))
+	outer.Define("b", object.Int(2))
+	outer.Define("unread", object.Int(9))
+	l := newLayout(syms("x", "a", "b"))
+	first := outer.capture(l, []int32{1, 2})
+	assert.True(t, first.captured && first.parent == nil && first.scope == outer && first.layout == l)
+	assert.True(t, first.slots[0].IsZero() && first.slots[1].Int() == 1 && first.slots[2].Int() == 2)
+	_, ok := first.Get("unread")
+	assert.True(t, !ok)
+
+	// A block written in a call of the first: its call rebinds b, and
+	// the inner block reads a from the first's captured scope.
+	call := newEnvOf(first, l)
+	call.SetSym(object.Intern("b"), object.Int(20))
+	inner := newLayout(syms("b", "a"))
+	second := call.capture(inner, []int32{0, 1})
+	assert.True(t, second.parent == first && second.scope == outer)
+	assert.True(t, second.slots[0].Int() == 20 && second.slots[1].IsZero())
+	v, ok := second.Get("a")
+	assert.True(t, ok && v.Int() == 1)
+	// The first captured scope is as it was.
+	assert.Equals(t, first.slots[2].Int(), int64(2))
+}
