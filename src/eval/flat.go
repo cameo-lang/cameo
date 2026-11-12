@@ -12,10 +12,10 @@ import (
 // activation back into cursors (cursorsAt), so a dump does not know of
 // flat code. doc/design/ir.md, "Flat code", has the design.
 //
-// IF, WHILE, CASE, AND, OR, SAFE and INTERP become jumps, and an
+// IF, WHILE, CASE, BEGIN, AND, OR, SAFE and INTERP become jumps, and an
 // instruction without lists runs as it does from a cursor (machine.exec).
-// Any other instruction that holds lists (BEGIN, CASE_IN, a REGEXP with
-// parts, defined? of an expression) runs from cursors inside the flat
+// Any other instruction that holds lists (CASE_IN, a REGEXP with parts,
+// defined? of an expression) runs from cursors inside the flat
 // code: it enters its lists as it always did, the activation runs them
 // from cursors until none is left, and goes on in its flat code. A list
 // with an async call or an await anywhere in it runs from cursors
@@ -77,6 +77,21 @@ const (
 	// fTree runs src, which holds lists, as machine.exec does: it enters
 	// a list, and the activation runs from cursors until none is left.
 	fTree
+	// fBegin starts a BEGIN: it notes the height of the stack as the base
+	// of the BEGIN at level a. Its body follows, then its else, its
+	// rescue clauses and its ensure.
+	fBegin
+	// fRescueTest tests the classes of rescue clause b of the BEGIN at
+	// level a, which are on top as a list, against the exception the
+	// BEGIN is trying its clauses for: it goes on in the body of the
+	// clause, or tries the clauses after it.
+	fRescueTest
+	// fRescued ends a rescue clause of the BEGIN at level a: the
+	// exception the clause around was handling is the one handled again.
+	fRescued
+	// fEnsureEnd ends the ensure of the BEGIN at level a: it drops the
+	// value of the clause, and what the clause interrupted goes on.
+	fEnsureEnd
 )
 
 // flatIns is one instruction of flat code.
@@ -93,10 +108,10 @@ type flatIns struct {
 	src *cameopb.Code
 	at  *flatList
 	idx int32
-	// loop is, for an fTree, the loop whose body it is in, an index into
-	// the loops of the flat code, -1 for none: where a break, next or
-	// redo out of its lists goes.
-	loop int32
+	// scope is the innermost loop body or list of a BEGIN the
+	// instruction is in, an index into the scopes of the flat code, -1
+	// for none: what takes a completion the instruction is left by.
+	scope int32
 }
 
 // flatList is a list of the IR that flat code was lowered from: what a
@@ -112,29 +127,64 @@ type flatList struct {
 	phase    phase
 	body     bool
 	// level is the level of the loop whose condition or body the list
-	// is, -1 for any other list.
+	// is, -1 for any other list; try is the level of the BEGIN the list
+	// is one of, -1 for any other.
 	level int32
+	try   int32
 }
 
-// flatCode is a list lowered. loops is the loops of the list that hold an
-// fTree in their body.
+// flatCode is a list lowered, and the scopes its instructions are in.
 type flatCode struct {
-	code  []flatIns
-	loops []*flatLoop
+	code   []flatIns
+	scopes []flatScope
+}
+
+// flatScope is a place a completion goes through on its way out of flat
+// code: the body of a loop, which takes a break, a next and a redo, or a
+// list of a BEGIN, which rescues, retries and runs its ensure.
+type flatScope struct {
+	parent int32
+	// loop is set for the body of a loop.
+	loop *flatLoop
+	// begin is set for a list of a BEGIN, the one phase says.
+	begin *flatBegin
+	phase phase
+}
+
+// flatBegin is a BEGIN lowered: where its lists start in the flat code.
+type flatBegin struct {
+	src   *cameopb.Code
+	level int32
+	// body and ensure are where the body and the ensure start; classes
+	// and bodies are, per rescue clause, where its classes and its body
+	// start. A clause without classes has -1.
+	body, ensure    int32
+	classes, bodies []int32
+}
+
+// try is what an activation keeps of a BEGIN it is inside: the height of
+// the value stack when it started, the exception its rescue clauses are
+// tried for or the one a clause is handling, the exception the clause
+// around was handling, and what its ensure interrupted. A cursor of a
+// list of a BEGIN keeps the same.
+type try struct {
+	base       int
+	exc, outer *object.Exception
+	pending    error
 }
 
 // lowerer lowers one list and the lists inside it.
 type lowerer struct {
 	syms *unitNames
 	out  []flatIns
-	// loops is the loops a break, next or redo at this point belongs to,
-	// outermost first; breaks holds, per loop, the fBreak instructions to
-	// patch with the loop's end.
-	loops  []*flatLoop
-	levels int32
-	ok     bool
-	// trees is the loops an fTree is in the body of.
-	trees []*flatLoop
+	// scopes is the scopes of the code so far, and scope the one the
+	// next instruction is in, -1 for none.
+	scopes []flatScope
+	scope  int32
+	// levels and tries are how many loops and BEGINs the next
+	// instruction is inside.
+	levels, tries int32
+	ok            bool
 }
 
 type flatLoop struct {
@@ -149,17 +199,38 @@ func lower(code []*cameopb.Code, syms *unitNames, body bool) *flatCode {
 	if len(code) == 0 {
 		return nil
 	}
-	l := &lowerer{syms: syms, ok: true}
-	l.list(&flatList{code: code, body: body, level: -1})
+	l := &lowerer{syms: syms, ok: true, scope: -1}
+	l.list(&flatList{code: code, body: body, level: -1, try: -1})
 	if !l.ok {
 		return nil
 	}
-	return &flatCode{code: l.out, loops: l.trees}
+	return &flatCode{code: l.out, scopes: l.scopes}
 }
 
 func (l *lowerer) emit(ins flatIns) int {
+	ins.scope = l.scope
 	l.out = append(l.out, ins)
 	return len(l.out) - 1
+}
+
+// in lowers at inside a new scope, sc, of the scope the lowerer is in.
+func (l *lowerer) in(sc flatScope, at *flatList) {
+	outer := l.scope
+	sc.parent = outer
+	l.scopes = append(l.scopes, sc)
+	l.scope = int32(len(l.scopes) - 1)
+	l.list(at)
+	l.scope = outer
+}
+
+// jumpLoop returns the loop a break, next or redo at this point jumps
+// to: the one whose body it is in with no list of a BEGIN between them,
+// which has an ensure to run or a clause to end first.
+func (l *lowerer) jumpLoop() *flatLoop {
+	if l.scope < 0 {
+		return nil
+	}
+	return l.scopes[l.scope].loop
 }
 
 // here is the index of the next instruction emitted.
@@ -167,7 +238,7 @@ func (l *lowerer) here() int32 { return int32(len(l.out)) }
 
 // inner returns list i of c, which is at index idx of at.
 func inner(at *flatList, c *cameopb.Code, idx, i int, ph phase, body bool) *flatList {
-	return &flatList{parent: at, code: c.Code[i].GetCode(), owner: c, ownerIdx: int32(idx), list: i, phase: ph, body: body, level: -1}
+	return &flatList{parent: at, code: c.Code[i].GetCode(), owner: c, ownerIdx: int32(idx), list: i, phase: ph, body: body, level: -1, try: -1}
 }
 
 // list lowers the instructions of at.
@@ -199,6 +270,12 @@ func (l *lowerer) list(at *flatList) {
 			l.while(at, c, idx, ins)
 		case cameopb.Op_CASE:
 			l.caseWhen(at, c, idx, ins)
+		case cameopb.Op_BEGIN:
+			if len(c.Code) < 3 || len(c.Code)%2 == 0 || awaits(c) {
+				l.ok = false
+				return
+			}
+			l.begin(at, c, idx, ins)
 		case cameopb.Op_INTERP:
 			ins.op = fInterp
 			l.emit(ins)
@@ -208,12 +285,13 @@ func (l *lowerer) list(at *flatList) {
 			}
 		case cameopb.Op_BREAK, cameopb.Op_NEXT, cameopb.Op_REDO:
 			// In the body of a loop of this list they are jumps; anywhere
-			// else they leave the activation, as exec has them do.
-			if len(l.loops) == 0 {
+			// else they are completions, as exec has them be, which the
+			// scopes around take or the activation is left by.
+			loop := l.jumpLoop()
+			if loop == nil {
 				l.emit(ins)
 				break
 			}
-			loop := l.loops[len(l.loops)-1]
 			ins.b = loop.level
 			switch c.Op {
 			case cameopb.Op_BREAK:
@@ -251,16 +329,12 @@ func (l *lowerer) list(at *flatList) {
 				ins.op, ins.sym = fBinary, object.SymAdd+object.Sym(c.Op-cameopb.Op_BINARY_PLUS)
 			case len(c.Code) > 0:
 				// An instruction with lists that flat code has no jumps
-				// for: BEGIN, CASE_IN, a REGEXP with parts, defined?.
+				// for: CASE_IN, a REGEXP with parts, defined?.
 				if awaits(c) {
 					l.ok = false
 					return
 				}
-				ins.op, ins.loop = fTree, -1
-				if len(l.loops) > 0 {
-					ins.loop = int32(len(l.trees))
-					l.trees = append(l.trees, l.loops[len(l.loops)-1])
-				}
+				ins.op = fTree
 			}
 			l.emit(ins)
 		}
@@ -294,9 +368,7 @@ func (l *lowerer) while(at *flatList, c *cameopb.Code, idx int, ins flatIns) {
 	}
 	body := inner(at, c, idx, 1, phaseBody, true)
 	body.level = loop.level
-	l.loops = append(l.loops, loop)
-	l.list(body)
-	l.loops = l.loops[:len(l.loops)-1]
+	l.in(flatScope{loop: loop}, body)
 	l.emit(flatIns{op: fPop})
 	l.emit(flatIns{op: fBack, a: loop.cond})
 	end := l.here()
@@ -333,6 +405,56 @@ func (l *lowerer) caseWhen(at *flatList, c *cameopb.Code, idx int, ins flatIns) 
 	for _, end := range ends {
 		l.out[end].a = l.here()
 	}
+}
+
+// begin lowers a BEGIN at index idx of at. Its lists are the body, the
+// else and the ensure, then the classes and the body of each rescue
+// clause; they are laid out as the body, the else, the clauses and the
+// ensure, which every way out of the others goes through. A rescue
+// clause is reached by the scope of the body, which an exception leaves
+// the body through (flatTakes).
+func (l *lowerer) begin(at *flatList, c *cameopb.Code, idx int, ins flatIns) {
+	bg := &flatBegin{src: c, level: l.tries}
+	l.tries++
+	sub := func(i int, ph phase, body bool) {
+		list := inner(at, c, idx, i, ph, body)
+		list.try = bg.level
+		l.in(flatScope{begin: bg, phase: ph}, list)
+	}
+	ins.op, ins.a = fBegin, bg.level
+	l.emit(ins)
+	bg.body = l.here()
+	sub(0, phaseBody, true)
+	if has(c, cameopb.Flag_FLAG_ELSE) {
+		l.emit(flatIns{op: fPop})
+		sub(1, phaseElse, true)
+	}
+	var ends []int
+	for i := 0; 3+2*i < len(c.Code); i++ {
+		ends = append(ends, l.emit(flatIns{op: fJump}))
+		bg.classes = append(bg.classes, -1)
+		if len(c.Code[3+2*i].GetCode()) > 0 {
+			bg.classes[i] = l.here()
+			sub(3+2*i, phaseClasses, false)
+			// The test is in the scope of the classes: a completion it
+			// is left by leaves the BEGIN as one out of them does.
+			l.scopes = append(l.scopes, flatScope{parent: l.scope, begin: bg, phase: phaseClasses})
+			l.out[l.emit(flatIns{op: fRescueTest, a: bg.level, b: int32(i), src: c})].scope = int32(len(l.scopes) - 1)
+		}
+		bg.bodies = append(bg.bodies, l.here())
+		sub(4+2*i, phaseRescue, true)
+		l.emit(flatIns{op: fRescued, a: bg.level})
+	}
+	for _, end := range ends {
+		l.out[end].a = l.here()
+	}
+	bg.ensure = -1
+	if has(c, cameopb.Flag_FLAG_ENSURE) {
+		bg.ensure = l.here()
+		sub(2, phaseEnsure, true)
+		l.emit(flatIns{op: fEnsureEnd, a: bg.level})
+	}
+	l.tries--
 }
 
 // awaits reports whether c or an instruction in its lists is an async
@@ -492,6 +614,20 @@ func (m *machine) runFlat() error {
 			if has(ins.src, cameopb.Flag_FLAG_SUBJECT) {
 				m.pop()
 			}
+		case fBegin:
+			m.tries = append(m.tries[:ins.a], try{base: len(m.stack)})
+		case fRescueTest:
+			if err := m.rescueTest(ins); err != nil {
+				return err
+			}
+		case fRescued:
+			in.rescuing = m.tries[ins.a].outer
+		case fEnsureEnd:
+			m.stack = m.stack[:len(m.stack)-1]
+			if err := m.tries[ins.a].pending; err != nil {
+				m.tries[ins.a].pending = nil
+				return err
+			}
 		case fTree:
 			// The instruction entered a list, or did its work without
 			// one; with a list entered, run goes on from the cursors.
@@ -515,38 +651,148 @@ func (m *machine) runFlat() error {
 	return nil
 }
 
-// flatTakes continues the flat code of m after the completion err left
-// the lists an fTree entered: a break, next or redo goes to the loop the
-// fTree is in the body of. It returns nil when the loop took it.
+// flatTakes finds the scope of the flat code of m that takes the
+// completion err, which the last instruction was left by, or the lists
+// it entered or the call it made were: the body of a loop takes a break,
+// a next and a redo, and a list of a BEGIN goes on in a rescue clause, in
+// the body again or in the ensure. It returns nil when one took it, and
+// m goes on where that one says; otherwise the completion, which a clause
+// it went through may have changed.
 func (m *machine) flatTakes(err error) error {
-	ctl, ok := err.(*control)
-	if !ok || ctl.target != nil || m.pc == 0 {
+	if m.pc == 0 {
 		return err
 	}
-	ins := &m.flat.code[m.pc-1]
-	if ins.op != fTree || ins.loop < 0 {
-		return err
-	}
-	loop := m.flat.loops[ins.loop]
-	switch ctl.kind {
-	case ctrlBreak:
-		m.stack = append(m.stack[:m.bases[loop.level]], ctl.value)
-		m.bases = m.bases[:loop.level]
-		m.pc = int(loop.end)
-		return nil
-	case ctrlNext, ctrlRedo:
-		m.stack = m.stack[:m.bases[loop.level]]
-		m.bases = m.bases[:loop.level+1]
-		if err := m.in.stopped(); err != nil {
-			return err
+	for s := m.flat.code[m.pc-1].scope; s >= 0 && err != nil; {
+		sc := &m.flat.scopes[s]
+		s = sc.parent
+		if sc.begin != nil {
+			err = m.beginTakes(sc.begin, sc.phase, err)
+			continue
 		}
-		m.pc = int(loop.cond)
-		if ctl.kind == ctrlRedo {
-			m.pc = int(loop.body)
+		ctl, ok := err.(*control)
+		if !ok || ctl.target != nil {
+			continue
 		}
-		return nil
+		loop := sc.loop
+		switch ctl.kind {
+		case ctrlBreak:
+			m.stack = append(m.stack[:m.bases[loop.level]], ctl.value)
+			m.bases = m.bases[:loop.level]
+			m.pc = int(loop.end)
+			return nil
+		case ctrlNext, ctrlRedo:
+			m.stack = m.stack[:m.bases[loop.level]]
+			m.bases = m.bases[:loop.level+1]
+			if err = m.in.stopped(); err != nil {
+				continue
+			}
+			m.pc = int(loop.cond)
+			if ctl.kind == ctrlRedo {
+				m.pc = int(loop.body)
+			}
+			return nil
+		}
 	}
 	return err
+}
+
+// beginTakes continues the BEGIN bg after the completion err left its
+// list of the given phase, as beginLeft does for a cursor: a rescue
+// clause may take an exception out of the body, the body runs again for
+// a retry out of a clause, and the ensure runs before the completion
+// goes on. It returns nil when the BEGIN took the completion or its
+// ensure runs first.
+func (m *machine) beginTakes(bg *flatBegin, ph phase, err error) error {
+	t := &m.tries[bg.level]
+	switch ph {
+	case phaseBody:
+		if exc, ok := err.(*object.Exception); ok {
+			m.stack = m.stack[:t.base]
+			t.exc = exc
+			return m.rescueFlat(bg, 0)
+		}
+	case phaseRescue:
+		m.in.rescuing = t.outer
+		if ctl, ok := err.(*control); ok && ctl.kind == ctrlRetry {
+			m.stack = m.stack[:t.base]
+			t.exc, t.outer = nil, nil
+			m.pc = int(bg.body)
+			return nil
+		}
+		err = caused(err, t.exc)
+	case phaseEnsure:
+		// The ensure did not end: what it interrupted is gone.
+		t.pending = nil
+		return err
+	}
+	return m.beginLeaves(bg, err)
+}
+
+// beginLeaves leaves the BEGIN bg with a completion none of its clauses
+// took: through its ensure, when it has one.
+func (m *machine) beginLeaves(bg *flatBegin, err error) error {
+	if bg.ensure < 0 {
+		return err
+	}
+	t := &m.tries[bg.level]
+	m.stack = m.stack[:t.base]
+	t.exc, t.outer, t.pending = nil, nil, err
+	m.pc = int(bg.ensure)
+	return nil
+}
+
+// rescueFlat tries the rescue clauses of bg from clause i on for the
+// exception the BEGIN keeps: it goes on in the body of the first that
+// fits, or in the classes of the first that names some. With no clause
+// left the exception leaves the BEGIN.
+func (m *machine) rescueFlat(bg *flatBegin, i int) error {
+	t := &m.tries[bg.level]
+	for ; i < len(bg.bodies); i++ {
+		if bg.classes[i] >= 0 {
+			m.pc = int(bg.classes[i])
+			return nil
+		}
+		if t.exc.Cls.IsA(object.StandardError) {
+			m.rescued(bg, i)
+			return nil
+		}
+	}
+	return m.beginLeaves(bg, t.exc)
+}
+
+// rescued goes on in the body of rescue clause i of bg, for the
+// exception the BEGIN keeps.
+func (m *machine) rescued(bg *flatBegin, i int) {
+	in, t := m.in, &m.tries[bg.level]
+	if in.rescuing != nil {
+		// Raised inside another rescue clause and rescued before it
+		// ends: it takes its cause where it is caught.
+		t.exc = caused(t.exc, in.rescuing).(*object.Exception)
+	}
+	if v := m.name(bg.src, i); v != "" {
+		m.env.Set(v, object.ExceptionValue(t.exc))
+	}
+	t.outer = in.rescuing
+	in.rescuing = t.exc
+	m.pc = int(bg.bodies[i])
+}
+
+// rescueTest runs an fRescueTest: the classes of a rescue clause are on
+// top as a list.
+func (m *machine) rescueTest(ins *flatIns) error {
+	bg := m.flat.scopes[ins.scope].begin
+	t := &m.tries[bg.level]
+	for _, cv := range m.pop().List().Elems {
+		cls, ok := cv.AsClass()
+		if !ok {
+			return m.beginLeaves(bg, m.in.raise(object.TypeError, 0, "class or module required for rescue clause"))
+		}
+		if t.exc.Cls.IsA(cls) {
+			m.rescued(bg, int(ins.b))
+			return nil
+		}
+	}
+	return m.rescueFlat(bg, int(ins.b)+1)
 }
 
 // atReal reports whether the next flat instruction of m is one a run
@@ -586,6 +832,18 @@ func (m *machine) cursorsAt(called bool) {
 		if l.level >= 0 {
 			cur.base = m.bases[l.level]
 		}
+		if l.try >= 0 {
+			t := &m.tries[l.try]
+			cur.base = t.base
+			switch l.phase {
+			case phaseClasses:
+				cur.exc = t.exc
+			case phaseRescue:
+				cur.exc, cur.outer = t.exc, t.outer
+			case phaseEnsure:
+				cur.pending = t.pending
+			}
+		}
 		// A cursor of a list around this one is after the instruction
 		// the inner list belongs to.
 		cur.next = int(next)
@@ -603,5 +861,5 @@ func (m *machine) cursorsAt(called bool) {
 		m.cursors = append(m.cursors, cur)
 	}
 	m.cursors = append(m.cursors, inside...)
-	m.flat, m.pc, m.bases = nil, 0, nil
+	m.flat, m.pc, m.bases, m.tries = nil, 0, nil, nil
 }
