@@ -131,7 +131,8 @@ func joinEncoded(ctx object.Context, kind object.Kind, parts []object.Value) (ob
 		if !ok {
 			return object.Value{}, incompatible(ctx, acc, p)
 		}
-		b.WriteString(p.Str())
+		var short [8]byte
+		b.WriteString(p.StrIn(&short))
 		acc = object.StringOf(k, b.String())
 	}
 	return acc, nil
@@ -322,21 +323,25 @@ func installEncodings() {
 		return encodingValue(self.Kind()), nil
 	})
 	def(s, "force_encoding", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		var sb [8]byte
 		k, err := encodingArg(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
-		return object.StringOf(k, self.Str()), nil
+		return object.StringOf(k, self.StrIn(&sb)), nil
 	})
 	def(s, "b", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.StringOf(object.KindBytes, self.Str()), nil
+		var sb [8]byte
+		return object.StringOf(object.KindBytes, self.StrIn(&sb)), nil
 	})
 	def(s, "valid_encoding?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Bool(validIn(self.Kind(), self.Str())), nil
+		var sb [8]byte
+		return object.Bool(validIn(self.Kind(), self.StrIn(&sb))), nil
 	})
 	// scrub replaces each invalid sequence with U+FFFD (? in US-ASCII), a
 	// string, or what the block returns for the sequence's bytes.
 	def(s, "scrub", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		var sb, ab1, ab2 [8]byte
 		k := self.Kind()
 		repl := "�"
 		if k == object.KindASCII {
@@ -344,11 +349,11 @@ func installEncodings() {
 		}
 		if len(args) > 0 && !args[0].IsNil() {
 			var err error
-			if repl, err = WantString(ctx, args[0]); err != nil {
+			if repl, err = WantStringIn(ctx, args[0], &ab1); err != nil {
 				return object.Value{}, err
 			}
 		}
-		out, err := scrub(k, self.Str(), func(bad string) (string, error) {
+		out, err := scrub(k, self.StrIn(&sb), func(bad string) (string, error) {
 			if block.IsZero() {
 				return repl, nil
 			}
@@ -356,13 +361,14 @@ func installEncodings() {
 			if err != nil {
 				return "", err
 			}
-			return WantString(ctx, v)
+			return WantStringIn(ctx, v, &ab2)
 		})
 		return object.StringOf(k, out), err
 	})
 	// encode converts to an encoding, from another when a second one says
 	// what the bytes are, with invalid:, undef: and replace:.
 	def(s, "encode", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		var sb, ab1 [8]byte
 		from, to := self.Kind(), object.KindString
 		var err error
 		if len(args) > 0 {
@@ -386,13 +392,13 @@ func installEncodings() {
 		replace, hasReplace := "", false
 		if kw != nil {
 			if v, ok := kw.Get(object.Symbol("replace")); ok {
-				if replace, err = WantString(ctx, v); err != nil {
+				if replace, err = WantStringIn(ctx, v, &ab1); err != nil {
 					return object.Value{}, err
 				}
 				hasReplace = true
 			}
 		}
-		out, err := encode(ctx, self.Str(), from, to, opt("invalid"), opt("undef"), replace, hasReplace)
+		out, err := encode(ctx, self.StrIn(&sb), from, to, opt("invalid"), opt("undef"), replace, hasReplace)
 		if err != nil {
 			return object.Value{}, err
 		}

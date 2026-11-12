@@ -11,21 +11,23 @@ import (
 // slice, match, match?, =~, start_with?, partition and rpartition.
 func installStringPatterns() {
 	c := object.StringClass
-	str := func(self object.Value) string { return self.Str() }
 
 	def(c, "sub", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return substitute(ctx, str(self), args, kw, block, 1, self.Kind() == object.KindBytes)
+		var sb [8]byte
+		return substitute(ctx, self.StrIn(&sb), args, kw, block, 1, self.Kind() == object.KindBytes)
 	})
 	def(c, "gsub", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return substitute(ctx, str(self), args, kw, block, -1, self.Kind() == object.KindBytes)
+		var sb [8]byte
+		return substitute(ctx, self.StrIn(&sb), args, kw, block, -1, self.Kind() == object.KindBytes)
 	})
 	def(c, "scan", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		var sb [8]byte
 		p, err := patternOf(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
 		var out []object.Value
-		for _, m := range p.findAll(str(self), -1) {
+		for _, m := range p.findAll(self.StrIn(&sb), -1) {
 			v := groupsOrText(m)
 			if block.IsZero() {
 				out = append(out, v)
@@ -41,17 +43,19 @@ func installStringPatterns() {
 		return self, nil
 	})
 	def(c, "split", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return split(ctx, str(self), args)
+		var sb [8]byte
+		return split(ctx, self.StrIn(&sb), args)
 	})
 	def(c, "=~", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		var sb, ab1 [8]byte
 		r, ok := args[0].AsRegexp()
 		if !ok {
-			if _, isStr := args[0].AsString(); isStr {
+			if _, isStr := args[0].AsStringIn(&ab1); isStr {
 				return object.Value{}, ctx.Raise(object.TypeError, "wrong argument type String (expected Regexp)")
 			}
 			return ctx.Call(args[0], "=~", self)
 		}
-		return matchIndex(r, str(self)), nil
+		return matchIndex(r, self.StrIn(&sb)), nil
 	})
 	asRegexp := func(ctx object.Context, v object.Value) (*object.Regexp, error) {
 		if r, ok := v.AsRegexp(); ok {
@@ -93,10 +97,11 @@ func installStringPatterns() {
 	// last one starting at or before it.
 	index := func(last bool) fn {
 		return func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+			var sb [8]byte
 			if len(args) < 1 || len(args) > 2 {
 				return object.Value{}, ArgError(ctx, len(args), "1..2")
 			}
-			s := str(self)
+			s := self.StrIn(&sb)
 			p, err := patternOf(ctx, args[0])
 			if err != nil {
 				return object.Value{}, err
@@ -131,9 +136,10 @@ func installStringPatterns() {
 	def(c, "index", -1, index(false))
 	def(c, "rindex", -1, index(true))
 	def(c, "[]", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		var sb [8]byte
 		if len(args) >= 1 {
 			if r, ok := args[0].AsRegexp(); ok {
-				m := r.MatchAt(str(self), 0)
+				m := r.MatchAt(self.StrIn(&sb), 0)
 				if m == nil {
 					return object.Nil, nil
 				}
@@ -154,22 +160,23 @@ func installStringPatterns() {
 				return object.Nil, nil
 			}
 		}
-		return stringIndex(ctx, str(self), args)
+		return stringIndex(ctx, self.StrIn(&sb), args)
 	})
 	def(c, "slice", -1, c.Methods["[]"].Native)
 	def(c, "start_with?", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		var sb, ab1 [8]byte
 		for _, a := range args {
 			if r, ok := a.AsRegexp(); ok {
-				if m := r.MatchHere(str(self), 0); m != nil {
+				if m := r.MatchHere(self.StrIn(&sb), 0); m != nil {
 					return object.True, nil
 				}
 				continue
 			}
-			p, err := WantString(ctx, a)
+			p, err := WantStringIn(ctx, a, &ab1)
 			if err != nil {
 				return object.Value{}, err
 			}
-			if strings.HasPrefix(str(self), p) {
+			if strings.HasPrefix(self.StrIn(&sb), p) {
 				return object.True, nil
 			}
 		}
@@ -179,17 +186,19 @@ func installStringPatterns() {
 		return object.NewList(object.String(m.Input[:m.Caps[0]]), matchText(m), object.String(m.Input[m.Caps[1]:]))
 	}
 	def(c, "partition", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		var sb [8]byte
 		p, err := patternOf(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
-		if m := p.findAt(str(self), 0); m != nil {
+		if m := p.findAt(self.StrIn(&sb), 0); m != nil {
 			return parts(m), nil
 		}
 		return object.NewList(self, object.String(""), object.String("")), nil
 	})
 	def(c, "rpartition", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		s := str(self)
+		var sb [8]byte
+		s := self.StrIn(&sb)
 		p, err := patternOf(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err

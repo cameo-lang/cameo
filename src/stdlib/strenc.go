@@ -119,11 +119,12 @@ func InstallStringEncodings() {
 		m := c.Methods[name]
 		fn, name := m.Native, name
 		c.Define(name, m.Arity, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+			var sb [8]byte
 			k := self.Kind()
 			if k == object.KindString {
 				return fn(ctx, self, args, kw, block)
 			}
-			s := self.Str()
+			s := self.StrIn(&sb)
 			switch {
 			case patternMethods[name] || hasRegexp(args):
 				v, err := fn(ctx, self, args, kw, block)
@@ -143,10 +144,11 @@ func InstallStringEncodings() {
 	asciiOnly := func(name string, f func(string) string) {
 		utf := c.Methods[name].Native
 		def(c, name, 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+			var sb [8]byte
 			if self.Kind() == object.KindString {
 				return utf(ctx, self, args, kw, block)
 			}
-			return object.StringOf(self.Kind(), f(self.Str())), nil
+			return object.StringOf(self.Kind(), f(self.StrIn(&sb))), nil
 		})
 	}
 	asciiOnly("upcase", func(s string) string { return asciiCase(s, asciiUpper) })
@@ -169,7 +171,8 @@ func InstallStringEncodings() {
 	// each_char and each_line yield in the receiver's encoding.
 	// Without a block each_char is an enumerator of the characters.
 	def(c, "each_char", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		k, s := self.Kind(), self.Str()
+		var sb [8]byte
+		k, s := self.Kind(), self.StrIn(&sb)
 		chars := func(ctx object.Context, yield func(object.Value) error) error {
 			for i := 0; i < len(s); {
 				size := 1
@@ -199,11 +202,12 @@ func InstallStringEncodings() {
 	})
 	eachLine := c.Methods["each_line"].Native
 	def(c, "each_line", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		var sb [8]byte
 		k := self.Kind()
 		if k == object.KindString || block.IsZero() {
 			return eachLine(ctx, self, args, kw, block)
 		}
-		for _, line := range strings.SplitAfter(self.Str(), "\n") {
+		for _, line := range strings.SplitAfter(self.StrIn(&sb), "\n") {
 			if line == "" {
 				continue
 			}
@@ -216,6 +220,7 @@ func InstallStringEncodings() {
 	// + makes a string of the encoding both are compatible in.
 	plus := c.Methods["+"].Native
 	def(c, "+", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		var sb [8]byte
 		if !args[0].IsString() || self.Kind() == object.KindString && args[0].Kind() == object.KindString {
 			return plus(ctx, self, args, kw, block)
 		}
@@ -223,6 +228,6 @@ func InstallStringEncodings() {
 		if !ok {
 			return object.Value{}, incompatible(ctx, self, args[0])
 		}
-		return object.StringOf(k, self.Str()+args[0].Str()), nil
+		return object.StringOf(k, self.StrIn(&sb)+args[0].Str()), nil
 	})
 }

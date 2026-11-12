@@ -25,8 +25,9 @@ func installSymbol() {
 		return object.StringOf(symKind(sym(self)), object.SymbolInspect(sym(self))), nil
 	})
 	def(c, "==", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		var sb [8]byte
 		o, ok := args[0].AsSymbol()
-		return object.Bool(ok && o == self.Str()), nil
+		return object.Bool(ok && o == self.StrIn(&sb)), nil
 	})
 	def(c, "<=>", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		o, ok := args[0].AsSymbol()
@@ -71,7 +72,8 @@ func installSymbol() {
 	})
 	strArg := func(name string, f func(s, a string) bool) {
 		def(c, name, 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-			a, err := WantString(ctx, args[0])
+			var ab1 [8]byte
+			a, err := WantStringIn(ctx, args[0], &ab1)
 			if err != nil {
 				return object.Value{}, err
 			}

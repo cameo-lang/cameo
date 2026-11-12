@@ -24,7 +24,7 @@ func NewMap() *Map { return &Map{version: version{span: newSpan()}} }
 // NewMapSized makes an empty map with room for n keys, for a map that is
 // to be filled with Add.
 func NewMapSized(n int) *Map {
-	t := &table{entries: make([]entry, 0, n), index: make(map[string]int32, n)}
+	t := &table{entries: make([]entry, 0, n), hint: n}
 	return &Map{version: version{span: span{t: t}}}
 }
 
@@ -32,7 +32,7 @@ func NewMapSized(n int) *Map {
 // a map literal is while it is evaluated: every other map is immutable,
 // and a change makes a copy with Put.
 func (m *Map) Add(k, v Value) {
-	m.span.appendLocked(Key(k), k, v, false)
+	m.span.appendLocked(keyOf(k), k, v, false)
 	m.t.live = m.len
 	m.pairs.Store(nil)
 }
@@ -59,7 +59,7 @@ func NewMapBuilder() *MapBuilder { return &MapBuilder{s: newSpan()} }
 
 // Set adds or replaces an entry.
 func (b *MapBuilder) Set(k, v Value) *MapBuilder {
-	b.s.appendLocked(Key(k), k, v, false)
+	b.s.appendLocked(keyOf(k), k, v, false)
 	return b
 }
 
@@ -107,7 +107,7 @@ func (m *Map) WithDefault(value, proc Value) *Map {
 }
 
 // Put returns a copy with k set to v.
-func (m *Map) Put(k, v Value) *Map { return m.derive(m.with(Key(k), k, v, false)) }
+func (m *Map) Put(k, v Value) *Map { return m.derive(m.with(keyOf(k), k, v, false)) }
 
 // Merge returns a copy with every entry of other set.
 func (m *Map) Merge(other *Map) *Map {
@@ -130,7 +130,7 @@ func (m *Map) Shift() (key, val Value, rest *Map, ok bool) {
 	if !ok {
 		return Value{}, Value{}, m, false
 	}
-	s := m.with(Key(key), key, Value{}, true)
+	s := m.with(keyOf(key), key, Value{}, true)
 	if s.t == m.t {
 		s.head = pos + 1
 	}
@@ -142,7 +142,7 @@ func (m *Map) Shift() (key, val Value, rest *Map, ok bool) {
 func (m *Map) Without(keys ...Value) *Map {
 	out := &Map{version: version{span: m.span}}
 	for _, k := range keys {
-		out = &Map{version: version{span: out.with(Key(k), k, Value{}, true)}}
+		out = &Map{version: version{span: out.with(keyOf(k), k, Value{}, true)}}
 	}
 	return out
 }
@@ -159,7 +159,7 @@ type Set struct {
 func NewSet(elems ...Value) *Set {
 	s := newSpan()
 	for _, e := range elems {
-		s.appendLocked(Key(e), e, True, false)
+		s.appendLocked(keyOf(e), e, True, false)
 	}
 	s.t.live = s.len
 	return &Set{version: version{span: s}}
@@ -182,9 +182,11 @@ func (s *Set) Elems() []Value {
 
 // With and Without return the set with e added or removed, in O(1) when
 // the set is the newest of its table.
-func (s *Set) With(e Value) *Set { return &Set{version: version{span: s.with(Key(e), e, True, false)}} }
+func (s *Set) With(e Value) *Set {
+	return &Set{version: version{span: s.with(keyOf(e), e, True, false)}}
+}
 func (s *Set) Without(e Value) *Set {
-	return &Set{version: version{span: s.with(Key(e), e, Value{}, true)}}
+	return &Set{version: version{span: s.with(keyOf(e), e, Value{}, true)}}
 }
 
 // Union, Intersection and Difference return new sets.
@@ -227,11 +229,14 @@ type Keyed interface{ KeyValue() Value }
 // symbol or a short string is built in a buffer of the call, so that a
 // lookup of one allocates nothing.
 func (v *span) lookup(k Value) (Value, bool) {
+	if w, ok := wordOf(k); ok {
+		return v.get(tkey{w: w})
+	}
 	var buf [quickKeySize]byte
 	if key, ok := quickKey(buf[:0], k); ok {
 		return v.getBytes(key)
 	}
-	return v.get(Key(k))
+	return v.get(tkey{k: Key(k)})
 }
 
 // quickKeySize is the room of a key that quickKey builds.
@@ -253,7 +258,8 @@ func quickKey(buf []byte, v Value) ([]byte, bool) {
 	default:
 		return nil, false
 	}
-	s := v.Str()
+	var short [inlineMax]byte
+	s := v.StrIn(&short)
 	if len(s) > quickKeySize-24 {
 		return nil, false
 	}
@@ -304,9 +310,10 @@ func writeKey(b *strings.Builder, v Value) {
 		default:
 			b.WriteString("a")
 		}
+		var short [inlineMax]byte
 		b.WriteString(strconv.Itoa(v.size()))
 		b.WriteByte(':')
-		b.WriteString(v.Str())
+		b.WriteString(v.StrIn(&short))
 	case KindList:
 		b.WriteString("[")
 		for _, e := range v.List().Elems {
@@ -456,6 +463,10 @@ func Equal(a, b Value) bool {
 		}
 		r, ok := compareNumbers(a, b)
 		return ok && r == 0
+	}
+	if a.kind() == KindString && b.kind() == KindString {
+		var x, y [inlineMax]byte
+		return a.StrIn(&x) == b.StrIn(&y)
 	}
 	if a.IsString() && b.IsString() {
 		return Key(a) == Key(b)

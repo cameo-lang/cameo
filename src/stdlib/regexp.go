@@ -23,13 +23,14 @@ func installRegexp() {
 	re := func(self object.Value) *object.Regexp { return self.Regexp() }
 
 	newRegexp := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		var ab1 [8]byte
 		if len(args) < 1 || len(args) > 2 {
 			return object.Value{}, ArgError(ctx, len(args), "1..2")
 		}
 		if r, ok := args[0].AsRegexp(); ok {
 			return object.RegexpValue(r), nil
 		}
-		source, err := WantString(ctx, args[0])
+		source, err := WantStringIn(ctx, args[0], &ab1)
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -62,7 +63,8 @@ func installRegexp() {
 	c.DefineSingleton("new", -1, newRegexp)
 	c.DefineSingleton("compile", -1, newRegexp)
 	escape := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		s, err := WantString(ctx, args[0])
+		var ab1 [8]byte
+		s, err := WantStringIn(ctx, args[0], &ab1)
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -88,6 +90,7 @@ func installRegexp() {
 		return r, nil
 	})
 	c.DefineSingleton("union", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		var ab1 [8]byte
 		if len(args) == 1 {
 			if l, ok := args[0].AsList(); ok {
 				args = l.Elems
@@ -106,7 +109,7 @@ func installRegexp() {
 				options |= object.RegexpNoEncoding
 				continue
 			}
-			s, err := WantString(ctx, a)
+			s, err := WantStringIn(ctx, a, &ab1)
 			if err != nil {
 				return object.Value{}, err
 			}
@@ -178,16 +181,18 @@ func installRegexp() {
 		return object.Bool(err == nil && !m.IsNil()), err
 	})
 	def(c, "=~", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		var ab1 [8]byte
 		if args[0].IsNil() {
 			return object.Nil, nil
 		}
-		s, err := WantString(ctx, args[0])
+		s, err := WantStringIn(ctx, args[0], &ab1)
 		if err != nil {
 			return object.Value{}, err
 		}
 		return matchIndex(re(self), s), nil
 	})
 	def(c, "===", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		var ab1 [8]byte
 		var s string
 		switch args[0].Kind() {
 		case object.KindString, object.KindBytes, object.KindASCII, object.KindSymbol:
@@ -200,7 +205,7 @@ func installRegexp() {
 			if err != nil {
 				return object.Value{}, err
 			}
-			if s, err = WantString(ctx, v); err != nil {
+			if s, err = WantStringIn(ctx, v, &ab1); err != nil {
 				return object.Value{}, err
 			}
 		}

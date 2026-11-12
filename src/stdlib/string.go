@@ -11,15 +11,15 @@ import (
 
 func installString() {
 	c := object.StringClass
-	str := func(self object.Value) string { return string(self.Str()) }
 	def(c, "+", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		o, ok := args[0].AsString()
-		if !ok {
+		if !args[0].IsString() {
 			return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into String", KindName(args[0]))
 		}
-		return object.String(str(self) + string(o)), nil
+		var x, y [8]byte
+		return object.Concat(object.KindString, self.StrIn(&x), args[0].StrIn(&y)), nil
 	})
 	def(c, "*", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		var sb [8]byte
 		n, err := WantInt(ctx, args[0], "")
 		if err != nil {
 			return object.Value{}, err
@@ -27,44 +27,51 @@ func installString() {
 		if n < 0 {
 			return object.Value{}, ctx.Raise(object.ArgumentError, "negative argument")
 		}
-		return object.String(strings.Repeat(str(self), int(n))), nil
+		return object.String(strings.Repeat(self.StrIn(&sb), int(n))), nil
 	})
 	def(c, "%", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		var sb [8]byte
 		var fargs []object.Value
 		if l, ok := args[0].AsList(); ok {
 			fargs = l.Elems
 		} else {
 			fargs = args
 		}
-		s, err := format(ctx, str(self), fargs)
+		s, err := format(ctx, self.StrIn(&sb), fargs)
 		return object.String(s), err
 	})
 	def(c, "==", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		o, ok := args[0].AsString()
-		return object.Bool(ok && o == self.Str()), nil
+		var sb, ab1 [8]byte
+		o, ok := args[0].AsStringIn(&ab1)
+		return object.Bool(ok && o == self.StrIn(&sb)), nil
 	})
 	def(c, "<=>", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		o, ok := args[0].AsString()
+		var sb, ab1 [8]byte
+		o, ok := args[0].AsStringIn(&ab1)
 		if !ok {
 			return object.Nil, nil
 		}
-		return object.Int(strings.Compare(str(self), string(o))), nil
+		return object.Int(strings.Compare(self.StrIn(&sb), string(o))), nil
 	})
 	def(c, "eql?", 1, c.Methods["=="].Native)
 	def(c, "===", 1, c.Methods["=="].Native)
 	def(c, "length", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Int(utf8.RuneCountInString(str(self))), nil
+		var sb [8]byte
+		return object.Int(utf8.RuneCountInString(self.StrIn(&sb))), nil
 	})
 	def(c, "size", 0, c.Methods["length"].Native)
 	def(c, "bytesize", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Int(len(str(self))), nil
+		var sb [8]byte
+		return object.Int(len(self.StrIn(&sb))), nil
 	})
 	def(c, "empty?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Bool(str(self) == ""), nil
+		var sb [8]byte
+		return object.Bool(self.StrIn(&sb) == ""), nil
 	})
 	mapStr := func(name string, f func(string) string) {
 		def(c, name, 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-			return object.String(f(str(self))), nil
+			var sb [8]byte
+			return object.String(f(self.StrIn(&sb))), nil
 		})
 	}
 	mapStr("upcase", strings.ToUpper)
@@ -101,17 +108,18 @@ func installString() {
 	// chomp(suffix) drops that suffix, and chomp("") every line ending.
 	chomp := c.Methods["chomp"].Native
 	def(c, "chomp", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		var sb, ab1 [8]byte
 		if len(args) == 0 {
 			return chomp(ctx, self, args, kw, block)
 		}
-		suffix, err := WantString(ctx, args[0])
+		suffix, err := WantStringIn(ctx, args[0], &ab1)
 		if err != nil {
 			return object.Value{}, err
 		}
 		if suffix == "" {
-			return object.String(strings.TrimRight(str(self), "\r\n")), nil
+			return object.String(strings.TrimRight(self.StrIn(&sb), "\r\n")), nil
 		}
-		return object.String(strings.TrimSuffix(str(self), suffix)), nil
+		return object.String(strings.TrimSuffix(self.StrIn(&sb), suffix)), nil
 	})
 	mapStr("chop", func(s string) string {
 		if s == "" {
@@ -125,10 +133,11 @@ func installString() {
 	// upto yields self and its successors up to max, as a range of strings
 	// from self to max does.
 	def(c, "upto", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		var sb, ab1 [8]byte
 		if len(args) < 1 || len(args) > 2 {
 			return object.Value{}, ArgError(ctx, len(args), "1..2")
 		}
-		hi, err := WantString(ctx, args[0])
+		hi, err := WantStringIn(ctx, args[0], &ab1)
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -136,7 +145,7 @@ func installString() {
 		if block.IsZero() {
 			return enumFor(self, "upto", args, nil), nil
 		}
-		for s := range stringsUpto(self.Str(), hi, exclusive, false) {
+		for s := range stringsUpto(self.StrIn(&sb), hi, exclusive, false) {
 			if _, err := ctx.Yield(block, object.String(s)); err != nil {
 				return object.Value{}, err
 			}
@@ -158,47 +167,53 @@ func installString() {
 		return b.String()
 	})
 	def(c, "to_sym", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if !validIn(self.Kind(), str(self)) {
-			quoted := object.QuoteString(str(self))
+		var sb [8]byte
+		if !validIn(self.Kind(), self.StrIn(&sb)) {
+			quoted := object.QuoteString(self.StrIn(&sb))
 			if self.Kind() == object.KindASCII {
-				quoted = object.QuoteBytes([]byte(str(self)))
+				quoted = object.QuoteBytes([]byte(self.StrIn(&sb)))
 			}
 			return object.Value{}, ctx.Raise(object.EncodingError, "invalid symbol in encoding %s :%s", encodingName(self.Kind()), quoted)
 		}
-		return object.Symbol(str(self)), nil
+		return object.Symbol(self.StrIn(&sb)), nil
 	})
 	def(c, "intern", 0, c.Methods["to_sym"].Native)
 	def(c, "to_i", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		var sb [8]byte
 		if len(args) == 1 {
 			base, err := WantInt(ctx, args[0], "")
 			if err != nil {
 				return object.Value{}, err
 			}
-			i, ok := parseIntBase(strings.TrimSpace(str(self)), int(base))
+			i, ok := parseIntBase(strings.TrimSpace(self.StrIn(&sb)), int(base))
 			if !ok {
 				return object.Int(0), nil
 			}
 			return i, nil
 		}
-		return leadingInt(str(self)), nil
+		return leadingInt(self.StrIn(&sb)), nil
 	})
 	def(c, "to_f", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Float(leadingFloat(str(self))), nil
+		var sb [8]byte
+		return object.Float(leadingFloat(self.StrIn(&sb))), nil
 	})
 	def(c, "hex", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if i, ok := parseIntBase(strings.TrimPrefix(strings.TrimSpace(str(self)), "0x"), 16); ok {
+		var sb [8]byte
+		if i, ok := parseIntBase(strings.TrimPrefix(strings.TrimSpace(self.StrIn(&sb)), "0x"), 16); ok {
 			return i, nil
 		}
 		return object.Int(0), nil
 	})
 	def(c, "oct", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if i, ok := parseIntBase(strings.TrimSpace(str(self)), 8); ok {
+		var sb [8]byte
+		if i, ok := parseIntBase(strings.TrimSpace(self.StrIn(&sb)), 8); ok {
 			return i, nil
 		}
 		return object.Int(0), nil
 	})
 	def(c, "ord", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		s := str(self)
+		var sb [8]byte
+		s := self.StrIn(&sb)
 		if s == "" {
 			return object.Value{}, ctx.Raise(object.ArgumentError, "empty string")
 		}
@@ -218,29 +233,32 @@ func installString() {
 		return object.Int(r), nil
 	})
 	def(c, "chr", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if str(self) == "" {
+		var sb [8]byte
+		if self.StrIn(&sb) == "" {
 			return object.String(""), nil
 		}
-		r, _ := utf8.DecodeRuneInString(str(self))
+		r, _ := utf8.DecodeRuneInString(self.StrIn(&sb))
 		return object.String(string(r)), nil
 	})
 	def(c, "hash", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Int(hashString(object.Key(self))), nil
 	})
 	def(c, "chars", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		var sb [8]byte
 		elems := []object.Value{}
-		for _, r := range str(self) {
+		for _, r := range self.StrIn(&sb) {
 			elems = append(elems, object.String(string(r)))
 		}
 		return object.NewList(elems...), nil
 	})
 	def(c, "each_char", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		var sb [8]byte
 		if block.IsZero() {
 			return enumFor(self, "each_char", nil, func(ctx object.Context) (object.Value, error) {
 				return ctx.Call(self, "size")
 			}), nil
 		}
-		for _, r := range str(self) {
+		for _, r := range self.StrIn(&sb) {
 			if _, err := ctx.Yield(block, object.String(string(r))); err != nil {
 				return object.Value{}, err
 			}
@@ -248,15 +266,17 @@ func installString() {
 		return self, nil
 	})
 	def(c, "bytes", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		elems := make([]object.Value, len(str(self)))
-		for i := 0; i < len(str(self)); i++ {
-			elems[i] = object.Int(str(self)[i])
+		var sb [8]byte
+		elems := make([]object.Value, len(self.StrIn(&sb)))
+		for i := 0; i < len(self.StrIn(&sb)); i++ {
+			elems[i] = object.Int(self.StrIn(&sb)[i])
 		}
 		return object.NewList(elems...), nil
 	})
 	def(c, "codepoints", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		var sb [8]byte
 		elems := []object.Value{}
-		for _, r := range str(self) {
+		for _, r := range self.StrIn(&sb) {
 			elems = append(elems, object.Int(r))
 		}
 		return object.NewList(elems...), nil
@@ -264,14 +284,15 @@ func installString() {
 	// byteindex is the byte offset of a substring at or after offset, which
 	// must fall on a character boundary.
 	def(c, "byteindex", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		var sb, ab1 [8]byte
 		if len(args) < 1 || len(args) > 2 {
 			return object.Value{}, ArgError(ctx, len(args), "1..2")
 		}
-		sub, err := WantString(ctx, args[0])
+		sub, err := WantStringIn(ctx, args[0], &ab1)
 		if err != nil {
 			return object.Value{}, err
 		}
-		s, off := str(self), int64(0)
+		s, off := self.StrIn(&sb), int64(0)
 		if len(args) == 2 {
 			if off, err = WantInt(ctx, args[1], ""); err != nil {
 				return object.Value{}, err
@@ -300,13 +321,15 @@ func installString() {
 	def(c, "+@", 0, c.Methods["-@"].Native)
 	def(c, "dedup", 0, c.Methods["-@"].Native)
 	def(c, "lines", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.NewList(lines(str(self))...), nil
+		var sb [8]byte
+		return object.NewList(lines(self.StrIn(&sb))...), nil
 	})
 	def(c, "each_line", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		var sb [8]byte
 		if block.IsZero() {
 			return enumFor(self, "each_line", args, nil), nil
 		}
-		for _, l := range lines(str(self)) {
+		for _, l := range lines(self.StrIn(&sb)) {
 			if _, err := ctx.Yield(block, l); err != nil {
 				return object.Value{}, err
 			}
@@ -315,11 +338,12 @@ func installString() {
 	})
 	strArg := func(name string, f func(s, arg string) object.Value) {
 		def(c, name, 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-			arg, err := WantString(ctx, args[0])
+			var sb, ab1 [8]byte
+			arg, err := WantStringIn(ctx, args[0], &ab1)
 			if err != nil {
 				return object.Value{}, err
 			}
-			return f(str(self), arg), nil
+			return f(self.StrIn(&sb), arg), nil
 		})
 	}
 	strArg("include?", func(s, a string) object.Value { return object.Bool(strings.Contains(s, a)) })
@@ -342,18 +366,20 @@ func installString() {
 		return casecmpP(self, args[0]), nil
 	})
 	def(c, "tr", 2, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		from, err := WantString(ctx, args[0])
+		var sb, ab1, ab2 [8]byte
+		from, err := WantStringIn(ctx, args[0], &ab1)
 		if err != nil {
 			return object.Value{}, err
 		}
-		to, err := WantString(ctx, args[1])
+		to, err := WantStringIn(ctx, args[1], &ab2)
 		if err != nil {
 			return object.Value{}, err
 		}
-		return object.String(translate(str(self), from, to)), nil
+		return object.String(translate(self.StrIn(&sb), from, to)), nil
 	})
 	pad := func(name string, place func(s, fill string, n int) string) {
 		def(c, name, -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+			var sb, ab1 [8]byte
 			if len(args) < 1 || len(args) > 2 {
 				return object.Value{}, ArgError(ctx, len(args), "1..2")
 			}
@@ -363,14 +389,14 @@ func installString() {
 			}
 			fill := " "
 			if len(args) == 2 {
-				if fill, err = WantString(ctx, args[1]); err != nil {
+				if fill, err = WantStringIn(ctx, args[1], &ab1); err != nil {
 					return object.Value{}, err
 				}
 				if fill == "" {
 					return object.Value{}, ctx.Raise(object.ArgumentError, "zero width padding")
 				}
 			}
-			return object.String(place(str(self), fill, int(n))), nil
+			return object.String(place(self.StrIn(&sb), fill, int(n))), nil
 		})
 	}
 	pad("ljust", func(s, fill string, n int) string { return s + Padding(fill, n-utf8.RuneCountInString(s)) })
@@ -383,19 +409,22 @@ func installString() {
 		return Padding(fill, total/2) + s + Padding(fill, total-total/2)
 	})
 	def(c, "format", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		s, err := format(ctx, str(self), args)
+		var sb [8]byte
+		s, err := format(ctx, self.StrIn(&sb), args)
 		return object.String(s), err
 	})
 	def(c, "ascii_only?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		for i := 0; i < len(str(self)); i++ {
-			if str(self)[i] >= 0x80 {
+		var sb [8]byte
+		for i := 0; i < len(self.StrIn(&sb)); i++ {
+			if self.StrIn(&sb)[i] >= 0x80 {
 				return object.False, nil
 			}
 		}
 		return object.True, nil
 	})
 	def(c, "b", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Bytes([]byte(str(self))), nil
+		var sb [8]byte
+		return object.Bytes([]byte(self.StrIn(&sb))), nil
 	})
 
 }

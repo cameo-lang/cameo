@@ -76,6 +76,15 @@ func WantInt(ctx object.Context, v object.Value, what string) (int64, error) {
 
 // WantString reads a String or Symbol argument or fails with Ruby's
 // TypeError.
+// WantStringIn is WantString for a caller that does not keep the text
+// beyond buf (object.Value.StrIn).
+func WantStringIn(ctx object.Context, v object.Value, buf *[8]byte) (string, error) {
+	if v.IsString() || v.Kind() == object.KindSymbol {
+		return v.StrIn(buf), nil
+	}
+	return WantString(ctx, v)
+}
+
 func WantString(ctx object.Context, v object.Value) (string, error) {
 	switch v.Kind() {
 	case object.KindString, object.KindBytes, object.KindASCII:

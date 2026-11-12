@@ -1022,7 +1022,10 @@ func builtinCompare(kinds object.Kinds) func(a, b object.Value) int {
 	case kinds.Only(object.KindFloat):
 		return func(a, b object.Value) int { return cmp.Compare(a.Float(), b.Float()) }
 	case kinds.Only(object.KindString, object.KindBytes, object.KindASCII):
-		return func(a, b object.Value) int { return strings.Compare(a.Str(), b.Str()) }
+		return func(a, b object.Value) int {
+			var x, y [8]byte
+			return strings.Compare(a.StrIn(&x), b.StrIn(&y))
+		}
 	}
 	return nil
 }

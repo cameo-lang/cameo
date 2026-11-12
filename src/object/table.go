@@ -17,7 +17,15 @@ import (
 type table struct {
 	mu      sync.RWMutex
 	entries []entry
-	index   map[string]int32
+	// index finds a key by its canonical form (Key), and words a key
+	// that is one word: an integer, or a string or a symbol short enough
+	// to be inline. A key is in one of the two, whichever its value
+	// says (keyOf). Each is made when the first key goes into it.
+	index map[string]int32
+	words map[word]int32
+	// hint is how many keys the table was made for, which the index
+	// the first key goes into is made for.
+	hint int
 	// live counts the keys present at the tip, to know when the log is
 	// mostly superseded entries and should be compacted.
 	live int
@@ -27,7 +35,7 @@ type table struct {
 // previous entry and start the entry its current life began at: a key's
 // place in the order is where it was last added after being absent.
 type entry struct {
-	k     string
+	k     tkey
 	key   Value
 	val   Value
 	prev  int32
@@ -46,7 +54,65 @@ type span struct {
 	head int32
 }
 
-func newSpan() span { return span{t: &table{index: map[string]int32{}}} }
+func newSpan() span { return span{t: &table{}} }
+
+// word is the key of a value that is one word: tag says what it is, an
+// integer or the class of a string and its length, and bits is the
+// integer or the bytes. Two values are the same key when their words
+// are equal, so such a key is hashed and compared without its text.
+type word struct{ tag, bits uint64 }
+
+// tkey is a key of a table: a word, or the canonical form of a value
+// that is none (Key).
+type tkey struct {
+	w word
+	k string
+}
+
+// wordOf returns the word of v, and false when v is not one word.
+func wordOf(v Value) (word, bool) {
+	if v.p == mark(KindInt) {
+		return word{tag: 'i', bits: uint64(v.n)}, true
+	}
+	d, ok := v.inline()
+	if !ok {
+		return word{}, false
+	}
+	// A string of ASCII alone is the same key in every encoding, as
+	// writeKey has it.
+	class := uint64('s')
+	switch inlineKinds[d>>4] {
+	case KindSymbol:
+		class = 'y'
+	case KindBytes:
+		if uint64(v.n)&0x8080808080808080 != 0 {
+			class = 'b'
+		}
+	case KindASCII:
+		if uint64(v.n)&0x8080808080808080 != 0 {
+			class = 'a'
+		}
+	}
+	return word{tag: class<<8 | uint64(d&15), bits: uint64(v.n)}, true
+}
+
+// keyOf returns the key of v in a table.
+func keyOf(v Value) tkey {
+	if w, ok := wordOf(v); ok {
+		return tkey{w: w}
+	}
+	return tkey{k: Key(v)}
+}
+
+// find returns the latest entry of the key k in the whole table.
+func (t *table) find(k tkey) (int32, bool) {
+	if k.w.tag != 0 {
+		p, ok := t.words[k.w]
+		return p, ok
+	}
+	p, ok := t.index[k.k]
+	return p, ok
+}
 
 // version is a map's or a set's view of a table.
 type version struct {
@@ -57,8 +123,8 @@ type version struct {
 
 // latest is the key's entry within the first n, or -1. The caller holds
 // the lock.
-func (t *table) latest(k string, n int32) int32 {
-	p, ok := t.index[k]
+func (t *table) latest(k tkey, n int32) int32 {
+	p, ok := t.find(k)
 	if !ok {
 		return -1
 	}
@@ -72,7 +138,7 @@ func (t *table) latest(k string, n int32) int32 {
 }
 
 // get returns the value for k, and whether the key is present.
-func (v *span) get(k string) (Value, bool) {
+func (v *span) get(k tkey) (Value, bool) {
 	if v.len == 0 {
 		return Value{}, false
 	}
@@ -112,7 +178,7 @@ func (v *span) getBytes(k []byte) (Value, bool) {
 // to val, or deleting it. It grows the table when v is its tip, and starts
 // a new table from v's live entries otherwise. A change that changes
 // nothing returns v's table and length unchanged.
-func (v *version) with(k string, key, val Value, del bool) span {
+func (v *version) with(k tkey, key, val Value, del bool) span {
 	t := v.t
 	t.mu.Lock()
 	if int(v.n) != len(t.entries) || len(t.entries) > 2*t.live+32 {
@@ -120,7 +186,7 @@ func (v *version) with(k string, key, val Value, del bool) span {
 		keys, vals := v.keysAndValues()
 		fresh := newSpan()
 		for i, kk := range keys {
-			fresh.appendLocked(Key(kk), kk, vals[i], false)
+			fresh.appendLocked(keyOf(kk), kk, vals[i], false)
 		}
 		fresh.appendLocked(k, key, val, del)
 		fresh.t.live = fresh.len
@@ -135,7 +201,7 @@ func (v *version) with(k string, key, val Value, del bool) span {
 
 // appendLocked appends the entry to v, which is its table's tip, with the
 // table locked or not yet shared.
-func (v *span) appendLocked(k string, key, val Value, del bool) {
+func (v *span) appendLocked(k tkey, key, val Value, del bool) {
 	t := v.t
 	prev := t.latest(k, v.n)
 	present := prev >= 0 && !t.entries[prev].gone
@@ -151,7 +217,18 @@ func (v *span) appendLocked(k string, key, val Value, del bool) {
 		start = t.entries[prev].start
 	}
 	t.entries = append(t.entries, entry{k: k, key: key, val: val, prev: prev, start: start, gone: del})
-	t.index[k] = pos
+	switch {
+	case k.w.tag != 0:
+		if t.words == nil {
+			t.words = make(map[word]int32, t.hint)
+		}
+		t.words[k.w] = pos
+	default:
+		if t.index == nil {
+			t.index = make(map[string]int32, t.hint)
+		}
+		t.index[k.k] = pos
+	}
 	v.n = pos + 1
 	switch {
 	case del:

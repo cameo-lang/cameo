@@ -5,6 +5,7 @@
 package object
 
 import (
+	"encoding/binary"
 	"fmt"
 	"math"
 	"os"
@@ -452,6 +453,34 @@ func (v Value) Str() string {
 	return unsafe.String((*byte)(v.p), n)
 }
 
+// StrIn is Str for a caller that does not keep the text beyond buf: an
+// inline string or symbol is read from buf, which holds a copy of its
+// bytes, and nothing is allocated. Any other string is its own bytes.
+func (v Value) StrIn(buf *[inlineMax]byte) string {
+	if d, ok := v.inline(); ok {
+		binary.LittleEndian.PutUint64(buf[:], uint64(v.n))
+		return unsafe.String(&buf[0], int(d&15))
+	}
+	return v.Str()
+}
+
+// Concat makes the string of a and b in the encoding kind names. One
+// short enough to be inline is made without its bytes on the heap.
+func Concat(kind Kind, a, b string) Value {
+	n := len(a) + len(b)
+	if row := inlineRow(kind); InlineStrings && n > 0 && n <= inlineMax && row >= 0 {
+		var bits uint64
+		for i := 0; i < len(a); i++ {
+			bits |= uint64(a[i]) << (8 * i)
+		}
+		for i := 0; i < len(b); i++ {
+			bits |= uint64(b[i]) << (8 * (len(a) + i))
+		}
+		return Value{p: unsafe.Pointer(&kindMarks[inlineBase+row<<4+n]), n: int64(bits)}
+	}
+	return StringOf(kind, a+b)
+}
+
 // Bytes returns the bytes of a byte string; the slice must not be changed.
 func (v Value) Bytes() []byte {
 	v.must(KindBytes)
@@ -549,6 +578,15 @@ func (v Value) AsString() (string, bool) {
 		return "", false
 	}
 	return v.Str(), true
+}
+
+// AsStringIn is AsString for a caller that does not keep the text
+// beyond buf (StrIn).
+func (v Value) AsStringIn(buf *[inlineMax]byte) (string, bool) {
+	if !v.IsString() {
+		return "", false
+	}
+	return v.StrIn(buf), true
 }
 
 func (v Value) AsSymbol() (string, bool) {

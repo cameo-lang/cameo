@@ -402,22 +402,29 @@ func (m *machine) interpAdd(c *cameopb.Code) error {
 	in, line := m.in, int(c.Line)
 	v := m.pop()
 	sofar := m.pop()
-	s, err := in.ToS(v)
-	if err != nil {
-		return withLine(err, line)
+	var x, y [8]byte
+	var s string
+	if v.IsString() && userMethodSym(v, object.SymToS) == nil {
+		s = v.StrIn(&x)
+	} else {
+		var err error
+		if s, err = in.ToS(v); err != nil {
+			return withLine(err, line)
+		}
 	}
+	before := sofar.StrIn(&y)
 	// The result takes the encoding its parts are compatible in, as
 	// Ruby's does: a binary part in UTF-8 text makes it binary. UTF-8
 	// parts alone, the usual case, need no looking at.
 	kind := sofar.Kind()
 	if pk := v.Kind(); v.IsString() && (pk != kind || kind != object.KindString) {
-		next, ok := stdlib.CombineEncodings(kind, sofar.Str() == "", object.ASCIIOnly(sofar.Str()), pk, s == "", object.ASCIIOnly(s))
+		next, ok := stdlib.CombineEncodings(kind, before == "", object.ASCIIOnly(before), pk, s == "", object.ASCIIOnly(s))
 		if !ok {
 			return in.raise(object.CompatibilityError, line, "%s", stdlib.IncompatibleEncodings(kind, pk))
 		}
 		kind = next
 	}
-	m.push(object.StringOf(kind, sofar.Str()+s))
+	m.push(object.Concat(kind, before, s))
 	return nil
 }
 

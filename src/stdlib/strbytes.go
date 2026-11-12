@@ -17,11 +17,12 @@ import (
 func installStringBytes() {
 	c := object.StringClass
 	def(c, "getbyte", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		var sb [8]byte
 		i, err := WantInt(ctx, args[0], "")
 		if err != nil {
 			return object.Value{}, err
 		}
-		s := self.Str()
+		s := self.StrIn(&sb)
 		if i < 0 {
 			i += int64(len(s))
 		}
@@ -38,8 +39,9 @@ func installStringBytes() {
 	})
 	def(c, "bytesplice", -1, bytesplice)
 	def(c, "append_as_bytes", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		var sb [8]byte
 		var b strings.Builder
-		b.WriteString(self.Str())
+		b.WriteString(self.StrIn(&sb))
 		for _, a := range args {
 			switch a.Kind() {
 			case object.KindString, object.KindBytes, object.KindASCII:
