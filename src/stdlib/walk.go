@@ -32,6 +32,9 @@ type walk struct {
 	fills bool
 	// indexed is set when fold reads the index in the state.
 	indexed bool
+	// packed is set when what yield returns is the elements of the one
+	// value the block is called with (object.Step.Packed).
+	packed bool
 }
 
 // The places of a walk's state.
@@ -51,7 +54,7 @@ func kept(st []object.Value) []object.Value { return st[walkKept:] }
 func (w walk) stepper(name string, sized bool) object.Stepper {
 	// What the steps after the first do, for an evaluator that does
 	// them itself.
-	steps := &object.Walk{Yield: w.yield, Fold: w.fold, Indexed: w.indexed, Done: w.done}
+	steps := &object.Walk{Yield: w.yield, Fold: w.fold, Indexed: w.indexed, Packed: w.packed, Done: w.done}
 	return func(ctx object.Context, call *object.Call, st []object.Value, got object.Got) (object.Step, error) {
 		i := 0
 		var elems []object.Value
@@ -100,7 +103,7 @@ func (w walk) stepper(name string, sized bool) object.Stepper {
 		}
 		st[walkIndex] = object.Int(i)
 		if w.yield != nil {
-			return object.Step{Yield: w.yield(st, elems[i], i, nil), State: st, Walk: steps}, nil
+			return object.Step{Yield: w.yield(st, elems[i], i, nil), State: st, Packed: w.packed, Walk: steps}, nil
 		}
 		// The element as the list holds it is the block's arguments: the
 		// evaluator reads them and keeps no slice of them.

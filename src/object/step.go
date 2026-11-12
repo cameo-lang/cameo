@@ -50,6 +50,12 @@ type Step struct {
 	// Rescue has an exception the block raises come back to the stepper
 	// in Got.Raised, where without it the exception ends the builtin.
 	Rescue bool
+	// Packed is set when Yield is the elements of the one value the
+	// block is called with: the key and the value of a Hash's each,
+	// which calls its block with the pair. Whoever calls the block makes
+	// the list, or binds the elements to the parameters of a block that
+	// has as many, which is what the block would do with the list.
+	Packed bool
 	// Walk and Count say what the steps after this one do, for a
 	// stepper whose steps are all alike: whoever runs the stepper may
 	// do them itself, without a call per step. One who does not calls
@@ -87,6 +93,8 @@ type Walk struct {
 	Fold func(ctx Context, state []Value, el, v Value) (next []Value, stop *Value, err error)
 	// Indexed is set when Fold reads the index in the state.
 	Indexed bool
+	// Packed is Step.Packed for every call of the block.
+	Packed bool
 	// Done returns the builtin's value once the walk is through; nil
 	// returns the receiver.
 	Done func(ctx Context, c *Call, state []Value) (Value, error)
@@ -147,7 +155,11 @@ func (step Stepper) native() NativeFn {
 			state, got = s.State, Got{}
 			// A copy: the block may keep its arguments, and the next
 			// step may write them (YieldKept).
-			if got.Value, err = ctx.Yield(block, append([]Value(nil), s.Yield...)...); err != nil {
+			args := append([]Value(nil), s.Yield...)
+			if s.Packed {
+				args = []Value{NewList(args...)}
+			}
+			if got.Value, err = ctx.Yield(block, args...); err != nil {
 				exc, ok := err.(*Exception)
 				if !ok || !s.Rescue {
 					return Value{}, err

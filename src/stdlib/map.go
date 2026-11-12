@@ -299,8 +299,8 @@ func installMap() {
 		}
 		return object.MapValue(keepDefault(m(self), b.Map())), nil
 	})
-	c.DefineStep("each", 0, walk{elems: keyed, yield: pair}.stepper("each", true))
-	c.DefineStep("each_pair", 0, walk{elems: keyed, yield: pair}.stepper("each_pair", true))
+	c.DefineStep("each", 0, walk{elems: keyed, yield: pair, packed: true}.stepper("each", true))
+	c.DefineStep("each_pair", 0, walk{elems: keyed, yield: pair, packed: true}.stepper("each_pair", true))
 	c.DefineStep("each_key", 0, walk{
 		elems: func(ctx object.Context, call *object.Call) ([]object.Value, []object.Value, error) {
 			return m(call.Self).Keys(), nil, nil
