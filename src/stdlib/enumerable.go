@@ -55,8 +55,8 @@ func installEnumerable() {
 	// block returns an enumerator, as withBlock's methods do.
 	walked := func(name string, sized bool, w walk) { e.DefineStep(name, -1, w.stepper(name, sized)) }
 	walked("each_with_index", true, walk{
-		yield: func(st []object.Value, el object.Value, i int) []object.Value {
-			return []object.Value{el, object.Int(i)}
+		yield: func(st []object.Value, el object.Value, i int, into []object.Value) []object.Value {
+			return append(into, el, object.Int(i))
 		},
 		done: func(ctx object.Context, call *object.Call, st []object.Value) (object.Value, error) {
 			return st[walkElems], nil
@@ -69,8 +69,8 @@ func installEnumerable() {
 			elems, err := ToList(ctx, call.Self)
 			return elems, []object.Value{call.Args[0]}, err
 		},
-		yield: func(st []object.Value, el object.Value, i int) []object.Value {
-			return []object.Value{el, st[walkKept]}
+		yield: func(st []object.Value, el object.Value, i int, into []object.Value) []object.Value {
+			return append(into, el, st[walkKept])
 		},
 		fold: func(ctx object.Context, st []object.Value, el, v object.Value) ([]object.Value, *object.Value, error) {
 			st[walkKept] = v

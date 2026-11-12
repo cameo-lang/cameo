@@ -206,12 +206,7 @@ func installRange() {
 		if endless {
 			return object.Value{}, ctx.Raise(object.TypeError, "cannot determine inclusion in beginless/endless ranges")
 		}
-		for s := range seq {
-			if object.Equal(strValue(s, sym), args[0]) {
-				return object.True, nil
-			}
-		}
-		return object.False, nil
+		return object.Bool(hasString(seq, sym, args[0])), nil
 	}
 	def(c, "include?", 1, include)
 	def(c, "member?", 1, include)
@@ -242,13 +237,8 @@ func installRange() {
 					return c.Methods["size"].Native(ctx, self, nil, nil, object.Value{})
 				}), "each", object.Value{})), nil
 			}
-			if seq, sym, _, ok := rangeStrings(r(self)); ok {
-				for s := range seq {
-					if _, err := ctx.Yield(block, strValue(s, sym)); err != nil {
-						return object.Step{}, err
-					}
-				}
-				return object.Done(self), nil
+			if done, err := eachString(ctx, r(self), block); done {
+				return object.Done(self), err
 			}
 			if r(self).Lo.Kind() == object.KindInstance {
 				err := eachBySucc(ctx, r(self), func(v object.Value) error {
@@ -263,6 +253,9 @@ func installRange() {
 		} else {
 			next = integerAdd(st[0], 1)
 		}
+		// An endless range counts to the last Integer of 64 bits, and
+		// goes on from there in steps of its own.
+		last, more := int64(math.MaxInt64-1), true
 		if !r(self).Hi.IsZero() {
 			_, hi, ok := intEnds(r(self))
 			if !ok {
@@ -271,8 +264,15 @@ func installRange() {
 			if integerCmp(next, hi) > 0 {
 				return object.Done(self), nil
 			}
+			if h, ok := hi.AsInt(); ok {
+				last, more = h, false
+			}
 		}
-		return object.Yield([]object.Value{next}, next), nil
+		s := object.YieldKept(st, next)
+		if got.First && next.Kind() == object.KindInt {
+			s.Count = &object.Count{Last: last, By: 1, More: more}
+		}
+		return s, nil
 	})
 	// reverse_each walks a range down from an Integer end, without
 	// listing it first, and endlessly for a beginless one; any other
@@ -691,6 +691,40 @@ func rangeReverseSize(ctx object.Context, r *object.Range) (object.Value, error)
 		return object.Value{}, ctx.Raise(object.TypeError, "can't iterate from %s", hi.Class().Name)
 	}
 	return object.Nil, nil
+}
+
+// hasString reports whether v is one of the strings or symbols of seq.
+// It is a function of its own for the reason eachString is, and not
+// inlined, which would undo that.
+//
+//go:noinline
+func hasString(seq iter.Seq[string], sym bool, v object.Value) bool {
+	for s := range seq {
+		if object.Equal(strValue(s, sym), v) {
+			return true
+		}
+	}
+	return false
+}
+
+// eachString calls block with each string or symbol of a range of them
+// and reports done; a range of anything else is not done. It is a
+// function of its own because a loop over a sequence that returns from
+// inside moves the results of the function it is in to the heap, on
+// every call of that function: each's, once per element of any range.
+//
+//go:noinline
+func eachString(ctx object.Context, r *object.Range, block object.Value) (done bool, err error) {
+	seq, sym, _, ok := rangeStrings(r)
+	if !ok {
+		return false, nil
+	}
+	for s := range seq {
+		if _, err := ctx.Yield(block, strValue(s, sym)); err != nil {
+			return true, err
+		}
+	}
+	return true, nil
 }
 
 func intEnds(r *object.Range) (lo, hi object.Value, ok bool) {

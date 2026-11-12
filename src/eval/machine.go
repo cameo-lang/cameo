@@ -42,6 +42,10 @@ func (m *machine) lay(env *Env, l *layout) {
 // release keeps m, whose activation ended, for the next call. The values
 // and the cursors it held are cleared, so that it keeps nothing alive.
 func (in *Interp) release(m *machine) {
+	if m.held {
+		// A stepper runs its block's next call on it (stepping.act).
+		return
+	}
 	if m.kind == actStep || len(in.free) >= maxFree || cap(m.stack) > maxKeptStack || cap(m.cursors) > maxKeptCursors {
 		return
 	}
