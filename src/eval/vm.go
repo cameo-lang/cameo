@@ -108,11 +108,13 @@ type machine struct {
 	// flat is the flat code the activation runs, nil when it runs from
 	// cursors; pc is its next instruction, bases the height of the value
 	// stack at the start of each loop it is in, and flatBody whether its
-	// list is one of statements (flat.go). again is set when the block
-	// of the activation is to run once more, for a redo.
+	// list is one of statements (flat.go). tries is what it keeps of each
+	// BEGIN it is in. again is set when the block of the activation is to
+	// run once more, for a redo.
 	flat     *flatCode
 	pc       int
 	bases    []int
+	tries    []try
 	flatBody bool
 	again    bool
 	// kind says what the activation is, and proc is the block of an

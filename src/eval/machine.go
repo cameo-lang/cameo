@@ -32,9 +32,10 @@ func (in *Interp) release(m *machine) {
 	if m.kind == actStep || len(in.free) >= maxFree || cap(m.stack) > maxKeptStack || cap(m.cursors) > maxKeptCursors {
 		return
 	}
-	stack, cursors := m.stack[:cap(m.stack)], m.cursors[:cap(m.cursors)]
+	stack, cursors, tries := m.stack[:cap(m.stack)], m.cursors[:cap(m.cursors)], m.tries[:cap(m.tries)]
 	clear(stack)
 	clear(cursors)
-	*m = machine{in: in, stack: stack[:0], cursors: cursors[:0]}
+	clear(tries)
+	*m = machine{in: in, stack: stack[:0], cursors: cursors[:0], bases: m.bases[:0], tries: tries[:0]}
 	in.free = append(in.free, m)
 }

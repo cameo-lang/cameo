@@ -6,6 +6,7 @@ import (
 	"github.com/cameo-lang/cameo/src/assert"
 	"github.com/cameo-lang/cameo/src/cameopb"
 	"github.com/cameo-lang/cameo/src/ir"
+	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/syntax"
 )
 
@@ -73,7 +74,8 @@ func TestLowerKeepsTheListsItHasNoJumpsFor(t *testing.T) {
 		return n
 	}
 	assert.Equals(t, count("def f(x)\n  case x\n  when 1 then :one\n  when 2, 3 then :more\n  else :other\n  end\nend\n", fWhen), 2)
-	assert.Equals(t, count("def f(x)\n  begin\n    x + 1\n  rescue => e\n    0\n  end\nend\n", fTree), 1)
+	assert.Equals(t, count("def f(x)\n  begin\n    x + 1\n  rescue => e\n    0\n  end\nend\n", fTree), 0)
+	assert.Equals(t, count("def f(x)\n  begin\n    x + 1\n  rescue => e\n    0\n  end\nend\n", fBegin), 1)
 	assert.Equals(t, count("def f(x)\n  case x\n  in [a, b] then a\n  else 0\n  end\nend\n", fTree), 1)
 }
 
@@ -283,4 +285,210 @@ func TestCursorsAtIsThePlaceInTheLists(t *testing.T) {
 	m.cursorsAt(false)
 	then = m.cursors[2]
 	assert.True(t, then.code[then.next].Op == cameopb.Op_SEND)
+}
+
+// A begin runs from flat code as it runs from cursors: the rescue clause
+// whose classes fit, else and ensure, retry, a return through an ensure
+// and one out of it, an exception raised in a clause and its cause, one
+// no clause takes, a break, next and redo through the clauses to the
+// loop around, the value of a begin, and a next out of one in a block.
+func TestBeginOfFlatCode(t *testing.T) {
+	expectOutput(t, `class Mine < StandardError; end
+def classes(kind)
+  begin
+    raise Mine, "mine" if kind == 1
+    raise ArgumentError, "arg" if kind == 2
+    raise "plain" if kind == 3
+    Integer("x") if kind == 4
+    :none
+  rescue Mine, TypeError => e
+    [:mine, e.message]
+  rescue ArgumentError
+    :arg
+  rescue => e
+    [:other, e.class]
+  else
+    :else
+  ensure
+    print "e#{kind} "
+  end
+end
+def retried
+  tries = 0
+  begin
+    tries += 1
+    raise "again" if tries < 3
+    tries
+  rescue
+    retry
+  end
+end
+def returns_through
+  begin
+    return :body
+  ensure
+    print "ensure "
+  end
+  :after
+end
+def ensure_wins
+  begin
+    raise "lost"
+  ensure
+    return :ensure
+  end
+end
+def nested
+  begin
+    begin
+      raise "inner"
+    rescue => e
+      raise ArgumentError, "outer"
+    ensure
+      print "in "
+    end
+  rescue => e
+    [e.message, e.cause && e.cause.message]
+  ensure
+    print "out "
+  end
+end
+def unrescued
+  begin
+    raise Mine, "up"
+  rescue ArgumentError
+    :no
+  ensure
+    print "passing "
+  end
+end
+def bad_class
+  begin
+    raise "x"
+  rescue 3
+    :no
+  end
+end
+def loops
+  out = []
+  i = 0
+  r = while i < 6
+    i += 1
+    begin
+      j = 0
+      while j < 3
+        j += 1
+        next if j == 1
+        break if j == 3
+        out += [[i, j]] if i == 1
+      end
+      next if i == 2
+      raise "three" if i == 3
+      break :done if i == 5
+    rescue => e
+      out += [e.message]
+      redo if out.size < 3
+    else
+      out += [:else]
+    ensure
+      out += [i]
+    end
+  end
+  [r, out]
+end
+def value
+  x = begin
+    1
+  ensure
+    2
+  end
+  y = begin
+    raise "v"
+  rescue
+    3
+  end
+  [x, y, (begin; 4; rescue; 5; else; 6; end)]
+end
+def in_block(list)
+  list.map do |x|
+    begin
+      next :two if x == 2
+      raise "odd" if x.odd?
+      x
+    rescue => e
+      e.message
+    ensure
+      print x
+    end
+  end
+end
+(0..4).each { |k| p classes(k) }
+p retried, returns_through, ensure_wins, nested
+begin
+  unrescued
+rescue Mine => e
+  p e.message
+end
+begin
+  bad_class
+rescue TypeError => e
+  p e.message
+end
+p loops, value, in_block([1, 2, 4])
+`, `e0 :else
+e1 [:mine, "mine"]
+e2 :arg
+e3 [:other, RuntimeError]
+e4 :arg
+ensure in out 3
+:body
+:ensure
+["outer", "inner"]
+passing "up"
+"class or module required for rescue clause"
+124[:done, [[1, 2], :else, 1, 2, "three", 3, :else, 4, 5]]
+[1, 3, 6]
+["odd", :two, 4]
+`)
+}
+
+// A run that pauses inside a rescue clause is frozen with the cursor of
+// the clause: the exception it handles and the height of the stack the
+// begin started at.
+func TestCursorsAtKeepsWhatABeginKeeps(t *testing.T) {
+	prog, err := syntax.Parse("t.cameo", "def f(n)\n  begin\n    g(n)\n  rescue => e\n    h(e)\n  ensure\n    k(n)\n  end\nend\n")
+	assert.NoError(t, err)
+	unit, err := ir.Compile("t.cameo", prog)
+	assert.NoError(t, err)
+	in := New(nil, nil)
+	var code []*cameopb.Code
+	for _, p := range unit.Procs {
+		if p.GetName() == "f" {
+			code = p.GetCode()
+		}
+	}
+	flat := lower(code, in.symsOf(unit), true)
+	assert.True(t, flat != nil)
+	// The calls of g, h and k, in that order.
+	var calls []int
+	for i, ins := range flat.code {
+		if ins.op == fExec && ins.src.Op == cameopb.Op_SEND {
+			calls = append(calls, i)
+		}
+	}
+	assert.Equals(t, len(calls), 3)
+	exc := &object.Exception{}
+	pending := &control{kind: ctrlReturn}
+
+	m := &machine{in: in, flat: flat, pc: calls[1] + 1, tries: []try{{base: 2, exc: exc}}, flatBody: true}
+	m.cursorsAt(true)
+	assert.Equals(t, len(m.cursors), 2)
+	clause := m.cursors[1]
+	assert.True(t, clause.owner.Op == cameopb.Op_BEGIN && clause.list == 4 && clause.phase == phaseRescue)
+	assert.True(t, clause.exc == exc && clause.base == 2 && clause.pending == nil)
+
+	m = &machine{in: in, flat: flat, pc: calls[2] + 1, tries: []try{{pending: pending}}, flatBody: true}
+	m.cursorsAt(true)
+	clause = m.cursors[1]
+	assert.True(t, clause.list == 2 && clause.phase == phaseEnsure && clause.pending == error(pending) && clause.exc == nil)
 }
