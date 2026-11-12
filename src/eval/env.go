@@ -22,17 +22,28 @@ import (
 // observes a variable from outside its scope, which is what an immutable
 // value needs.
 //
-// A scope holds its variables by Sym, so a read compares numbers. The
-// methods that take a name as a string intern it, for the code that runs
+// A scope holds its variables in slots, which its layout names: the
+// scope of a call has the layout of the proc that is called, made once
+// per program, so flat code reads and writes a variable by its index
+// (flat.go). Any other scope has a layout of its own, which grows as
+// names are bound. A name the layout of a proc does not hold is kept in a
+// map. The methods that take a name find its slot in the layout; the
+// ones that take it as a string intern it first, for the code that runs
 // seldom: a dump, the debugger, a pattern's bindings.
 //
-// The first few variables live in the scope itself, so a scope of a method
-// with a handful of locals costs no allocation beyond its own; more spill
-// into a map.
+// The first few slots live in the scope itself, so a scope of a method
+// with a handful of locals costs no allocation beyond its own.
 type Env struct {
-	names  [envInline]object.Sym
-	values [envInline]object.Value
-	n      int
+	// layout names the slots, nil while nothing is bound in a scope
+	// without a proc's layout; own is set when the layout is the
+	// scope's own, which a new name is added to.
+	layout *layout
+	own    bool
+	// slots holds the variables of the layout, the zero value for one
+	// that is unbound.
+	slots  []object.Value
+	inline [envInline]object.Value
+	// more holds the variables the layout of a proc does not name.
 	more   map[object.Sym]object.Value
 	parent *Env
 	// captured marks a scope a block captured: Set never rebinds in it.
@@ -45,12 +56,86 @@ type Env struct {
 	promises []*Promise
 }
 
-// envInline is how many variables a scope holds without a map.
+// envInline is how many variables a scope holds without an allocation.
 const envInline = 4
+
+// layout is the names of the slots of a scope, index for index.
+type layout struct {
+	names []object.Sym
+	// index finds the slot of a name of a layout too long to look
+	// through.
+	index map[object.Sym]int32
+}
+
+// layoutScan is the number of names up to which a layout is looked
+// through for a name.
+const layoutScan = 8
+
+// newLayout makes the layout of names, each of them once.
+func newLayout(names []object.Sym) *layout {
+	l := &layout{}
+	for _, name := range names {
+		if l.slot(name) < 0 {
+			l.add(name)
+		}
+	}
+	return l
+}
+
+// slot is the index of name in the layout, -1 when it has none.
+func (l *layout) slot(name object.Sym) int {
+	if l.index != nil {
+		if i, ok := l.index[name]; ok {
+			return int(i)
+		}
+		return -1
+	}
+	for i, n := range l.names {
+		if n == name {
+			return i
+		}
+	}
+	return -1
+}
+
+// add gives name the next slot.
+func (l *layout) add(name object.Sym) {
+	l.names = append(l.names, name)
+	switch {
+	case l.index != nil:
+		l.index[name] = int32(len(l.names) - 1)
+	case len(l.names) > layoutScan:
+		l.index = make(map[object.Sym]int32, 2*len(l.names))
+		for i, n := range l.names {
+			l.index[n] = int32(i)
+		}
+	}
+}
 
 // NewEnv makes a scope inside parent (nil for a method body).
 func NewEnv(parent *Env) *Env {
 	return &Env{parent: parent}
+}
+
+// newEnvOf makes a scope inside parent with the layout l of a proc.
+func newEnvOf(parent *Env, l *layout) *Env {
+	e := &Env{parent: parent}
+	e.lay(l)
+	return e
+}
+
+// lay gives a scope nothing is bound in the layout l of a proc, nil for
+// none.
+func (e *Env) lay(l *layout) {
+	if l == nil {
+		return
+	}
+	e.layout = l
+	if n := len(l.names); n <= envInline {
+		e.slots = e.inline[:n]
+	} else {
+		e.slots = make([]object.Value, n)
+	}
 }
 
 // lookup finds name in this scope alone.
@@ -64,9 +149,10 @@ func (e *Env) lookup(name string) (object.Value, bool) {
 
 // lookupSym is lookup for a name that is interned.
 func (e *Env) lookupSym(name object.Sym) (object.Value, bool) {
-	for i := 0; i < e.n; i++ {
-		if e.names[i] == name {
-			return e.values[i], true
+	if l := e.layout; l != nil {
+		if i := l.slot(name); i >= 0 {
+			v := e.slots[i]
+			return v, !v.IsZero()
 		}
 	}
 	if e.more != nil {
@@ -81,16 +167,8 @@ func (e *Env) bind(name string, v object.Value) { e.bindSym(object.Intern(name),
 
 // bindSym is bind for a name that is interned.
 func (e *Env) bindSym(name object.Sym, v object.Value) {
-	for i := 0; i < e.n; i++ {
-		if e.names[i] == name {
-			e.values[i] = v
-			return
-		}
-	}
-	if e.n < envInline {
-		e.names[e.n] = name
-		e.values[e.n] = v
-		e.n++
+	if i := e.reserve(name); i >= 0 {
+		e.slots[i] = v
 		return
 	}
 	if e.more == nil {
@@ -99,11 +177,30 @@ func (e *Env) bindSym(name object.Sym, v object.Value) {
 	e.more[name] = v
 }
 
-// each calls f with every variable of this scope alone, in binding order
-// for the inline ones and by name for the rest.
+// reserve returns the slot of name in this scope, giving it one when
+// the layout is the scope's own; -1 when the layout of a proc has none
+// for it. A slot it gives holds no value yet: the name is unbound.
+func (e *Env) reserve(name object.Sym) int {
+	l := e.layout
+	if l == nil {
+		l = &layout{}
+		e.layout, e.own, e.slots = l, true, e.inline[:0]
+	}
+	if i := l.slot(name); i >= 0 || !e.own {
+		return i
+	}
+	l.add(name)
+	e.slots = append(e.slots, object.Value{})
+	return len(e.slots) - 1
+}
+
+// each calls f with every variable of this scope alone, in the order of
+// its slots and then by name.
 func (e *Env) each(f func(name string, v object.Value)) {
-	for i := 0; i < e.n; i++ {
-		f(e.names[i].String(), e.values[i])
+	for i, v := range e.slots {
+		if !v.IsZero() {
+			f(e.layout.names[i].String(), v)
+		}
 	}
 	rest := make(map[string]object.Value, len(e.more))
 	names := make([]string, 0, len(e.more))
@@ -167,6 +264,34 @@ func (e *Env) snapshot() *Env {
 	return s
 }
 
+// capture is snapshot for a block whose proc has the layout l and reads
+// the variables in the slots reads of it, itself or in the blocks
+// written in it: the captured scope has that layout and holds those
+// variables alone. A call of the block reads what it captured by slot.
+func (e *Env) capture(l *layout, reads []int32) *Env {
+	s := &Env{captured: true}
+	s.lay(l)
+	captured := e
+	for captured != nil && !captured.captured {
+		captured = captured.parent
+	}
+	for _, i := range reads {
+		name := l.names[i]
+		for live := e; live != captured; live = live.parent {
+			if v, ok := live.lookupSym(name); ok {
+				s.slots[i] = v
+				break
+			}
+		}
+	}
+	if s.parent = captured; captured != nil && captured.scope != nil {
+		s.scope = captured.scope
+	} else {
+		s.scope = methodScope(e)
+	}
+	return s
+}
+
 // copyLive binds in s the variables of this scope and of its parents up
 // to the first captured one, the outermost first so that an inner binding
 // wins. It returns that captured scope, nil when there is none.
@@ -193,13 +318,13 @@ func (e *Env) copyInto(s *Env) {
 
 // copyOwn binds the variables of this scope alone in s.
 func (e *Env) copyOwn(s *Env) {
-	for i := 0; i < e.n; i++ {
-		s.bindSym(e.names[i], e.values[i])
-	}
-	if e.more != nil {
-		for name, v := range e.more {
-			s.bindSym(name, v)
+	for i, v := range e.slots {
+		if !v.IsZero() {
+			s.bindSym(e.layout.names[i], v)
 		}
+	}
+	for name, v := range e.more {
+		s.bindSym(name, v)
 	}
 }
 
