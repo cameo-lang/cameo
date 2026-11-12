@@ -21,7 +21,7 @@ func loweredProc(t *testing.T, src, name string) *flatCode {
 	in := New(nil, nil)
 	for _, p := range unit.Procs {
 		if p.GetName() == name {
-			return lower(p.GetCode(), in.symsOf(unit), true)
+			return lower(p.GetCode(), in.symsOf(unit), true, nil, nil)
 		}
 	}
 	t.Fatalf("no proc %s", name)
@@ -258,7 +258,7 @@ func TestCursorsAtIsThePlaceInTheLists(t *testing.T) {
 			code = p.GetCode()
 		}
 	}
-	flat := lower(code, in.symsOf(unit), true)
+	flat := lower(code, in.symsOf(unit), true, nil, nil)
 	assert.True(t, flat != nil)
 	// The call of g, inside the if inside the body of the loop.
 	call := -1
@@ -467,7 +467,7 @@ func TestCursorsAtKeepsWhatABeginKeeps(t *testing.T) {
 			code = p.GetCode()
 		}
 	}
-	flat := lower(code, in.symsOf(unit), true)
+	flat := lower(code, in.symsOf(unit), true, nil, nil)
 	assert.True(t, flat != nil)
 	// The calls of g, h and k, in that order.
 	var calls []int
@@ -491,4 +491,128 @@ func TestCursorsAtKeepsWhatABeginKeeps(t *testing.T) {
 	m.cursorsAt(true)
 	clause = m.cursors[1]
 	assert.True(t, clause.list == 2 && clause.phase == phaseEnsure && clause.pending == error(pending) && clause.exc == nil)
+}
+
+// Variables read and bound by slot behave as they do by name: more of
+// them than a scope holds inline, parameters of every kind, a block's
+// captured, shadowed and nested reads, a for loop that rebinds in the
+// scope around it, a lambda that reads its own name, what a pattern and
+// a rescue clause bind, a variable that is unbound, and a block at the
+// top level, which keeps the value it captured.
+func TestVariablesInSlots(t *testing.T) {
+	expectOutput(t, `def many(a, b = a + 1, *rest, k: b * 2, **opts, &blk)
+  c = a + b
+  d = c + k
+  e = d + rest.size
+  f = e + opts.size
+  g = f + 1
+  h = g + 1
+  i = h + 1
+  j = i + 1
+  [a, b, c, d, e, f, g, h, i, j, blk ? blk.call(j) : nil]
+end
+def blocks(list, base)
+  scale = 2
+  inner = list.map { |x| x * scale + base }
+  nested = list.map { |x| list.map { |y| x * y + base }.sum }
+  shadow = list.map { |base| base + scale }
+  unread = 99
+  [inner, nested, shadow, base, unread]
+end
+def loops(n)
+  total = 0
+  for i in 1..n
+    total += i
+    last = i
+  end
+  [total, last, i]
+end
+def recursive(n)
+  fact = lambda { |k| k < 2 ? 1 : k * fact.call(k - 1) }
+  fact.call(n)
+end
+def patterns(v)
+  case v
+  in [first, *others] then [first, others]
+  in {name:, **more} then [name, more]
+  in Integer => n then n + 1
+  else :none
+  end
+end
+def unbound(flag)
+  x = 1 if flag
+  [x, defined?(x), defined?(zzz)]
+end
+def rescued
+  begin
+    raise ArgumentError, "bad"
+  rescue => err
+    msg = err.message
+  end
+  [msg, err.class]
+end
+p many(1), many(1, 5, 6, 7, k: 1, z: 2) { |v| v * 10 }
+p blocks([1, 2, 3], 10), loops(4), recursive(5)
+p patterns([1, 2, 3]), patterns({name: "n", age: 3}), patterns(41), patterns(nil)
+p unbound(true), unbound(false), rescued
+top = 5
+adders = [1, 2].map { |n| lambda { |x| x + n + top } }
+top = 100
+p adders.map { |f| f.call(1) }
+`, `[1, 2, 3, 7, 7, 7, 8, 9, 10, 11, nil]
+[1, 5, 6, 7, 9, 10, 11, 12, 13, 14, 140]
+[[12, 14, 16], [36, 42, 48], [3, 4, 5], 10, 99]
+[10, nil, 4]
+120
+[1, [2, 3]]
+["n", {age: 3}]
+42
+:none
+[1, "local-variable", nil]
+[nil, nil, nil]
+["bad", ArgumentError]
+[7, 8]
+`)
+}
+
+// The locals of a method are slots of its layout, its parameters first,
+// and its flat code reads and binds them by slot.
+func TestLowerReadsLocalsBySlot(t *testing.T) {
+	prog, err := syntax.Parse("t.cameo", "def f(a, b)\n  c = a + b\n  [1].each { |x| c + x }\n  c\nend\n")
+	assert.NoError(t, err)
+	unit, err := ir.Compile("t.cameo", prog)
+	assert.NoError(t, err)
+	in := New(nil, nil)
+	var f, block *irProc
+	for i, p := range unit.Procs {
+		switch p.GetName() {
+		case "f":
+			f = procOf(unit, uint32(i))
+		case "block":
+			block = procOf(unit, uint32(i))
+		}
+	}
+	ps := in.paramsOf(f)
+	names := []string{}
+	for _, sym := range ps.layout.names {
+		names = append(names, sym.String())
+	}
+	assert.Equals(t, names, []string{"a", "b", "c", "x"})
+	flat := in.flatOfProc(f)
+	assert.True(t, flat != nil && flat.layout == ps.layout)
+	ops := map[flatOp]int{}
+	for _, ins := range flat.code {
+		ops[ins.op]++
+	}
+	assert.Equals(t, ops[fLoad]+ops[fStore], 0)
+	assert.Equals(t, ops[fLoadSlot], 3)
+	assert.Equals(t, ops[fStoreSlot], 1)
+
+	// The block reads c and x, and captures those alone.
+	bs := in.paramsOf(block)
+	reads := []string{}
+	for _, slot := range bs.reads {
+		reads = append(reads, bs.layout.names[slot].String())
+	}
+	assert.Equals(t, reads, []string{"c", "x"})
 }

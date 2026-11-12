@@ -309,6 +309,12 @@ func (in *Interp) inFile(err error, fr *Frame) error {
 func (in *Interp) bindParams(p *params, args []object.Value, kw *object.Map, block object.Value, env *Env, fr *Frame, strict bool, name string, line int) error {
 	if p.plain && kw == nil && len(args) == len(p.Positional) {
 		// Required parameters alone, and as many arguments.
+		if env.layout == p.layout && p.layout != nil {
+			for i := range p.Positional {
+				env.slots[p.Positional[i].slot] = args[i]
+			}
+			return nil
+		}
 		for i := range p.Positional {
 			env.DefineSym(p.Positional[i].sym, args[i])
 		}

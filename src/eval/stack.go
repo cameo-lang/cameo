@@ -374,7 +374,9 @@ func (in *Interp) methodAct(m *object.Method, recv object.Value, args []object.V
 	}
 	act := in.machine()
 	act.unit, act.env, act.fr, act.kind = code.unit, env, fr, actMethod
-	if err := in.bindParams(in.paramsOf(code), args, kw, block, env, fr, true, m.Name, line); err != nil {
+	ps := in.paramsOf(code)
+	env.lay(ps.layout)
+	if err := in.bindParams(ps, args, kw, block, env, fr, true, m.Name, line); err != nil {
 		_, err = in.leave(act, object.Value{}, err)
 		return nil, err
 	}
@@ -393,7 +395,7 @@ func (in *Interp) blockAct(p *Proc, args []object.Value, kw *object.Map, inner o
 		return nil, err
 	}
 	var env *Env
-	fr := p.Frame
+	fr, ps := p.Frame, in.paramsOf(p.IR)
 	if p.Strict {
 		// A lambda's call is a frame of its own, where its return stops:
 		// it starts and ends with the call, whatever became of the
@@ -402,10 +404,11 @@ func (in *Interp) blockAct(p *Proc, args []object.Value, kw *object.Map, inner o
 		bound.frame.Lambda, bound.frame.ended = true, false
 		bound.env.parent = p.Env
 		fr, env = &bound.frame, &bound.env
+		env.lay(ps.layout)
 	} else {
-		env = NewEnv(p.Env)
+		env = newEnvOf(p.Env, ps.layout)
 	}
-	if err := in.bindParams(in.paramsOf(p.IR), args, kw, inner, env, fr, p.Strict, "block", p.line()); err != nil {
+	if err := in.bindParams(ps, args, kw, inner, env, fr, p.Strict, "block", p.line()); err != nil {
 		if p.Strict {
 			fr.ended = true
 		}

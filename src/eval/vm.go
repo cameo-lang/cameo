@@ -157,7 +157,19 @@ func (in *Interp) runList(unit *cameopb.Unit, code []*cameopb.Code, env *Env, fr
 func (in *Interp) runCode(unit *cameopb.Unit, code []*cameopb.Code, env *Env, fr *Frame, body bool) (object.Value, error) {
 	m := in.machine()
 	m.unit, m.env, m.fr = unit, env, fr
-	m.startAt(in.flatOf(unit, code, body), code, body)
+	// The list reads the variables of env by slot where env has the
+	// layout of a proc, as the scope a default is evaluated in has, or
+	// is the top level's.
+	var flat *flatCode
+	switch {
+	case env == in.top:
+		flat = in.flatOfLaid(unit, code, body, nil, env)
+	case !env.own:
+		flat = in.flatOfLaid(unit, code, body, env.layout, nil)
+	default:
+		flat = in.flatOf(unit, code, body)
+	}
+	m.startAt(flat, code, body)
 	return in.start(m)
 }
 
@@ -306,7 +318,7 @@ func (m *machine) exec(c *cameopb.Code) error {
 	case cameopb.Op_INTERP:
 		m.interp(c)
 	case cameopb.Op_LAMBDA:
-		p := writtenProc(m.unit, c.Args[0].GetProc(), env.snapshot(), fr)
+		p := writtenProc(m.unit, c.Args[0].GetProc(), m.captured(c.Args[0].GetProc()), fr)
 		p.Strict = has(c, cameopb.Flag_FLAG_STRICT)
 		m.push(procValue(p))
 	case cameopb.Op_SEND:
@@ -634,9 +646,21 @@ func (m *machine) callArgs(c *cameopb.Code, i int) ([]object.Value, *object.Map)
 func (m *machine) closure(index uint32) object.Value {
 	env := m.env
 	if !m.unit.Procs[index].GetShared() {
-		env = env.snapshot()
+		env = m.captured(index)
 	}
 	return procValue(writtenProc(m.unit, index, env, m.fr))
+}
+
+// captured returns the scope a block or lambda written here, proc index
+// of the unit, closes over: the variables it reads, with the values
+// they have now. Under a debugger, which shows the variables in sight,
+// it is every variable.
+func (m *machine) captured(index uint32) *Env {
+	if m.in.dbg != nil {
+		return m.env.snapshot()
+	}
+	ps := m.in.procParams(m.unit, index)
+	return m.env.capture(ps.layout, ps.reads)
 }
 
 // binaryNames is the name of each operator a BINARY_ instruction runs,

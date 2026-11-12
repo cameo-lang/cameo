@@ -316,6 +316,29 @@ keeps: the height of the stack when it started, the exception a clause
 handles, and what its ensure interrupted. A `begin` that nothing is
 raised in costs one instruction that notes the height of the stack.
 
+**Variables in slots.** A proc has a **layout**, made once per program:
+its parameters, then every variable its code names, each with an index.
+The scope of a call has the layout of the proc that is called and holds
+the variables in slots, the first four inside the scope itself. Flat
+code is lowered for that layout: a `LOAD` or a `STORE` of a name the
+layout holds is a read or a write of a slot. The top level's scope has a
+layout of its own, which lowering a statement adds the statement's
+variables to.
+
+A scope still answers by name, for the code that reads a variable so: a
+pattern, a rescue clause, the debugger, a dump. A name its layout does
+not hold is kept in a map. An instruction that goes by slot checks that
+the scope has the layout the code was lowered for, and goes by the name
+when it has another: a scope a dump restored, or the body of a class
+made by `Class.new`.
+
+A block captures the variables it reads, itself or in the blocks
+written in it, and no others: the captured scope has the layout of the
+block's proc, so a call of the block reads what it captured by slot too.
+Which variables a proc reads is what a closure that travels to another
+interpreter carries (`usesOf`). Under a debugger a block captures every
+variable in sight, since the debugger shows them.
+
 The unit and the dump do not know of flat code. Each flat instruction
 that is where an instruction of the IR starts remembers that
 instruction, the list it is in and the lists around that one. A run
