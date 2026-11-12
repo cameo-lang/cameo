@@ -44,6 +44,24 @@ func Install() {
 	installIO()
 	// After Enumerable and Enumerator: it wraps Enumerable's methods.
 	installUserEnumerable()
+	// The methods read for it: each uses its arguments and returns.
+	borrows(object.MapClass, "[]", "key?", "has_key?", "include?", "member?")
+	borrows(object.ListClass, "[]", "at")
+}
+
+// borrows marks the methods names of c as ones that do not keep the
+// slice of their arguments (object.Method.Borrows). A method is marked
+// once its code was read for that: it may keep an argument, and pass
+// the slice down, but neither return nor store the slice or a part of
+// it.
+func borrows(c *object.Class, names ...string) {
+	for _, name := range names {
+		m := c.Methods[name]
+		if m == nil || m.Native == nil {
+			panic("stdlib: no builtin " + c.Name + "#" + name)
+		}
+		m.Borrows = true
+	}
 }
 
 type fn = func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error)

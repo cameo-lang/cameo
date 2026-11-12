@@ -700,7 +700,7 @@ func (m *machine) binary(c *cameopb.Code) error {
 // send runs a SEND: a method call.
 func (m *machine) send(c *cameopb.Code) error {
 	in, fr := m.in, m.fr
-	if c.Flags&^sendPlain == 0 && len(c.Args) == 2 {
+	if c.Flags&^sendPlain == 0 && plainArgs(c) {
 		if called, err := m.sendContained(c); called {
 			return err
 		}
@@ -746,8 +746,9 @@ func (m *machine) send(c *cameopb.Code) error {
 const sendPlain = uint64(cameopb.Flag_FLAG_SELF | cameopb.Flag_FLAG_VCALL | cameopb.Flag_FLAG_PRIVATE | cameopb.Flag_FLAG_TAIL)
 
 // sendContained runs a SEND with positional arguments alone when it
-// calls a method a script defined whose calls keep neither their frame
-// nor their scope (params.contained). The arguments are not copied off
+// calls a builtin that keeps no slice of its arguments
+// (object.Method.Borrows), or a method a script defined whose calls keep
+// neither their frame nor their scope (params.contained). The arguments are not copied off
 // the stack: the call reads them where the caller pushed them, above
 // the top of the caller's stack, which nothing writes to until the call
 // ended. It reports false when the call is another kind, and has done
@@ -768,7 +769,22 @@ func (m *machine) sendContained(c *cameopb.Code) (bool, error) {
 		recv = m.stack[base]
 	}
 	meth := in.lookupSym(recv, m.sym(c, 0), selfCall)
-	if !in.runs(meth, selfCall || has(c, cameopb.Flag_FLAG_PRIVATE)) || meth.Owner == object.EnumeratorClass {
+	private := selfCall || has(c, cameopb.Flag_FLAG_PRIVATE)
+	if meth != nil && meth.Body == nil && (meth.Borrows || argc == 0 && meth.Owner != object.ClassClass && meth.Owner != object.ProcClass) && (meth.Arity < 0 || meth.Arity == argc) && (!meth.Private || private) {
+		// A builtin that keeps no slice of its arguments, or has none,
+		// reads them where they are, and is called without the general
+		// call's checks: it is no method of a script and takes no
+		// block. Class#new and the methods that call a Proc are left
+		// to the general call, which runs a script's initialize and a
+		// script's block as activations.
+		v, err := meth.Native(in, recv, m.stack[n-argc:n:n], nil, object.Value{})
+		if err != nil {
+			return true, withLine(err, int(c.Line))
+		}
+		m.stack = append(m.stack[:base], v)
+		return true, nil
+	}
+	if !in.runs(meth, private) || meth.Owner == object.EnumeratorClass {
 		return false, nil
 	}
 	code := meth.Body.(*irProc)
@@ -798,6 +814,18 @@ func (m *machine) sendContained(c *cameopb.Code) (bool, error) {
 		err = in.pushAct(act, c)
 	}
 	return true, withLine(err, line)
+}
+
+// plainArgs reports whether the arguments of the SEND c after its name
+// and its count are names alone: the variable the receiver was read
+// from, which a mutator's error names, and no block.
+func plainArgs(c *cameopb.Code) bool {
+	for _, a := range c.Args[2:] {
+		if _, ok := a.GetKind().(*cameopb.Arg_Name); !ok {
+			return false
+		}
+	}
+	return true
 }
 
 // tailLoop runs a tail call of the method meth, with the argc values on
