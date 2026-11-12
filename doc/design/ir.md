@@ -340,6 +340,22 @@ Which variables a proc reads is what a closure that travels to another
 interpreter carries (`usesOf`). Under a debugger a block captures every
 variable in sight, since the debugger shows them.
 
+**A call that allocates nothing.** A proc is **contained** when its
+code, its parameters' defaults included, names no proc and starts no
+async call: it writes no block and no lambda. Nothing can then hold the
+frame or the scope of a call of it after the call ended, since a Proc
+is what keeps a frame and a captured scope what reaches a method's
+scope. A call of a contained method or block uses the frame and the
+scope that are part of its machine, which is kept for the next call
+(`machine.go`); the slots beyond the four a scope holds are kept with
+the machine too. A `SEND` with positional arguments alone that calls a
+contained method does not copy the arguments either: the call reads
+them where the caller pushed them, above the top of the caller's stack,
+which nothing writes to until the call ended. A bare `super` copies the
+arguments it passes on, since the method it reaches may keep them.
+Under a debugger, which holds frames and scopes to show them, every
+call allocates its own.
+
 The unit and the dump do not know of flat code. Each flat instruction
 that is where an instruction of the IR starts remembers that
 instruction, the list it is in and the lists around that one. A run

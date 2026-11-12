@@ -22,6 +22,12 @@ type params struct {
 	// unit.
 	layout *layout
 	reads  []int32
+	// contained is set when nothing a call of the proc makes can keep
+	// its frame or its scope after the call ended: its code writes no
+	// block, lambda, method or class and starts no async call. The
+	// frame, the scope and the arguments of such a call are not
+	// allocated (methodAct).
+	contained bool
 }
 
 // param is one positional parameter: required (Default nil, Splat false),
@@ -97,6 +103,7 @@ func (c *code) irParams(p *irProc) *params {
 		names = append(names, object.Intern(name))
 	}
 	out.layout = newLayout(names)
+	out.contained = contained(p.proc)
 	for i := range out.Positional {
 		out.Positional[i].slot = int32(out.layout.slot(out.Positional[i].sym))
 	}
@@ -105,6 +112,45 @@ func (c *code) irParams(p *irProc) *params {
 	}
 	actual, _ := c.params.LoadOrStore(p.proc, out)
 	return actual.(*params)
+}
+
+// contained reports whether no instruction of proc, its parameters'
+// defaults included, names a proc or is an async call or an await. A
+// block, a lambda, a method and a class body are procs an instruction
+// names, and they are what keeps a frame (Proc.Frame) or reaches a scope
+// later (Env.scope, for the promises of a block); an async call keeps
+// its promise in the scope.
+func contained(proc *cameopb.Proc) bool {
+	var free func([]*cameopb.Code) bool
+	free = func(code []*cameopb.Code) bool {
+		for _, ins := range code {
+			if awaits(ins) {
+				return false
+			}
+			for _, a := range ins.Args {
+				if _, ok := a.GetKind().(*cameopb.Arg_Proc); ok {
+					return false
+				}
+			}
+			for _, seq := range ins.Code {
+				if !free(seq.GetCode()) {
+					return false
+				}
+			}
+		}
+		return true
+	}
+	for _, param := range proc.GetParams().GetPositional() {
+		if !free(param.GetDefault().GetCode()) {
+			return false
+		}
+	}
+	for _, param := range proc.GetParams().GetKeywords() {
+		if !free(param.GetDefault().GetCode()) {
+			return false
+		}
+	}
+	return free(proc.GetCode())
 }
 
 // locals adds to names the variables the code of proc names, the code of
