@@ -343,7 +343,12 @@ func (l *lowerer) list(at *flatList) {
 			l.emit(ins)
 			for i := range c.Code {
 				l.list(inner(at, c, idx, i, phasePart, false))
-				l.emit(flatIns{op: fPart, src: c})
+				// b is set for the last part.
+				part := flatIns{op: fPart, src: c}
+				if i+1 == len(c.Code) {
+					part.b = 1
+				}
+				l.emit(part)
 			}
 		case cameopb.Op_BREAK, cameopb.Op_NEXT, cameopb.Op_REDO:
 			// In the body of a loop of this list they are jumps; anywhere
@@ -735,7 +740,7 @@ func (m *machine) runFlat() error {
 		case fInterp:
 			m.stack = append(m.stack, object.String(""))
 		case fPart:
-			if err := m.interpAdd(ins.src); err != nil {
+			if err := m.interpAdd(ins.src, ins.b == 1); err != nil {
 				return err
 			}
 			yield = in.pausing.flag.Load()
