@@ -901,43 +901,102 @@ func sortValues(ctx object.Context, elems []object.Value, kinds object.Kinds, bl
 
 // sortBy sorts a copy of elems by the keys a block computes.
 func sortBy(ctx object.Context, elems []object.Value, block object.Value) ([]object.Value, error) {
-	type keyed struct{ key, el object.Value }
-	items := make([]keyed, len(elems))
+	keys := make([]object.Value, len(elems))
 	for i, el := range elems {
 		k, err := ctx.Yield(block, el)
 		if err != nil {
 			return nil, err
 		}
-		items[i] = keyed{k, el}
+		keys[i] = k
 	}
-	ints := true
-	for _, it := range items {
-		ints = ints && it.key.Kind() == object.KindInt
+	return sortByKeys(ctx, elems, keys)
+}
+
+// sortByKeys returns elems in the order of their keys, key for element.
+func sortByKeys(ctx object.Context, elems, keys []object.Value) ([]object.Value, error) {
+	ints, nums := true, true
+	for _, k := range keys {
+		switch k.Kind() {
+		case object.KindInt:
+			// An Integer a float holds exactly, so that Integers and
+			// Floats compare as floats.
+			n := k.Int()
+			nums = nums && n > -1<<53 && n < 1<<53
+		case object.KindFloat:
+			ints = false
+			nums = nums && !math.IsNaN(k.Float())
+		default:
+			ints, nums = false, false
+		}
 	}
-	var sortErr error
-	if ints {
-		sort.SliceStable(items, func(i, j int) bool { return items[i].key.Int() < items[j].key.Int() })
-	} else {
-		sort.SliceStable(items, func(i, j int) bool {
-			if sortErr != nil {
-				return false
+	// The elements are sorted by their key and then by their place, so
+	// that elements with one key stay in their order whichever way the
+	// sort goes about it. Keys that are numbers are sorted as numbers,
+	// with the place beside them: no comparison calls back, and what
+	// is moved is small.
+	switch {
+	case ints:
+		return sortKeyed(elems, keys, func(k object.Value) int64 { return k.Int() }), nil
+	case nums:
+		return sortKeyed(elems, keys, func(k object.Value) float64 {
+			if k.Kind() == object.KindInt {
+				return float64(k.Int())
 			}
-			c, err := ctx.Compare(items[i].key, items[j].key)
+			return k.Float()
+		}), nil
+	default:
+		out := make([]object.Value, len(elems))
+		at := make([]int, len(keys))
+		for i := range at {
+			at[i] = i
+		}
+		var sortErr error
+		slices.SortFunc(at, func(a, b int) int {
+			if sortErr != nil {
+				return 0
+			}
+			c, err := ctx.Compare(keys[a], keys[b])
 			if err != nil {
 				sortErr = err
-				return false
+				return 0
 			}
-			return c < 0
+			if c != 0 {
+				return c
+			}
+			return cmp.Compare(a, b)
 		})
+		if sortErr != nil {
+			return nil, sortErr
+		}
+		for i, a := range at {
+			out[i] = elems[a]
+		}
+		return out, nil
 	}
-	if sortErr != nil {
-		return nil, sortErr
+}
+
+// sortKeyed returns elems in the order of the numbers key reads from
+// their keys, and elements with one number in the order they had.
+func sortKeyed[K int64 | float64](elems, keys []object.Value, key func(object.Value) K) []object.Value {
+	type keyed struct {
+		key K
+		at  int
 	}
-	out := make([]object.Value, len(items))
+	items := make([]keyed, len(keys))
+	for i, k := range keys {
+		items[i] = keyed{key(k), i}
+	}
+	slices.SortFunc(items, func(a, b keyed) int {
+		if c := cmp.Compare(a.key, b.key); c != 0 {
+			return c
+		}
+		return cmp.Compare(a.at, b.at)
+	})
+	out := make([]object.Value, len(elems))
 	for i, it := range items {
-		out[i] = it.el
+		out[i] = elems[it.at]
 	}
-	return out, nil
+	return out
 }
 
 func grepElems(ctx object.Context, elems []object.Value, args []object.Value, block object.Value, keep bool) (object.Value, error) {
