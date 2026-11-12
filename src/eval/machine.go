@@ -74,6 +74,6 @@ func (in *Interp) release(m *machine) {
 	m.unit, m.syms, m.env, m.fr = nil, nil, nil, nil
 	m.flat, m.pc, m.flatBody, m.again = nil, 0, false, false
 	m.kind, m.proc, m.site, m.debugged, m.stepper = actList, nil, nil, false, nil
-	m.result, m.wait, m.inGo, m.passing, m.row = object.Value{}, nil, 0, false, 0
+	m.result, m.wait, m.inGo, m.passing, m.row, m.sofar = object.Value{}, nil, 0, false, 0, nil
 	in.free = append(in.free, m)
 }
