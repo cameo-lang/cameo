@@ -22,6 +22,10 @@ import (
 // error streams, and the constants the script defines. Workers started by
 // async get interpreters of their own.
 type Interp struct {
+	// toSPlain is what plainToS found under the generation toSGen of
+	// the classes, once toSKnown is set.
+	toSPlain, toSKnown bool
+	toSGen             uint64
 	// IgnoreMutationErrors makes a call of one of Ruby's mutators return
 	// its result on a copy instead of raising; see mutate.go.
 	IgnoreMutationErrors bool
