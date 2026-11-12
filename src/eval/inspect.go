@@ -65,6 +65,19 @@ func (in *Interp) Inspect(v object.Value) (string, error) {
 
 // ToS implements object.Context: a value's to_s, as puts prints it.
 func (in *Interp) ToS(v object.Value) (string, error) {
+	// A String or an Integer is itself or its digits unless a script
+	// gave the class a to_s, which is looked up once per generation of
+	// the classes and not per value.
+	switch v.Kind() {
+	case object.KindString:
+		if in.plainToS() {
+			return v.Str(), nil
+		}
+	case object.KindInt:
+		if in.plainToS() {
+			return itoa(v.Int()), nil
+		}
+	}
 	if m := userMethodSym(v, object.SymToS); m != nil {
 		r, err := in.callOwn(m, v, nil)
 		if err != nil {
@@ -108,6 +121,16 @@ func (in *Interp) ToS(v object.Value) (string, error) {
 		return "", nil
 	}
 	return in.inspectBuiltin(v)
+}
+
+// plainToS reports whether to_s of a String and of an Integer is the
+// builtin's: no script defined one for either class.
+func (in *Interp) plainToS() bool {
+	if gen := object.Generation(); gen != in.toSGen || !in.toSKnown {
+		in.toSPlain = userMethodSym(object.String(""), object.SymToS) == nil && userMethodSym(object.Int(0), object.SymToS) == nil
+		in.toSGen, in.toSKnown = gen, true
+	}
+	return in.toSPlain
 }
 
 func (in *Interp) inspectBuiltin(v object.Value) (string, error) {
