@@ -104,13 +104,16 @@ func (v *span) get(k string, key Value) (Value, bool) {
 	if v.len == 0 {
 		return Value{}, false
 	}
-	v.t.mu.RLock()
-	defer v.t.mu.RUnlock()
-	p := v.t.latest(k, key, v.n)
-	if p < 0 || v.t.entries[p].gone {
+	t := v.t
+	t.mu.RLock()
+	p := t.latest(k, key, v.n)
+	if p < 0 || t.entries[p].gone {
+		t.mu.RUnlock()
 		return Value{}, false
 	}
-	return v.t.entries[p].val, true
+	val := t.entries[p].val
+	t.mu.RUnlock()
+	return val, true
 }
 
 // getBytes is get for a key in bytes, which a lookup need not make a
@@ -119,21 +122,20 @@ func (v *span) getBytes(k []byte) (Value, bool) {
 	if v.len == 0 {
 		return Value{}, false
 	}
-	v.t.mu.RLock()
-	defer v.t.mu.RUnlock()
-	p, ok := v.t.index[string(k)]
-	if !ok {
+	t := v.t
+	t.mu.RLock()
+	p, ok := t.index[string(k)]
+	for ok && p >= v.n {
+		p = t.entries[p].prev
+		ok = p >= 0
+	}
+	if !ok || t.entries[p].gone {
+		t.mu.RUnlock()
 		return Value{}, false
 	}
-	for p >= v.n {
-		if p = v.t.entries[p].prev; p < 0 {
-			return Value{}, false
-		}
-	}
-	if v.t.entries[p].gone {
-		return Value{}, false
-	}
-	return v.t.entries[p].val, true
+	val := t.entries[p].val
+	t.mu.RUnlock()
+	return val, true
 }
 
 // with returns the version after setting key (whose canonical form is k)
