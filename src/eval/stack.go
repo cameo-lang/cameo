@@ -150,8 +150,9 @@ func (in *Interp) run(floor int) (object.Value, error) {
 				continue
 			}
 		}
-		// The lists an instruction of flat code entered were left: a
-		// break, next or redo goes to the loop the instruction is in.
+		// An instruction of flat code was left by a completion, or the
+		// lists it entered or the call it made were: a loop or a BEGIN
+		// the instruction is in may take it.
 		if err != nil && m.flat != nil {
 			if err = m.flatTakes(err); err == nil {
 				continue
@@ -298,7 +299,7 @@ func (in *Interp) leave(m *machine, v object.Value, err error) (object.Value, er
 		if c, ok := err.(*control); ok && c.kind == ctrlRedo && c.target == nil {
 			if err = in.stopped(); err == nil {
 				m.stack = m.stack[:0]
-				m.flat, m.bases = nil, nil
+				m.flat, m.bases, m.tries = nil, nil, nil
 				m.startAt(in.flatOfProc(p.IR), p.IR.proc.GetCode(), true)
 				m.again = true
 				return object.Value{}, nil

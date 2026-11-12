@@ -290,12 +290,31 @@ it in one array, with jumps where the IR has lists.
 | `CASE` | per when its conditions, a test, its body; then the else |
 | `INTERP{part...}` | each part, and an instruction that adds it to the string |
 | an instruction without lists | itself, run by `machine.exec` as from a cursor |
-| `BEGIN`, `CASE_IN`, a `REGEXP` with parts, `defined?` of an expression | itself: it enters its list, and the activation runs from cursors until none is left |
+| `BEGIN` | its body, its else, per rescue clause its classes, a test and its body, then its ensure |
+| `CASE_IN`, a `REGEXP` with parts, `defined?` of an expression | itself: it enters its list, and the activation runs from cursors until none is left |
 
 An activation that runs flat code has an index into it in place of
 cursors, and the height of the value stack at the start of each loop it
 is in. `runFlat` runs it until the activation ends, a call becomes the
 activation that runs, or a pause is asked for.
+
+A completion that leaves an instruction of flat code is taken by a
+**scope**. Each instruction names the innermost scope it is in: the body
+of a loop, or one list of a `BEGIN`. The scopes of a list are a tree
+made when it is lowered, so nothing is pushed when a body or a `begin`
+is entered. `flatTakes` walks from the scope of the instruction that was
+left outwards: the body of a loop takes a `break`, a `next` and a `redo`;
+the body of a `BEGIN` sends an exception to the first rescue clause that
+may fit; a rescue clause takes `retry`; and every list of a `BEGIN` but
+its ensure sends what it does not take through the ensure, which hands
+it on when it ends. A `break`, `next` or `redo` is a jump only when no
+list of a `BEGIN` lies between it and its loop; otherwise it is a
+completion, and the scopes take it.
+
+An activation keeps per `BEGIN` it is in what a cursor of the `BEGIN`
+keeps: the height of the stack when it started, the exception a clause
+handles, and what its ensure interrupted. A `begin` that nothing is
+raised in costs one instruction that notes the height of the stack.
 
 The unit and the dump do not know of flat code. Each flat instruction
 that is where an instruction of the IR starts remembers that
