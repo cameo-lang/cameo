@@ -2,6 +2,7 @@ package stdlib
 
 import (
 	"math/big"
+	"slices"
 
 	"github.com/cameo-lang/cameo/src/object"
 )
@@ -116,6 +117,12 @@ func installList() {
 				lo, hi, err := valuesAtBounds(ctx, r, int64(len(es)))
 				if err != nil {
 					return object.Value{}, err
+				}
+				// The elements the list has are taken as one piece, with
+				// room made for them once; the rest are nil.
+				if in := min(hi+1, int64(len(es))); lo >= 0 && lo < in {
+					out = append(slices.Grow(out, int(in-lo)), es[lo:in]...)
+					lo = in
 				}
 				for i := lo; i <= hi; i++ {
 					out = append(out, at(i))
