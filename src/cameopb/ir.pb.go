@@ -90,6 +90,10 @@ const (
 	// SCOPED: `::Name`; no scope is popped.
 	Flag_FLAG_TOP Flag = 268435456
 	// REGEXP: no part is interpolated, so the regexp is made once.
+	// LIST, MAP: every element, key and value is a literal, so the list or
+	// the map is one value. The elements of the LIST are the CONST and SYM
+	// before it; the entries of the MAP are the instructions after it, a
+	// value, a key and a MAP_SET for each.
 	Flag_FLAG_STATIC Flag = 536870912
 )
 
