@@ -85,6 +85,11 @@ type breakpoint struct {
 func (in *Interp) Debug(console io.Reader, out io.Writer, source string, stop bool) *Debugger {
 	if in.dbg == nil {
 		in.dbg = &Debugger{in: in, console: bufio.NewScanner(console), out: out}
+		// The debugger shows the calls that led to where the run is, a
+		// call that made a tail call too.
+		if in.tailFrames == 0 {
+			in.tailFrames = TailFramesKept
+		}
 		in.dbg.console.Buffer(make([]byte, 1<<20), 1<<20)
 		// With the debugger on, debugger and binding.break are defined
 		// as if the script had required "debug".
@@ -144,6 +149,14 @@ func (d *Debugger) leave() {
 		return
 	}
 	d.stack = d.stack[:len(d.stack)-1]
+}
+
+// drop removes the frame that has above frames above it: the frame of a
+// call that made a tail call and is kept no longer.
+func (d *Debugger) drop(above int) {
+	if i := len(d.stack) - 1 - above; !d.evaluating && i >= 0 {
+		d.stack = append(d.stack[:i], d.stack[i+1:]...)
+	}
 }
 
 // depth is how many frames are on the stack.

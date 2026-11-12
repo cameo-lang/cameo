@@ -618,7 +618,8 @@ func plainConstant(c *cameopb.Code) (object.Value, bool) {
 // and the next instruction is one a run pauses before. It returns the
 // completion that leaves the activation.
 func (m *machine) runFlat() error {
-	in, code, lay := m.in, m.flat.code, m.flat.layout
+	in, flat := m.in, m.flat
+	code, lay := flat.code, flat.layout
 	yield, started := in.pausing.flag.Load(), false
 	for m.pc < len(code) {
 		ins := &code[m.pc]
@@ -779,7 +780,9 @@ func (m *machine) runFlat() error {
 			if err := m.exec(ins.src); err != nil {
 				return err
 			}
-			if in.acts[len(in.acts)-1] != m {
+			// A call became the activation that runs, or a tail call
+			// made this one run other code (tailLoop).
+			if in.acts[len(in.acts)-1] != m || m.flat != flat {
 				return nil
 			}
 			yield = in.pausing.flag.Load()

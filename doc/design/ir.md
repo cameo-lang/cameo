@@ -356,6 +356,19 @@ arguments it passes on, since the method it reaches may keep them.
 Under a debugger, which holds frames and scopes to show them, every
 call allocates its own.
 
+**Tail calls.** The compiler sets `FLAG_TAIL` on a `SEND` whose value
+is the value of its proc (`ir/tail.go`; [cameo.md](cameo.md#tail-calls)
+has the rules). The activation such a call makes takes the place of the
+one that made it (`pushCall`): it gets the caller's call site and the
+value the caller was to hand on, and the caller's machine is released.
+A method whose frame and scope are its machine's own runs the method it
+tail-calls in that machine itself (`tailLoop`): the arguments move to
+the bottom of the stack, the frame and the scope are made anew, and the
+activation goes on at the start of the other method's flat code. With
+`KeepTailFrames`, and under a debugger, a tail call is pushed as any
+call, the caller is marked as only passing a value on, and the oldest of
+a row of such callers longer than the number kept is dropped.
+
 The unit and the dump do not know of flat code. Each flat instruction
 that is where an instruction of the IR starts remembers that
 instruction, the list it is in and the lists around that one. A run

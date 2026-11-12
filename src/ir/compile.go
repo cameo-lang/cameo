@@ -128,7 +128,11 @@ func (c *compiler) proc(name string, params *syntax.Params, body []syntax.Node, 
 
 // block compiles a literal block or a lambda's body into a proc.
 func (c *compiler) block(b *syntax.Block) (uint32, error) {
-	return c.proc("block", &b.Params, b.Body, b.Line(), b.Shared)
+	index, err := c.proc("block", &b.Params, b.Body, b.Line(), b.Shared)
+	if err == nil && !b.Shared {
+		markTail(c.unit.Procs[index].Code, false)
+	}
+	return index, err
 }
 
 func (c *compiler) params(p *syntax.Params) (*cameopb.Params, error) {
@@ -470,6 +474,7 @@ func (c *compiler) expr(e *emitter, n syntax.Node) error {
 		if err != nil {
 			return err
 		}
+		markTail(c.unit.Procs[index].Code, true)
 		e.emit(cameopb.Op_DEF, line, c.nameArg(n.Name), procArg(index)).Flags = flag(cameopb.Flag_FLAG_SINGLETON, n.Singleton)
 	case *syntax.ClassDef:
 		flags, err := c.scope(e, n.Scope)

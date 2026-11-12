@@ -47,6 +47,9 @@ type Interp struct {
 	// free is machines of activations that ended, which the next calls
 	// run on (machine.go).
 	free []*machine
+	// tailFrames is how many activations that made a tail call are kept
+	// in a row, 0 for none (KeepTailFrames).
+	tailFrames int
 	// paramsBy is the parameter lists of the procs the interpreter
 	// called, by unit and index; paramsUnit and paramsList are the unit
 	// asked for last and its lists (paramsOf).

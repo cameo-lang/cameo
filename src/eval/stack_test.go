@@ -12,13 +12,15 @@ import (
 
 // probed runs src with a module Probe whose method state prints how many
 // activations the interpreter is running and in how many loops, and
-// returns what the script printed.
+// returns what the script printed. The interpreter keeps the activation
+// that makes a tail call, so that each call the script makes is counted.
 func probed(t *testing.T, src string) string {
 	t.Helper()
 	prog, err := syntax.Parse("t.cameo", src)
 	assert.NoError(t, err)
 	var out bytes.Buffer
 	in := New(&out, &out)
+	in.KeepTailFrames(TailFramesKept)
 	probe := object.NewModule("Probe")
 	probe.DefineSingleton("state", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		in := ctx.(*Interp)
@@ -87,7 +89,7 @@ p (1.times { raise "out" } rescue "rescued")
 func TestRecursionIsBoundedByACountNotByTheGoStack(t *testing.T) {
 	prints(t, `def count(n) = n == 0 ? 0 : 1 + count(n - 1)
 p count(150_000)
-def forever(n) = forever(n + 1)
+def forever(n) = 1 + forever(n + 1)
 begin
   forever(0)
 rescue SystemStackError => e
@@ -145,4 +147,127 @@ rescue => e
   p [e.message, e.class]
 end
 `, "each3 done\n2\neach3 done\n20\neach3 done\n3\n:deep\n2\n3\n\"unexpected return\"\npass 1\npass 2\npass 2\npass 3\neach3 done\n3\n[\"from raiser\", ArgumentError]\n")
+}
+
+// A tail call does not keep the call that makes it: a method that calls
+// itself, or two that call each other, a million calls deep run in a
+// stack that does not grow. The call may pass keywords, be made in a
+// method with more variables than a scope holds, in a method with a
+// block in it, by a lambda that calls itself, or be new. A block that
+// returns from its method, a call under an ensure and a call whose
+// value is used are as they were.
+func TestTailCallsKeepNoFrame(t *testing.T) {
+	prints(t, `def count(n, acc)
+  return acc if n == 0
+  count(n - 1, acc + 1)
+end
+def even?(n) = n == 0 ? true : odd?(n - 1)
+def odd?(n) = n == 0 ? false : even?(n - 1)
+class Walker
+  int :limit
+  def walk(n, seen)
+    if n >= limit
+      seen
+    else
+      step(n, seen)
+    end
+  end
+  def step(n, seen)
+    extra = [n].map { |v| v % 7 == 0 ? 1 : 0 }.sum
+    walk(n + 1, seen + extra)
+  end
+end
+def with_keywords(n, total: 0)
+  return total if n == 0
+  with_keywords(n - 1, total: total + n)
+end
+def wide(n, a, b, c, d, e)
+  f = a + b
+  return f + c + d + e if n == 0
+  wide(n - 1, b, c, d, e, f % 10)
+end
+def find_first(list)
+  list.each { |x| return x * 2 if x > 2 }
+end
+def builds(n) = Walker.new(limit: n)
+def through_lambda(n)
+  step = ->(k, acc) { k == 0 ? acc : step.call(k - 1, acc + 2) }
+  step.call(n, 0)
+end
+def guarded(n)
+  begin
+    n == 0 ? :done : guarded(n - 1)
+  ensure
+    nil
+  end
+end
+def not_tail(n) = n == 0 ? 0 : 1 + not_tail(n - 1)
+p count(1_000_000, 0), even?(300_001), odd?(300_001)
+p Walker.new(limit: 200_000).walk(0, 0), with_keywords(100_000), wide(300_000, 1, 2, 3, 4, 5)
+p find_first([1, 2, 3, 4]), builds(3).walk(0, 0), through_lambda(300_000)
+p guarded(1000), not_tail(1000)
+p [1, 2, 3].map { |x| count(x, 10) }
+`, "1000000\nfalse\ntrue\n28572\n5000050000\n24\n6\n1\n600000\n:done\n1000\n[11, 12, 13]\n")
+}
+
+// A method that calls itself in tail position is a loop in one
+// activation, whatever the depth; a tail call of another kind takes the
+// place of its caller. With KeepTailFrames the calls stay, a row of them
+// no longer than the number kept.
+func TestTailCallsAndTheActivationsTheyKeep(t *testing.T) {
+	src := `def down(n) = n == 0 ? Probe.state : down(n - 1)
+def hop(n) = n == 0 ? Probe.state : skip(n - 1, k: 1)
+def skip(n, k:) = hop(n)
+down(1000)
+hop(1000)
+[1].each { |x| down(x) }
+`
+	run := func(keep int) string {
+		prog, err := syntax.Parse("t.cameo", src)
+		assert.NoError(t, err)
+		var out bytes.Buffer
+		in := New(&out, &out)
+		in.KeepTailFrames(keep)
+		probe := object.NewModule("Probe")
+		probe.DefineSingleton("state", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+			fmt.Fprintf(&out, "%d activations\n", len(ctx.(*Interp).acts))
+			return object.Nil, nil
+		})
+		in.SetConst("Probe", object.ClassValue(probe))
+		assert.NoError(t, in.Run("t.cameo", prog))
+		return out.String()
+	}
+	// The statement and the one call that runs; inside each, the
+	// stepper, its block's place and the call.
+	assert.Equals(t, run(0), "2 activations\n2 activations\n3 activations\n")
+	// The statement, the row that is kept, and the call that runs. A
+	// row is cut back to the number kept when it is a quarter longer,
+	// so it is that number or up to a quarter more.
+	kept := func(out string) (first, second, third int) {
+		_, err := fmt.Sscanf(out, "%d activations\n%d activations\n%d activations\n", &first, &second, &third)
+		assert.NoError(t, err)
+		return first - 2, second - 2, third
+	}
+	for _, keep := range []int{4, TailFramesKept} {
+		first, second, third := kept(run(keep))
+		assert.True(t, first >= keep && first <= keep+keep/4, fmt.Sprint(first))
+		assert.True(t, second >= keep && second <= keep+keep/4, fmt.Sprint(second))
+		assert.Equals(t, third, 5)
+	}
+}
+
+// A block written in a method that made a tail call has nowhere to
+// return to once it is called: the method ended with its tail call.
+func TestAProcReturnsToNoMethodThatMadeATailCall(t *testing.T) {
+	prints(t, `def later(pr) = pr.call
+def early
+  pr = proc { return 1 }
+  later(pr)
+end
+begin
+  early
+rescue LocalJumpError => e
+  p e.message
+end
+`, "\"unexpected return\"\n")
 }

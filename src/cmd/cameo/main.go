@@ -31,6 +31,10 @@ const usage = `usage: cameo [--no-pause] [--io] <script.cameo> [args...]
        cameo --ignore-mutation-errors <script.cameo>
                                          run it, a call of Ruby's mutators such as push returning its
                                          result on a copy instead of raising; resume takes it too
+       cameo --keep-tail-frames <script.cameo>
+                                         run it, a call that makes a tail call staying on the stack, the
+                                         last 256 of a row, so that a dump shows the calls that led to
+                                         where the script paused; resume takes it too
        cameo inspect <dump>              show what a dump holds: where the script paused, its variables,
                                          constants and promises
        cameo [--io] irb [script.cameo]   evaluate lines typed in, at the top level of the script when one is given
@@ -64,7 +68,7 @@ func tuneGC() {
 // the script ran or checked, 1 when it failed, 2 when the command line is
 // wrong.
 func run(args []string) int {
-	pause, ignoreMutations := true, false
+	pause, ignoreMutations, keepTail := true, false, false
 	var io []string
 flags:
 	for len(args) > 0 {
@@ -73,6 +77,8 @@ flags:
 			pause = false
 		case args[0] == "--ignore-mutation-errors":
 			ignoreMutations = true
+		case args[0] == "--keep-tail-frames":
+			keepTail = true
 		case strings.HasPrefix(args[0], "--io"):
 			allow, rest, err := cameo.ParseIOFlags(args)
 			if err != nil {
@@ -116,7 +122,7 @@ flags:
 		}
 		return 0
 	case len(args) == 2 && args[0] == "resume":
-		return resume(args[1], io, pause, ignoreMutations, os.Stdout, os.Stderr)
+		return resume(args[1], io, pause, ignoreMutations, keepTail, os.Stdout, os.Stderr)
 	case (len(args) == 1 || len(args) == 2) && args[0] == "irb":
 		path := ""
 		if len(args) == 2 {
@@ -140,7 +146,7 @@ flags:
 		if len(argv) > 0 && argv[0] == "--" {
 			argv = argv[1:]
 		}
-		return runScript(args[0], argv, io, pause, ignoreMutations, os.Stdout, os.Stderr)
+		return runScript(args[0], argv, io, pause, ignoreMutations, keepTail, os.Stdout, os.Stderr)
 	default:
 		fmt.Fprintln(os.Stderr, usage)
 		return 2

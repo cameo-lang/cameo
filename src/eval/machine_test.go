@@ -55,7 +55,7 @@ func TestAReleasedMachineIsAsNew(t *testing.T) {
 	m.bases, m.tries = append(m.bases, 1), append(m.tries, try{base: 1, pending: ErrStopped})
 	m.flat, m.pc, m.flatBody, m.again = &flatCode{}, 3, true, true
 	m.kind, m.proc, m.site, m.debugged, m.stepper = actBlock, &Proc{}, &cameopb.Code{}, true, &stepping{}
-	m.result, m.wait, m.inGo = object.Int(2), &awaiting{}, 1
+	m.result, m.wait, m.inGo, m.passing, m.row = object.Int(2), &awaiting{}, 1, true, 1
 	// Every field is set to something: a field added to machine is to
 	// be set here, and reset in release.
 	set := reflect.ValueOf(m).Elem()

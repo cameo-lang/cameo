@@ -342,22 +342,10 @@ func (in *Interp) leave(m *machine, v object.Value, err error) (object.Value, er
 	return v, err
 }
 
-// methodAct makes the activation of a call of the method m, which a
-// script defined, with its parameters bound.
-func (in *Interp) methodAct(m *object.Method, recv object.Value, args []object.Value, kw *object.Map, block object.Value, line int) (*machine, error) {
-	if err := in.stopped(); err != nil {
-		return nil, err
-	}
-	code := m.Body.(*irProc)
-	act, ps := in.machine(), in.paramsOf(code)
-	// The frame and the scope of a call that keeps neither are the
-	// machine's own, which the next call it runs uses again. Under a
-	// debugger, which keeps both while it shows them, they are not.
-	bound := &act.own
-	if !ps.contained || in.dbg != nil {
-		bound = &activation{}
-	}
-	bound.frame = Frame{
+// frame makes fr the frame of a call of the method m, whose code is
+// code.
+func (in *Interp) frame(fr *Frame, m *object.Method, recv object.Value, args []object.Value, kw *object.Map, block object.Value, code *irProc) {
+	*fr = Frame{
 		Self:    recv,
 		Method:  m,
 		Owner:   m.Owner,
@@ -367,7 +355,6 @@ func (in *Interp) methodAct(m *object.Method, recv object.Value, args []object.V
 		Lexical: m.Lexical,
 		File:    m.File,
 	}
-	fr, env := &bound.frame, &bound.env
 	if len(m.Lexical) > 0 {
 		fr.DefTarget = m.Lexical[len(m.Lexical)-1]
 	} else {
@@ -380,6 +367,144 @@ func (in *Interp) methodAct(m *object.Method, recv object.Value, args []object.V
 			fr.BuildingExc = exc
 		}
 	}
+}
+
+// TailFramesKept is how many activations that made a tail call are kept
+// in a row under a debugger, and what cameo --keep-tail-frames keeps.
+const TailFramesKept = 256
+
+// KeepTailFrames makes the interpreter keep the activation that makes a
+// tail call, up to n of them in a row: the debugger and a dump then show
+// the calls that led to where the run is. Beyond n the oldest is dropped,
+// so a loop of tail calls still runs in a stack that does not grow. With
+// 0, which is how an interpreter starts, a tail call keeps none.
+func (in *Interp) KeepTailFrames(n int) { in.tailFrames = n }
+
+// pushCall makes act, the activation of a call the instruction c of m
+// makes, the activation that runs. A tail call (FLAG_TAIL) of a method,
+// a block or a lambda takes the place of m: its value is the value of m,
+// so it goes to the caller of m, and m does not stay on the stack. A
+// method that was given a block stays (givenBlock).
+func (in *Interp) pushCall(m, act *machine, c *cameopb.Code) error {
+	top := len(in.acts) - 1
+	if !has(c, cameopb.Flag_FLAG_TAIL) || m.kind == actList || top < 0 || in.acts[top] != m || m.givenBlock() {
+		return in.pushAct(act, c)
+	}
+	if in.tailFrames > 0 {
+		// The activation is kept to be shown, and the oldest of a row
+		// of them that is too long is dropped.
+		m.passing, m.row = true, 1
+		// Its frame has ended for a block written in it, as it has
+		// when the activation does not stay: a script runs the same
+		// either way.
+		m.endFrame()
+		if top > 0 && in.acts[top-1].passing {
+			m.row = in.acts[top-1].row + 1
+		}
+		if err := in.pushAct(act, c); err != nil {
+			return err
+		}
+		// A row is cut back to the number kept once it is a quarter
+		// longer, so that the cut is not made for every call.
+		if spare := in.tailFrames/4 + 1; m.row >= in.tailFrames+spare {
+			in.dropActs(top+1-m.row, spare)
+		}
+		return nil
+	}
+	in.endsEarly(m, 0)
+	act.site = m.site
+	if !m.result.IsZero() {
+		act.result = m.result
+	}
+	in.acts[top] = act
+	in.release(m)
+	return nil
+}
+
+// dropActs removes the n activations from index i on, the oldest of a
+// row that made tail calls and were kept: the activation above them
+// hands its value to the one below.
+func (in *Interp) dropActs(i, n int) {
+	above := in.acts[i+n]
+	debugged := 0
+	for _, act := range in.acts[i+n:] {
+		if act.debugged {
+			debugged++
+		}
+	}
+	// The newest of them first: the debugger's frame of each is then
+	// the one right under the frames of what stays.
+	for j := i + n - 1; j >= i; j-- {
+		m := in.acts[j]
+		in.endsEarly(m, debugged)
+		above.site = m.site
+		if !m.result.IsZero() {
+			above.result = m.result
+		}
+		in.release(m)
+	}
+	copy(in.acts[i:], in.acts[i+n:])
+	clear(in.acts[len(in.acts)-n:])
+	in.acts = in.acts[:len(in.acts)-n]
+	for j := i; j < len(in.acts) && in.acts[j].passing; j++ {
+		in.acts[j].row -= n
+	}
+}
+
+// endsEarly does what the end of the activation m does besides handing
+// on a value (leave), for one that made a tail call and does not stay:
+// its frame has ended, so a block written in it has nowhere to return
+// to. above is how many frames the debugger has above the one of m.
+func (in *Interp) endsEarly(m *machine, above int) {
+	if m.debugged {
+		in.dbg.drop(above)
+	}
+	m.endFrame()
+	if m.kind == actMethod && len(m.env.promises) > 0 {
+		in.promises.end(m.env.promises)
+	}
+}
+
+// endFrame marks the frame of m, a method or a lambda that made a tail
+// call, as ended: a block written in it has nowhere to return to.
+func (m *machine) endFrame() {
+	switch m.kind {
+	case actMethod:
+		m.fr.ended = true
+	case actBlock:
+		if m.proc.Strict {
+			m.fr.ended = true
+		}
+	}
+}
+
+// givenBlock returns whether m is a method that was given a block. Such
+// a method makes no tail call: a break out of the block ends the method,
+// which has to be on the stack for it.
+func (m *machine) givenBlock() bool {
+	return m.kind == actMethod && m.fr.Block.Kind() == object.KindProc
+}
+
+// methodAct makes the activation of a call of the method m, which a
+// script defined, with its parameters bound.
+func (in *Interp) methodAct(m *object.Method, recv object.Value, args []object.Value, kw *object.Map, block object.Value, line int) (*machine, error) {
+	if err := in.stopped(); err != nil {
+		return nil, err
+	}
+	code := m.Body.(*irProc)
+	act, ps := in.machine(), in.paramsOf(code)
+	if ps.layout == nil {
+		panic("eval: a proc without a layout")
+	}
+	// The frame and the scope of a call that keeps neither are the
+	// machine's own, which the next call it runs uses again. Under a
+	// debugger, which keeps both while it shows them, they are not.
+	bound := &act.own
+	if !ps.contained || in.dbg != nil {
+		bound = &activation{}
+	}
+	fr, env := &bound.frame, &bound.env
+	in.frame(fr, m, recv, args, kw, block, code)
 	act.unit, act.env, act.fr, act.kind = code.unit, env, fr, actMethod
 	act.lay(env, ps.layout)
 	if err := in.bindParams(ps, args, kw, block, env, fr, true, m.Name, line); err != nil {
