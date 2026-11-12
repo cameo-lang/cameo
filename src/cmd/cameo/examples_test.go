@@ -75,7 +75,7 @@ func TestIRPrintsAListing(t *testing.T) {
 	want := `proc #0 <main>
   CONST 1
   CONST 2
-  LIST 2
+  LIST 2 static
   STORE list
   DROP
   LOAD list

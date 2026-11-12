@@ -281,10 +281,31 @@ func (c *compiler) expr(e *emitter, n syntax.Node) error {
 			code.Code = append(code.Code, s)
 		}
 	case *syntax.List:
-		_, _, err := c.args(e, n.Elems, line, true)
-		return err
+		if _, _, err := c.args(e, n.Elems, line, true); err != nil {
+			return err
+		}
+		// A list of literals is one value, whenever it is made: the
+		// LIST says so, and the elements are the instructions before it.
+		static := true
+		for _, el := range n.Elems {
+			static = static && literal(el)
+		}
+		e.code[len(e.code)-1].Flags |= flag(cameopb.Flag_FLAG_STATIC, static)
+		return nil
 	case *syntax.Map:
-		return c.mapEntries(e, n.Entries, line)
+		at := len(e.code)
+		if err := c.mapEntries(e, n.Entries, line); err != nil {
+			return err
+		}
+		// A map of literals likewise: the MAP says so, and its entries
+		// are the instructions after it, a value, a key and a MAP_SET
+		// for each.
+		static := true
+		for _, entry := range n.Entries {
+			static = static && entry.Key != nil && literal(entry.Key) && literal(entry.Value)
+		}
+		e.code[at].Flags |= flag(cameopb.Flag_FLAG_STATIC, static)
+		return nil
 	case *syntax.Range:
 		var flags uint64
 		if n.Lo != nil {
@@ -864,6 +885,18 @@ func (c *compiler) shortCircuit(e *emitter, op cameopb.Op, left, right syntax.No
 	}
 	e.emit(op, line).Code = []*cameopb.Seq{r}
 	return nil
+}
+
+// literal reports whether n is a literal that compiles to one CONST or
+// SYM whose value is the same whenever it runs.
+func literal(n syntax.Node) bool {
+	switch n := n.(type) {
+	case *syntax.Nil, *syntax.Bool, *syntax.Int, *syntax.Float, *syntax.Sym:
+		return true
+	case *syntax.Str:
+		return utf8.ValidString(n.Value)
+	}
+	return false
 }
 
 // args compiles a list of expressions. Without a splat each leaves its

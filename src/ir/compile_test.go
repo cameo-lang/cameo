@@ -49,7 +49,7 @@ func TestCompileLiterals(t *testing.T) {
 func TestCompileBuildsAListWithASplatPieceByPiece(t *testing.T) {
 	assert.Equals(t, listing(t, "a = [1]\nb = [0, *a, 2]\n"), `proc #0 <main>
   CONST 1
-  LIST 1
+  LIST 1 static
   STORE a
   DROP
   LIST 0
@@ -65,7 +65,7 @@ func TestCompileBuildsAListWithASplatPieceByPiece(t *testing.T) {
 
 func TestCompileAMapEvaluatesEachValueBeforeItsKey(t *testing.T) {
 	assert.Equals(t, listing(t, "h = {a: 1}\ng = {\"k\" => 2, **h}\n"), `proc #0 <main>
-  MAP 1
+  MAP 1 static
   CONST 1
   SYM a
   MAP_SET
@@ -126,7 +126,7 @@ d = foo(*a, k: 1, &b)
 e = "#{b} and #{c}"
 `), `proc #0 <main>
   CONST 3
-  LIST 1
+  LIST 1 static
   STORE a
   DROP
   LOAD a
