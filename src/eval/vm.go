@@ -111,10 +111,15 @@ type machine struct {
 	// list is one of statements (flat.go). tries is what it keeps of each
 	// BEGIN it is in. again is set when the block of the activation is to
 	// run once more, for a redo.
-	flat     *flatCode
-	pc       int
-	bases    []int
-	tries    []try
+	flat  *flatCode
+	pc    int
+	bases []int
+	tries []try
+	// own is the frame and the scope of a call of a method that keeps
+	// neither (params.contained), and spare the slots of its scope
+	// beyond the ones the scope holds itself.
+	own      activation
+	spare    []object.Value
 	flatBody bool
 	again    bool
 	// kind says what the activation is, and proc is the block of an
@@ -480,7 +485,9 @@ func (m *machine) exec(c *cameopb.Code) error {
 			}
 			block = v
 		}
-		args, kw := fr.Args, fr.Kw
+		// The arguments a method was called with may be on the stack of
+		// its caller (send); the method super reaches may keep them.
+		args, kw := append([]object.Value(nil), fr.Args...), fr.Kw
 		if !has(c, cameopb.Flag_FLAG_FORWARD) {
 			args, kw = m.callArgs(c, 0)
 		}
@@ -688,6 +695,11 @@ func (m *machine) binary(c *cameopb.Code) error {
 // send runs a SEND: a method call.
 func (m *machine) send(c *cameopb.Code) error {
 	in, fr := m.in, m.fr
+	if c.Flags&^sendPlain == 0 && len(c.Args) == 2 {
+		if called, err := m.sendContained(c); called {
+			return err
+		}
+	}
 	name, line := m.name(c, 0), int(c.Line)
 	var block object.Value
 	if has(c, cameopb.Flag_FLAG_BLOCK_ARG) {
@@ -722,6 +734,50 @@ func (m *machine) send(c *cameopb.Code) error {
 		}
 	}
 	return m.call(c, in.lookupSym(recv, m.sym(c, 0), selfCall), recv, name, args, kw, block, has(c, cameopb.Flag_FLAG_VCALL), selfCall || has(c, cameopb.Flag_FLAG_PRIVATE), line)
+}
+
+// sendPlain is the flags of a SEND that sendContained may run: a call
+// with positional arguments alone and no block.
+const sendPlain = uint64(cameopb.Flag_FLAG_SELF | cameopb.Flag_FLAG_VCALL | cameopb.Flag_FLAG_PRIVATE)
+
+// sendContained runs a SEND with positional arguments alone when it
+// calls a method a script defined whose calls keep neither their frame
+// nor their scope (params.contained). The arguments are not copied off
+// the stack: the call reads them where the caller pushed them, above
+// the top of the caller's stack, which nothing writes to until the call
+// ended. It reports false when the call is another kind, and has done
+// nothing then.
+func (m *machine) sendContained(c *cameopb.Code) (bool, error) {
+	in := m.in
+	if m.inGo != 0 || in.dbg != nil {
+		return false, nil
+	}
+	selfCall := has(c, cameopb.Flag_FLAG_SELF)
+	argc, n := int(c.Args[1].GetInt()), len(m.stack)
+	recv, base := m.fr.Self, n-argc
+	if !selfCall {
+		if m.mayMutate(c) {
+			return false, nil
+		}
+		base--
+		recv = m.stack[base]
+	}
+	meth := in.lookupSym(recv, m.sym(c, 0), selfCall)
+	if !in.runs(meth, selfCall || has(c, cameopb.Flag_FLAG_PRIVATE)) || meth.Owner == object.EnumeratorClass {
+		return false, nil
+	}
+	code := meth.Body.(*irProc)
+	if ps := in.paramsOf(code); !ps.contained || !ps.plain || len(ps.Positional) != argc {
+		return false, nil
+	}
+	args := m.stack[n-argc : n : n]
+	m.stack = m.stack[:base]
+	line := int(c.Line)
+	act, err := in.methodAct(meth, recv, args, nil, object.Value{}, line)
+	if err == nil {
+		err = in.pushAct(act, c)
+	}
+	return true, withLine(err, line)
 }
 
 // call calls the method meth, which lookup found for name on recv, for
