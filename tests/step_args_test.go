@@ -54,8 +54,7 @@ b=2
 // The evaluator does the steps of a walk and of a count itself, from
 // the second on, with the index or the Integer as a number of its own.
 // What the builtins return, where they stop, and what they call the
-// block with is as when the stepper does every step: this output is
-// the one from before the evaluator did.
+// block with is as when the stepper does every step.
 func TestWalksAndCountsTheEvaluatorSteps(t *testing.T) {
 	out := runScript(t, `
 p (1..).each { |i| break i if i > 3 }
@@ -134,9 +133,9 @@ p 1.step(10, 3) { |i| p i }
 :c
 3
 {a: 2, b: 4, c: 6}
-:a
-:b
-:c
+[:a, 1]
+[:b, 2]
+[:c, 3]
 3
 [[:a, 2], [:b, 4], [:c, 6]]
 0

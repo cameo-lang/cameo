@@ -390,6 +390,7 @@ func (in *Interp) stepOn(m *machine, err error) (v object.Value, called bool, _ 
 			if s.Yield, s.Done, more, s.Value, err = in.stepped(st); more {
 				continue
 			}
+			s.Packed = st.walk != nil && st.walk.Packed
 		} else if s, err = st.builtin.Step(in, st.call, st.state, st.got); err == nil && !s.Done {
 			st.state, st.rescue, st.got = s.State, s.Rescue, object.Got{}
 		}
@@ -410,6 +411,12 @@ func (in *Interp) stepOn(m *machine, err error) (v object.Value, called bool, _ 
 			if p, ok := asProc(block); ok && p.written() {
 				st.proc, st.ps, st.flat = p, in.paramsOf(p.IR), in.flatOfProc(p.IR)
 			}
+		}
+		// The elements of the one value the block is called with are
+		// its arguments as they are for a block with a parameter for
+		// each; any other block gets the value, a list of them.
+		if s.Packed && (st.proc == nil || !st.ps.plain || len(st.ps.Positional) != len(s.Yield)) {
+			s.Yield = []object.Value{object.NewList(append([]object.Value(nil), s.Yield...)...)}
 		}
 		// A stepper whose steps are all alike says so at its first:
 		// the steps after it are the evaluator's, for a block a script

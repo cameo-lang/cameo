@@ -152,7 +152,8 @@ func installFolds() {
 			return object.MapValue(groups.Map()), nil
 		},
 	})
-	// each_slice and each_cons walk the slices and the windows.
+	// each_slice and each_cons walk the slices and the windows, and
+	// return the receiver, as Ruby's do since 3.1.
 	parts := func(cut func(elems []object.Value, n int) []object.Value) walk {
 		return walk{
 			elems: func(ctx object.Context, call *object.Call) ([]object.Value, []object.Value, error) {
@@ -162,9 +163,6 @@ func installFolds() {
 				}
 				elems, err := ToList(ctx, call.Self)
 				return cut(elems, n), nil, err
-			},
-			done: func(ctx object.Context, call *object.Call, st []object.Value) (object.Value, error) {
-				return object.Nil, nil
 			},
 		}
 	}
