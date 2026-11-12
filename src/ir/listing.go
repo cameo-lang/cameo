@@ -14,7 +14,7 @@ import (
 
 // Version is the IR version this cameo compiles to and runs. A dump is
 // resumed by a cameo of the same version.
-const Version = 2
+const Version = 3
 
 // Listing returns a unit as text, one instruction per line, the lists an
 // instruction carries indented under it:

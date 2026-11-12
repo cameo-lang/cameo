@@ -129,6 +129,16 @@ func (p *Program) Args(args []string) {
 // receiver never changes either way.
 func (p *Program) IgnoreMutationErrors(ignore bool) { p.in.IgnoreMutationErrors = ignore }
 
+// KeepTailFrames makes the program keep the call that makes a tail call
+// on its stack, up to n of them in a row, so that the debugger and a dump
+// show the calls that led to where the run is. A tail call keeps none
+// otherwise. TailFramesKept is the number the cameo command keeps.
+func (p *Program) KeepTailFrames(n int) { p.in.KeepTailFrames(n) }
+
+// TailFramesKept is how many calls in a row cameo --keep-tail-frames
+// keeps.
+const TailFramesKept = eval.TailFramesKept
+
 // Terminal gives the program e, which Cameo::Kernel::Readline.readline reads
 // lines from; without one, readline returns nil. Call it before the program
 // runs.

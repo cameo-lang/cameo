@@ -399,10 +399,10 @@ proc #2 <class:Point>
   ALIAS size norm
 
 proc #3 zero
-  SEND new 0 self vcall
+  SEND new 0 self vcall tail
 
 proc #4 norm
-  SEND x 0 self vcall
+  SEND x 0 self vcall tail
 
 proc #5 <class:Line>
   CONST nil

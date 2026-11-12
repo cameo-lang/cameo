@@ -21,8 +21,9 @@ const statusPaused = 3
 // runScript runs the script at path and returns the process exit status.
 // With pause set, ^C pauses the script and writes its dump; see
 // runProgram. With ignoreMutations set, a call of one of Ruby's mutators
-// returns its result on a copy instead of raising.
-func runScript(path string, argv, allowIO []string, pause, ignoreMutations bool, stdout, stderr io.Writer) int {
+// returns its result on a copy instead of raising. With keepTail set, a
+// call that makes a tail call stays on the stack.
+func runScript(path string, argv, allowIO []string, pause, ignoreMutations, keepTail bool, stdout, stderr io.Writer) int {
 	src, err := os.ReadFile(path)
 	if err != nil {
 		fmt.Fprintln(stderr, err)
@@ -42,6 +43,9 @@ func runScript(path string, argv, allowIO []string, pause, ignoreMutations bool,
 		return 1
 	}
 	prog.IgnoreMutationErrors(ignoreMutations)
+	if keepTail {
+		prog.KeepTailFrames(cameo.TailFramesKept)
+	}
 	// A script that requires "debug" talks to the debugger on the
 	// terminal.
 	prog.Console(os.Stdin, stdout)
@@ -51,7 +55,7 @@ func runScript(path string, argv, allowIO []string, pause, ignoreMutations bool,
 
 // resume continues the script the dump at path holds and returns the
 // process exit status, as runScript does.
-func resume(path string, allowIO []string, pause, ignoreMutations bool, stdout, stderr io.Writer) int {
+func resume(path string, allowIO []string, pause, ignoreMutations, keepTail bool, stdout, stderr io.Writer) int {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		fmt.Fprintln(stderr, err)
@@ -63,6 +67,9 @@ func resume(path string, allowIO []string, pause, ignoreMutations bool, stdout, 
 		return 1
 	}
 	prog.IgnoreMutationErrors(ignoreMutations)
+	if keepTail {
+		prog.KeepTailFrames(cameo.TailFramesKept)
+	}
 	giveTerminal(prog)
 	return runProgram(prog, allowIO, pause, stderr)
 }
