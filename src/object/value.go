@@ -7,6 +7,7 @@ package object
 import (
 	"fmt"
 	"math"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -142,6 +143,41 @@ const (
 	lenMask   = 1<<kindShift - 1
 )
 
+// A string or a symbol of one to inlineMax bytes is inline: its bytes
+// are in n, the first in the lowest byte, and p points at a mark in the
+// upper half of kindMarks that says its kind and its length. Nothing of
+// it is on the heap, and two of them are equal when their words are.
+const (
+	inlineMax  = 8
+	inlineBase = 128
+)
+
+// inlineKinds is the kinds that are inline, by the row of their marks.
+var inlineKinds = [...]Kind{KindString, KindSymbol, KindBytes, KindASCII}
+
+// inlineRow is the row of the marks of kind k, -1 for a kind that is
+// never inline.
+func inlineRow(k Kind) int {
+	switch k {
+	case KindString:
+		return 0
+	case KindSymbol:
+		return 1
+	case KindBytes:
+		return 2
+	case KindASCII:
+		return 3
+	}
+	return -1
+}
+
+// inline returns the mark offset of v when it is an inline string or
+// symbol, and false otherwise. Its low four bits are the length.
+func (v Value) inline() (uintptr, bool) {
+	d := uintptr(v.p) - uintptr(unsafe.Pointer(&kindMarks[inlineBase]))
+	return d, d < uintptr(len(kindMarks)-inlineBase)
+}
+
 // mark returns the mark of kind k. A kind that lives in the payload is
 // tested by comparing p with its mark, which is one comparison where
 // kind is two.
@@ -150,6 +186,9 @@ func mark(k Kind) unsafe.Pointer { return unsafe.Pointer(&kindMarks[k]) }
 // kind returns the kind of v.
 func (v Value) kind() Kind {
 	if d := uintptr(v.p) - uintptr(unsafe.Pointer(&kindMarks[0])); d < uintptr(len(kindMarks)) {
+		if d >= inlineBase {
+			return inlineKinds[(d-inlineBase)>>4]
+		}
 		return Kind(d)
 	}
 	return Kind(uint64(v.n) >> kindShift)
@@ -166,11 +205,47 @@ func strValue(k Kind, n int64, p unsafe.Pointer) Value {
 	if n == 0 {
 		return Value{p: mark(k)}
 	}
+	if row := inlineRow(k); InlineStrings && n <= inlineMax && row >= 0 {
+		var bits uint64
+		for i, b := range unsafe.Slice((*byte)(p), n) {
+			bits |= uint64(b) << (8 * i)
+		}
+		return Value{p: unsafe.Pointer(&kindMarks[inlineBase+row<<4+int(n)]), n: int64(bits)}
+	}
 	return Value{p: p, n: n | int64(k)<<kindShift}
 }
 
+// InlineStrings says whether a short string or symbol is made inline.
+var InlineStrings = os.Getenv("CAMEO_INLINE_STRINGS") != "0"
+
 // size returns the number of bytes of a string or a symbol.
-func (v Value) size() int { return int(v.n & lenMask) }
+func (v Value) size() int {
+	if d, ok := v.inline(); ok {
+		return int(d & 15)
+	}
+	return int(v.n & lenMask)
+}
+
+// inlineBytes returns the bytes of an inline string of n bytes, in a
+// slice of their own.
+func (v Value) inlineBytes(n int) []byte {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = byte(uint64(v.n) >> (8 * i))
+	}
+	return b
+}
+
+// oneByte is the string of each byte, which an inline string of one
+// byte reads as.
+var oneByte = func() (out [256]string) {
+	all := make([]byte, 256)
+	for i := range all {
+		all[i] = byte(i)
+		out[i] = unsafe.String(&all[i], 1)
+	}
+	return out
+}()
 
 // Nil is cameo's nil; True and False its booleans.
 var (
@@ -367,6 +442,13 @@ func (v Value) Str() string {
 	if n == 0 {
 		return ""
 	}
+	if _, ok := v.inline(); ok {
+		if n == 1 {
+			return oneByte[byte(v.n)]
+		}
+		b := v.inlineBytes(n)
+		return unsafe.String(&b[0], n)
+	}
 	return unsafe.String((*byte)(v.p), n)
 }
 
@@ -376,6 +458,9 @@ func (v Value) Bytes() []byte {
 	n := v.size()
 	if n == 0 {
 		return []byte{}
+	}
+	if _, ok := v.inline(); ok {
+		return v.inlineBytes(n)
 	}
 	return unsafe.Slice((*byte)(v.p), n)
 }
