@@ -2,6 +2,7 @@ package stdlib
 
 import (
 	"strings"
+	"unicode/utf8"
 
 	"github.com/cameo-lang/cameo/src/object"
 )
@@ -14,10 +15,10 @@ func installStringPatterns() {
 	str := func(self object.Value) string { return self.Str() }
 
 	def(c, "sub", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return substitute(ctx, str(self), args, kw, block, 1, self.Kind() == object.KindBytes)
+		return substitute(ctx, self, args, kw, block, 1)
 	})
 	def(c, "gsub", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return substitute(ctx, str(self), args, kw, block, -1, self.Kind() == object.KindBytes)
+		return substitute(ctx, self, args, kw, block, -1)
 	})
 	def(c, "scan", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		p, err := patternOf(ctx, args[0])
@@ -218,7 +219,8 @@ func installStringPatterns() {
 // substitute is sub (limit 1) and gsub (limit -1): each match replaced by
 // a string with its backreferences filled in, by a hash's value for the
 // matched text, or by a block's value for it.
-func substitute(ctx object.Context, s string, args []object.Value, kw *object.Map, block object.Value, limit int, binary bool) (object.Value, error) {
+func substitute(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value, limit int) (object.Value, error) {
+	s, binary := self.Str(), self.Kind() == object.KindBytes
 	// `gsub(/a/, "a" => "b")` passes its hash as keywords.
 	if kw != nil && kw.Len() > 0 && len(args) == 1 {
 		args = append(args, object.MapValue(kw))
@@ -254,6 +256,16 @@ func substitute(ctx object.Context, s string, args []object.Value, kw *object.Ma
 		}
 		return ctx.ToS(v)
 	}
+	// The result has the receiver's characters, less those of what
+	// matched, and those of what replaced it: chars is their number, -1
+	// when the receiver does not know its own, or a match or what
+	// replaces it begins or ends inside a character, where the count of
+	// the parts is not that of the whole (object.Joined).
+	chars := -1
+	if n, ok := self.Chars(); ok {
+		chars = n
+	}
+	starts := func(s string, i int) bool { return i == len(s) || utf8.RuneStart(s[i]) }
 	var b strings.Builder
 	at := 0
 	for _, m := range p.findAll(s, limit) {
@@ -278,14 +290,23 @@ func substitute(ctx object.Context, s string, args []object.Value, kw *object.Ma
 			}
 		}
 		b.WriteString(repl)
+		if chars >= 0 {
+			if starts(s, m.Caps[0]) && starts(s, m.Caps[1]) && starts(repl, 0) {
+				chars += utf8.RuneCountInString(repl) - utf8.RuneCountInString(s[m.Caps[0]:m.Caps[1]])
+			} else {
+				chars = -1
+			}
+		}
 		at = m.Caps[1]
 	}
 	b.WriteString(s[at:])
-	if binary {
+	switch {
+	case binary:
 		return object.Bytes([]byte(b.String())), nil
+	case chars >= 0:
+		return object.StringOfChars(b.String(), chars), nil
 	}
-	// Counting is little beside the matching.
-	return object.Counted(b.String()), nil
+	return object.String(b.String()), nil
 }
 
 // split is String#split: on whitespace by default (and for " "), into

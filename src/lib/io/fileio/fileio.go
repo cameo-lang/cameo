@@ -167,8 +167,7 @@ func Install() {
 		if binary {
 			return object.Bytes(data), nil
 		}
-		// Counting is little beside the reading.
-		return object.Counted(string(data)), nil
+		return object.String(string(data)), nil
 	})
 
 	// write(path, data) and write(path) { data } write data, a String or

@@ -61,3 +61,24 @@ p made.map { |s| s.length == s.each_char.count }.uniq
 `)
 	assert.Equals(t, out, "[14, 14, 14, 14, 14, 11, 12, 13, 13, 13, 14, 14, 0, 0, 0, 2, 0, 17, 16, 13, 14, 1, 24, 18, 1, 3, 0, 1, 17, 3, 3, 2, 2, 25, 3]\n[true]\n")
 }
+
+// A substitution in a string that knows its characters gives a string
+// that knows its own, from what matched and what replaced it; one that
+// cuts a character or puts half of one in is counted, and has the same
+// length as in Ruby.
+func TestLengthOfSubstitutedStrings(t *testing.T) {
+	out := runScript(t, `
+a = "  Héllo Wörld\n"
+half = "\xC3".force_encoding("UTF-8")
+rest = "\xA9".force_encoding("UTF-8")
+made = [
+  a.gsub("l", "łł"), a.gsub(/ö/) { |m| m * 3 }, a.sub("é", ""), a.gsub("z", "y"), half.gsub("x", "y"),
+  a.gsub("", "-"), a.gsub(/(l+)/, '<\1é>'), a.gsub(/[éö]/, "é" => "e", "ö" => "öö"), a.sub(/\s+/, ""),
+  (half + "x").sub("x", rest), (half + "x" + rest).sub("x", ""), "aéb".gsub(/b|a/, half), a.gsub(/./, ""),
+  a.b.gsub("l", "L").force_encoding("UTF-8"), a.gsub("é", "e").gsub("ö", "o"), "".gsub("", "é"),
+]
+p made.map { |s| s.length }
+p made.map { |s| s.length == s.each_char.count }.uniq
+`)
+	assert.Equals(t, out, "[17, 16, 13, 14, 1, 29, 20, 15, 12, 1, 1, 3, 1, 14, 14, 1]\n[true]\n")
+}

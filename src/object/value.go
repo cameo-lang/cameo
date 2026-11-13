@@ -326,8 +326,7 @@ func StringOfChars(s string, chars int) Value {
 func ASCIIString(s string) Value { return StringOfChars(s, len(s)) }
 
 // Counted makes a UTF-8 string of s and counts its characters: for a
-// string whose making costs more than the counting, as a file's text
-// and the result of a substitution do.
+// short string, as a symbol's name is.
 func Counted(s string) Value { return StringOfChars(s, utf8.RuneCountInString(s)) }
 
 // Literal makes a UTF-8 string of s and counts its characters: for a
