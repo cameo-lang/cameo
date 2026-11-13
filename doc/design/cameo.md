@@ -1213,10 +1213,18 @@ re-opened by accident:
   - A String carries its encoding, as Ruby's does: UTF-8, ASCII-8BIT
     (binary) or US-ASCII, the value's kind. Literals are UTF-8; `.b`,
     `pack` and a protobuf `bytes` field make binary strings; `force_encoding`
-    relabels the same bytes and `encode` converts them. A binary or
-    US-ASCII string has one character per byte, changes case in ASCII
-    alone, prints a byte past 7 bits as `\xNN`, and gives its methods'
-    results its encoding; `+`, `<<`, `join` and interpolation take the
+    relabels the same bytes and `encode` converts them. A US-ASCII
+    string has one character per byte, changes case in ASCII alone, and
+    gives its methods' results its encoding. A binary string has bytes
+    and no characters, unlike Ruby's, which reads its bytes as ASCII: it
+    answers the methods that read, make and compare bytes (`bytes`,
+    `getbyte`, `bytesize`, `length`, `[]`, `+`, `*`, `==`, `index`,
+    `start_with?`, `unpack`, and a pattern, which matches bytes), and
+    raises Encoding::CompatibilityError for one that needs to know what
+    character a byte is (`upcase`, `strip`, `chars`, `to_i`, `split`,
+    `reverse`), so that a script says what its bytes are, with
+    `force_encoding`, before it reads them as text. It prints a byte past
+    7 bits as `\xNN`; `+`, `<<`, `join` and interpolation take the
     encoding their parts are compatible in, or raise
     Encoding::CompatibilityError. `valid_encoding?` and `scrub` deal with
     bytes an encoding does not allow. `force_encoding` returns the

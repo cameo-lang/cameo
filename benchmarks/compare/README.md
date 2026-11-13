@@ -1,7 +1,7 @@
 # cameo against three other Rubies
 
 [compare.rb](compare.rb) runs cameo's supported subset of CRuby's
-benchmarks, the 791 files of [../ruby/works](../ruby/works), on four Rubies:
+benchmarks, the 783 files of [../ruby/works](../ruby/works), on four Rubies:
 
 | Ruby | What it is |
 |---|---|
@@ -52,7 +52,7 @@ The run is older than two of cameo's rules: a block cannot assign to a
 variable of the scope around it, and a bang method of Ruby's core is
 refused. It timed the 852 cases `works/` held then, and
 [results.tsv](results.tsv) still has a row for each, and the summary below
-counts all of them. Two groups of those rows are stale:
+counts all of them. Three groups of those rows are stale:
 
 - 61 rows are of cases now under
   [../ruby/unsupported/mutation](../ruby/unsupported/mutation), whose timed
@@ -68,6 +68,10 @@ counts all of them. Two groups of those rows are stale:
   `app_lc_fizzbuzz`, `gc_hash1`, `hash_aref_array`, `hash_aref_dsym`,
   `hash_aref_fix`, `hash_flatten`, `hash_ident_num`, `hash_ident_str`,
   `hash_ident_sym`, `hash_keys`, `hash_to_proc` and `hash_values`.
+- 8 rows are of the `string_upcase--upcase-ascii8bit-` and
+  `string_downcase--downcase-ascii8bit-` cases, now under
+  [../ruby/unsupported/binary-strings](../ruby/unsupported/binary-strings):
+  they change the case of a binary string, which cameo refuses.
 
 The other 161 `set--` cases, the two `hash_first--` cases and the eight
 `vm_call_kw_and_kw_splat--` cases changed only in their prelude, which the
