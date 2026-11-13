@@ -27,6 +27,7 @@ pull request per cause, on top of the stack that ends in #388.
 - [x] #400 a string is at most 4 GiB
 - [x] #401 a substitution has its number from its parts
 - [x] #402 tr, squeeze, padding, prefixes and suffixes, parts of ASCII
+- [x] #403 a binary string answers its byte methods alone
 
 ## Measurements
 Suite geomean against CRuby: 172% at #388, 164% at #389, 153% at #394;

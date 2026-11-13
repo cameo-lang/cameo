@@ -7,18 +7,22 @@ String
 "\xC3"
 "\xC3\xA9"
 "\xFF"
-["h", "\xC3", "\xA9"]
-"\xFFoll\xA9\xC3h"
-"H\xC3\xA9LLO\xFF"
-#<Encoding:BINARY (ASCII-8BIT)>
+[104, 195, 169]
 3
 true
 true
-["h\xC3\xA9", "", "o\xFF"]
-"**h\xC3\xA9llo\xFF***"
+"h\xC3\xA9llo"
 104
-7
-7
+upcase reads characters, and a binary string has bytes alone: say what they are with force_encoding first
+downcase reads characters, and a binary string has bytes alone: say what they are with force_encoding first
+chars reads characters, and a binary string has bytes alone: say what they are with force_encoding first
+reverse reads characters, and a binary string has bytes alone: say what they are with force_encoding first
+strip reads characters, and a binary string has bytes alone: say what they are with force_encoding first
+to_i reads characters, and a binary string has bytes alone: say what they are with force_encoding first
+ord reads characters, and a binary string has bytes alone: say what they are with force_encoding first
+center reads characters, and a binary string has bytes alone: say what they are with force_encoding first
+split reads characters, and a binary string has bytes alone: say what they are with force_encoding first
+"CAFÉ"
 true
 false
 true
@@ -64,17 +68,12 @@ false
 [255, 254]
 "aXc"
 "a!c"
-"zb"
-"ab"
-2
 195
 99
 nil
 #<Encoding:US-ASCII>
 #<Encoding:UTF-8>
 #<Encoding:US-ASCII>
-#<Encoding:BINARY (ASCII-8BIT)>
-195
 233
 "invalid symbol in encoding UTF-8 :\"\\xC3\""
 :AbC

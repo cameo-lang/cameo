@@ -296,6 +296,12 @@ sets the fields, and `p a` prints `Point(x: 1, y: 2)` where Ruby prints
   `subsec` is a Float, since `Rational` is left out.
 - A String is UTF-8, ASCII-8BIT (binary) or US-ASCII; other encodings do not
   exist.
+- A binary String has bytes and no characters. A method that reads
+  characters (`upcase`, `strip`, `chars`, `to_i`, `split`, `reverse`,
+  `center`, `tr`) raises Encoding::CompatibilityError for one, where Ruby
+  reads its bytes as ASCII; `force_encoding("UTF-8")` first says what the
+  bytes are. The methods on bytes, comparison, `+`, `*`, `[]`, `length`
+  and patterns work as in Ruby.
 - Regular expressions use Ruby's syntax on cameo's own engine; lookbehind
   and backreferences are rejected with "This regexp is not supported in
   Cameo".

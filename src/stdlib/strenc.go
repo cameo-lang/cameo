@@ -33,6 +33,27 @@ var ownEncoding = map[string]bool{
 	"casecmp": true, "casecmp?": true,
 }
 
+// byteMethods are the methods a binary string answers: those that read
+// or make bytes, compare, and say what the string is. A binary string
+// has bytes and no characters, so a method that needs to know what
+// character a byte is (its case, whether it is a space or a digit, where
+// a line ends) raises for one, where Ruby reads the bytes as ASCII: the
+// script says what the bytes are first, with force_encoding.
+var byteMethods = map[string]bool{
+	"encoding": true, "force_encoding": true, "b": true, "valid_encoding?": true, "scrub": true,
+	"encode": true, "ascii_only?": true, "bytes": true, "bytesize": true, "byteindex": true,
+	"bytesplice": true, "getbyte": true, "setbyte": true, "append_as_bytes": true,
+	"unpack": true, "unpack1": true, "hash": true, "==": true, "eql?": true, "===": true,
+	"<=>": true, "empty?": true, "frozen?": true, "freeze": true, "dup": true, "clone": true,
+	"-@": true, "+@": true, "dedup": true, "to_s": true, "to_str": true, "inspect": true,
+	"dump": true, "+": true, "*": true, "<<": true, "concat": true, "length": true,
+	"size": true, "[]": true, "slice": true, "include?": true, "start_with?": true,
+	"end_with?": true, "index": true, "rindex": true, "delete_prefix": true,
+	"delete_suffix": true, "to_proto": true, "to_value_proto": true, "to_json": true,
+	// These say themselves what they do with a binary string.
+	"unicode_normalize": true, "unicode_normalized?": true,
+}
+
 // patternMethods take a string or a regexp to match the bytes with.
 var patternMethods = map[string]bool{
 	"sub": true, "gsub": true, "scan": true, "match": true, "match?": true, "=~": true,
@@ -216,6 +237,21 @@ func InstallStringEncodings() {
 		}
 		return self, nil
 	})
+	// A binary string answers its byte methods alone.
+	for name, m := range c.Methods {
+		// A pattern matches bytes as it matches characters.
+		if m.Native == nil || byteMethods[name] || patternMethods[name] {
+			continue
+		}
+		fn, name, borrows := m.Native, name, m.Borrows
+		c.Define(name, m.Arity, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+			if self.Kind() == object.KindBytes {
+				return object.Value{}, ctx.Raise(object.CompatibilityError, "%s reads characters, and a binary string has bytes alone: say what they are with force_encoding first", name)
+			}
+			return fn(ctx, self, args, kw, block)
+		})
+		c.Methods[name].Borrows = borrows
+	}
 	// + makes a string of the encoding both are compatible in.
 	plus := c.Methods["+"].Native
 	def(c, "+", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
