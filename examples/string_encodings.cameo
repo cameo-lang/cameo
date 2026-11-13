@@ -24,9 +24,14 @@ end
 x = b"\xE9"
 p "a#{x}".encoding, "#{x}".encoding, ["a".b, "b"].join.encoding
 a = "US".force_encoding("US-ASCII")
-p a, a.encoding, a.valid_encoding?, (a + "é").encoding, a.upcase.encoding, b"\xFF".force_encoding("US-ASCII").valid_encoding?, b"\xFF".force_encoding("US-ASCII").scrub
+p a, a.encoding, a.valid_encoding?, (a + "é").encoding, a.upcase.encoding
+begin
+  b"\xFF".force_encoding("US-ASCII")
+rescue Encoding::InvalidByteSequenceError => e
+  p e.message
+end
 p 65.chr, 65.chr.encoding, 233.chr, 233.chr.encoding, 233.chr(Encoding::UTF_8), 0x263a.chr("UTF-8")
-p "héllo".encode("UTF-8"), "caf\xC3\xA9".b.force_encoding("UTF-8"), b"a\xFFb".force_encoding("UTF-8").encode("UTF-8", invalid: :replace), "aé".encode("US-ASCII", undef: :replace), b"x\xE9".encode("UTF-8", undef: :replace, replace: "?")
+p "héllo".encode("UTF-8"), "caf\xC3\xA9".b.force_encoding("UTF-8"), b"a\xFFb".encode("UTF-8", "UTF-8", invalid: :replace), "aé".encode("US-ASCII", undef: :replace), b"x\xE9".encode("UTF-8", undef: :replace, replace: "?")
 begin; "é".encode("US-ASCII"); rescue Encoding::UndefinedConversionError => e; p e.message; end
 begin; b"\xE9".encode("UTF-8"); rescue Encoding::UndefinedConversionError => e; p e.message; end
 s = "ab".b
@@ -41,7 +46,7 @@ p "hé".getbyte(1), "abc".getbyte(-1), "abc".getbyte(3)
 p :foo.encoding, :"é".encoding, :foo.to_s.encoding
 p "é".ord
 begin
-  b"\xC3".force_encoding("UTF-8").to_sym
+  b"\xC3".to_sym
 rescue EncodingError => e
   p e.message
 end

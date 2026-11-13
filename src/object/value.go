@@ -329,9 +329,26 @@ func ASCIIString(s string) Value { return StringOfChars(s, len(s)) }
 // short string, as a symbol's name is.
 func Counted(s string) Value { return StringOfChars(s, utf8.RuneCountInString(s)) }
 
-// Literal makes a UTF-8 string of s and counts its characters: for a
-// string that is made once and read often, a literal of a script.
-func Literal(s string) Value { return Counted(s) }
+// Text makes a string of bytes that come from outside, a file or the
+// host: a UTF-8 string that knows its characters when the bytes are
+// UTF-8, and a binary string when they are not, since a UTF-8 string is
+// made of whole characters alone. Looking whether they are counts them,
+// which is what a string literal, UTF-8 always, is made by it for.
+func Text(s string) Value {
+	chars := 0
+	for i := 0; i < len(s); chars++ {
+		if s[i] < utf8.RuneSelf {
+			i++
+			continue
+		}
+		r, size := utf8.DecodeRuneInString(s[i:])
+		if r == utf8.RuneError && size == 1 {
+			return StringOf(KindBytes, s)
+		}
+		i += size
+	}
+	return StringOfChars(s, chars)
+}
 
 // Chars returns the number of characters of a UTF-8 string that knows
 // it. False says nothing but that nobody counted: a string in another

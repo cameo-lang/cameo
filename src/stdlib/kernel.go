@@ -102,6 +102,11 @@ func installKernel() {
 		if err != nil {
 			return object.Value{}, err
 		}
+		// The text is UTF-8, which the bytes of a binary argument are
+		// not: as for a method of a String (InstallStringEncodings).
+		if b, ok := binaryAmong(args[1:]); ok && args[0].Kind() != object.KindBytes {
+			return object.Value{}, incompatible(ctx, args[0], b)
+		}
 		s, err := format(ctx, f, args[1:])
 		return object.String(s), err
 	})

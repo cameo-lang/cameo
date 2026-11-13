@@ -14,6 +14,12 @@ import (
 // receiver's encoding. A UTF-8 string with UTF-8 arguments goes straight
 // to the method.
 //
+// A UTF-8 or US-ASCII string takes no binary string with bytes above 127
+// as an argument: the method would put those bytes, which are no
+// characters, into a string of characters. It raises
+// Encoding::CompatibilityError, also where Ruby makes a binary string of
+// an ASCII receiver. +, << and concat say themselves what they join.
+//
 // Most methods see a binary string through latin1: each byte as the
 // character of the same number, so that UTF-8 code counting characters
 // counts bytes; the result comes back the same way. Methods that take a
@@ -60,6 +66,10 @@ var patternMethods = map[string]bool{
 	"partition": true, "rpartition": true,
 }
 
+// joins are the methods that join the receiver and an argument, and say
+// themselves which encodings go together.
+var joins = map[string]bool{"+": true, "<<": true, "concat": true}
+
 func toLatin1(s string) string {
 	if object.ASCIIOnly(s) {
 		return s
@@ -103,6 +113,26 @@ func relabel(v object.Value, k object.Kind, f func(string) string) object.Value 
 	return v
 }
 
+// asciiWhere gives the UTF-8 strings of v that hold ASCII alone the
+// US-ASCII encoding, in lists too: what a method of a US-ASCII string
+// made.
+func asciiWhere(v object.Value) object.Value {
+	switch v.Kind() {
+	case object.KindString:
+		if object.ASCIIOnly(v.Str()) {
+			return object.StringOf(object.KindASCII, v.Str())
+		}
+	case object.KindList:
+		elems := v.List().Elems
+		out := make([]object.Value, len(elems))
+		for i, e := range elems {
+			out[i] = asciiWhere(e)
+		}
+		return object.NewList(out...)
+	}
+	return v
+}
+
 func viewArgs(args []object.Value) []object.Value {
 	out := make([]object.Value, len(args))
 	for i, a := range args {
@@ -116,6 +146,24 @@ func viewArgs(args []object.Value) []object.Value {
 		}
 	}
 	return out
+}
+
+// binaryAmong returns the first binary string with a byte above 127
+// among args and the elements of the lists among them.
+func binaryAmong(args []object.Value) (object.Value, bool) {
+	for _, a := range args {
+		switch a.Kind() {
+		case object.KindBytes:
+			if !object.ASCIIOnly(a.Str()) {
+				return a, true
+			}
+		case object.KindList:
+			if b, ok := binaryAmong(a.List().Elems); ok {
+				return b, true
+			}
+		}
+	}
+	return object.Value{}, false
 }
 
 func hasRegexp(args []object.Value) bool {
@@ -141,10 +189,27 @@ func InstallStringEncodings() {
 		fn, name := m.Native, name
 		c.Define(name, m.Arity, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			k := self.Kind()
+			if k != object.KindBytes && !joins[name] {
+				if b, ok := binaryAmong(args); ok {
+					return object.Value{}, incompatible(ctx, self, b)
+				}
+			}
 			if k == object.KindString {
 				return fn(ctx, self, args, kw, block)
 			}
 			s := self.Str()
+			// A US-ASCII string holds 7-bit bytes alone, which are
+			// UTF-8 as they are: the method runs on them, and what
+			// it makes is US-ASCII while it holds nothing else, and
+			// UTF-8 once an argument brought other characters in,
+			// as in Ruby.
+			if k == object.KindASCII && name != "inspect" && name != "dump" {
+				v, err := fn(ctx, object.ASCIIString(s), args, kw, block)
+				if err != nil {
+					return object.Value{}, err
+				}
+				return asciiWhere(v), nil
+			}
 			switch {
 			case patternMethods[name] || hasRegexp(args):
 				v, err := fn(ctx, self, args, kw, block)

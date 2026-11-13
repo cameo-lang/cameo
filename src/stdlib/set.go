@@ -103,12 +103,9 @@ func installSet() {
 		return object.Nil, nil
 	})
 	def(c, "join", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		sep := ""
-		if len(args) == 1 && !args[0].IsNil() {
-			var err error
-			if sep, err = WantString(ctx, args[0]); err != nil {
-				return object.Value{}, err
-			}
+		sep, err := separator(ctx, args)
+		if err != nil {
+			return object.Value{}, err
 		}
 		return join(ctx, set(self).Elems(), sep)
 	})

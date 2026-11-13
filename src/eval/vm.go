@@ -632,7 +632,7 @@ func (m *machine) constant(c *cameopb.Code) (object.Value, error) {
 	case *cameopb.Constant_FloatValue:
 		return object.Float(k.FloatValue), nil
 	case *cameopb.Constant_StringValue:
-		return object.String(k.StringValue), nil
+		return object.Text(k.StringValue), nil
 	case *cameopb.Constant_BytesValue:
 		// A binary string literal, b"..."; see ir.proto.
 		return object.Bytes(k.BytesValue), nil
