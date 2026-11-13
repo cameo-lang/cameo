@@ -17,6 +17,9 @@ Go. This file is the entry point for coding agents. Read it first, then:
    stacks: small pull requests in one stack, CI on the top alone, where to
    fix a failing run.
 6. [README.md](README.md) — what cameo is and how to build it.
+7. [agents.md](agents.md) — how to write cameo programs: the guide a model
+   reads before it writes a script. Keep it current; agents/CLAUDE.md says
+   when.
 
 ## Pull requests
 
