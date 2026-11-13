@@ -1,0 +1,11 @@
+# Five steps of work. After each, the script tells the Go program how
+# far it is; the Go program may pause the run there.
+total = 0
+n = 1
+while n <= 5
+  total += n * n
+  puts "step #{n}: total #{total}"
+  Host.reached(n)
+  n += 1
+end
+puts "done: #{total}"
