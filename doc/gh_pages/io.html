@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cameo — enabling I/O</title>
+<meta name="description" content="A cameo script does no I/O unless the program that runs it allows it: cameo --io on the command line, AllowIO and FileSystem from Go, or a module of Go functions.">
+<link rel="stylesheet" href="style.css">
+<script type="module" src="site.js"></script>
+</head>
+<body>
+<header class="site"><div class="inner">
+  <a class="name" href="index.html">cameo</a>
+  <nav>
+    <a href="index.html">Overview</a>
+    <a href="examples.html">Examples</a>
+    <a href="go.html">Embedding in Go</a>
+    <a href="grpc.html">gRPC</a>
+    <a href="pause.html">Pause and resume</a>
+    <a href="async.html">Async</a>
+    <a href="io.html" aria-current="page">I/O</a>
+    <a href="ruby.html">Ruby vs cameo</a>
+    <a href="numbers.html">Numbers</a>
+    <a href="native.html">Native code</a>
+    <a href="https://github.com/cameo-lang/cameo">GitHub</a>
+  </nav>
+</div></header>
+
+<main>
+<h1>Enabling I/O</h1>
+<p class="lead">A script does no I/O of its own. What it may read and
+write is decided by whoever runs it: a flag on the command line, or two
+calls in the Go program that embeds it.</p>
+
+<nav class="toc" aria-label="On this page">
+<ol>
+  <li><a href="#default">What a script can do by default</a></li>
+  <li><a href="#cli">On the command line: --io</a></li>
+  <li><a href="#go">From a Go program: AllowIO and FileSystem</a></li>
+  <li><a href="#host">Everything else: a module of Go functions</a></li>
+</ol>
+</nav>
+
+<h2 id="default">What a script can do by default</h2>
+
+<p>It computes, and it writes to the two streams its host gave it:
+<code>puts</code>, <code>print</code>, <code>p</code> and
+<code>warn</code>. It has no <code>ENV</code>, no sockets, no
+<code>system</code> and no backticks. <code>File</code> handles paths
+as strings, and its methods that touch a file do not exist; the error
+says how to get them.</p>
+
+<pre class="cameo"><code>p File.respond_to?(:read)
+p File.basename("/home/ada/notes.txt")      # a path is only a string
+
+begin
+  File.read("notes.txt")
+rescue NoMethodError =&gt; e
+  puts e.message
+end</code></pre>
+<pre class="output"><code>false
+"notes.txt"
+undefined method 'read' for class File: the host allows no file I/O; run the script with cameo --io=file, or let the program say AllowIO("file") and give it a file system with FileSystem</code></pre>
+
+<p>So a script from an untrusted source can be run as it is: the worst
+it does is compute for too long, and
+<a href="go.html#run"><code>RunContext</code></a> stops that.</p>
+
+<h2 id="cli">On the command line: --io</h2>
+
+<p><code>cameo --io script.cameo</code> allows every kind of I/O, and
+<code>cameo --io=file script.cameo</code> the kinds named, separated by
+commas. The flag goes before the script, and before <code>irb</code>,
+<code>resume</code> and <code>debug</code>.</p>
+
+<pre class="ruby"><code>text = File.read("notes.txt")
+puts text.lines.size
+File.write("copy.txt", text.upcase)
+File.open("copy.txt") { |f| puts f.gets }</code></pre>
+<pre class="sh"><code>cameo --io=file io.cameo</code></pre>
+<pre class="output"><code>3
+THREE</code></pre>
+
+<table>
+<tr><th>Kind</th><th>Gives a script</th></tr>
+<tr><td><code>file</code></td><td><code>File.read</code>,
+<code>File.open</code> for reading, and <code>File.write</code>, on the
+machine's files, relative paths from the working directory. A path is
+only a path: <code>"|cmd"</code> runs nothing.</td></tr>
+<tr><td><code>network</code>, <code>popen</code></td><td>Nothing yet. The
+flag takes the names, and no library of cameo's uses them so
+far.</td></tr>
+</table>
+
+<p>Without the flag the same script stops at its first line, with the
+message above, and exits with status 1.</p>
+
+<h2 id="go">From a Go program: AllowIO and FileSystem</h2>
+
+<p>A program that embeds cameo allows a kind with
+<code>prog.AllowIO("file")</code> and says which files with
+<code>prog.FileSystem(fsys, dir)</code>. Both are needed. The file
+system is an <a href="https://github.com/spf13/afero">afero</a>
+<code>Fs</code>: the disk, one directory of it, a read-only view, or
+memory. <code>prog.AllowHostIO("file")</code> is the short form for the
+machine's own files from the working directory, which is what the
+command line does.</p>
+
+<p>The example
+<a href="https://github.com/cameo-lang/cameo/tree/main/examples/io">examples/io</a>
+gives this script a file system in memory:</p>
+
+<pre data-file="examples/io/notes.cameo" class="cameo hosted"><code># The script reads and writes files as in Ruby. Which files those are is
+# the Go program's choice.
+text = File.read("notes.txt")
+puts "#{text.lines.size} lines"
+File.write("shout.txt", text.upcase)
+File.open("shout.txt") { |f| puts f.gets }</code></pre>
+<pre data-file="examples/io/main.go" class="go"><code>// Command io lets a script read and write files, in a file system the Go
+// program chooses. A script does no I/O unless the program that runs it
+// allows a kind of it: here the kind "file", with a file system in
+// memory that holds one file.
+//
+//	go run ./examples/io
+package main
+
+import (
+	_ "embed"
+	"fmt"
+	"io"
+	"os"
+
+	"github.com/cameo-lang/cameo/src/cameo"
+	"github.com/spf13/afero"
+)
+
+//go:embed notes.cameo
+var script string
+
+// run runs the script with the files of fsys, relative paths read from
+// dir.
+func run(fsys afero.Fs, dir string, stdout, stderr io.Writer) error {
+	prog, err := cameo.Load("notes.cameo", script, stdout, stderr)
+	if err != nil {
+		return err
+	}
+	// Both are needed: the kind allowed, and a file system to read. The
+	// file system may be the disk (afero.NewOsFs), one directory of it
+	// (afero.NewBasePathFs), a read-only view (afero.NewReadOnlyFs) or
+	// memory, as here.
+	prog.AllowIO("file")
+	prog.FileSystem(fsys, dir)
+	return prog.Run()
+}
+
+func main() {
+	fsys := afero.NewMemMapFs()
+	if err := afero.WriteFile(fsys, "/work/notes.txt", []byte("three\nlines\nhere\n"), 0o644); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	if err := run(fsys, "/work", os.Stdout, os.Stderr); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	shout, _ := afero.ReadFile(fsys, "/work/shout.txt")
+	fmt.Printf("the script wrote %d bytes into the file system\n", len(shout))
+}</code></pre>
+
+<pre class="sh"><code>go run ./examples/io</code></pre>
+<pre class="output"><code>3 lines
+THREE
+the script wrote 17 bytes into the file system</code></pre>
+
+<p>Given <code>afero.NewReadOnlyFs(fsys)</code> instead, the script
+reads the file and its <code>File.write</code> raises.</p>
+
+<h2 id="host">Everything else: a module of Go functions</h2>
+
+<p>Any other I/O, a database, an HTTP request, a queue, the script gets
+as a module the Go program defines: the program decides what the
+function does and what the script may ask of it. A function that takes
+time returns a promise, and the script awaits it while its other work
+goes on.</p>
+
+<ul>
+  <li><a href="native.html#host">Native code</a> shows a module of Go
+  functions.</li>
+  <li><a href="go.html#promises">Embedding in Go</a> has a program that
+  fetches web pages for a script, each request on its own
+  goroutine.</li>
+  <li><a href="grpc.html">gRPC</a> calls a public service the same
+  way.</li>
+</ul>
+</main>
+
+<footer class="site"><div class="inner">
+  cameo · <a href="https://github.com/cameo-lang/cameo">github.com/cameo-lang/cameo</a> ·
+  every sample on this site was run
+</div></footer>
+</body>
+</html>

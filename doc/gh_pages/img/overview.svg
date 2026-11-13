@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 330" font-family="-apple-system, 'Segoe UI', Roboto, sans-serif" font-size="15">
+  <title>A Go program with the cameo interpreter inside it</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#4b5563"/>
+    </marker>
+  </defs>
+  <rect width="860" height="330" fill="#ffffff"/>
+
+  <!-- The Go program around everything. -->
+  <rect x="16" y="16" width="620" height="298" rx="10" fill="#f6f8fb" stroke="#64748b" stroke-width="1.5"/>
+  <text x="32" y="42" font-weight="700" fill="#1f2937">Your Go program</text>
+
+  <!-- The interpreter and its script. -->
+  <rect x="36" y="60" width="290" height="234" rx="8" fill="#eef6e0" stroke="#4d7c0f" stroke-width="1.5"/>
+  <text x="52" y="86" font-weight="700" fill="#365314">cameo interpreter</text>
+  <rect x="56" y="100" width="250" height="112" rx="6" fill="#ffffff" stroke="#4d7c0f"/>
+  <text x="70" y="124" font-weight="600" fill="#1f2937">script.cameo</text>
+  <text x="70" y="148" font-size="14" fill="#374151">Ruby's syntax, immutable values</text>
+  <text x="70" y="170" font-size="14" fill="#374151">classes are protobuf messages</text>
+  <text x="70" y="192" font-size="14" fill="#374151">async and await on goroutines</text>
+  <text x="56" y="240" fill="#365314">no I/O unless the program allows it</text>
+  <text x="56" y="262" fill="#365314">pure Go, no cgo</text>
+
+  <!-- What the host gives. -->
+  <rect x="436" y="60" width="180" height="96" rx="8" fill="#ffffff" stroke="#64748b"/>
+  <text x="450" y="86" font-weight="600" fill="#1f2937">Go functions</text>
+  <text x="450" y="108" fill="#374151">and classes the</text>
+  <text x="450" y="130" fill="#374151">script may call</text>
+
+  <rect x="436" y="198" width="180" height="96" rx="8" fill="#ffffff" stroke="#64748b"/>
+  <text x="450" y="224" font-weight="600" fill="#1f2937">Load, Run, Call</text>
+  <text x="450" y="246" fill="#374151">Pause, Dump,</text>
+  <text x="450" y="268" fill="#374151">Resume</text>
+
+  <line x1="330" y1="108" x2="432" y2="108" stroke="#4b5563" stroke-width="1.5" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <text x="381" y="98" text-anchor="middle" font-size="13" fill="#4b5563">values and</text>
+  <text x="381" y="128" text-anchor="middle" font-size="13" fill="#4b5563">messages</text>
+  <line x1="432" y1="246" x2="330" y2="246" stroke="#4b5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="381" y="236" text-anchor="middle" font-size="13" fill="#4b5563">calls</text>
+
+  <!-- The world outside. -->
+  <rect x="696" y="60" width="148" height="96" rx="8" fill="#ffffff" stroke="#64748b" stroke-dasharray="5 4"/>
+  <text x="710" y="86" font-weight="600" fill="#1f2937">Files, network,</text>
+  <text x="710" y="108" fill="#374151">databases,</text>
+  <text x="710" y="130" fill="#374151">gRPC services</text>
+  <line x1="620" y1="108" x2="692" y2="108" stroke="#4b5563" stroke-width="1.5" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <text x="656" y="98" text-anchor="middle" font-size="13" fill="#4b5563">I/O</text>
+
+  <rect x="696" y="198" width="148" height="96" rx="8" fill="#ffffff" stroke="#64748b" stroke-dasharray="5 4"/>
+  <text x="710" y="224" font-weight="600" fill="#1f2937">A paused run,</text>
+  <text x="710" y="246" fill="#374151">as bytes: store it,</text>
+  <text x="710" y="268" fill="#374151">resume it later</text>
+  <line x1="620" y1="246" x2="692" y2="246" stroke="#4b5563" stroke-width="1.5" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <text x="656" y="236" text-anchor="middle" font-size="13" fill="#4b5563">state</text>
+</svg>

@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cameo — calling a gRPC service</title>
+<meta name="description" content="A class of a cameo script is a protobuf message, so a script builds the request of a gRPC call and reads its response with no generated code. An example against a free public service.">
+<link rel="stylesheet" href="style.css">
+<script type="module" src="site.js"></script>
+</head>
+<body>
+<header class="site"><div class="inner">
+  <a class="name" href="index.html">cameo</a>
+  <nav>
+    <a href="index.html">Overview</a>
+    <a href="examples.html">Examples</a>
+    <a href="go.html">Embedding in Go</a>
+    <a href="grpc.html" aria-current="page">gRPC</a>
+    <a href="pause.html">Pause and resume</a>
+    <a href="async.html">Async</a>
+    <a href="io.html">I/O</a>
+    <a href="ruby.html">Ruby vs cameo</a>
+    <a href="numbers.html">Numbers</a>
+    <a href="native.html">Native code</a>
+    <a href="https://github.com/cameo-lang/cameo">GitHub</a>
+  </nav>
+</div></header>
+
+<main>
+<h1>Calling a gRPC service</h1>
+<p class="lead">A class of a script is a protobuf message. A script
+builds the request of a gRPC call as an instance of its own class, and
+the response comes back as one: no generated code, no conversion.</p>
+
+<nav class="toc" aria-label="On this page">
+<ol>
+  <li><a href="#run">Run it</a></li>
+  <li><a href="#script">The script</a></li>
+  <li><a href="#match">How the classes match the service</a></li>
+  <li><a href="#go">The Go program</a></li>
+</ol>
+</nav>
+
+<p>The example is
+<a href="https://github.com/cameo-lang/cameo/tree/main/examples/grpc">examples/grpc</a>.
+It calls <code>hello.HelloService</code> of
+<a href="https://grpcb.in">grpcb.in</a>, a public test server
+(<a href="https://github.com/moul/grpcbin">moul/grpcbin</a>) that anyone
+may call without a key.</p>
+
+<h2 id="run">Run it</h2>
+
+<pre class="sh"><code>cd examples/grpc
+go run . Ada Grace</code></pre>
+<pre class="output"><code>hello Ada
+hello Grace</code></pre>
+
+<p>The default address is <code>grpcb.in:9001</code>, with TLS;
+<code>go run . -addr grpcb.in:9000 -plaintext Ada</code> goes without.
+The example's test runs the same script against a service on its own
+machine, so it needs no network.</p>
+
+<h2 id="script">The script</h2>
+
+<p>The script declares the service's two messages as classes, sends one
+request per name, and awaits the answers. Every call is on its way before
+the first answer is read.</p>
+
+<pre data-file="examples/grpc/hello.cameo" class="cameo hosted"><code># The messages of grpcb.in's hello.HelloService, declared as classes. A
+# class in the module Hello is the message hello.&lt;name&gt;, and number: sets
+# the field's number, so an instance is on the wire what the service
+# reads and writes.
+module Hello
+  class HelloRequest
+    string :greeting, number: 1
+  end
+
+  class HelloResponse
+    string :reply, number: 1
+  end
+end
+
+include Cameo
+
+# HelloService is a module the Go program gives the script. say_hello
+# sends the request and returns a promise at once; the Go program settles
+# it with the HelloResponse when the answer is in. Every call is on its
+# way before the first await returns.
+def greet_all(names)
+  calls = names.map { |name| HelloService.say_hello(Hello::HelloRequest.new(greeting: name)) }
+  calls.map { |call| (await call).reply }
+rescue HelloService::Failed =&gt; e
+  ["the service failed: #{e.message}"]
+end</code></pre>
+
+<h2 id="match">How the classes match the service</h2>
+
+<p>The service's messages are <code>hello.HelloRequest</code>, with the
+string <code>greeting</code> as field 1, and
+<code>hello.HelloResponse</code>, with the string <code>reply</code> as
+field 1. Two things make the script's classes the same messages:</p>
+
+<ul>
+  <li>A class in the module <code>Hello</code> is a message of the
+  package <code>hello</code>: the package is the enclosing modules, in
+  lower case.</li>
+  <li><code>number:</code> sets a field's number. Without it cameo
+  derives the number from the field's name, which suits messages only
+  cameo reads.</li>
+</ul>
+
+<p><code>cameo proto</code> prints the <code>.proto</code> text of a
+script's classes, to compare with the service's or to hand to another
+language:</p>
+
+<pre class="sh"><code>cameo proto examples/grpc/hello.cameo</code></pre>
+<pre class="proto"><code>syntax = "proto3";
+
+package hello;
+
+message HelloRequest {
+  optional string greeting = 1;
+}
+
+message HelloResponse {
+  optional string reply = 1;
+}</code></pre>
+
+<h2 id="go">The Go program</h2>
+
+<p>cameo does no I/O, so the Go program gives the script a module,
+<code>HelloService</code>. Its <code>say_hello</code> gets the request
+as a <code>proto.Message</code>, sends it on a goroutine, and returns a
+promise at once. The answer is read into a message of the script's
+<code>Hello::HelloResponse</code>, which settles the promise.</p>
+
+<pre data-file="examples/grpc/main.go" class="go"><code>// Command grpc calls a gRPC service from a cameo script. A class of a
+// script is a protobuf message, so the request the script builds goes on
+// the wire as it is, and the response comes back as an instance of a
+// class of the script: no generated code and no conversion.
+//
+// The service is hello.HelloService of grpcb.in, a public test server
+// that anyone may call:
+//
+//	go run . Ada Grace              # in examples/grpc
+//	go run . -addr localhost:9000 -plaintext Ada
+//
+// cameo does no I/O, so the Go program gives the script a module,
+// HelloService, whose say_hello starts the call on a goroutine and
+// returns a promise; the script awaits it.
+package main
+
+import (
+	"context"
+	_ "embed"
+	"flag"
+	"fmt"
+	"io"
+	"os"
+	"time"
+
+	"github.com/cameo-lang/cameo/src/cameo"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/dynamicpb"
+)
+
+//go:embed hello.cameo
+var script string
+
+// greetAll runs the script's greet_all over names, with conn as the
+// connection to the service, and returns the replies.
+func greetAll(ctx context.Context, conn grpc.ClientConnInterface, names []string, stdout, stderr io.Writer) ([]any, error) {
+	prog, err := cameo.Load("hello.cameo", script, stdout, stderr)
+	if err != nil {
+		return nil, err
+	}
+	service := prog.Module("HelloService")
+	failed := service.Exception("Failed")
+	service.Def("say_hello", func(args []any, kwargs map[string]any, block *cameo.Block) (any, error) {
+		if len(args) != 1 {
+			return nil, fmt.Errorf("say_hello takes one argument, not %d", len(args))
+		}
+		// An instance of a class of the script is a proto.Message here.
+		request, ok := args[0].(proto.Message)
+		if !ok {
+			return nil, fmt.Errorf("say_hello takes a Hello::HelloRequest, not %T", args[0])
+		}
+		// The class the script declares for the response, as a descriptor:
+		// the answer is read into a message of it. The script has defined
+		// the class by the time it calls this.
+		response, err := prog.Descriptor("Hello::HelloResponse")
+		if err != nil {
+			return nil, err
+		}
+		promise := prog.Promise()
+		go func() {
+			reply := dynamicpb.NewMessage(response)
+			if err := conn.Invoke(ctx, "/hello.HelloService/SayHello", request, reply); err != nil {
+				promise.Fail(failed.New("%v", err))
+				return
+			}
+			// The message becomes a Hello::HelloResponse in the script.
+			promise.Resolve(reply)
+		}()
+		return promise, nil
+	})
+	// Run defines the script's classes and methods.
+	if err := prog.Run(); err != nil {
+		return nil, err
+	}
+	replies, err := prog.Call(nil, "greet_all", names)
+	if err != nil {
+		return nil, err
+	}
+	return replies.([]any), nil
+}
+
+func main() {
+	addr := flag.String("addr", "grpcb.in:9001", "the address of a hello.HelloService")
+	plaintext := flag.Bool("plaintext", false, "connect without TLS, as grpcb.in:9000 takes it")
+	flag.Parse()
+	names := flag.Args()
+	if len(names) == 0 {
+		names = []string{"cameo"}
+	}
+	creds := credentials.NewClientTLSFromCert(nil, "")
+	if *plaintext {
+		creds = insecure.NewCredentials()
+	}
+	conn, err := grpc.NewClient(*addr, grpc.WithTransportCredentials(creds))
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	defer conn.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	replies, err := greetAll(ctx, conn, names, os.Stdout, os.Stderr)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	for _, reply := range replies {
+		fmt.Println(reply)
+	}
+}</code></pre>
+
+<p>The example is a Go module of its own, so cameo itself does not
+depend on gRPC. <a href="go.html#proto">Embedding in Go</a> has more on
+passing messages both ways, and <a href="native.html#classes">Native
+code</a> shows the other direction: a class backed by a message Go
+code generated.</p>
+</main>
+
+<footer class="site"><div class="inner">
+  cameo · <a href="https://github.com/cameo-lang/cameo">github.com/cameo-lang/cameo</a> ·
+  every sample on this site was run
+</div></footer>
+</body>
+</html>

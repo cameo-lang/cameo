@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cameo — by example</title>
+<meta name="description" content="cameo in seven short programs: methods and blocks, classes with typed fields, immutable values, collections, pattern matching, exceptions and async.">
+<link rel="stylesheet" href="style.css">
+<script type="module" src="site.js"></script>
+</head>
+<body>
+<header class="site"><div class="inner">
+  <a class="name" href="index.html">cameo</a>
+  <nav>
+    <a href="index.html">Overview</a>
+    <a href="examples.html" aria-current="page">Examples</a>
+    <a href="go.html">Embedding in Go</a>
+    <a href="grpc.html">gRPC</a>
+    <a href="pause.html">Pause and resume</a>
+    <a href="async.html">Async</a>
+    <a href="io.html">I/O</a>
+    <a href="ruby.html">Ruby vs cameo</a>
+    <a href="numbers.html">Numbers</a>
+    <a href="native.html">Native code</a>
+    <a href="https://github.com/cameo-lang/cameo">GitHub</a>
+  </nav>
+</div></header>
+
+<main>
+<h1>cameo by example</h1>
+<p class="lead">Seven short programs, each with what it prints. If you
+know Ruby you can read all of them; the comments say where cameo goes
+its own way.</p>
+
+<nav class="toc" aria-label="On this page">
+<ol>
+  <li><a href="#hello">Methods and blocks</a></li>
+  <li><a href="#classes">A class with typed fields</a></li>
+  <li><a href="#immutable">Nothing changes in place</a></li>
+  <li><a href="#collections">Collections</a></li>
+  <li><a href="#patterns">Pattern matching</a></li>
+  <li><a href="#exceptions">Exceptions</a></li>
+  <li><a href="#async">Async</a></li>
+</ol>
+</nav>
+
+<p>To run one, save it as <code>hello.cameo</code> and say
+<code>cameo hello.cameo</code>, or type it into <code>cameo irb</code>.
+Building the binary needs Go alone:</p>
+
+<pre class="sh"><code>git clone https://github.com/cameo-lang/cameo
+cd cameo
+make install        # puts cameo into GOBIN</code></pre>
+
+<h2 id="hello">Methods and blocks</h2>
+
+<p>Methods, keyword arguments, string interpolation, ranges and blocks
+are Ruby's.</p>
+
+<pre class="cameo"><code>def greet(name, greeting: "Hello")
+  "#{greeting}, #{name}!"
+end
+
+puts greet("world")
+puts greet("cameo", greeting: "Welcome")
+
+squares = (1..5).map { |n| n * n }
+p squares, squares.sum, squares.select(&amp;:even?)</code></pre>
+<pre class="output"><code>Hello, world!
+Welcome, cameo!
+[1, 4, 9, 16, 25]
+55
+[4, 16]</code></pre>
+
+<h2 id="classes">A class with typed fields</h2>
+
+<p>A class declares its fields with their types, where Ruby has instance
+variables. <code>new</code> takes them by name, <code>==</code> compares
+them, and <code>with</code> returns a copy with some of them changed.</p>
+
+<pre class="cameo"><code>class Account
+  string :owner
+  int :cents
+
+  def deposit(amount) = with(cents: cents + amount)
+  def to_s = format("%s: %.2f", owner, cents / 100.0)
+end
+
+a = Account.new(owner: "Ada", cents: 1_000)
+b = a.deposit(250)
+
+puts a, b
+p a == Account.new(owner: "Ada", cents: 1_000)</code></pre>
+<pre class="output"><code>Ada: 10.00
+Ada: 12.50
+true</code></pre>
+
+<p>A field's type is <code>int</code>, <code>float</code>,
+<code>string</code>, <code>bool</code>, <code>bytes</code>, one of
+protobuf's sized numbers, a <code>list</code>, <code>set</code> or
+<code>map</code>, or another class with <code>ref</code>.
+<a href="ruby.html#fields">Ruby vs cameo</a> has them all.</p>
+
+<h2 id="immutable">Nothing changes in place</h2>
+
+<p>Every value is immutable. An assignment makes a changed copy and
+rebinds the variable it names; whoever else held the old value still
+holds it. A call of one of Ruby's mutators, such as
+<code>&lt;&lt;</code> or <code>push</code>, raises, and the message names
+the form to write.</p>
+
+<pre class="cameo"><code>list = [3, 1, 2]
+same = list
+list += [4]               # a new list; same still holds the old one
+list = list.sort
+
+p list, same
+
+prices = { tea: 3, cake: 5 }
+prices[:tea] = 4          # rebinds prices to a changed copy
+p prices
+
+begin
+  list &lt;&lt; 5               # Ruby's mutators raise: nothing changes in place
+rescue CameoError =&gt; e
+  puts e.message
+end</code></pre>
+<pre class="output"><code>[1, 2, 3, 4]
+[3, 1, 2]
+{tea: 4, cake: 5}
+cameo does not support mutating calls without rebinding; use a = a &lt;&lt; 1, +, or append</code></pre>
+
+<h2 id="collections">Collections</h2>
+
+<p>Arrays, hashes, sets and ranges have Ruby's Enumerable. A block
+captures the values around it and cannot assign to a variable outside
+itself, so a sum is a <code>reduce</code> or a <code>sum</code>, and a
+hash is built with <code>each_with_object</code>, <code>to_h</code> or
+<code>group_by</code>.</p>
+
+<pre class="cameo"><code>words = %w[apple banana cherry avocado blueberry]
+
+by_letter = words.group_by { |w| w[0] }
+p by_letter
+
+total = words.reduce(0) { |sum, w| sum + w.length }
+p total
+
+counts = words.each_with_object({}) { |w, seen| seen[w[0]] = (seen[w[0]] || 0) + 1 }
+p counts
+
+longest = words.max_by(&amp;:length)
+puts "longest: #{longest}"</code></pre>
+<pre class="output"><code>{"a" =&gt; ["apple", "avocado"], "b" =&gt; ["banana", "blueberry"], "c" =&gt; ["cherry"]}
+33
+{"a" =&gt; 2, "b" =&gt; 2, "c" =&gt; 1}
+longest: blueberry</code></pre>
+
+<h2 id="patterns">Pattern matching</h2>
+
+<p><code>case</code>/<code>in</code> takes an instance apart by its
+fields, and arrays and hashes as in Ruby.</p>
+
+<pre class="cameo"><code>class Circle
+  float :radius
+end
+
+class Rect
+  float :width, :height
+end
+
+def area(shape)
+  case shape
+  in Circle(radius:) then 3.14159 * radius * radius
+  in Rect(width:, height:) then width * height
+  in [first, *rest] then area(first) + rest.sum { |s| area(s) }
+  end
+end
+
+p area(Circle.new(radius: 1.0))
+p area([Rect.new(width: 2.0, height: 3.0), Rect.new(width: 1.0, height: 1.0)])</code></pre>
+<pre class="output"><code>3.14159
+7.0</code></pre>
+
+<h2 id="exceptions">Exceptions</h2>
+
+<p><code>raise</code>, <code>rescue</code>, <code>ensure</code> and
+<code>retry</code> are Ruby's. An exception class may declare fields,
+which <code>new</code> takes after the message.</p>
+
+<pre class="cameo"><code>class OutOfStock &lt; StandardError
+  string :item
+end
+
+def take(stock, item)
+  raise OutOfStock.new("no #{item} left", item: item) if stock.fetch(item, 0) == 0
+  stock.merge(item =&gt; stock[item] - 1)
+end
+
+stock = { "tea" =&gt; 1 }
+stock = take(stock, "tea")
+begin
+  take(stock, "tea")
+rescue OutOfStock =&gt; e
+  puts "#{e.message} (#{e.item})"
+ensure
+  p stock
+end</code></pre>
+<pre class="output"><code>no tea left (tea)
+{"tea" =&gt; 0}</code></pre>
+
+<h2 id="async">Async</h2>
+
+<p><code>async</code> starts a method call on a goroutine of its own and
+returns a promise; <code>await</code> waits for the result. Values are
+immutable, so the calls share nothing and need no locks.</p>
+
+<pre class="cameo"><code>include Cameo
+
+class Page
+  string :name
+
+  def words = name.length * 100      # stands in for real work
+end
+
+pages = %w[home about pricing].map { |n| Page.new(name: n) }
+jobs = pages.map { |page| async page, :words }   # each on its own goroutine
+p jobs.map { |job| await job }</code></pre>
+<pre class="output"><code>[400, 500, 700]</code></pre>
+
+<p>The <a href="async.html">async page</a> has the model and eight more
+examples. The scripts under
+<a href="https://github.com/cameo-lang/cameo/tree/main/examples">examples/</a>
+in the repository, 74 of them, are cameo's specification: each
+has the output it must print beside it, and the tests run them all.</p>
+</main>
+
+<footer class="site"><div class="inner">
+  cameo · <a href="https://github.com/cameo-lang/cameo">github.com/cameo-lang/cameo</a> ·
+  every sample on this site was run
+</div></footer>
+</body>
+</html>

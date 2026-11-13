@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cameo — pause and resume</title>
+<meta name="description" content="Stop a running cameo script where it is, keep its state as bytes, and continue it later: by hand with ^C and cameo resume, or from a Go program with Pause, Dump and Resume.">
+<link rel="stylesheet" href="style.css">
+<script type="module" src="site.js"></script>
+</head>
+<body>
+<header class="site"><div class="inner">
+  <a class="name" href="index.html">cameo</a>
+  <nav>
+    <a href="index.html">Overview</a>
+    <a href="examples.html">Examples</a>
+    <a href="go.html">Embedding in Go</a>
+    <a href="grpc.html">gRPC</a>
+    <a href="pause.html" aria-current="page">Pause and resume</a>
+    <a href="async.html">Async</a>
+    <a href="io.html">I/O</a>
+    <a href="ruby.html">Ruby vs cameo</a>
+    <a href="numbers.html">Numbers</a>
+    <a href="native.html">Native code</a>
+    <a href="https://github.com/cameo-lang/cameo">GitHub</a>
+  </nav>
+</div></header>
+
+<main>
+<h1>Pause and resume</h1>
+<p class="lead">A running script can be stopped where it is, inside a
+method or a loop, and its state written out as bytes. Another process
+continues it from those bytes, later or on another machine.</p>
+
+<nav class="toc" aria-label="On this page">
+<ol>
+  <li><a href="#hand">By hand: ^C and cameo resume</a></li>
+  <li><a href="#go">From a Go program: Pause, Dump and Resume</a></li>
+  <li><a href="#holds">What the state holds</a></li>
+</ol>
+</nav>
+
+<p>The state is a protobuf message: the script's code, the calls it is
+inside, its variables and constants, its classes and its pending
+promises. That works because every value is immutable and every object is
+a protobuf message already.</p>
+
+<h2 id="hand">By hand: ^C and cameo resume</h2>
+
+<p>Take a script that runs for a while, <code>count.cameo</code>:</p>
+
+<pre class="ruby"><code>def slow_square(n)
+  i = 0
+  while i &lt; 3_000_000
+    i += 1
+  end
+  n * n
+end
+
+total = 0
+n = 1
+while n &lt;= 40
+  total += slow_square(n)
+  puts "#{n}: #{total}"
+  n += 1
+end
+puts "done: #{total}"</code></pre>
+
+<p>Run it and press <code>^C</code>. cameo stops the script before its
+next instruction, writes the state to a temporary file and says how to
+go on. Its exit status is 3.</p>
+
+<pre class="sh"><code>cameo count.cameo</code></pre>
+<pre class="output"><code>1: 1
+2: 5
+...
+10: 385
+11: 506
+^C
+cameo: pausing; press ^C again to end the script
+cameo: paused before line 3 of count.cameo
+cameo: resume with: cameo resume /tmp/cameo-count-676897826.dump</code></pre>
+
+<p><code>cameo inspect</code> shows what the file holds: where the
+script stopped, the calls it was inside, and its variables.</p>
+
+<pre class="sh"><code>cameo inspect /tmp/cameo-count-676897826.dump</code></pre>
+<pre class="output"><code>script: count.cameo
+paused: before line 3
+inside:
+  slow_square, line 3
+variables:
+  total = 506
+  n = 12
+constants:
+  ARGV = []
+classes: none
+promises: none</code></pre>
+
+<p><code>cameo resume</code> continues the script there, in a new
+process. The file is not used up: resuming it again starts from the
+same point.</p>
+
+<pre class="sh"><code>cameo resume /tmp/cameo-count-676897826.dump</code></pre>
+<pre class="output"><code>12: 650
+13: 819
+...
+40: 22140
+done: 22140</code></pre>
+
+<p>A second <code>^C</code> while cameo is pausing ends the script, and
+<code>cameo --no-pause count.cameo</code> makes the first one end it, as
+it ends any program.</p>
+
+<h2 id="go">From a Go program: Pause, Dump and Resume</h2>
+
+<p>A Go program that embeds cameo does the same with three calls.
+<code>prog.Pause()</code> asks the run to stop and may be called from
+any goroutine; <code>Run</code> then returns
+<code>cameo.ErrPaused</code>. <code>prog.Dump()</code> returns the state
+as bytes, to store wherever the program stores things.
+<code>cameo.Resume(data, stdout, stderr)</code> makes a new program of
+them, and its <code>Run</code> goes on where the first one stopped.</p>
+
+<p>The example
+<a href="https://github.com/cameo-lang/cameo/tree/main/examples/pause">examples/pause</a>
+runs this script, which tells the Go program after each step how far it
+is:</p>
+
+<pre data-file="examples/pause/steps.cameo" class="cameo hosted"><code># Five steps of work. After each, the script tells the Go program how
+# far it is; the Go program may pause the run there.
+total = 0
+n = 1
+while n &lt;= 5
+  total += n * n
+  puts "step #{n}: total #{total}"
+  Host.reached(n)
+  n += 1
+end
+puts "done: #{total}"</code></pre>
+
+<p>The Go program pauses the run on step 3, takes the state, and
+continues it in a second program:</p>
+
+<pre data-file="examples/pause/main.go" class="go"><code>// Command pause stops a running script, keeps its state as bytes, and
+// continues it later in another interpreter, as a program would that
+// stores the bytes in a database and goes on after a restart.
+//
+//	go run ./examples/pause
+//
+// The script counts through five steps and calls Host.reached after
+// each. On step 3 the Go program asks the run to pause: Run returns
+// ErrPaused, Dump gives the state, and Resume makes a new program of it
+// that goes on with step 4.
+package main
+
+import (
+	_ "embed"
+	"errors"
+	"fmt"
+	"io"
+	"os"
+
+	"github.com/cameo-lang/cameo/src/cameo"
+)
+
+//go:embed steps.cameo
+var script string
+
+// host gives prog the module Host, whose reached calls stop with the
+// step the script is at.
+func host(prog *cameo.Program, stop func(step int64)) {
+	prog.Module("Host").Def("reached", func(args []any, kwargs map[string]any, block *cameo.Block) (any, error) {
+		if len(args) != 1 {
+			return nil, fmt.Errorf("reached takes one argument, not %d", len(args))
+		}
+		step, ok := args[0].(int64)
+		if !ok {
+			return nil, fmt.Errorf("reached takes an Integer, not %T", args[0])
+		}
+		stop(step)
+		return nil, nil
+	})
+}
+
+// firstHalf runs the script until it has reached step, pauses it there
+// and returns its state.
+func firstHalf(step int64, stdout, stderr io.Writer) ([]byte, error) {
+	prog, err := cameo.Load("steps.cameo", script, stdout, stderr)
+	if err != nil {
+		return nil, err
+	}
+	host(prog, func(at int64) {
+		if at == step {
+			// Pause may be called from any goroutine: a timer, a
+			// signal handler, a request to shut down.
+			prog.Pause()
+		}
+	})
+	if err := prog.Run(); !errors.Is(err, cameo.ErrPaused) {
+		return nil, fmt.Errorf("the script did not pause: %v", err)
+	}
+	dump, err := prog.Dump()
+	if err != nil {
+		return nil, err
+	}
+	fmt.Fprintf(stdout, "paused before line %d\n", dump.Line)
+	return dump.Data, nil
+}
+
+// secondHalf continues the run whose state is data, to its end.
+func secondHalf(data []byte, stdout, stderr io.Writer) error {
+	prog, err := cameo.Resume(data, stdout, stderr)
+	if err != nil {
+		return err
+	}
+	// The state holds the script and its values, and nothing of the
+	// host: the module is given again.
+	host(prog, func(int64) {})
+	return prog.Run()
+}
+
+func main() {
+	data, err := firstHalf(3, os.Stdout, os.Stderr)
+	if err == nil {
+		fmt.Println("the state is bytes now; a program would store them")
+		err = secondHalf(data, os.Stdout, os.Stderr)
+	}
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}</code></pre>
+
+<pre class="sh"><code>go run ./examples/pause</code></pre>
+<pre class="output"><code>step 1: total 1
+step 2: total 5
+step 3: total 14
+paused before line 9
+the state is bytes now; a program would store them
+step 4: total 30
+step 5: total 55
+done: 55</code></pre>
+
+<p>The same <code>Pause</code> stops a script on a timer, on a signal,
+or when the service that runs it shuts down. A paused program that is
+not dumped can also go on: calling <code>Run</code> again continues
+it.</p>
+
+<h2 id="holds">What the state holds</h2>
+
+<ul>
+  <li><strong>The script and its values</strong>: the code, the stack of
+  calls, local variables, constants, classes and methods, blocks and
+  procs, and promises that are still pending.</li>
+  <li><strong>Nothing of the host.</strong> A module of Go functions is
+  given to the resumed program again, as the example does, and a promise
+  the host had not settled is reached with
+  <code>prog.PendingPromise(id)</code>.</li>
+  <li><strong>No handles.</strong> A value that names something outside
+  the script, such as a <code>Random</code>, is left out, and
+  <code>dump.Missing</code> lists what was.</li>
+  <li><strong>Inside a block</strong> of <code>each</code>,
+  <code>map</code>, <code>times</code>, <code>loop</code> and the other
+  common iterators a run pauses at once. Inside the block of a builtin
+  that cannot stop halfway yet, it pauses when that builtin returns.</li>
+</ul>
+
+<p>The design document
+<a href="https://github.com/cameo-lang/cameo/blob/main/doc/design/pause.md">doc/design/pause.md</a>
+has the format, the list of those builtins, and the limits.</p>
+</main>
+
+<footer class="site"><div class="inner">
+  cameo · <a href="https://github.com/cameo-lang/cameo">github.com/cameo-lang/cameo</a> ·
+  every sample on this site was run
+</div></footer>
+</body>
+</html>
