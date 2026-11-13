@@ -53,12 +53,13 @@ and so does `cameo --io=file irb`. `File.write` writes a whole file;
 
 What asks for a library is measured, not guessed:
 
-- **ruby/spec** ([specs/](../specs)): of the 1006 spec files that
-  `require` a library cameo lacks, 146 want `date`, 131 `net/http`, 103
-  `uri`, 94 `matrix`, 58 `stringio`, 56 `bigdecimal`, 52 `win32ole`, 44
-  `strscan`, 42 `csv`, 25 `zlib`, 22 `etc`, 20 `syslog`, 15 `openssl`, 13
-  `ostruct`, 13 `erb`, 12 `tempfile`, 12 `io/nonblock`, 11 `prime`, 11 `open3`, 10
-  `getoptlong`, 10 `digest`, 8 `yaml`, and fewer each for the rest.
+- **ruby/spec** ([specs/](../specs)): of the 375 spec files that
+  `require` a library cameo lacks, 131 want `net/http`, 52 `win32ole`, 22
+  `etc`, 20 `syslog`, 13 each `coverage`, `erb`, `io/nonblock`, `ostruct`
+  and `tempfile`, 11 `open3`, 8 `yaml`, and fewer each for the rest. It
+  was 1006 files before `date`, `uri`, `matrix`, `stringio`, `bigdecimal`,
+  `strscan`, `csv`, `zlib` and the other libraries of this document were
+  built in.
 - **CRuby's benchmarks** ([benchmarks/ruby](../benchmarks/ruby)): 22 cases
   stop on a `require` cameo refuses.
 - What the scripts cameo runs ask for: a cameo script runs in SpicyLab's

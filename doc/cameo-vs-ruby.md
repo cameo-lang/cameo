@@ -45,11 +45,11 @@ each:
 | 2 | a string literal with bytes that are not UTF-8 |
 | 1 each | class variables, `String#tr` with a hash |
 
-**ruby/spec.** [specs](../specs) sorts all 3841 spec files of
+**ruby/spec.** [specs](../specs) sorts all 3858 spec files of
 [ruby/spec](https://github.com/ruby/spec) by what cameo's checker accepts:
-1403 are accepted. Most of the rest require a library cameo
-does not build in (1006), or use an instance variable (852), mostly in
-mspec's own `before` blocks. [specs/run.rb](../specs/run.rb) runs
+1855 are accepted. Most of the rest use an instance variable (1021),
+mostly in mspec's own `before` blocks, or require a library cameo does
+not build in (375). [specs/run.rb](../specs/run.rb) runs
 `language/` and `core/` under cameo and under CRuby, after rewriting
 mspec's idioms into calls of its prelude, which is why it accepts more
 files than the sort does: of the 2134 examples both Rubies ran, CRuby

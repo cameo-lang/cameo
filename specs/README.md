@@ -21,8 +21,9 @@ the message that put it there.
 [sort.rb](sort.rb) runs `cameo check` on each `*_spec.rb` and files it under
 the first thing that stops it:
 
-- A `require` of a library cameo does not build in (anything but `set`,
-  `time`, `pp`, `pathname` and `cgi`) files it under `unsupported/require`.
+- A `require` of a library cameo does not build in files it under
+  `unsupported/require`. sort.rb asks cameo: it runs a script that
+  requires the library, once per name, and a LoadError says no.
 - Otherwise the checker's first message names the directory, through the
   table in `sort.rb`'s `reason`: instance variables, which cameo leaves
   out, global variables, mutating methods, singleton methods and so
@@ -33,7 +34,7 @@ the first thing that stops it:
 The `require_relative` lines that load mspec's `spec_helper` and a spec's
 fixtures are the harness's business, so they do not count against a file.
 mspec's own idioms do count: a `before` block that sets `@object` uses an
-instance variable, and that alone files most of the 852 specs under
+instance variable, and that alone files most of the 1021 specs under
 `unsupported/instance-variables`. A harness that runs the specs on cameo
 will have to give those blocks somewhere to keep their state.
 

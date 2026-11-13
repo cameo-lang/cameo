@@ -42,8 +42,16 @@ cameo = options[:cameo] || begin
   bin
 end
 
-# The libraries cameo's require loads; any other is a LoadError.
-BUILTIN = %w[set time pp pathname cgi cgi/escape cgi/util].freeze
+# Whether cameo's require loads a library, asked of cameo once per name: a
+# script that requires it runs, or stops with a LoadError.
+BUILTIN = Hash.new do |known, lib|
+  Dir.mktmpdir("cameo-sort") do |dir|
+    script = File.join(dir, "require.rb")
+    File.write(script, "require #{lib.inspect}\n")
+    _, status = Open3.capture2e(cameo, script)
+    known[lib] = status.success?
+  end
+end
 
 # reason maps one of the checker's messages to the directory it files a spec
 # under, or nil for the harness's require_relative.
@@ -56,8 +64,9 @@ def reason(msg)
   when /\Aglobal variables are not supported/ then "globals"
   when /\Aclass variables are not supported/ then "class-variables"
   when /\Amultiple assignment binds local variables only/ then "multiple-assignment"
-  when /changes its receiver|a bang method changes its receiver|the left side of an assignment must start with a local variable|\Aindex assignment takes one index|cannot store into its hash|\Aself\.\w+ = …: a field is set in initialize|\Aself\[…\] = …: cameo has no setters/
+  when /changes its receiver|a bang method changes its receiver|the left side of an assignment must start with a local variable|\Aindex assignment takes one index|cannot store into its hash|\Aself\.\w+ = …: a field is set in initialize|\Aself\[…\] = …: cameo has no setters|\AThis is not supported, use \S+ = |\Aa block cannot rebind /
     "mutation"
+  when /\Aa string literal with bytes that are not UTF-8/ then "invalid-strings"
   when /\Aclass << self is not supported|\Adef \S+ on an object|\Adef self\.\S+ outside a class body/ then "singleton-methods"
   when /\A(send|public_send|__send__|eval|class_eval|module_eval|instance_eval|instance_exec|class_exec|define_method|undef|method|binding) is not supported/
     "metaprogramming"
@@ -83,7 +92,7 @@ end
 def classify(cameo, file)
   out, = Open3.capture2e(cameo, "check", file, chdir: SPEC)
   messages = out.force_encoding("UTF-8").scrub.lines.filter_map { _1[/\A[^:]+:\d+: (.*)$/, 1] }
-  lib = requires(File.join(SPEC, file)).find { !BUILTIN.include?(_1) }
+  lib = requires(File.join(SPEC, file)).find { !BUILTIN[_1] }
   messages.each do |msg|
     why = reason(msg)
     next unless why
