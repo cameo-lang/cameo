@@ -135,3 +135,40 @@ What the others fail on:
 - rbgo fails `CGI.escape_html`, `Pathname`, lazy `zip`, `Time.strptime`,
   reverse `each` over Bignum ranges and a few more, and times out on two
   endless-range `bsearch` cases.
+
+## CRuby, CRuby with YJIT and cameo, by category
+
+`compare.rb --rubies mri,yjit,cameo` times those three alone: `mri` is the
+`ruby` on `PATH` with `--disable-yjit`, whatever `RUBYOPT` says, and `yjit`
+the same binary with `--yjit`. Without warmruby among the Rubies the
+reference output is MRI's. [categories.rb](categories.rb) prints a results
+file as a table of categories, each cell the geometric mean of a Ruby's
+time as a multiple of MRI's over the cases every Ruby ran:
+
+```sh
+ruby benchmarks/compare/compare.rb --rubies mri,yjit,cameo --jobs 3 --out benchmarks/compare/yjit.tsv
+ruby benchmarks/compare/categories.rb          # yjit.tsv, as Markdown
+```
+
+[yjit.tsv](yjit.tsv) is the run of 2026-11-14 on a laptop, an Apple M4
+with 10 cores, three cases at a time, CRuby being 3.4.1:
+
+| Category | Cases | CRuby | CRuby + YJIT | cameo |
+|---|---:|---:|---:|---:|
+| Method calls, blocks and the VM | 192 | 1.00× | 0.94× | 3.28× |
+| Small programs | 8 | 1.00× | 0.41× | 2.04× |
+| Arrays and Enumerable | 161 | 1.00× | 0.98× | 1.30× |
+| Hashes | 26 | 1.00× | 0.84× | 4.62× |
+| Sets | 161 | 1.00× | 0.68× | 0.97× |
+| Strings and regexps | 105 | 1.00× | 1.00× | 0.83× |
+| Numbers | 34 | 1.00× | 0.93× | 1.82× |
+| Ranges | 36 | 1.00× | 0.91× | 1.91× |
+| Time | 28 | 1.00× | 0.90× | 0.85× |
+| Libraries (File paths, Pathname, CGI) | 21 | 1.00× | 1.00× | 0.51× |
+| **All** | 772 | 1.00× | 0.88× | 1.51× |
+
+The nine cases MRI fails are the eight `Pathname()` cases and
+`CGI.escape_html`, as above. Time all three in one run: a column timed
+alone has a quieter machine than the others had, and its times are not
+comparable with theirs. The README and the site's numbers page show this
+table.
