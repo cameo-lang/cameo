@@ -175,6 +175,16 @@ func hasRegexp(args []object.Value) bool {
 	return false
 }
 
+// noCharacters is the error of the method name called on a binary
+// string, which it would have to read as characters.
+func noCharacters(ctx object.Context, name string) error {
+	return ctx.Raise(object.CompatibilityError, "%s reads characters, and a binary string has bytes alone: say what they are with force_encoding first", name)
+}
+
+// InstallStringEncodings gives each String method one wrapper at most,
+// which reads the receiver's encoding once: a UTF-8 receiver goes to the
+// method, a binary one raises unless the method is one of byteMethods
+// or patternMethods, and any other is run as its encoding has it.
 func InstallStringEncodings() {
 	c := object.StringClass
 	var names []string
@@ -187,9 +197,15 @@ func InstallStringEncodings() {
 	for _, name := range names {
 		m := c.Methods[name]
 		fn, name := m.Native, name
+		// A pattern matches bytes as it matches characters.
+		bytes, joins := byteMethods[name] || patternMethods[name], joins[name]
 		c.Define(name, m.Arity, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			k := self.Kind()
-			if k != object.KindBytes && !joins[name] {
+			if k == object.KindBytes {
+				if !bytes {
+					return object.Value{}, noCharacters(ctx, name)
+				}
+			} else if !joins {
 				if b, ok := binaryAmong(args); ok {
 					return object.Value{}, incompatible(ctx, self, b)
 				}
@@ -228,12 +244,16 @@ func InstallStringEncodings() {
 		// their slice no more than the method does.
 		c.Methods[name].Borrows = m.Borrows
 	}
-	// Case changes in ASCII alone outside UTF-8.
+	// Case changes in ASCII alone in a US-ASCII string. A binary string
+	// has no case.
 	asciiOnly := func(name string, f func(string) string) {
 		utf := c.Methods[name].Native
 		def(c, name, 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-			if self.Kind() == object.KindString {
+			switch self.Kind() {
+			case object.KindString:
 				return utf(ctx, self, args, kw, block)
+			case object.KindBytes:
+				return object.Value{}, noCharacters(ctx, name)
 			}
 			return object.StringOf(self.Kind(), f(self.Str())), nil
 		})
@@ -259,6 +279,9 @@ func InstallStringEncodings() {
 	// Without a block each_char is an enumerator of the characters.
 	def(c, "each_char", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		k, s := self.Kind(), self.Str()
+		if k == object.KindBytes {
+			return object.Value{}, noCharacters(ctx, "each_char")
+		}
 		chars := func(ctx object.Context, yield func(object.Value) error) error {
 			for i := 0; i < len(s); {
 				size := 1
@@ -289,6 +312,9 @@ func InstallStringEncodings() {
 	eachLine := c.Methods["each_line"].Native
 	def(c, "each_line", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		k := self.Kind()
+		if k == object.KindBytes {
+			return object.Value{}, noCharacters(ctx, "each_line")
+		}
 		if k == object.KindString || block.IsZero() {
 			return eachLine(ctx, self, args, kw, block)
 		}
@@ -302,16 +328,17 @@ func InstallStringEncodings() {
 		}
 		return self, nil
 	})
-	// A binary string answers its byte methods alone.
+	// A binary string answers its byte methods alone. The methods above
+	// say so themselves; these are the ones that read the receiver's
+	// encoding themselves and have no wrapper yet.
 	for name, m := range c.Methods {
-		// A pattern matches bytes as it matches characters.
-		if m.Native == nil || byteMethods[name] || patternMethods[name] {
+		if m.Native == nil || !ownEncoding[name] || byteMethods[name] || patternMethods[name] {
 			continue
 		}
 		fn, name, borrows := m.Native, name, m.Borrows
 		c.Define(name, m.Arity, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			if self.Kind() == object.KindBytes {
-				return object.Value{}, ctx.Raise(object.CompatibilityError, "%s reads characters, and a binary string has bytes alone: say what they are with force_encoding first", name)
+				return object.Value{}, noCharacters(ctx, name)
 			}
 			return fn(ctx, self, args, kw, block)
 		})
