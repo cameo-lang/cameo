@@ -28,6 +28,18 @@ func installStringPatterns() {
 		var out []object.Value
 		for _, m := range p.findAll(str(self), -1) {
 			v := groupsOrText(m)
+			// What matched in ASCII is ASCII.
+			if self.KnownASCII() {
+				if l, ok := v.AsList(); ok {
+					for i, g := range l.Elems {
+						if g.IsString() {
+							l.Elems[i] = object.ASCIIString(g.Str())
+						}
+					}
+				} else {
+					v = object.ASCIIString(v.Str())
+				}
+			}
 			if block.IsZero() {
 				out = append(out, v)
 				continue
@@ -42,7 +54,7 @@ func installStringPatterns() {
 		return self, nil
 	})
 	def(c, "split", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return split(ctx, str(self), args)
+		return split(ctx, self, args)
 	})
 	def(c, "=~", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		r, ok := args[0].AsRegexp()
@@ -313,7 +325,8 @@ func substitute(ctx object.Context, self object.Value, args []object.Value, kw *
 // characters for "", and on each match of a string or regexp otherwise,
 // with a regexp's groups kept between the fields. A positive limit caps
 // the fields; without one, trailing empty fields are dropped.
-func split(ctx object.Context, s string, args []object.Value) (object.Value, error) {
+func split(ctx object.Context, self object.Value, args []object.Value) (object.Value, error) {
+	s := self.Str()
 	limit := 0
 	if len(args) >= 2 {
 		n, err := WantInt(ctx, args[1], "")
@@ -323,7 +336,7 @@ func split(ctx object.Context, s string, args []object.Value) (object.Value, err
 		limit = int(n)
 	}
 	var fields []object.Value
-	add := func(f string) { fields = append(fields, object.String(f)) }
+	add := func(f string) { fields = append(fields, partOf(self, f)) }
 	var p matcher
 	whitespace := len(args) == 0 || args[0].IsNil()
 	if !whitespace {

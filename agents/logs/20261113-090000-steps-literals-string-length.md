@@ -26,6 +26,7 @@ pull request per cause, on top of the stack that ends in #388.
 - [x] #399 more makers of strings give the number
 - [x] #400 a string is at most 4 GiB
 - [x] #401 a substitution has its number from its parts
+- [x] #402 tr, squeeze, padding, prefixes and suffixes, parts of ASCII
 
 ## Measurements
 Suite geomean against CRuby: 172% at #388, 164% at #389, 153% at #394;
@@ -53,8 +54,8 @@ not run for #395 to #398. Single cases, seconds, before, after, CRuby:
   does nothing else.
 
 ## Left open
-- A string whose maker gives no count (`tr`, `delete`, `squeeze`,
-  `center`, `format`, `split`, a file that was read) is counted at
-  every `length`.
+- A string whose maker gives no count (`format`, `succ`, a part
+  `split` or `scan` cut out of a string that is not ASCII, a file that
+  was read, what a StringIO reads) is counted at every `length`.
 - `String#[]` still decodes the whole string, known ASCII or not.
 - The call path, `sort` with a block, `max` and `min` on integers.

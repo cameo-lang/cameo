@@ -20,7 +20,9 @@ type parser struct {
 	ctx object.Context
 	o   *options
 	s   string
-	r   *csv.Reader
+	// ascii says s holds ASCII alone, and so do its fields.
+	ascii bool
+	r     *csv.Reader
 	// lineStarts are the byte offsets where each line of s starts, so a
 	// field's position from the reader becomes an offset into s.
 	lineStarts []int
@@ -53,12 +55,13 @@ func newParser(ctx object.Context, o *options, s string) *parser {
 	if o.strip {
 		s = stripAroundQuotes(s, o.stripped, o.colSep[0])
 	}
-	p := &parser{ctx: ctx, o: o, s: s}
+	p := &parser{ctx: ctx, o: o, s: s, ascii: true}
 	p.lineStarts = []int{0}
 	for i := 0; i < len(s); i++ {
 		if s[i] == '\n' {
 			p.lineStarts = append(p.lineStarts, i+1)
 		}
+		p.ascii = p.ascii && s[i] < 0x80
 	}
 	p.reset()
 	return p
@@ -204,6 +207,8 @@ func (p *parser) record() ([]object.Value, string, []bool, error) {
 			fields[i] = p.o.emptyField()
 		case f == "":
 			fields[i] = p.o.nilField()
+		case p.ascii:
+			fields[i] = object.ASCIIString(f)
 		default:
 			fields[i] = object.String(f)
 		}
