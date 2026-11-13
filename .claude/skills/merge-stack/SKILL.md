@@ -125,9 +125,13 @@ was based on it, and the conflicts you resolved; read it.
 
 ## 3. Run CI on the top only
 
-Every push starts a run. Cancel the runs of every pull request but the top,
-and check again for half a minute or so: a run is created a little after its
-push.
+A push starts no run for a branch whose head commit carries `[skip ci]`
+([agents/stacks.md](../../../agents/stacks.md)): set the marker on every
+commit but the top's in step 2, and the top's run is the only one. Where a
+commit below the top went out without it, cancel its run, and check again
+for half a minute or so: a run is created a little after its push. Step 5
+writes the messages of the commits that reach `main` from the pull requests'
+titles and descriptions, which never carry the marker.
 
 ```sh
 gh run list --branch <head> --json databaseId,status \
