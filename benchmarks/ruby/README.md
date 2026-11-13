@@ -83,6 +83,10 @@ binary string is under `unsupported/binary-strings/`: Ruby changes the
 ASCII letters among the bytes, and cameo raises
 `Encoding::CompatibilityError`.
 
+A case that writes bytes that are not UTF-8 in a string literal, `"\xff"`,
+is under `unsupported/invalid-strings/`: cameo writes such a string
+`b"\xff"`, which Ruby does not read.
+
 `bugs/` is empty: every case filed there has been fixed. A bare `Object`
 prints as `#<Object>`, without the address Ruby shows, since cameo values
 have no identity; the cases that print one count as working.

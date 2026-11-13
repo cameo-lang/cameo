@@ -438,7 +438,7 @@ class Point
   int64 :x
   string :tag
 end
-p await(Echo.new, :go, nil, true, 7, 2**70, 1.5, "s", "\xff".b, :sym, [1, [2, "t"], :u], {a: 1}, Point.new(x: 1), Echo.new)
+p await(Echo.new, :go, nil, true, 7, 2**70, 1.5, "s", b"\xff", :sym, [1, [2, "t"], :u], {a: 1}, Point.new(x: 1), Echo.new)
 `, "[nil, true, 7, 1180591620717411303424, 1.5, \"s\", \"\\xFF\", \"sym\", [1, [2, \"t\"], \"u\"], {\"a\" => 1}, Point(x: 1, tag: nil), Echo()]\n")
 	expectError(t, "include Cameo\nclass Echo\n  def go(x) = x\nend\nawait Echo.new, :go, Echo\n", "a Class cannot be passed to async (TypeError)")
 	expectError(t, "include Cameo\nanon = Class.new { def go = 1 }\nawait anon.new, :go\n", "has an invalid nested name")
@@ -448,8 +448,8 @@ p await(Echo.new, :go, nil, true, 7, 2**70, 1.5, "s", "\xff".b, :sym, [1, [2, "t
 func TestAsyncRejectsWhatTheEnvelopeRejects(t *testing.T) {
 	// A string that is not valid UTF-8 cannot cross, on its own, in a list,
 	// or as a worker's result.
-	echo := "include Cameo\nclass Echo\n  def go(*args) = args\n  def bad = \"\xff\"\nend\n"
-	for _, call := range []string{`await Echo.new, :go, "\xff"`, `await Echo.new, :go, ["\xff"]`, `await Echo.new, :go, ["\xff", :a]`, `await Echo.new, :bad`} {
+	echo := "include Cameo\nclass Echo\n  def go(*args) = args\n  def bad = b\"\\xff\".force_encoding(\"UTF-8\")\nend\nx = b\"\\xff\".force_encoding(\"UTF-8\")\n"
+	for _, call := range []string{`await Echo.new, :go, x`, `await Echo.new, :go, [x]`, `await Echo.new, :go, [x, :a]`, `await Echo.new, :bad`} {
 		expectError(t, echo+call+"\n", "invalid UTF-8")
 	}
 }

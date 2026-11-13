@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"slices"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/go-ruby-parser/parser"
 	"github.com/go-ruby-parser/parser/ast"
@@ -230,6 +231,10 @@ func (c *converter) expr(n ast.Node) Node {
 		c.fail("imaginary literals are not supported")
 		return nil
 	case *ast.StringLit:
+		if !utf8.ValidString(n.Value) {
+			c.fail(`a string literal with bytes that are not UTF-8 is a binary string and is written b"..."`)
+			return nil
+		}
 		return &Str{c.pos(), n.Value}
 	case *ast.StrInterp:
 		return &Interp{c.pos(), c.exprs(n.Parts)}
@@ -827,6 +832,11 @@ func isFieldType(name string) bool { return compositeFieldTypes[name] || object.
 
 func (c *converter) call(n *ast.Call) Node {
 	name := n.Name
+	if name == bytesCall && n.Recv == nil && n.Paren && n.Block == nil && len(n.Args) == 1 {
+		if s, ok := n.Args[0].(*ast.StringLit); ok {
+			return &Bytes{c.pos(), s.Value}
+		}
+	}
 	if n.Recv == nil && len(n.Args) == 0 && n.Block == nil && !n.Paren {
 		// The line of __LINE__ is the statement's: the parser records no
 		// finer position.

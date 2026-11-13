@@ -17,7 +17,7 @@ says why; its *Decisions taken* records the choices made explicitly.
 ## How compatible, measured
 
 **CRuby's benchmark suite.** [benchmarks/ruby](../benchmarks/ruby) holds the
-1318 cases of CRuby's `benchmark/` that cameo may legally carry. 783 of them
+1318 cases of CRuby's `benchmark/` that cameo may legally carry. 781 of them
 run under cameo with Ruby's output. The others, by the first thing that stops
 each:
 
@@ -42,6 +42,7 @@ each:
 | 6 | `ruby2_keywords` |
 | 5 | object identity |
 | 3 | `ENV` |
+| 2 | a string literal with bytes that are not UTF-8 |
 | 1 each | class variables, `String#tr` with a hash |
 
 **ruby/spec.** [specs](../specs) sorts all 3841 spec files of
@@ -297,6 +298,11 @@ sets the fields, and `p a` prints `Point(x: 1, y: 2)` where Ruby prints
   `subsec` is a Float, since `Rational` is left out.
 - A String is UTF-8, ASCII-8BIT (binary) or US-ASCII; other encodings do not
   exist.
+- A string literal is UTF-8. One with bytes that are not UTF-8 (`"\xFF"`)
+  is a syntax error, where Ruby makes a String whose `valid_encoding?` is
+  false. Such bytes are written as a binary string literal, `b"\xFF"`,
+  which Ruby reads as a call of `b`; it takes escapes as `"..."` does, or
+  none as `b'...'`, and no interpolation.
 - A binary String has bytes and no characters. A method that reads
   characters (`upcase`, `strip`, `chars`, `to_i`, `split`, `reverse`,
   `center`, `tr`) raises Encoding::CompatibilityError for one, where Ruby

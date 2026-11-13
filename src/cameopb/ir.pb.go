@@ -923,8 +923,8 @@ func (x *Seq) GetCode() []*Code {
 
 // Constant is a literal the source wrote: nil when no kind is set, a
 // boolean, a number or a string. An integer beyond 64 bits is big_value,
-// its decimal digits. A string that is not valid UTF-8, which a protobuf
-// string cannot hold, is bytes_value.
+// its decimal digits. A string literal is UTF-8 and string_value; a
+// binary string literal, b"...", is bytes_value.
 type Constant struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Kind:

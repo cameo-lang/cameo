@@ -31,8 +31,8 @@ n = 12
 p (a + b).length, (a * 3).length, "#{a} #{b}".length, "#{a}#{n}#{1.5}#{:sým}#{nil}".length
 p a[1, 3].length, a[1..].length, a[1].length, a[-1].length, a.chars.map(&:length), a.chars.join.length
 p n.to_s.length, 1.5.to_s.length, (a + n.to_s).length, "#{a}".length, "#{n}".length
-half = "\xC3".force_encoding("UTF-8")
-rest = "\xA9".force_encoding("UTF-8")
+half = b"\xC3".force_encoding("UTF-8")
+rest = b"\xA9".force_encoding("UTF-8")
 p half.length, rest.length, (half + rest).length, (half + "a").length, ("a" + rest).length, "#{half}#{rest}".length
 p (rest * 3).length, (half * 2).length, a.b.length, a.b.force_encoding("UTF-8").length, (a.b + "x").length
 p "#{a.b}x".length, a.dup.force_encoding("ASCII-8BIT").length
@@ -47,8 +47,8 @@ p "#{a.b}x".length, a.dup.force_encoding("ASCII-8BIT").length
 func TestLengthOfStringsMadeByMethodsThatCount(t *testing.T) {
 	out := runScript(t, `
 a = "  Héllo Wörld\n"
-half = "\xC3".force_encoding("UTF-8")
-rest = "\xA9".force_encoding("UTF-8")
+half = b"\xC3".force_encoding("UTF-8")
+rest = b"\xA9".force_encoding("UTF-8")
 made = [
   a.upcase, a.downcase, a.capitalize, a.swapcase, a.reverse, a.strip, a.lstrip, a.rstrip, a.chomp, a.chop,
   a.to_s, a.to_str, "".chop, "é".chop, "".strip, (half * 2).reverse, half.chop,
@@ -69,8 +69,8 @@ p made.map { |s| s.length == s.each_char.count }.uniq
 func TestLengthOfSubstitutedStrings(t *testing.T) {
 	out := runScript(t, `
 a = "  Héllo Wörld\n"
-half = "\xC3".force_encoding("UTF-8")
-rest = "\xA9".force_encoding("UTF-8")
+half = b"\xC3".force_encoding("UTF-8")
+rest = b"\xA9".force_encoding("UTF-8")
 made = [
   a.gsub("l", "łł"), a.gsub(/ö/) { |m| m * 3 }, a.sub("é", ""), a.gsub("z", "y"), half.gsub("x", "y"),
   a.gsub("", "-"), a.gsub(/(l+)/, '<\1é>'), a.gsub(/[éö]/, "é" => "e", "ö" => "öö"), a.sub(/\s+/, ""),
@@ -92,8 +92,8 @@ func TestLengthOfStringsWhoseCountFollowsFromTheirMaking(t *testing.T) {
 require "csv"
 a = "  Héllo Wörld\n"
 x = "hello, world  foo"
-half = "\xC3".force_encoding("UTF-8")
-rest = "\xA9".force_encoding("UTF-8")
+half = b"\xC3".force_encoding("UTF-8")
+rest = b"\xA9".force_encoding("UTF-8")
 made = [
   a.tr("lo", "łø"), a.tr("l", ""), a.tr("^l", "é"), a.tr("a-z", "A-Z"), x.tr("o", "ö"),
   a.squeeze, "aaééé  b".squeeze, "".squeeze, x.squeeze,

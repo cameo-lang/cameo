@@ -10,10 +10,10 @@ import (
 // pattern, as Ruby's does.
 func TestABinaryStringAnswersItsBytes(t *testing.T) {
 	out := runScript(t, `
-b = "héllo\xFF".b
+b = b"héllo\xFF"
 p b.length, b.size, b.bytesize, b[1], b[1, 2], b[-1], b.bytes.first(3), b.getbyte(0), b.empty?
-p b + "x".b, b * 2 == b + b, b == "héllo\xFF".b, b.index("l"), b.include?("ll"), b.start_with?("h"), b.end_with?("\xFF".b)
-p b.delete_prefix("h"), b.unpack("C2"), b.encoding, b.ascii_only?, b.hash == "héllo\xFF".b.hash, b.dup == b
+p b + "x".b, b * 2 == b + b, b == b"héllo\xFF", b.index("l"), b.include?("ll"), b.start_with?("h"), b.end_with?(b"\xFF")
+p b.delete_prefix("h"), b.unpack("C2"), b.encoding, b.ascii_only?, b.hash == b"héllo\xFF".hash, b.dup == b
 p b.sub("l", "L"), b.gsub(/l/n, "L"), b.scan(/l/n).size, b =~ /l/n, b.match?(/\xFF/n)
 `)
 	assert.Equals(t, out, `7
