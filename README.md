@@ -173,7 +173,7 @@ is the full list. A model that writes cameo reads [agents.md](agents.md).
 
 **Speed.** Time relative to CRuby, lower is faster: the geometric mean
 over the cases of CRuby's own benchmark suite that cameo runs, by
-category. Measured on 2026-11-14 on a laptop (Apple M4), against CRuby 3.4.1.
+category. Measured on 2026-11-13 on a laptop (Apple M4), against CRuby 3.4.1.
 
 | Category | Cases | CRuby | CRuby + YJIT | cameo |
 |---|---:|---:|---:|---:|
@@ -195,7 +195,7 @@ category. Measured on 2026-11-14 on a laptop (Apple M4), against CRuby 3.4.1.
 |---|---|---|
 | CRuby's benchmark suite | cases that run with Ruby's output | 781 of 1318 |
 | ruby/spec, all of it | spec files the checker accepts | 1855 of 3858 |
-| ruby/spec, `language/` and `core/` | examples that pass, of those CRuby passes in the same harness | 1045 of 2134 (2026-11-05) |
+| ruby/spec, `language/` and `core/` | examples that pass, of those CRuby passes in the same harness | 990 of 2073 |
 | Ruby 3.4's standard library | libraries built in | 32 of 87 |
 
 Most of what does not run uses something cameo leaves out on purpose:

@@ -294,7 +294,10 @@ core/complex/hash_spec.rb	Complex#hash is different for different instances	expe
 core/complex/imag_spec.rb	Complex#imag is an alias of Complex#imaginary	expected	rational-complex	uninitialized constant Complex (NameError)
 core/complex/imaginary_spec.rb	Complex#imaginary returns the imaginary part of self	expected	rational-complex	undefined method 'Complex' for main (NoMethodError)
 core/complex/infinite_spec.rb	*	expected	rational-complex	imaginary literals are not supported
-core/complex/inspect_spec.rb	*	expected	numeric-subclass	class Comparison < Numeric: a subclass of Numeric is not supported; Integer and Float do not coerce other numbers in their arithmetic (CameoError)
+core/complex/inspect_spec.rb	Complex#inspect returns (${real}+${image}i) for positive imaginary parts	expected	rational-complex	undefined method 'Complex' for main (NoMethodError)
+core/complex/inspect_spec.rb	Complex#inspect returns (${real}-${image}i) for negative imaginary parts	expected	rational-complex	undefined method 'Complex' for main (NoMethodError)
+core/complex/inspect_spec.rb	Complex#inspect calls #inspect on real and imaginary	harness	fails under Ruby too	undefined method 'should_receive' for an instance of NumericSpecs::Subclass (NoMethodError)
+core/complex/inspect_spec.rb	Complex#inspect adds an `*' before the `i' if the last character of the imaginary part is not numeric	harness	fails under Ruby too	undefined method 'should_receive' for an instance of NumericSpecs::Subclass (NoMethodError)
 core/complex/integer_spec.rb	Complex#integer? returns false for a Complex with no imaginary part	expected	rational-complex	undefined method 'Complex' for main (NoMethodError)
 core/complex/integer_spec.rb	Complex#integer? returns false for a Complex with an imaginary part	expected	rational-complex	undefined method 'Complex' for main (NoMethodError)
 core/complex/magnitude_spec.rb	Complex#magnitude is an alias of Complex#abs	expected	rational-complex	uninitialized constant Complex (NameError)
@@ -348,7 +351,14 @@ core/complex/to_i_spec.rb	Complex#to_i when the imaginary part responds to #== 0
 core/complex/to_i_spec.rb	Complex#to_i when the imaginary part is non-zero raises RangeError	expected	rational-complex	undefined method 'Complex' for main (NoMethodError)
 core/complex/to_i_spec.rb	Complex#to_i when the imaginary part is Float 0.0 raises RangeError	expected	rational-complex	undefined method 'Complex' for main (NoMethodError)
 core/complex/to_r_spec.rb	*	expected	rational-complex	rational literals are not supported
-core/complex/to_s_spec.rb	*	expected	numeric-subclass	class Comparison < Numeric: a subclass of Numeric is not supported; Integer and Float do not coerce other numbers in their arithmetic (CameoError)
+core/complex/to_s_spec.rb	Complex#to_s when self's real component is 0 returns both the real and imaginary component even when the real is 0	expected	rational-complex	undefined method 'Complex' for main (NoMethodError)
+core/complex/to_s_spec.rb	Complex#to_s returns self as String	expected	rational-complex	undefined method 'Complex' for main (NoMethodError)
+core/complex/to_s_spec.rb	Complex#to_s returns 1+0.0i for Complex(1, 0.0)	expected	rational-complex	undefined method 'Complex' for main (NoMethodError)
+core/complex/to_s_spec.rb	Complex#to_s returns 1-0.0i for Complex(1, -0.0)	expected	rational-complex	undefined method 'Complex' for main (NoMethodError)
+core/complex/to_s_spec.rb	Complex#to_s returns 1+Infinity*i for Complex(1, Infinity)	expected	rational-complex	undefined method 'Complex' for main (NoMethodError)
+core/complex/to_s_spec.rb	Complex#to_s returns 1-Infinity*i for Complex(1, -Infinity)	expected	rational-complex	undefined method 'Complex' for main (NoMethodError)
+core/complex/to_s_spec.rb	Complex#to_s returns 1+NaN*i for Complex(1, NaN)	expected	rational-complex	undefined method 'Complex' for main (NoMethodError)
+core/complex/to_s_spec.rb	Complex#to_s treats real and imaginary parts as strings	harness	fails under Ruby too	undefined method 'should_receive' for an instance of NumericSpecs::Subclass (NoMethodError)
 core/complex/uminus_spec.rb	Complex#-@ sends #-@ to the real and imaginary parts and returns a Complex with the resulting respective parts	harness	fails under Ruby too	undefined method 'mock_numeric' for main (NoMethodError)
 core/conditionvariable/broadcast_spec.rb	ConditionVariable#broadcast releases all threads waiting in line for this resource	expected	threads	uninitialized constant Mutex (NameError)
 core/conditionvariable/marshal_dump_spec.rb	ConditionVariable#marshal_dump raises a TypeError	expected	threads	uninitialized constant ConditionVariable (NameError)
@@ -442,20 +452,14 @@ core/encoding/converter/constants_spec.rb	Encoding::Converter::XML_ATTR_CONTENT_
 core/encoding/converter/constants_spec.rb	Encoding::Converter::XML_ATTR_CONTENT_DECORATOR has an Integer value	expected	encodings	uninitialized constant Encoding::Converter (NameError)
 core/encoding/converter/constants_spec.rb	Encoding::Converter::XML_ATTR_QUOTE_DECORATOR exists	expected	encodings	uninitialized constant Encoding::Converter (NameError)
 core/encoding/converter/constants_spec.rb	Encoding::Converter::XML_ATTR_QUOTE_DECORATOR has an Integer value	expected	encodings	uninitialized constant Encoding::Converter (NameError)
-core/encoding/converter/convert_spec.rb	Encoding::Converter#convert returns a String	expected	encodings	uninitialized constant Encoding::Converter (NameError)
-core/encoding/converter/convert_spec.rb	Encoding::Converter#convert sets the encoding of the result to the target encoding	expected	encodings	uninitialized constant Encoding::Converter (NameError)
-core/encoding/converter/convert_spec.rb	Encoding::Converter#convert transcodes the given String to the target encoding	expected	encodings	uninitialized constant Encoding::Converter (NameError)
-core/encoding/converter/convert_spec.rb	Encoding::Converter#convert allows Strings of different encodings to the source encoding	expected	encodings	uninitialized constant Encoding::Converter (NameError)
-core/encoding/converter/convert_spec.rb	Encoding::Converter#convert reuses the given encoding pair if called multiple times	expected	encodings	uninitialized constant Encoding::Converter (NameError)
-core/encoding/converter/convert_spec.rb	Encoding::Converter#convert raises UndefinedConversionError if the String contains characters invalid for the target encoding	expected	encodings	uninitialized constant Encoding::Converter (NameError)
-core/encoding/converter/convert_spec.rb	Encoding::Converter#convert raises an ArgumentError if called on a finished stream	expected	encodings	uninitialized constant Encoding::Converter (NameError)
+core/encoding/converter/convert_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
 core/encoding/converter/convpath_spec.rb	Encoding::Converter#convpath returns an Array with a single element if there is a direct converter	expected	encodings	uninitialized constant Encoding::Converter (NameError)
 core/encoding/converter/convpath_spec.rb	Encoding::Converter#convpath returns multiple encoding pairs when direct conversion is impossible	expected	encodings	uninitialized constant Encoding::Converter (NameError)
 core/encoding/converter/convpath_spec.rb	Encoding::Converter#convpath indicates if crlf_newline conversion would occur	expected	encodings	uninitialized constant Encoding::Converter (NameError)
 core/encoding/converter/destination_encoding_spec.rb	Encoding::Converter#destination_encoding returns the destination encoding as an Encoding object	expected	encodings	uninitialized constant Encoding::Converter (NameError)
 core/encoding/converter/finish_spec.rb	*	expected	instance-variables	@ec = …: cameo has no instance variables; initialize sets a field with self.ec = …
 core/encoding/converter/inspect_spec.rb	Encoding::Converter#inspect includes the source and destination encodings in the return value	expected	encodings	uninitialized constant Encoding::UTF_16LE (NameError)
-core/encoding/converter/last_error_spec.rb	*	expected	block-captures-values	a block cannot rebind exception, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while
+core/encoding/converter/last_error_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
 core/encoding/converter/new_spec.rb	Encoding::Converter.new accepts a String for the source encoding	expected	encodings	uninitialized constant Encoding::Converter (NameError)
 core/encoding/converter/new_spec.rb	Encoding::Converter.new accepts a String for the destination encoding	expected	encodings	uninitialized constant Encoding::Converter (NameError)
 core/encoding/converter/new_spec.rb	Encoding::Converter.new accepts an Encoding object for the source encoding	expected	encodings	uninitialized constant Encoding::Converter (NameError)
@@ -476,16 +480,7 @@ core/encoding/converter/new_spec.rb	Encoding::Converter.new when passed nil for 
 core/encoding/converter/new_spec.rb	Encoding::Converter.new when passed nil for the replacement object when the destination encoding is not UTF-8 sets the replacement String to '\uFFFD'	expected	encodings	uninitialized constant Encoding::Converter (NameError)
 core/encoding/converter/new_spec.rb	Encoding::Converter.new when passed nil for the replacement object when the destination encoding is not UTF-8 sets the replacement String encoding to UTF-8	expected	encodings	uninitialized constant Encoding::Converter (NameError)
 core/encoding/converter/primitive_convert_spec.rb	*	expected	instance-variables	@ec = …: cameo has no instance variables; initialize sets a field with self.ec = …
-core/encoding/converter/primitive_errinfo_spec.rb	Encoding::Converter#primitive_errinfo returns [:source_buffer_empty,nil,nil,nil,nil] when no conversion has been attempted	expected	encodings	uninitialized constant Encoding::Converter (NameError)
-core/encoding/converter/primitive_errinfo_spec.rb	Encoding::Converter#primitive_errinfo returns [:finished,nil,nil,nil,nil] when #primitive_convert last returned :finished	expected	encodings	uninitialized constant Encoding::Converter (NameError)
-core/encoding/converter/primitive_errinfo_spec.rb	Encoding::Converter#primitive_errinfo returns [:source_buffer_empty,nil,nil,nil, nil] when #convert last succeeded	expected	encodings	uninitialized constant Encoding::Converter (NameError)
-core/encoding/converter/primitive_errinfo_spec.rb	Encoding::Converter#primitive_errinfo returns [:destination_buffer_full,nil,nil,nil,nil] when #primitive_convert last returned :destination_buffer_full	expected	encodings	uninitialized constant Encoding::Converter (NameError)
-core/encoding/converter/primitive_errinfo_spec.rb	Encoding::Converter#primitive_errinfo returns the status of the last primitive conversion, even if it was successful and the previous one wasn't	expected	encodings	uninitialized constant Encoding::Converter (NameError)
-core/encoding/converter/primitive_errinfo_spec.rb	Encoding::Converter#primitive_errinfo returns the state, source encoding, target encoding, and the erroneous bytes when #primitive_convert last returned :undefined_conversion	harness	fails under Ruby too	uninitialized constant Encoding::Converter (NameError)
-core/encoding/converter/primitive_errinfo_spec.rb	Encoding::Converter#primitive_errinfo returns the state, source encoding, target encoding, and erroneous bytes when #primitive_convert last returned :incomplete_input	harness	fails under Ruby too	uninitialized constant Encoding::Converter (NameError)
-core/encoding/converter/primitive_errinfo_spec.rb	Encoding::Converter#primitive_errinfo returns the state, source encoding, target encoding, erroneous bytes, and the read-again bytes when #primitive_convert last returned :invalid_byte_sequence	harness	fails under Ruby too	uninitialized constant Encoding::Converter (NameError)
-core/encoding/converter/primitive_errinfo_spec.rb	Encoding::Converter#primitive_errinfo returns the state, source encoding, target encoding, erroneous bytes, and the read-again bytes when #convert last raised InvalidByteSequenceError	harness	fails under Ruby too	uninitialized constant Encoding::Converter (NameError)
-core/encoding/converter/primitive_errinfo_spec.rb	Encoding::Converter#primitive_errinfo returns the state, source encoding, target encoding, erroneous bytes, and the read-again bytes when #finish last raised InvalidByteSequenceError	harness	fails under Ruby too	uninitialized constant Encoding::Converter (NameError)
+core/encoding/converter/primitive_errinfo_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
 core/encoding/converter/putback_spec.rb	*	expected	instance-variables	@ec = …: cameo has no instance variables; initialize sets a field with self.ec = …
 core/encoding/converter/replacement_spec.rb	*	expected	block-captures-values	a block cannot rebind ec, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while
 core/encoding/converter/search_convpath_spec.rb	Encoding::Converter.search_convpath returns an Array with a single element if there is a direct converter	expected	encodings	uninitialized constant Encoding::Converter (NameError)
@@ -503,15 +498,13 @@ core/encoding/find_spec.rb	*	expected	instance-variables	@encodings = …: cameo
 core/encoding/inspect_spec.rb	Encoding#inspect returns a String	pass		
 core/encoding/inspect_spec.rb	Encoding#inspect returns #<Encoding:name> for a non-dummy encoding named 'name'	expected	encodings	undefined method 'list' for class Encoding (NoMethodError)
 core/encoding/inspect_spec.rb	Encoding#inspect returns #<Encoding:name (dummy)> for a dummy encoding named 'name'	expected	encodings	undefined method 'list' for class Encoding (NoMethodError)
-core/encoding/invalid_byte_sequence_error/destination_encoding_name_spec.rb	*	expected	mutation	multiple assignment binds local variables only
-core/encoding/invalid_byte_sequence_error/destination_encoding_spec.rb	*	expected	mutation	multiple assignment binds local variables only
-core/encoding/invalid_byte_sequence_error/error_bytes_spec.rb	*	expected	mutation	multiple assignment binds local variables only
-core/encoding/invalid_byte_sequence_error/incomplete_input_spec.rb	Encoding::InvalidByteSequenceError#incomplete_input? returns nil by default	bug		undefined method 'incomplete_input?' for an instance of Encoding::InvalidByteSequenceError (NoMethodError)
-core/encoding/invalid_byte_sequence_error/incomplete_input_spec.rb	Encoding::InvalidByteSequenceError#incomplete_input? returns true if #primitive_convert returned :incomplete_input for the same data	expected	encodings	uninitialized constant Encoding::Converter (NameError)
-core/encoding/invalid_byte_sequence_error/incomplete_input_spec.rb	Encoding::InvalidByteSequenceError#incomplete_input? returns false if #primitive_convert returned :invalid_byte_sequence for the same data	expected	encodings	uninitialized constant Encoding::Converter (NameError)
-core/encoding/invalid_byte_sequence_error/readagain_bytes_spec.rb	*	expected	mutation	multiple assignment binds local variables only
-core/encoding/invalid_byte_sequence_error/source_encoding_name_spec.rb	*	expected	mutation	multiple assignment binds local variables only
-core/encoding/invalid_byte_sequence_error/source_encoding_spec.rb	*	expected	mutation	multiple assignment binds local variables only
+core/encoding/invalid_byte_sequence_error/destination_encoding_name_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
+core/encoding/invalid_byte_sequence_error/destination_encoding_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
+core/encoding/invalid_byte_sequence_error/error_bytes_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
+core/encoding/invalid_byte_sequence_error/incomplete_input_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
+core/encoding/invalid_byte_sequence_error/readagain_bytes_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
+core/encoding/invalid_byte_sequence_error/source_encoding_name_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
+core/encoding/invalid_byte_sequence_error/source_encoding_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
 core/encoding/list_spec.rb	Encoding.list returns an Array	expected	encodings	undefined method 'list' for class Encoding (NoMethodError)
 core/encoding/list_spec.rb	Encoding.list returns an Array of Encoding objects	expected	encodings	undefined method 'list' for class Encoding (NoMethodError)
 core/encoding/list_spec.rb	Encoding.list returns each encoding only once	expected	encodings	undefined method 'list' for class Encoding (NoMethodError)
@@ -534,11 +527,11 @@ core/encoding/names_spec.rb	Encoding#names returns #name as the first value	expe
 core/encoding/names_spec.rb	Encoding#names includes any aliases the encoding has	expected	encodings	undefined method 'name_list' for class Encoding (NoMethodError)
 core/encoding/replicate_spec.rb	Encoding#replicate has been removed	pass		
 core/encoding/to_s_spec.rb	Encoding#to_s is an alias of Encoding#name	expected	metaprogramming	undefined method 'instance_method' for class Encoding (NoMethodError)
-core/encoding/undefined_conversion_error/destination_encoding_name_spec.rb	*	expected	instance-variables	@exception = …: cameo has no instance variables; initialize sets a field with self.exception = …
-core/encoding/undefined_conversion_error/destination_encoding_spec.rb	*	expected	instance-variables	@exception = …: cameo has no instance variables; initialize sets a field with self.exception = …
-core/encoding/undefined_conversion_error/error_char_spec.rb	*	expected	instance-variables	@exception = …: cameo has no instance variables; initialize sets a field with self.exception = …
-core/encoding/undefined_conversion_error/source_encoding_name_spec.rb	*	expected	instance-variables	@exception = …: cameo has no instance variables; initialize sets a field with self.exception = …
-core/encoding/undefined_conversion_error/source_encoding_spec.rb	*	expected	instance-variables	@exception = …: cameo has no instance variables; initialize sets a field with self.exception = …
+core/encoding/undefined_conversion_error/destination_encoding_name_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
+core/encoding/undefined_conversion_error/destination_encoding_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
+core/encoding/undefined_conversion_error/error_char_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
+core/encoding/undefined_conversion_error/source_encoding_name_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
+core/encoding/undefined_conversion_error/source_encoding_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
 core/enumerable/all_spec.rb	*	expected	instance-variables	@list = …: cameo has no instance variables; initialize sets a field with self.list = …
 core/enumerable/any_spec.rb	*	expected	instance-variables	@list = …: cameo has no instance variables; initialize sets a field with self.list = …
 core/enumerable/chain_spec.rb	*	expected	instance-variables	@list = …: cameo has no instance variables; initialize sets a field with self.list = …
@@ -849,22 +842,7 @@ core/fiber/transfer_spec.rb	*	expected	instance-variables	@method: cameo has no 
 core/fiber/yield_spec.rb	*	expected	block-captures-values	a block cannot rebind step, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while
 core/file/absolute_path_spec.rb	*	expected	instance-variables	@abs = …: cameo has no instance variables; initialize sets a field with self.abs = …
 core/file/atime_spec.rb	*	expected	instance-variables	@file = …: cameo has no instance variables; initialize sets a field with self.file = …
-core/file/basename_spec.rb	File.basename returns the basename of a path (basic cases)	pass		
-core/file/basename_spec.rb	File.basename returns the last component of the filename	pass		
-core/file/basename_spec.rb	File.basename returns an string	pass		
-core/file/basename_spec.rb	File.basename returns the basename for unix format	pass		
-core/file/basename_spec.rb	File.basename returns the basename for edge cases	pass		
-core/file/basename_spec.rb	File.basename ignores a trailing directory separator	pass		
-core/file/basename_spec.rb	File.basename returns the basename for unix suffix	pass		
-core/file/basename_spec.rb	File.basename takes into consideration the platform path separator(s)	pass		
-core/file/basename_spec.rb	File.basename raises a TypeError if the arguments are not String types	pass		
-core/file/basename_spec.rb	File.basename accepts an object that has a #to_path method	harness	fails under Ruby too	undefined method 'mock_to_path' for main (NoMethodError)
-core/file/basename_spec.rb	File.basename raises an ArgumentError if passed more than two arguments	pass		
-core/file/basename_spec.rb	File.basename rejects strings encoded with non ASCII-compatible encodings	expected	encodings	undefined method 'list' for class Encoding (NoMethodError)
-core/file/basename_spec.rb	File.basename works with all ASCII-compatible encodings	expected	encodings	undefined method 'list' for class Encoding (NoMethodError)
-core/file/basename_spec.rb	File.basename returns the extension for a multibyte filename	pass		
-core/file/basename_spec.rb	File.basename returns a new unfrozen String	expected	identity-and-freezing	undefined method 'equal?' for an instance of String (NoMethodError)
-core/file/basename_spec.rb	File.basename preserves the encoding of the path	expected	encodings	uninitialized constant Encoding::EUC_JP (NameError)
+core/file/basename_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
 core/file/birthtime_spec.rb	*	expected	instance-variables	@file = …: cameo has no instance variables; initialize sets a field with self.file = …
 core/file/blockdev_spec.rb	*	expected	instance-variables	@object: cameo has no instance variables; a field is read with its reader, object or self.object
 core/file/chardev_spec.rb	*	expected	instance-variables	@object: cameo has no instance variables; a field is read with its reader, object or self.object
@@ -1594,13 +1572,14 @@ core/io/binmode_spec.rb	*	expected	mutation	def from=: setters are not supported
 core/io/binread_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
 core/io/binwrite_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
 core/io/buffer/advance_spec.rb	*	expected	instance-variables	@buffer: cameo has no instance variables; a field is read with its reader, buffer or self.buffer
-core/io/buffer/and_spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
+core/io/buffer/and_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
+core/io/buffer/bit_count_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
 core/io/buffer/empty_spec.rb	*	expected	instance-variables	@buffer = …: cameo has no instance variables; initialize sets a field with self.buffer = …
 core/io/buffer/external_spec.rb	*	expected	instance-variables	@buffer: cameo has no instance variables; a field is read with its reader, buffer or self.buffer
 core/io/buffer/for_spec.rb	*	expected	instance-variables	@string = …: cameo has no instance variables; initialize sets a field with self.string = …
 core/io/buffer/free_spec.rb	IO::Buffer#free with a buffer created with .new frees internal memory and nullifies the buffer	expected	io	uninitialized constant IO::Buffer (NameError)
 core/io/buffer/free_spec.rb	IO::Buffer#free with a buffer created with .new frees mapped memory and nullifies the buffer	expected	io	uninitialized constant IO::Buffer (NameError)
-core/io/buffer/free_spec.rb	IO::Buffer#free with a file-backed buffer created with .map frees mapped memory and nullifies the buffer	expected	io	undefined method 'open' for class File (NoMethodError)
+core/io/buffer/free_spec.rb	IO::Buffer#free with a file-backed buffer created with .map frees mapped memory and nullifies the buffer	expected	io	undefined method 'open' for class File: the host allows no file I/O; run the script with cameo --io=file, or let the program say AllowIO("file") and give it a file system with FileSystem (NoMethodError)
 core/io/buffer/free_spec.rb	IO::Buffer#free with a String-backed buffer created with .for without a block disassociates the buffer from the string and nullifies the buffer	expected	io	uninitialized constant IO::Buffer (NameError)
 core/io/buffer/free_spec.rb	IO::Buffer#free with a String-backed buffer created with .for with a block disassociates the buffer from the string and nullifies the buffer	expected	io	uninitialized constant IO::Buffer (NameError)
 core/io/buffer/free_spec.rb	IO::Buffer#free with a String-backed buffer created with .string disassociates the buffer from the string and nullifies the buffer	expected	io	uninitialized constant IO::Buffer (NameError)
@@ -1616,7 +1595,7 @@ core/io/buffer/map_spec.rb	*	expected	instance-variables	@tmp_files = …: cameo
 core/io/buffer/mapped_spec.rb	*	expected	instance-variables	@buffer: cameo has no instance variables; a field is read with its reader, buffer or self.buffer
 core/io/buffer/not_spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
 core/io/buffer/null_spec.rb	*	expected	instance-variables	@buffer = …: cameo has no instance variables; initialize sets a field with self.buffer = …
-core/io/buffer/or_spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
+core/io/buffer/or_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
 core/io/buffer/overlap_spec.rb	*	expected	instance-variables	@buffer = …: cameo has no instance variables; initialize sets a field with self.buffer = …
 core/io/buffer/private_spec.rb	*	expected	instance-variables	@buffer: cameo has no instance variables; a field is read with its reader, buffer or self.buffer
 core/io/buffer/readonly_spec.rb	*	expected	instance-variables	@buffer: cameo has no instance variables; a field is read with its reader, buffer or self.buffer
@@ -1629,7 +1608,7 @@ core/io/buffer/transfer_spec.rb	*	expected	instance-variables	@buffer: cameo has
 core/io/buffer/valid_spec.rb	*	expected	instance-variables	@buffer: cameo has no instance variables; a field is read with its reader, buffer or self.buffer
 core/io/buffer/view_spec.rb	*	expected	instance-variables	@storage = …: cameo has no instance variables; initialize sets a field with self.storage = …
 core/io/buffer/write_spec.rb	*	expected	instance-variables	@path = …: cameo has no instance variables; initialize sets a field with self.path = …
-core/io/buffer/xor_spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
+core/io/buffer/xor_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
 core/io/close_on_exec_spec.rb	*	expected	instance-variables	@name = …: cameo has no instance variables; initialize sets a field with self.name = …
 core/io/close_read_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
 core/io/close_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
@@ -1666,11 +1645,11 @@ core/io/isatty_spec.rb	IO#isatty is an alias of IO#tty?	expected	metaprogramming
 core/io/lineno_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
 core/io/new_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
 core/io/nonblock_spec.rb	IO#nonblock? before	harness	IO#nonblock? before	
-core/io/nonblock_spec.rb	IO#nonblock? returns false for a file by default	harness	fails under Ruby too	undefined method 'open' for class File (NoMethodError)
+core/io/nonblock_spec.rb	IO#nonblock? returns false for a file by default	harness	fails under Ruby too	undefined method 'open' for class File: the host allows no file I/O; run the script with cameo --io=file, or let the program say AllowIO("file") and give it a file system with FileSystem (NoMethodError)
 core/io/nonblock_spec.rb	IO#nonblock? returns true for pipe by default	harness	fails under Ruby too	undefined method 'pipe' for class IO (NoMethodError)
 core/io/nonblock_spec.rb	IO#nonblock? returns true for socket by default	harness	fails under Ruby too	cannot load such file -- socket (LoadError)
 core/io/nonblock_spec.rb	IO#nonblock= before	harness	IO#nonblock= before	
-core/io/nonblock_spec.rb	IO#nonblock= changes the IO to non-blocking mode	harness	fails under Ruby too	undefined method 'open' for class File (NoMethodError)
+core/io/nonblock_spec.rb	IO#nonblock= changes the IO to non-blocking mode	harness	fails under Ruby too	undefined method 'open' for class File: the host allows no file I/O; run the script with cameo --io=file, or let the program say AllowIO("file") and give it a file system with FileSystem (NoMethodError)
 core/io/open_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
 core/io/output_spec.rb	*	expected	mutation	def from=: setters are not supported; a field changes through with
 core/io/path_spec.rb	IO#path returns the path of the file associated with the IO object	harness	fails under Ruby too	undefined method 'unlink' for class File (NoMethodError)
@@ -2233,7 +2212,7 @@ core/numeric/abs2_spec.rb	*	expected	instance-variables	@numbers = …: cameo ha
 core/numeric/abs_spec.rb	*	expected	instance-variables	@obj = …: cameo has no instance variables; initialize sets a field with self.obj = …
 core/numeric/angle_spec.rb	Numeric#angle is an alias of Numeric#arg	expected	metaprogramming	undefined method 'instance_method' for class Numeric (NoMethodError)
 core/numeric/arg_spec.rb	*	expected	instance-variables	@numbers = …: cameo has no instance variables; initialize sets a field with self.numbers = …
-core/numeric/ceil_spec.rb	*	expected	numeric-subclass	class Comparison < Numeric: a subclass of Numeric is not supported; Integer and Float do not coerce other numbers in their arithmetic (CameoError)
+core/numeric/ceil_spec.rb	Numeric#ceil converts self to a Float (using #to_f) and returns the #ceil'ed result	harness	fails under Ruby too	undefined method 'mock_numeric' for main (NoMethodError)
 core/numeric/clone_spec.rb	Numeric#clone returns self	expected	identity-and-freezing	undefined method 'equal?' for an instance of Integer (NoMethodError)
 core/numeric/clone_spec.rb	Numeric#clone does not change frozen status	pass		
 core/numeric/clone_spec.rb	Numeric#clone accepts optional keyword argument :freeze	expected	identity-and-freezing	undefined method 'equal?' for an instance of Integer (NoMethodError)
@@ -2263,7 +2242,7 @@ core/numeric/i_spec.rb	Numeric#i sets the imaginary part to self	expected	ration
 core/numeric/imag_spec.rb	Numeric#imag is an alias of Numeric#imaginary	expected	metaprogramming	undefined method 'instance_method' for class Numeric (NoMethodError)
 core/numeric/imaginary_spec.rb	*	expected	instance-variables	@numbers = …: cameo has no instance variables; initialize sets a field with self.numbers = …
 core/numeric/infinite_spec.rb	Numeric#infinite? returns nil by default	harness	fails under Ruby too	undefined method 'mock_numeric' for main (NoMethodError)
-core/numeric/integer_spec.rb	*	expected	numeric-subclass	class Comparison < Numeric: a subclass of Numeric is not supported; Integer and Float do not coerce other numbers in their arithmetic (CameoError)
+core/numeric/integer_spec.rb	Numeric#integer? returns false	pass		
 core/numeric/magnitude_spec.rb	Numeric#magnitude is an alias of Numeric#abs	expected	metaprogramming	undefined method 'instance_method' for class Numeric (NoMethodError)
 core/numeric/modulo_spec.rb	Numeric#modulo is an alias of Numeric#%	expected	metaprogramming	undefined method 'instance_method' for class Numeric (NoMethodError)
 core/numeric/modulo_spec.rb	Numeric#% returns self - other * self.div(other)	harness	fails under Ruby too	undefined method 'mock_numeric' for main (NoMethodError)
@@ -2274,7 +2253,16 @@ core/numeric/numeric_spec.rb	Numeric includes Comparable	pass
 core/numeric/phase_spec.rb	Numeric#phase is an alias of Numeric#arg	expected	metaprogramming	undefined method 'instance_method' for class Numeric (NoMethodError)
 core/numeric/polar_spec.rb	*	expected	instance-variables	@pos_numbers = …: cameo has no instance variables; initialize sets a field with self.pos_numbers = …
 core/numeric/positive_spec.rb	*	expected	instance-variables	@obj = …: cameo has no instance variables; initialize sets a field with self.obj = …
-core/numeric/quo_spec.rb	*	expected	numeric-subclass	class Comparison < Numeric: a subclass of Numeric is not supported; Integer and Float do not coerce other numbers in their arithmetic (CameoError)
+core/numeric/quo_spec.rb	Numeric#quo returns the result of self divided by the given Integer as a Rational	bug		undefined method 'quo' for an instance of Integer (NoMethodError)
+core/numeric/quo_spec.rb	Numeric#quo returns the result of self divided by the given Float as a Float	bug		undefined method 'quo' for an instance of Integer (NoMethodError)
+core/numeric/quo_spec.rb	Numeric#quo returns the result of self divided by the given Bignum as a Float	bug		undefined method 'quo' for an instance of Integer (NoMethodError)
+core/numeric/quo_spec.rb	Numeric#quo raises a ZeroDivisionError when the given Integer is 0	bug		undefined method 'quo' for an instance of Integer (NoMethodError)
+core/numeric/quo_spec.rb	Numeric#quo calls #to_r to convert the object to a Rational	harness	fails under Ruby too	undefined method 'should_receive' for an instance of NumericSpecs::Subclass (NoMethodError)
+core/numeric/quo_spec.rb	Numeric#quo raises a TypeError of #to_r does not return a Rational	harness	fails under Ruby too	undefined method 'should_receive' for an instance of NumericSpecs::Subclass (NoMethodError)
+core/numeric/quo_spec.rb	Numeric#quo raises a TypeError when given a non-Integer	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
+core/numeric/quo_spec.rb	Numeric#quo returns the result of calling self#/ with other	harness	fails under Ruby too	undefined method 'should_receive' for an instance of NumericSpecs::Subclass (NoMethodError)
+core/numeric/quo_spec.rb	Numeric#quo raises a ZeroDivisionError if the given argument is zero and not a Float	bug		undefined method 'quo' for an instance of Integer (NoMethodError)
+core/numeric/quo_spec.rb	Numeric#quo returns infinity if the given argument is zero and is a Float	bug		undefined method 'quo' for an instance of Integer (NoMethodError)
 core/numeric/real_spec.rb	*	expected	instance-variables	@numbers = …: cameo has no instance variables; initialize sets a field with self.numbers = …
 core/numeric/rect_spec.rb	Numeric#rect is an alias of Numeric#rectangular	expected	metaprogramming	undefined method 'instance_method' for class Numeric (NoMethodError)
 core/numeric/rectangular_spec.rb	*	expected	instance-variables	@numbers = …: cameo has no instance variables; initialize sets a field with self.numbers = …
@@ -2283,13 +2271,13 @@ core/numeric/round_spec.rb	*	expected	instance-variables	@obj = …: cameo has n
 core/numeric/singleton_method_added_spec.rb	*	expected	metaprogramming	def test on an object: methods belong to classes
 core/numeric/step_spec.rb	*	expected	instance-variables	@prc = …: cameo has no instance variables; initialize sets a field with self.prc = …
 core/numeric/to_c_spec.rb	*	expected	instance-variables	@numbers = …: cameo has no instance variables; initialize sets a field with self.numbers = …
-core/numeric/to_int_spec.rb	*	expected	numeric-subclass	class Comparison < Numeric: a subclass of Numeric is not supported; Integer and Float do not coerce other numbers in their arithmetic (CameoError)
+core/numeric/to_int_spec.rb	Numeric#to_int returns self#to_i	harness	fails under Ruby too	undefined method 'should_receive' for an instance of NumericSpecs::Subclass (NoMethodError)
 core/numeric/truncate_spec.rb	*	expected	instance-variables	@obj = …: cameo has no instance variables; initialize sets a field with self.obj = …
 core/numeric/uminus_spec.rb	Numeric#-@ returns the same value with opposite sign (integers)	pass		
 core/numeric/uminus_spec.rb	Numeric#-@ returns the same value with opposite sign (floats)	pass		
 core/numeric/uminus_spec.rb	Numeric#-@ returns the same value with opposite sign (two complement)	pass		
 core/numeric/uminus_spec.rb	Numeric#-@ with a Numeric subclass calls #coerce(0) on self, then subtracts the second element of the result from the first	harness	fails under Ruby too	undefined method 'mock_numeric' for main (NoMethodError)
-core/numeric/uplus_spec.rb	*	expected	numeric-subclass	class Comparison < Numeric: a subclass of Numeric is not supported; Integer and Float do not coerce other numbers in their arithmetic (CameoError)
+core/numeric/uplus_spec.rb	Numeric#+@ returns self	pass		
 core/numeric/zero_spec.rb	*	expected	instance-variables	@obj = …: cameo has no instance variables; initialize sets a field with self.obj = …
 core/objectspace/_id2ref_spec.rb	ObjectSpace._id2ref converts an object id to a reference to the object	expected	process	uninitialized constant ObjectSpace (NameError)
 core/objectspace/_id2ref_spec.rb	ObjectSpace._id2ref retrieves true by object_id	expected	process	uninitialized constant ObjectSpace (NameError)
@@ -2383,9 +2371,9 @@ core/proc/syntax_tree_spec.rb	*	expected	mutation	….keep_script_lines = …: t
 core/proc/to_proc_spec.rb	Proc#to_proc returns self	expected	literal-only	undefined method 'new' for class Proc: use a literal (NoMethodError)
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with Proc.new returns a description including file and line number	expected	literal-only	undefined method 'new' for class Proc: use a literal (NoMethodError)
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with Proc.new has a binary encoding	expected	literal-only	undefined method 'new' for class Proc: use a literal (NoMethodError)
-core/proc/to_s_spec.rb	Proc#to_s for a proc created with lambda returns a description including '(lambda)' and including file and line number	bug		Expected "#<Proc:/private/tmp/claude-501/-Users-eno-projects-cameo/6c8e9e9e-f5ba-46e6-9c99-0155edcb71cc/scratchpad/specout/programs/core/proc/to_s_spec.rb:266 (lambda)>" =~ /^#<Proc:([^ ]*?) \/private\/tmp\/claude\-501\/\-Users\-eno\-projec
+core/proc/to_s_spec.rb	Proc#to_s for a proc created with lambda returns a description including '(lambda)' and including file and line number	bug		Expected "<tmp>/to_s_spec.rb:266 (lambda)>" =~ /^#<Proc:([^ ]*?) <tmp>\/to_s_spec\.rb:266 \(lambda\)>$/ to be truthy but was nil
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with lambda has a binary encoding	pass		
-core/proc/to_s_spec.rb	Proc#to_s for a proc created with proc returns a description including file and line number	bug		Expected "#<Proc:/private/tmp/claude-501/-Users-eno-projects-cameo/6c8e9e9e-f5ba-46e6-9c99-0155edcb71cc/scratchpad/specout/programs/core/proc/to_s_spec.rb:276>" =~ /^#<Proc:([^ ]*?) \/private\/tmp\/claude\-501\/\-Users\-eno\-projects\-cameo
+core/proc/to_s_spec.rb	Proc#to_s for a proc created with proc returns a description including file and line number	bug		Expected "<tmp>/to_s_spec.rb:276>" =~ /^#<Proc:([^ ]*?) <tmp>\/to_s_spec\.rb:276>$/ to be truthy but was nil
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with proc has a binary encoding	pass		
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with UnboundMethod#to_proc returns a description including '(lambda)' and optionally including file and line number	expected	metaprogramming	undefined method 'method' for main (NoMethodError)
 core/proc/to_s_spec.rb	Proc#to_s for a proc created with UnboundMethod#to_proc has a binary encoding	expected	metaprogramming	undefined method 'method' for main (NoMethodError)
@@ -2849,13 +2837,7 @@ core/regexp/options_spec.rb	Regexp#options includes Regexp::FIXEDENCODING for a 
 core/regexp/options_spec.rb	Regexp#options includes Regexp::FIXEDENCODING for a Regexp literal with the 's' option	expected	encodings	Expected 0 == 0 to be falsy but was true
 core/regexp/options_spec.rb	Regexp#options does not include Regexp::FIXEDENCODING for a Regexp literal with the 'n' option	pass		
 core/regexp/options_spec.rb	Regexp#options includes Regexp::NOENCODING for a Regexp literal with the 'n' option	pass		
-core/regexp/quote_spec.rb	Regexp.quote escapes any characters with special meaning in a regular expression	pass		
-core/regexp/quote_spec.rb	Regexp.quote works with symbols	pass		
-core/regexp/quote_spec.rb	Regexp.quote works with substrings	pass		
-core/regexp/quote_spec.rb	Regexp.quote works for broken strings	pass		
-core/regexp/quote_spec.rb	Regexp.quote sets the encoding of the result to US-ASCII if there are only US-ASCII characters present in the input String	expected	encodings	unknown encoding name - euc-jp (ArgumentError)
-core/regexp/quote_spec.rb	Regexp.quote sets the encoding of the result to the encoding of the String if any non-US-ASCII characters are present in an input String with valid encoding	pass		
-core/regexp/quote_spec.rb	Regexp.quote sets the encoding of the result to BINARY if any non-US-ASCII characters are present in an input String with invalid encoding	harness	fails under Ruby too	Expected #<Encoding:UTF-8> == #<Encoding:BINARY (ASCII-8BIT)> to be truthy but was false
+core/regexp/quote_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
 core/regexp/source_spec.rb	Regexp#source returns the original string of the pattern	pass		
 core/regexp/source_spec.rb	Regexp#source keeps escape sequences as is	pass		
 core/regexp/source_spec.rb	Regexp#source escaping keeps escaping of metacharacter	pass		
@@ -2996,22 +2978,21 @@ core/sizedqueue/size_spec.rb	*	expected	instance-variables	@object: cameo has no
 core/string/allocate_spec.rb	String.allocate returns an instance of String	expected	metaprogramming	allocate is not supported: use new (NoMethodError)
 core/string/allocate_spec.rb	String.allocate returns a fully-formed String	expected	metaprogramming	allocate is not supported: use new (NoMethodError)
 core/string/allocate_spec.rb	String.allocate returns a binary String	expected	metaprogramming	allocate is not supported: use new (NoMethodError)
-core/string/append_as_bytes_spec.rb	String#append_bytes doesn't allow to mutate frozen strings	expected	mutation	cameo does not support mutating calls without rebinding; use + (CameoError)
-core/string/append_as_bytes_spec.rb	String#append_bytes allows creating broken strings in UTF8	expected	mutation	cameo does not support mutating calls without rebinding; use + (CameoError)
-core/string/append_as_bytes_spec.rb	String#append_bytes allows creating broken strings in UTF_32	expected	encodings	uninitialized constant Encoding::UTF_32LE (NameError)
-core/string/append_as_bytes_spec.rb	String#append_bytes never changes the receiver encoding	expected	mutation	cameo does not support mutating calls without rebinding; use + (CameoError)
-core/string/append_as_bytes_spec.rb	String#append_bytes accepts variadic String or Integer arguments	expected	mutation	cameo does not support mutating calls without rebinding; use + (CameoError)
-core/string/append_as_bytes_spec.rb	String#append_bytes truncates integers to the least significant byte	expected	mutation	cameo does not support mutating calls without rebinding; use + (CameoError)
-core/string/append_as_bytes_spec.rb	String#append_bytes wraps negative integers	expected	mutation	cameo does not support mutating calls without rebinding; use + (CameoError)
-core/string/append_as_bytes_spec.rb	String#append_bytes only accepts strings or integers, and doesn't attempt to cast with #to_str or #to_int	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
+core/string/append_as_bytes_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
 core/string/append_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/ascii_only_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/b_spec.rb	String#b returns a binary encoded string	pass		
 core/string/b_spec.rb	String#b returns new string without modifying self	expected	identity-and-freezing	undefined method 'equal?' for an instance of String (NoMethodError)
-core/string/bitwise_and_spec.rb	*	expected	mutation	This is not supported, use str = str.bitwise_and instead
-core/string/bitwise_not_spec.rb	*	expected	mutation	This is not supported, use str = str.bitwise_not instead
-core/string/bitwise_or_spec.rb	*	expected	mutation	This is not supported, use str = str.bitwise_or instead
-core/string/bitwise_xor_spec.rb	*	expected	mutation	This is not supported, use str = str.bitwise_xor instead
+core/string/bit_clear_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
+core/string/bit_count_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
+core/string/bit_flip_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
+core/string/bit_get_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
+core/string/bit_set_p_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
+core/string/bit_set_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
+core/string/bitwise_and_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
+core/string/bitwise_not_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
+core/string/bitwise_or_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
+core/string/bitwise_xor_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
 core/string/byteindex_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/byterindex_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/bytes_spec.rb	*	expected	instance-variables	@utf8 = …: cameo has no instance variables; initialize sets a field with self.utf8 = …
@@ -3096,7 +3077,7 @@ core/string/element_reference_spec.rb	*	expected	instance-variables	instance_var
 core/string/element_set_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/empty_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/encode_spec.rb	*	expected	mutation	….default_internal = …: the left side of an assignment must start with a local variable, so the copy has somewhere to go
-core/string/encoding_spec.rb	*	expected	mutation	This is not supported, use x = x.encode instead
+core/string/encoding_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
 core/string/end_with_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/eql_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/equal_value_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
@@ -3109,7 +3090,7 @@ core/string/getbyte_spec.rb	String#getbyte starts indexing at 0	pass
 core/string/getbyte_spec.rb	String#getbyte counts from the end of the String if given a negative argument	pass		
 core/string/getbyte_spec.rb	String#getbyte returns an Integer between 0 and 255	pass		
 core/string/getbyte_spec.rb	String#getbyte regards a multi-byte character as having multiple bytes	pass		
-core/string/getbyte_spec.rb	String#getbyte mirrors the output of #bytes	pass		
+core/string/getbyte_spec.rb	String#getbyte mirrors the output of #bytes	expected	binary-strings	invalid byte sequence in UTF-8: keep the bytes in a binary string (Encoding::InvalidByteSequenceError)
 core/string/getbyte_spec.rb	String#getbyte interprets bytes relative to the String's encoding	expected	encodings	unknown encoding name - utf-16le (ArgumentError)
 core/string/getbyte_spec.rb	String#getbyte returns nil for out-of-bound indexes	pass		
 core/string/getbyte_spec.rb	String#getbyte regards the empty String as containing no bytes	pass		
@@ -3142,7 +3123,7 @@ core/string/ord_spec.rb	String#ord ignores subsequent characters	pass
 core/string/ord_spec.rb	String#ord understands multibyte characters	pass		
 core/string/ord_spec.rb	String#ord is equivalent to #codepoints.first	pass		
 core/string/ord_spec.rb	String#ord raises an ArgumentError if called on an empty String	pass		
-core/string/ord_spec.rb	String#ord raises ArgumentError if the character is broken	pass		
+core/string/ord_spec.rb	String#ord raises ArgumentError if the character is broken	expected	binary-strings	invalid byte sequence in US-ASCII: keep the bytes in a binary string (Encoding::InvalidByteSequenceError)
 core/string/partition_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/plus_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/prepend_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
@@ -3197,16 +3178,7 @@ core/string/to_r_spec.rb	String#to_r understands a forward slash as separating t
 core/string/to_r_spec.rb	String#to_r returns (0/1) for Strings it can't parse	expected	rational-complex	undefined method 'to_r' for an instance of String (NoMethodError)
 core/string/to_s_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/to_str_spec.rb	String#to_str is an alias of String#to_s	expected	metaprogramming	undefined method 'instance_method' for class String (NoMethodError)
-core/string/to_sym_spec.rb	String#to_sym returns the symbol corresponding to self	expected	identity-and-freezing	undefined method 'equal?' for an instance of Symbol (NoMethodError)
-core/string/to_sym_spec.rb	String#to_sym does not special case +(binary) and -(binary)	expected	identity-and-freezing	undefined method 'equal?' for an instance of Symbol (NoMethodError)
-core/string/to_sym_spec.rb	String#to_sym does not special case certain operators	expected	identity-and-freezing	undefined method 'equal?' for an instance of Symbol (NoMethodError)
-core/string/to_sym_spec.rb	String#to_sym returns a US-ASCII Symbol for a UTF-8 String containing only US-ASCII characters	expected	identity-and-freezing	undefined method 'equal?' for an instance of Symbol (NoMethodError)
-core/string/to_sym_spec.rb	String#to_sym returns a US-ASCII Symbol for a binary String containing only US-ASCII characters	expected	identity-and-freezing	undefined method 'equal?' for an instance of Symbol (NoMethodError)
-core/string/to_sym_spec.rb	String#to_sym returns a UTF-8 Symbol for a UTF-8 String containing non US-ASCII characters	expected	identity-and-freezing	undefined method 'equal?' for an instance of Symbol (NoMethodError)
-core/string/to_sym_spec.rb	String#to_sym returns a UTF-16LE Symbol for a UTF-16LE String containing non US-ASCII characters	expected	encodings	uninitialized constant Encoding::UTF_16LE (NameError)
-core/string/to_sym_spec.rb	String#to_sym returns a binary Symbol for a binary String containing non US-ASCII characters	bug		Expected #<Encoding:UTF-8> == #<Encoding:BINARY (ASCII-8BIT)> to be truthy but was false
-core/string/to_sym_spec.rb	String#to_sym ignores existing symbols with different encoding	expected	encodings	uninitialized constant Encoding::ISO_8859_1 (NameError)
-core/string/to_sym_spec.rb	String#to_sym raises an EncodingError for UTF-8 String containing invalid bytes	pass		
+core/string/to_sym_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
 core/string/tr_s_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/tr_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/try_convert_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
@@ -3259,41 +3231,34 @@ core/string/upcase_spec.rb	*	expected	instance-variables	instance_variable_get i
 core/string/uplus_spec.rb	*	expected	metaprogramming	eval is not supported; use nothing
 core/string/upto_spec.rb	*	expected	instance-variables	instance_variable_get is not supported; use the field's reader
 core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 1-byte character is valid if is in format 0xxxxxxx	pass		
-core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 1-byte character is not valid if is not in format 0xxxxxxx	pass		
+core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 1-byte character is not valid if is not in format 0xxxxxxx	expected	binary-strings	invalid byte sequence in UTF-8: keep the bytes in a binary string (Encoding::InvalidByteSequenceError)
 core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 2-bytes character is valid if in format [110xxxxx 10xxxxx]	pass		
-core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 2-bytes character is not valid if the first byte is not in format 110xxxxx	pass		
-core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 2-bytes character is not valid if the second byte is not in format 10xxxxxx	pass		
-core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 2-bytes character is not valid if is smaller than [xxxxxx10 xx000000] (codepoints < U+007F, that are encoded with the 1-byte format)	pass		
-core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 2-bytes character is not valid if the first byte is missing	pass		
-core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 2-bytes character is not valid if the second byte is missing	pass		
+core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 2-bytes character is not valid if the first byte is not in format 110xxxxx	expected	binary-strings	invalid byte sequence in UTF-8: keep the bytes in a binary string (Encoding::InvalidByteSequenceError)
+core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 2-bytes character is not valid if the second byte is not in format 10xxxxxx	expected	binary-strings	invalid byte sequence in UTF-8: keep the bytes in a binary string (Encoding::InvalidByteSequenceError)
+core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 2-bytes character is not valid if is smaller than [xxxxxx10 xx000000] (codepoints < U+007F, that are encoded with the 1-byte format)	expected	binary-strings	invalid byte sequence in UTF-8: keep the bytes in a binary string (Encoding::InvalidByteSequenceError)
+core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 2-bytes character is not valid if the first byte is missing	expected	binary-strings	invalid byte sequence in UTF-8: keep the bytes in a binary string (Encoding::InvalidByteSequenceError)
+core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 2-bytes character is not valid if the second byte is missing	expected	binary-strings	invalid byte sequence in UTF-8: keep the bytes in a binary string (Encoding::InvalidByteSequenceError)
 core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 3-bytes character is valid if in format [1110xxxx 10xxxxxx 10xxxxxx]	pass		
-core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 3-bytes character is not valid if the first byte is not in format 1110xxxx	pass		
-core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 3-bytes character is not valid if the second byte is not in format 10xxxxxx	pass		
-core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 3-bytes character is not valid if the third byte is not in format 10xxxxxx	pass		
-core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 3-bytes character is not valid if is smaller than [xxxx0000 xx100000 xx000000] (codepoints < U+07FF that are encoded with the 2-byte format)	pass		
-core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 3-bytes character is not valid if in range [xxxx1101 xx100000 xx000000] - [xxxx1101 xx111111 xx111111] (codepoints U+D800 - U+DFFF)	pass		
-core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 3-bytes character is not valid if the first byte is missing	pass		
-core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 3-bytes character is not valid if the second byte is missing	pass		
-core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 3-bytes character is not valid if the second and the third bytes are missing	pass		
+core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 3-bytes character is not valid if the first byte is not in format 1110xxxx	expected	binary-strings	invalid byte sequence in UTF-8: keep the bytes in a binary string (Encoding::InvalidByteSequenceError)
+core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 3-bytes character is not valid if the second byte is not in format 10xxxxxx	expected	binary-strings	invalid byte sequence in UTF-8: keep the bytes in a binary string (Encoding::InvalidByteSequenceError)
+core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 3-bytes character is not valid if the third byte is not in format 10xxxxxx	expected	binary-strings	invalid byte sequence in UTF-8: keep the bytes in a binary string (Encoding::InvalidByteSequenceError)
+core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 3-bytes character is not valid if is smaller than [xxxx0000 xx100000 xx000000] (codepoints < U+07FF that are encoded with the 2-byte format)	expected	binary-strings	invalid byte sequence in UTF-8: keep the bytes in a binary string (Encoding::InvalidByteSequenceError)
+core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 3-bytes character is not valid if in range [xxxx1101 xx100000 xx000000] - [xxxx1101 xx111111 xx111111] (codepoints U+D800 - U+DFFF)	expected	binary-strings	invalid byte sequence in UTF-8: keep the bytes in a binary string (Encoding::InvalidByteSequenceError)
+core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 3-bytes character is not valid if the first byte is missing	expected	binary-strings	invalid byte sequence in UTF-8: keep the bytes in a binary string (Encoding::InvalidByteSequenceError)
+core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 3-bytes character is not valid if the second byte is missing	expected	binary-strings	invalid byte sequence in UTF-8: keep the bytes in a binary string (Encoding::InvalidByteSequenceError)
+core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 3-bytes character is not valid if the second and the third bytes are missing	expected	binary-strings	invalid byte sequence in UTF-8: keep the bytes in a binary string (Encoding::InvalidByteSequenceError)
 core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 4-bytes character is valid if in format [11110xxx 10xxxxxx 10xxxxxx 10xxxxxx]	pass		
-core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 4-bytes character is not valid if the first byte is not in format 11110xxx	pass		
-core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 4-bytes character is not valid if the second byte is not in format 10xxxxxx	pass		
-core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 4-bytes character is not valid if the third byte is not in format 10xxxxxx	pass		
-core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 4-bytes character is not valid if the forth byte is not in format 10xxxxxx	pass		
-core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 4-bytes character is not valid if is smaller than [xxxxx000 xx001000 xx000000 xx000000] (codepoint < U+10000)	pass		
-core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 4-bytes character is not valid if is greater than [xxxxx100 xx001111 xx111111 xx111111] (codepoint > U+10FFFF)	pass		
-core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 4-bytes character is not valid if the first byte is missing	pass		
-core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 4-bytes character is not valid if the second byte is missing	pass		
-core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 4-bytes character is not valid if the second and the third bytes are missing	pass		
-core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 4-bytes character is not valid if the second, the third and the fourth bytes are missing	pass		
-core/string/valid_encoding_spec.rb	String#valid_encoding? returns true if the String's encoding is valid	pass		
-core/string/valid_encoding_spec.rb	String#valid_encoding? returns true if self is valid in the current encoding and other encodings	pass		
-core/string/valid_encoding_spec.rb	String#valid_encoding? returns true for all encodings self is valid in	expected	encodings	unknown encoding name - Big5 (ArgumentError)
-core/string/valid_encoding_spec.rb	String#valid_encoding? returns true for IBM720 encoding self is valid in	expected	encodings	unknown encoding name - IBM720 (ArgumentError)
-core/string/valid_encoding_spec.rb	String#valid_encoding? returns false if self is valid in one encoding, but invalid in the one it's tagged with	expected	mutation	force_encoding returns a copy in cameo and changes nothing, and this call drops it; use x = x.force_encoding(...) (CameoError)
-core/string/valid_encoding_spec.rb	String#valid_encoding? returns false if self contains a character invalid in the associated encoding	pass		
-core/string/valid_encoding_spec.rb	String#valid_encoding? returns false if a valid String had an invalid character appended to it	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
-core/string/valid_encoding_spec.rb	String#valid_encoding? returns true if an invalid string is appended another invalid one but both make a valid string	expected	mutation	cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 4-bytes character is not valid if the first byte is not in format 11110xxx	expected	binary-strings	invalid byte sequence in UTF-8: keep the bytes in a binary string (Encoding::InvalidByteSequenceError)
+core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 4-bytes character is not valid if the second byte is not in format 10xxxxxx	expected	binary-strings	invalid byte sequence in UTF-8: keep the bytes in a binary string (Encoding::InvalidByteSequenceError)
+core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 4-bytes character is not valid if the third byte is not in format 10xxxxxx	expected	binary-strings	invalid byte sequence in UTF-8: keep the bytes in a binary string (Encoding::InvalidByteSequenceError)
+core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 4-bytes character is not valid if the forth byte is not in format 10xxxxxx	expected	binary-strings	invalid byte sequence in UTF-8: keep the bytes in a binary string (Encoding::InvalidByteSequenceError)
+core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 4-bytes character is not valid if is smaller than [xxxxx000 xx001000 xx000000 xx000000] (codepoint < U+10000)	expected	binary-strings	invalid byte sequence in UTF-8: keep the bytes in a binary string (Encoding::InvalidByteSequenceError)
+core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 4-bytes character is not valid if is greater than [xxxxx100 xx001111 xx111111 xx111111] (codepoint > U+10FFFF)	expected	binary-strings	invalid byte sequence in UTF-8: keep the bytes in a binary string (Encoding::InvalidByteSequenceError)
+core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 4-bytes character is not valid if the first byte is missing	expected	binary-strings	invalid byte sequence in UTF-8: keep the bytes in a binary string (Encoding::InvalidByteSequenceError)
+core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 4-bytes character is not valid if the second byte is missing	expected	binary-strings	invalid byte sequence in UTF-8: keep the bytes in a binary string (Encoding::InvalidByteSequenceError)
+core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 4-bytes character is not valid if the second and the third bytes are missing	expected	binary-strings	invalid byte sequence in UTF-8: keep the bytes in a binary string (Encoding::InvalidByteSequenceError)
+core/string/valid_encoding/utf_8_spec.rb	String#valid_encoding? and UTF-8 4-bytes character is not valid if the second, the third and the fourth bytes are missing	expected	binary-strings	invalid byte sequence in UTF-8: keep the bytes in a binary string (Encoding::InvalidByteSequenceError)
+core/string/valid_encoding_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
 core/struct/clone_spec.rb	*	expected	attr-accessor	attr_reader is not supported: a field declaration defines its reader, and there are no setters
 core/struct/constants_spec.rb	Struct::Group is no longer defined	expected	struct	uninitialized constant Struct (NameError)
 core/struct/constants_spec.rb	Struct::Passwd is no longer defined	expected	struct	uninitialized constant Struct (NameError)
@@ -3352,20 +3317,8 @@ core/symbol/capitalize_spec.rb	Symbol#capitalize works with both upper- and lowe
 core/symbol/capitalize_spec.rb	Symbol#capitalize leaves lowercase Unicode characters (except in first position) as they were	pass		
 core/symbol/capitalize_spec.rb	Symbol#capitalize leaves non-alphabetic ASCII characters as they were	pass		
 core/symbol/case_compare_spec.rb	Symbol#=== is an alias of Symbol#==	expected	metaprogramming	undefined method 'instance_method' for class Symbol (NoMethodError)
-core/symbol/casecmp_spec.rb	Symbol#casecmp with Symbol compares symbols without regard to case	pass		
-core/symbol/casecmp_spec.rb	Symbol#casecmp with Symbol doesn't consider non-ascii characters equal that aren't	pass		
-core/symbol/casecmp_spec.rb	Symbol#casecmp with Symbol doesn't do case mapping for non-ascii characters	pass		
-core/symbol/casecmp_spec.rb	Symbol#casecmp with Symbol returns 0 for empty strings in different encodings	expected	encodings	unknown encoding name - UTF-32LE (ArgumentError)
-core/symbol/casecmp_spec.rb	Symbol#casecmp returns nil if other is a String	pass		
-core/symbol/casecmp_spec.rb	Symbol#casecmp returns nil if other is an Integer	pass		
-core/symbol/casecmp_spec.rb	Symbol#casecmp returns nil if other is an object	harness	fails under Ruby too	undefined method 'mock' for main (NoMethodError)
-core/symbol/casecmp_spec.rb	Symbol#casecmp? compares symbols without regard to case	pass		
-core/symbol/casecmp_spec.rb	Symbol#casecmp? doesn't consider non-ascii characters equal that aren't	pass		
-core/symbol/casecmp_spec.rb	Symbol#casecmp? doesn't do case mapping for non-ascii and non-unicode characters	pass		
-core/symbol/casecmp_spec.rb	Symbol#casecmp? does case mapping for unicode characters	pass		
-core/symbol/casecmp_spec.rb	Symbol#casecmp? returns nil when comparing characters with different encodings	pass		
-core/symbol/casecmp_spec.rb	Symbol#casecmp? returns true for empty symbols in different encodings	expected	encodings	unknown encoding name - UTF-32LE (ArgumentError)
-core/symbol/comparison_spec.rb	Symbol#<=> with Symbol compares individual characters based on their ascii value	pass		
+core/symbol/casecmp_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
+core/symbol/comparison_spec.rb	Symbol#<=> with Symbol compares individual characters based on their ascii value	expected	encodings	to_sym reads characters, and a binary string has bytes alone: say what they are with force_encoding first (Encoding::CompatibilityError)
 core/symbol/comparison_spec.rb	Symbol#<=> with Symbol returns -1 when self is less than other	pass		
 core/symbol/comparison_spec.rb	Symbol#<=> with Symbol returns 0 when self is equal to other	pass		
 core/symbol/comparison_spec.rb	Symbol#<=> with Symbol returns 1 when self is greater than other	pass		
@@ -3391,7 +3344,7 @@ core/symbol/encoding_spec.rb	Symbol#encoding for UTF-8 symbols is UTF-8 after co
 core/symbol/end_with_spec.rb	*	expected	instance-variables	@method: cameo has no instance variables; a field is read with its reader, method or self.method
 core/symbol/equal_value_spec.rb	Symbol#== only returns true when the other is exactly the same symbol	pass		
 core/symbol/id2name_spec.rb	Symbol#id2name is an alias of Symbol#to_s	expected	metaprogramming	undefined method 'instance_method' for class Symbol (NoMethodError)
-core/symbol/inspect_spec.rb	Symbol#inspect (describe body)	harness	fails under Ruby too	undefined method 'default_external' for class Encoding (NoMethodError)
+core/symbol/inspect_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
 core/symbol/intern_spec.rb	Symbol#intern is an alias of Symbol#to_sym	expected	metaprogramming	undefined method 'instance_method' for class Symbol (NoMethodError)
 core/symbol/length_spec.rb	Symbol#length returns 0 for empty name	pass		
 core/symbol/length_spec.rb	Symbol#length returns 1 for name formed by a NUL character	pass		
@@ -3508,11 +3461,7 @@ core/threadgroup/enclosed_spec.rb	ThreadGroup#enclosed? returns false when a Thr
 core/threadgroup/enclosed_spec.rb	ThreadGroup#enclosed? returns true when a ThreadGroup is enclosed	expected	threads	uninitialized constant ThreadGroup (NameError)
 core/threadgroup/list_spec.rb	ThreadGroup#list returns the list of threads in the group	expected	threads	uninitialized constant Queue (NameError)
 core/time/_dump_spec.rb	*	expected	instance-variables	@local = …: cameo has no instance variables; initialize sets a field with self.local = …
-core/time/_load_spec.rb	Time._load is a private method	expected	visibility	undefined method 'private_methods' for class Time (NoMethodError)
-core/time/_load_spec.rb	Time._load loads a time object in the new format	bug		undefined method '_load' for class Time (NoMethodError)
-core/time/_load_spec.rb	Time._load loads a time object in the old UNIX timestamp based format	bug		undefined method '_load' for class Time (NoMethodError)
-core/time/_load_spec.rb	Time._load loads MRI's marshaled time format	expected	marshal	incompatible marshal data: proto: cannot parse invalid wire-format data (ArgumentError)
-core/time/_load_spec.rb	Time._load treats the data as binary data	expected	marshal	incompatible marshal data: proto: cannot parse invalid wire-format data (ArgumentError)
+core/time/_load_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
 core/time/asctime_spec.rb	Time#asctime returns a canonical string representation of time	pass		
 core/time/at_spec.rb	*	expected	metaprogramming	class << self is not supported: define class methods with def self.name
 core/time/ceil_spec.rb	*	expected	instance-variables	@time = …: cameo has no instance variables; initialize sets a field with self.time = …
@@ -3818,7 +3767,7 @@ language/regexp/anchors_spec.rb	*	expected	globals	global variables are not supp
 language/regexp/back-references_spec.rb	*	expected	globals	global variables are not supported
 language/regexp/character_classes_spec.rb	*	expected	metaprogramming	eval is not supported; use nothing
 language/regexp/empty_checks_spec.rb	*	expected	regexp	This regexp is not supported in Cameo: /(a|\2b|())*/ uses a backreference
-language/regexp/encoding_spec.rb	*	expected	metaprogramming	eval is not supported; use nothing
+language/regexp/encoding_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
 language/regexp/escapes_spec.rb	*	expected	metaprogramming	eval is not supported; use nothing
 language/regexp/grouping_spec.rb	*	expected	metaprogramming	eval is not supported; use nothing
 language/regexp/interpolation_spec.rb	*	expected	metaprogramming	def to_s on an object: methods belong to classes
@@ -3833,12 +3782,7 @@ language/safe_navigator_spec.rb	*	expected	metaprogramming	eval is not supported
 language/safe_spec.rb	*	expected	globals	global variables are not supported
 language/send_spec.rb	*	expected	visibility	module_function is not supported: every method is public
 language/singleton_class_spec.rb	*	expected	metaprogramming	eval is not supported; use nothing
-language/source_encoding_spec.rb	Source files encoded in UTF-8 without a BOM can be parsed	harness	fails under Ruby too	undefined method 'fixture' for main (NoMethodError)
-language/source_encoding_spec.rb	Source files encoded in UTF-8 with a BOM can be parsed	harness	fails under Ruby too	undefined method 'fixture' for main (NoMethodError)
-language/source_encoding_spec.rb	Source files encoded in UTF-16 LE without a BOM are parsed as empty because they contain a NUL byte before the encoding comment	harness	fails under Ruby too	undefined method 'fixture' for main (NoMethodError)
-language/source_encoding_spec.rb	Source files encoded in UTF-16 LE with a BOM are invalid because they contain an invalid UTF-8 sequence before the encoding comment	harness	fails under Ruby too	undefined method 'tmp' for main (NoMethodError)
-language/source_encoding_spec.rb	Source files encoded in UTF-16 BE without a BOM are parsed as empty because they contain a NUL byte before the encoding comment	harness	fails under Ruby too	undefined method 'fixture' for main (NoMethodError)
-language/source_encoding_spec.rb	Source files encoded in UTF-16 BE with a BOM are invalid because they contain an invalid UTF-8 sequence before the encoding comment	harness	fails under Ruby too	undefined method 'tmp' for main (NoMethodError)
+language/source_encoding_spec.rb	*	expected	binary-strings	a string literal with bytes that are not UTF-8 is a binary string and is written b"..."
 language/string_spec.rb	*	expected	class-variables	class variables are not supported
 language/super_spec.rb	*	expected	metaprogramming	define_method is not supported; use def
 language/symbol_spec.rb	*	expected	metaprogramming	eval is not supported; use nothing

@@ -64,6 +64,8 @@ module Classify
     [/undefined method '(private|public|protected)_(instance_)?methods'/, "expected", "visibility"],
     [/(imaginary|rational) literals are not supported|undefined method '(to_c|i)' for/, "expected", "rational-complex"],
     [/fork is not supported/, "expected", "process"],
+    # bytes that are not UTF-8 live in a binary string, written b"..."
+    [/is a binary string and is written b"|keep the bytes in a binary string/, "expected", "binary-strings"],
     # initialize runs in new alone; send cannot reach it
     [/send\(:initialize\): initialize runs only in new/, "expected", "metaprogramming"],
   ].freeze
