@@ -445,13 +445,13 @@ p await(Echo.new, :go, nil, true, 7, 2**70, 1.5, "s", "\xff".b, :sym, [1, [2, "t
 	expectError(t, "include Cameo\nclass Echo\n  def go(x) = x\nend\nawait Echo.new, :go, Object.new\n", "an Object cannot be passed to async (TypeError)")
 }
 
-func TestAsyncRejectsWhatTheEnvelopeRejects(t *testing.T) {
-	// A string that is not valid UTF-8 cannot cross, on its own, in a list,
-	// or as a worker's result.
-	echo := "include Cameo\nclass Echo\n  def go(*args) = args\n  def bad = \"\xff\"\nend\n"
-	for _, call := range []string{`await Echo.new, :go, "\xff"`, `await Echo.new, :go, ["\xff"]`, `await Echo.new, :go, ["\xff", :a]`, `await Echo.new, :bad`} {
-		expectError(t, echo+call+"\n", "invalid UTF-8")
-	}
+func TestALiteralOfBytesThatAreNotUTF8CrossesAsBytes(t *testing.T) {
+	// A string is UTF-8 or binary, so there is none the envelope cannot
+	// carry: a literal of bytes that are not UTF-8 is binary, and crosses
+	// on its own, in a list, and as a worker's result.
+	echo := "include Cameo\nclass Echo\n  def go(*args) = args\n  def bad = \"\\xff\"\nend\n"
+	expectOutput(t, echo+`p await(Echo.new, :go, "\xff"), await(Echo.new, :go, ["\xff", :a]), await(Echo.new, :bad), await(Echo.new, :bad).encoding`+"\n",
+		"[\"\\xFF\"]\n[[\"\\xFF\", \"a\"]]\n\"\\xFF\"\n#<Encoding:BINARY (ASCII-8BIT)>\n")
 }
 
 func TestWorkersEncodeASharedFieldlessInstance(t *testing.T) {

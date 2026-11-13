@@ -119,7 +119,7 @@ func Load(file, src string, stdout, stderr io.Writer) (*Program, error) {
 func (p *Program) Args(args []string) {
 	elems := make([]object.Value, len(args))
 	for i, a := range args {
-		elems[i] = object.String(a)
+		elems[i] = object.Text(a)
 	}
 	p.in.SetConst("ARGV", object.NewList(elems...))
 }
@@ -383,7 +383,7 @@ func (c conv) toValue(v any) (object.Value, error) {
 	case float64:
 		return object.Float(v), nil
 	case string:
-		return object.String(v), nil
+		return object.Text(v), nil
 	case []byte:
 		return object.Bytes(v), nil
 	case time.Time:

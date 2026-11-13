@@ -632,10 +632,11 @@ func (m *machine) constant(c *cameopb.Code) (object.Value, error) {
 	case *cameopb.Constant_FloatValue:
 		return object.Float(k.FloatValue), nil
 	case *cameopb.Constant_StringValue:
-		return object.String(k.StringValue), nil
+		return object.Text(k.StringValue), nil
 	case *cameopb.Constant_BytesValue:
-		// A string literal that is not valid UTF-8; see ir.proto.
-		return object.String(string(k.BytesValue)), nil
+		// A string literal that is not valid UTF-8, which is a binary
+		// string; see ir.proto.
+		return object.Bytes(k.BytesValue), nil
 	case *cameopb.Constant_BigValue:
 		return m.in.code.literal(c, func() (object.Value, error) {
 			b, _ := new(big.Int).SetString(k.BigValue, 10)

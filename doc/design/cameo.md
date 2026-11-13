@@ -1224,8 +1224,15 @@ re-opened by accident:
     `force_encoding`, before it reads them as text. It prints a byte past
     7 bits as `\xNN`; `+`, `<<`, `join` and interpolation take the
     encoding their parts are compatible in, or raise
-    Encoding::CompatibilityError. `valid_encoding?` and `scrub` deal with
-    bytes an encoding does not allow. `force_encoding` returns the
+    Encoding::CompatibilityError. A UTF-8 string is made of whole
+    characters alone, and a US-ASCII one of ASCII, unlike Ruby's, which
+    may hold bytes their encoding does not allow: bytes that are not
+    UTF-8 are a binary string where they come in (a literal with such
+    bytes written out, a file, what the host passes, `pack`), and
+    `force_encoding`, `setbyte`, `bytesplice` and `append_as_bytes` raise
+    Encoding::InvalidByteSequenceError when the bytes they would call
+    UTF-8 or US-ASCII are not. `encode("UTF-8", "UTF-8", invalid:
+    :replace)` reads a binary string as UTF-8 with what is not replaced. `force_encoding` returns the
     relabelled string and leaves its receiver, and raises when its value
     is dropped. Integer and Symbol `to_s`
     give UTF-8 where Ruby gives US-ASCII; only `encoding` tells.

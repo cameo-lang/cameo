@@ -38,19 +38,19 @@ Unicode Normalization not appropriate for ASCII-8BIT
 `)
 }
 
-// The encoding rules are Ruby's: a UTF-8 String with bytes that are not
-// UTF-8 is refused, a US-ASCII one is as it is and normalized, a binary
+// The encoding rules are Ruby's: bytes that are not UTF-8, which a
+// literal makes a binary string of, are refused, a US-ASCII one is as it is and normalized, a binary
 // one is refused after the arguments are counted.
 func TestUnicodeNormalizeKeepsRubysEncodingRules(t *testing.T) {
-	out := runScript(t, `begin; "\xff".unicode_normalize; rescue ArgumentError => e; puts e.message; end
-begin; "\xff".unicode_normalized?; rescue ArgumentError => e; puts e.message; end
-p "é".force_encoding("US-ASCII").unicode_normalize(:nfd).bytes, "é".force_encoding("US-ASCII").unicode_normalized?(:nfd)
+	out := runScript(t, `begin; "\xff".unicode_normalize; rescue Encoding::CompatibilityError => e; puts e.message; end
+begin; "\xff".unicode_normalized?; rescue Encoding::CompatibilityError => e; puts e.message; end
+p "e".force_encoding("US-ASCII").unicode_normalize(:nfd).bytes, "e".force_encoding("US-ASCII").unicode_normalized?(:nfd)
 begin; "x".b.unicode_normalize(:nfc, :nfd); rescue ArgumentError => e; puts e.message; end
 begin; "x".b.unicode_normalize; rescue Encoding::CompatibilityError => e; puts e.message; end
 `)
-	assert.Equals(t, out, `invalid byte sequence in UTF-8
-invalid byte sequence in UTF-8
-[195, 169]
+	assert.Equals(t, out, `Unicode Normalization not appropriate for ASCII-8BIT
+Unicode Normalization not appropriate for ASCII-8BIT
+[101]
 true
 wrong number of arguments (given 2, expected 0..1)
 Unicode Normalization not appropriate for ASCII-8BIT

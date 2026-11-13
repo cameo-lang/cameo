@@ -613,7 +613,7 @@ func plainConstant(c *cameopb.Code) (object.Value, bool) {
 	case *cameopb.Constant_FloatValue:
 		return object.Float(k.FloatValue), true
 	case *cameopb.Constant_StringValue:
-		return object.Literal(k.StringValue), true
+		return object.Text(k.StringValue), true
 	}
 	return object.Value{}, false
 }

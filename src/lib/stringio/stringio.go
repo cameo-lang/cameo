@@ -68,6 +68,11 @@ func (s *sio) str(b []byte) object.Value {
 	if s.kind == object.KindBytes {
 		return object.Bytes(append([]byte(nil), b...))
 	}
+	// Bytes of the buffer that are no whole characters are read as
+	// bytes.
+	if s.kind == object.KindString {
+		return object.Text(string(b))
+	}
 	return object.StringOf(s.kind, string(b))
 }
 

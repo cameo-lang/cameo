@@ -15,8 +15,8 @@ func TestAStringKnownToBeASCII(t *testing.T) {
 	plain, known := String("abc"), ASCIIString("abc")
 	assert.False(t, plain.KnownASCII())
 	assert.True(t, known.KnownASCII())
-	assert.True(t, Literal("abc").KnownASCII())
-	assert.False(t, Literal("abé").KnownASCII())
+	assert.True(t, Counted("abc").KnownASCII())
+	assert.False(t, Counted("abé").KnownASCII())
 	assert.True(t, ASCIIString("").KnownASCII())
 	assert.True(t, String("").KnownASCII())
 	assert.False(t, Bytes([]byte("abc")).KnownASCII())
@@ -51,7 +51,7 @@ func TestAStringThatKnowsItsCharacters(t *testing.T) {
 		return n
 	}
 	assert.Equals(t, chars(String("héllo")), -1)
-	assert.Equals(t, chars(Literal("héllo")), 5)
+	assert.Equals(t, chars(Counted("héllo")), 5)
 	assert.Equals(t, chars(StringOfChars("héllo", 5)), 5)
 	assert.Equals(t, chars(ASCIIString("abc")), 3)
 	assert.Equals(t, chars(String("")), 0)
@@ -61,22 +61,22 @@ func TestAStringThatKnowsItsCharacters(t *testing.T) {
 	assert.Equals(t, chars(Int(-1)), -1)
 	assert.Equals(t, chars(Int(5<<32)), -1)
 
-	known := Literal("héllo")
+	known := Counted("héllo")
 	assert.Equals(t, known.Str(), "héllo")
 	assert.Equals(t, known.Kind(), KindString)
 	assert.False(t, known.KnownASCII())
 	assert.True(t, Equal(known, String("héllo")))
 	assert.Equals(t, Key(known), Key(String("héllo")))
 	s := "shéred"
-	assert.True(t, Same(String(s), Literal(s)))
+	assert.True(t, Same(String(s), Counted(s)))
 	assert.False(t, Same(String(s), Symbol(s)))
 
-	assert.Equals(t, chars(Joined("héllowörld", known, Literal("wörld"))), 10)
+	assert.Equals(t, chars(Joined("héllowörld", known, Counted("wörld"))), 10)
 	assert.Equals(t, chars(Joined("héllo", known, String(""))), 5)
 	assert.Equals(t, chars(Joined("héllox", known, String("x"))), -1)
 	// Half a character and its other half are one character together.
-	assert.Equals(t, chars(Joined("\xc3\xa9", Literal("\xc3"), Literal("\xa9"))), -1)
-	assert.Equals(t, chars(Joined("\xc3a", Literal("\xc3"), Literal("a"))), 2)
+	assert.Equals(t, chars(Joined("\xc3\xa9", Counted("\xc3"), Counted("\xa9"))), -1)
+	assert.Equals(t, chars(Joined("\xc3a", Counted("\xc3"), Counted("a"))), 2)
 }
 
 // A count too far from the length in bytes to fit beside it is dropped.

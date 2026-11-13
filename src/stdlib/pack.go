@@ -228,11 +228,11 @@ func pack(ctx object.Context, elems []object.Value, format string, buffer object
 	}
 	switch {
 	case !buffer.IsZero():
-		return object.StringOf(buffer.Kind(), string(out)), nil
+		return labelled(ctx, buffer.Kind(), string(out))
 	case len(ds) == 0:
 		return object.StringOf(object.KindASCII, ""), nil
 	case ds[0].letter == 'U':
-		return object.String(string(out)), nil
+		return object.Text(string(out)), nil
 	}
 	return object.Bytes(out), nil
 }
@@ -429,7 +429,7 @@ func unpack(ctx object.Context, data []byte, format string, start int) ([]object
 				s = s[:d.count]
 			}
 			at += (len(s) + 1) / 2
-			out = append(out, object.String(s))
+			out = append(out, object.Text(s))
 		default:
 			n := len(data) - at
 			if d.count >= 0 && d.count < n {

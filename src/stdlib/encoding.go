@@ -61,6 +61,28 @@ func encodingArg(ctx object.Context, v object.Value) (object.Kind, error) {
 	return 0, ctx.Raise(object.ArgumentError, "unknown encoding name - %s", s)
 }
 
+// labelled makes the string of bytes s a script says are of encoding k,
+// with force_encoding or by putting bytes into a string of that
+// encoding: it raises for bytes the encoding does not allow, where Ruby
+// makes a string that is not valid, since a string of an encoding of
+// characters is made of whole characters alone.
+func labelled(ctx object.Context, k object.Kind, s string) (object.Value, error) {
+	switch k {
+	case object.KindBytes:
+		return object.StringOf(k, s), nil
+	case object.KindASCII:
+		if !object.ASCIIOnly(s) {
+			return object.Value{}, ctx.Raise(object.InvalidByteSequenceError, "invalid byte sequence in US-ASCII: keep the bytes in a binary string")
+		}
+		return object.StringOf(k, s), nil
+	}
+	v := object.Text(s)
+	if v.Kind() != object.KindString {
+		return object.Value{}, ctx.Raise(object.InvalidByteSequenceError, "invalid byte sequence in UTF-8: keep the bytes in a binary string")
+	}
+	return v, nil
+}
+
 // validIn reports whether s is a valid string of encoding k.
 func validIn(k object.Kind, s string) bool {
 	switch k {
@@ -343,7 +365,7 @@ func installEncodings() {
 		if err != nil {
 			return object.Value{}, err
 		}
-		return object.StringOf(k, self.Str()), nil
+		return labelled(ctx, k, self.Str())
 	})
 	def(s, "b", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.StringOf(object.KindBytes, self.Str()), nil

@@ -23,19 +23,25 @@ begin
 rescue ArgumentError => e
   puts e.message
 end
-s = "h\xC3llo\xFF\xE3\x81".dup
-p s.valid_encoding?, s.scrub, s.scrub("?"), s.scrub { |b| "<#{b.bytes.size}>" }
+# Bytes that are not UTF-8 are a binary string, which encode reads as
+# UTF-8 with what is not replaced.
+s = "h\xC3llo\xFF\xE3\x81"
+p s.encoding, s.encode("UTF-8", "UTF-8", invalid: :replace), s.encode("UTF-8", "UTF-8", invalid: :replace, replace: "?")
 t = "caf\xC3\xA9".b
 p t.encoding, t.valid_encoding?
 utf = t.force_encoding("UTF-8")
 p utf, utf.encoding, utf.size
 u = "héllo".b.force_encoding(Encoding::UTF_8)
 p u, u.encoding, u.valid_encoding?, "x".force_encoding("BINARY").encoding, Encoding::UTF_8, Encoding::BINARY.to_s, "a".encoding.name
-w = "\xff\xfe".dup.force_encoding("UTF-8")
-p w.valid_encoding?
-v = "ok\xff".dup
-v = v.scrub
-p v
+# Bytes that are not UTF-8 stay a binary string: a literal of them is one,
+# and force_encoding refuses to call them UTF-8.
+w = "\xff\xfe"
+p w.encoding, w.valid_encoding?, "caf\xC3\xA9".encoding
+begin
+  w.force_encoding("UTF-8")
+rescue Encoding::InvalidByteSequenceError => e
+  p e.message
+end
 begin
   "x".force_encoding("EBCDIC")
 rescue ArgumentError => e
