@@ -5,10 +5,11 @@
 # on four Rubies and shows how long each took and whether its output was
 # CRuby's:
 #
-#   mri       the ruby on PATH, which every time is a percentage of
+#   mri       the ruby on PATH, without YJIT, which every time is a percentage of
 #   cameo     this component's interpreter
 #   warmruby  CRuby 3.4 compiled to WASI, on wazero, compiled ahead (../warmruby)
 #   rbgo      go-embedded-ruby, a Ruby interpreter in Go (../rbgo)
+#   yjit      the ruby on PATH with --yjit; run only when --rubies names it
 #
 # Each case is timed from inside the Ruby that runs it, by a harness this
 # script writes around it (see harness): the case's prelude runs once, then
@@ -31,14 +32,15 @@
 #   ruby compare.rb [--jobs N] [--min-time SECONDS] [--timeout SECONDS] [--out FILE] [FILE...]
 #   ruby compare.rb --only NAME [FILE...]       # time one Ruby again, keep the others
 #   ruby compare.rb --report FILE               # show a results file again
+#   ruby compare.rb --rubies mri,yjit,cameo --out yjit.tsv   # these Rubies alone
+#
+# Without warmruby among the Rubies, the reference output is MRI's.
 
 require "fileutils"
 require "open3"
 require "optparse"
 require "tmpdir"
 
-# The Ruby whose output is the reference: CRuby 3.4.
-REFERENCE = "warmruby"
 GREEN, RED, BOLD = 32, 31, 1
 WIDTH = 17
 
@@ -164,7 +166,8 @@ def harness(source, min_time)
   RUBY
 end
 
-options = { jobs: 2, timeout: 600, min_time: 1.0, out: File.join(__dir__, "results.tsv"), color: $stdout.tty? }
+ALL = %w[mri cameo warmruby rbgo yjit].freeze
+options = { rubies: nil, jobs: 2, timeout: 600, min_time: 1.0, out: File.join(__dir__, "results.tsv"), color: $stdout.tty? }
 OptionParser.new do |o|
   o.banner = "usage: ruby compare.rb [options] [FILE...]"
   o.on("--jobs N", Integer, "cases run at once (default 2)") { options[:jobs] = _1 }
@@ -172,12 +175,20 @@ OptionParser.new do |o|
   o.on("--min-time SECONDS", Float, "time the runs until they add up to this (default 1)") { options[:min_time] = _1 }
   o.on("--out FILE", "results table (default compare/results.tsv)") { options[:out] = _1 }
   o.on("--report FILE", "show a results file instead of running") { options[:report] = _1 }
+  o.on("--rubies LIST", Array, "the Rubies to run: mri and any of the others (default: all but yjit)") { options[:rubies] = _1 }
   o.on("--only NAME", "time only this Ruby and keep the others' timings from --out") { options[:only] = _1 }
   o.on("--[no-]color", "colour the table (default: when standard output is a terminal)") { options[:color] = _1 }
 end.parse!
 
 # The Rubies in the order of the table's columns; MRI is the baseline.
-NAMES = %w[mri cameo warmruby rbgo].freeze
+# A results file names its own, in the header.
+NAMES = (options[:rubies] ||
+         (options[:report] && File.open(options[:report], &:gets).to_s.scan(/(\w+)_result\b/).flatten) ||
+         %w[mri cameo warmruby rbgo]).freeze
+abort "compare.rb: --rubies takes mri and any of #{(ALL - ["mri"]).join(", ")}" unless NAMES.include?("mri") && (NAMES - ALL).empty?
+# The Ruby whose output is the reference: CRuby 3.4, as warmruby runs it,
+# or MRI when warmruby is not among the Rubies.
+REFERENCE = NAMES.include?("warmruby") ? "warmruby" : "mri"
 
 if options[:report]
   lines = File.readlines(options[:report], chomp: true)
@@ -206,18 +217,24 @@ def build(dir, cmd)
   system(cmd, chdir: dir) or abort("compare.rb: building in #{dir} failed")
 end
 build(CAMEO, "go build -o #{bin}/cameo ./src/cmd/cameo")
-build(File.join(CAMEO, "benchmarks/rbgo"), "make build >/dev/null")
-build(File.join(CAMEO, "benchmarks/warmruby"), "make build >/dev/null")
+build(File.join(CAMEO, "benchmarks/rbgo"), "make build >/dev/null") if NAMES.include?("rbgo")
+build(File.join(CAMEO, "benchmarks/warmruby"), "make build >/dev/null") if NAMES.include?("warmruby")
+
+# MRI runs without YJIT whatever RUBYOPT says, so that the mri column is the
+# interpreter and the yjit column the JIT. A Ruby built without YJIT does
+# not know the flag.
+NO_JIT = defined?(RubyVM::YJIT) ? ["--disable-yjit"] : []
 
 ENGINES = {
-  "mri" => ->(f) { ["ruby", f] },
+  "mri" => ->(f) { ["ruby", *NO_JIT, f] },
   "cameo" => ->(f) { ["#{bin}/cameo", f] },
   "warmruby" => ->(f) { ["#{CAMEO}/benchmarks/warmruby/bin/warmruby", f] },
   "rbgo" => ->(f) { ["#{CAMEO}/benchmarks/rbgo/bin/rbgo", f] },
-}.freeze
+  "yjit" => ->(f) { ["ruby", "--yjit", f] },
+}.slice(*NAMES).freeze
 
 # A first run downloads warmruby's module and compiles it into its cache.
-system("#{CAMEO}/benchmarks/warmruby/bin/warmruby", File::NULL, out: File::NULL)
+system("#{CAMEO}/benchmarks/warmruby/bin/warmruby", File::NULL, out: File::NULL) if NAMES.include?("warmruby")
 
 files = ARGV.empty? ? Dir[File.join(CAMEO, "benchmarks/ruby/works/*.rb")].sort : ARGV.map { File.expand_path(_1) }
 
