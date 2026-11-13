@@ -13,5 +13,9 @@ import (
 func TestMain(m *testing.M) {
 	os.Setenv("TZ", "UTC")
 	time.Local = time.UTC
-	os.Exit(m.Run())
+	code := m.Run()
+	if builtCameo.dir != "" {
+		os.RemoveAll(builtCameo.dir)
+	}
+	os.Exit(code)
 }

@@ -70,13 +70,18 @@ calls a method the script defines:
 ```go
 cameo.Register("Greeter", &greetpb.Greeter{}).
 	DefineMethod("greet", func(self *greetpb.Greeter, args []any, kwargs map[string]any, block *cameo.Block) (any, error) {
-		return fmt.Sprintf("%s, %s!", self.Greeting, args[0]), nil
-	})
+		name, ok := args[0].(string)
+		// … refuses what is not a String
+		return fmt.Sprintf("%s, %s!", self.Greeting, name), nil
+	}).
 
-prog, err := cameo.Load("hello.cameo", src, os.Stdout, os.Stderr)
-err = prog.Run()                                 // runs the script
-line, err := prog.Call(nil, "welcome", "Go")     // calls a method of the script
+prog, err := cameo.Load(file, src, stdout, stderr)     // checks the script
+if err := prog.Run(); err != nil {                     // runs it
+line, err := prog.Call(nil, "welcome", "Go")           // calls a method of the script
 ```
+
+These are lines of [examples/ex1/main.go](examples/ex1/main.go), which
+has the rest.
 
 ```ruby
 greeter = Greeter.new(greeting: "Hello")
@@ -114,7 +119,8 @@ cameo(main):006> a += [3]
 => [1, 2, 3]
 ```
 
-Pause a script with `^C` and continue it later:
+Pause a script with `^C` and continue it later. `count.cameo` is the
+script of [Pause and resume](https://cameo-lang.github.io/cameo/pause.html):
 
 ```
 $ cameo count.cameo
@@ -128,6 +134,8 @@ $ cameo inspect /tmp/cameo-count-676897826.dump     # where it stopped, and its 
 $ cameo resume /tmp/cameo-count-676897826.dump
 3: 14
 4: 30
+...
+done: 22140
 ```
 
 The other commands:
