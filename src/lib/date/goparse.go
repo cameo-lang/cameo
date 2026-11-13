@@ -168,13 +168,22 @@ func strptime(str, format string) (*frags, error) {
 		return nil, err
 	}
 	if fields.Epoch {
-		t, ok := stdlib.ParseEpoch(str, format)
+		t, ok := stdlib.ParseEpoch(str, layouts, fields, time.UTC)
 		if !ok {
 			return nil, errNoMatch
 		}
+		// Ruby keeps the seconds as written and the fraction apart, both
+		// positive for "-1.5": -1 and 1/2.
+		secs, nsec := t.Unix(), t.Nanosecond()
+		if secs < 0 && nsec != 0 {
+			secs, nsec = secs+1, int(1e9)-nsec
+		}
 		f := newFrags()
-		f.set("seconds", t.Unix())
-		if format != "%s" {
+		f.set("seconds", secs)
+		if fields.Frac && nsec != 0 {
+			f.set("sec_fraction", float64(nsec)/1e9)
+		}
+		if fields.Zone {
 			f.set("zone", stdlib.ZoneText(str))
 			_, off := t.Zone()
 			f.set("offset", int64(off))
