@@ -1,0 +1,26 @@
+# The messages of grpcb.in's hello.HelloService, declared as classes. A
+# class in the module Hello is the message hello.<name>, and number: sets
+# the field's number, so an instance is on the wire what the service
+# reads and writes.
+module Hello
+  class HelloRequest
+    string :greeting, number: 1
+  end
+
+  class HelloResponse
+    string :reply, number: 1
+  end
+end
+
+include Cameo
+
+# HelloService is a module the Go program gives the script. say_hello
+# sends the request and returns a promise at once; the Go program settles
+# it with the HelloResponse when the answer is in. Every call is on its
+# way before the first await returns.
+def greet_all(names)
+  calls = names.map { |name| HelloService.say_hello(Hello::HelloRequest.new(greeting: name)) }
+  calls.map { |call| (await call).reply }
+rescue HelloService::Failed => e
+  ["the service failed: #{e.message}"]
+end
