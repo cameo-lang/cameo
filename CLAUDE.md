@@ -13,7 +13,10 @@ Go. This file is the entry point for coding agents. Read it first, then:
 3. **[agents/golang.md](agents/golang.md)** — the Go layout and conventions.
 4. **[agents/teamwork.md](agents/teamwork.md)** — what to decide yourself and
    what to ask.
-5. [README.md](README.md) — what cameo is and how to build it.
+5. **[agents/stacks.md](agents/stacks.md)** — how we work with pull request
+   stacks: small pull requests in one stack, CI on the top alone, where to
+   fix a failing run.
+6. [README.md](README.md) — what cameo is and how to build it.
 
 ## Pull requests
 
