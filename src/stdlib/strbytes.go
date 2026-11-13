@@ -53,7 +53,7 @@ func installStringBytes() {
 				return object.Value{}, ctx.Raise(object.TypeError, "wrong argument type %s (expected String or Integer)", KindName(a))
 			}
 		}
-		return object.StringOf(self.Kind(), b.String()), nil
+		return labelled(ctx, self.Kind(), b.String())
 	})
 }
 
@@ -88,7 +88,7 @@ func SetByte(ctx object.Context, self object.Value, args []object.Value) (object
 	}
 	b := []byte(s)
 	b[i] = v
-	return object.StringOf(self.Kind(), string(b)), nil
+	return labelled(ctx, self.Kind(), string(b))
 }
 
 // bytesplice is String#bytesplice: the bytes of a start and length, or of
@@ -155,7 +155,7 @@ func bytesplice(ctx object.Context, self object.Value, args []object.Value, kw *
 		}
 	}
 	v := val.Str()
-	return object.StringOf(k, s[:beg]+v[vbeg:vbeg+vlen]+s[beg+n:]), nil
+	return labelled(ctx, k, s[:beg]+v[vbeg:vbeg+vlen]+s[beg+n:])
 }
 
 func spliceString(ctx object.Context, v object.Value) (object.Value, error) {

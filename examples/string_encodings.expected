@@ -42,8 +42,7 @@ Encoding::CompatibilityError
 true
 #<Encoding:UTF-8>
 #<Encoding:US-ASCII>
-false
-"?"
+"invalid byte sequence in US-ASCII: keep the bytes in a binary string"
 "A"
 #<Encoding:US-ASCII>
 "\xE9"
@@ -75,7 +74,7 @@ nil
 #<Encoding:UTF-8>
 #<Encoding:US-ASCII>
 233
-"invalid symbol in encoding UTF-8 :\"\\xC3\""
+"to_sym reads characters, and a binary string has bytes alone: say what they are with force_encoding first"
 :AbC
 :Äöü
 :äöü

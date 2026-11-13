@@ -210,8 +210,7 @@ func installList() {
 			}
 			return object.NewList(out...), nil
 		case object.KindString, object.KindBytes, object.KindASCII:
-			a := args[0].Str()
-			return join(ctx, elems(self), string(a))
+			return join(ctx, elems(self), args[0])
 		}
 		return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into Integer", KindName(args[0]))
 	})
@@ -319,13 +318,9 @@ func installList() {
 		return object.NewList(out...), nil
 	})
 	def(c, "join", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		sep := ""
-		if len(args) == 1 && !args[0].IsNil() {
-			s, err := WantString(ctx, args[0])
-			if err != nil {
-				return object.Value{}, err
-			}
-			sep = s
+		sep, err := separator(ctx, args)
+		if err != nil {
+			return object.Value{}, err
 		}
 		return join(ctx, elems(self), sep)
 	})
@@ -543,17 +538,29 @@ func flatten(elems []object.Value, depth int64) []object.Value {
 	return out
 }
 
-// join is Array#join, whose result takes the encoding its strings are
-// compatible in.
-func join(ctx object.Context, elems []object.Value, sep string) (object.Value, error) {
+// separator returns the string join puts between the elements, in the
+// encoding it has: the one argument of args, or none.
+func separator(ctx object.Context, args []object.Value) (object.Value, error) {
+	if len(args) != 1 || args[0].IsNil() {
+		return object.ASCIIString(""), nil
+	}
+	if args[0].IsString() {
+		return args[0], nil
+	}
+	s, err := WantString(ctx, args[0])
+	return object.Counted(s), err
+}
+
+// join is Array#join, whose result takes the encoding its strings and
+// the separator between are compatible in.
+func join(ctx object.Context, elems []object.Value, between object.Value) (object.Value, error) {
 	parts := make([]object.Value, 0, 2*len(elems))
-	between := object.Counted(sep)
 	for i, e := range elems {
-		if i > 0 && sep != "" {
+		if i > 0 && between.Str() != "" {
 			parts = append(parts, between)
 		}
 		if l, ok := e.AsList(); ok {
-			v, err := join(ctx, l.Elems, sep)
+			v, err := join(ctx, l.Elems, between)
 			if err != nil {
 				return object.Value{}, err
 			}

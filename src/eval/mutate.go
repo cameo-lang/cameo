@@ -2,6 +2,7 @@ package eval
 
 import (
 	"strings"
+	"unicode/utf8"
 
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/stdlib"
@@ -285,33 +286,45 @@ func init() {
 			return appendStrings(in, cur, args, line)
 		}),
 		"prepend": returnsSelf(func(in *Interp, fr *Frame, cur object.Value, args []object.Value, block object.Value, line int) (object.Value, error) {
-			var b strings.Builder
 			for _, a := range args {
-				s, ok := a.AsString()
-				if !ok {
+				if _, ok := a.AsString(); !ok {
 					return object.Value{}, in.raise(object.TypeError, line, "no implicit conversion of %s into String", typeName(a))
 				}
-				b.WriteString(s)
 			}
-			return object.String(b.String() + cur.Str()), nil
+			if len(args) == 0 {
+				return cur, nil
+			}
+			// The strings and the receiver after them, in the encoding
+			// they are compatible in.
+			return appendStrings(in, args[0], append(args[1:len(args):len(args)], cur), line)
 		}),
 		"insert": returnsSelf(func(in *Interp, fr *Frame, cur object.Value, args []object.Value, block object.Value, line int) (object.Value, error) {
 			if err := wantArgs(in, args, 2, line); err != nil {
 				return object.Value{}, err
 			}
 			i, ok := args[0].AsInt()
-			s, ok2 := args[1].AsString()
-			if !ok || !ok2 {
+			if _, isString := args[1].AsString(); !ok || !isString {
 				return object.Value{}, in.raise(object.TypeError, line, "insert takes an index and a string")
 			}
-			rs := []rune(cur.Str())
-			if i < 0 {
-				i += int64(len(rs)) + 1
+			// The place is counted in characters: runes of a UTF-8
+			// string, bytes of any other.
+			text, k := cur.Str(), cur.Kind()
+			size := int64(len(text))
+			if k == object.KindString {
+				size = int64(utf8.RuneCountInString(text))
 			}
-			if i < 0 || i > int64(len(rs)) {
+			if i < 0 {
+				i += size + 1
+			}
+			if i < 0 || i > size {
 				return object.Value{}, in.raise(object.IndexError, line, "index %d out of string", args[0].Int())
 			}
-			return object.String(string(rs[:i]) + s + string(rs[i:])), nil
+			at := int(i)
+			if k == object.KindString {
+				at = len(string([]rune(text)[:i]))
+			}
+			// The three pieces in the encoding they are compatible in.
+			return appendStrings(in, object.StringOf(k, text[:at]), []object.Value{args[1], object.StringOf(k, text[at:])}, line)
 		}),
 		"replace": returnsSelf(func(in *Interp, fr *Frame, cur object.Value, args []object.Value, block object.Value, line int) (object.Value, error) {
 			if err := wantArgs(in, args, 1, line); err != nil {

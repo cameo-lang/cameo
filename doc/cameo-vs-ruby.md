@@ -303,12 +303,23 @@ sets the fields, and `p a` prints `Point(x: 1, y: 2)` where Ruby prints
   false. Such bytes are written as a binary string literal, `b"\xFF"`,
   which Ruby reads as a call of `b`; it takes escapes as `"..."` does, or
   none as `b'...'`, and no interpolation.
+- A UTF-8 String holds whole characters alone, and none is invalid. A
+  file that is not UTF-8 and such bytes from the host are a binary
+  String, and `force_encoding("UTF-8")` of such bytes raises
+  Encoding::InvalidByteSequenceError, where Ruby makes a String whose
+  `valid_encoding?` is false.
 - A binary String has bytes and no characters. A method that reads
   characters (`upcase`, `strip`, `chars`, `to_i`, `split`, `reverse`,
   `center`, `tr`) raises Encoding::CompatibilityError for one, where Ruby
   reads its bytes as ASCII; `force_encoding("UTF-8")` first says what the
   bytes are. The methods on bytes, comparison, `+`, `*`, `[]`, `length`
   and patterns work as in Ruby.
+- A method of a UTF-8 or US-ASCII String raises
+  Encoding::CompatibilityError for a binary String argument with a byte
+  above 127 (`"abc".gsub("b", b"\xFF")`, `format("%s", b"\xFF")`), also
+  where Ruby makes a binary String because the receiver is ASCII. `+`,
+  `<<`, `concat`, `prepend`, `insert`, interpolation and `Array#join`
+  make the binary String, as Ruby does.
 - Regular expressions use Ruby's syntax on cameo's own engine; lookbehind
   and backreferences are rejected with "This regexp is not supported in
   Cameo".

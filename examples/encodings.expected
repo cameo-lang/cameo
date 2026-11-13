@@ -45,10 +45,9 @@ nil
 "test"
 invalid base64
 offset outside of string
-false
+#<Encoding:BINARY (ASCII-8BIT)>
 "h�llo��"
 "h?llo??"
-"h<1>llo<1><2>"
 #<Encoding:BINARY (ASCII-8BIT)>
 true
 "café"
@@ -61,8 +60,10 @@ true
 #<Encoding:UTF-8>
 "ASCII-8BIT"
 "UTF-8"
-false
-"ok�"
+#<Encoding:BINARY (ASCII-8BIT)>
+true
+#<Encoding:UTF-8>
+"invalid byte sequence in UTF-8: keep the bytes in a binary string"
 "unknown encoding name - EBCDIC"
 "ab<c\u2028d>ab<c\u2028d>"
 "x&lt;y"

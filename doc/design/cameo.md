@@ -1218,8 +1218,9 @@ re-opened by accident:
     interpolation. `.b`,
     `pack` and a protobuf `bytes` field make binary strings too; `force_encoding`
     relabels the same bytes and `encode` converts them. A US-ASCII
-    string has one character per byte, changes case in ASCII alone, and
-    gives its methods' results its encoding. A binary string has bytes
+    string holds 7-bit characters alone, one per byte, and gives its
+    methods' results its encoding while they hold nothing else: one
+    that an argument brought other characters into is UTF-8, as in Ruby. A binary string has bytes
     and no characters, unlike Ruby's, which reads its bytes as ASCII: it
     answers the methods that read, make and compare bytes (`bytes`,
     `getbyte`, `bytesize`, `length`, `[]`, `+`, `*`, `==`, `index`,
@@ -1230,8 +1231,15 @@ re-opened by accident:
     `force_encoding`, before it reads them as text. It prints a byte past
     7 bits as `\xNN`; `+`, `<<`, `join` and interpolation take the
     encoding their parts are compatible in, or raise
-    Encoding::CompatibilityError. `valid_encoding?` and `scrub` deal with
-    bytes an encoding does not allow. `force_encoding` returns the
+    Encoding::CompatibilityError. A UTF-8 string is made of whole
+    characters alone, and a US-ASCII one of ASCII, unlike Ruby's, which
+    may hold bytes their encoding does not allow: bytes that are not
+    UTF-8 are a binary string where they come in (a file, what the host
+    passes, `pack`), and
+    `force_encoding`, `setbyte`, `bytesplice` and `append_as_bytes` raise
+    Encoding::InvalidByteSequenceError when the bytes they would call
+    UTF-8 or US-ASCII are not. `encode("UTF-8", "UTF-8", invalid:
+    :replace)` reads a binary string as UTF-8 with what is not replaced. `force_encoding` returns the
     relabelled string and leaves its receiver, and raises when its value
     is dropped. Integer and Symbol `to_s`
     give UTF-8 where Ruby gives US-ASCII; only `encoding` tells.

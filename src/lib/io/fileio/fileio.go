@@ -167,7 +167,8 @@ func Install() {
 		if binary {
 			return object.Bytes(data), nil
 		}
-		return object.String(string(data)), nil
+		// A file that is not UTF-8 is read as bytes.
+		return object.Text(string(data)), nil
 	})
 
 	// write(path, data) and write(path) { data } write data, a String or
