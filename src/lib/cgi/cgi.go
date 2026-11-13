@@ -272,7 +272,7 @@ func indexFold(s, sub string) int {
 	return -1
 }
 
-// startsWithWord reports s starting with what Ruby's \w matches, an ASCII
+// startsWithWord returns whether s starts with what Ruby's \w matches, an ASCII
 // letter, digit or _.
 func startsWithWord(s string) bool { return s != "" && isWordByte(s[0]) }
 

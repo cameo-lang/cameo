@@ -17,7 +17,7 @@ func ProcField(cls *object.Class) (field string, owner *object.Class) {
 	return procField(cls, map[*object.Class]bool{})
 }
 
-// HasProc reports whether an instance of cls may hold a proc, in a field
+// HasProc returns whether an instance of cls may hold a proc, in a field
 // of its own or of a class a field refers to. Such an instance does not
 // keep its message: the closure in it is made for one reader.
 func HasProc(cls *object.Class) bool {
@@ -25,13 +25,13 @@ func HasProc(cls *object.Class) bool {
 	return field != ""
 }
 
-// holdsProc reports whether a value of the field type t may hold a proc.
+// holdsProc returns whether a value of the field type t may hold a proc.
 func holdsProc(t *object.FieldType) bool {
 	name, _ := procIn(t, map[*object.Class]bool{})
 	return name != ""
 }
 
-// ownProc reports whether cls declares a proc field itself, also as the
+// ownProc returns whether cls declares a proc field itself, also as the
 // element of a list, a set or a map: its message refers to
 // cameo.Closure.
 func ownProc(cls *object.Class) bool {

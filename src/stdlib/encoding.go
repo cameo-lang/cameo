@@ -83,7 +83,7 @@ func labelled(ctx object.Context, k object.Kind, s string) (object.Value, error)
 	return v, nil
 }
 
-// validIn reports whether s is a valid string of encoding k.
+// validIn returns whether s is a valid string of encoding k.
 func validIn(k object.Kind, s string) bool {
 	switch k {
 	case object.KindBytes:

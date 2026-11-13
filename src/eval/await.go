@@ -167,7 +167,7 @@ func (in *Interp) quiet() {
 }
 
 // freeze keeps the activations of the interpreter as they are, for the
-// dump, and reports true: the interpreter stops. A worker whose promise
+// dump, and returns true: the interpreter stops. A worker whose promise
 // something needs does not freeze.
 func (in *Interp) freeze() bool {
 	// What is frozen runs from cursors: a dump writes cursors, and a
@@ -192,7 +192,7 @@ func (in *Interp) freeze() bool {
 }
 
 // frozenNow says the worker w, which froze, has left its goroutine: Dump
-// may read it, and a need of its promise thaws it. It reports false when
+// may read it, and a need of its promise thaws it. It returns false when
 // the promise came to be needed meanwhile, or the pause was taken back
 // for a run that goes on (goOnPaused), which thawed the workers frozen
 // by then and would not come to this one: the worker goes on at once.
@@ -207,7 +207,7 @@ func (p *pauser) frozenNow(w *Interp, pr *Promise) bool {
 	return true
 }
 
-// canPause reports whether the interpreter stops for a pause where it
+// canPause returns whether the interpreter stops for a pause where it
 // is, before an instruction of m: one loop runs, m is in no list of its
 // own, and nothing needs the promise of a worker.
 func (in *Interp) canPause(m *machine) bool {

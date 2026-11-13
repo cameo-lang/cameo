@@ -28,7 +28,7 @@ type stop struct{}
 func (*stop) Error() string { return "stop" }
 
 // until runs e, handing each element to f until f says it is done, and
-// reports whether it was.
+// returns whether it was.
 func until(ctx object.Context, e each, f func(object.Value) (done bool, err error)) (bool, error) {
 	mine := &stop{}
 	err := e(ctx, func(v object.Value) error {

@@ -530,7 +530,7 @@ func (l *lowerer) begin(at *flatList, c *cameopb.Code, idx int, ins flatIns) {
 	l.tries--
 }
 
-// awaits reports whether c or an instruction in its lists is an async
+// awaits returns whether c or an instruction in its lists is an async
 // call or an await.
 func awaits(c *cameopb.Code) bool {
 	switch c.Op {
@@ -547,7 +547,7 @@ func awaits(c *cameopb.Code) bool {
 	return false
 }
 
-// literals reports whether the n instructions lowered last are the
+// literals returns whether the n instructions lowered last are the
 // constants of the n instructions before idx in at: the elements of a
 // list of literals.
 func (l *lowerer) literals(at *flatList, idx, n int) bool {
@@ -963,7 +963,7 @@ func (m *machine) rescueTest(ins *flatIns) error {
 	return m.rescueFlat(bg, int(ins.b)+1)
 }
 
-// atReal reports whether the next flat instruction of m is one a run
+// atReal returns whether the next flat instruction of m is one a run
 // pauses before.
 func (m *machine) atReal() bool {
 	return m.pc < len(m.flat.code) && m.flat.code[m.pc].real

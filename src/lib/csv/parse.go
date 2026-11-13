@@ -120,7 +120,7 @@ func (p *parser) rowSep() string {
 	return "\n"
 }
 
-// eof reports whether every row has been read.
+// eof returns whether every row has been read.
 func (p *parser) eof() bool {
 	if p.pendingEmpty > 0 || p.hasStash {
 		return false

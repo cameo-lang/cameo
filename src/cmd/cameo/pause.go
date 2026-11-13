@@ -140,7 +140,7 @@ func runProgram(prog *cameo.Program, allowIO []string, pause bool, stderr io.Wri
 }
 
 // writeDump writes the paused program's dump to a temporary file and
-// says where, and how to resume it. It reports written unset when there
+// says where, and how to resume it. It returns written unset when there
 // is no dump, since the script cannot be dumped where it paused or the
 // file cannot be written: the script then goes on.
 func writeDump(prog *cameo.Program, stderr io.Writer) (status int, written bool) {

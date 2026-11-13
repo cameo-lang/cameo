@@ -81,7 +81,7 @@ func (in *Interp) declareFields(n *fieldDecl, typ *object.FieldType, def object.
 	return object.Nil, nil
 }
 
-// declaredBefore reports whether the field at index i of cls, which a
+// declaredBefore returns whether the field at index i of cls, which a
 // body reopening the class declares again, came from the class reopened
 // and the declaration gives it again: the same type, the same default,
 // and the same number when it names one.
@@ -409,7 +409,7 @@ func outOfRange(t *object.FieldType, v object.Value, role string) (object.Value,
 	return object.Value{}, nil, "", false
 }
 
-// isNumber reports an Integer or a Float.
+// isNumber returns true for an Integer or a Float.
 func isNumber(v object.Value) bool { return v.IsInteger() || v.Kind() == object.KindFloat }
 
 // inspectNumber prints a number for an error message.
@@ -512,7 +512,7 @@ func (in *Interp) reserve(n reserved, fr *Frame) (object.Value, error) {
 	return object.Nil, nil
 }
 
-// topLevelInclude reports whether an include in fr is the top level's,
+// topLevelInclude returns whether an include in fr is the top level's,
 // which takes Cameo alone; extend is never.
 func (in *Interp) topLevelInclude(extend bool, fr *Frame) bool {
 	return fr.DefTarget == in.mainClass && !extend
@@ -821,13 +821,13 @@ func attrReader(name string) object.NativeFn {
 	}
 }
 
-// exceptionNumber reports whether number is one an exception class keeps
+// exceptionNumber returns whether number is one an exception class keeps
 // for the parts of its message besides its fields.
 func exceptionNumber(cls *object.Class, number int64) bool {
 	return cls.IsA(object.ExceptionClass) && number <= protogen.ExceptionNumbers
 }
 
-// isClassValue reports whether v is the class cls itself.
+// isClassValue returns whether v is the class cls itself.
 func isClassValue(v object.Value, cls *object.Class) bool {
 	c, ok := v.AsClass()
 	return ok && c == cls

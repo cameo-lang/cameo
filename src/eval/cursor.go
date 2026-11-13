@@ -557,7 +557,7 @@ func (m *machine) caseConds(c *cameopb.Code, i int) error {
 
 // caseHit tests the conditions of a when of the CASE c, which are on the
 // stack as a list, and drops them. With one that fits it drops the
-// subject too and reports true.
+// subject too and returns true.
 func (m *machine) caseHit(c *cameopb.Code) (bool, error) {
 	conds := m.pop()
 	var subject object.Value

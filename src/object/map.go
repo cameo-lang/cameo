@@ -78,7 +78,7 @@ func (m *Map) Len() int { return m.len }
 // Get returns the value for k, and false when absent.
 func (m *Map) Get(k Value) (Value, bool) { return m.lookup(k) }
 
-// Has reports whether k is a key.
+// Has returns whether k is a key.
 func (m *Map) Has(k Value) bool {
 	_, ok := m.lookup(k)
 	return ok
@@ -168,7 +168,7 @@ func NewSet(elems ...Value) *Set {
 // Len returns the number of elements.
 func (s *Set) Len() int { return s.len }
 
-// Has reports whether e is a member.
+// Has returns whether e is a member.
 func (s *Set) Has(e Value) bool {
 	_, ok := s.lookup(e)
 	return ok
@@ -243,7 +243,7 @@ func (v *span) lookup(k Value) (Value, bool) {
 const quickKeySize = 64
 
 // quickKey appends to buf what Key returns for a symbol or a UTF-8
-// string, and reports false for any other value and for one whose
+// string, and returns false for any other value and for one whose
 // key does not fit in quickKeySize bytes.
 func quickKey(buf []byte, v Value) ([]byte, bool) {
 	var tag byte

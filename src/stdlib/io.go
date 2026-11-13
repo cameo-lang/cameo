@@ -23,7 +23,7 @@ func installIO() {
 	stderr = object.InstanceValue(&object.Instance{Cls: c, Fields: []object.Value{object.String("stderr")}})
 	object.ObjectClass.Consts["STDOUT"] = stdout
 	object.ObjectClass.Consts["STDERR"] = stderr
-	// isErr reports whether self is the error stream.
+	// isErr returns whether self is the error stream.
 	isErr := func(self object.Value) bool { return self.Instance().Fields[0].Str() == "stderr" }
 	def(c, "puts", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Nil, puts(ctx, isErr(self), args)

@@ -448,7 +448,7 @@ func (c *Class) LookupSingleton(name string) *Method {
 	return nil
 }
 
-// IsA reports whether c is k or descends from it or includes it.
+// IsA returns whether c is k or descends from it or includes it.
 func (c *Class) IsA(k *Class) bool {
 	for _, a := range c.Ancestors() {
 		if a == k {
@@ -662,7 +662,7 @@ type Context interface {
 	Compare(a, b Value) (int, error)
 	// Write writes to the script's standard output or standard error.
 	Write(stderr bool, s string) error
-	// RespondsTo reports whether v has a method name.
+	// RespondsTo returns whether v has a method name.
 	RespondsTo(v Value, name string) bool
 	// Rand returns the interpreter's generator, the one Kernel#rand draws
 	// from: an async process has its own.
@@ -674,7 +674,7 @@ type Context interface {
 	// AtExit keeps a block to run when the script ends, as Kernel#at_exit
 	// does.
 	AtExit(block Value)
-	// IOAllowed reports whether the host lets the script do I/O through the
+	// IOAllowed returns whether the host lets the script do I/O through the
 	// library named by its require path, by the name, by the library's
 	// kind of I/O, or because every kind is allowed.
 	IOAllowed(lib string) bool
@@ -685,7 +685,7 @@ type Context interface {
 	FileSystem() (fsys afero.Fs, dir string)
 	// File is the script's file name, as its errors report it.
 	File() string
-	// Required reports whether the script required the library name:
+	// Required returns whether the script required the library name:
 	// what a library defined on every object answers by.
 	Required(name string) bool
 	// State returns the Go value a library keeps for the run under name,

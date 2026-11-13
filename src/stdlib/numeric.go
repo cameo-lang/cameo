@@ -23,7 +23,7 @@ func installNumeric() {
 	installFloat()
 }
 
-// numArgs reads two numbers as floats, and reports whether both are
+// numArgs reads two numbers as floats, and returns whether both are
 // integers.
 func numArgs(ctx object.Context, self, other object.Value, op string) (a, b float64, ints bool, err error) {
 	a, _ = self.AsNumber()
@@ -378,7 +378,7 @@ func floatRound(ctx object.Context, self object.Value, args []object.Value, kw *
 	return object.Float(roundFloat(x, s, mode) / s), nil
 }
 
-// floatRoundOverflow reports that x * 10**ndigits is a whole number
+// floatRoundOverflow returns whether x * 10**ndigits is a whole number
 // already, so that rounding returns x: a float has at most 17 significant
 // digits, and x has about binexp/3.32 of them before the point.
 func floatRoundOverflow(ndigits int64, binexp int) bool {
@@ -390,7 +390,7 @@ func floatRoundOverflow(ndigits int64, binexp int) bool {
 	return ndigits >= int64(floatDig-e)
 }
 
-// floatRoundUnderflow reports that x rounds to zero at ndigits.
+// floatRoundUnderflow returns whether x rounds to zero at ndigits.
 func floatRoundUnderflow(ndigits int64, binexp int) bool {
 	e := binexp / 4
 	if binexp > 0 {

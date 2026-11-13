@@ -26,7 +26,7 @@ func arithSeq(recv object.Value, meth string, args []object.Value, kw *object.Ma
 	}), meth, object.Value{})
 }
 
-// arithInts reports a sequence that counts in Integers.
+// arithInts returns true for a sequence that counts in Integers.
 func arithInts(s *object.ArithSeq) bool {
 	return s.Begin.IsInteger() && s.Step.IsInteger() && (s.End.IsInteger() || s.End.IsNil())
 }

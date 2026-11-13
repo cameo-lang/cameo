@@ -199,13 +199,13 @@ var (
 // Kind returns what the value holds.
 func (v Value) Kind() Kind { return v.kind() }
 
-// IsZero reports the zero Value: no value at all.
+// IsZero returns true for the zero Value: no value at all.
 func (v Value) IsZero() bool { return v.p == nil && v.n == 0 }
 
-// IsNil reports cameo's nil.
+// IsNil returns true for cameo's nil.
 func (v Value) IsNil() bool { return v.p == mark(KindNil) }
 
-// Truthy reports whether a value counts as true: everything but nil and
+// Truthy returns whether a value counts as true: everything but nil and
 // false. The zero Value counts as nil.
 func (v Value) Truthy() bool {
 	if v.p == mark(KindBool) {
@@ -364,9 +364,9 @@ func (v Value) Chars() (int, bool) {
 	return v.size() - extra, true
 }
 
-// KnownASCII reports a UTF-8 string that is known to hold ASCII alone:
-// one whose characters are known to be its bytes. False says nothing:
-// the string may still be ASCII.
+// KnownASCII returns true for a UTF-8 string that is known to hold ASCII
+// alone: one whose characters are known to be its bytes. False says
+// nothing: the string may still be ASCII.
 func (v Value) KnownASCII() bool {
 	n, ok := v.Chars()
 	return ok && n == v.size()
@@ -391,14 +391,14 @@ func StringOf(kind Kind, s string) Value {
 	return strValue(kind, int64(len(s)), unsafe.Pointer(unsafe.StringData(s)))
 }
 
-// IsString reports a String in any encoding.
+// IsString returns true for a String in any encoding.
 func (v Value) IsString() bool {
 	k := v.kind()
 	return k == KindString || k == KindBytes || k == KindASCII
 }
 
-// ASCIIOnly reports a string of 7-bit bytes alone, which reads the same in
-// every encoding.
+// ASCIIOnly returns true for a string of 7-bit bytes alone, which reads
+// the same in every encoding.
 func ASCIIOnly(s string) bool {
 	for i := 0; i < len(s); i++ {
 		if s[i] >= 0x80 {
@@ -433,7 +433,8 @@ func MatchValue(m *Match) Value   { return ptrValue(KindMatch, unsafe.Pointer(m)
 func Opaque(kind Kind, p unsafe.Pointer) Value { return ptrValue(kind, p) }
 
 // Readers. The unchecked ones (Int, Float, Str, ...) are for use after a
-// kind check and panic on another kind; the As* ones report the kind.
+// kind check and panic on another kind; the As* ones return whether the
+// kind fits.
 
 func (v Value) Int() int64 {
 	if v.p != mark(KindInt) {
@@ -660,8 +661,8 @@ func (v Value) AsException() (*Exception, bool) {
 	return (*Exception)(v.p), true
 }
 
-// Same reports identity: the same kind and the same payload. Two strings
-// are the same only when they share their bytes.
+// Same returns whether a and b are identical: the same kind and the same
+// payload. Two strings are the same only when they share their bytes.
 func Same(a, b Value) bool {
 	if a.p != b.p {
 		return false
@@ -906,7 +907,7 @@ func SymbolKey(s string) string {
 	return s + ": "
 }
 
-// isSymbolName reports whether Ruby's parser reads s after a colon: an
+// isSymbolName returns whether Ruby's parser reads s after a colon: an
 // identifier, a method name ending in ?, ! or =, an operator, or the name of
 // an instance, class or global variable.
 func isSymbolName(s string) bool {
@@ -923,7 +924,7 @@ func isSymbolName(s string) bool {
 	return false
 }
 
-// isGlobalName reports whether s is what follows the $ of a global
+// isGlobalName returns whether s is what follows the $ of a global
 // variable's name: an identifier, a match group ($1, $10, but not $01),
 // $0, one punctuation character ($~, $!), or $- and one character ($-w).
 func isGlobalName(s string) bool {
@@ -941,7 +942,7 @@ func isGlobalName(s string) bool {
 	return false
 }
 
-// isMethodName reports whether s is an identifier, or one followed by ?, !
+// isMethodName returns whether s is an identifier, or one followed by ?, !
 // or =.
 func isMethodName(s string) bool {
 	if n := len(s); n > 1 && strings.ContainsAny(s[n-1:], "?!=") {

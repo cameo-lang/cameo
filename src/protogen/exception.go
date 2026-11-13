@@ -64,7 +64,7 @@ func exceptionParts(cls *object.Class) []exceptionPart {
 	return out
 }
 
-// ExceptionPart reports whether name is one of the parts of an exception
+// ExceptionPart returns whether name is one of the parts of an exception
 // of class cls, which no field of the class may be named.
 func ExceptionPart(cls *object.Class, name string) bool {
 	for _, p := range exceptionParts(cls) {

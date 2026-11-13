@@ -18,7 +18,7 @@ func (p *Program) Debug(console io.Reader, out io.Writer) {
 	p.in.Debug(console, out, p.src, true)
 }
 
-// Quit reports whether the debugger's quit command ended the run: Run then
+// Quit returns whether the debugger's quit command ended the run: Run then
 // returned an error wrapping eval.ErrStopped, which is not a failure of
 // the script.
 func (p *Program) Quit() bool {

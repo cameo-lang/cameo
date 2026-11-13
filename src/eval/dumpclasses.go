@@ -45,7 +45,7 @@ func (in *Interp) newClassDump() *classDump {
 	return &classDump{in: in, ids: map[*object.Class]string{}, taken: map[string]bool{}}
 }
 
-// carried reports whether the dump carries cls: a class or module a script
+// carried returns whether the dump carries cls: a class or module a script
 // defined, or the copy a library written in cameo made of one Go defined.
 // A builtin class and one the host registered are the process's, and are
 // referred to by name.
@@ -68,7 +68,7 @@ func nativeNamed(name string) *object.Class {
 	return cls
 }
 
-// copied reports whether a class with the digest is a copy of one Go
+// copied returns whether a class with the digest is a copy of one Go
 // defined, made for a library written in cameo to add to (libraryOpens).
 func copied(digest string) bool { return strings.HasPrefix(digest, "+") }
 

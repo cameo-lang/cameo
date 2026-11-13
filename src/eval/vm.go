@@ -235,7 +235,7 @@ func (m *machine) sym(c *cameopb.Code, i int) object.Sym {
 	return m.syms.syms[c.Args[i].GetName()]
 }
 
-// mayMutate reports whether the name a SEND calls can be one of Ruby's
+// mayMutate returns whether the name a SEND calls can be one of Ruby's
 // mutators (mutate.go).
 func (m *machine) mayMutate(c *cameopb.Code) bool {
 	if m.syms == nil {
@@ -762,7 +762,7 @@ const sendPlain = uint64(cameopb.Flag_FLAG_SELF | cameopb.Flag_FLAG_VCALL | came
 // neither their frame nor their scope (params.contained). The arguments are not copied off
 // the stack: the call reads them where the caller pushed them, above
 // the top of the caller's stack, which nothing writes to until the call
-// ended. It reports false when the call is another kind, and has done
+// ended. It returns false when the call is another kind, and has done
 // nothing then.
 func (m *machine) sendContained(c *cameopb.Code) (bool, error) {
 	in := m.in
@@ -827,7 +827,7 @@ func (m *machine) sendContained(c *cameopb.Code) (bool, error) {
 	return true, withLine(err, line)
 }
 
-// plainArgs reports whether the arguments of the SEND c after its name
+// plainArgs returns whether the arguments of the SEND c after its name
 // and its count are names alone: the variable the receiver was read
 // from, which a mutator's error names, and no block.
 func plainArgs(c *cameopb.Code) bool {

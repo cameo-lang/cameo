@@ -94,7 +94,7 @@ func (r *Regexp) view(s string) (v string, at, back func(int) int) {
 	return v, at, back
 }
 
-// fixedEncoding reports a pattern Ruby gives the UTF-8 encoding for
+// fixedEncoding returns true for a pattern Ruby gives the UTF-8 encoding for
 // good: one with a character past ASCII, or a \u escape of one.
 func fixedEncoding(source string) bool {
 	for i := 0; i < len(source); i++ {

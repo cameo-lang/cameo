@@ -103,7 +103,7 @@ func equalNumber(ctx object.Context, self object.Value, args []object.Value, kw 
 
 func installInteger() {
 	c := object.IntegerClass
-	// arith defines a binary operator: small on two KindInts, which reports
+	// arith defines a binary operator: small on two KindInts, which returns
 	// overflow, large on any two integers, floats when either is a float.
 	// A zero integer divisor raises before either runs, where zero says so.
 	arith := func(name string, zero bool, small func(a, b int64) (int64, bool), large func(a, b *big.Int) *big.Int, floats func(a, b float64) object.Value) {
@@ -744,7 +744,7 @@ func addIntegers(a, b object.Value) object.Value {
 	return object.BigInt(new(big.Int).Add(bigOf(a), bigOf(b)))
 }
 
-// exceeds53 reports an integer a float cannot hold exactly.
+// exceeds53 returns true for an integer a float cannot hold exactly.
 func exceeds53(v object.Value) bool {
 	if x, ok := v.AsInt(); ok {
 		return x > 1<<53 || x < -(1<<53)

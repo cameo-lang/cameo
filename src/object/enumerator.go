@@ -54,7 +54,7 @@ func (e *Enumerator) Made(name string, block Value) *Enumerator {
 	return e
 }
 
-// MakesEnumerator reports whether the call of name on recv with args and
+// MakesEnumerator returns whether the call of name on recv with args and
 // block is one that makes an enumerator and does nothing else: an
 // iterating method called without a block, or a method of a lazy
 // enumerator, which keeps its block for later. A reader makes an

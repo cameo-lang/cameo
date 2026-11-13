@@ -255,7 +255,7 @@ func raise(ctx object.Context, args []object.Value) error {
 	return ctx.Raise(object.TypeError, "exception class/object expected")
 }
 
-// plainException reports whether an exception of cls is made here rather
+// plainException returns whether an exception of cls is made here rather
 // than by cls.exception: its class declares no fields and has Exception's
 // own initialize, exception and new. It reads the classes' own methods rather than looking
 // initialize up, which costs a raise in a loop a tenth of its time.

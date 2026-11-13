@@ -58,7 +58,7 @@ func (in *Interp) dropped(recv object.Value, name string, line int) error {
 	return nil
 }
 
-// mayMutate reports whether a call of name can be one of Ruby's mutators,
+// mayMutate returns whether a call of name can be one of Ruby's mutators,
 // so that a compiled call site of any other name skips the check.
 func mayMutate(name string) bool {
 	return mutators[name] || syntax.IsBang(name) || syntax.ReturnsCopy(name)
