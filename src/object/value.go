@@ -325,9 +325,13 @@ func StringOfChars(s string, chars int) Value {
 // are its bytes.
 func ASCIIString(s string) Value { return StringOfChars(s, len(s)) }
 
+// Counted makes a UTF-8 string of s and counts its characters: for a
+// short string, as a symbol's name is.
+func Counted(s string) Value { return StringOfChars(s, utf8.RuneCountInString(s)) }
+
 // Literal makes a UTF-8 string of s and counts its characters: for a
 // string that is made once and read often, a literal of a script.
-func Literal(s string) Value { return StringOfChars(s, utf8.RuneCountInString(s)) }
+func Literal(s string) Value { return Counted(s) }
 
 // Chars returns the number of characters of a UTF-8 string that knows
 // it. False says nothing but that nobody counted: a string in another

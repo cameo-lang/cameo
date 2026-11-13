@@ -76,16 +76,36 @@ func installString() {
 			return object.String(f(str(self))), nil
 		})
 	}
-	mapStr("upcase", strings.ToUpper)
-	mapStr("downcase", strings.ToLower)
-	mapStr("capitalize", func(s string) string {
+	// alike makes a method whose result has a character for each of the
+	// receiver's, and trimmed one whose result is the receiver less
+	// characters of one byte: the result knows its characters when the
+	// receiver does.
+	counted := func(name string, f func(string) string, chars func(n int, in, out string) int) {
+		def(c, name, 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+			in := str(self)
+			out := f(in)
+			if n, ok := self.Chars(); ok {
+				return object.StringOfChars(out, chars(n, in, out)), nil
+			}
+			return object.String(out), nil
+		})
+	}
+	alike := func(name string, f func(string) string) {
+		counted(name, f, func(n int, in, out string) int { return n })
+	}
+	trimmed := func(name string, f func(string) string) {
+		counted(name, f, func(n int, in, out string) int { return n - (len(in) - len(out)) })
+	}
+	alike("upcase", strings.ToUpper)
+	alike("downcase", strings.ToLower)
+	alike("capitalize", func(s string) string {
 		if s == "" {
 			return s
 		}
 		r, size := utf8.DecodeRuneInString(s)
 		return string(unicode.ToUpper(r)) + strings.ToLower(s[size:])
 	})
-	mapStr("swapcase", func(s string) string {
+	alike("swapcase", func(s string) string {
 		return strings.Map(func(r rune) rune {
 			if unicode.IsUpper(r) {
 				return unicode.ToLower(r)
@@ -93,17 +113,17 @@ func installString() {
 			return unicode.ToUpper(r)
 		}, s)
 	})
-	mapStr("reverse", func(s string) string {
+	alike("reverse", func(s string) string {
 		runes := []rune(s)
 		for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
 			runes[i], runes[j] = runes[j], runes[i]
 		}
 		return string(runes)
 	})
-	mapStr("strip", func(s string) string { return strings.Trim(s, " \t\n\r\f\v\x00") })
-	mapStr("lstrip", func(s string) string { return strings.TrimLeft(s, " \t\n\r\f\v\x00") })
-	mapStr("rstrip", func(s string) string { return strings.TrimRight(s, " \t\n\r\f\v\x00") })
-	mapStr("chomp", func(s string) string {
+	trimmed("strip", func(s string) string { return strings.Trim(s, " \t\n\r\f\v\x00") })
+	trimmed("lstrip", func(s string) string { return strings.TrimLeft(s, " \t\n\r\f\v\x00") })
+	trimmed("rstrip", func(s string) string { return strings.TrimRight(s, " \t\n\r\f\v\x00") })
+	trimmed("chomp", func(s string) string {
 		s = strings.TrimSuffix(s, "\n")
 		return strings.TrimSuffix(s, "\r")
 	})
@@ -118,17 +138,22 @@ func installString() {
 			return object.Value{}, err
 		}
 		if suffix == "" {
-			return object.String(strings.TrimRight(str(self), "\r\n")), nil
+			// Line endings are a byte each.
+			out := strings.TrimRight(str(self), "\r\n")
+			if n, ok := self.Chars(); ok {
+				return object.StringOfChars(out, n-(len(str(self))-len(out))), nil
+			}
+			return object.String(out), nil
 		}
-		return object.String(strings.TrimSuffix(str(self), suffix)), nil
+		return lessSuffix(self, suffix), nil
 	})
-	mapStr("chop", func(s string) string {
+	counted("chop", func(s string) string {
 		if s == "" {
 			return s
 		}
 		_, size := utf8.DecodeLastRuneInString(s)
 		return s[:len(s)-size]
-	})
+	}, func(n int, in, out string) int { return max(n-1, 0) })
 	mapStr("succ", succ)
 	mapStr("next", succ)
 	// upto yields self and its successors up to max, as a range of strings
@@ -152,19 +177,22 @@ func installString() {
 		}
 		return self, nil
 	})
-	mapStr("to_s", func(s string) string { return s })
-	mapStr("to_str", func(s string) string { return s })
+	alike("to_s", func(s string) string { return s })
+	alike("to_str", func(s string) string { return s })
 	mapStr("inspect", object.QuoteString)
-	mapStr("squeeze", func(s string) string {
+	def(c, "squeeze", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		// The characters that stay are counted as they are written.
 		var b strings.Builder
 		var last rune = -1
-		for _, r := range s {
+		kept := 0
+		for _, r := range str(self) {
 			if r != last {
 				b.WriteRune(r)
+				kept++
 			}
 			last = r
 		}
-		return b.String()
+		return object.StringOfChars(b.String(), kept), nil
 	})
 	def(c, "to_sym", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if !validIn(self.Kind(), str(self)) {
@@ -333,8 +361,27 @@ func installString() {
 	}
 	strArg("include?", func(s, a string) object.Value { return object.Bool(strings.Contains(s, a)) })
 	strArg("end_with?", func(s, a string) object.Value { return object.Bool(strings.HasSuffix(s, a)) })
-	strArg("delete_prefix", func(s, a string) object.Value { return object.String(strings.TrimPrefix(s, a)) })
-	strArg("delete_suffix", func(s, a string) object.Value { return object.String(strings.TrimSuffix(s, a)) })
+	def(c, "delete_prefix", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		prefix, err := WantString(ctx, args[0])
+		if err != nil {
+			return object.Value{}, err
+		}
+		s := str(self)
+		out := strings.TrimPrefix(s, prefix)
+		// The rest has the receiver's characters less the prefix's,
+		// unless it begins inside a character (object.Joined).
+		if n, ok := self.Chars(); ok && (out == "" || utf8.RuneStart(out[0])) {
+			return object.StringOfChars(out, n-utf8.RuneCountInString(s[:len(s)-len(out)])), nil
+		}
+		return object.String(out), nil
+	})
+	def(c, "delete_suffix", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+		suffix, err := WantString(ctx, args[0])
+		if err != nil {
+			return object.Value{}, err
+		}
+		return lessSuffix(self, suffix), nil
+	})
 	strArg("count", func(s, a string) object.Value {
 		n := 0
 		for _, r := range s {
@@ -359,7 +406,7 @@ func installString() {
 		if err != nil {
 			return object.Value{}, err
 		}
-		return object.String(translate(str(self), from, to)), nil
+		return object.StringOfChars(translate(str(self), from, to)), nil
 	})
 	pad := func(name string, place func(s, fill string, n int) string) {
 		def(c, name, -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -379,13 +426,25 @@ func installString() {
 					return object.Value{}, ctx.Raise(object.ArgumentError, "zero width padding")
 				}
 			}
-			return object.String(place(str(self), fill, int(n))), nil
+			// The result has the receiver's characters and the
+			// padding's, which the method counts to pad: unless
+			// the receiver begins inside a character, which
+			// padding before it could complete (object.Joined).
+			s := str(self)
+			have, ok := self.Chars()
+			if !ok {
+				have = utf8.RuneCountInString(s)
+			}
+			out := place(s, fill, max(int(n)-have, 0))
+			if s == "" || utf8.RuneStart(s[0]) {
+				return object.StringOfChars(out, max(int(n), have)), nil
+			}
+			return object.String(out), nil
 		})
 	}
-	pad("ljust", func(s, fill string, n int) string { return s + Padding(fill, n-utf8.RuneCountInString(s)) })
-	pad("rjust", func(s, fill string, n int) string { return Padding(fill, n-utf8.RuneCountInString(s)) + s })
-	pad("center", func(s, fill string, n int) string {
-		total := n - utf8.RuneCountInString(s)
+	pad("ljust", func(s, fill string, total int) string { return s + Padding(fill, total) })
+	pad("rjust", func(s, fill string, total int) string { return Padding(fill, total) + s })
+	pad("center", func(s, fill string, total int) string {
 		if total <= 0 {
 			return s
 		}
@@ -441,7 +500,36 @@ func lines(s string) []object.Value {
 // substitute is sub and gsub with a string pattern, a replacement string or
 // map, or a block. limit is the number of replacements, -1 for all.
 // translate is String#tr with character lists and a-z ranges.
-func translate(s, from, to string) string {
+// lessSuffix is the string v without that suffix, when it ends in it:
+// with v's characters less the suffix's, when v knows its own and the
+// suffix does not begin inside a character (object.Joined).
+func lessSuffix(v object.Value, suffix string) object.Value {
+	s := v.Str()
+	out := strings.TrimSuffix(s, suffix)
+	n, ok := v.Chars()
+	switch {
+	case !ok:
+		return object.String(out)
+	case len(out) == len(s):
+		return object.StringOfChars(out, n)
+	case utf8.RuneStart(suffix[0]):
+		return object.StringOfChars(out, n-utf8.RuneCountInString(suffix))
+	}
+	return object.String(out)
+}
+
+// partOf makes a string of s, which is cut out of v: of ASCII when v is
+// known to be.
+func partOf(v object.Value, s string) object.Value {
+	if v.KnownASCII() {
+		return object.ASCIIString(s)
+	}
+	return object.String(s)
+}
+
+// translate is String#tr, and the number of characters of its result,
+// counted as they are written.
+func translate(s, from, to string) (string, int) {
 	expand := func(spec string) []rune {
 		runes := []rune(spec)
 		var out []rune
@@ -463,6 +551,11 @@ func translate(s, from, to string) string {
 	}
 	f, t := expand(from), expand(to)
 	var b strings.Builder
+	chars := 0
+	write := func(r rune) {
+		b.WriteRune(r)
+		chars++
+	}
 	for _, r := range s {
 		idx := -1
 		for i, fr := range f {
@@ -473,23 +566,23 @@ func translate(s, from, to string) string {
 		}
 		if negate {
 			if idx >= 0 {
-				b.WriteRune(r)
+				write(r)
 			} else if len(t) > 0 {
-				b.WriteRune(t[len(t)-1])
+				write(t[len(t)-1])
 			}
 			continue
 		}
 		switch {
 		case idx < 0:
-			b.WriteRune(r)
+			write(r)
 		case len(t) == 0:
 		case idx < len(t):
-			b.WriteRune(t[idx])
+			write(t[idx])
 		default:
-			b.WriteRune(t[len(t)-1])
+			write(t[len(t)-1])
 		}
 	}
-	return b.String()
+	return b.String(), chars
 }
 
 // stringIndex is String#[] with an index, a start and length, a range, or a

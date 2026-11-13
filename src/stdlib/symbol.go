@@ -102,7 +102,13 @@ func symKind(s string) object.Kind {
 }
 
 // symString is a symbol's name as a String in the symbol's encoding.
-func symString(v object.Value) object.Value { return object.StringOf(symKind(v.Str()), v.Str()) }
+func symString(v object.Value) object.Value {
+	// A name is short, and counted when it is not US-ASCII.
+	if k := symKind(v.Str()); k != object.KindString {
+		return object.StringOf(k, v.Str())
+	}
+	return object.Counted(v.Str())
+}
 
 func installNilBool() {
 	n := object.NilClass

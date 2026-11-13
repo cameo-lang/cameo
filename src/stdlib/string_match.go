@@ -2,6 +2,7 @@ package stdlib
 
 import (
 	"strings"
+	"unicode/utf8"
 
 	"github.com/cameo-lang/cameo/src/object"
 )
@@ -14,10 +15,10 @@ func installStringPatterns() {
 	str := func(self object.Value) string { return self.Str() }
 
 	def(c, "sub", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return substitute(ctx, str(self), args, kw, block, 1, self.Kind() == object.KindBytes)
+		return substitute(ctx, self, args, kw, block, 1)
 	})
 	def(c, "gsub", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return substitute(ctx, str(self), args, kw, block, -1, self.Kind() == object.KindBytes)
+		return substitute(ctx, self, args, kw, block, -1)
 	})
 	def(c, "scan", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		p, err := patternOf(ctx, args[0])
@@ -27,6 +28,18 @@ func installStringPatterns() {
 		var out []object.Value
 		for _, m := range p.findAll(str(self), -1) {
 			v := groupsOrText(m)
+			// What matched in ASCII is ASCII.
+			if self.KnownASCII() {
+				if l, ok := v.AsList(); ok {
+					for i, g := range l.Elems {
+						if g.IsString() {
+							l.Elems[i] = object.ASCIIString(g.Str())
+						}
+					}
+				} else {
+					v = object.ASCIIString(v.Str())
+				}
+			}
 			if block.IsZero() {
 				out = append(out, v)
 				continue
@@ -41,7 +54,7 @@ func installStringPatterns() {
 		return self, nil
 	})
 	def(c, "split", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return split(ctx, str(self), args)
+		return split(ctx, self, args)
 	})
 	def(c, "=~", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		r, ok := args[0].AsRegexp()
@@ -218,7 +231,8 @@ func installStringPatterns() {
 // substitute is sub (limit 1) and gsub (limit -1): each match replaced by
 // a string with its backreferences filled in, by a hash's value for the
 // matched text, or by a block's value for it.
-func substitute(ctx object.Context, s string, args []object.Value, kw *object.Map, block object.Value, limit int, binary bool) (object.Value, error) {
+func substitute(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value, limit int) (object.Value, error) {
+	s, binary := self.Str(), self.Kind() == object.KindBytes
 	// `gsub(/a/, "a" => "b")` passes its hash as keywords.
 	if kw != nil && kw.Len() > 0 && len(args) == 1 {
 		args = append(args, object.MapValue(kw))
@@ -254,6 +268,16 @@ func substitute(ctx object.Context, s string, args []object.Value, kw *object.Ma
 		}
 		return ctx.ToS(v)
 	}
+	// The result has the receiver's characters, less those of what
+	// matched, and those of what replaced it: chars is their number, -1
+	// when the receiver does not know its own, or a match or what
+	// replaces it begins or ends inside a character, where the count of
+	// the parts is not that of the whole (object.Joined).
+	chars := -1
+	if n, ok := self.Chars(); ok {
+		chars = n
+	}
+	starts := func(s string, i int) bool { return i == len(s) || utf8.RuneStart(s[i]) }
 	var b strings.Builder
 	at := 0
 	for _, m := range p.findAll(s, limit) {
@@ -278,11 +302,21 @@ func substitute(ctx object.Context, s string, args []object.Value, kw *object.Ma
 			}
 		}
 		b.WriteString(repl)
+		if chars >= 0 {
+			if starts(s, m.Caps[0]) && starts(s, m.Caps[1]) && starts(repl, 0) {
+				chars += utf8.RuneCountInString(repl) - utf8.RuneCountInString(s[m.Caps[0]:m.Caps[1]])
+			} else {
+				chars = -1
+			}
+		}
 		at = m.Caps[1]
 	}
 	b.WriteString(s[at:])
-	if binary {
+	switch {
+	case binary:
 		return object.Bytes([]byte(b.String())), nil
+	case chars >= 0:
+		return object.StringOfChars(b.String(), chars), nil
 	}
 	return object.String(b.String()), nil
 }
@@ -291,7 +325,8 @@ func substitute(ctx object.Context, s string, args []object.Value, kw *object.Ma
 // characters for "", and on each match of a string or regexp otherwise,
 // with a regexp's groups kept between the fields. A positive limit caps
 // the fields; without one, trailing empty fields are dropped.
-func split(ctx object.Context, s string, args []object.Value) (object.Value, error) {
+func split(ctx object.Context, self object.Value, args []object.Value) (object.Value, error) {
+	s := self.Str()
 	limit := 0
 	if len(args) >= 2 {
 		n, err := WantInt(ctx, args[1], "")
@@ -301,7 +336,7 @@ func split(ctx object.Context, s string, args []object.Value) (object.Value, err
 		limit = int(n)
 	}
 	var fields []object.Value
-	add := func(f string) { fields = append(fields, object.String(f)) }
+	add := func(f string) { fields = append(fields, partOf(self, f)) }
 	var p matcher
 	whitespace := len(args) == 0 || args[0].IsNil()
 	if !whitespace {
