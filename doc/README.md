@@ -31,7 +31,7 @@ The documents in this directory are the reference behind the site:
 
 ## Changing the site
 
-A page is one HTML file with the same header as the others. Three rules
+A page is one HTML file with the same header as the others. Four rules
 keep it true, and `go test ./tests` holds the site to them:
 
 - A `<pre class="cameo">` block is run, and the `<pre class="output">`
@@ -42,3 +42,13 @@ keep it true, and `go test ./tests` holds the site to them:
   file as it is. The file's own test runs it.
 - A script that needs a Go program around it is
   `<pre class="cameo hosted">`, which is not run on its own.
+- A command of one line, `<pre class="sh">` with `cameo …` or
+  `go run ./examples/…`, that has a `<pre class="output">` under it is
+  run, and must print that. A file it needs is a block of the same page
+  with its name, `<pre data-name="count.cameo" class="ruby">`. In the
+  output, a line `...` stands for any lines, a line `^C` is an
+  interrupt sent after the line before it, and the path of a dump may
+  be any.
+
+The README is held to the same: its irb session, its `^C` session and
+its Go excerpt, which must be lines of `examples/ex1/main.go`.

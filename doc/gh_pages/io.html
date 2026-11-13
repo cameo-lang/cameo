@@ -73,7 +73,15 @@ it does is compute for too long, and
 commas. The flag goes before the script, and before <code>irb</code>,
 <code>resume</code> and <code>debug</code>.</p>
 
-<pre class="ruby"><code>text = File.read("notes.txt")
+<p>With a file <code>notes.txt</code> of three lines,</p>
+
+<pre data-name="notes.txt" class="output"><code>three
+lines
+here</code></pre>
+
+<p>and a script <code>io.cameo</code>,</p>
+
+<pre data-name="io.cameo" class="ruby"><code>text = File.read("notes.txt")
 puts text.lines.size
 File.write("copy.txt", text.upcase)
 File.open("copy.txt") { |f| puts f.gets }</code></pre>
