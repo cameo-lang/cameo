@@ -81,7 +81,7 @@ func ScalarNames() []string {
 	return names
 }
 
-// MapKey reports whether protobuf takes the type as a map key: a string, a
+// MapKey returns whether protobuf takes the type as a map key: a string, a
 // bool, or an integer of 32 or 64 bits.
 func (t *ScalarType) MapKey() bool {
 	switch t.Kind {
@@ -93,7 +93,7 @@ func (t *ScalarType) MapKey() bool {
 	return false
 }
 
-// Fits reports whether an Integer is within an integer type's range.
+// Fits returns whether an Integer is within an integer type's range.
 func (t *ScalarType) Fits(v Value) bool {
 	if t.Bits == 0 {
 		return v.IsInteger()

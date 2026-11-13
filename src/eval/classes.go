@@ -402,7 +402,7 @@ func (in *Interp) libraryOpens(fr *Frame, name string) *object.Class {
 // scopeDigest names the library a copy libraryOpens made belongs to.
 func scopeDigest(fr *Frame) string { return "lib:" + fr.File }
 
-// ranLast reports whether the definition whose digest is given is the
+// ranLast returns whether the definition whose digest is given is the
 // last one that ran on cls: its first, or the last that reopened it.
 func ranLast(cls *object.Class, digest string) bool {
 	return cls.Digest == digest || strings.HasSuffix(cls.Digest, "+"+digest)
@@ -437,7 +437,7 @@ func subclassRefused(super *object.Class) (string, bool) {
 	return syntax.SubclassRefused(super.Name)
 }
 
-// hostDefined reports whether v is a module the host defined: a class
+// hostDefined returns whether v is a module the host defined: a class
 // value without the digest every definition in a script has.
 func hostDefined(v object.Value) bool {
 	cls, ok := v.AsClass()

@@ -114,7 +114,7 @@ func (c *code) irParams(p *irProc) *params {
 	return actual.(*params)
 }
 
-// contained reports whether no instruction of proc, its parameters'
+// contained returns whether no instruction of proc, its parameters'
 // defaults included, names a proc or is an async call or an await. A
 // block, a lambda, a method and a class body are procs an instruction
 // names, and they are what keeps a frame (Proc.Frame) or reaches a scope

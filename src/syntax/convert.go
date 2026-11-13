@@ -114,7 +114,7 @@ func (c *converter) blocksAbove(depth int) int {
 	return n
 }
 
-// isLambdaLiteral reports whether n is `-> { }`, `lambda { }` or
+// isLambdaLiteral returns whether n is `-> { }`, `lambda { }` or
 // `proc { }`.
 func isLambdaLiteral(n ast.Node) bool {
 	call, ok := n.(*ast.Call)
@@ -141,7 +141,7 @@ func (c *converter) pop() { c.stack = c.stack[:len(c.stack)-1] }
 // top is the innermost frame.
 func (c *converter) top() frame { return c.stack[len(c.stack)-1] }
 
-// inClassBody reports whether the innermost frame is a class body itself,
+// inClassBody returns whether the innermost frame is a class body itself,
 // not a method inside it.
 func (c *converter) inClassBody() bool { return c.top().kind == ctxClass }
 
@@ -167,7 +167,7 @@ func (c *converter) enclosingDef() (frame, bool) {
 	return frame{}, false
 }
 
-// insideClass reports whether a class or module body encloses the current
+// insideClass returns whether a class or module body encloses the current
 // position at any depth.
 func (c *converter) insideClass() bool {
 	for _, f := range c.stack {
@@ -529,7 +529,7 @@ func markRebinds(value, target Node) {
 	}
 }
 
-// isTarget reports whether recv reads target, the variable or field an
+// isTarget returns whether recv reads target, the variable or field an
 // assignment binds.
 func isTarget(recv, target Node) bool {
 	switch t := target.(type) {
@@ -547,7 +547,7 @@ func isTarget(recv, target Node) bool {
 	return false
 }
 
-// inInitialize reports a position inside a class's initialize.
+// inInitialize returns true for a position inside a class's initialize.
 func (c *converter) inInitialize() bool {
 	def, ok := c.enclosingDef()
 	return ok && def.name == "initialize" && c.insideClass()
@@ -572,7 +572,7 @@ func (c *converter) declare(name string) {
 	top.locals[name] = true
 }
 
-// captured reports whether name, assigned in the innermost frame, is a
+// captured returns whether name, assigned in the innermost frame, is a
 // variable of a scope around a block: bound outside the block, in the
 // method, class body or top level the block is written in, or in a block
 // around it, and not first bound by the block itself.
@@ -595,7 +595,7 @@ func (c *converter) captured(name string) bool {
 	return false
 }
 
-// isBlock reports whether the frame captures the variables around it: a
+// isBlock returns whether the frame captures the variables around it: a
 // block's, or the class body of Class.new.
 func (f frame) isBlock() bool { return f.kind == ctxBlock || f.closure }
 
@@ -611,7 +611,7 @@ func (c *converter) assignLocal(name string) {
 	c.declare(name)
 }
 
-// buildingClass reports whether the current position builds a class: it is
+// buildingClass returns whether the current position builds a class: it is
 // in a class body, or in a class method, where `self.name = value` sets an
 // attribute of the class. Whether the body still runs is the evaluator's
 // to check.
@@ -654,7 +654,7 @@ func SubclassRefused(super string) (msg string, ok bool) {
 	return "", false
 }
 
-// IsBang reports whether name is a bang method, such as compact! or
+// IsBang returns whether name is a bang method, such as compact! or
 // merge!; the operators ! and != and exit! are not.
 func IsBang(name string) bool {
 	return strings.HasSuffix(name, "!") && name != "!" && name != "!=" && name != "exit!"
@@ -701,7 +701,7 @@ var rebindForms = map[string]string{
 	"add":     "a = a.add(x)",
 }
 
-// ReturnsCopy reports whether name is a mutator of Ruby's that cameo keeps
+// ReturnsCopy returns whether name is a mutator of Ruby's that cameo keeps
 // as a method returning the changed copy: force_encoding, which nothing
 // else replaces.
 func ReturnsCopy(name string) bool { return name == "force_encoding" }
@@ -817,7 +817,7 @@ var libraryFunctions = map[string]map[string]bool{
 // operands and leave the arguments as they are.
 var nonMutatingBangs = map[string]bool{"parse!": true, "order!": true, "permute!": true}
 
-// isLibraryFunction reports a call of one of libraryFunctions.
+// isLibraryFunction returns true for a call of one of libraryFunctions.
 func isLibraryFunction(n *ast.Call) bool {
 	r, isConst := n.Recv.(*ast.ConstRef)
 	return isConst && libraryFunctions[r.Name][n.Name]
@@ -827,7 +827,7 @@ func isLibraryFunction(n *ast.Call) bool {
 // besides the scalar types of object.Scalar.
 var compositeFieldTypes = map[string]bool{"list": true, "set": true, "map": true, "ref": true, "enum": true, "proc": true}
 
-// isFieldType reports a typed field helper.
+// isFieldType returns true for a typed field helper.
 func isFieldType(name string) bool { return compositeFieldTypes[name] || object.Scalar(name) != nil }
 
 func (c *converter) call(n *ast.Call) Node {
@@ -976,7 +976,7 @@ func (c *converter) call(n *ast.Call) Node {
 	return call
 }
 
-// isSetter reports whether a call name is an attribute or index assignment:
+// isSetter returns whether a call name is an attribute or index assignment:
 // `x=` or `[]=`, as opposed to the comparison operators that also end in =.
 func isSetter(name string) bool {
 	if name == "[]=" {
@@ -1468,7 +1468,7 @@ func describeSetter(n *ast.Call) string {
 	return "…." + strings.TrimSuffix(n.Name, "=") + " = …"
 }
 
-// isPlainName reports whether a method name is an identifier that can be a
+// isPlainName returns whether a method name is an identifier that can be a
 // field reader: letters, digits and underscores, no operator or suffix.
 func isPlainName(name string) bool {
 	if name == "" {

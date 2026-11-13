@@ -49,7 +49,7 @@ func (in *Interp) start(m *machine) (object.Value, error) {
 	return in.run(floor)
 }
 
-// atInstruction reports whether the activation's next step runs an
+// atInstruction returns whether the activation's next step runs an
 // instruction, and not the end of a list.
 func (m *machine) atInstruction() bool {
 	if len(m.cursors) == 0 {
@@ -281,7 +281,7 @@ func (in *Interp) stepped(st *stepping) (yield []object.Value, done, more bool, 
 	return st.elems[st.i : st.i+1 : st.i+1], false, false, object.Value{}, nil
 }
 
-// keeps reports whether the calls of the block the stepper st calls can
+// keeps returns whether the calls of the block the stepper st calls can
 // run on one activation, the one act its first call made, for the
 // arguments args. They can when a call leaves nothing behind that
 // outlives it: its scope and its frame are the machine's own (contained
@@ -292,7 +292,7 @@ func (in *Interp) keeps(st *stepping, act *machine, args []object.Value) bool {
 		act.flat != nil && act.flat == st.flat && act.env == &act.own.env && act.env.layout == ps.layout && fits(ps, args)
 }
 
-// fits reports whether binding args to the required parameters of ps
+// fits returns whether binding args to the required parameters of ps
 // is one argument to one parameter, with arguments left over dropped,
 // as a block does: not too few, and not one list for several.
 func fits(ps *params, args []object.Value) bool {
@@ -361,7 +361,7 @@ func (in *Interp) stepAct(meth *object.Method, recv object.Value, args []object.
 
 // stepOn runs the next step of the stepper m is an activation of. err is
 // the completion its block was left by, nil when the block returned,
-// whose value is then on m's stack. It reports called when the step
+// whose value is then on m's stack. It returns called when the step
 // pushed the block's activation; otherwise the builtin ended, with the
 // value or the completion returned.
 func (in *Interp) stepOn(m *machine, err error) (v object.Value, called bool, _ error) {
@@ -776,7 +776,7 @@ func (in *Interp) blockActOf(p *Proc, ps *params, flat *flatCode, args []object.
 	return act, nil
 }
 
-// callsProc reports whether name is a method of Proc that calls the proc
+// callsProc returns whether name is a method of Proc that calls the proc
 // with its arguments.
 func callsProc(name string) bool {
 	switch name {
@@ -786,7 +786,7 @@ func callsProc(name string) bool {
 	return false
 }
 
-// runs reports whether a call of the method m is an activation the loop
+// runs returns whether a call of the method m is an activation the loop
 // runs: m is one a script defined. private says whether the call reaches
 // a function of Kernel.
 func (in *Interp) runs(m *object.Method, private bool) bool {

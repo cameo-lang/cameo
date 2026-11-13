@@ -16,7 +16,7 @@ func installMath() {
 	domainError.Lexical = m
 	m.Consts["DomainError"] = object.ClassValue(domainError)
 
-	// in reports whether a function's argument lies in its domain.
+	// in returns whether a function's argument lies in its domain.
 	unary := func(name string, f func(float64) float64, in func(float64) bool) {
 		m.DefineSingleton(name, 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			x, err := wantFloat(ctx, args[0])

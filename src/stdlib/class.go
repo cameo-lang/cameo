@@ -251,7 +251,7 @@ func singletonMethodNames(ctx object.Context, c *object.Class, all bool) map[str
 	return names
 }
 
-// ioAvailable reports whether the host allows the I/O of the module k,
+// ioAvailable returns whether the host allows the I/O of the module k,
 // true for a class or module that does none.
 func ioAvailable(ctx object.Context, k *object.Class) bool {
 	return k.IOKind == "" || ctx.IOAllowed(k.IOKind)

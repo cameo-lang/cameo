@@ -53,7 +53,7 @@ type Promise struct {
 // ID is the promise's id, the Integer a script awaits.
 func (p *Promise) ID() int64 { return p.id }
 
-// settle settles the promise once; it reports false when it was settled
+// settle settles the promise once; it returns false when it was settled
 // already.
 func (p *Promise) settle(result object.Value, exc *object.Exception, later func(*Interp) (object.Value, error)) bool {
 	p.mu.Lock()
@@ -68,7 +68,7 @@ func (p *Promise) settle(result object.Value, exc *object.Exception, later func(
 
 // SettleLater settles the promise with a result made on the goroutine that
 // awaits it: an error that is an *object.Exception raises it, any other a
-// RuntimeError. It reports false when the promise was settled already.
+// RuntimeError. It returns false when the promise was settled already.
 func (p *Promise) SettleLater(f func(*Interp) (object.Value, error)) bool {
 	return p.settle(object.Value{}, nil, f)
 }
@@ -264,7 +264,7 @@ func (in *Interp) waitStarted() error {
 	return nil
 }
 
-// cameoIncluded reports whether async and the rest of Cameo are in scope:
+// cameoIncluded returns whether async and the rest of Cameo are in scope:
 // the script included Cameo at the top level, or self's class did.
 func (in *Interp) cameoIncluded(fr *Frame) bool {
 	return in.cameoTop || fr.Self.Class().IsA(object.CameoModule)
@@ -616,7 +616,7 @@ func (c crossing) value(dec *protogen.Decoder) (object.Value, error) {
 	return dec.Decode(c.data)
 }
 
-// readsBackAsIs reports whether v is equal to what a worker decodes from
+// readsBackAsIs returns whether v is equal to what a worker decodes from
 // its wire form, so the worker can take v itself: values are immutable,
 // and the round trip costs more than most calls async starts. A symbol
 // reads back as a string and a hash's symbol keys as strings, so neither
@@ -645,7 +645,7 @@ func (in *Interp) readsBackAsIs(v object.Value) bool {
 	return v.IsNil()
 }
 
-// scriptDefined reports whether the script defined cls: a builtin class
+// scriptDefined returns whether the script defined cls: a builtin class
 // has no digest, and one the host registered a "host:" one.
 func scriptDefined(cls *object.Class) bool {
 	return cls.Digest != "" && !strings.HasPrefix(cls.Digest, "host:")

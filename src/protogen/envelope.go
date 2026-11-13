@@ -94,7 +94,7 @@ func (e *Encoder) WithSymbols() *Encoder {
 	return e
 }
 
-// CarryUnit reports whether a closure of the unit with the given digest
+// CarryUnit returns whether a closure of the unit with the given digest
 // is to carry the unit's code: the first one this encoder makes, when it
 // carries units at all.
 func (e *Encoder) CarryUnit(digest string) bool {

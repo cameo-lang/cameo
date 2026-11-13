@@ -38,7 +38,7 @@ func (v Value) AsBigInt() (*big.Int, bool) {
 	return nil, false
 }
 
-// IsInteger reports an Integer in either form.
+// IsInteger returns true for an Integer in either form.
 func (v Value) IsInteger() bool { return v.kind() == KindInt || v.kind() == KindBig }
 
 // BigToFloat is the float nearest b, ±Inf beyond the float range.
@@ -105,8 +105,8 @@ func (v Value) isNumber() bool {
 	return v.kind() == KindInt || v.kind() == KindBig || v.kind() == KindFloat
 }
 
-// AddInt, SubInt and MulInt are 64-bit arithmetic that reports overflow,
-// where an Integer moves to its big form.
+// AddInt, SubInt and MulInt are 64-bit arithmetic that returns whether
+// it overflowed, where an Integer moves to its big form.
 func AddInt(x, y int64) (int64, bool) {
 	r := x + y
 	return r, (r^x)&(r^y) >= 0

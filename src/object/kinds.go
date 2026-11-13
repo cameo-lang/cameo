@@ -34,7 +34,7 @@ func KindsOf(elems []Value) Kinds {
 	return k
 }
 
-// Only reports a non-empty set of nothing but the given kinds.
+// Only returns true for a non-empty set of nothing but the given kinds.
 func (k Kinds) Only(kinds ...Kind) bool {
 	var mask Kinds
 	for _, kind := range kinds {

@@ -110,7 +110,7 @@ func (in *Interp) Debug(console io.Reader, out io.Writer, source string, stop bo
 	return in.dbg
 }
 
-// Debugging reports whether the debugger is on, and Debugger returns it.
+// Debugging returns whether the debugger is on, and Debugger returns it.
 func (in *Interp) Debugging() bool     { return in.dbg != nil }
 func (in *Interp) Debugger() *Debugger { return in.dbg }
 
@@ -511,5 +511,5 @@ func (in *Interp) evalIn(src string, env *Env, fr *Frame) (object.Value, error) 
 	return in.runProgram("(rdbg)", prog, env, fr)
 }
 
-// Quit reports whether the debugger ended the run.
+// Quit returns whether the debugger ended the run.
 func (d *Debugger) Quit() bool { return d.quit }

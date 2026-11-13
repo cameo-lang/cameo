@@ -693,7 +693,7 @@ func rangeReverseSize(ctx object.Context, r *object.Range) (object.Value, error)
 	return object.Nil, nil
 }
 
-// hasString reports whether v is one of the strings or symbols of seq.
+// hasString returns whether v is one of the strings or symbols of seq.
 // It is a function of its own for the reason eachString is, and not
 // inlined, which would undo that.
 //
@@ -708,7 +708,7 @@ func hasString(seq iter.Seq[string], sym bool, v object.Value) bool {
 }
 
 // eachString calls block with each string or symbol of a range of them
-// and reports done; a range of anything else is not done. It is a
+// and returns done; a range of anything else is not done. It is a
 // function of its own because a loop over a sequence that returns from
 // inside moves the results of the function it is in to the heap, on
 // every call of that function: each's, once per element of any range.

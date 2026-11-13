@@ -186,7 +186,7 @@ func build(cls *object.Class, p parts) object.Value {
 	return object.InstanceValue(&object.Instance{Cls: cls, Fields: fields})
 }
 
-// isURI reports whether v is a URI::Generic or a subclass instance.
+// isURI returns whether v is a URI::Generic or a subclass instance.
 func isURI(v object.Value) bool {
 	inst, ok := v.AsInstance()
 	return ok && inst.Cls.IsA(genericClass)

@@ -170,7 +170,7 @@ func (t *translator) quantifier(b *strings.Builder) error {
 	return nil
 }
 
-// isRepeat reports the inside of a brace that is a repetition count:
+// isRepeat returns true for the inside of a brace that is a repetition count:
 // {n}, {n,}, {n,m} or Ruby's {,m}.
 func isRepeat(body string) bool {
 	lo, hi, comma := body, "", false
@@ -545,7 +545,7 @@ func (t *translator) class() (string, error) {
 	return "", t.unsupported("an unterminated character class")
 }
 
-// hasNamedGroup reports a (?<name>...) or (?'name'...) group, outside
+// hasNamedGroup returns true for a (?<name>...) or (?'name'...) group, outside
 // classes and escapes.
 func hasNamedGroup(src string) bool {
 	depth := 0

@@ -441,7 +441,7 @@ func asProc(v object.Value) (*Proc, bool) {
 	return (*Proc)(v.Opaque()), true
 }
 
-// written reports whether p has a body a script wrote: a block or a
+// written returns whether p has a body a script wrote: a block or a
 // lambda, not a proc made from a symbol or by a builtin.
 func (p *Proc) written() bool { return p.IR != nil }
 

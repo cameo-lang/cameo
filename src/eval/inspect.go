@@ -123,7 +123,7 @@ func (in *Interp) ToS(v object.Value) (string, error) {
 	return in.inspectBuiltin(v)
 }
 
-// plainToS reports whether to_s of a String and of an Integer is the
+// plainToS returns whether to_s of a String and of an Integer is the
 // builtin's: no script defined one for either class.
 func (in *Interp) plainToS() bool {
 	if gen := object.Generation(); gen != in.toSGen || !in.toSKnown {

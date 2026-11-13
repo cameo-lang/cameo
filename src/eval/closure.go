@@ -267,7 +267,7 @@ func (in *Interp) encodeFrame(e *protogen.Encoder, fr *Frame, needs *uses) (*cam
 	return b, nil
 }
 
-// isMain reports whether v is the top-level self.
+// isMain returns whether v is the top-level self.
 func isMain(v object.Value) bool {
 	inst, ok := v.AsInstance()
 	return ok && inst.Cls.Digest == "main"

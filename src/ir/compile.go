@@ -64,7 +64,7 @@ var binaryOps = map[string]cameopb.Op{
 	"!=": cameopb.Op_BINARY_NE,
 }
 
-// IsOperator reports whether a call of name with a receiver and one plain
+// IsOperator returns whether a call of name with a receiver and one plain
 // argument is compiled to a BINARY_ instruction.
 func IsOperator(name string) bool {
 	_, ok := binaryOps[name]
@@ -887,7 +887,7 @@ func (c *compiler) shortCircuit(e *emitter, op cameopb.Op, left, right syntax.No
 	return nil
 }
 
-// literal reports whether n is a literal that compiles to one CONST or
+// literal returns whether n is a literal that compiles to one CONST or
 // SYM whose value is the same whenever it runs.
 func literal(n syntax.Node) bool {
 	switch n.(type) {
@@ -1058,7 +1058,7 @@ func (c *compiler) send(e *emitter, n *syntax.Call) error {
 	return nil
 }
 
-// isOperatorCall reports whether n is an operator with a receiver and one
+// isOperatorCall returns whether n is an operator with a receiver and one
 // plain argument, nothing else. A safe call `&.` is an ordinary call.
 func isOperatorCall(n *syntax.Call) bool {
 	if !IsOperator(n.Name) || n.Recv == nil || len(n.Args) != 1 || n.Block != nil || n.BlockArg != nil || len(n.KwArgs) > 0 || n.Safe {

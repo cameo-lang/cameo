@@ -106,7 +106,7 @@ func (s *sio) write(b []byte) int {
 }
 
 // line reads the next line up to sep (nil for the rest, "" for a
-// paragraph), at most limit bytes when limit is positive, and reports
+// paragraph), at most limit bytes when limit is positive, and returns
 // false at the end.
 func (s *sio) line(sep *string, limit int, chomp bool) ([]byte, bool) {
 	if s.pos >= len(s.buf) {

@@ -288,7 +288,7 @@ func (r *Random) Bytes(n int) []byte {
 	return out
 }
 
-// SameState reports whether two generators have the same seed and stand
+// SameState returns whether two generators have the same seed and stand
 // at the same place in their sequence, Ruby's Random#==.
 func (r *Random) SameState(o *Random) bool {
 	if r == o {
