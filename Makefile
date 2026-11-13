@@ -79,17 +79,19 @@ $(PROTOC):
 	unzip -q -o $(PROTOC_DIR)/protoc.zip -d $(PROTOC_DIR)
 	rm $(PROTOC_DIR)/protoc.zip
 
-proto: prerequisites $(PROTOC) ## Generate the Go code of the messages in src/cameopb from their .proto files
+proto: prerequisites $(PROTOC) ## Generate the Go code of the messages in src/cameopb and examples/ex1 from their .proto files
 	go build -o bin/protoc-gen-go google.golang.org/protobuf/cmd/protoc-gen-go
 	$(PROTOC) --plugin=protoc-gen-go=bin/protoc-gen-go -I src/cameopb \
 	  --go_out=src/cameopb --go_opt=module=github.com/cameo-lang/cameo/src/cameopb \
 	  $(patsubst src/cameopb/%,%,$(PROTO_FILES))
+	$(PROTOC) --plugin=protoc-gen-go=bin/protoc-gen-go -I examples/ex1 \
+	  --go_out=examples/ex1/greetpb --go_opt=paths=source_relative greet.proto
 
 # Not part of check, which needs no tool but Go; CI runs it as a step.
-proto-check: proto ## Fail when the committed Go code of src/cameopb differs from what make proto generates
-	@git diff --exit-code -- src/cameopb || { \
-	  echo "src/cameopb is not what its .proto files generate: run make proto and commit the result." >&2; exit 1; }
-	@untracked=$$(git ls-files --others --exclude-standard -- src/cameopb); if [ -n "$$untracked" ]; then \
+proto-check: proto ## Fail when the committed Go code of src/cameopb or examples/ex1 differs from what make proto generates
+	@git diff --exit-code -- src/cameopb examples/ex1/greetpb || { \
+	  echo "src/cameopb or examples/ex1/greetpb is not what its .proto files generate: run make proto and commit the result." >&2; exit 1; }
+	@untracked=$$(git ls-files --others --exclude-standard -- src/cameopb examples/ex1/greetpb); if [ -n "$$untracked" ]; then \
 	  echo "make proto wrote files that are not committed: $$untracked" >&2; exit 1; fi
 
 install: prerequisites ## Install the cameo binary into GOBIN (or ~/go/bin)

@@ -1,0 +1,11 @@
+// The message behind the Greeter class of this example: an instance of
+// the class in a script is one of these messages in Go.
+syntax = "proto3";
+
+package ex1;
+
+option go_package = "github.com/cameo-lang/cameo/examples/ex1/greetpb";
+
+message Greeter {
+  string greeting = 1;
+}

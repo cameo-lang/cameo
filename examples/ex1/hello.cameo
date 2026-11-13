@@ -1,0 +1,14 @@
+# Greeter is a class the Go program defines: its fields are those of a
+# protobuf message, and its methods are Go functions.
+greeter = Greeter.new(greeting: "Hello")
+puts greeter.greet("world")
+
+# A method returns a new value; nothing changes in place.
+loud = greeter.louder
+puts loud.greet("cameo")
+puts greeter.greet("again")
+
+# The Go program calls this method once the script has run.
+def welcome(name)
+  Greeter.new(greeting: "Welcome").greet(name)
+end
