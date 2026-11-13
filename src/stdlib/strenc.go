@@ -103,6 +103,26 @@ func relabel(v object.Value, k object.Kind, f func(string) string) object.Value 
 	return v
 }
 
+// asciiWhere gives the UTF-8 strings of v that hold ASCII alone the
+// US-ASCII encoding, in lists too: what a method of a US-ASCII string
+// made.
+func asciiWhere(v object.Value) object.Value {
+	switch v.Kind() {
+	case object.KindString:
+		if object.ASCIIOnly(v.Str()) {
+			return object.StringOf(object.KindASCII, v.Str())
+		}
+	case object.KindList:
+		elems := v.List().Elems
+		out := make([]object.Value, len(elems))
+		for i, e := range elems {
+			out[i] = asciiWhere(e)
+		}
+		return object.NewList(out...)
+	}
+	return v
+}
+
 func viewArgs(args []object.Value) []object.Value {
 	out := make([]object.Value, len(args))
 	for i, a := range args {
@@ -145,6 +165,18 @@ func InstallStringEncodings() {
 				return fn(ctx, self, args, kw, block)
 			}
 			s := self.Str()
+			// A US-ASCII string holds 7-bit bytes alone, which are
+			// UTF-8 as they are: the method runs on them, and what
+			// it makes is US-ASCII while it holds nothing else, and
+			// UTF-8 once an argument brought other characters in,
+			// as in Ruby.
+			if k == object.KindASCII && name != "inspect" && name != "dump" {
+				v, err := fn(ctx, object.ASCIIString(s), args, kw, block)
+				if err != nil {
+					return object.Value{}, err
+				}
+				return asciiWhere(v), nil
+			}
 			switch {
 			case patternMethods[name] || hasRegexp(args):
 				v, err := fn(ctx, self, args, kw, block)

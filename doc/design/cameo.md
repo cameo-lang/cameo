@@ -1212,8 +1212,9 @@ re-opened by accident:
     (binary) or US-ASCII, the value's kind. Literals are UTF-8; `.b`,
     `pack` and a protobuf `bytes` field make binary strings; `force_encoding`
     relabels the same bytes and `encode` converts them. A US-ASCII
-    string has one character per byte, changes case in ASCII alone, and
-    gives its methods' results its encoding. A binary string has bytes
+    string holds 7-bit characters alone, one per byte, and gives its
+    methods' results its encoding while they hold nothing else: one
+    that an argument brought other characters into is UTF-8, as in Ruby. A binary string has bytes
     and no characters, unlike Ruby's, which reads its bytes as ASCII: it
     answers the methods that read, make and compare bytes (`bytes`,
     `getbyte`, `bytesize`, `length`, `[]`, `+`, `*`, `==`, `index`,
