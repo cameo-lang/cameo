@@ -26,7 +26,7 @@ p [IPAddr.new("10.1.2.3").private?, IPAddr.new("172.16.0.1").private?, IPAddr.ne
 p [a | 255, (a & IPAddr.new("255.255.255.0")).to_s, (a << 8).to_s, (a >> 8).to_s, (~a).to_s, (a | "0.0.0.255").to_s], [a.reverse, v6.reverse, v6.ip6_int]
 p [IPAddr.new("::ffff:192.168.1.1").ipv4_mapped?, IPAddr.new("::ffff:192.168.1.1").native.to_s, a.ipv4_mapped.to_s, a.ipv4_compat.to_s, IPAddr.new("::192.168.1.1").ipv4_compat?, v6.ipv4_mapped?, a.native.to_s, IPAddr.new("::ffff:192.168.1.1").to_s]
 p [IPAddr.new("192.168.1.10/255.255.255.0").inspect, IPAddr.new("0.0.0.0/0").inspect, IPAddr.new("::/0").to_s, IPAddr.new(3232235786, Socket::AF_INET).to_s, IPAddr.new(1, Socket::AF_INET6).to_s, IPAddr.new.to_s, IPAddr.new.family]
-p ["2001:0db8:0000:0000:0000:0000:0000:0001", "2001:db8:0:0:1:0:0:1", "::", "1::", "0:0:0:0:0:0:0:1", "::1:2", "64:ff9b::1.2.3.4"].map { |s| IPAddr.new(s).to_s }, IPAddr.new("fe80::1%eth0").zone_id, IPAddr.new("fe80::1%eth0").to_s, a.hton.bytes, IPAddr.ntop("\xC0\xA8\x01\x0A".b)
+p ["2001:0db8:0000:0000:0000:0000:0000:0001", "2001:db8:0:0:1:0:0:1", "::", "1::", "0:0:0:0:0:0:0:1", "::1:2", "64:ff9b::1.2.3.4"].map { |s| IPAddr.new(s).to_s }, IPAddr.new("fe80::1%eth0").zone_id, IPAddr.new("fe80::1%eth0").to_s, a.hton.bytes, IPAddr.ntop(b"\xC0\xA8\x01\x0A")
 ["256.1.1.1", "1.2.3", "abc", "", "1.2.3.4/33", "1.2.3.4/-1", "1.2.3.4/255.255.0.255", "::1/129", "2001:db8::g", "01.2.3.4", "1.2.3.4/24/", "1.2.3.4/::"].each do |s|
   IPAddr.new(s)
 rescue IPAddr::Error => e

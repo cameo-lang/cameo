@@ -6,7 +6,7 @@ p composed == decomposed, composed.unicode_normalize(:nfd) == decomposed, decomp
 p decomposed.unicode_normalized?, decomposed.unicode_normalized?(:nfd), composed.length, composed.unicode_normalize(:nfd).length
 p "ﬁ①".unicode_normalize(:nfkc), "Å".unicode_normalize(:nfd).codepoints.map { |c| c.to_s(16) }
 begin
-  "\xff".b.unicode_normalize
+  b"\xff".unicode_normalize
 rescue Encoding::CompatibilityError => e
   puts e.message
 end

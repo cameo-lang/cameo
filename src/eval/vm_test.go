@@ -126,7 +126,7 @@ false
 	prints(t, "class A < 5\nend\n", "t.cameo:1: superclass must be a Class (an instance of Integer given) (TypeError)\n")
 	prints(t, "class A\n  int :x\n  int :x\nend\n", "t.cameo:3: field x is already declared in A (CameoError)\n")
 	prints(t, "class A\n  include Integer\nend\n", "t.cameo:2: wrong argument type class Integer (expected Module) (TypeError)\n")
-	prints(t, "s = \"a\\xffb\"\nputs s.bytes.inspect, s.encoding, s.valid_encoding?\n", "[97, 255, 98]\nUTF-8\nfalse\n")
+	prints(t, "s = b\"a\\xffb\"\nputs s.bytes.inspect, s.encoding, b\"caf\\u00e9\".encoding\n", "[97, 255, 98]\nASCII-8BIT\nASCII-8BIT\n")
 	prints(t, "class A\n  def boom = raise(\"in body\")\n  boom2\nend\nputs defined?(A).inspect\n", "t.cameo:3: undefined local variable or method 'boom2' for class A (NameError)\n")
 }
 

@@ -181,6 +181,44 @@ func TestForceEncodingOnATemporary(t *testing.T) {
 	parse(t, "s = \"a\".b\ns.force_encoding(\"UTF-8\")\nt = \"b\".b.force_encoding(\"UTF-8\")\n")
 }
 
+func TestBinaryStringLiterals(t *testing.T) {
+	// b with a quote right behind it is a binary string literal, with
+	// the escapes of the quote it has, over lines and after a heredoc.
+	prog := parse(t, "x = b\"a\\xFFé\"\ny = b'q\\xFF'\nt = <<~EOS\n  b\"text\"\nEOS\nz = b\"two\nlines\"\n")
+	for i, want := range map[int]string{0: "a\xffé", 1: `q\xFF`, 3: "two\nlines"} {
+		got, ok := prog.Body[i].(*Assign).Value.(*Bytes)
+		if !ok || got.Value != want {
+			t.Errorf("statement %d is %#v, want the bytes %q", i, prog.Body[i].(*Assign).Value, want)
+		}
+	}
+	if _, ok := prog.Body[2].(*Assign).Value.(*Str); !ok {
+		t.Errorf("a b\" inside a heredoc is %#v, want it to stay text", prog.Body[2].(*Assign).Value)
+	}
+	// A literal stands where a string does, and keeps its line.
+	prog = parse(t, "p(b\"\\x00\", 1)\nh = { b\"k\" => b\"v\".size }\n\ncase h\nwhen b\"\\xFF\" then 1\nend\n")
+	if line := prog.Body[2].(*Case).Line(); line != 4 {
+		t.Errorf("the case after two literals is on line %d, want 4", line)
+	}
+	// With a space, or with a receiver, b is a method that is called.
+	prog = parse(t, "s = \"club\"\nu = s.b\"x\"\nv = b \"x\"\n")
+	for i := 1; i <= 2; i++ {
+		if c, ok := prog.Body[i].(*Assign).Value.(*Call); !ok || c.Name != "b" {
+			t.Errorf("statement %d is %#v, want a call of b", i, prog.Body[i].(*Assign).Value)
+		}
+	}
+	rejects(t, "x = b\"a#{1}\"\n", "takes no interpolation")
+}
+
+func TestAStringLiteralIsUTF8(t *testing.T) {
+	// Bytes that are not UTF-8 are no string literal, written out or
+	// beside an interpolation; the same bytes as whole characters are.
+	parse(t, "x = \"caf\\xC3\\xA9\"\ny = \"\\u00e9\"\n")
+	rejects(t, "x = \"\\xFF\"\n", `is written b"..."`)
+	rejects(t, "x = \"\\xC3\"\n", `is written b"..."`)
+	rejects(t, "x = \"a#{1}\\xFF\"\n", `is written b"..."`)
+	rejects(t, "x = \"\xff\"\n", `is written b"..."`)
+}
+
 func TestBigIntLiterals(t *testing.T) {
 	// An integer literal beyond 64 bits, negated or not, is a BigInt.
 	parse(t, "x = 99999999999999999999\ny = -0xffffffffffffffff\n")

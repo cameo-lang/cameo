@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"unicode/utf8"
 
 	"google.golang.org/protobuf/proto"
 
@@ -255,13 +254,9 @@ func (c *compiler) expr(e *emitter, n syntax.Node) error {
 	case *syntax.Float:
 		e.emit(cameopb.Op_CONST, line, constArg(&cameopb.Constant{Kind: &cameopb.Constant_FloatValue{FloatValue: n.Value}}))
 	case *syntax.Str:
-		if !utf8.ValidString(n.Value) {
-			// A protobuf string is UTF-8; a literal with other bytes in
-			// it, "\xff", travels as bytes and is a String all the same.
-			e.emit(cameopb.Op_CONST, line, constArg(&cameopb.Constant{Kind: &cameopb.Constant_BytesValue{BytesValue: []byte(n.Value)}}))
-			break
-		}
 		e.emit(cameopb.Op_CONST, line, constArg(&cameopb.Constant{Kind: &cameopb.Constant_StringValue{StringValue: n.Value}}))
+	case *syntax.Bytes:
+		e.emit(cameopb.Op_CONST, line, constArg(&cameopb.Constant{Kind: &cameopb.Constant_BytesValue{BytesValue: []byte(n.Value)}}))
 	case *syntax.Sym:
 		e.emit(cameopb.Op_SYM, line, c.nameArg(n.Name))
 	case *syntax.Self:
@@ -895,11 +890,9 @@ func (c *compiler) shortCircuit(e *emitter, op cameopb.Op, left, right syntax.No
 // literal reports whether n is a literal that compiles to one CONST or
 // SYM whose value is the same whenever it runs.
 func literal(n syntax.Node) bool {
-	switch n := n.(type) {
-	case *syntax.Nil, *syntax.Bool, *syntax.Int, *syntax.Float, *syntax.Sym:
+	switch n.(type) {
+	case *syntax.Nil, *syntax.Bool, *syntax.Int, *syntax.Float, *syntax.Sym, *syntax.Str:
 		return true
-	case *syntax.Str:
-		return utf8.ValidString(n.Value)
 	}
 	return false
 }

@@ -4,7 +4,7 @@ require "base64"
 
 p Base64.encode64("hello world, this is a longer string to wrap over sixty characters, right?")
 p Base64.strict_encode64("hi"), Base64.strict_encode64(""), Base64.encode64("x").encoding
-p Base64.urlsafe_encode64("\xff\xfe".b), Base64.urlsafe_encode64("\xff\xfe".b, padding: false)
+p Base64.urlsafe_encode64(b"\xff\xfe"), Base64.urlsafe_encode64(b"\xff\xfe", padding: false)
 
 # decode64 skips what is not base64; the strict and URL-safe forms refuse it.
 p Base64.decode64("aGk="), Base64.decode64("aGk"), Base64.decode64("a\nGk=\n"), Base64.decode64("aGk=").encoding

@@ -1,7 +1,7 @@
 # cameo against three other Rubies
 
 [compare.rb](compare.rb) runs cameo's supported subset of CRuby's
-benchmarks, the 783 files of [../ruby/works](../ruby/works), on four Rubies:
+benchmarks, the 781 files of [../ruby/works](../ruby/works), on four Rubies:
 
 | Ruby | What it is |
 |---|---|
@@ -52,8 +52,11 @@ The run is older than two of cameo's rules: a block cannot assign to a
 variable of the scope around it, and a bang method of Ruby's core is
 refused. It timed the 852 cases `works/` held then, and
 [results.tsv](results.tsv) still has a row for each, and the summary below
-counts all of them. Three groups of those rows are stale:
+counts all of them. Four groups of those rows are stale:
 
+- 2 rows are of the `string_valid_encoding_p--` cases, now under
+  [../ruby/unsupported/invalid-strings](../ruby/unsupported/invalid-strings):
+  their prelude writes bytes that are not UTF-8 in a string literal.
 - 61 rows are of cases now under
   [../ruby/unsupported/mutation](../ruby/unsupported/mutation), whose timed
   script mutates: `bighash`, `gc_hash2`, `hash_long`, the four

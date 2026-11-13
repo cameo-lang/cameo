@@ -19,7 +19,7 @@ end
 class Boom < StandardError
   int :code
 end
-[nil, true, 42, -2**70, 1.5, "str", "\xff".b, [1, [2, "x"]], {"b" => [nil]}, Set[1, 2], 1..3, 1..., Time.utc(2020, 1, 2, 3, 4, 5), /a.b/i].each do |v|
+[nil, true, 42, -2**70, 1.5, "str", b"\xff", [1, [2, "x"]], {"b" => [nil]}, Set[1, 2], 1..3, 1..., Time.utc(2020, 1, 2, 3, 4, 5), /a.b/i].each do |v|
   d = Marshal.dump(v)
   p [d.encoding, Marshal.load(d) == v, Marshal.load(d)]
 end

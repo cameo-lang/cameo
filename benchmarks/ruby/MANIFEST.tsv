@@ -233,6 +233,8 @@ unsupported/instance-variables	vm_super_splat_calls--splat_kw.rb	benchmark/vm_su
 unsupported/instance-variables	vm_super_splat_calls--splat_kw_block.rb	benchmark/vm_super_splat_calls.yml, entry splat_kw_block	instance variables
 unsupported/instance-variables	vm_super_splat_calls--splat_kw_splat.rb	benchmark/vm_super_splat_calls.yml, entry splat_kw_splat	instance variables
 unsupported/instance-variables	vm_super_splat_calls--splat_kw_splat_block.rb	benchmark/vm_super_splat_calls.yml, entry splat_kw_splat_block	instance variables
+unsupported/invalid-strings	string_valid_encoding_p--valid_enc_false.rb	benchmark/string_valid_encoding_p.yml, entry valid_enc_false	a string literal with bytes that are not UTF-8
+unsupported/invalid-strings	string_valid_encoding_p--valid_enc_true.rb	benchmark/string_valid_encoding_p.yml, entry valid_enc_true	a string literal with bytes that are not UTF-8
 unsupported/legacy-keywords	vm_send_cfunc--vm_send_cfunc.rb	benchmark/vm_send_cfunc.yml, entry vm_send_cfunc	ruby2_keywords (legacy keyword passing)
 unsupported/legacy-keywords	vm_send_cfunc--vm_send_cfunc_splat.rb	benchmark/vm_send_cfunc.yml, entry vm_send_cfunc_splat	ruby2_keywords (legacy keyword passing)
 unsupported/legacy-keywords	vm_send_cfunc--vm_send_cfunc_splat_empty_kw.rb	benchmark/vm_send_cfunc.yml, entry vm_send_cfunc_splat_empty_kw	ruby2_keywords (legacy keyword passing)
@@ -1135,8 +1137,6 @@ works	string_upcase--upcase-nonascii1.rb	benchmark/string_upcase.yml, entry upca
 works	string_upcase--upcase-nonascii10.rb	benchmark/string_upcase.yml, entry upcase-nonascii10	
 works	string_upcase--upcase-nonascii100.rb	benchmark/string_upcase.yml, entry upcase-nonascii100	
 works	string_upcase--upcase-nonascii1000.rb	benchmark/string_upcase.yml, entry upcase-nonascii1000	
-works	string_valid_encoding_p--valid_enc_false.rb	benchmark/string_valid_encoding_p.yml, entry valid_enc_false	
-works	string_valid_encoding_p--valid_enc_true.rb	benchmark/string_valid_encoding_p.yml, entry valid_enc_true	
 works	time_at--time_at_0.rb	benchmark/time_at.yml, entry time_at_0	
 works	time_at--time_at_1.rb	benchmark/time_at.yml, entry time_at_1	
 works	time_at--time_at_2.rb	benchmark/time_at.yml, entry time_at_2	

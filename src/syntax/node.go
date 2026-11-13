@@ -58,6 +58,13 @@ type Str struct {
 	Value string
 }
 
+// Bytes is a binary string literal, b"...": its bytes are the string,
+// whatever they are, and its encoding is ASCII-8BIT.
+type Bytes struct {
+	Pos
+	Value string
+}
+
 // Interp is an interpolated string: Parts alternate Str and expressions, each
 // converted with to_s and concatenated.
 type Interp struct {

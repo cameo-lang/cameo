@@ -17,7 +17,7 @@ p "ascii".force_encoding("US-ASCII").unicode_normalize.encoding, require("unicod
 begin; "x".unicode_normalize(:nfx); rescue ArgumentError => e; puts e.message; end
 begin; "x".unicode_normalize("nfc"); rescue ArgumentError => e; puts e.message; end
 begin; "x".b.unicode_normalize; rescue Encoding::CompatibilityError => e; puts e.message; end
-begin; "\xff".b.unicode_normalized?; rescue Encoding::CompatibilityError => e; puts e.message; end
+begin; b"\xff".unicode_normalized?; rescue Encoding::CompatibilityError => e; puts e.message; end
 `)
 	assert.Equals(t, out, `[["e9", "20", "e9", "20", "fb01", "20", "2460", "20", "c5", "20", "c5"], ["e9", "20", "e9", "20", "fb01", "20", "2460", "20", "c5", "20", "c5"], ["65", "301", "20", "65", "301", "20", "fb01", "20", "2460", "20", "41", "30a", "20", "41", "30a"], ["e9", "20", "e9", "20", "66", "69", "20", "31", "20", "c5", "20", "c5"], ["65", "301", "20", "65", "301", "20", "66", "69", "20", "31", "20", "41", "30a", "20", "41", "30a"]]
 false
@@ -42,8 +42,8 @@ Unicode Normalization not appropriate for ASCII-8BIT
 // UTF-8 is refused, a US-ASCII one is as it is and normalized, a binary
 // one is refused after the arguments are counted.
 func TestUnicodeNormalizeKeepsRubysEncodingRules(t *testing.T) {
-	out := runScript(t, `begin; "\xff".unicode_normalize; rescue ArgumentError => e; puts e.message; end
-begin; "\xff".unicode_normalized?; rescue ArgumentError => e; puts e.message; end
+	out := runScript(t, `begin; b"\xff".force_encoding("UTF-8").unicode_normalize; rescue ArgumentError => e; puts e.message; end
+begin; b"\xff".force_encoding("UTF-8").unicode_normalized?; rescue ArgumentError => e; puts e.message; end
 p "é".force_encoding("US-ASCII").unicode_normalize(:nfd).bytes, "é".force_encoding("US-ASCII").unicode_normalized?(:nfd)
 begin; "x".b.unicode_normalize(:nfc, :nfd); rescue ArgumentError => e; puts e.message; end
 begin; "x".b.unicode_normalize; rescue Encoding::CompatibilityError => e; puts e.message; end

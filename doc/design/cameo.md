@@ -1211,8 +1211,12 @@ re-opened by accident:
     block; `super` from it reaches Object's, which raises NoMethodError.
     `respond_to?` asks `respond_to_missing?` for a name it does not find.
   - A String carries its encoding, as Ruby's does: UTF-8, ASCII-8BIT
-    (binary) or US-ASCII, the value's kind. Literals are UTF-8; `.b`,
-    `pack` and a protobuf `bytes` field make binary strings; `force_encoding`
+    (binary) or US-ASCII, the value's kind. A literal is UTF-8, and one
+    with bytes that are not UTF-8, `"\xFF"`, is a syntax error. A binary
+    string has a literal of its own, `b"\xFF"` or `b'...'`: the name `b`
+    with the quote right behind it and no receiver before it, without
+    interpolation. `.b`,
+    `pack` and a protobuf `bytes` field make binary strings too; `force_encoding`
     relabels the same bytes and `encode` converts them. A US-ASCII
     string has one character per byte, changes case in ASCII alone, and
     gives its methods' results its encoding. A binary string has bytes

@@ -23,7 +23,7 @@ begin
 rescue ArgumentError => e
   puts e.message
 end
-s = "h\xC3llo\xFF\xE3\x81".dup
+s = b"h\xC3llo\xFF\xE3\x81".force_encoding("UTF-8")
 p s.valid_encoding?, s.scrub, s.scrub("?"), s.scrub { |b| "<#{b.bytes.size}>" }
 t = "caf\xC3\xA9".b
 p t.encoding, t.valid_encoding?
@@ -31,9 +31,9 @@ utf = t.force_encoding("UTF-8")
 p utf, utf.encoding, utf.size
 u = "héllo".b.force_encoding(Encoding::UTF_8)
 p u, u.encoding, u.valid_encoding?, "x".force_encoding("BINARY").encoding, Encoding::UTF_8, Encoding::BINARY.to_s, "a".encoding.name
-w = "\xff\xfe".dup.force_encoding("UTF-8")
+w = b"\xff\xfe".force_encoding("UTF-8")
 p w.valid_encoding?
-v = "ok\xff".dup
+v = b"ok\xff".force_encoding("UTF-8")
 v = v.scrub
 p v
 begin
