@@ -129,7 +129,7 @@ type Value struct {
 //     64 bits of it, and p points at the mark of their kind, an element of
 //     kindMarks: the address says the kind;
 //   - a string or a symbol has its bytes at p, its length in bytes in the
-//     low 34 bits of n and, in the 22 bits above them, how many of its
+//     low 32 bits of n and, in the 24 bits above them, how many of its
 //     bytes are not the first of a character (extraUnset when nobody has
 //     counted); one of no bytes has the mark of its kind at p;
 //   - every other kind has its object at p;
@@ -150,7 +150,7 @@ const (
 	// own for the count, and a third word would make every value of
 	// every kind half as big again, so the count shares n, and a string
 	// whose difference does not fit the field is counted when asked.
-	sizeBits   = 34
+	sizeBits   = 32
 	sizeMask   = 1<<sizeBits - 1
 	extraMask  = 1<<(kindShift-sizeBits) - 1
 	extraUnset = extraMask
@@ -181,7 +181,7 @@ func strValue(k Kind, n int64, p unsafe.Pointer) Value {
 		return Value{p: mark(k)}
 	}
 	if n > sizeMask {
-		panic("object: a string of more than 16 GiB")
+		panic("object: a string of more than 4 GiB")
 	}
 	return Value{p: p, n: n | extraUnset<<sizeBits | int64(k)<<kindShift}
 }

@@ -59,7 +59,7 @@ func TestAStringThatKnowsItsCharacters(t *testing.T) {
 	assert.Equals(t, chars(StringOf(KindASCII, "abc")), -1)
 	assert.Equals(t, chars(Symbol("abc")), -1)
 	assert.Equals(t, chars(Int(-1)), -1)
-	assert.Equals(t, chars(Int(5<<34)), -1)
+	assert.Equals(t, chars(Int(5<<32)), -1)
 
 	known := Literal("héllo")
 	assert.Equals(t, known.Str(), "héllo")
@@ -81,12 +81,12 @@ func TestAStringThatKnowsItsCharacters(t *testing.T) {
 
 // A count too far from the length in bytes to fit beside it is dropped.
 func TestACountThatDoesNotFitIsDropped(t *testing.T) {
-	long := strings.Repeat("é", 1<<22)
-	_, ok := StringOfChars(long, 1<<22).Chars()
+	long := strings.Repeat("é", 1<<24)
+	_, ok := StringOfChars(long, 1<<24).Chars()
 	assert.False(t, ok)
-	n, ok := StringOfChars(long[:len(long)-4], 1<<22-2).Chars()
+	n, ok := StringOfChars(long[:len(long)-4], 1<<24-2).Chars()
 	assert.True(t, ok)
-	assert.Equals(t, n, 1<<22-2)
+	assert.Equals(t, n, 1<<24-2)
 	_, ok = StringOfChars("abc", 4).Chars()
 	assert.False(t, ok)
 }
