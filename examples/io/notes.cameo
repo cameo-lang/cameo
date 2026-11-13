@@ -1,0 +1,6 @@
+# The script reads and writes files as in Ruby. Which files those are is
+# the Go program's choice.
+text = File.read("notes.txt")
+puts "#{text.lines.size} lines"
+File.write("shout.txt", text.upcase)
+File.open("shout.txt") { |f| puts f.gets }
