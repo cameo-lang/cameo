@@ -35,10 +35,14 @@ build: prerequisites ## Build the cameo binary into bin/
 	go build -o $(BINARY) ./src/cmd/cameo
 
 tests: prerequisites ## Run the Go tests, and check formatting and go.mod
-	@unformatted=$$(gofmt -l src tests); if [ -n "$$unformatted" ]; then \
+	@unformatted=$$(gofmt -l src tests examples); if [ -n "$$unformatted" ]; then \
 	  echo "not gofmt-clean, run: gofmt -w $$unformatted" >&2; exit 1; fi
 	go mod tidy -diff
 	go test ./...
+	cd examples/grpc && go mod tidy -diff && go vet ./... && go test ./...
+
+# examples/grpc is a module of its own, so that cameo's go.mod does not
+# require gRPC; the tests target runs its tests from inside it.
 
 # The shell tests drive the built binary, which reaches them through CAMEO_BIN.
 integration-tests: prerequisites build ## Run the shell-based integration tests
