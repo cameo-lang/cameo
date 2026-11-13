@@ -67,8 +67,9 @@ func TestSiteShowsTheWebFetchExample(t *testing.T) {
 }
 
 // sitePre is a <pre> on the site with its classes; the first names the
-// block's language, or output for what a sample printed.
-var sitePre = regexp.MustCompile(`<pre class="([^"]*)">`)
+// block's language, or output for what a sample printed. A block that
+// shows a file names it before its classes.
+var sitePre = regexp.MustCompile(`<pre(?: data-[a-z]+="[^"]*")* class="([^"]*)">`)
 
 // siteLanguages maps the class of a <pre> to the highlight.js language
 // file site.js loads for it, as site.js does.
@@ -109,4 +110,29 @@ func TestSiteBlocksNameAHighlightedLanguage(t *testing.T) {
 		}
 	}
 	assert.True(t, blocks >= 30, "found %d blocks on the site", blocks)
+}
+
+// siteFile is a block on the site that shows a file of the repository
+// whole: its data-file names the file.
+var siteFile = regexp.MustCompile(`(?s)<pre data-file="([^"]+)" class="[^"]*"><code>(.*?)</code></pre>`)
+
+// TestSiteShowsItsExampleFilesAsTheyAre holds every block that names a
+// file to that file, so a program or a script the site shows is the one
+// the example's own test runs.
+func TestSiteShowsItsExampleFilesAsTheyAre(t *testing.T) {
+	pages, err := filepath.Glob("../doc/gh_pages/*.html")
+	assert.NoError(t, err)
+	shown := 0
+	for _, page := range pages {
+		src, err := os.ReadFile(page)
+		assert.NoError(t, err)
+		for _, m := range siteFile.FindAllStringSubmatch(string(src), -1) {
+			shown++
+			file, err := os.ReadFile("../" + m[1])
+			assert.NoError(t, err)
+			assert.Equals(t, html.UnescapeString(m[2]), strings.TrimSuffix(string(file), "\n"),
+				"%s shows %s other than it is", filepath.Base(page), m[1])
+		}
+	}
+	assert.True(t, shown >= 6, "found %d files shown on the site", shown)
 }

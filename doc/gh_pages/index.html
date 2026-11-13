@@ -13,9 +13,14 @@
   <a class="name" href="index.html">cameo</a>
   <nav>
     <a href="index.html" aria-current="page">Overview</a>
-    <a href="ruby.html">Coming from Ruby</a>
-    <a href="async.html">Async</a>
+    <a href="examples.html">Examples</a>
     <a href="go.html">Embedding in Go</a>
+    <a href="grpc.html">gRPC</a>
+    <a href="pause.html">Pause and resume</a>
+    <a href="async.html">Async</a>
+    <a href="io.html">I/O</a>
+    <a href="ruby.html">Ruby vs cameo</a>
+    <a href="numbers.html">Numbers</a>
     <a href="native.html">Native code</a>
     <a href="https://github.com/cameo-lang/cameo">GitHub</a>
   </nav>
@@ -52,6 +57,12 @@ Point(x: 1, y: 2)
 Point(x: 10, y: 10)
 Point(x: 20, y: 12)</code></pre>
 
+<figure>
+  <img src="img/overview.svg" alt="A Go program with the cameo interpreter inside it. The script and the program's Go functions and classes exchange values and protobuf messages; the program loads, runs, calls, pauses and resumes the script. Files, the network, databases and gRPC services are reached through the Go program alone, and a paused run leaves the program as bytes that are stored and resumed later.">
+  <figcaption>A script computes. Everything else, I/O included, goes
+  through the Go program that runs it.</figcaption>
+</figure>
+
 <h2>What it is for: scripting a Go program</h2>
 
 <p>A Go program loads a cameo script, runs it, calls its methods, and
@@ -71,11 +82,14 @@ instance in the script.</p>
   <li><strong>It builds wherever Go does.</strong> The <code>cameo</code>
   package compiles with <code>CGO_ENABLED=0</code> for ios/arm64,
   android/arm64, darwin/arm64, windows/amd64, js/wasm and wasip1/wasm.</li>
-  <li><strong>A script reads no file and starts no process.</strong> It
-  has no <code>ENV</code>, sockets or <code>system</code>,
-  <code>File</code> only handles paths, and its only <code>IO</code> is
-  <code>STDOUT</code> and <code>STDERR</code>. Anything else the host
-  gives it as a module of Go methods.</li>
+  <li><strong>A script does no I/O of its own.</strong> It has no
+  <code>ENV</code>, sockets or <code>system</code>, and writes only to
+  the two streams the host gave it. The host allows more
+  <a href="io.html">kind by kind</a>, such as files in a file system of
+  its choosing, or gives the script a module of Go functions.</li>
+  <li><strong>A run can stop and go on later.</strong> The host
+  <a href="pause.html">pauses a script</a> where it is, keeps its state
+  as bytes, and resumes it in another process.</li>
 </ul>
 
 <p>A script runs in its own interpreter, and <code>RunContext</code> stops
@@ -83,37 +97,47 @@ it, with every worker it started, when the host's context ends.</p>
 
 <h2>How fast it is</h2>
 
-<p>cameo runs the 852 cases of CRuby's own benchmark suite that use only
-what cameo supports, every one with Ruby's output. From
-<a href="https://github.com/cameo-lang/cameo/blob/main/benchmarks/compare/README.md">benchmarks/compare</a>,
-measured on 2026-10-19 against CRuby 3.4.11 (mri) on a 16-core server:</p>
+<p>cameo runs the 781 cases of CRuby's own benchmark suite that use only
+what cameo supports, every one with Ruby's output. Over the 772 that
+CRuby 3.4 runs too, on a laptop:</p>
 
-<blockquote class="callout">cameo takes a little under three times MRI's
-time on the typical case, a geometric mean of 281% over the 843 cases both
-run, and is faster in 174 of them.</blockquote>
+<blockquote class="callout">cameo takes 1.51 times
+CRuby's time on the typical case, and CRuby with YJIT
+0.88 times. It is faster than CRuby on strings, times
+and paths, and slowest on hashes and on calls of small methods.</blockquote>
 
-<p>Its slowest cases are small hashes built in a loop, deep recursion
-through method calls, hash lookups and sorting with a block. The same
-comparison has two Rubies that also run inside a Go program: CRuby compiled
-to WebAssembly (732% of MRI's time) and go-embedded-ruby (994%).</p>
+<p><a href="numbers.html">Numbers</a> has the table by category, how it
+was measured, and how much of Ruby cameo runs.</p>
 
 <h2>Read on</h2>
 
 <div class="cards">
-  <a href="ruby.html"><strong>Coming from Ruby</strong>
-    <span>What works as in Ruby, and the differences: immutability, typed
-    fields, what the checker rejects, missing builtins, what only cameo
-    has.</span></a>
-  <a href="async.html"><strong>Async</strong>
-    <span>The concurrency model: async, await and promises, on one core
-    and on many, with I/O done by the host.</span></a>
+  <a href="examples.html"><strong>Examples</strong>
+    <span>cameo in seven short programs, each with what it prints.</span></a>
   <a href="go.html"><strong>Embedding in Go</strong>
     <span>Load, run and call a script; convert values; pass protobuf
     messages; handle errors; run workers.</span></a>
+  <a href="grpc.html"><strong>gRPC</strong>
+    <span>A script calls a public gRPC service, its classes being the
+    service's messages.</span></a>
+  <a href="pause.html"><strong>Pause and resume</strong>
+    <span>Stop a run where it is and continue it later, by hand and
+    from Go.</span></a>
+  <a href="async.html"><strong>Async</strong>
+    <span>The concurrency model: async, await and promises, on one core
+    and on many, with I/O done by the host.</span></a>
+  <a href="io.html"><strong>I/O</strong>
+    <span>What a script may do by default, and how the command line and
+    a Go program allow more.</span></a>
+  <a href="ruby.html"><strong>Ruby vs cameo</strong>
+    <span>What works as in Ruby, and each difference beside its Ruby:
+    immutability, typed fields, what the checker rejects.</span></a>
+  <a href="numbers.html"><strong>Numbers</strong>
+    <span>Speed against CRuby and YJIT by category, and how much of
+    Ruby runs.</span></a>
   <a href="native.html"><strong>Native code</strong>
     <span>Give a script modules of Go methods and classes backed by a
-    protobuf message, or add a builtin class to cameo's standard
-    library.</span></a>
+    protobuf message, or add a builtin class.</span></a>
 </div>
 
 <p>The interpreter is complete to its

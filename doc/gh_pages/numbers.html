@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cameo — numbers</title>
+<meta name="description" content="How fast cameo is against CRuby and CRuby with YJIT, by category, and how much of Ruby it runs: CRuby's benchmark suite, ruby/spec and the standard library.">
+<link rel="stylesheet" href="style.css">
+<script type="module" src="site.js"></script>
+</head>
+<body>
+<header class="site"><div class="inner">
+  <a class="name" href="index.html">cameo</a>
+  <nav>
+    <a href="index.html">Overview</a>
+    <a href="examples.html">Examples</a>
+    <a href="go.html">Embedding in Go</a>
+    <a href="grpc.html">gRPC</a>
+    <a href="pause.html">Pause and resume</a>
+    <a href="async.html">Async</a>
+    <a href="io.html">I/O</a>
+    <a href="ruby.html">Ruby vs cameo</a>
+    <a href="numbers.html" aria-current="page">Numbers</a>
+    <a href="native.html">Native code</a>
+    <a href="https://github.com/cameo-lang/cameo">GitHub</a>
+  </nav>
+</div></header>
+
+<main>
+<h1>Numbers</h1>
+<p class="lead">How fast cameo is, and how much of Ruby it runs. Every
+number here comes from a run that is in the repository, with the script
+that made it.</p>
+
+<nav class="toc" aria-label="On this page">
+<ol>
+  <li><a href="#speed">Speed: CRuby, CRuby with YJIT, cameo</a></li>
+  <li><a href="#compatibility">Compatibility</a></li>
+  <li><a href="#embedded">Against other Rubies inside a Go program</a></li>
+</ol>
+</nav>
+
+<h2 id="speed">Speed: CRuby, CRuby with YJIT, cameo</h2>
+
+<p>Time relative to CRuby, so lower is faster and 2.00× is twice
+CRuby's time. Each cell is the geometric mean over the cases of a
+category.</p>
+
+<table>
+<tr><th>Category</th><th>Cases</th><th>CRuby</th><th>CRuby + YJIT</th><th>cameo</th></tr>
+<tr><td>Method calls, blocks and the VM</td><td>192</td><td>1.00×</td><td>0.94×</td><td>3.28×</td></tr>
+<tr><td>Small programs</td><td>8</td><td>1.00×</td><td>0.41×</td><td>2.04×</td></tr>
+<tr><td>Arrays and Enumerable</td><td>161</td><td>1.00×</td><td>0.98×</td><td>1.30×</td></tr>
+<tr><td>Hashes</td><td>26</td><td>1.00×</td><td>0.84×</td><td>4.62×</td></tr>
+<tr><td>Sets</td><td>161</td><td>1.00×</td><td>0.68×</td><td>0.97×</td></tr>
+<tr><td>Strings and regexps</td><td>105</td><td>1.00×</td><td>1.00×</td><td>0.83×</td></tr>
+<tr><td>Numbers</td><td>34</td><td>1.00×</td><td>0.93×</td><td>1.82×</td></tr>
+<tr><td>Ranges</td><td>36</td><td>1.00×</td><td>0.91×</td><td>1.91×</td></tr>
+<tr><td>Time</td><td>28</td><td>1.00×</td><td>0.90×</td><td>0.85×</td></tr>
+<tr><td>Libraries (File paths, Pathname, CGI)</td><td>21</td><td>1.00×</td><td>1.00×</td><td>0.51×</td></tr>
+<tr><td><strong>All</strong></td><td>772</td><td>1.00×</td><td>0.88×</td><td>1.51×</td></tr>
+</table>
+
+<p>How it was measured:</p>
+
+<ul>
+  <li><strong>The cases</strong> are those of CRuby's own
+  <code>benchmark/</code> directory that use only what cameo supports,
+  <a href="https://github.com/cameo-lang/cameo/tree/main/benchmarks/ruby/works">781 files</a>.
+  A case counts when all three ran it; cameo's output is checked
+  against CRuby's.</li>
+  <li><strong>The machine</strong> is a laptop, an Apple M4 with 10
+  cores, three cases at a time, on 2026-11-14. CRuby is 3.4.1, and
+  "CRuby + YJIT" is the same binary with <code>--yjit</code>. A laptop's
+  times vary more than a server's; read the table for its proportions,
+  not its last digit.</li>
+  <li><strong>A time</strong> is the mean of the timed runs of a case
+  after one run to warm up, read from the Ruby's own clock, so no
+  interpreter's start is in it. cameo starts in about 9&nbsp;ms and
+  CRuby in about 25&nbsp;ms on this machine.</li>
+  <li><strong>To run it again:</strong>
+  <code>ruby benchmarks/compare/compare.rb --rubies mri,yjit,cameo --out benchmarks/compare/yjit.tsv</code>,
+  then <code>ruby benchmarks/compare/categories.rb</code>.
+  <a href="https://github.com/cameo-lang/cameo/blob/main/benchmarks/compare/yjit.tsv">yjit.tsv</a>
+  has every case.</li>
+</ul>
+
+<p>cameo is an interpreter without a JIT. Where it spends its time is
+in <a href="https://github.com/cameo-lang/cameo/blob/main/benchmarks/compare/README.md">benchmarks/compare</a>.</p>
+
+<h2 id="compatibility">Compatibility</h2>
+
+<table>
+<tr><th>Measured by</th><th>What counts</th><th>cameo</th></tr>
+<tr><td>CRuby's benchmark suite</td><td>cases that run with Ruby's
+output</td><td>781 of 1318</td></tr>
+<tr><td>ruby/spec, all of it</td><td>spec files cameo's checker
+accepts</td><td>1855 of 3858</td></tr>
+<tr><td>ruby/spec, <code>language/</code> and
+<code>core/</code></td><td>examples that pass, of those CRuby passes in
+the same harness</td><td>1045 of 2134</td></tr>
+<tr><td>Ruby 3.4's standard library</td><td>libraries built
+in</td><td>32 of 87</td></tr>
+</table>
+
+<ul>
+  <li><strong>The benchmark suite.</strong> The 537 cases that do not
+  run are sorted by the first thing that stops each: mutation (119),
+  instance variables (61), <code>attr_*</code> accessors (59),
+  metaprogramming (52) and smaller groups.
+  <a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md">doc/cameo-vs-ruby.md</a>
+  has the table.</li>
+  <li><strong>ruby/spec, the files.</strong> Sorted without running a
+  spec, on 2026-11-13. Most of the rest use an instance variable (1021
+  files), mostly in mspec's own <code>before</code> blocks, or require a
+  library cameo does not build in (375).</li>
+  <li><strong>ruby/spec, the examples.</strong> Run on 2026-11-05,
+  before the rules for strings became stricter; a later run passes
+  fewer, and the count will be measured again.
+  <a href="https://github.com/cameo-lang/cameo/blob/main/doc/coverage.md">doc/coverage.md</a>
+  says what stops each example that does not pass, and which of those
+  are bugs.</li>
+  <li><strong>The standard library.</strong> Ruby 3.4.1 ships 58
+  default gems and 29 bundled ones. A library goes in when its work is
+  computation on values, and stays out when it is the file system,
+  processes or threads.
+  <a href="https://github.com/cameo-lang/cameo/blob/main/doc/stdlib.md">doc/stdlib.md</a>
+  lists every one with its status.</li>
+</ul>
+
+<h2 id="embedded">Against other Rubies inside a Go program</h2>
+
+<p>An older run, of 2026-10-19 on a 16-core server, compared cameo with
+two Rubies that also run inside a Go program: CRuby compiled to
+WebAssembly, and go-embedded-ruby. Over the cases all four ran, cameo
+took 2.9 times CRuby's time, the WebAssembly build 7.2 times and
+go-embedded-ruby 9.9 times.
+<a href="https://github.com/cameo-lang/cameo/blob/main/benchmarks/compare/README.md">benchmarks/compare</a>
+has that run.</p>
+</main>
+
+<footer class="site"><div class="inner">
+  cameo · <a href="https://github.com/cameo-lang/cameo">github.com/cameo-lang/cameo</a> ·
+  every sample on this site was run
+</div></footer>
+</body>
+</html>
