@@ -150,7 +150,7 @@ ruby benchmarks/compare/compare.rb --rubies mri,yjit,cameo --jobs 3 --out benchm
 ruby benchmarks/compare/categories.rb          # yjit.tsv, as Markdown
 ```
 
-[yjit.tsv](yjit.tsv) is the run of 2026-11-14 on a laptop, an Apple M4
+[yjit.tsv](yjit.tsv) is the run of 2026-11-13 on a laptop, an Apple M4
 with 10 cores, three cases at a time, CRuby being 3.4.1:
 
 | Category | Cases | CRuby | CRuby + YJIT | cameo |

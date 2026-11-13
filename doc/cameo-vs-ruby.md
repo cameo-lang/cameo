@@ -52,8 +52,8 @@ mostly in mspec's own `before` blocks, or require a library cameo does
 not build in (375). [specs/run.rb](../specs/run.rb) runs
 `language/` and `core/` under cameo and under CRuby, after rewriting
 mspec's idioms into calls of its prelude, which is why it accepts more
-files than the sort does: of the 2134 examples both Rubies ran, CRuby
-passes all and cameo 1045, and [coverage.md](coverage.md) says what stops
+files than the sort does: of the 2073 examples both Rubies ran, CRuby
+passes all and cameo 990, and [coverage.md](coverage.md) says what stops
 each of the others, and which of those are bugs.
 
 ## The same as in Ruby

@@ -70,7 +70,7 @@ category.</p>
   A case counts when all three ran it; cameo's output is checked
   against CRuby's.</li>
   <li><strong>The machine</strong> is a laptop, an Apple M4 with 10
-  cores, three cases at a time, on 2026-11-14. CRuby is 3.4.1, and
+  cores, three cases at a time, on 2026-11-13. CRuby is 3.4.1, and
   "CRuby + YJIT" is the same binary with <code>--yjit</code>. A laptop's
   times vary more than a server's; read the table for its proportions,
   not its last digit.</li>
@@ -98,7 +98,7 @@ output</td><td>781 of 1318</td></tr>
 accepts</td><td>1855 of 3858</td></tr>
 <tr><td>ruby/spec, <code>language/</code> and
 <code>core/</code></td><td>examples that pass, of those CRuby passes in
-the same harness</td><td>1045 of 2134</td></tr>
+the same harness</td><td>990 of 2073</td></tr>
 <tr><td>Ruby 3.4's standard library</td><td>libraries built
 in</td><td>32 of 87</td></tr>
 </table>
@@ -114,9 +114,10 @@ in</td><td>32 of 87</td></tr>
   spec, on 2026-11-13. Most of the rest use an instance variable (1021
   files), mostly in mspec's own <code>before</code> blocks, or require a
   library cameo does not build in (375).</li>
-  <li><strong>ruby/spec, the examples.</strong> Run on 2026-11-05,
-  before the rules for strings became stricter; a later run passes
-  fewer, and the count will be measured again.
+  <li><strong>ruby/spec, the examples.</strong> Run on 2026-11-13.
+  The run of 2026-11-05 passed 1045: since then bytes that are not
+  UTF-8 have to be a binary String, and the 57 examples that stopped
+  passing all stop at that rule.
   <a href="https://github.com/cameo-lang/cameo/blob/main/doc/coverage.md">doc/coverage.md</a>
   says what stops each example that does not pass, and which of those
   are bugs.</li>
