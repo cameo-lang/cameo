@@ -547,9 +547,10 @@ func flatten(elems []object.Value, depth int64) []object.Value {
 // compatible in.
 func join(ctx object.Context, elems []object.Value, sep string) (object.Value, error) {
 	parts := make([]object.Value, 0, 2*len(elems))
+	between := object.Counted(sep)
 	for i, e := range elems {
 		if i > 0 && sep != "" {
-			parts = append(parts, object.String(sep))
+			parts = append(parts, between)
 		}
 		if l, ok := e.AsList(); ok {
 			v, err := join(ctx, l.Elems, sep)
@@ -566,6 +567,11 @@ func join(ctx object.Context, elems []object.Value, sep string) (object.Value, e
 		s, err := ctx.ToS(e)
 		if err != nil {
 			return object.Value{}, err
+		}
+		// A number's text is ASCII.
+		if k := e.Kind(); k == object.KindInt || k == object.KindFloat {
+			parts = append(parts, object.ASCIIString(s))
+			continue
 		}
 		parts = append(parts, object.String(s))
 	}

@@ -76,16 +76,36 @@ func installString() {
 			return object.String(f(str(self))), nil
 		})
 	}
-	mapStr("upcase", strings.ToUpper)
-	mapStr("downcase", strings.ToLower)
-	mapStr("capitalize", func(s string) string {
+	// alike makes a method whose result has a character for each of the
+	// receiver's, and trimmed one whose result is the receiver less
+	// characters of one byte: the result knows its characters when the
+	// receiver does.
+	counted := func(name string, f func(string) string, chars func(n int, in, out string) int) {
+		def(c, name, 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
+			in := str(self)
+			out := f(in)
+			if n, ok := self.Chars(); ok {
+				return object.StringOfChars(out, chars(n, in, out)), nil
+			}
+			return object.String(out), nil
+		})
+	}
+	alike := func(name string, f func(string) string) {
+		counted(name, f, func(n int, in, out string) int { return n })
+	}
+	trimmed := func(name string, f func(string) string) {
+		counted(name, f, func(n int, in, out string) int { return n - (len(in) - len(out)) })
+	}
+	alike("upcase", strings.ToUpper)
+	alike("downcase", strings.ToLower)
+	alike("capitalize", func(s string) string {
 		if s == "" {
 			return s
 		}
 		r, size := utf8.DecodeRuneInString(s)
 		return string(unicode.ToUpper(r)) + strings.ToLower(s[size:])
 	})
-	mapStr("swapcase", func(s string) string {
+	alike("swapcase", func(s string) string {
 		return strings.Map(func(r rune) rune {
 			if unicode.IsUpper(r) {
 				return unicode.ToLower(r)
@@ -93,17 +113,17 @@ func installString() {
 			return unicode.ToUpper(r)
 		}, s)
 	})
-	mapStr("reverse", func(s string) string {
+	alike("reverse", func(s string) string {
 		runes := []rune(s)
 		for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
 			runes[i], runes[j] = runes[j], runes[i]
 		}
 		return string(runes)
 	})
-	mapStr("strip", func(s string) string { return strings.Trim(s, " \t\n\r\f\v\x00") })
-	mapStr("lstrip", func(s string) string { return strings.TrimLeft(s, " \t\n\r\f\v\x00") })
-	mapStr("rstrip", func(s string) string { return strings.TrimRight(s, " \t\n\r\f\v\x00") })
-	mapStr("chomp", func(s string) string {
+	trimmed("strip", func(s string) string { return strings.Trim(s, " \t\n\r\f\v\x00") })
+	trimmed("lstrip", func(s string) string { return strings.TrimLeft(s, " \t\n\r\f\v\x00") })
+	trimmed("rstrip", func(s string) string { return strings.TrimRight(s, " \t\n\r\f\v\x00") })
+	trimmed("chomp", func(s string) string {
 		s = strings.TrimSuffix(s, "\n")
 		return strings.TrimSuffix(s, "\r")
 	})
@@ -122,13 +142,13 @@ func installString() {
 		}
 		return object.String(strings.TrimSuffix(str(self), suffix)), nil
 	})
-	mapStr("chop", func(s string) string {
+	counted("chop", func(s string) string {
 		if s == "" {
 			return s
 		}
 		_, size := utf8.DecodeLastRuneInString(s)
 		return s[:len(s)-size]
-	})
+	}, func(n int, in, out string) int { return max(n-1, 0) })
 	mapStr("succ", succ)
 	mapStr("next", succ)
 	// upto yields self and its successors up to max, as a range of strings
@@ -152,8 +172,8 @@ func installString() {
 		}
 		return self, nil
 	})
-	mapStr("to_s", func(s string) string { return s })
-	mapStr("to_str", func(s string) string { return s })
+	alike("to_s", func(s string) string { return s })
+	alike("to_str", func(s string) string { return s })
 	mapStr("inspect", object.QuoteString)
 	mapStr("squeeze", func(s string) string {
 		var b strings.Builder

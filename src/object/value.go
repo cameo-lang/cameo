@@ -129,7 +129,7 @@ type Value struct {
 //     64 bits of it, and p points at the mark of their kind, an element of
 //     kindMarks: the address says the kind;
 //   - a string or a symbol has its bytes at p, its length in bytes in the
-//     low 36 bits of n and, in the 20 bits above them, how many of its
+//     low 34 bits of n and, in the 22 bits above them, how many of its
 //     bytes are not the first of a character (extraUnset when nobody has
 //     counted); one of no bytes has the mark of its kind at p;
 //   - every other kind has its object at p;
@@ -150,7 +150,7 @@ const (
 	// own for the count, and a third word would make every value of
 	// every kind half as big again, so the count shares n, and a string
 	// whose difference does not fit the field is counted when asked.
-	sizeBits   = 36
+	sizeBits   = 34
 	sizeMask   = 1<<sizeBits - 1
 	extraMask  = 1<<(kindShift-sizeBits) - 1
 	extraUnset = extraMask
@@ -181,7 +181,7 @@ func strValue(k Kind, n int64, p unsafe.Pointer) Value {
 		return Value{p: mark(k)}
 	}
 	if n > sizeMask {
-		panic("object: a string of more than 64 GiB")
+		panic("object: a string of more than 16 GiB")
 	}
 	return Value{p: p, n: n | extraUnset<<sizeBits | int64(k)<<kindShift}
 }
@@ -325,9 +325,14 @@ func StringOfChars(s string, chars int) Value {
 // are its bytes.
 func ASCIIString(s string) Value { return StringOfChars(s, len(s)) }
 
+// Counted makes a UTF-8 string of s and counts its characters: for a
+// string whose making costs more than the counting, as a file's text
+// and the result of a substitution do.
+func Counted(s string) Value { return StringOfChars(s, utf8.RuneCountInString(s)) }
+
 // Literal makes a UTF-8 string of s and counts its characters: for a
 // string that is made once and read often, a literal of a script.
-func Literal(s string) Value { return StringOfChars(s, utf8.RuneCountInString(s)) }
+func Literal(s string) Value { return Counted(s) }
 
 // Chars returns the number of characters of a UTF-8 string that knows
 // it. False says nothing but that nobody counted: a string in another

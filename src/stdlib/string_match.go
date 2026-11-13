@@ -284,7 +284,8 @@ func substitute(ctx object.Context, s string, args []object.Value, kw *object.Ma
 	if binary {
 		return object.Bytes([]byte(b.String())), nil
 	}
-	return object.String(b.String()), nil
+	// Counting is little beside the matching.
+	return object.Counted(b.String()), nil
 }
 
 // split is String#split: on whitespace by default (and for " "), into

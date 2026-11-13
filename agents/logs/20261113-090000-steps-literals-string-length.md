@@ -23,6 +23,7 @@ pull request per cause, on top of the stack that ends in #388.
 - [x] #396 `values_at` takes a range's elements as one piece
 - [x] #397 a list or a map of literals is made once
 - [x] #398 a string keeps the number of its characters
+- [x] #399 more makers of strings give the number
 
 ## Measurements
 Suite geomean against CRuby: 172% at #388, 164% at #389, 153% at #394;
@@ -50,7 +51,8 @@ not run for #395 to #398. Single cases, seconds, before, after, CRuby:
   does nothing else.
 
 ## Left open
-- A string whose maker does not know the count (`upcase`, `gsub`,
-  `join`, a string read from a file) is counted at every `length`.
+- A string whose maker gives no count (`tr`, `delete`, `squeeze`,
+  `center`, `format`, `split`, a line read from a file) is counted at
+  every `length`.
 - `String#[]` still decodes the whole string, known ASCII or not.
 - The call path, `sort` with a block, `max` and `min` on integers.

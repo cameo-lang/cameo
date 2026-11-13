@@ -126,15 +126,32 @@ func incompatible(ctx object.Context, a, b object.Value) error {
 func joinEncoded(ctx object.Context, kind object.Kind, parts []object.Value) (object.Value, error) {
 	var b strings.Builder
 	acc := object.StringOf(kind, "")
+	// chars is the characters of the parts so far, each counted that does
+	// not know its own; whole says no part begins inside a character,
+	// where it could complete the one before it (object.Joined).
+	chars, whole := 0, true
 	for _, p := range parts {
 		k, ok := compatible(acc, p)
 		if !ok {
 			return object.Value{}, incompatible(ctx, acc, p)
 		}
-		b.WriteString(p.Str())
+		s := p.Str()
+		if n, ok := p.Chars(); ok {
+			chars += n
+		} else {
+			chars += utf8.RuneCountInString(s)
+		}
+		whole = whole && (s == "" || utf8.RuneStart(s[0]))
+		b.WriteString(s)
 		acc = object.StringOf(k, b.String())
 	}
-	return acc, nil
+	switch {
+	case acc.Kind() != object.KindString:
+		return acc, nil
+	case whole:
+		return object.StringOfChars(acc.Str(), chars), nil
+	}
+	return object.Counted(acc.Str()), nil
 }
 
 // invalidRun is how many bytes from i on make one invalid sequence, the
