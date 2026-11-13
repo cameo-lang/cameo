@@ -78,6 +78,11 @@ which Ruby runs the same way, since `push` returns its receiver.
 A case whose timed script mutates, with a mutator, a bang method or a
 block that assigns to a variable around it, is under `unsupported/mutation/`.
 
+A case that calls a method that reads characters, such as `upcase`, on a
+binary string is under `unsupported/binary-strings/`: Ruby changes the
+ASCII letters among the bytes, and cameo raises
+`Encoding::CompatibilityError`.
+
 `bugs/` is empty: every case filed there has been fixed. A bare `Object`
 prints as `#<Object>`, without the address Ruby shows, since cameo values
 have no identity; the cases that print one count as working.

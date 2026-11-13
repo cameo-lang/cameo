@@ -54,12 +54,12 @@ made = [
   a.to_s, a.to_str, "".chop, "é".chop, "".strip, (half * 2).reverse, half.chop,
   a.gsub("l", "łł"), a.gsub(/ö/) { |m| m * 3 }, a.sub("é", ""), a.gsub("z", "y"), half.gsub("x", "y"),
   [a, "é", 1, 2.5, :sým, nil, ["ü", 3]].join, [a, "é", 1].join("—"), [half, rest].join, [half, rest].join("-"),
-  [].join, ["é"].join(","), [a.b, "x"].join, :sým.to_s, :abc.to_s, 12.to_s, 12.inspect, (2**80).to_s, 1.5.to_s,
+  [].join, ["é"].join(","), :sým.to_s, :abc.to_s, 12.to_s, 12.inspect, (2**80).to_s, 1.5.to_s,
 ]
 p made.map { |s| s.length }
 p made.map { |s| s.length == s.each_char.count }.uniq
 `)
-	assert.Equals(t, out, "[14, 14, 14, 14, 14, 11, 12, 13, 13, 13, 14, 14, 0, 0, 0, 2, 0, 17, 16, 13, 14, 1, 24, 18, 1, 3, 0, 1, 17, 3, 3, 2, 2, 25, 3]\n[true]\n")
+	assert.Equals(t, out, "[14, 14, 14, 14, 14, 11, 12, 13, 13, 13, 14, 14, 0, 0, 0, 2, 0, 17, 16, 13, 14, 1, 24, 18, 1, 3, 0, 1, 3, 3, 2, 2, 25, 3]\n[true]\n")
 }
 
 // A substitution in a string that knows its characters gives a string

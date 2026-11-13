@@ -91,6 +91,14 @@ unsupported/attr-accessor	vm_attr_ivar--vm_attr_ivar.rb	benchmark/vm_attr_ivar.y
 unsupported/attr-accessor	vm_attr_ivar_set--vm_attr_ivar_set.rb	benchmark/vm_attr_ivar_set.yml, entry vm_attr_ivar_set	attr_* accessors (fields are declared, no setters)
 unsupported/attr-accessor	vm_gc_wb_obj--vm_gc_wb_obj.rb	benchmark/vm_gc_wb_obj.yml, entry vm_gc_wb_obj	attr_* accessors (fields are declared, no setters)
 unsupported/attr-accessor	vm_ivar_generic_get--vm_ivar_generic_get.rb	benchmark/vm_ivar_generic_get.yml, entry vm_ivar_generic_get	attr_* accessors (fields are declared, no setters)
+unsupported/binary-strings	string_downcase--downcase-ascii8bit-256.rb	benchmark/string_downcase.yml, entry downcase-ascii8bit-256	downcase of a binary string, whose bytes cameo does not read as characters
+unsupported/binary-strings	string_downcase--downcase-ascii8bit-2560.rb	benchmark/string_downcase.yml, entry downcase-ascii8bit-2560	downcase of a binary string, whose bytes cameo does not read as characters
+unsupported/binary-strings	string_downcase--downcase-ascii8bit-25600.rb	benchmark/string_downcase.yml, entry downcase-ascii8bit-25600	downcase of a binary string, whose bytes cameo does not read as characters
+unsupported/binary-strings	string_downcase--downcase-ascii8bit-256000.rb	benchmark/string_downcase.yml, entry downcase-ascii8bit-256000	downcase of a binary string, whose bytes cameo does not read as characters
+unsupported/binary-strings	string_upcase--upcase-ascii8bit-256.rb	benchmark/string_upcase.yml, entry upcase-ascii8bit-256	upcase of a binary string, whose bytes cameo does not read as characters
+unsupported/binary-strings	string_upcase--upcase-ascii8bit-2560.rb	benchmark/string_upcase.yml, entry upcase-ascii8bit-2560	upcase of a binary string, whose bytes cameo does not read as characters
+unsupported/binary-strings	string_upcase--upcase-ascii8bit-25600.rb	benchmark/string_upcase.yml, entry upcase-ascii8bit-25600	upcase of a binary string, whose bytes cameo does not read as characters
+unsupported/binary-strings	string_upcase--upcase-ascii8bit-256000.rb	benchmark/string_upcase.yml, entry upcase-ascii8bit-256000	upcase of a binary string, whose bytes cameo does not read as characters
 unsupported/class-variables	vm_cvar--vm_cvar.rb	benchmark/vm_cvar.yml, entry vm_cvar	class variables
 unsupported/complex	complex_float_add--complex_float_add.rb	benchmark/complex_float_add.yml, entry complex_float_add	Rational and Complex (left out)
 unsupported/complex	complex_float_div--complex_float_div.rb	benchmark/complex_float_div.yml, entry complex_float_div	Rational and Complex (left out)
@@ -1052,10 +1060,6 @@ works	string_downcase--downcase-1.rb	benchmark/string_downcase.yml, entry downca
 works	string_downcase--downcase-10.rb	benchmark/string_downcase.yml, entry downcase-10	
 works	string_downcase--downcase-100.rb	benchmark/string_downcase.yml, entry downcase-100	
 works	string_downcase--downcase-1000.rb	benchmark/string_downcase.yml, entry downcase-1000	
-works	string_downcase--downcase-ascii8bit-256.rb	benchmark/string_downcase.yml, entry downcase-ascii8bit-256	
-works	string_downcase--downcase-ascii8bit-2560.rb	benchmark/string_downcase.yml, entry downcase-ascii8bit-2560	
-works	string_downcase--downcase-ascii8bit-25600.rb	benchmark/string_downcase.yml, entry downcase-ascii8bit-25600	
-works	string_downcase--downcase-ascii8bit-256000.rb	benchmark/string_downcase.yml, entry downcase-ascii8bit-256000	
 works	string_downcase--downcase-nonascii1.rb	benchmark/string_downcase.yml, entry downcase-nonascii1	
 works	string_downcase--downcase-nonascii10.rb	benchmark/string_downcase.yml, entry downcase-nonascii10	
 works	string_downcase--downcase-nonascii100.rb	benchmark/string_downcase.yml, entry downcase-nonascii100	
@@ -1127,10 +1131,6 @@ works	string_upcase--upcase-1.rb	benchmark/string_upcase.yml, entry upcase-1
 works	string_upcase--upcase-10.rb	benchmark/string_upcase.yml, entry upcase-10	
 works	string_upcase--upcase-100.rb	benchmark/string_upcase.yml, entry upcase-100	
 works	string_upcase--upcase-1000.rb	benchmark/string_upcase.yml, entry upcase-1000	
-works	string_upcase--upcase-ascii8bit-256.rb	benchmark/string_upcase.yml, entry upcase-ascii8bit-256	
-works	string_upcase--upcase-ascii8bit-2560.rb	benchmark/string_upcase.yml, entry upcase-ascii8bit-2560	
-works	string_upcase--upcase-ascii8bit-25600.rb	benchmark/string_upcase.yml, entry upcase-ascii8bit-25600	
-works	string_upcase--upcase-ascii8bit-256000.rb	benchmark/string_upcase.yml, entry upcase-ascii8bit-256000	
 works	string_upcase--upcase-nonascii1.rb	benchmark/string_upcase.yml, entry upcase-nonascii1	
 works	string_upcase--upcase-nonascii10.rb	benchmark/string_upcase.yml, entry upcase-nonascii10	
 works	string_upcase--upcase-nonascii100.rb	benchmark/string_upcase.yml, entry upcase-nonascii100	

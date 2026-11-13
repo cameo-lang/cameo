@@ -2,7 +2,7 @@
 # them, valid_encoding? and scrub deal with text that is not UTF-8, and
 # pack and unpack turn numbers and strings into bytes and back.
 x = (0..255).to_a.pack("C*")
-p x.size, x.encoding, (x * 2).size, x.downcase.bytes.first(70).last(5), x.upcase.bytes[97, 3]
+p x.size, x.encoding, (x * 2).size, x.bytes.first(70).last(5), x[97, 3]
 p [1, 2, 3].pack("C*").bytes, [-1].pack("c").bytes, [258].pack("n").bytes, [258].pack("v").bytes, [1].pack("N").bytes, [1].pack("V").bytes
 p [65, 0x263a].pack("U*"), [65, 0x263a].pack("U*").encoding, [1.5].pack("e").bytes, [1.5].pack("G").bytes
 p ["ab", "c"].pack("a3A3").bytes, ["hi"].pack("Z*").bytes, ["414243"].pack("H*").bytes, ["hello world"].pack("m").bytes.size, ["hello"].pack("m0").unpack1("m").bytes

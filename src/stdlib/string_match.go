@@ -64,6 +64,13 @@ func installStringPatterns() {
 			}
 			return ctx.Call(args[0], "=~", self)
 		}
+		// A match in a binary string is at a byte.
+		if self.Kind() == object.KindBytes {
+			if m := r.MatchAt(str(self), 0); m != nil {
+				return object.Int(m.Caps[0]), nil
+			}
+			return object.Nil, nil
+		}
 		return matchIndex(r, str(self)), nil
 	})
 	asRegexp := func(ctx object.Context, v object.Value) (*object.Regexp, error) {
