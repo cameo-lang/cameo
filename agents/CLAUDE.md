@@ -43,6 +43,22 @@ summarise it in `doc/design/<name>.md` as part of the change: the context,
 the decisions and their reasons, the final shape of the code. Not for ad-hoc
 tasks.
 
+**Keep the documentation current.** A change that a user of cameo can see
+is not finished until the documents say so, in the same pull request:
+
+| What changed | Update |
+|---|---|
+| what a script may write: a construct, a builtin, a library, an error message a script sees | [agents.md](../agents.md), the guide for models that write cameo; `doc/cameo-vs-ruby.md`; the site's `ruby.html` and `examples.html` |
+| the `cameo` Go package, a command or a flag | the site's `go.html`, `native.html`, `pause.html` or `io.html`, and the README's commands |
+| what is measured: speed, the benchmark cases that work, ruby/spec, the libraries | the numbers in the README, the site's `numbers.html` and `doc/cameo-vs-ruby.md`, from a run you made |
+| an example under `examples/` that the site shows | nothing by hand: a test holds the site's block to the file, so rerun it and fix what it names |
+
+[agents.md](../agents.md) matters most: a model reads it instead of the
+rest, and writes what it says. When a rule of the language changes, change
+the table and the snippets there, and run every snippet again. The site is
+[doc/gh_pages](../doc/gh_pages); `go test ./tests` runs its samples, so a
+sample that no longer prints what the page shows fails there.
+
 ## Writing it down
 
 How to write — prose, comments, commit messages, pull request descriptions — is
