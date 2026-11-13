@@ -128,8 +128,10 @@ type Value struct {
 //   - nil, a boolean, an integer and a float have their payload in n, all
 //     64 bits of it, and p points at the mark of their kind, an element of
 //     kindMarks: the address says the kind;
-//   - a string or a symbol has its bytes at p and its length in the low 55
-//     bits of n, and asciiBit above them; one of no bytes has the mark of its kind at p;
+//   - a string or a symbol has its bytes at p, its length in bytes in the
+//     low 36 bits of n and, in the 20 bits above them, how many of its
+//     bytes are not the first of a character (extraUnset when nobody has
+//     counted); one of no bytes has the mark of its kind at p;
 //   - every other kind has its object at p;
 //   - the top byte of n is the kind of whatever has no mark at p.
 //
@@ -139,11 +141,19 @@ var kindMarks [256]byte
 
 const (
 	kindShift = 56
-	// asciiBit is set in n for a UTF-8 string that is known to hold
-	// ASCII alone, whose characters are then its bytes. It says nothing
-	// when it is unset: most strings are never looked at.
-	asciiBit = 1 << (kindShift - 1)
-	lenMask  = asciiBit - 1
+	// A string's n has two fields under its kind. The low sizeBits are
+	// its length in bytes. The extra field above them is the length in
+	// bytes less the length in characters, of a UTF-8 string whose
+	// characters were counted where it was made: 0 for ASCII, whose
+	// characters are its bytes. All ones, extraUnset, says nobody
+	// counted: most strings are never asked. A Value has no room of its
+	// own for the count, and a third word would make every value of
+	// every kind half as big again, so the count shares n, and a string
+	// whose difference does not fit the field is counted when asked.
+	sizeBits   = 36
+	sizeMask   = 1<<sizeBits - 1
+	extraMask  = 1<<(kindShift-sizeBits) - 1
+	extraUnset = extraMask
 )
 
 // mark returns the mark of kind k. A kind that lives in the payload is
@@ -170,11 +180,14 @@ func strValue(k Kind, n int64, p unsafe.Pointer) Value {
 	if n == 0 {
 		return Value{p: mark(k)}
 	}
-	return Value{p: p, n: n | int64(k)<<kindShift}
+	if n > sizeMask {
+		panic("object: a string of more than 64 GiB")
+	}
+	return Value{p: p, n: n | extraUnset<<sizeBits | int64(k)<<kindShift}
 }
 
 // size returns the number of bytes of a string or a symbol.
-func (v Value) size() int { return int(v.n & lenMask) }
+func (v Value) size() int { return int(v.n & sizeMask) }
 
 // Nil is cameo's nil; True and False its booleans.
 var (
@@ -291,32 +304,64 @@ func Bytes(b []byte) Value {
 	return strValue(KindBytes, int64(len(b)), unsafe.Pointer(unsafe.SliceData(b)))
 }
 
-// ASCIIString makes a UTF-8 string of s, which the caller knows to hold
-// ASCII alone: digits, a string made of such strings. Its length in
-// characters, and what else depends on where its characters are, is
-// then read off its bytes.
-func ASCIIString(s string) Value {
+// StringOfChars makes a UTF-8 string of s, which the caller knows to
+// have that many characters: what made s counted them, or had the counts
+// of what it made s from. The string then answers its length without
+// looking at its bytes. A count that does not fit beside the length in
+// bytes is dropped, and the string is counted when asked.
+func StringOfChars(s string, chars int) Value {
+	// A count above the bytes or too far under them is dropped; the
+	// comparison is unsigned to be one for the two. The string of no
+	// bytes has no n to keep a count in, and needs none.
 	v := String(s)
-	if len(s) > 0 {
-		v.n |= asciiBit
+	if extra := uint(len(s) - chars); extra < extraUnset && len(s) > 0 {
+		v.n ^= int64(extra^extraUnset) << sizeBits
 	}
 	return v
 }
 
-// Literal makes a UTF-8 string of s and looks whether it holds ASCII
-// alone: for a string that is made once and read often, a literal of a
-// script.
-func Literal(s string) Value {
-	if ASCIIOnly(s) {
-		return ASCIIString(s)
+// ASCIIString makes a UTF-8 string of s, which the caller knows to hold
+// ASCII alone: digits, a string made of such strings. Its characters
+// are its bytes.
+func ASCIIString(s string) Value { return StringOfChars(s, len(s)) }
+
+// Literal makes a UTF-8 string of s and counts its characters: for a
+// string that is made once and read often, a literal of a script.
+func Literal(s string) Value { return StringOfChars(s, utf8.RuneCountInString(s)) }
+
+// Chars returns the number of characters of a UTF-8 string that knows
+// it. False says nothing but that nobody counted: a string in another
+// encoding, one made from bytes, one whose maker did not know.
+func (v Value) Chars() (int, bool) {
+	if v.p == mark(KindString) {
+		return 0, true
 	}
-	return String(s)
+	extra := int(v.n >> sizeBits & extraMask)
+	if extra == extraUnset || v.kind() != KindString {
+		return 0, false
+	}
+	return v.size() - extra, true
 }
 
-// KnownASCII reports a UTF-8 string that is known to hold ASCII alone.
-// False says nothing: the string may still be ASCII.
+// KnownASCII reports a UTF-8 string that is known to hold ASCII alone:
+// one whose characters are known to be its bytes. False says nothing:
+// the string may still be ASCII.
 func (v Value) KnownASCII() bool {
-	return v.n&asciiBit != 0 && v.kind() == KindString || v.p == mark(KindString)
+	n, ok := v.Chars()
+	return ok && n == v.size()
+}
+
+// Joined makes the UTF-8 string s, which is a and then b: a string that
+// knows its characters when both of them do. A b that begins inside a
+// character is left out, since it may complete a character a ends in
+// the middle of, and the two then have one character less together.
+func Joined(s string, a, b Value) Value {
+	an, aok := a.Chars()
+	bn, bok := b.Chars()
+	if !aok || !bok || bn > 0 && !utf8.RuneStart(*(*byte)(b.p)) {
+		return String(s)
+	}
+	return StringOfChars(s, an+bn)
 }
 
 // StringOf makes a string of s in the encoding kind names: KindString
@@ -601,8 +646,8 @@ func Same(a, b Value) bool {
 		return false
 	}
 	// Two strings that share their bytes are the same whether or not
-	// one of them is known to be ASCII.
-	return a.n == b.n || (a.n^b.n) == asciiBit && a.IsString()
+	// one of them knows its characters.
+	return a.n == b.n || (a.n^b.n)&^(extraMask<<sizeBits) == 0 && a.IsString()
 }
 
 // Objects.

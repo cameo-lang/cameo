@@ -17,10 +17,7 @@ func installString() {
 		if !ok {
 			return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into String", KindName(args[0]))
 		}
-		if self.KnownASCII() && args[0].KnownASCII() {
-			return object.ASCIIString(str(self) + string(o)), nil
-		}
-		return object.String(str(self) + string(o)), nil
+		return object.Joined(str(self)+string(o), self, args[0]), nil
 	})
 	def(c, "*", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		n, err := WantInt(ctx, args[0], "")
@@ -30,8 +27,10 @@ func installString() {
 		if n < 0 {
 			return object.Value{}, ctx.Raise(object.ArgumentError, "negative argument")
 		}
-		if self.KnownASCII() {
-			return object.ASCIIString(strings.Repeat(str(self), int(n))), nil
+		// Copies of a string that begins at a character have its
+		// characters each.
+		if chars, ok := self.Chars(); ok && chars > 0 && utf8.RuneStart(str(self)[0]) {
+			return object.StringOfChars(strings.Repeat(str(self), int(n)), chars*int(n)), nil
 		}
 		return object.String(strings.Repeat(str(self), int(n))), nil
 	})
@@ -59,9 +58,9 @@ func installString() {
 	def(c, "eql?", 1, c.Methods["=="].Native)
 	def(c, "===", 1, c.Methods["=="].Native)
 	def(c, "length", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		// The characters of a string known to be ASCII are its bytes.
-		if self.KnownASCII() {
-			return object.Int(len(str(self))), nil
+		// A string that was made with its characters counted has them.
+		if n, ok := self.Chars(); ok {
+			return object.Int(n), nil
 		}
 		return object.Int(utf8.RuneCountInString(str(self))), nil
 	})
@@ -240,7 +239,7 @@ func installString() {
 	def(c, "chars", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		elems := []object.Value{}
 		for _, r := range str(self) {
-			elems = append(elems, object.String(string(r)))
+			elems = append(elems, object.StringOfChars(string(r), 1))
 		}
 		return object.NewList(elems...), nil
 	})
@@ -251,7 +250,7 @@ func installString() {
 			}), nil
 		}
 		for _, r := range str(self) {
-			if _, err := ctx.Yield(block, object.String(string(r))); err != nil {
+			if _, err := ctx.Yield(block, object.StringOfChars(string(r), 1)); err != nil {
 				return object.Value{}, err
 			}
 		}
@@ -510,7 +509,7 @@ func stringIndex(ctx object.Context, s string, args []object.Value) (object.Valu
 			if i < 0 || i >= n {
 				return object.Nil, nil
 			}
-			return object.String(string(runes[i])), nil
+			return object.StringOfChars(string(runes[i]), 1), nil
 		case object.KindString, object.KindBytes, object.KindASCII:
 			a := args[0].Str()
 			if strings.Contains(s, string(a)) {
@@ -523,7 +522,7 @@ func stringIndex(ctx object.Context, s string, args []object.Value) (object.Valu
 			if !ok {
 				return object.Nil, nil
 			}
-			return object.String(string(runes[start : start+length])), nil
+			return object.StringOfChars(string(runes[start:start+length]), length), nil
 		}
 		return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into Integer", KindName(args[0]))
 	case 2:
@@ -545,7 +544,7 @@ func stringIndex(ctx object.Context, s string, args []object.Value) (object.Valu
 		if end > int64(n) {
 			end = int64(n)
 		}
-		return object.String(string(runes[start:end])), nil
+		return object.StringOfChars(string(runes[start:end]), int(end-start)), nil
 	}
 	return object.Value{}, ArgError(ctx, len(args), "1..2")
 }

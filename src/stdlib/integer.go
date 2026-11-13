@@ -490,7 +490,7 @@ func installInteger() {
 			}
 			base = b
 		}
-		return object.String(integerText(self, int(base))), nil
+		return object.ASCIIString(integerText(self, int(base))), nil
 	})
 	def(c, "inspect", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.String(integerText(self, 10)), nil

@@ -1,6 +1,7 @@
 package eval
 
 import (
+	"unicode/utf8"
 	"unsafe"
 
 	"github.com/cameo-lang/cameo/src/cameopb"
@@ -417,19 +418,37 @@ func (m *machine) interpAdd(c *cameopb.Code, last bool) error {
 	// The result takes the encoding its parts are compatible in, as
 	// Ruby's does: a binary part in UTF-8 text makes it binary. UTF-8
 	// parts alone, the usual case, need no looking at.
-	kind := sofar.Kind()
-	if pk := v.Kind(); v.IsString() && (pk != kind || kind != object.KindString) {
+	kind, pk := sofar.Kind(), v.Kind()
+	if v.IsString() && (pk != kind || kind != object.KindString) {
 		next, ok := stdlib.CombineEncodings(kind, sofar.Str() == "", object.ASCIIOnly(sofar.Str()), pk, s == "", object.ASCIIOnly(s))
 		if !ok {
 			return in.raise(object.CompatibilityError, line, "%s", stdlib.IncompatibleEncodings(kind, pk))
 		}
 		kind = next
 	}
+	// A part that knows its characters, or is a number, whose text is
+	// ASCII, keeps the string knowing its own (object.Joined): chars
+	// is their number, -1 when one of the two does not know.
+	chars := -1
+	if n, ok := sofar.Chars(); ok && kind == object.KindString {
+		switch pk {
+		case object.KindInt, object.KindFloat:
+			chars = n + len(s)
+		case object.KindString:
+			if pn, ok := v.Chars(); ok && (pn == 0 || utf8.RuneStart(s[0])) {
+				chars = n + pn
+			}
+		}
+	}
 	prev := sofar.Str()
 	switch {
 	case len(prev) == 0 && last:
 		// One part: the string is the part.
-		m.push(object.StringOf(kind, s))
+		if chars >= 0 {
+			m.push(object.StringOfChars(s, chars))
+		} else {
+			m.push(object.StringOf(kind, s))
+		}
 		return nil
 	case len(prev) > 0 && len(prev) == len(m.sofar) && unsafe.StringData(prev) == unsafe.SliceData(m.sofar):
 		// The string so far is the one the part before left in the
@@ -440,7 +459,11 @@ func (m *machine) interpAdd(c *cameopb.Code, last bool) error {
 		// the INTERP of a part came between, or a resume.
 		m.sofar = append(append(make([]byte, 0, max(2*(len(prev)+len(s)), 32)), prev...), s...)
 	}
-	m.push(object.StringOf(kind, unsafe.String(unsafe.SliceData(m.sofar), len(m.sofar))))
+	if all := unsafe.String(unsafe.SliceData(m.sofar), len(m.sofar)); chars >= 0 {
+		m.push(object.StringOfChars(all, chars))
+	} else {
+		m.push(object.StringOf(kind, all))
+	}
 	if last {
 		m.sofar = nil
 	}
