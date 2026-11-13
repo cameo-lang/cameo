@@ -37,8 +37,10 @@ below, each with the Ruby you would write and the cameo way.</p>
   <li><a href="#same">The same as in Ruby</a></li>
   <li><a href="#immutable">Values are immutable</a></li>
   <li><a href="#fields">Typed fields instead of instance variables</a></li>
+  <li><a href="#strings">Strings are UTF-8 or binary</a></li>
   <li><a href="#rejected">What the checker rejects</a></li>
   <li><a href="#missing">Missing builtins</a></li>
+  <li><a href="#smaller">Smaller differences</a></li>
   <li><a href="#only">Only in cameo: with, async, await and promises, protobuf</a></li>
 </ol>
 </nav>
@@ -97,7 +99,7 @@ reaches it. The full list is
   says what each covers.</li>
 </ul>
 
-<p>This script prints the same under <code>ruby</code> 3.3 and under
+<p>This script prints the same under <code>ruby</code> 3.4 and under
 <code>cameo</code>:</p>
 
 <pre class="cameo"><code>def describe(shape)
@@ -130,7 +132,7 @@ end</code></pre>
 rescued ArgumentError: invalid value for Integer(): "12x"
 done</code></pre>
 
-<p>Of the 1318 cases in CRuby's benchmark suite that cameo may carry, 852
+<p>Of the 1318 cases in CRuby's benchmark suite that cameo may carry, 781
 run under cameo with Ruby's output. What stops most of the rest is
 metaprogramming, instance variables, <code>attr_*</code> accessors and
 mutation of something other than a local variable, which the sections
@@ -204,6 +206,46 @@ contents are <code>==</code> and hash alike. There is no object identity,
 so <code>equal?</code> and <code>object_id</code> do not exist.
 <code>frozen?</code> is true for every value, and <code>freeze</code> and
 <code>dup</code> change nothing.</p>
+
+<h3 id="blocks">A block captures values</h3>
+
+<p>A block, a proc or a lambda keeps the values its variables have when
+it is made. It cannot assign to a variable of the scope around it, and
+it does not see a later assignment there. This is unlike Ruby, where a
+block shares the variables themselves. The checker refuses the
+assignment and names what to write instead.</p>
+
+<div class="pair">
+<div>
+<h4>Ruby</h4>
+<pre class="ruby"><code>total = 0
+[1, 2, 3].each { |n| total += n }
+p total
+
+base = 10
+add = ->(n) { n + base }
+base = 20
+p add.(1)</code></pre>
+<pre class="output"><code>6
+21</code></pre>
+</div>
+<div>
+<h4>cameo</h4>
+<pre class="cameo rejected"><code>total = 0
+[1, 2, 3].each { |n| total += n }
+p total</code></pre>
+<pre class="output error"><code>script.cameo:2: a block cannot rebind total, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while</code></pre>
+<pre class="cameo"><code>total = [1, 2, 3].reduce(0) { |sum, n| sum + n }
+p total
+
+base = 10
+add = -&gt;(n) { n + base }
+base = 20
+p add.(1)</code></pre>
+<pre class="output"><code>6
+11</code></pre>
+</div>
+</div>
 
 <h2 id="fields">Typed fields instead of instance variables</h2>
 
@@ -303,6 +345,51 @@ made before, and classes that inherit from it, keep the class as it was
 and do not see what the reopening adds. A builtin class cannot be
 reopened.</p>
 
+<h2 id="strings">Strings are UTF-8 or binary</h2>
+
+<p>A String is UTF-8, US-ASCII or binary; Ruby's other encodings do not
+exist. A UTF-8 String holds whole characters alone, so none is invalid,
+where Ruby lets a String hold bytes that do not fit its encoding. Bytes
+that are not UTF-8 are a binary String, written
+<code>b"\xFF"</code>; Ruby reads that as a call of a method
+<code>b</code>. The plain literal <code>"\xFF"</code> is refused before
+the script runs:</p>
+
+<pre class="cameo rejected"><code>s = "\xFF"</code></pre>
+<pre class="output error"><code>script.cameo:1: a string literal with bytes that are not UTF-8 is a binary string and is written b"..."</code></pre>
+
+<p>A binary String has bytes and no characters. The methods on bytes,
+comparison, <code>+</code>, <code>[]</code> and <code>length</code>
+work as in Ruby; a method that reads characters, such as
+<code>upcase</code>, <code>strip</code> or <code>split</code>, raises,
+where Ruby reads the bytes as ASCII. <code>force_encoding("UTF-8")</code>
+says what the bytes are, and raises when they are not UTF-8.</p>
+
+<pre class="cameo"><code>bytes = b"\xFFab"
+p bytes.encoding
+p bytes.bytesize
+p bytes + "c"
+
+begin
+  bytes.upcase
+rescue Encoding::CompatibilityError =&gt; e
+  puts e.message
+end
+
+begin
+  bytes.force_encoding("UTF-8")
+rescue Encoding::InvalidByteSequenceError =&gt; e
+  puts e.class
+end
+
+p b"caf\xC3\xA9".force_encoding("UTF-8").upcase</code></pre>
+<pre class="output"><code>#&lt;Encoding:BINARY (ASCII-8BIT)&gt;
+3
+"\xFFabc"
+upcase reads characters, and a binary string has bytes alone: say what they are with force_encoding first
+Encoding::InvalidByteSequenceError
+"CAFÉ"</code></pre>
+
 <h2 id="rejected">What the checker rejects</h2>
 
 <p>cameo checks a whole script before it runs any of it, and reports every
@@ -338,6 +425,7 @@ script.cameo:11: global variables are not supported</code></pre>
 <tr><td>a bang method of Ruby's core, such as <code>a.sort!</code></td><td>the copying form, assigned: <code>a = a.sort</code></td></tr>
 <tr><td>nested multiple assignment, <code>a, (b, c) = …</code></td><td>separate assignments</td></tr>
 <tr><td><code>require_relative</code>, <code>load</code></td><td>one file per script</td></tr>
+<tr><td><code>exit!</code></td><td><code>exit</code></td></tr>
 <tr><td>backticks, <code>fork</code></td><td>none; a host can give the script a module of Go methods, and <code>async</code> runs a call on a goroutine</td></tr>
 <tr><td>rational and imaginary literals, <code>1r</code> and <code>2i</code></td><td>none</td></tr>
 <tr><td>assignment to a scoped constant, <code>A::B = 1</code></td><td>the assignment inside <code>A</code></td></tr>
@@ -359,18 +447,20 @@ reaches it, mostly with <code>NameError</code> or
   <code>ENV</code>, <code>Module.new</code>, refinements,
   <code>binding</code> beyond the debugger's <code>binding.break</code>,
   <code>method</code>, <code>Proc#curry</code>.</li>
-  <li><strong>No I/O beyond standard output and error</strong>:
-  <code>File</code> beyond its path methods (<code>basename</code>,
-  <code>dirname</code>, <code>extname</code>, <code>join</code>,
-  <code>split</code>, <code>expand_path</code> and
-  <code>absolute_path</code>), <code>IO</code> beyond <code>STDOUT</code>
-  and <code>STDERR</code>, <code>Dir</code>, <code>gets</code>,
-  <code>STDIN</code>.</li>
+  <li><strong>No I/O unless the host allows it</strong>: a script
+  writes to standard output and error. <code>File.read</code>,
+  <code>File.open</code> and <code>File.write</code> exist once the host
+  allows files, with <code>cameo --io=file</code> or from Go; see
+  <a href="io.html">I/O</a>. <code>File</code>'s path methods
+  (<code>basename</code>, <code>dirname</code>, <code>extname</code>,
+  <code>join</code>, <code>split</code>, <code>expand_path</code> and
+  <code>absolute_path</code>) always work. <code>Dir</code>,
+  <code>gets</code>, <code>STDIN</code> and sockets do not exist.</li>
   <li><strong>No threads or processes</strong>: <code>Thread</code>,
   <code>Fiber</code>, <code>Mutex</code>, <code>sleep</code>,
   <code>system</code>, <code>exec</code>, <code>spawn</code>. cameo has
   <code>async</code> and <code>await</code> instead.</li>
-  <li><strong>Not there yet</strong>: <code>exit!</code>,
+  <li><strong>Not there yet</strong>:
   <code>printf</code> (<code>format</code> exists),
   <code>__method__</code>, <code>Enumerator.new</code>,
   <code>Integer()</code> with a base, <code>autoload</code>.</li>
@@ -425,6 +515,39 @@ puts RUBY_VERSION &gt;= "3.4"</code></pre>
 <pre class="output"><code>cameo
 3.4.0
 true</code></pre>
+
+<h2 id="smaller">Smaller differences</h2>
+
+<ul>
+<li><code>throw</code> ends the <code>catch</code> whose tag is equal
+to its own, where Ruby wants the same object, so a String works as a
+tag.</li>
+<li><code>Time</code> is immutable: <code>utc</code> and
+<code>localtime</code> return a new time and leave the receiver as it
+was. <code>subsec</code> is a Float, since <code>Rational</code> is
+left out.</li>
+<li>Values print as CRuby 3.4 prints them, <code>{x: 1}</code>. A bare
+Object prints as <code>#&lt;Object&gt;</code>, without an
+address.</li>
+<li><code>__LINE__</code> is the line its statement starts on.</li>
+<li><code>JSON.generate</code> writes an instance of a cameo class as
+an object of its fields, where Ruby writes the string of
+<code>to_s</code>.</li>
+<li><code>methods</code> and <code>instance_methods</code> return
+sorted lists.</li>
+</ul>
+
+<pre class="cameo"><code>p catch("a") { throw "a", 1 }
+t = Time.utc(2026, 1, 2, 3, 4, 5)
+u = t.localtime("+01:00")
+p t.hour, u.hour</code></pre>
+<pre class="output"><code>1
+3
+4</code></pre>
+
+<p>In Ruby the first line raises <code>UncaughtThrowError</code>, and
+the two hours are 4 and 4: <code>localtime</code> changes
+<code>t</code>.</p>
 
 <h2 id="only">Only in cameo</h2>
 
