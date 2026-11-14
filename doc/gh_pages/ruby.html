@@ -41,7 +41,7 @@ below, each with the Ruby you would write and the cameo way.</p>
   <li><a href="#rejected">What the checker rejects</a></li>
   <li><a href="#missing">Missing builtins</a></li>
   <li><a href="#smaller">Smaller differences</a></li>
-  <li><a href="#only">Only in cameo: with, async, await and promises, protobuf</a></li>
+  <li><a href="#only">Only in cameo: with, tail calls, the IR, async, await and promises, protobuf</a></li>
 </ol>
 </nav>
 
@@ -571,6 +571,223 @@ p({ a: 1 }.with(b: 2))</code></pre>
 Point(x: 1, y: 10)
 Point(x: 1, y: 2)
 {a: 1, b: 2}</code></pre>
+
+<h3 id="tail">Tail calls</h3>
+
+<p>A call whose value is the value of the method it is in is a tail
+call. cameo runs it in place of its caller, which does not stay on the
+stack, so a method that ends by calling itself runs as a loop, at any
+depth. CRuby keeps a frame for every call. Here are two ways to count a
+String's bytes by recursion; only the second ends in a tail call, since
+in the first the <code>+</code> runs after the call returns.</p>
+
+<pre class="cameo"><code># Without a tail call: the + runs after the recursive call returns.
+def len(s, i = 0)
+  return 0 if s.getbyte(i).nil?
+
+  1 + len(s, i + 1)
+end
+
+# With a tail call: the recursive call is the method's value.
+def len_tc(s, i = 0)
+  return i if s.getbyte(i).nil?
+
+  len_tc(s, i + 1)
+end
+
+short = "x" * 1_000
+p len(short), len_tc(short)
+
+long = "x" * 1_000_000
+p len_tc(long)
+begin
+  len(long)
+rescue SystemStackError =&gt; e
+  puts "len: #{e.class}: #{e.message}"
+end</code></pre>
+<pre class="output"><code>1000
+1000
+1000000
+len: SystemStackError: stack level too deep</code></pre>
+
+<p>CRuby 3.4 raises <code>SystemStackError</code> for both methods on the
+long String, and already at 100,000 bytes. Timed over 10 million calls in
+all, on a laptop on 2026-11-14, in milliseconds:</p>
+
+<table>
+<tr><th>Bytes × runs</th><th></th><th><code>len</code></th><th><code>len_tc</code></th></tr>
+<tr><td>5,000 × 2000</td><td>cameo</td><td>2793</td><td>1861</td></tr>
+<tr><td></td><td>CRuby 3.4</td><td>261</td><td>242</td></tr>
+<tr><td>100,000 × 100</td><td>cameo</td><td>2889</td><td>1858</td></tr>
+<tr><td></td><td>CRuby 3.4</td><td>stack too deep</td><td>stack too deep</td></tr>
+<tr><td>1,000,000 × 10</td><td>cameo</td><td>stack too deep</td><td>1856</td></tr>
+<tr><td></td><td>CRuby 3.4</td><td>stack too deep</td><td>stack too deep</td></tr>
+</table>
+
+<ul>
+  <li><strong>The tail call is a third faster</strong> in cameo, at every
+  size: a call that replaces its caller makes no frame and returns
+  once, not once per level.</li>
+  <li><strong>Its depth has no limit.</strong> <code>len_tc</code> takes
+  the same time per call at a million levels as at five thousand.</li>
+  <li><strong>A call is still what costs.</strong> Where CRuby runs the
+  methods it is eight to ten times faster than cameo on them.</li>
+  <li><strong>Only a call in tail position gains.</strong> In
+  <code>fib(n - 1) + fib(n - 2)</code> neither call is one, and
+  rewriting it as <code>fib2(fib2(acc, n - 1), n - 2)</code> makes the
+  outer call a tail call and leaves as many calls: both take the same
+  time.</li>
+</ul>
+
+<p>A call that passes a block, a call under a <code>rescue</code> or an
+<code>ensure</code>, <code>super</code> and <code>yield</code> keep their
+caller. A backtrace, a dump and the debugger do not show the calls that
+were replaced; <code>cameo --keep-tail-frames</code> keeps the last 256
+of a row for them, and makes a tail call about a tenth slower.</p>
+
+<h3 id="ir">The IR: what a script compiles to</h3>
+
+<p>cameo does not walk a script's syntax tree. It compiles the script to
+an intermediate representation, the IR, and runs that. CRuby compiles to
+bytecode too; what differs is that cameo's IR is a protobuf message, as
+every value is. So the code of a script travels with its values: a
+<a href="pause.html">paused run</a> is written out with its code, a
+block goes to a worker or to another program as its code and the values
+it captured, and a dump resumes in a process that never saw the source.
+<code>cameo ir</code> prints the IR of a script without running it. Take
+<code>len.cameo</code>, the two methods above in a class with one
+field:</p>
+
+<pre data-name="len.cameo" class="ruby"><code>class Word
+  string :text
+
+  def len(i = 0)
+    return 0 if text.getbyte(i).nil?
+
+    1 + len(i + 1)
+  end
+
+  def len_tc(i = 0)
+    return i if text.getbyte(i).nil?
+
+    len_tc(i + 1)
+  end
+end
+
+word = Word.new(text: "cameo")
+puts word.len, word.len_tc</code></pre>
+<pre class="sh"><code>cameo ir len.cameo</code></pre>
+<pre class="output"><code>proc #0 &lt;main&gt;
+  CLASS Word #1 3b0407905bbe03ac
+  DROP
+  GETCONST Word
+  MAP 1
+  CONST "cameo"
+  SYM text
+  MAP_SET
+  SEND new 0 Word kw
+  STORE word
+  DROP
+  LOAD word
+  SEND len 0 word
+  LOAD word
+  SEND len_tc 0 word
+  SEND puts 2 self
+
+proc #1 &lt;class:Word&gt;
+  FIELD (string :text)
+  DROP
+  DEF len #2
+  DROP
+  DEF len_tc #3
+
+proc #2 len(i = …)
+  default i:
+    CONST 0
+  SEND text 0 self vcall
+  LOAD i
+  SEND getbyte 1
+  SEND nil? 0
+  IF
+    then:
+      CONST 0
+      RETURN
+    else:
+      CONST nil
+  DROP
+  CONST 1
+  LOAD i
+  CONST 1
+  BINARY_PLUS
+  SEND len 1 self
+  BINARY_PLUS
+
+proc #3 len_tc(i = …)
+  default i:
+    CONST 0
+  SEND text 0 self vcall
+  LOAD i
+  SEND getbyte 1
+  SEND nil? 0
+  IF
+    then:
+      LOAD i
+      RETURN
+    else:
+      CONST nil
+  DROP
+  LOAD i
+  CONST 1
+  BINARY_PLUS
+  SEND len_tc 1 self tail</code></pre>
+
+<p>How to read it:</p>
+
+<ul>
+  <li><strong>A proc is one body</strong>: the top level, a class body,
+  a method, a block or a lambda. The script is four: the top level, the
+  body of <code>Word</code> and its two methods.</li>
+  <li><strong>A class is defined by running its body.</strong>
+  <code>CLASS Word #1</code> runs proc #1, where <code>FIELD</code>
+  declares the typed field and each <code>DEF</code> a method, by the
+  number of its proc. The hexadecimal number after it is a digest of the
+  body, by which cameo knows the same definition when it meets it
+  again.</li>
+  <li><strong>An instruction works on a stack of values.</strong>
+  <code>LOAD</code> and <code>CONST</code> push one. <code>SEND len 1
+  self</code> calls <code>len</code> on self with the one value on top
+  and pushes the result; a <code>SEND</code> without
+  <code>self</code>, as <code>SEND getbyte 1</code>, takes its receiver
+  from the stack too. <code>BINARY_PLUS</code> is <code>+</code>: on two
+  Integers or two Floats the evaluator adds, on anything else it calls
+  the method.</li>
+  <li><strong>Keyword arguments are a Hash.</strong>
+  <code>Word.new(text: "cameo")</code> builds it with <code>MAP</code>
+  and <code>MAP_SET</code>, and <code>kw</code> on the
+  <code>SEND</code> says the last value is the keywords.</li>
+  <li><strong>A field is read by a call.</strong> <code>text</code> in a
+  method is <code>SEND text 0 self</code>, the reader the field
+  declaration defined; there is no instruction for an instance
+  variable, since there are none.</li>
+  <li><strong>Control flow is nested, with no jumps.</strong> An
+  <code>IF</code> carries its two branches as lists, so a place in the
+  code is a path of indices, which is what a dump stores as "where the
+  script was".</li>
+  <li><strong><code>DROP</code> ends a statement</strong> by discarding
+  its value. The instruction after it starts the next statement, which
+  is where the debugger stops.</li>
+  <li><strong><code>tail</code> marks a tail call.</strong> The last
+  <code>SEND</code> of <code>len_tc</code> has it and replaces its
+  caller. In <code>len</code> the last instruction is the
+  <code>BINARY_PLUS</code>, so its <code>SEND len</code> has none: this
+  is the quickest way to see whether a call you meant to be a tail call
+  is one.</li>
+</ul>
+
+<p>The IR has a version, and a dump is resumed by a cameo with the same
+one: a dump written by an older cameo is refused, not converted.
+<a href="https://github.com/cameo-lang/cameo/blob/main/doc/design/ir.md">doc/design/ir.md</a>
+has every instruction and how the evaluator runs them.</p>
 
 <h3>Time zones by name</h3>
 
