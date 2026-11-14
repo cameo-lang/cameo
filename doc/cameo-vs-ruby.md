@@ -320,6 +320,11 @@ sets the fields, and `p a` prints `Point(x: 1, y: 2)` where Ruby prints
   where Ruby makes a binary String because the receiver is ASCII. `+`,
   `<<`, `concat`, `prepend`, `insert`, interpolation and `Array#join`
   make the binary String, as Ruby does.
+- `getbyte` reads a byte of a String whose bytes are its characters, one
+  of ASCII alone, or of a binary String. For a UTF-8 String with
+  characters beyond ASCII it raises Encoding::CompatibilityError, where
+  Ruby returns a part of a character: `"é".b.getbyte(0)` says the bytes
+  are meant.
 - Regular expressions use Ruby's syntax on cameo's own engine; lookbehind
   and backreferences are rejected with "This regexp is not supported in
   Cameo".

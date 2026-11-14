@@ -7,13 +7,15 @@ import (
 	"github.com/cameo-lang/cameo/src/assert"
 )
 
-// A string made as ASCII, or a literal that is, is known to be; any
-// other string says nothing, whatever it holds. The mark changes
+// A UTF-8 string knows whether it is ASCII alone, however it was made;
+// a string of another kind says nothing, whatever it holds. The mark changes
 // neither the string, its length, its kind nor what it is equal to and
 // the same as.
 func TestAStringKnownToBeASCII(t *testing.T) {
 	plain, known := String("abc"), ASCIIString("abc")
-	assert.False(t, plain.KnownASCII())
+	assert.True(t, plain.KnownASCII())
+	assert.False(t, String("abé").KnownASCII())
+	assert.True(t, StringOf(KindString, "abc").KnownASCII())
 	assert.True(t, known.KnownASCII())
 	assert.True(t, Counted("abc").KnownASCII())
 	assert.False(t, Counted("abé").KnownASCII())
@@ -39,9 +41,9 @@ func TestAStringKnownToBeASCII(t *testing.T) {
 	assert.Equals(t, v.Int(), int64(1))
 }
 
-// A string made with its characters counted has them, and one made of
-// two such has the sum; a string nobody counted says so, as does one in
-// another encoding, and a value that is no string.
+// A UTF-8 string has its characters counted, by String or by what made
+// it, and one made of two has the sum; a string in another encoding has
+// no count, nor has a value that is no string.
 func TestAStringThatKnowsItsCharacters(t *testing.T) {
 	chars := func(v Value) int {
 		n, ok := v.Chars()
@@ -50,7 +52,7 @@ func TestAStringThatKnowsItsCharacters(t *testing.T) {
 		}
 		return n
 	}
-	assert.Equals(t, chars(String("héllo")), -1)
+	assert.Equals(t, chars(String("héllo")), 5)
 	assert.Equals(t, chars(Counted("héllo")), 5)
 	assert.Equals(t, chars(StringOfChars("héllo", 5)), 5)
 	assert.Equals(t, chars(ASCIIString("abc")), 3)
@@ -73,9 +75,9 @@ func TestAStringThatKnowsItsCharacters(t *testing.T) {
 
 	assert.Equals(t, chars(Joined("héllowörld", known, Counted("wörld"))), 10)
 	assert.Equals(t, chars(Joined("héllo", known, String(""))), 5)
-	assert.Equals(t, chars(Joined("héllox", known, String("x"))), -1)
+	assert.Equals(t, chars(Joined("héllox", known, String("x"))), 6)
 	// Half a character and its other half are one character together.
-	assert.Equals(t, chars(Joined("\xc3\xa9", Counted("\xc3"), Counted("\xa9"))), -1)
+	assert.Equals(t, chars(Joined("\xc3\xa9", Counted("\xc3"), Counted("\xa9"))), 1)
 	assert.Equals(t, chars(Joined("\xc3a", Counted("\xc3"), Counted("a"))), 2)
 }
 
