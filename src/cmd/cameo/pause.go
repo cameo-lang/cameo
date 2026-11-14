@@ -118,8 +118,11 @@ func runProgram(prog *cameo.Program, allowIO []string, pause bool, stderr io.Wri
 				if pausing.Swap(true) {
 					os.Exit(130)
 				}
-				prog.Pause()
+				// The message goes out before the pause is asked for: the
+				// script may stop, and say where or that it cannot, as
+				// soon as it is asked.
 				fmt.Fprintln(stderr, "cameo: pausing; press ^C again to end the script")
+				prog.Pause()
 			}
 		}()
 	}
