@@ -165,7 +165,13 @@ func joinEncoded(ctx object.Context, kind object.Kind, parts []object.Value) (ob
 		}
 		whole = whole && (s == "" || utf8.RuneStart(s[0]))
 		b.WriteString(s)
-		acc = object.StringOf(k, b.String())
+		// The characters so far are counted already: the string is not
+		// read again for each part.
+		if k == object.KindString && whole {
+			acc = object.StringOfChars(b.String(), chars)
+		} else {
+			acc = object.StringOf(k, b.String())
+		}
 	}
 	switch {
 	case acc.Kind() != object.KindString:

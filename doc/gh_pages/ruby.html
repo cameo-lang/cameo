@@ -363,7 +363,11 @@ comparison, <code>+</code>, <code>[]</code> and <code>length</code>
 work as in Ruby; a method that reads characters, such as
 <code>upcase</code>, <code>strip</code> or <code>split</code>, raises,
 where Ruby reads the bytes as ASCII. <code>force_encoding("UTF-8")</code>
-says what the bytes are, and raises when they are not UTF-8.</p>
+says what the bytes are, and raises when they are not UTF-8.
+<code>getbyte</code> goes the other way: it reads a byte of a binary
+String or of one that is ASCII alone, and raises for a UTF-8 String with
+characters beyond ASCII, where Ruby returns a part of a character;
+<code>s.b.getbyte(i)</code> says the bytes are meant.</p>
 
 <pre class="cameo"><code>bytes = b"\xFFab"
 p bytes.encoding

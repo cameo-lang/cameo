@@ -288,8 +288,17 @@ func Bool(b bool) Value {
 	return False
 }
 
-// String makes a string value sharing s's bytes.
+// String makes a UTF-8 string value sharing s's bytes, and counts its
+// characters, so that every UTF-8 string knows them, and with them
+// whether it is ASCII alone: no method has to read the string to find
+// out. A maker that has the count already gives it to StringOfChars.
 func String(s string) Value {
+	return StringOfChars(s, utf8.RuneCountInString(s))
+}
+
+// uncounted makes a UTF-8 string value that does not know its
+// characters: what StringOfChars starts from.
+func uncounted(s string) Value {
 	return strValue(KindString, int64(len(s)), unsafe.Pointer(unsafe.StringData(s)))
 }
 
@@ -313,7 +322,7 @@ func StringOfChars(s string, chars int) Value {
 	// A count above the bytes or too far under them is dropped; the
 	// comparison is unsigned to be one for the two. The string of no
 	// bytes has no n to keep a count in, and needs none.
-	v := String(s)
+	v := uncounted(s)
 	if extra := uint(len(s) - chars); extra < extraUnset && len(s) > 0 {
 		v.n ^= int64(extra^extraUnset) << sizeBits
 	}
@@ -351,8 +360,8 @@ func Text(s string) Value {
 }
 
 // Chars returns the number of characters of a UTF-8 string that knows
-// it. False says nothing but that nobody counted: a string in another
-// encoding, one made from bytes, one whose maker did not know.
+// it, as every one does whose count fits beside its length. False is
+// for a string in another encoding, and for one too long to keep it.
 func (v Value) Chars() (int, bool) {
 	if v.p == mark(KindString) {
 		return 0, true
@@ -388,6 +397,9 @@ func Joined(s string, a, b Value) Value {
 // StringOf makes a string of s in the encoding kind names: KindString
 // (UTF-8), KindBytes (binary) or KindASCII (US-ASCII).
 func StringOf(kind Kind, s string) Value {
+	if kind == KindString {
+		return String(s) // a UTF-8 string knows its characters
+	}
 	return strValue(kind, int64(len(s)), unsafe.Pointer(unsafe.StringData(s)))
 }
 
