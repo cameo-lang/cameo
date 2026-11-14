@@ -26,7 +26,7 @@ func Install() {
 			if err != nil {
 				return object.Value{}, err
 			}
-			return object.String(f(s)), nil
+			return object.NewString(f(s), object.UTF8), nil
 		}
 	}
 	for _, name := range []string{"escapeHTML", "escape_html", "h"} {
@@ -62,7 +62,7 @@ func Install() {
 					return object.Value{}, err
 				}
 			}
-			return object.String(f(s, elements)), nil
+			return object.NewString(f(s, elements), object.UTF8), nil
 		}
 	}
 	for _, name := range []string{"escapeElement", "escape_element"} {
@@ -76,7 +76,7 @@ func Install() {
 		if !ok {
 			return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into Time", stdlib.KindName(args[0]))
 		}
-		return object.String(t.UTC().Format("Mon, 02 Jan 2006 15:04:05 GMT")), nil
+		return object.NewString(t.UTC().Format("Mon, 02 Jan 2006 15:04:05 GMT"), object.UTF8), nil
 	})
 	m.DefineSingleton("pretty", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) < 1 || len(args) > 2 {
@@ -92,7 +92,7 @@ func Install() {
 				return object.Value{}, err
 			}
 		}
-		return object.String(prettyHTML(s, shift)), nil
+		return object.NewString(prettyHTML(s, shift), object.UTF8), nil
 	})
 }
 

@@ -34,7 +34,7 @@ func Install() {
 	// as singleton methods, and holds Row, Table and the errors.
 	c := csvClass
 	object.DefineNative("CSV", object.ClassValue(c))
-	c.Consts["VERSION"] = object.String("3.3.2")
+	c.Consts["VERSION"] = object.NewString("3.3.2", object.ASCII)
 	malformedError.Lexical = c
 	c.Consts["MalformedCSVError"] = object.ClassValue(malformedError)
 	malformedError.Define("line_number", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -143,7 +143,7 @@ func Install() {
 				return object.Value{}, err
 			}
 		}
-		return object.String(w.b.String()), nil
+		return object.NewString(w.b.String(), object.UTF8), nil
 	})
 	c.DefineSingleton("generate", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) > 1 {
@@ -169,7 +169,7 @@ func Install() {
 			return object.Value{}, err
 		}
 		h := handleOf(v)
-		return object.String(h.p.s + h.w.b.String()), nil
+		return object.NewString(h.p.s+h.w.b.String(), object.UTF8), nil
 	})
 	newCSV := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) > 1 {

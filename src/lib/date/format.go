@@ -150,7 +150,7 @@ func installFormatting() {
 	c := dateClass
 	str := func(name string, f func(d dt, v object.Value) string) {
 		c.Define(name, 0, func(ctx object.Context, self object.Value, a []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-			return object.String(f(read(self), self)), nil
+			return object.NewString(f(read(self), self), object.UTF8), nil
 		})
 	}
 	str("to_s", func(d dt, v object.Value) string { return toS(v) })
@@ -172,7 +172,7 @@ func installFormatting() {
 				if len(a) > 0 {
 					return object.Value{}, stdlib.ArgError(ctx, len(a), "0")
 				}
-				return object.String(date(d)), nil
+				return object.NewString(date(d), object.UTF8), nil
 			}
 			n := int64(0)
 			if len(a) > 1 {
@@ -184,7 +184,7 @@ func installFormatting() {
 					return object.Value{}, err
 				}
 			}
-			return object.String(datetime(d, n)), nil
+			return object.NewString(datetime(d, n), object.UTF8), nil
 		})
 	}
 	iso := func(d dt, n int64) string {
@@ -210,7 +210,7 @@ func installFormatting() {
 				return object.Value{}, err
 			}
 		}
-		return object.String(strftime(read(self), f)), nil
+		return object.NewString(strftime(read(self), f), object.UTF8), nil
 	})
 	c.Define("deconstruct_keys", 1, func(ctx object.Context, self object.Value, a []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		d := read(self)
@@ -226,7 +226,7 @@ func installFormatting() {
 			h, min, s := d.clock()
 			all["hour"], all["min"], all["sec"] = object.Int(h), object.Int(min), object.Int(s)
 			all["sec_fraction"] = ratio(float64(d.sf), nanos)
-			all["zone"] = object.String(offsetString(d.of, true))
+			all["zone"] = object.NewString(offsetString(d.of, true), object.UTF8)
 			order = append(order, "hour", "min", "sec", "sec_fraction", "zone")
 		}
 		b := object.NewMapBuilder()

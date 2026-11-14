@@ -30,7 +30,7 @@ type state struct {
 func Install() {
 	m := module
 	object.DefineNative("Singleton", object.ClassValue(m))
-	m.Consts["VERSION"] = object.String("0.3.0")
+	m.Consts["VERSION"] = object.NewString("0.3.0", object.ASCII)
 	m.Included = included
 	m.Extended = func(ctx object.Context, into *object.Class) error {
 		return ctx.Raise(object.NoMethodError, "undefined method 'extend_object' for module Singleton")

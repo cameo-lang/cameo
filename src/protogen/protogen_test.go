@@ -89,11 +89,11 @@ message Person {
 func TestInstanceRoundTrip(t *testing.T) {
 	p, address := person()
 	reg := NewRegistry()
-	home := &object.Instance{Cls: address, Fields: []object.Value{object.String("Springfield")}}
+	home := &object.Instance{Cls: address, Fields: []object.Value{object.NewString("Springfield", object.UTF8)}}
 	ann := &object.Instance{Cls: p, Fields: []object.Value{
-		object.String("ann"), object.InstanceValue(home),
-		object.NewList(object.String("a"), object.String("b")),
-		object.MapValue(object.MapOf(object.String("math"), object.Int(1))),
+		object.NewString("ann", object.UTF8), object.InstanceValue(home),
+		object.NewList(object.NewString("a", object.UTF8), object.NewString("b", object.UTF8)),
+		object.MapValue(object.MapOf(object.NewString("math", object.UTF8), object.Int(1))),
 		object.Symbol("user"),
 	}}
 	data, err := reg.Marshal(ann)
@@ -132,10 +132,10 @@ func TestEnvelopeRoundTrip(t *testing.T) {
 	}
 	enc, dec := NewEncoder(reg), NewDecoder(reg, resolve)
 	values := []object.Value{
-		object.Nil, object.True, object.Int(-7), object.Float(2.5), object.String("s"), object.Bytes([]byte("b")),
-		object.NewList(object.Int(1), object.NewList()), object.MapValue(object.MapOf(object.String("k"), object.Int(1))),
+		object.Nil, object.True, object.Int(-7), object.Float(2.5), object.NewString("s", object.UTF8), object.Bytes([]byte("b")),
+		object.NewList(object.Int(1), object.NewList()), object.MapValue(object.MapOf(object.NewString("k", object.UTF8), object.Int(1))),
 		object.SetValue(object.NewSet(object.Int(1), object.Int(2))), object.RangeValue(&object.Range{Lo: object.Int(1), Hi: object.Int(3)}),
-		object.InstanceValue(&object.Instance{Cls: p, Fields: []object.Value{object.String("ann"), {}, object.NewList(), object.MapValue(object.NewMap()), {}}}),
+		object.InstanceValue(&object.Instance{Cls: p, Fields: []object.Value{object.NewString("ann", object.UTF8), {}, object.NewList(), object.MapValue(object.NewMap()), {}}}),
 	}
 	for _, v := range values {
 		data, err := enc.Encode(v)
@@ -154,7 +154,7 @@ func TestEnvelopeRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if back, _ := dec.Decode(data); !object.Equal(back, object.String("sym")) {
+	if back, _ := dec.Decode(data); !object.Equal(back, object.NewString("sym", object.UTF8)) {
 		t.Fatalf("a symbol travels as a string, got %s", object.Key(back))
 	}
 	if _, err := enc.Encode(object.ClassValue(object.ProcClass)); err == nil {
@@ -162,7 +162,7 @@ func TestEnvelopeRoundTrip(t *testing.T) {
 	}
 	// An encoder set to keep symbols writes one as a symbol, also as the
 	// key of a map.
-	keyed := object.MapValue(object.MapOf(object.Symbol("k"), object.NewList(object.Symbol("v"), object.String("s"))))
+	keyed := object.MapValue(object.MapOf(object.Symbol("k"), object.NewList(object.Symbol("v"), object.NewString("s", object.UTF8))))
 	data, err = NewEncoder(reg).WithSymbols().Encode(keyed)
 	if err != nil {
 		t.Fatal(err)
@@ -187,10 +187,10 @@ func TestEnvelopeReadsItsEarlierWireForm(t *testing.T) {
 		{object.Nil, ""},
 		{object.True, "0801"},
 		{object.Int(7), "1007"},
-		{object.String("s"), "220173"},
+		{object.NewString("s", object.UTF8), "220173"},
 		{object.Bytes([]byte("b")), "2a0162"},
-		{object.NewList(object.Int(1), object.String("a")), "32090a0210010a03220161"},
-		{object.MapValue(object.MapOf(object.String("k"), object.Int(1))), "3a0b0a09120210010a0322016b"},
+		{object.NewList(object.Int(1), object.NewString("a", object.UTF8)), "32090a0210010a03220161"},
+		{object.MapValue(object.MapOf(object.NewString("k", object.UTF8), object.Int(1))), "3a0b0a09120210010a0322016b"},
 		{object.RangeValue(&object.Range{Lo: object.Int(1), Hi: object.Int(3), Exclusive: true}), "4a0a0a021001120210031801"},
 	}
 	for _, c := range cases {
@@ -250,7 +250,7 @@ func TestEnvelopeTime(t *testing.T) {
 func TestEnvelopeMapDefault(t *testing.T) {
 	reg := NewRegistry()
 	enc, dec := NewEncoder(reg), NewDecoder(reg, nil)
-	m := object.MapOf(object.String("k"), object.Int(1)).WithDefault(object.Int(0), object.Value{})
+	m := object.MapOf(object.NewString("k", object.UTF8), object.Int(1)).WithDefault(object.Int(0), object.Value{})
 	data, err := enc.Encode(object.MapValue(m))
 	if err != nil {
 		t.Fatal(err)

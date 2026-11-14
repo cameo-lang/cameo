@@ -13,14 +13,14 @@ func installException() {
 	c := object.ExceptionClass
 	exc := func(self object.Value) *object.Exception { return self.Exception() }
 	def(c, "message", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(exc(self).Message), nil
+		return object.NewString(exc(self).Message, object.UTF8), nil
 	})
 	def(c, "to_s", 0, c.Methods["message"].Native)
 	def(c, "full_message", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(exc(self).Message + " (" + exc(self).Cls.QualifiedName() + ")"), nil
+		return object.NewString(exc(self).Message+" ("+exc(self).Cls.QualifiedName()+")", object.UTF8), nil
 	})
 	def(c, "inspect", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String("#<" + exc(self).Cls.QualifiedName() + ": " + exc(self).Message + ">"), nil
+		return object.NewString("#<"+exc(self).Cls.QualifiedName()+": "+exc(self).Message+">", object.UTF8), nil
 	})
 	def(c, "backtrace", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Nil, nil

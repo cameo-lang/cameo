@@ -230,9 +230,9 @@ func pack(ctx object.Context, elems []object.Value, format string, buffer object
 	case !buffer.IsZero():
 		return labelled(ctx, buffer.Kind(), string(out))
 	case len(ds) == 0:
-		return object.StringOf(object.KindASCII, ""), nil
+		return object.NewString("", object.USASCII), nil
 	case ds[0].letter == 'U':
-		return object.Text(string(out)), nil
+		return object.NewString(string(out), object.UTF8), nil
 	}
 	return object.Bytes(out), nil
 }
@@ -404,7 +404,7 @@ func unpack(ctx object.Context, data []byte, format string, start int) ([]object
 				bits[i] = '0' + bit
 			}
 			at += (n + 7) / 8
-			out = append(out, object.StringOf(object.KindASCII, string(bits)))
+			out = append(out, object.NewString(string(bits), object.USASCII))
 		case d.letter == 'm' && d.explicit && d.count == 0:
 			dec, ok := DecodeBase64Strict(string(data[at:]))
 			if !ok {
@@ -429,7 +429,7 @@ func unpack(ctx object.Context, data []byte, format string, start int) ([]object
 				s = s[:d.count]
 			}
 			at += (len(s) + 1) / 2
-			out = append(out, object.Text(s))
+			out = append(out, object.NewString(s, object.UTF8))
 		default:
 			n := len(data) - at
 			if d.count >= 0 && d.count < n {

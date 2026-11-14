@@ -386,7 +386,7 @@ func (d *Decoder) Value(msg *cameopb.Value) (object.Value, error) {
 	case *cameopb.Value_FloatValue:
 		return object.Float(k.FloatValue), nil
 	case *cameopb.Value_StringValue:
-		return object.String(k.StringValue), nil
+		return object.NewString(k.StringValue, object.UTF8), nil
 	case *cameopb.Value_SymbolValue:
 		return object.Symbol(k.SymbolValue), nil
 	case *cameopb.Value_Handle:

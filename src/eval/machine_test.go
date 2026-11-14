@@ -17,7 +17,7 @@ func TestAReleasedMachineHoldsNothing(t *testing.T) {
 	in := New(nil, nil)
 	m := in.machine()
 	m.kind, m.fr, m.env = actMethod, &Frame{}, NewEnv(nil)
-	m.push(object.String("kept alive"))
+	m.push(object.NewString("kept alive", object.UTF8))
 	m.push(object.Int(1))
 	m.pop()
 	m.cursors = append(m.cursors, cursor{pending: ErrStopped})

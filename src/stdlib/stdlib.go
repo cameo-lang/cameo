@@ -189,7 +189,7 @@ func yielded(args []object.Value) object.Value {
 func StringList(ss []string) object.Value {
 	out := make([]object.Value, len(ss))
 	for i, s := range ss {
-		out[i] = object.String(s)
+		out[i] = object.NewString(s, object.UTF8)
 	}
 	return object.NewList(out...)
 }

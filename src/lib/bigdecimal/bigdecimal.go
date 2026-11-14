@@ -79,11 +79,11 @@ func readD(v object.Value) dec {
 func build(d dec) object.Value {
 	fields := make([]object.Value, 4)
 	fields[fSign] = object.Int(int64(d.sign()))
-	fields[fDigits] = object.String("")
+	fields[fDigits] = object.NewString("", object.ASCII)
 	fields[fExponent] = object.Int(0)
-	fields[fSpecial] = object.String(d.plainSpecial())
+	fields[fSpecial] = object.NewString(d.plainSpecial(), object.UTF8)
 	if d.finite() && !d.isZero() {
-		fields[fDigits] = object.String(d.digits())
+		fields[fDigits] = object.NewString(d.digits(), object.ASCII)
 		fields[fExponent] = object.Int(d.exponent())
 	}
 	if d.special == nan {
@@ -296,7 +296,7 @@ func Install() {
 	} {
 		c.Consts[name] = object.Int(v)
 	}
-	c.Consts["VERSION"] = object.String("3.1.8")
+	c.Consts["VERSION"] = object.NewString("3.1.8", object.ASCII)
 	c.Consts["INFINITY"] = build(decInf(false))
 	c.Consts["NAN"] = build(decNaN())
 	object.DefineFunction("BigDecimal", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -840,7 +840,7 @@ func installQueries() {
 		case !d.isZero():
 			digits, e = d.digits(), d.exponent()
 		}
-		return object.NewList(object.Int(sign), object.String(digits), object.Int(10), object.Int(e)), nil
+		return object.NewList(object.Int(sign), object.NewString(digits, object.UTF8), object.Int(10), object.Int(e)), nil
 	})
 	for _, name := range []string{"clone", "dup"} {
 		def(name, 0, func(ctx object.Context, d dec, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -875,14 +875,14 @@ func installConversions() {
 			}
 		}
 		if plain {
-			return object.String(d.plain(prefix, group)), nil
+			return object.NewString(d.plain(prefix, group), object.UTF8), nil
 		}
-		return object.String(d.engineering(prefix, group)), nil
+		return object.NewString(d.engineering(prefix, group), object.UTF8), nil
 	}
 	def("to_s", -1, toS)
 	def("inspect", 0, toS)
 	def("to_digits", 0, func(ctx object.Context, d dec, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(d.plain("", 0)), nil
+		return object.NewString(d.plain("", 0), object.ASCII), nil
 	})
 	def("to_f", 0, func(ctx object.Context, d dec, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Float(d.toFloat()), nil
@@ -897,7 +897,7 @@ func installConversions() {
 	})
 	def("_dump", -1, func(ctx object.Context, d dec, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		words := (int64(d.ndigits())+8)/9 + 1
-		return object.String(strconv.FormatInt(words*9, 10) + ":" + d.engineering("", 0)), nil
+		return object.NewString(strconv.FormatInt(words*9, 10)+":"+d.engineering("", 0), object.ASCII), nil
 	})
 }
 

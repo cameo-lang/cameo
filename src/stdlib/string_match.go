@@ -33,11 +33,11 @@ func installStringPatterns() {
 				if l, ok := v.AsList(); ok {
 					for i, g := range l.Elems {
 						if g.IsString() {
-							l.Elems[i] = object.ASCIIString(g.Str())
+							l.Elems[i] = object.NewString(g.Str(), object.ASCII)
 						}
 					}
 				} else {
-					v = object.ASCIIString(v.Str())
+					v = object.NewString(v.Str(), object.ASCII)
 				}
 			}
 			if block.IsZero() {
@@ -169,7 +169,7 @@ func installStringPatterns() {
 					}
 				}
 				if s, ok := m.Group(g); ok {
-					return object.String(s), nil
+					return object.NewString(s, object.UTF8), nil
 				}
 				return object.Nil, nil
 			}
@@ -196,7 +196,7 @@ func installStringPatterns() {
 		return object.False, nil
 	})
 	parts := func(m *object.Match) object.Value {
-		return object.NewList(object.String(m.Input[:m.Caps[0]]), matchText(m), object.String(m.Input[m.Caps[1]:]))
+		return object.NewList(object.NewString(m.Input[:m.Caps[0]], object.UTF8), matchText(m), object.NewString(m.Input[m.Caps[1]:], object.UTF8))
 	}
 	def(c, "partition", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		p, err := patternOf(ctx, args[0])
@@ -206,7 +206,7 @@ func installStringPatterns() {
 		if m := p.findAt(str(self), 0); m != nil {
 			return parts(m), nil
 		}
-		return object.NewList(self, object.String(""), object.String("")), nil
+		return object.NewList(self, object.NewString("", object.ASCII), object.NewString("", object.ASCII)), nil
 	})
 	def(c, "rpartition", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		s := str(self)
@@ -229,7 +229,7 @@ func installStringPatterns() {
 			}
 		}
 		if last == nil {
-			return object.NewList(object.String(""), object.String(""), self), nil
+			return object.NewList(object.NewString("", object.ASCII), object.NewString("", object.ASCII), self), nil
 		}
 		return parts(last), nil
 	})
@@ -255,7 +255,7 @@ func substitute(ctx object.Context, self object.Value, args []object.Value, kw *
 		switch args[1].Kind() {
 		case object.KindString, object.KindASCII, object.KindMap:
 		case object.KindBytes:
-			args = []object.Value{args[0], object.String(string(args[1].Bytes()))}
+			args = []object.Value{args[0], object.NewString(string(args[1].Bytes()), object.UTF8)}
 		default:
 			return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into String", KindName(args[1]))
 		}
@@ -325,7 +325,7 @@ func substitute(ctx object.Context, self object.Value, args []object.Value, kw *
 	case chars >= 0:
 		return object.StringOfChars(b.String(), chars), nil
 	}
-	return object.String(b.String()), nil
+	return object.NewString(b.String(), object.UTF8), nil
 }
 
 // split is String#split: on whitespace by default (and for " "), into

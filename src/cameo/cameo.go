@@ -119,7 +119,7 @@ func Load(file, src string, stdout, stderr io.Writer) (*Program, error) {
 func (p *Program) Args(args []string) {
 	elems := make([]object.Value, len(args))
 	for i, a := range args {
-		elems[i] = object.Text(a)
+		elems[i] = object.NewString(a, object.UTF8)
 	}
 	p.in.SetConst("ARGV", object.NewList(elems...))
 }
@@ -383,7 +383,7 @@ func (c conv) toValue(v any) (object.Value, error) {
 	case float64:
 		return object.Float(v), nil
 	case string:
-		return object.Text(v), nil
+		return object.NewString(v, object.UTF8), nil
 	case []byte:
 		return object.Bytes(v), nil
 	case time.Time:
@@ -401,7 +401,7 @@ func (c conv) toValue(v any) (object.Value, error) {
 	case []string:
 		elems := make([]object.Value, len(v))
 		for i, e := range v {
-			elems[i] = object.String(e)
+			elems[i] = object.NewString(e, object.UTF8)
 		}
 		return object.NewList(elems...), nil
 	case map[string]any:
@@ -416,7 +416,7 @@ func (c conv) toValue(v any) (object.Value, error) {
 			if err != nil {
 				return object.Value{}, err
 			}
-			b.Set(object.String(k), val)
+			b.Set(object.NewString(k, object.UTF8), val)
 		}
 		return object.MapValue(b.Map()), nil
 	case map[any]any:

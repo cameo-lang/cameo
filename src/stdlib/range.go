@@ -486,9 +486,9 @@ func installRange() {
 			}
 		}
 		if r(self).Exclusive {
-			return object.String(lo + "..." + hi), nil
+			return object.NewString(lo+"..."+hi, object.UTF8), nil
 		}
-		return object.String(lo + ".." + hi), nil
+		return object.NewString(lo+".."+hi, object.UTF8), nil
 	})
 }
 
@@ -539,7 +539,7 @@ func strValue(s string, sym bool) object.Value {
 	if sym {
 		return object.Symbol(s)
 	}
-	return object.String(s)
+	return object.NewString(s, object.UTF8)
 }
 
 // RangeElems expands a range of integers, strings or symbols into its

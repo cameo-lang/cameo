@@ -71,7 +71,7 @@ func Install() {
 	d := delegatorClass
 	object.DefineNative("Delegator", object.ClassValue(d))
 	object.DefineNative("SimpleDelegator", object.ClassValue(simpleClass))
-	d.Consts["VERSION"] = object.String("0.4.0")
+	d.Consts["VERSION"] = object.NewString("0.4.0", object.ASCII)
 	d.DefineSingleton("new", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		cls := self.Cls()
 		if cls == delegatorClass {

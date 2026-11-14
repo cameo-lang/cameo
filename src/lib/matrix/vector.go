@@ -471,7 +471,7 @@ func installVector() {
 				}
 				parts[i] = s
 			}
-			return object.String("Vector[" + strings.Join(parts, ", ") + "]"), nil
+			return object.NewString("Vector["+strings.Join(parts, ", ")+"]", object.UTF8), nil
 		}
 	}
 	defV("to_s", 0, render(false))

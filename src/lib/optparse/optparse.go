@@ -110,10 +110,10 @@ func parserOf(v object.Value) *parser { return v.Instance().Message.(*parser) }
 func fail(cls *object.Class, reason string, args ...string) error {
 	list := make([]object.Value, len(args))
 	for i, a := range args {
-		list[i] = object.String(a)
+		list[i] = object.NewString(a, object.UTF8)
 	}
 	return &object.Exception{Cls: cls, Message: reason + ": " + strings.Join(args, " "),
-		Attrs: map[string]object.Value{"args": object.NewList(list...), "reason": object.String(reason)}}
+		Attrs: map[string]object.Value{"args": object.NewList(list...), "reason": object.NewString(reason, object.UTF8)}}
 }
 
 // programName is the script's name without its extension, as $0 gives it.
@@ -330,7 +330,7 @@ func (p *parser) ver(ctx object.Context) object.Value {
 		release, _ := ctx.ToS(p.release)
 		s += " (" + release + ")"
 	}
-	return object.String(s)
+	return object.NewString(s, object.UTF8)
 }
 
 // switches lists the switches, heads first and tails last.
@@ -412,7 +412,7 @@ func (p *parser) short(name string) *sw {
 func (c *converter) convert(ctx object.Context, shown []string, text string) (object.Value, error) {
 	bad := func() error { return fail(invalidArg, "invalid argument", shown...) }
 	if c == nil {
-		return object.String(text), nil
+		return object.NewString(text, object.UTF8), nil
 	}
 	if c.table != nil {
 		var hits []int
@@ -489,7 +489,7 @@ func (c *converter) convert(ctx object.Context, shown []string, text string) (ob
 		parts := strings.Split(text, ",")
 		out := make([]object.Value, len(parts))
 		for i, part := range parts {
-			out[i] = object.String(part)
+			out[i] = object.NewString(part, object.UTF8)
 		}
 		return object.NewList(out...), nil
 	case "TrueClass", "FalseClass":
@@ -501,7 +501,7 @@ func (c *converter) convert(ctx object.Context, shown []string, text string) (ob
 		}
 		return object.Value{}, bad()
 	}
-	return object.String(text), nil
+	return object.NewString(text, object.UTF8), nil
 }
 
 // parseInt is Kernel#Integer on an option's text.
@@ -569,7 +569,7 @@ func (p *parser) parse(ctx object.Context, argv []object.Value, order bool, stor
 		switch {
 		case a == "--":
 			for _, r := range args[i+1:] {
-				rest = append(rest, object.String(r))
+				rest = append(rest, object.NewString(r, object.UTF8))
 			}
 			return rest, nil
 		case strings.HasPrefix(a, "--"):
@@ -694,11 +694,11 @@ func (p *parser) parse(ctx object.Context, argv []object.Value, order bool, stor
 		default:
 			if order {
 				for _, r := range args[i:] {
-					rest = append(rest, object.String(r))
+					rest = append(rest, object.NewString(r, object.UTF8))
 				}
 				return rest, nil
 			}
-			rest = append(rest, object.String(a))
+			rest = append(rest, object.NewString(a, object.UTF8))
 		}
 	}
 	return rest, nil
@@ -737,7 +737,7 @@ func (p *parser) builtin(ctx object.Context, name string, hasValue bool, shown s
 func Install() {
 	c := class
 	object.DefineNative("OptionParser", object.ClassValue(c))
-	c.Consts["Version"] = object.String("0.6.0")
+	c.Consts["Version"] = object.NewString("0.6.0", object.ASCII)
 	for _, e := range []*object.Class{parseError, invalidOpt, missingArg, invalidArg, needlessArg, ambiguousOpt, ambiguousArg} {
 		e.Lexical = c
 		c.Consts[e.Name] = object.ClassValue(e)
@@ -833,11 +833,11 @@ func Install() {
 	}
 	getset("banner", func(p *parser) object.Value {
 		if p.banner.IsNil() {
-			return object.String("Usage: " + p.program + " [options]")
+			return object.NewString("Usage: "+p.program+" [options]", object.UTF8)
 		}
 		return p.banner
 	}, func(ctx object.Context, p *parser, v object.Value) error { p.banner = v; return nil })
-	getset("program_name", func(p *parser) object.Value { return object.String(p.program) }, func(ctx object.Context, p *parser, v object.Value) error {
+	getset("program_name", func(p *parser) object.Value { return object.NewString(p.program, object.UTF8) }, func(ctx object.Context, p *parser, v object.Value) error {
 		s, err := ctx.ToS(v)
 		p.program = s
 		return err
@@ -849,13 +849,13 @@ func Install() {
 		p.width = int(n)
 		return err
 	})
-	getset("summary_indent", func(p *parser) object.Value { return object.String(p.indent) }, func(ctx object.Context, p *parser, v object.Value) error {
+	getset("summary_indent", func(p *parser) object.Value { return object.NewString(p.indent, object.UTF8) }, func(ctx object.Context, p *parser, v object.Value) error {
 		s, err := stdlib.WantString(ctx, v)
 		p.indent = s
 		return err
 	})
 	help := func(ctx object.Context, p *parser, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(p.help(ctx)), nil
+		return object.NewString(p.help(ctx), object.UTF8), nil
 	}
 	def("help", 0, help)
 	def("to_s", 0, help)
@@ -863,14 +863,14 @@ func Install() {
 		lines := p.summarize()
 		out := make([]object.Value, len(lines))
 		for i, l := range lines {
-			out[i] = object.String(strings.TrimRight(l, " ") + "\n")
+			out[i] = object.NewString(strings.TrimRight(l, " ")+"\n", object.UTF8)
 		}
 		return object.NewList(out...), nil
 	})
 	def("to_a", 0, func(ctx object.Context, p *parser, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		out := []object.Value{object.String(p.bannerText(ctx))}
+		out := []object.Value{object.NewString(p.bannerText(ctx), object.UTF8)}
 		for _, l := range p.summarize() {
-			out = append(out, object.String(strings.TrimRight(l, " ")+"\n"))
+			out = append(out, object.NewString(strings.TrimRight(l, " ")+"\n", object.UTF8))
 		}
 		return object.NewList(out...), nil
 	})
@@ -953,9 +953,9 @@ func Install() {
 					s := &sw{shorts: []string{name}}
 					if j+1 < len(text) && text[j+1] == ':' {
 						s.kind, s.arg = required, "VAL"
-						result = result.Put(object.String(name), object.Nil)
+						result = result.Put(object.NewString(name, object.UTF8), object.Nil)
 					} else {
-						result = result.Put(object.String(name), object.False)
+						result = result.Put(object.NewString(name, object.UTF8), object.False)
 					}
 					keys[s] = name
 					q.items = append(q.items, item{sw: s})
@@ -966,9 +966,9 @@ func Install() {
 			s := &sw{longs: []string{name}}
 			if isArg {
 				s.kind, s.arg = required, "VAL"
-				result = result.Put(object.String(name), object.Nil)
+				result = result.Put(object.NewString(name, object.UTF8), object.Nil)
 			} else {
-				result = result.Put(object.String(name), object.False)
+				result = result.Put(object.NewString(name, object.UTF8), object.False)
 			}
 			keys[s] = name
 			q.items = append(q.items, item{sw: s})
@@ -976,7 +976,7 @@ func Install() {
 		q.items = append(q.items, p.items...)
 		if _, err := q.parse(ctx, argv, false, func(s *sw, v object.Value) {
 			if k, ok := keys[s]; ok {
-				result = result.Put(object.String(k), v)
+				result = result.Put(object.NewString(k, object.UTF8), v)
 			}
 		}); err != nil {
 			return object.Value{}, err
@@ -984,6 +984,6 @@ func Install() {
 		return object.MapValue(result), nil
 	})
 	def("inspect", 0, func(ctx object.Context, p *parser, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String("#<OptionParser " + p.bannerText(ctx) + ">"), nil
+		return object.NewString("#<OptionParser "+p.bannerText(ctx)+">", object.UTF8), nil
 	})
 }

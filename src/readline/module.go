@@ -58,7 +58,7 @@ func Install() {
 		case err != nil:
 			return object.Value{}, ctx.Raise(object.IOError, "%s", err)
 		}
-		return object.String(line), nil
+		return object.NewString(line, object.UTF8), nil
 	})
 	// history returns the lines in the history, the oldest first, and an
 	// empty Array where the host gave the program no terminal.
@@ -70,7 +70,7 @@ func Install() {
 		lines := e.History()
 		out := make([]object.Value, len(lines))
 		for i, l := range lines {
-			out[i] = object.String(l)
+			out[i] = object.NewString(l, object.UTF8)
 		}
 		return object.NewList(out...), nil
 	})

@@ -154,7 +154,7 @@ func init() {
 		if _, err := ctx.(*Interp).proto.Message(c); err != nil {
 			return object.Value{}, ctx.Raise(object.CameoError, "%s", err.Error())
 		}
-		return object.String(protogen.Text(c)), nil
+		return object.NewString(protogen.Text(c), object.UTF8), nil
 	})
 	cls.Define("from_proto", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		c := self.Cls()

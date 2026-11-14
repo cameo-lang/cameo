@@ -42,7 +42,7 @@ func installScalar() {
 		if err != nil {
 			return object.Value{}, err
 		}
-		return object.String("#<Matrix::Scalar value=" + s + ">"), nil
+		return object.NewString("#<Matrix::Scalar value="+s+">", object.UTF8), nil
 	})
 	matrixClass.Define("coerce", 1, coerce)
 	vectorClass.Define("coerce", 1, coerce)

@@ -33,7 +33,7 @@ func Install() {
 		if err != nil || !text {
 			return self, err
 		}
-		return object.StringOf(self.Kind(), f.String(s)), nil
+		return object.NewString(f.String(s), object.EncodingOf(self.Kind())), nil
 	})
 	object.StringClass.Define("unicode_normalized?", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		f, err := form(ctx, args)

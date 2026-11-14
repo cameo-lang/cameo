@@ -128,5 +128,5 @@ func generateLine(ctx object.Context, o *options, row object.Value) (object.Valu
 	if err := w.add(row); err != nil {
 		return object.Value{}, err
 	}
-	return object.String(w.b.String()), nil
+	return object.NewString(w.b.String(), object.UTF8), nil
 }

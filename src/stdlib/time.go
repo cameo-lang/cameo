@@ -188,7 +188,7 @@ func installTime() {
 	})
 	def(c, "zone", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if name := zoneName(tm(self)); name != "" {
-			return object.String(name), nil
+			return object.NewString(name, object.UTF8), nil
 		}
 		return object.Nil, nil
 	})
@@ -252,7 +252,7 @@ func installTime() {
 		return object.MapValue(out), nil
 	})
 	asctime := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(Strftime(tm(self), "%a %b %e %H:%M:%S %Y")), nil
+		return object.NewString(Strftime(tm(self), "%a %b %e %H:%M:%S %Y"), object.UTF8), nil
 	}
 	def(c, "asctime", 0, asctime)
 	def(c, "ctime", 0, asctime)
@@ -260,7 +260,7 @@ func installTime() {
 		t := tm(self)
 		zone := object.Nil
 		if name := zoneName(t); name != "" {
-			zone = object.String(name)
+			zone = object.NewString(name, object.UTF8)
 		}
 		return object.NewList(object.Int(t.Second()), object.Int(t.Minute()), object.Int(t.Hour()), object.Int(t.Day()),
 			object.Int(int(t.Month())), object.Int(t.Year()), object.Int(int(t.Weekday())), object.Int(t.YearDay()),
@@ -342,13 +342,13 @@ func installTime() {
 		if err != nil {
 			return object.Value{}, err
 		}
-		return object.String(Strftime(tm(self), f)), nil
+		return object.NewString(Strftime(tm(self), f), object.UTF8), nil
 	})
 	def(c, "to_s", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(TimeToS(tm(self))), nil
+		return object.NewString(TimeToS(tm(self)), object.UTF8), nil
 	})
 	def(c, "inspect", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(TimeInspect(tm(self))), nil
+		return object.NewString(TimeInspect(tm(self)), object.UTF8), nil
 	})
 }
 

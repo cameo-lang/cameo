@@ -86,7 +86,7 @@ var components = map[*object.Class][]string{
 func Install() {
 	m := uriModule
 	object.DefineNative("URI", object.ClassValue(m))
-	m.Consts["VERSION"] = object.String("1.0.2")
+	m.Consts["VERSION"] = object.NewString("1.0.2", object.ASCII)
 	for _, c := range []*object.Class{errorClass, invalidURI, invalidComp, badURI, genericClass, httpClass, httpsClass, ftpClass, fileClass, wsClass, wssClass, ldapClass, ldapsClass, mailtoClass, parserClass} {
 		c.Lexical = m
 		m.Consts[c.Name] = object.ClassValue(c)
@@ -170,7 +170,7 @@ func build(cls *object.Class, p parts) object.Value {
 	}
 	set := func(i int, s *string) {
 		if s != nil {
-			fields[i] = object.String(*s)
+			fields[i] = object.NewString(*s, object.UTF8)
 		}
 	}
 	set(fScheme, p.scheme)
@@ -712,7 +712,7 @@ func toURI(ctx object.Context, v object.Value) (object.Value, error) {
 		return v, nil
 	}
 	if v.IsString() || v.Kind() == object.KindSymbol {
-		return parse(ctx, object.String(v.Str()))
+		return parse(ctx, object.NewString(v.Str(), object.UTF8))
 	}
 	shown, err := ctx.Inspect(v)
 	if err != nil {
@@ -928,7 +928,7 @@ func mailtoToS(v object.Value) string {
 func headersValue(headers [][2]string) object.Value {
 	out := make([]object.Value, len(headers))
 	for i, h := range headers {
-		out[i] = object.NewList(object.String(h[0]), object.String(h[1]))
+		out[i] = object.NewList(object.NewString(h[0], object.UTF8), object.NewString(h[1], object.UTF8))
 	}
 	return object.NewList(out...)
 }

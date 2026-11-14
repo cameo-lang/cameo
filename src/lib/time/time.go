@@ -133,9 +133,9 @@ func Install() {
 			out += "." + stdlib.PadDigits(int64(t.Nanosecond()), 9)[:min(n, 9)] + strings.Repeat("0", int(max(n-9, 0)))
 		}
 		if t.Location() == gotime.UTC {
-			return object.String(out + "Z"), nil
+			return object.NewString(out+"Z", object.UTF8), nil
 		}
-		return object.String(out + stdlib.Strftime(t, "%:z")), nil
+		return object.NewString(out+stdlib.Strftime(t, "%:z"), object.UTF8), nil
 	}
 	c.Define("iso8601", -1, xml)
 	c.Define("xmlschema", -1, xml)

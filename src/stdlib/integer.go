@@ -490,10 +490,10 @@ func installInteger() {
 			}
 			base = b
 		}
-		return object.ASCIIString(integerText(self, int(base))), nil
+		return object.NewString(integerText(self, int(base)), object.ASCII), nil
 	})
 	def(c, "inspect", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.ASCIIString(integerText(self, 10)), nil
+		return object.NewString(integerText(self, 10), object.ASCII), nil
 	})
 	def(c, "to_i", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return self, nil
@@ -530,9 +530,9 @@ func installInteger() {
 			return object.Value{}, ctx.Raise(object.RangeError, "%s out of char range", integerText(self, 10))
 		}
 		if k == object.KindString {
-			return object.String(string(rune(v))), nil
+			return object.NewString(string(rune(v)), object.UTF8), nil
 		}
-		return object.StringOf(k, string([]byte{byte(v)})), nil
+		return object.NewString(string([]byte{byte(v)}), object.EncodingOf(k)), nil
 	})
 	def(c, "ord", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return self, nil

@@ -71,9 +71,9 @@ func (s *sio) str(b []byte) object.Value {
 	// Bytes of the buffer that are no whole characters are read as
 	// bytes.
 	if s.kind == object.KindString {
-		return object.Text(string(b))
+		return object.NewString(string(b), object.UTF8)
 	}
-	return object.StringOf(s.kind, string(b))
+	return object.NewString(string(b), object.EncodingOf(s.kind))
 }
 
 // pad extends the buffer with NUL up to n bytes, as a write or an unget
@@ -261,7 +261,7 @@ func save(ctx object.Context, handle object.Value) (object.Value, error) {
 	flags := func(pairs ...any) object.Value {
 		b := object.NewMapBuilder()
 		for i := 0; i < len(pairs); i += 2 {
-			b.Set(object.String(pairs[i].(string)), pairs[i+1].(object.Value))
+			b.Set(object.NewString(pairs[i].(string), object.UTF8), pairs[i+1].(object.Value))
 		}
 		return object.MapValue(b.Map())
 	}
@@ -285,7 +285,7 @@ func restore(ctx object.Context, state object.Value) (object.Value, error) {
 		return object.Value{}, ctx.Raise(object.TypeError, "the state of a StringIO is a Hash")
 	}
 	get := func(key string) object.Value {
-		v, _ := m.Get(object.String(key))
+		v, _ := m.Get(object.NewString(key, object.UTF8))
 		return v
 	}
 	num := func(key string) int {
@@ -313,7 +313,7 @@ func Install() {
 	// position.
 	c.State = &object.StateHook{Save: save, Restore: restore}
 	object.DefineNative("StringIO", object.ClassValue(c))
-	c.Consts["VERSION"] = object.String("3.1.2")
+	c.Consts["VERSION"] = object.NewString("3.1.2", object.ASCII)
 	c.Consts["MAX_LENGTH"] = object.Int(int64(1<<62 - 1))
 	c.Include(object.Enumerable)
 	// IO's seek constants, for seek(offset, IO::SEEK_END).
@@ -937,7 +937,7 @@ func Install() {
 		return ctx.Call(s.str(nil), "encoding")
 	})
 	def("inspect", 0, func(ctx object.Context, s *sio, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(fmt.Sprintf("#<StringIO pos:%d size:%d>", s.pos, len(s.buf))), nil
+		return object.NewString(fmt.Sprintf("#<StringIO pos:%d size:%d>", s.pos, len(s.buf)), object.UTF8), nil
 	})
 }
 

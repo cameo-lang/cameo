@@ -288,12 +288,73 @@ func Bool(b bool) Value {
 	return False
 }
 
-// String makes a UTF-8 string value sharing s's bytes, and counts its
-// characters, so that every UTF-8 string knows them, and with them
-// whether it is ASCII alone: no method has to read the string to find
-// out. A maker that has the count already gives it to StringOfChars.
-func String(s string) Value {
-	return StringOfChars(s, utf8.RuneCountInString(s))
+// Encoding says what the bytes of a new string are. Every string is made
+// with one, so no string is of unknown kind, and a string of text knows
+// from then on whether it is ASCII alone.
+type Encoding uint8
+
+const (
+	// ASCII is 7-bit bytes alone, which the caller knows: digits, hex,
+	// a name of the language. A script sees a UTF-8 string, and its
+	// characters are its bytes.
+	ASCII Encoding = iota + 1
+	// UTF8 is text that may hold characters beyond ASCII. NewString
+	// reads it once: it counts the characters, so the string knows
+	// whether it is ASCII alone, and bytes that are not UTF-8 make a
+	// binary string, since a UTF-8 string is whole characters alone.
+	UTF8
+	// USASCII is a string a script labelled US-ASCII.
+	USASCII
+	// Binary is bytes without characters.
+	Binary
+)
+
+// CheckASCII makes NewString panic for a string given as ASCII that is
+// not. Tests set it; a caller that is wrong would make a string whose
+// characters are not where it says.
+var CheckASCII bool
+
+// NewString makes a string value sharing s's bytes, which are what enc
+// says.
+func NewString(s string, enc Encoding) Value {
+	switch enc {
+	case ASCII:
+		if CheckASCII && !ASCIIOnly(s) {
+			panic("object.NewString: given as ASCII: " + s)
+		}
+		return StringOfChars(s, len(s))
+	case UTF8:
+		chars := 0
+		for i := 0; i < len(s); chars++ {
+			if s[i] < utf8.RuneSelf {
+				i++
+				continue
+			}
+			r, size := utf8.DecodeRuneInString(s[i:])
+			if r == utf8.RuneError && size == 1 {
+				return strValue(KindBytes, int64(len(s)), unsafe.Pointer(unsafe.StringData(s)))
+			}
+			i += size
+		}
+		return StringOfChars(s, chars)
+	case USASCII:
+		return strValue(KindASCII, int64(len(s)), unsafe.Pointer(unsafe.StringData(s)))
+	case Binary:
+		return strValue(KindBytes, int64(len(s)), unsafe.Pointer(unsafe.StringData(s)))
+	}
+	panic("object.NewString: no encoding")
+}
+
+// EncodingOf returns the encoding of the strings of kind k: KindString
+// is UTF8, KindBytes Binary and KindASCII USASCII.
+func EncodingOf(k Kind) Encoding {
+	switch k {
+	case KindBytes:
+		return Binary
+	case KindASCII:
+		return USASCII
+	}
+	return UTF8
 }
 
 // uncounted makes a UTF-8 string value that does not know its
@@ -329,36 +390,6 @@ func StringOfChars(s string, chars int) Value {
 	return v
 }
 
-// ASCIIString makes a UTF-8 string of s, which the caller knows to hold
-// ASCII alone: digits, a string made of such strings. Its characters
-// are its bytes.
-func ASCIIString(s string) Value { return StringOfChars(s, len(s)) }
-
-// Counted makes a UTF-8 string of s and counts its characters: for a
-// short string, as a symbol's name is.
-func Counted(s string) Value { return StringOfChars(s, utf8.RuneCountInString(s)) }
-
-// Text makes a string of bytes that come from outside, a file or the
-// host: a UTF-8 string that knows its characters when the bytes are
-// UTF-8, and a binary string when they are not, since a UTF-8 string is
-// made of whole characters alone. Looking whether they are counts them,
-// which is what a string literal, UTF-8 always, is made by it for.
-func Text(s string) Value {
-	chars := 0
-	for i := 0; i < len(s); chars++ {
-		if s[i] < utf8.RuneSelf {
-			i++
-			continue
-		}
-		r, size := utf8.DecodeRuneInString(s[i:])
-		if r == utf8.RuneError && size == 1 {
-			return StringOf(KindBytes, s)
-		}
-		i += size
-	}
-	return StringOfChars(s, chars)
-}
-
 // Chars returns the number of characters of a UTF-8 string that knows
 // it, as every one does whose count fits beside its length. False is
 // for a string in another encoding, and for one too long to keep it.
@@ -389,18 +420,9 @@ func Joined(s string, a, b Value) Value {
 	an, aok := a.Chars()
 	bn, bok := b.Chars()
 	if !aok || !bok || bn > 0 && !utf8.RuneStart(*(*byte)(b.p)) {
-		return String(s)
+		return NewString(s, UTF8)
 	}
 	return StringOfChars(s, an+bn)
-}
-
-// StringOf makes a string of s in the encoding kind names: KindString
-// (UTF-8), KindBytes (binary) or KindASCII (US-ASCII).
-func StringOf(kind Kind, s string) Value {
-	if kind == KindString {
-		return String(s) // a UTF-8 string knows its characters
-	}
-	return strValue(kind, int64(len(s)), unsafe.Pointer(unsafe.StringData(s)))
 }
 
 // IsString returns true for a String in any encoding.

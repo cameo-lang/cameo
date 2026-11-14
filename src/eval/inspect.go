@@ -127,7 +127,7 @@ func (in *Interp) ToS(v object.Value) (string, error) {
 // builtin's: no script defined one for either class.
 func (in *Interp) plainToS() bool {
 	if gen := object.Generation(); gen != in.toSGen || !in.toSKnown {
-		in.toSPlain = userMethodSym(object.String(""), object.SymToS) == nil && userMethodSym(object.Int(0), object.SymToS) == nil
+		in.toSPlain = userMethodSym(object.NewString("", object.ASCII), object.SymToS) == nil && userMethodSym(object.Int(0), object.SymToS) == nil
 		in.toSGen, in.toSKnown = gen, true
 	}
 	return in.toSPlain

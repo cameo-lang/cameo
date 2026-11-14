@@ -542,13 +542,13 @@ func flatten(elems []object.Value, depth int64) []object.Value {
 // encoding it has: the one argument of args, or none.
 func separator(ctx object.Context, args []object.Value) (object.Value, error) {
 	if len(args) != 1 || args[0].IsNil() {
-		return object.ASCIIString(""), nil
+		return object.NewString("", object.ASCII), nil
 	}
 	if args[0].IsString() {
 		return args[0], nil
 	}
 	s, err := WantString(ctx, args[0])
-	return object.Counted(s), err
+	return object.NewString(s, object.UTF8), err
 }
 
 // join is Array#join, whose result takes the encoding its strings and
@@ -577,10 +577,10 @@ func join(ctx object.Context, elems []object.Value, between object.Value) (objec
 		}
 		// A number's text is ASCII.
 		if k := e.Kind(); k == object.KindInt || k == object.KindFloat {
-			parts = append(parts, object.ASCIIString(s))
+			parts = append(parts, object.NewString(s, object.ASCII))
 			continue
 		}
-		parts = append(parts, object.String(s))
+		parts = append(parts, object.NewString(s, object.UTF8))
 	}
 	return joinEncoded(ctx, object.KindString, parts)
 }

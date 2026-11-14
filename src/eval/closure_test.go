@@ -115,7 +115,7 @@ twice = Greeter.new("?").each_twice { |x| x * 10 }
 	}
 	assert.Equals(t, called(t, reader, travel("greet"), object.False), `"hello ann!"`)
 	assert.Equals(t, called(t, reader, travel("greet"), object.True), `"hello ann!hello ann!"`)
-	assert.Equals(t, called(t, reader, travel("maker"), object.String(".")), `Greeter(punct: ".")`)
+	assert.Equals(t, called(t, reader, travel("maker"), object.NewString(".", object.UTF8)), `Greeter(punct: ".")`)
 	assert.Equals(t, called(t, reader, travel("twice"), object.Int(2)), "40")
 }
 

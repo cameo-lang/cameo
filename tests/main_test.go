@@ -4,6 +4,8 @@ import (
 	"os"
 	"testing"
 	"time"
+
+	"github.com/cameo-lang/cameo/src/object"
 )
 
 // TestMain runs the tests in UTC, as make does for every target: a test
@@ -12,6 +14,7 @@ import (
 // `go test ./tests` pins the zone itself.
 func TestMain(m *testing.M) {
 	os.Setenv("TZ", "UTC")
+	object.CheckASCII = true // a string given as ASCII that is not is a bug
 	time.Local = time.UTC
 	code := m.Run()
 	if builtCameo.dir != "" {

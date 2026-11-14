@@ -208,9 +208,9 @@ func (p *parser) record() ([]object.Value, string, []bool, error) {
 		case f == "":
 			fields[i] = p.o.nilField()
 		case p.ascii:
-			fields[i] = object.ASCIIString(f)
+			fields[i] = object.NewString(f, object.ASCII)
 		default:
-			fields[i] = object.String(f)
+			fields[i] = object.NewString(f, object.UTF8)
 		}
 	}
 	if skipped > 0 {
@@ -291,7 +291,7 @@ func (o *options) emptyField() object.Value {
 	if !o.emptyValue.IsZero() {
 		return o.emptyValue
 	}
-	return object.String("")
+	return object.NewString("", object.ASCII)
 }
 
 var (
@@ -372,7 +372,7 @@ func (p *parser) convertOne(field object.Value, c converter, index int, header o
 		}
 		return field, nil
 	case "downcase":
-		return object.String(strings.ToLower(s)), nil
+		return object.NewString(strings.ToLower(s), object.UTF8), nil
 	case "symbol":
 		t := strings.ToLower(s)
 		t = nonWord.ReplaceAllString(t, "")

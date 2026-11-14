@@ -12,17 +12,17 @@ import (
 // neither the string, its length, its kind nor what it is equal to and
 // the same as.
 func TestAStringKnownToBeASCII(t *testing.T) {
-	plain, known := String("abc"), ASCIIString("abc")
+	plain, known := NewString("abc", UTF8), NewString("abc", ASCII)
 	assert.True(t, plain.KnownASCII())
-	assert.False(t, String("abé").KnownASCII())
-	assert.True(t, StringOf(KindString, "abc").KnownASCII())
+	assert.False(t, NewString("abé", UTF8).KnownASCII())
+	assert.True(t, NewString("abc", UTF8).KnownASCII())
 	assert.True(t, known.KnownASCII())
-	assert.True(t, Counted("abc").KnownASCII())
-	assert.False(t, Counted("abé").KnownASCII())
-	assert.True(t, ASCIIString("").KnownASCII())
-	assert.True(t, String("").KnownASCII())
+	assert.True(t, NewString("abc", UTF8).KnownASCII())
+	assert.False(t, NewString("abé", UTF8).KnownASCII())
+	assert.True(t, NewString("", ASCII).KnownASCII())
+	assert.True(t, NewString("", UTF8).KnownASCII())
 	assert.False(t, Bytes([]byte("abc")).KnownASCII())
-	assert.False(t, StringOf(KindASCII, "abc").KnownASCII())
+	assert.False(t, NewString("abc", USASCII).KnownASCII())
 	assert.False(t, Symbol("abc").KnownASCII())
 	assert.False(t, Int(1<<55).KnownASCII())
 	assert.False(t, Int(-1).KnownASCII())
@@ -32,7 +32,7 @@ func TestAStringKnownToBeASCII(t *testing.T) {
 	assert.True(t, Equal(plain, known))
 	assert.Equals(t, Key(plain), Key(known))
 	s := "shared"
-	assert.True(t, Same(String(s), ASCIIString(s)))
+	assert.True(t, Same(NewString(s, UTF8), NewString(s, ASCII)))
 	assert.False(t, Same(Int(0), Int(1<<55)))
 	assert.False(t, Same(Int(0), Int(1<<40)))
 	m := MapOf(known, Int(1))
@@ -52,33 +52,33 @@ func TestAStringThatKnowsItsCharacters(t *testing.T) {
 		}
 		return n
 	}
-	assert.Equals(t, chars(String("héllo")), 5)
-	assert.Equals(t, chars(Counted("héllo")), 5)
+	assert.Equals(t, chars(NewString("héllo", UTF8)), 5)
+	assert.Equals(t, chars(NewString("héllo", UTF8)), 5)
 	assert.Equals(t, chars(StringOfChars("héllo", 5)), 5)
-	assert.Equals(t, chars(ASCIIString("abc")), 3)
-	assert.Equals(t, chars(String("")), 0)
+	assert.Equals(t, chars(NewString("abc", ASCII)), 3)
+	assert.Equals(t, chars(NewString("", UTF8)), 0)
 	assert.Equals(t, chars(Bytes([]byte("abc"))), -1)
-	assert.Equals(t, chars(StringOf(KindASCII, "abc")), -1)
+	assert.Equals(t, chars(NewString("abc", USASCII)), -1)
 	assert.Equals(t, chars(Symbol("abc")), -1)
 	assert.Equals(t, chars(Int(-1)), -1)
 	assert.Equals(t, chars(Int(5<<32)), -1)
 
-	known := Counted("héllo")
+	known := NewString("héllo", UTF8)
 	assert.Equals(t, known.Str(), "héllo")
 	assert.Equals(t, known.Kind(), KindString)
 	assert.False(t, known.KnownASCII())
-	assert.True(t, Equal(known, String("héllo")))
-	assert.Equals(t, Key(known), Key(String("héllo")))
+	assert.True(t, Equal(known, NewString("héllo", UTF8)))
+	assert.Equals(t, Key(known), Key(NewString("héllo", UTF8)))
 	s := "shéred"
-	assert.True(t, Same(String(s), Counted(s)))
-	assert.False(t, Same(String(s), Symbol(s)))
+	assert.True(t, Same(NewString(s, UTF8), NewString(s, UTF8)))
+	assert.False(t, Same(NewString(s, UTF8), Symbol(s)))
 
-	assert.Equals(t, chars(Joined("héllowörld", known, Counted("wörld"))), 10)
-	assert.Equals(t, chars(Joined("héllo", known, String(""))), 5)
-	assert.Equals(t, chars(Joined("héllox", known, String("x"))), 6)
+	assert.Equals(t, chars(Joined("héllowörld", known, NewString("wörld", UTF8))), 10)
+	assert.Equals(t, chars(Joined("héllo", known, NewString("", UTF8))), 5)
+	assert.Equals(t, chars(Joined("héllox", known, NewString("x", UTF8))), 6)
 	// Half a character and its other half are one character together.
-	assert.Equals(t, chars(Joined("\xc3\xa9", Counted("\xc3"), Counted("\xa9"))), 1)
-	assert.Equals(t, chars(Joined("\xc3a", Counted("\xc3"), Counted("a"))), 2)
+	assert.Equals(t, chars(Joined("\xc3\xa9", StringOfChars("\xc3", 1), StringOfChars("\xa9", 1))), 1)
+	assert.Equals(t, chars(Joined("\xc3a", StringOfChars("\xc3", 1), StringOfChars("a", 1))), 2)
 }
 
 // A count too far from the length in bytes to fit beside it is dropped.

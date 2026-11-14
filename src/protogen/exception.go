@@ -233,7 +233,7 @@ func (d *Decoder) Exception(cls *object.Class, msg protoreflect.Message) (*objec
 		var v object.Value
 		switch p.kind {
 		case partString:
-			v = object.String(pv.String())
+			v = object.NewString(pv.String(), object.UTF8)
 		case partSymbol:
 			v = object.Symbol(pv.String())
 		case partInt:

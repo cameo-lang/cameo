@@ -9,11 +9,11 @@ func installObject() {
 	o := object.ObjectClass
 	def(o, "to_s", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		s, err := ctx.ToS(self)
-		return object.String(s), err
+		return object.NewString(s, object.UTF8), err
 	})
 	def(o, "inspect", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		s, err := ctx.Inspect(self)
-		return object.String(s), err
+		return object.NewString(s, object.UTF8), err
 	})
 	def(b, "==", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		eq, err := ctx.Equal(self, args[0])

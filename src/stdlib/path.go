@@ -238,9 +238,9 @@ func PathNames(p string) (string, []string) {
 func installPaths() {
 	f := object.NewClass("File", object.ObjectClass)
 	object.ObjectClass.Consts["File"] = object.ClassValue(f)
-	f.Consts["SEPARATOR"] = object.String("/")
-	f.Consts["Separator"] = object.String("/")
-	f.Consts["PATH_SEPARATOR"] = object.String(":")
+	f.Consts["SEPARATOR"] = object.NewString("/", object.ASCII)
+	f.Consts["Separator"] = object.NewString("/", object.ASCII)
+	f.Consts["PATH_SEPARATOR"] = object.NewString(":", object.ASCII)
 	f.Consts["ALT_SEPARATOR"] = object.Nil
 	// The open, lock and fnmatch flags, with Linux's values. cameo opens
 	// files only to read them (Cameo::IO::FileIO, which takes a mode
@@ -273,7 +273,7 @@ func installPaths() {
 				return object.Value{}, err
 			}
 		}
-		return object.String(Basename(p, suffix)), nil
+		return object.NewString(Basename(p, suffix), object.UTF8), nil
 	})
 	f.DefineSingleton("dirname", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) < 1 || len(args) > 2 {
@@ -295,21 +295,21 @@ func installPaths() {
 		for i := int64(0); i < levels; i++ {
 			p = Dirname(p)
 		}
-		return object.String(p), nil
+		return object.NewString(p, object.UTF8), nil
 	})
 	f.DefineSingleton("extname", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		p, err := str(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
-		return object.String(Extname(p)), nil
+		return object.NewString(Extname(p), object.UTF8), nil
 	})
 	f.DefineSingleton("split", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		p, err := str(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
-		return object.NewList(object.String(Dirname(p)), object.String(Basename(p, ""))), nil
+		return object.NewList(object.NewString(Dirname(p), object.UTF8), object.NewString(Basename(p, ""), object.UTF8)), nil
 	})
 	f.DefineSingleton("join", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		// An array joins into one part, as File.join(*array).
@@ -333,7 +333,7 @@ func installPaths() {
 			return JoinPaths(parts), nil
 		}
 		s, err := join(args)
-		return object.String(s), err
+		return object.NewString(s, object.UTF8), err
 	})
 	expand := func(home bool) object.NativeFn {
 		return func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -350,7 +350,7 @@ func installPaths() {
 					return object.Value{}, err
 				}
 			}
-			return object.String(expandPath(p, dir, home)), nil
+			return object.NewString(expandPath(p, dir, home), object.UTF8), nil
 		}
 	}
 	f.DefineSingleton("expand_path", -1, expand(true))
@@ -372,5 +372,5 @@ func PathnameOf(v object.Value) (string, bool) {
 
 // PathnameValue makes a Pathname of a path.
 func PathnameValue(p string) object.Value {
-	return object.InstanceValue(&object.Instance{Cls: object.PathnameClass, Fields: []object.Value{object.String(p)}})
+	return object.InstanceValue(&object.Instance{Cls: object.PathnameClass, Fields: []object.Value{object.NewString(p, object.UTF8)}})
 }

@@ -65,16 +65,16 @@ type jobState struct {
 func Install() {
 	m := benchmarkModule
 	object.DefineNative("Benchmark", object.ClassValue(m))
-	m.Consts["VERSION"] = object.String("0.4.0")
-	m.Consts["BENCHMARK_VERSION"] = object.String("2002-04-25")
-	m.Consts["CAPTION"] = object.String(benchmarkCaption)
-	m.Consts["FORMAT"] = object.String(benchmarkFormat)
+	m.Consts["VERSION"] = object.NewString("0.4.0", object.ASCII)
+	m.Consts["BENCHMARK_VERSION"] = object.NewString("2002-04-25", object.ASCII)
+	m.Consts["CAPTION"] = object.NewString(benchmarkCaption, object.UTF8)
+	m.Consts["FORMAT"] = object.NewString(benchmarkFormat, object.UTF8)
 	for _, c := range []*object.Class{tmsClass, reportClass, jobClass} {
 		c.Lexical = m
 		m.Consts[c.Name] = object.ClassValue(c)
 	}
-	tmsClass.Consts["CAPTION"] = object.String(benchmarkCaption)
-	tmsClass.Consts["FORMAT"] = object.String(benchmarkFormat)
+	tmsClass.Consts["CAPTION"] = object.NewString(benchmarkCaption, object.UTF8)
+	tmsClass.Consts["FORMAT"] = object.NewString(benchmarkFormat, object.UTF8)
 
 	// The module functions are instance methods too, for a class that
 	// includes Benchmark.
@@ -86,7 +86,7 @@ func Install() {
 		if len(args) > 1 {
 			return object.Value{}, stdlib.ArgError(ctx, len(args), "0..1")
 		}
-		label := object.String("")
+		label := object.NewString("", object.ASCII)
 		if len(args) == 1 {
 			label = args[0]
 		}
@@ -106,7 +106,7 @@ func Install() {
 		return object.Float(time.Since(start).Seconds()), nil
 	})
 	define("benchmark", func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		caption, width, format := object.String(""), object.Nil, object.Nil
+		caption, width, format := object.NewString("", object.ASCII), object.Nil, object.Nil
 		for i, a := range args {
 			switch i {
 			case 0:
@@ -129,7 +129,7 @@ func Install() {
 		if len(args) > 0 {
 			width, labels = args[0], args[1:]
 		}
-		return benchmarkRun(ctx, object.String(benchmarkCaption), width, object.String(benchmarkFormat), labels, block)
+		return benchmarkRun(ctx, object.NewString(benchmarkCaption, object.UTF8), width, object.NewString(benchmarkFormat, object.UTF8), labels, block)
 	})
 	define("bmbm", func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) > 1 {
@@ -187,7 +187,7 @@ func newTms(ctx object.Context, times []object.Value, label object.Value) (objec
 	if err != nil {
 		return object.Value{}, err
 	}
-	fields[tmsLabel] = object.String(s)
+	fields[tmsLabel] = object.NewString(s, object.UTF8)
 	total := fields[tmsUtime]
 	for _, i := range []int{tmsStime, tmsCutime, tmsCstime} {
 		if total, err = ctx.Call(total, "+", fields[i]); err != nil {
@@ -236,7 +236,7 @@ func tmsFormat(ctx object.Context, self, format object.Value, args []object.Valu
 				return m
 			}
 			spec := d.re.FindStringSubmatch(m)[1] + d.conv
-			out, err := ctx.Call(object.String(spec), "%", fields[d.field])
+			out, err := ctx.Call(object.NewString(spec, object.UTF8), "%", fields[d.field])
 			if err != nil {
 				failed = err
 				return m
@@ -253,7 +253,7 @@ func tmsFormat(ctx object.Context, self, format object.Value, args []object.Valu
 	if format.IsZero() || format.IsNil() {
 		return str, nil
 	}
-	out, err := ctx.Call(object.String(str), "%", object.NewList(args...))
+	out, err := ctx.Call(object.NewString(str, object.UTF8), "%", object.NewList(args...))
 	if err != nil {
 		return "", err
 	}
@@ -313,21 +313,21 @@ func installTms() {
 		if err != nil {
 			return object.Value{}, err
 		}
-		return object.String(s), nil
+		return object.NewString(s, object.UTF8), nil
 	})
 	c.Define("to_s", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		s, err := tmsToS(ctx, self)
 		if err != nil {
 			return object.Value{}, err
 		}
-		return object.String(s), nil
+		return object.NewString(s, object.UTF8), nil
 	})
 	c.Define("inspect", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		s, err := tmsInspect(ctx, self)
 		if err != nil {
 			return object.Value{}, err
 		}
-		return object.String(s), nil
+		return object.NewString(s, object.UTF8), nil
 	})
 	c.Define("to_a", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		f := tmsFields(self)
@@ -347,7 +347,7 @@ func installTms() {
 		})
 	}
 	c.Define("add", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		t, err := benchmarkMeasure(ctx, object.String(""), block)
+		t, err := benchmarkMeasure(ctx, object.NewString("", object.ASCII), block)
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -379,7 +379,7 @@ func tmsMemberwise(ctx object.Context, op string, self, x object.Value) (object.
 func installReports() {
 	report := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		st := self.Instance().Message.(*reportState)
-		label := object.String("")
+		label := object.NewString("", object.ASCII)
 		if len(args) > 0 {
 			label = args[0]
 		}
@@ -409,7 +409,7 @@ func installReports() {
 			return object.Value{}, ctx.Raise(object.ArgumentError, "no block")
 		}
 		st := self.Instance().Message.(*jobState)
-		label := object.String("")
+		label := object.NewString("", object.ASCII)
 		if len(args) > 0 {
 			label = args[0]
 		}
@@ -431,7 +431,7 @@ func installReports() {
 		st := self.Instance().Message.(*jobState)
 		list := make([]object.Value, len(st.labels))
 		for i, label := range st.labels {
-			list[i] = object.NewList(object.String(label), st.blocks[i])
+			list[i] = object.NewList(object.NewString(label, object.UTF8), st.blocks[i])
 		}
 		return object.NewList(list...), nil
 	})
@@ -454,7 +454,7 @@ func benchmarkRun(ctx object.Context, caption, widthArg, format object.Value, la
 	}
 	labelWidth++
 	if format.IsNil() {
-		format = object.String(benchmarkFormat)
+		format = object.NewString(benchmarkFormat, object.UTF8)
 	}
 	st := &reportState{width: int(labelWidth)}
 	report := object.InstanceValue(&object.Instance{Cls: reportClass, Message: st})
@@ -530,7 +530,7 @@ func benchmarkBmbm(ctx object.Context, width int, block object.Value) (object.Va
 		if err := write(padRight(st.labels[i], width, " ")); err != nil {
 			return object.Value{}, err
 		}
-		res, err := benchmarkMeasure(ctx, object.String(""), b)
+		res, err := benchmarkMeasure(ctx, object.NewString("", object.ASCII), b)
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -545,7 +545,7 @@ func benchmarkBmbm(ctx object.Context, width int, block object.Value) (object.Va
 			return object.Value{}, err
 		}
 	}
-	ets, err := tmsFormat(ctx, sum, object.String("total: %tsec"), nil)
+	ets, err := tmsFormat(ctx, sum, object.NewString("total: %tsec", object.ASCII), nil)
 	if err != nil {
 		return object.Value{}, err
 	}
@@ -558,7 +558,7 @@ func benchmarkBmbm(ctx object.Context, width int, block object.Value) (object.Va
 		if err := write(padRight(st.labels[i], width, " ")); err != nil {
 			return object.Value{}, err
 		}
-		res, err := benchmarkMeasure(ctx, object.String(st.labels[i]), b)
+		res, err := benchmarkMeasure(ctx, object.NewString(st.labels[i], object.UTF8), b)
 		if err != nil {
 			return object.Value{}, err
 		}

@@ -39,7 +39,7 @@ var (
 func Install() {
 	m := jsonModule
 	object.DefineNative("JSON", object.ClassValue(m))
-	m.Consts["VERSION"] = object.String("2.9.1")
+	m.Consts["VERSION"] = object.NewString("2.9.1", object.ASCII)
 	for _, c := range []*object.Class{jsonError, jsonParserError, jsonNestingError, jsonGeneratorErr} {
 		c.Lexical = m
 		m.Consts[c.Name] = object.ClassValue(c)
@@ -141,7 +141,7 @@ func jsonOption(opts []*object.Map, name string) (object.Value, bool) {
 	for _, o := range opts {
 		if got, ok := o.Get(object.Symbol(name)); ok {
 			v, found = got, true
-		} else if got, ok := o.Get(object.String(name)); ok {
+		} else if got, ok := o.Get(object.NewString(name, object.UTF8)); ok {
 			v, found = got, true
 		}
 	}
@@ -221,7 +221,7 @@ func jsonGenerateCall(ctx object.Context, args []object.Value, kw *object.Map, g
 	if err := g.value(args[0], depth); err != nil {
 		return object.Value{}, err
 	}
-	return object.String(g.b.String()), nil
+	return object.NewString(g.b.String(), object.UTF8), nil
 }
 
 // jsonGenerator writes a value as JSON, with the options of Ruby's
@@ -238,11 +238,11 @@ type jsonGenerator struct {
 // class defines receives.
 func (g *jsonGenerator) state(depth int) object.Value {
 	return object.NewMapBuilder().
-		Set(object.Symbol("indent"), object.String(g.indent)).
-		Set(object.Symbol("space"), object.String(g.space)).
-		Set(object.Symbol("space_before"), object.String(g.spaceBefore)).
-		Set(object.Symbol("object_nl"), object.String(g.objectNL)).
-		Set(object.Symbol("array_nl"), object.String(g.arrayNL)).
+		Set(object.Symbol("indent"), object.NewString(g.indent, object.UTF8)).
+		Set(object.Symbol("space"), object.NewString(g.space, object.UTF8)).
+		Set(object.Symbol("space_before"), object.NewString(g.spaceBefore, object.UTF8)).
+		Set(object.Symbol("object_nl"), object.NewString(g.objectNL, object.UTF8)).
+		Set(object.Symbol("array_nl"), object.NewString(g.arrayNL, object.UTF8)).
 		Set(object.Symbol("allow_nan"), object.Bool(g.allowNaN)).
 		Set(object.Symbol("ascii_only"), object.Bool(g.asciiOnly)).
 		Set(object.Symbol("script_safe"), object.Bool(g.scriptSafe)).
@@ -285,7 +285,7 @@ func (g *jsonGenerator) value(v object.Value, depth int) error {
 		inst := v.Instance()
 		keys := make([]object.Value, len(inst.Fields))
 		for i, f := range inst.Cls.Fields {
-			keys[i] = object.String(f.Name)
+			keys[i] = object.NewString(f.Name, object.UTF8)
 		}
 		return g.object(keys, inst.Fields, depth)
 	default:
@@ -293,7 +293,7 @@ func (g *jsonGenerator) value(v object.Value, depth int) error {
 		if err != nil {
 			return err
 		}
-		return g.string(object.String(s))
+		return g.string(object.NewString(s, object.UTF8))
 	}
 	return nil
 }
@@ -369,7 +369,7 @@ func (g *jsonGenerator) object(keys, values []object.Value, depth int) error {
 			if err != nil {
 				return err
 			}
-			k = object.String(s)
+			k = object.NewString(s, object.UTF8)
 		}
 		if err := g.string(k); err != nil {
 			return err
@@ -621,7 +621,7 @@ func (p *jsonParser) string(i int) (object.Value, int, error) {
 		c := s[j]
 		switch {
 		case c == '"':
-			return object.String(b.String()), j + 1, nil
+			return object.NewString(b.String(), object.UTF8), j + 1, nil
 		case c < 0x20:
 			return object.Value{}, 0, jsonFailed{}
 		case c != '\\':

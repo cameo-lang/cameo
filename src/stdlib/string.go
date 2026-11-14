@@ -32,7 +32,7 @@ func installString() {
 		if chars, ok := self.Chars(); ok && chars > 0 && utf8.RuneStart(str(self)[0]) {
 			return object.StringOfChars(strings.Repeat(str(self), int(n)), chars*int(n)), nil
 		}
-		return object.String(strings.Repeat(str(self), int(n))), nil
+		return object.NewString(strings.Repeat(str(self), int(n)), object.UTF8), nil
 	})
 	def(c, "%", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		var fargs []object.Value
@@ -42,7 +42,7 @@ func installString() {
 			fargs = args
 		}
 		s, err := format(ctx, str(self), fargs)
-		return object.String(s), err
+		return object.NewString(s, object.UTF8), err
 	})
 	def(c, "==", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		o, ok := args[0].AsString()
@@ -73,7 +73,7 @@ func installString() {
 	})
 	mapStr := func(name string, f func(string) string) {
 		def(c, name, 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-			return object.String(f(str(self))), nil
+			return object.NewString(f(str(self)), object.UTF8), nil
 		})
 	}
 	// alike makes a method whose result has a character for each of the
@@ -87,7 +87,7 @@ func installString() {
 			if n, ok := self.Chars(); ok {
 				return object.StringOfChars(out, chars(n, in, out)), nil
 			}
-			return object.String(out), nil
+			return object.NewString(out, object.UTF8), nil
 		})
 	}
 	alike := func(name string, f func(string) string) {
@@ -143,7 +143,7 @@ func installString() {
 			if n, ok := self.Chars(); ok {
 				return object.StringOfChars(out, n-(len(str(self))-len(out))), nil
 			}
-			return object.String(out), nil
+			return object.NewString(out, object.UTF8), nil
 		}
 		return lessSuffix(self, suffix), nil
 	})
@@ -171,7 +171,7 @@ func installString() {
 			return enumFor(self, "upto", args, nil), nil
 		}
 		for s := range stringsUpto(self.Str(), hi, exclusive, false) {
-			if _, err := ctx.Yield(block, object.String(s)); err != nil {
+			if _, err := ctx.Yield(block, object.NewString(s, object.UTF8)); err != nil {
 				return object.Value{}, err
 			}
 		}
@@ -256,10 +256,10 @@ func installString() {
 	})
 	def(c, "chr", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if str(self) == "" {
-			return object.String(""), nil
+			return object.NewString("", object.ASCII), nil
 		}
 		r, _ := utf8.DecodeRuneInString(str(self))
-		return object.String(string(r)), nil
+		return object.NewString(string(r), object.UTF8), nil
 	})
 	def(c, "hash", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Int(hashString(object.Key(self))), nil
@@ -373,7 +373,7 @@ func installString() {
 		if n, ok := self.Chars(); ok && (out == "" || utf8.RuneStart(out[0])) {
 			return object.StringOfChars(out, n-utf8.RuneCountInString(s[:len(s)-len(out)])), nil
 		}
-		return object.String(out), nil
+		return object.NewString(out, object.UTF8), nil
 	})
 	def(c, "delete_suffix", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		suffix, err := WantString(ctx, args[0])
@@ -439,7 +439,7 @@ func installString() {
 			if s == "" || utf8.RuneStart(s[0]) {
 				return object.StringOfChars(out, max(int(n), have)), nil
 			}
-			return object.String(out), nil
+			return object.NewString(out, object.UTF8), nil
 		})
 	}
 	pad("ljust", func(s, fill string, total int) string { return s + Padding(fill, total) })
@@ -452,7 +452,7 @@ func installString() {
 	})
 	def(c, "format", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		s, err := format(ctx, str(self), args)
-		return object.String(s), err
+		return object.NewString(s, object.UTF8), err
 	})
 	def(c, "ascii_only?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		for i := 0; i < len(str(self)); i++ {
@@ -488,10 +488,10 @@ func lines(s string) []object.Value {
 	for s != "" {
 		i := strings.IndexByte(s, '\n')
 		if i < 0 {
-			out = append(out, object.String(s))
+			out = append(out, object.NewString(s, object.UTF8))
 			break
 		}
-		out = append(out, object.String(s[:i+1]))
+		out = append(out, object.NewString(s[:i+1], object.UTF8))
 		s = s[i+1:]
 	}
 	return out
@@ -509,22 +509,22 @@ func lessSuffix(v object.Value, suffix string) object.Value {
 	n, ok := v.Chars()
 	switch {
 	case !ok:
-		return object.String(out)
+		return object.NewString(out, object.UTF8)
 	case len(out) == len(s):
 		return object.StringOfChars(out, n)
 	case utf8.RuneStart(suffix[0]):
 		return object.StringOfChars(out, n-utf8.RuneCountInString(suffix))
 	}
-	return object.String(out)
+	return object.NewString(out, object.UTF8)
 }
 
 // partOf makes a string of s, which is cut out of v: of ASCII when v is
 // known to be.
 func partOf(v object.Value, s string) object.Value {
 	if v.KnownASCII() {
-		return object.ASCIIString(s)
+		return object.NewString(s, object.ASCII)
 	}
-	return object.String(s)
+	return object.NewString(s, object.UTF8)
 }
 
 // translate is String#tr, and the number of characters of its result,
@@ -596,7 +596,7 @@ func stringIndex(ctx object.Context, self object.Value, args []object.Value) (ob
 		case object.KindString, object.KindBytes, object.KindASCII:
 			a := args[0].Str()
 			if strings.Contains(s, string(a)) {
-				return object.String(a), nil
+				return object.NewString(a, object.UTF8), nil
 			}
 			return object.Nil, nil
 		}
@@ -604,7 +604,7 @@ func stringIndex(ctx object.Context, self object.Value, args []object.Value) (ob
 	// The characters of a string of ASCII alone are its bytes, which
 	// are sliced as they are; any other string is decoded first.
 	n := len(s)
-	sub := func(from, to int) object.Value { return object.ASCIIString(s[from:to]) }
+	sub := func(from, to int) object.Value { return object.NewString(s[from:to], object.ASCII) }
 	if !self.KnownASCII() {
 		runes := []rune(s)
 		n = len(runes)
@@ -660,7 +660,7 @@ func charAt(self object.Value, i int64) object.Value {
 		if i < 0 || i >= int64(len(s)) {
 			return object.Nil
 		}
-		return object.ASCIIString(s[i : i+1])
+		return object.NewString(s[i:i+1], object.ASCII)
 	}
 	if n, known := self.Chars(); known {
 		if i < 0 {

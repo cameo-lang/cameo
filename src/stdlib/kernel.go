@@ -108,7 +108,7 @@ func installKernel() {
 			return object.Value{}, incompatible(ctx, args[0], b)
 		}
 		s, err := format(ctx, f, args[1:])
-		return object.String(s), err
+		return object.NewString(s, object.UTF8), err
 	})
 	object.DefineFunction("sprintf", -1, object.Kernel.Methods["format"].Native)
 	// loop keeps nothing: it calls its block until the block raises
@@ -156,7 +156,7 @@ func installKernel() {
 	})
 	object.DefineFunction("String", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		s, err := ctx.ToS(args[0])
-		return object.String(s), err
+		return object.NewString(s, object.UTF8), err
 	})
 	object.DefineFunction("Array", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if args[0].IsNil() {

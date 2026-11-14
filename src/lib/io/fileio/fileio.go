@@ -73,15 +73,15 @@ func Install() {
 	stringio.DefineReading(file)
 	file.Define("path", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		p, _ := stringio.ReaderInfo(self)
-		return object.String(p), nil
+		return object.NewString(p, object.UTF8), nil
 	})
 	file.Define("to_path", 0, file.Methods["path"].Native)
 	file.Define("inspect", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		p, closed := stringio.ReaderInfo(self)
 		if closed {
-			return object.String("#<File:" + p + " (closed)>"), nil
+			return object.NewString("#<File:"+p+" (closed)>", object.UTF8), nil
 		}
-		return object.String("#<File:" + p + ">"), nil
+		return object.NewString("#<File:"+p+">", object.UTF8), nil
 	})
 
 	// open(path, mode = "r", **opts) returns a handle reading the file,
@@ -168,7 +168,7 @@ func Install() {
 			return object.Bytes(data), nil
 		}
 		// A file that is not UTF-8 is read as bytes.
-		return object.Text(string(data)), nil
+		return object.NewString(string(data), object.UTF8), nil
 	})
 
 	// write(path, data) and write(path) { data } write data, a String or
@@ -204,7 +204,7 @@ func Install() {
 			if err != nil {
 				return object.Value{}, err
 			}
-			data = object.String(s)
+			data = object.NewString(s, object.UTF8)
 		}
 		if err := writeFile(ctx, name, []byte(data.Str())); err != nil {
 			return object.Value{}, err

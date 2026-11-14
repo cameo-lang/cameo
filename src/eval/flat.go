@@ -613,7 +613,7 @@ func plainConstant(c *cameopb.Code) (object.Value, bool) {
 	case *cameopb.Constant_FloatValue:
 		return object.Float(k.FloatValue), true
 	case *cameopb.Constant_StringValue:
-		return object.Text(k.StringValue), true
+		return object.NewString(k.StringValue, object.UTF8), true
 	}
 	return object.Value{}, false
 }
@@ -738,7 +738,7 @@ func (m *machine) runFlat() error {
 			m.pc = int(ins.a)
 			yield = in.pausing.flag.Load()
 		case fInterp:
-			m.stack = append(m.stack, object.String(""))
+			m.stack = append(m.stack, object.NewString("", object.ASCII))
 		case fPart:
 			if err := m.interpAdd(ins.src, ins.b == 1); err != nil {
 				return err

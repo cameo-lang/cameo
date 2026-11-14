@@ -69,14 +69,14 @@ func encodingArg(ctx object.Context, v object.Value) (object.Kind, error) {
 func labelled(ctx object.Context, k object.Kind, s string) (object.Value, error) {
 	switch k {
 	case object.KindBytes:
-		return object.StringOf(k, s), nil
+		return object.NewString(s, object.EncodingOf(k)), nil
 	case object.KindASCII:
 		if !object.ASCIIOnly(s) {
 			return object.Value{}, ctx.Raise(object.InvalidByteSequenceError, "invalid byte sequence in US-ASCII: keep the bytes in a binary string")
 		}
-		return object.StringOf(k, s), nil
+		return object.NewString(s, object.EncodingOf(k)), nil
 	}
-	v := object.Text(s)
+	v := object.NewString(s, object.UTF8)
 	if v.Kind() != object.KindString {
 		return object.Value{}, ctx.Raise(object.InvalidByteSequenceError, "invalid byte sequence in UTF-8: keep the bytes in a binary string")
 	}
@@ -147,7 +147,7 @@ func incompatible(ctx object.Context, a, b object.Value) error {
 // compatible in, starting from kind, as interpolation and join do.
 func joinEncoded(ctx object.Context, kind object.Kind, parts []object.Value) (object.Value, error) {
 	var b strings.Builder
-	acc := object.StringOf(kind, "")
+	acc := object.NewString("", object.EncodingOf(kind))
 	// chars is the characters of the parts so far, each counted that does
 	// not know its own; whole says no part begins inside a character,
 	// where it could complete the one before it (object.Joined).
@@ -170,7 +170,7 @@ func joinEncoded(ctx object.Context, kind object.Kind, parts []object.Value) (ob
 		if k == object.KindString && whole {
 			acc = object.StringOfChars(b.String(), chars)
 		} else {
-			acc = object.StringOf(k, b.String())
+			acc = object.NewString(b.String(), object.EncodingOf(k))
 		}
 	}
 	switch {
@@ -179,7 +179,7 @@ func joinEncoded(ctx object.Context, kind object.Kind, parts []object.Value) (ob
 	case whole:
 		return object.StringOfChars(acc.Str(), chars), nil
 	}
-	return object.Counted(acc.Str()), nil
+	return object.NewString(acc.Str(), object.UTF8), nil
 }
 
 // invalidRun is how many bytes from i on make one invalid sequence, the
@@ -350,7 +350,7 @@ func asciiLower(c byte) byte {
 func installEncodings() {
 	e := object.EncodingClass
 	for _, k := range []object.Kind{object.KindString, object.KindBytes, object.KindASCII} {
-		encodingValues[k] = object.InstanceValue(&object.Instance{Cls: e, Fields: []object.Value{object.String(encodingName(k))}})
+		encodingValues[k] = object.InstanceValue(&object.Instance{Cls: e, Fields: []object.Value{object.NewString(encodingName(k), object.UTF8)}})
 	}
 	e.Consts["UTF_8"] = encodingValue(object.KindString)
 	e.Consts["ASCII_8BIT"] = encodingValue(object.KindBytes)
@@ -374,7 +374,7 @@ func installEncodings() {
 		return labelled(ctx, k, self.Str())
 	})
 	def(s, "b", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.StringOf(object.KindBytes, self.Str()), nil
+		return object.NewString(self.Str(), object.Binary), nil
 	})
 	def(s, "valid_encoding?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Bool(validIn(self.Kind(), self.Str())), nil
@@ -403,7 +403,7 @@ func installEncodings() {
 			}
 			return WantString(ctx, v)
 		})
-		return object.StringOf(k, out), err
+		return object.NewString(out, object.EncodingOf(k)), err
 	})
 	// encode converts to an encoding, from another when a second one says
 	// what the bytes are, with invalid:, undef: and replace:.
@@ -441,6 +441,6 @@ func installEncodings() {
 		if err != nil {
 			return object.Value{}, err
 		}
-		return object.StringOf(to, out), nil
+		return object.NewString(out, object.EncodingOf(to)), nil
 	})
 }

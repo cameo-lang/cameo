@@ -19,8 +19,8 @@ var stdout, stderr object.Value
 func installIO() {
 	c := IOClass
 	object.ObjectClass.Consts["IO"] = object.ClassValue(c)
-	stdout = object.InstanceValue(&object.Instance{Cls: c, Fields: []object.Value{object.String("stdout")}})
-	stderr = object.InstanceValue(&object.Instance{Cls: c, Fields: []object.Value{object.String("stderr")}})
+	stdout = object.InstanceValue(&object.Instance{Cls: c, Fields: []object.Value{object.NewString("stdout", object.ASCII)}})
+	stderr = object.InstanceValue(&object.Instance{Cls: c, Fields: []object.Value{object.NewString("stderr", object.ASCII)}})
 	object.ObjectClass.Consts["STDOUT"] = stdout
 	object.ObjectClass.Consts["STDERR"] = stderr
 	// isErr returns whether self is the error stream.

@@ -81,7 +81,7 @@ func (g *getopt) find(name string) (*option, error) {
 }
 
 func (g *getopt) fail(cls *object.Class, msg string) error {
-	g.errorMsg = object.String(msg)
+	g.errorMsg = object.NewString(msg, object.UTF8)
 	g.errorCls = object.ClassValue(cls)
 	return &object.Exception{Cls: cls, Message: msg}
 }
@@ -190,13 +190,13 @@ func (g *getopt) report(ctx object.Context, err error) error {
 }
 
 func pair(name, arg string) object.Value {
-	return object.NewList(object.String(name), object.String(arg))
+	return object.NewList(object.NewString(name, object.UTF8), object.NewString(arg, object.UTF8))
 }
 
 func strings2(ss []string) object.Value {
 	out := make([]object.Value, len(ss))
 	for i, s := range ss {
-		out[i] = object.String(s)
+		out[i] = object.NewString(s, object.UTF8)
 	}
 	return object.NewList(out...)
 }
@@ -216,7 +216,7 @@ func Install() {
 	// the command line into a value; a block cannot write into its
 	// surroundings.
 	c.Include(object.Enumerable)
-	c.Consts["VERSION"] = object.String("0.2.1")
+	c.Consts["VERSION"] = object.NewString("0.2.1", object.ASCII)
 	c.Consts["NO_ARGUMENT"] = object.Int(noArgument)
 	c.Consts["REQUIRED_ARGUMENT"] = object.Int(requiredArgument)
 	c.Consts["OPTIONAL_ARGUMENT"] = object.Int(optionalArgument)
@@ -324,7 +324,7 @@ func Install() {
 			if !ok {
 				return object.Nil, nil
 			}
-			if _, err := ctx.Yield(block, object.String(name), object.String(arg)); err != nil {
+			if _, err := ctx.Yield(block, object.NewString(name, object.UTF8), object.NewString(arg, object.UTF8)); err != nil {
 				return object.Value{}, err
 			}
 		}
@@ -381,6 +381,6 @@ func Install() {
 		return g.errorMsg, nil
 	})
 	def("inspect", 0, func(ctx object.Context, g *getopt, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String("#<GetoptLong>"), nil
+		return object.NewString("#<GetoptLong>", object.ASCII), nil
 	})
 }

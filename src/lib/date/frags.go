@@ -29,7 +29,7 @@ func hashOf(f *frags) object.Value {
 				}
 			}
 		case string:
-			v = object.String(x)
+			v = object.NewString(x, object.UTF8)
 		}
 		b.Set(object.Symbol(k), v)
 	}

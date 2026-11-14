@@ -22,7 +22,7 @@ func installSymbol() {
 		return self, nil
 	})
 	def(c, "inspect", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.StringOf(symKind(sym(self)), object.SymbolInspect(sym(self))), nil
+		return object.NewString(object.SymbolInspect(sym(self)), object.EncodingOf(symKind(sym(self)))), nil
 	})
 	def(c, "==", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		o, ok := args[0].AsSymbol()
@@ -81,7 +81,7 @@ func installSymbol() {
 	strArg("start_with?", strings.HasPrefix)
 	strArg("end_with?", strings.HasSuffix)
 	def(c, "[]", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return stringIndex(ctx, object.String(sym(self)), args)
+		return stringIndex(ctx, object.NewString(sym(self), object.UTF8), args)
 	})
 	def(c, "hash", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Int(hashString(object.Key(self))), nil
@@ -105,15 +105,15 @@ func symKind(s string) object.Kind {
 func symString(v object.Value) object.Value {
 	// A name is short, and counted when it is not US-ASCII.
 	if k := symKind(v.Str()); k != object.KindString {
-		return object.StringOf(k, v.Str())
+		return object.NewString(v.Str(), object.EncodingOf(k))
 	}
-	return object.Counted(v.Str())
+	return object.NewString(v.Str(), object.UTF8)
 }
 
 func installNilBool() {
 	n := object.NilClass
 	def(n, "to_s", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(""), nil
+		return object.NewString("", object.ASCII), nil
 	})
 	def(n, "to_a", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.NewList(), nil
@@ -128,7 +128,7 @@ func installNilBool() {
 		return object.Float(0), nil
 	})
 	def(n, "inspect", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String("nil"), nil
+		return object.NewString("nil", object.ASCII), nil
 	})
 	// nil =~ anything is nil, as in Ruby, where every other receiver
 	// without a =~ of its own raises NoMethodError.
@@ -144,9 +144,9 @@ func installNilBool() {
 	b := object.BoolClass
 	def(b, "to_s", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if self.Truthy() {
-			return object.String("true"), nil
+			return object.NewString("true", object.ASCII), nil
 		}
-		return object.String("false"), nil
+		return object.NewString("false", object.ASCII), nil
 	})
 	def(b, "inspect", 0, b.Methods["to_s"].Native)
 	def(b, "&", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {

@@ -1477,11 +1477,11 @@ func installMatrix() {
 	})
 	defM("to_s", 0, func(ctx object.Context, m matrix, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		s, err := m.render(ctx, false)
-		return object.String(s), err
+		return object.NewString(s, object.UTF8), err
 	})
 	defM("inspect", 0, func(ctx object.Context, m matrix, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		s, err := m.render(ctx, true)
-		return object.String(s), err
+		return object.NewString(s, object.UTF8), err
 	})
 	// Shapes and copies.
 	defM("vstack", -1, func(ctx object.Context, m matrix, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {

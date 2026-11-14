@@ -162,7 +162,7 @@ func (m *machine) ended(cur *cursor) error {
 		return nil
 	case cameopb.Op_DEFINED_CONST:
 		m.pop()
-		m.push(object.String("constant"))
+		m.push(object.NewString("constant", object.ASCII))
 		return nil
 	case cameopb.Op_DEFINED_METHOD:
 		m.definedMethod(c, m.pop())
@@ -381,7 +381,7 @@ func (m *machine) rescue(cur *cursor, i int) {
 // is on the stack under each part while the part is evaluated, and a part
 // is made a string before the next one is evaluated.
 func (m *machine) interp(c *cameopb.Code) {
-	m.push(object.String(""))
+	m.push(object.NewString("", object.ASCII))
 	if len(c.Code) > 0 {
 		m.enter(c, 0, phasePart, len(m.stack), false)
 	}
@@ -447,7 +447,7 @@ func (m *machine) interpAdd(c *cameopb.Code, last bool) error {
 		if chars >= 0 {
 			m.push(object.StringOfChars(s, chars))
 		} else {
-			m.push(object.StringOf(kind, s))
+			m.push(object.NewString(s, object.EncodingOf(kind)))
 		}
 		return nil
 	case len(prev) > 0 && len(prev) == len(m.sofar) && unsafe.StringData(prev) == unsafe.SliceData(m.sofar):
@@ -462,7 +462,7 @@ func (m *machine) interpAdd(c *cameopb.Code, last bool) error {
 	if all := unsafe.String(unsafe.SliceData(m.sofar), len(m.sofar)); chars >= 0 {
 		m.push(object.StringOfChars(all, chars))
 	} else {
-		m.push(object.StringOf(kind, all))
+		m.push(object.NewString(all, object.EncodingOf(kind)))
 	}
 	if last {
 		m.sofar = nil
@@ -482,7 +482,7 @@ func (m *machine) regexp(c *cameopb.Code) error {
 		m.enter(c, 0, phaseStatic, len(m.stack), false)
 		return nil
 	}
-	m.push(object.String(""))
+	m.push(object.NewString("", object.ASCII))
 	return m.regexpNext(c, 0)
 }
 
@@ -501,7 +501,7 @@ func (m *machine) regexpPart(c *cameopb.Code, i int) error {
 			return err
 		}
 	}
-	m.push(object.String(sofar.Str() + s))
+	m.push(object.NewString(sofar.Str()+s, object.UTF8))
 	return m.regexpNext(c, i+1)
 }
 
@@ -622,7 +622,7 @@ func (m *machine) caseInFrom(c *cameopb.Code, i int) error {
 // names on recv.
 func (m *machine) definedMethod(c *cameopb.Code, recv object.Value) {
 	if recv.Class().Lookup(m.name(c, 0)) != nil {
-		m.push(object.String("method"))
+		m.push(object.NewString("method", object.ASCII))
 	} else {
 		m.push(object.Nil)
 	}

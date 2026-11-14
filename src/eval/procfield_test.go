@@ -53,7 +53,7 @@ app = App.new(named: names.each_with_index.to_h { |name, i| [name, Route.new(pat
 		v, err := reader.Decoder().Decode(data)
 		assert.NoError(t, err)
 		named := field(t, v, "named").Map()
-		got, ok := named.Get(object.String("k"))
+		got, ok := named.Get(object.NewString("k", object.UTF8))
 		assert.True(t, ok, "the map has no route k")
 		assert.Equals(t, called(t, reader, field(t, got, "handler"), object.Int(10)), "14")
 	}

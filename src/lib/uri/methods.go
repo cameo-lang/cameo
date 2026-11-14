@@ -54,7 +54,7 @@ func installModule() {
 	m.DefineSingleton("scheme_list", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		b := object.NewMapBuilder()
 		for _, name := range []string{"FILE", "FTP", "HTTP", "HTTPS", "LDAP", "LDAPS", "MAILTO", "WS", "WSS"} {
-			b.Set(object.String(name), object.ClassValue(schemes[name]))
+			b.Set(object.NewString(name, object.UTF8), object.ClassValue(schemes[name]))
 		}
 		return object.MapValue(b.Map()), nil
 	})
@@ -99,7 +99,7 @@ func strings9(c []*string) object.Value {
 		if s == nil {
 			out[i] = object.Nil
 		} else {
-			out[i] = object.String(*s)
+			out[i] = object.NewString(*s, object.UTF8)
 		}
 	}
 	return object.NewList(out...)
@@ -159,12 +159,12 @@ func extract(ctx object.Context, self object.Value, args []object.Value, kw *obj
 			continue
 		}
 		if !block.IsZero() {
-			if _, err := ctx.Yield(block, object.String(m)); err != nil {
+			if _, err := ctx.Yield(block, object.NewString(m, object.UTF8)); err != nil {
 				return object.Value{}, err
 			}
 			continue
 		}
-		found = append(found, object.String(m))
+		found = append(found, object.NewString(m, object.UTF8))
 	}
 	if !block.IsZero() {
 		return object.Nil, nil
@@ -244,7 +244,7 @@ func installGeneric() {
 		if strings.HasPrefix(h, "[") && strings.HasSuffix(h, "]") {
 			h = h[1 : len(h)-1]
 		}
-		return object.String(h), nil
+		return object.NewString(h, object.UTF8), nil
 	})
 	c.Define("default_port", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if dp := defaultPort(self.Instance().Cls); dp != nil {
@@ -289,10 +289,10 @@ func installGeneric() {
 	predicate("relative?", func(p parts) bool { return p.scheme == nil })
 	predicate("hierarchical?", func(p parts) bool { return p.path != nil })
 	c.Define("to_s", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(toS(self)), nil
+		return object.NewString(toS(self), object.UTF8), nil
 	})
 	c.Define("inspect", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String("#<" + self.Instance().Cls.QualifiedName() + " " + toS(self) + ">"), nil
+		return object.NewString("#<"+self.Instance().Cls.QualifiedName()+" "+toS(self)+">", object.UTF8), nil
 	})
 	c.Define("==", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		eq, err := equal(ctx, self, args[0])
@@ -372,7 +372,7 @@ func strOrNil(s *string) object.Value {
 	if s == nil {
 		return object.Nil
 	}
-	return object.String(*s)
+	return object.NewString(*s, object.UTF8)
 }
 
 // componentStrings reads new's nine positional components: a String, an
@@ -484,10 +484,10 @@ func installSubclasses() {
 		if !strings.HasPrefix(url, "/") {
 			url = "/" + url
 		}
-		return object.String(url), nil
+		return object.NewString(url, object.UTF8), nil
 	})
 	h.Define("authority", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(authority(self)), nil
+		return object.NewString(authority(self), object.UTF8), nil
 	})
 	h.Define("origin", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		p := read(self)
@@ -495,7 +495,7 @@ func installSubclasses() {
 		if p.scheme != nil {
 			sch = *p.scheme
 		}
-		return object.String(sch + "://" + authority(self)), nil
+		return object.NewString(sch+"://"+authority(self), object.UTF8), nil
 	})
 
 	f := ftpClass
@@ -521,7 +521,7 @@ func installSubclasses() {
 	mt := mailtoClass
 	mt.Define("to", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		to, _ := mailto(self)
-		return object.String(to), nil
+		return object.NewString(to, object.UTF8), nil
 	})
 	mt.Define("headers", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		_, headers := mailto(self)
@@ -542,7 +542,7 @@ func installSubclasses() {
 				head.WriteString(capitalize(decodeComponent(h[0], true)) + ": " + decodeComponent(h[1], true) + "\n")
 			}
 		}
-		return object.String("To: " + toLine + "\n" + head.String() + "\n" + body.String() + "\n"), nil
+		return object.NewString("To: "+toLine+"\n"+head.String()+"\n"+body.String()+"\n", object.UTF8), nil
 	}
 	mt.Define("to_mailtext", 0, mailtext)
 	mt.Define("to_rfc822text", 0, mailtext)
@@ -723,7 +723,7 @@ func installForms() {
 		if err != nil {
 			return object.Value{}, err
 		}
-		return object.String(encodeComponent(s, true)), nil
+		return object.NewString(encodeComponent(s, true), object.UTF8), nil
 	})
 	m.DefineSingleton("encode_uri_component", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) < 1 || len(args) > 2 {
@@ -733,7 +733,7 @@ func installForms() {
 		if err != nil {
 			return object.Value{}, err
 		}
-		return object.String(encodeComponent(s, false)), nil
+		return object.NewString(encodeComponent(s, false), object.UTF8), nil
 	})
 	decode := func(plus bool) fn {
 		return func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -747,7 +747,7 @@ func installForms() {
 			if badEscapeRe.MatchString(s) {
 				return object.Value{}, ctx.Raise(object.ArgumentError, "invalid %%-encoding (%s)", s)
 			}
-			return object.String(decodeComponent(s, plus)), nil
+			return object.NewString(decodeComponent(s, plus), object.UTF8), nil
 		}
 	}
 	m.DefineSingleton("decode_www_form_component", -1, decode(true))
@@ -796,7 +796,7 @@ func installForms() {
 				out = append(out, key+"="+encodeComponent(vs, true))
 			}
 		}
-		return object.String(strings.Join(out, "&")), nil
+		return object.NewString(strings.Join(out, "&"), object.UTF8), nil
 	})
 	m.DefineSingleton("decode_www_form", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) < 1 || len(args) > 2 {
@@ -834,7 +834,7 @@ func installForms() {
 				}
 				isindex = false
 			}
-			out = append(out, object.NewList(object.String(decodeComponent(key, true)), object.String(decodeComponent(val, true))))
+			out = append(out, object.NewList(object.NewString(decodeComponent(key, true), object.UTF8), object.NewString(decodeComponent(val, true), object.UTF8)))
 		}
 		return object.NewList(out...), nil
 	})
@@ -944,7 +944,7 @@ func installParser() {
 		return join(ctx, args)
 	})
 	c.Define("inspect", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String("#<URI::RFC3986_Parser>"), nil
+		return object.NewString("#<URI::RFC3986_Parser>", object.ASCII), nil
 	})
 }
 

@@ -101,7 +101,7 @@ func installHandle() {
 		if h.p.rows == 0 {
 			return object.Nil, nil
 		}
-		return object.String(h.p.line), nil
+		return object.NewString(h.p.line, object.UTF8), nil
 	})
 	eof := func(ctx object.Context, h *handle, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Bool(h.p.eof()), nil
@@ -113,7 +113,7 @@ func installHandle() {
 		return object.Nil, nil
 	})
 	def("string", 0, func(ctx object.Context, h *handle, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(h.p.s + h.w.b.String()), nil
+		return object.NewString(h.p.s+h.w.b.String(), object.UTF8), nil
 	})
 	def("headers", 0, func(ctx object.Context, h *handle, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if h.p.headersSet {
@@ -122,16 +122,16 @@ func installHandle() {
 		return h.p.o.headers, nil
 	})
 	def("col_sep", 0, func(ctx object.Context, h *handle, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(h.p.o.colSep), nil
+		return object.NewString(h.p.o.colSep, object.UTF8), nil
 	})
 	def("row_sep", 0, func(ctx object.Context, h *handle, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(h.p.rowSep()), nil
+		return object.NewString(h.p.rowSep(), object.UTF8), nil
 	})
 	def("quote_char", 0, func(ctx object.Context, h *handle, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if h.p.o.quoteChar == "" {
 			return object.Nil, nil
 		}
-		return object.String(h.p.o.quoteChar), nil
+		return object.NewString(h.p.o.quoteChar, object.UTF8), nil
 	})
 	add := func(ctx object.Context, h *handle, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		for _, row := range args {
@@ -149,7 +149,8 @@ func installHandle() {
 		if h.p.o.quoteChar != "" {
 			q = strconv.Quote(h.p.o.quoteChar)
 		}
-		return object.String("#<CSV io_type:StringIO encoding:UTF-8 lineno:" + strconv.Itoa(h.p.rows) +
-			" col_sep:" + strconv.Quote(h.p.o.colSep) + " row_sep:" + strconv.Quote(h.p.rowSep()) + " quote_char:" + q + ">"), nil
+		return object.NewString("#<CSV io_type:StringIO encoding:UTF-8 lineno:"+strconv.Itoa(h.p.rows)+
+				" col_sep:"+strconv.Quote(h.p.o.colSep)+" row_sep:"+strconv.Quote(h.p.rowSep())+" quote_char:"+q+">", object.UTF8),
+			nil
 	})
 }

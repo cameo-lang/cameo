@@ -66,7 +66,7 @@ func installRegexp() {
 		if err != nil {
 			return object.Value{}, err
 		}
-		return object.String(regexpEscape(s)), nil
+		return object.NewString(regexpEscape(s), object.UTF8), nil
 	}
 	c.DefineSingleton("escape", 1, escape)
 	c.DefineSingleton("quote", 1, escape)
@@ -119,7 +119,7 @@ func installRegexp() {
 	})
 
 	def(c, "source", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(re(self).Source), nil
+		return object.NewString(re(self).Source, object.UTF8), nil
 	})
 	def(c, "options", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Int(re(self).Options), nil
@@ -141,15 +141,15 @@ func installRegexp() {
 			for k, i := range idx {
 				out[k] = object.Int(i)
 			}
-			b.Set(object.String(name), object.NewList(out...))
+			b.Set(object.NewString(name, object.UTF8), object.NewList(out...))
 		}
 		return b.Value(), nil
 	})
 	def(c, "to_s", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(re(self).String()), nil
+		return object.NewString(re(self).String(), object.UTF8), nil
 	})
 	def(c, "inspect", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(re(self).Inspect()), nil
+		return object.NewString(re(self).Inspect(), object.UTF8), nil
 	})
 	def(c, "==", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Bool(object.Equal(self, args[0])), nil
@@ -322,7 +322,7 @@ func installMatchData() {
 	md := func(self object.Value) *object.Match { return self.Match() }
 	group := func(m *object.Match, i int) object.Value {
 		if s, ok := m.Group(i); ok {
-			return object.String(s)
+			return object.NewString(s, object.UTF8)
 		}
 		return object.Nil
 	}
@@ -410,7 +410,7 @@ func installMatchData() {
 		m := md(self)
 		b := object.NewMapBuilder()
 		for _, name := range m.Re.UniqueNames() {
-			k := object.String(name)
+			k := object.NewString(name, object.UTF8)
 			if symbols {
 				k = object.Symbol(name)
 			}
@@ -549,16 +549,16 @@ func installMatchData() {
 		return object.Int(utf8.RuneCountInString(s)), nil
 	})
 	def(c, "pre_match", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(md(self).Input[:md(self).Caps[0]]), nil
+		return object.NewString(md(self).Input[:md(self).Caps[0]], object.UTF8), nil
 	})
 	def(c, "post_match", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(md(self).Input[md(self).Caps[1]:]), nil
+		return object.NewString(md(self).Input[md(self).Caps[1]:], object.UTF8), nil
 	})
 	def(c, "to_s", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return group(md(self), 0), nil
 	})
 	def(c, "string", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(md(self).Input), nil
+		return object.NewString(md(self).Input, object.UTF8), nil
 	})
 	def(c, "regexp", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.RegexpValue(md(self).Re), nil
@@ -569,7 +569,7 @@ func installMatchData() {
 	def(c, "size", 0, size)
 	def(c, "length", 0, size)
 	def(c, "inspect", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(MatchInspect(md(self))), nil
+		return object.NewString(MatchInspect(md(self)), object.UTF8), nil
 	})
 	def(c, "==", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Bool(object.Equal(self, args[0])), nil
@@ -715,7 +715,7 @@ func expand(repl string, m *object.Match) string {
 // matchValue is what a block gets for a match: the matched text.
 func matchText(m *object.Match) object.Value {
 	s, _ := m.Group(0)
-	return object.String(s)
+	return object.NewString(s, object.UTF8)
 }
 
 // groupsOrText is what scan gives for a match: the groups when the pattern
@@ -727,7 +727,7 @@ func groupsOrText(m *object.Match) object.Value {
 	out := make([]object.Value, m.Groups())
 	for i := range out {
 		if s, ok := m.Group(i + 1); ok {
-			out[i] = object.String(s)
+			out[i] = object.NewString(s, object.UTF8)
 		} else {
 			out[i] = object.Nil
 		}

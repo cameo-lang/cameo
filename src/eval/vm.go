@@ -454,7 +454,7 @@ func (m *machine) exec(c *cameopb.Code) error {
 		return m.call(c, in.lookupSym(fr.Self, m.sym(c, 0), true), fr.Self, name, nil, nil, object.Value{}, true, true, line)
 	case cameopb.Op_DEFINED_LOCAL:
 		if _, ok := env.GetSym(m.sym(c, 0)); ok {
-			m.push(object.String("local-variable"))
+			m.push(object.NewString("local-variable", object.ASCII))
 		} else {
 			m.push(object.Nil)
 		}
@@ -470,7 +470,7 @@ func (m *machine) exec(c *cameopb.Code) error {
 		if fr.Block.IsZero() {
 			m.push(object.Nil)
 		} else {
-			m.push(object.String("yield"))
+			m.push(object.NewString("yield", object.ASCII))
 		}
 	case cameopb.Op_SCOPED:
 		var v object.Value
@@ -632,7 +632,7 @@ func (m *machine) constant(c *cameopb.Code) (object.Value, error) {
 	case *cameopb.Constant_FloatValue:
 		return object.Float(k.FloatValue), nil
 	case *cameopb.Constant_StringValue:
-		return object.Text(k.StringValue), nil
+		return object.NewString(k.StringValue, object.UTF8), nil
 	case *cameopb.Constant_BytesValue:
 		// A binary string literal, b"..."; see ir.proto.
 		return object.Bytes(k.BytesValue), nil
