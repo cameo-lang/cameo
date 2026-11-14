@@ -76,6 +76,11 @@ func SetByte(ctx object.Context, self object.Value, args []object.Value) (object
 	if err != nil {
 		return object.Value{}, err
 	}
+	// A byte is set in a string of bytes. A string of characters is
+	// refused, where Ruby sets the byte and may leave a broken character.
+	if self.Kind() != object.KindBytes {
+		return object.Value{}, ctx.Raise(object.CompatibilityError, "setbyte sets a byte, and only a binary string has bytes alone: call b first")
+	}
 	s := self.Str()
 	if i < -int64(len(s)) || i >= int64(len(s)) {
 		return object.Value{}, ctx.Raise(object.IndexError, "index %d out of string", i)

@@ -324,7 +324,8 @@ sets the fields, and `p a` prints `Point(x: 1, y: 2)` where Ruby prints
   of ASCII alone, or of a binary String. For a UTF-8 String with
   characters beyond ASCII it raises Encoding::CompatibilityError, where
   Ruby returns a part of a character: `"é".b.getbyte(0)` says the bytes
-  are meant.
+  are meant. `setbyte` sets a byte of a binary String alone and raises
+  the same error for any other, where Ruby sets the byte in any String.
 - Regular expressions use Ruby's syntax on cameo's own engine; lookbehind
   and backreferences are rejected with "This regexp is not supported in
   Cameo".
