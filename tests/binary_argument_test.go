@@ -45,9 +45,10 @@ x = x.prepend("a", "b")
 p x
 `)
 	const no = "incompatible character encodings: UTF-8 and BINARY (ASCII-8BIT)\n"
+	const noText = "format makes text, and a binary string has bytes alone: say what they are with force_encoding first, or join bytes with +\n"
 	assert.Equals(t, out, "delete_suffix: "+no+"delete_prefix: "+no+"sub: "+no+"gsub: "+no+
 		"split: "+no+"partition: "+no+"chomp: "+no+"tr: "+no+"center: "+no+"slice: "+no+
-		"%: "+no+"% list: "+no+"format: "+no+
+		"%: "+noText+"% list: "+noText+"format: "+noText+
 		"ascii receiver: incompatible character encodings: US-ASCII and BINARY (ASCII-8BIT)\n"+
 		`ascii argument: [["UTF-8", true]]
 join: [["ASCII-8BIT", true]]
@@ -56,7 +57,7 @@ list * string: [["ASCII-8BIT", true]]
 prepend: [["ASCII-8BIT", true]]
 insert: [["ASCII-8BIT", true]]
 insert in bytes: [["ASCII-8BIT", true]]
-prepend é: incompatible character encodings: BINARY (ASCII-8BIT) and UTF-8
+prepend é: [["ASCII-8BIT", true]]
 "abhé-llo"
 `)
 }

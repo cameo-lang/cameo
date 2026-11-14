@@ -335,10 +335,18 @@ sets the fields, and `p a` prints `Point(x: 1, y: 2)` where Ruby prints
   and patterns work as in Ruby.
 - A method of a UTF-8 or US-ASCII String raises
   Encoding::CompatibilityError for a binary String argument with a byte
-  above 127 (`"abc".gsub("b", b"\xFF")`, `format("%s", b"\xFF")`), also
-  where Ruby makes a binary String because the receiver is ASCII. `+`,
-  `<<`, `concat`, `prepend`, `insert`, interpolation and `Array#join`
-  make the binary String, as Ruby does.
+  above 127 (`"abc".gsub("b", b"\xFF")`), also where Ruby makes a
+  binary String because the receiver is ASCII.
+- Binary joined with anything is binary: `+`, `<<`, `concat`,
+  `prepend`, `insert` and `Array#join` return a binary String as soon as
+  one part is binary, whatever the parts hold. Ruby returns UTF-8 when
+  the binary part is ASCII alone (`"a" + "b".b`), and raises when both
+  hold other bytes (`"é" + b"\xFF"`).
+- What makes text for a reader refuses a binary String with
+  Encoding::CompatibilityError: an interpolation (`"v=#{bytes}"`) and
+  `format`, `sprintf` and `%`, as the format or as an argument. Ruby
+  makes a binary String or text of them. `force_encoding` first says
+  what the bytes are, and `+` joins bytes.
 - `getbyte` reads a byte of a String whose bytes are its characters, one
   of ASCII alone, or of a binary String. For a UTF-8 String with
   characters beyond ASCII it raises Encoding::CompatibilityError, where

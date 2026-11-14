@@ -43,8 +43,7 @@ func installString() {
 		} else {
 			fargs = args
 		}
-		s, err := format(ctx, strOf(self), fargs)
-		return object.NewString(s, str.UTF8), err
+		return formatText(ctx, self, fargs)
 	})
 	def(c, "==", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		o, ok := args[0].AsString()
@@ -456,8 +455,7 @@ func installString() {
 		return Padding(fill, total/2) + s + Padding(fill, total-total/2)
 	})
 	def(c, "format", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		s, err := format(ctx, strOf(self), args)
-		return object.NewString(s, str.UTF8), err
+		return formatText(ctx, self, args)
 	})
 	def(c, "ascii_only?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		for i := 0; i < len(strOf(self)); i++ {
@@ -747,7 +745,7 @@ func casecmp(self, other object.Value) object.Value {
 	if !other.IsString() {
 		return object.Nil
 	}
-	if _, ok := compatible(self, other); !ok {
+	if _, ok := sameText(self, other); !ok {
 		return object.Nil
 	}
 	a, b := self.Str(), other.Str()
@@ -775,7 +773,7 @@ func casecmpP(self, other object.Value) object.Value {
 	if !other.IsString() {
 		return object.Nil
 	}
-	if _, ok := compatible(self, other); !ok {
+	if _, ok := sameText(self, other); !ok {
 		return object.Nil
 	}
 	if self.Kind() == object.KindString && other.Kind() == object.KindString {

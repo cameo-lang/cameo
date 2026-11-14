@@ -96,17 +96,24 @@ func validIn(k object.Kind, s string) bool {
 	return utf8.ValidString(s)
 }
 
-// compatible is the encoding of a string made from a and b, as Ruby's
-// rb_enc_compatible decides it (str.Shared): either's when they share
-// it, the other's when one is ASCII alone, and none when both hold
-// other bytes in different encodings.
+// compatible is the encoding of a string made by joining a and b:
+// binary when either is, and otherwise what the two share as text
+// (str.Joined).
 func compatible(a, b object.Value) (object.Kind, bool) {
+	ae, aEmpty, aASCII := given(a)
+	be, bEmpty, bASCII := given(b)
+	return kindOf(str.Joined(ae, aEmpty, aASCII, be, bEmpty, bASCII))
+}
+
+// sameText is the encoding two strings read as characters share
+// (str.Shared). A comparison of characters asks it.
+func sameText(a, b object.Value) (object.Kind, bool) {
 	ae, aEmpty, aASCII := given(a)
 	be, bEmpty, bASCII := given(b)
 	return kindOf(str.Shared(ae, aEmpty, aASCII, be, bEmpty, bASCII))
 }
 
-// given returns the string v as str.Shared takes one: its
+// given returns the string v as str.Joined and str.Shared take one: its
 // encoding, whether it is empty and whether it is ASCII alone.
 func given(v object.Value) (enc str.Encoding, empty, ascii bool) {
 	s := v.Str()
@@ -122,7 +129,7 @@ func kindOf(enc str.Encoding, ok bool) (object.Kind, bool) {
 // CombineEncodings is compatible for a string being built: the encoding
 // so far and whether it is empty or ASCII so far, then the next part's.
 func CombineEncodings(acc object.Kind, accEmpty, accASCII bool, part object.Kind, partEmpty, partASCII bool) (object.Kind, bool) {
-	return kindOf(str.Shared(object.EncodingOf(acc), accEmpty, accASCII, object.EncodingOf(part), partEmpty, partASCII))
+	return kindOf(str.Joined(object.EncodingOf(acc), accEmpty, accASCII, object.EncodingOf(part), partEmpty, partASCII))
 }
 
 // IncompatibleEncodings is the message for combining two strings of
@@ -437,6 +444,23 @@ func installEncodings() {
 		}
 		return object.NewString(out, object.EncodingOf(to)), nil
 	})
+}
+
+// NoText is the message for a binary string given to what makes text
+// for a reader, format or an interpolation: its bytes are no
+// characters until the script says what they are.
+func NoText(what string) string {
+	return what + " makes text, and a binary string has bytes alone: say what they are with force_encoding first, or join bytes with +"
+}
+
+// formatText is format for a script: it refuses a binary string as
+// the format, and format itself refuses one a %s puts into the text.
+func formatText(ctx object.Context, f object.Value, args []object.Value) (object.Value, error) {
+	if f.Kind() == object.KindBytes {
+		return object.Value{}, ctx.Raise(object.CompatibilityError, "%s", NoText("format"))
+	}
+	s, err := format(ctx, f.Str(), args)
+	return object.NewString(s, str.UTF8), err
 }
 
 // TextOf makes the UTF-8 string a library returns as text, s, and

@@ -76,6 +76,12 @@ func format(ctx object.Context, f string, args []object.Value) (string, error) {
 func formatOne(ctx object.Context, spec string, verb byte, arg object.Value) (string, error) {
 	switch verb {
 	case 's':
+		// The bytes of a binary string are no text to put in. One that
+		// is not put in, an argument no directive takes or an element of
+		// a list that %s inspects, is not looked at.
+		if arg.Kind() == object.KindBytes {
+			return "", ctx.Raise(object.CompatibilityError, "%s", NoText("format"))
+		}
 		s, err := ctx.ToS(arg)
 		if err != nil {
 			return "", err
