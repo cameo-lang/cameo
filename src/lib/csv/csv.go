@@ -4,7 +4,8 @@
 //
 // It follows csv 3.3.2, the version Ruby 3.4 ships. A Row and a Table are
 // values: []=, << and delete return the changed copy for the variable to
-// take, where Ruby changes them in place. A CSV object, CSV.new(string),
+// take. This deviates from Ruby's behaviour: Ruby changes a Row and a
+// Table in place, cameo returns a copy. A CSV object, CSV.new(string),
 // is a handle that reads the string a row at a time and takes rows with
 // <<, as an IO does. CSV.read, foreach, open, table and the other file
 // methods are left out, as cameo reads no files.

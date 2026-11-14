@@ -4,9 +4,10 @@
 // Integer.from_prime_division and each_prime.
 //
 // It follows prime 0.1.3, the version Ruby 3.4 ships. prime? is a
-// Miller-Rabin test, so a large number answers at once where Ruby's trial
-// division does not finish; prime_division divides out the small factors
-// and then runs Pollard's rho. Prime.each returns an Enumerator, not
+// Miller-Rabin test, and prime_division divides out the small factors and
+// then runs Pollard's rho. This deviates from Ruby's behaviour: Ruby
+// divides by trial, which does not finish for a large number, cameo
+// answers at once. Prime.each returns an Enumerator, not
 // Ruby's Prime::EratosthenesGenerator.
 package prime
 

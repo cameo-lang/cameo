@@ -14,7 +14,8 @@
 // and raise TypeError, as a Proc does in Ruby; an instance of a cameo
 // class is found again by its class's name and digest, as from_proto
 // finds it. nil's envelope is empty, so Marshal.load of an empty string
-// is nil, where Ruby's is "marshal data too short". Marshal.dump to an IO
+// is nil. This deviates from Ruby's behaviour: Ruby raises "marshal data
+// too short", cameo returns nil. Marshal.dump to an IO
 // and Marshal.load from one are left out, with Ruby's MAJOR_VERSION and
 // MINOR_VERSION, which name Ruby's format.
 package marshal

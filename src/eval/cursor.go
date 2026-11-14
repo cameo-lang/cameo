@@ -422,6 +422,8 @@ func (m *machine) interpAdd(c *cameopb.Code, last bool) error {
 	// parts alone, the usual case, need no looking at.
 	kind, pk := sofar.Kind(), v.Kind()
 	// An interpolation makes text, which a binary string is not.
+	// This deviates from Ruby's behaviour: Ruby makes a string of the
+	// two, cameo raises.
 	if pk == object.KindBytes {
 		return in.raise(object.CompatibilityError, line, "%s", stdlib.NoText("an interpolation"))
 	}

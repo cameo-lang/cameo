@@ -3,8 +3,9 @@
 // :nfd, :nfkc and :nfkd, on golang.org/x/text/unicode/norm.
 //
 // Ruby loads the library itself when a script calls the methods, so they
-// are there without a require; require "unicode_normalize" is accepted,
-// where Ruby knows only unicode_normalize/normalize. unicode_normalize! is
+// are there without a require. This deviates from Ruby's behaviour: Ruby
+// knows only unicode_normalize/normalize, cameo accepts
+// require "unicode_normalize" too. unicode_normalize! is
 // a bang method cameo has not. A binary String raises
 // Encoding::CompatibilityError, a UTF-8 String with a byte sequence that
 // is not UTF-8 raises ArgumentError, and a US-ASCII String is as it is,

@@ -24,9 +24,10 @@ func installStringBytes() {
 		}
 		s := self.Str()
 		// A UTF-8 string with characters beyond ASCII has characters,
-		// which its bytes are parts of: getbyte refuses it, where Ruby
-		// returns the byte. A string that knows its characters says
-		// so at once; any other is read once.
+		// which its bytes are parts of.
+		// This deviates from Ruby's behaviour: Ruby returns the byte,
+		// cameo raises. A string that knows its characters says so at
+		// once; any other is read once.
 		if self.Kind() == object.KindString && !self.KnownASCII() {
 			if self.Chars() >= 0 || !str.ASCIIOnly(s) {
 				return object.Value{}, ctx.Raise(object.CompatibilityError, "getbyte reads a byte, and this UTF-8 string has characters beyond ASCII: call b first for its bytes, or read a character with []")
@@ -77,8 +78,10 @@ func SetByte(ctx object.Context, self object.Value, args []object.Value) (object
 	if err != nil {
 		return object.Value{}, err
 	}
-	// A byte is set in a string of bytes. A string of characters is
-	// refused, where Ruby sets the byte and may leave a broken character.
+	// A byte is set in a string of bytes.
+	// This deviates from Ruby's behaviour: Ruby sets the byte in a string
+	// of characters too, and may leave a broken character, cameo raises
+	// for one.
 	if self.Kind() != object.KindBytes {
 		return object.Value{}, ctx.Raise(object.CompatibilityError, "setbyte sets a byte, and only a binary string has bytes alone: call b first")
 	}

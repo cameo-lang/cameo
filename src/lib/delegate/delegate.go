@@ -5,7 +5,8 @@
 //
 // It follows delegate 0.4.0, the version Ruby 3.4 ships. A delegator is a
 // value, so __setobj__ returns the delegator with the new object, for the
-// variable to take, where Ruby changes it in place. The wrapped object
+// variable to take. This deviates from Ruby's behaviour: Ruby changes the
+// delegator in place, cameo returns a copy. The wrapped object
 // counts in a delegator's identity as a Hash key, as its fields do.
 package delegate
 

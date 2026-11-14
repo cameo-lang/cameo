@@ -7,9 +7,9 @@
 // keys and Set members and compare by their elements; []= returns the
 // changed copy. The element arithmetic is cameo's own, so Integer,
 // Float and big Integer elements behave as Ruby's do, and the determinant
-// and rank are Ruby's fraction-free algorithms. cameo has no Rational, so
-// where Ruby's inverse of an Integer matrix has Rationals, cameo's has
-// Floats, computed exactly first.
+// and rank are Ruby's fraction-free algorithms. cameo has no Rational.
+// This deviates from Ruby's behaviour: Ruby's inverse of an Integer
+// matrix has Rationals, cameo's has Floats, computed exactly first.
 package matrix
 
 import (

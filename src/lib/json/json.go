@@ -8,8 +8,8 @@
 // depth included, which Ruby's to_json methods accept as well.
 //
 // An instance of a cameo class without its own to_json is a JSON object of
-// its fields, where Ruby writes the string of to_s; see
-// doc/cameo-vs-ruby.md.
+// its fields. This deviates from Ruby's behaviour: Ruby writes the string
+// of to_s, cameo writes the fields; see doc/cameo-vs-ruby.md.
 package json
 
 import (
@@ -622,8 +622,9 @@ func (p *jsonParser) string(i int) (object.Value, int, error) {
 		c := s[j]
 		switch {
 		case c == '"':
-			// A string is text: a lone surrogate, which Ruby writes as
-			// its three bytes, is no character.
+			// A string is text, and a lone surrogate is no character.
+			// This deviates from Ruby's behaviour: Ruby writes a lone
+			// surrogate as its three bytes, cameo raises.
 			v, ok := object.TryUTF8(b.String())
 			if !ok {
 				return object.Value{}, 0, p.ctx.Raise(jsonParserError, "a string that is not UTF-8 at '%s'", jsonExcerpt(s[i:]))
