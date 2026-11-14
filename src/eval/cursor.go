@@ -421,6 +421,10 @@ func (m *machine) interpAdd(c *cameopb.Code, last bool) error {
 	// Ruby's does: a binary part in UTF-8 text makes it binary. UTF-8
 	// parts alone, the usual case, need no looking at.
 	kind, pk := sofar.Kind(), v.Kind()
+	// An interpolation makes text, which a binary string is not.
+	if pk == object.KindBytes {
+		return in.raise(object.CompatibilityError, line, "%s", stdlib.NoText("an interpolation"))
+	}
 	if v.IsString() && (pk != kind || kind != object.KindString) {
 		next, ok := stdlib.CombineEncodings(kind, sofar.Str() == "", str.ASCIIOnly(sofar.Str()), pk, s == "", str.ASCIIOnly(s))
 		if !ok {

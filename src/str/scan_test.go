@@ -16,22 +16,26 @@ func TestAnEncodingHasTheNameAScriptSees(t *testing.T) {
 	assert.Equals(t, Binary.Name(), "ASCII-8BIT")
 }
 
-// Text of two encodings shares one when a string is empty or ASCII
-// alone, and none when both hold other bytes.
+// Binary joined with anything is binary. Text of two encodings shares
+// one when a string is empty or ASCII alone, and none when both hold
+// other bytes.
 func TestWhichEncodingsGoTogether(t *testing.T) {
-	shared := func(a Encoding, aEmpty, aASCII bool, b Encoding, bEmpty, bASCII bool) Encoding {
-		enc, ok := Shared(a, aEmpty, aASCII, b, bEmpty, bASCII)
+	joined := func(a Encoding, aEmpty, aASCII bool, b Encoding, bEmpty, bASCII bool) Encoding {
+		enc, ok := Joined(a, aEmpty, aASCII, b, bEmpty, bASCII)
 		if !ok {
 			return 0
 		}
 		return enc
 	}
-	assert.Equals(t, shared(UTF8, false, false, UTF8, false, false), UTF8)
-	assert.Equals(t, shared(ASCII, false, true, UTF8, false, false), UTF8)
-	assert.Equals(t, shared(UTF8, false, false, USASCII, false, true), UTF8)
-	assert.Equals(t, shared(USASCII, false, true, UTF8, false, false), UTF8)
-	assert.Equals(t, shared(USASCII, false, true, UTF8, false, true), USASCII)
-	assert.Equals(t, shared(USASCII, true, true, UTF8, false, true), UTF8)
+	assert.Equals(t, joined(UTF8, false, false, Binary, false, true), Binary)
+	assert.Equals(t, joined(Binary, true, true, UTF8, false, false), Binary)
+	assert.Equals(t, joined(UTF8, false, false, Binary, true, true), Binary)
+	assert.Equals(t, joined(UTF8, false, false, UTF8, false, false), UTF8)
+	assert.Equals(t, joined(ASCII, false, true, UTF8, false, false), UTF8)
+	assert.Equals(t, joined(UTF8, false, false, USASCII, false, true), UTF8)
+	assert.Equals(t, joined(USASCII, false, true, UTF8, false, false), UTF8)
+	assert.Equals(t, joined(USASCII, false, true, UTF8, false, true), USASCII)
+	assert.Equals(t, joined(USASCII, true, true, UTF8, false, true), UTF8)
 
 	_, ok := Shared(UTF8, false, false, Binary, false, false)
 	assert.False(t, ok)

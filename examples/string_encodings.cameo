@@ -16,13 +16,16 @@ end
 p "caf\xC3\xA9".b.force_encoding("UTF-8").upcase
 p b == b"héllo\xFF", b == "héllo", "abc".b == "abc", { "abc" => 1 }["abc".b], { "é" => 1 }["é".b], "a".b.hash == "a".hash
 p "a" + b"\xFF", ("a" + b"\xFF").encoding, (b"\xFF" + "a").encoding, ("a".b + "é").encoding
+# Binary joined with anything is binary; an interpolation makes text
+# and refuses it.
+p ("é" + b"\xFF").encoding, ("a" + b"b").encoding
+x = b"\xE9"
 begin
-  "é" + b"\xFF"
+  "a#{x}"
 rescue Encoding::CompatibilityError => e
   p e.class
 end
-x = b"\xE9"
-p "a#{x}".encoding, "#{x}".encoding, ["a".b, "b"].join.encoding
+p ["a".b, "b"].join.encoding
 a = "US".force_encoding("US-ASCII")
 p a, a.encoding, a.valid_encoding?, (a + "é").encoding, a.upcase.encoding
 begin

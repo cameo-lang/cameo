@@ -1,7 +1,7 @@
 // Package str knows what the bytes of a string are: the encodings a
 // string is made in, the scan that tells ASCII from other text and
 // counts characters, the index that finds a character in UTF-8, and
-// which encodings two strings share. It knows no
+// which encodings go together when strings are joined. It knows no
 // value of the language: package object makes its strings with what is
 // here.
 package str
@@ -68,4 +68,16 @@ func Shared(a Encoding, aEmpty, aASCII bool, b Encoding, bEmpty, bASCII bool) (E
 		return b, true
 	}
 	return 0, false
+}
+
+// Joined is the encoding of a string made by joining two. Binary joined
+// with anything is binary, whatever either holds: bytes do not become
+// characters by standing beside some. Ruby makes text of the two when
+// the binary one is ASCII alone, and raises when both hold other bytes.
+// Text of two encodings goes together as Shared has it.
+func Joined(a Encoding, aEmpty, aASCII bool, b Encoding, bEmpty, bASCII bool) (Encoding, bool) {
+	if a == Binary || b == Binary {
+		return Binary, true
+	}
+	return Shared(a, aEmpty, aASCII, b, bEmpty, bASCII)
 }

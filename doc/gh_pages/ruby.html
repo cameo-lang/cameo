@@ -369,6 +369,29 @@ String or of one that is ASCII alone, and raises for a UTF-8 String with
 characters beyond ASCII, where Ruby returns a part of a character;
 <code>s.b.getbyte(i)</code> says the bytes are meant.</p>
 
+<p>Binary joined with anything is binary: <code>+</code>,
+<code>&lt;&lt;</code>, <code>concat</code> and <code>Array#join</code>
+return a binary String as soon as one part is binary, where Ruby returns
+UTF-8 when the binary part is ASCII alone and raises when both hold
+other bytes. What makes text for a reader refuses a binary String: an
+interpolation, and <code>format</code>, <code>sprintf</code> and
+<code>%</code>.</p>
+
+<pre class="cameo"><code>bytes = b"ab"
+p ("x" + bytes).encoding, ["x", bytes].join.encoding
+
+begin
+  "v=#{bytes}"
+rescue Encoding::CompatibilityError =&gt; e
+  puts e.message
+end
+
+puts "v=#{bytes.force_encoding("UTF-8")}"</code></pre>
+<pre class="output"><code>#&lt;Encoding:BINARY (ASCII-8BIT)&gt;
+#&lt;Encoding:BINARY (ASCII-8BIT)&gt;
+an interpolation makes text, and a binary string has bytes alone: say what they are with force_encoding first, or join bytes with +
+v=ab</code></pre>
+
 <pre class="cameo"><code>bytes = b"\xFFab"
 p bytes.encoding
 p bytes.bytesize

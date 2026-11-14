@@ -99,17 +99,10 @@ func installKernel() {
 		if len(args) == 0 {
 			return object.Value{}, ArgError(ctx, 0, "1+")
 		}
-		f, err := WantString(ctx, args[0])
-		if err != nil {
+		if _, err := WantString(ctx, args[0]); err != nil {
 			return object.Value{}, err
 		}
-		// The text is UTF-8, which the bytes of a binary argument are
-		// not: as for a method of a String (InstallStringEncodings).
-		if b, ok := binaryAmong(args[1:]); ok && args[0].Kind() != object.KindBytes {
-			return object.Value{}, incompatible(ctx, args[0], b)
-		}
-		s, err := format(ctx, f, args[1:])
-		return object.NewString(s, str.UTF8), err
+		return formatText(ctx, args[0], args[1:])
 	})
 	object.DefineFunction("sprintf", -1, object.Kernel.Methods["format"].Native)
 	// loop keeps nothing: it calls its block until the block raises
