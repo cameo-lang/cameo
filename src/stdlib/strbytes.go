@@ -22,6 +22,15 @@ func installStringBytes() {
 			return object.Value{}, err
 		}
 		s := self.Str()
+		// A UTF-8 string with characters beyond ASCII has characters,
+		// which its bytes are parts of: getbyte refuses it, where Ruby
+		// returns the byte. A string that knows its characters says
+		// so at once; any other is read once.
+		if self.Kind() == object.KindString && !self.KnownASCII() {
+			if _, counted := self.Chars(); counted || !object.ASCIIOnly(s) {
+				return object.Value{}, ctx.Raise(object.CompatibilityError, "getbyte reads a byte, and this UTF-8 string has characters beyond ASCII: call b first for its bytes, or read a character with []")
+			}
+		}
 		if i < 0 {
 			i += int64(len(s))
 		}

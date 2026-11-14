@@ -199,6 +199,7 @@ func InstallStringEncodings() {
 		fn, name := m.Native, name
 		// A pattern matches bytes as it matches characters.
 		bytes, joins := byteMethods[name] || patternMethods[name], joins[name]
+		index := name == "[]" || name == "slice"
 		c.Define(name, m.Arity, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			k := self.Kind()
 			if k == object.KindBytes {
@@ -214,6 +215,19 @@ func InstallStringEncodings() {
 				return fn(ctx, self, args, kw, block)
 			}
 			s := self.Str()
+			// An index into a binary or a US-ASCII string is an index
+			// into its bytes: the byte is read where it is, without a
+			// view of the whole string.
+			if index && len(args) == 1 && args[0].Kind() == object.KindInt {
+				i := args[0].Int()
+				if i < 0 {
+					i += int64(len(s))
+				}
+				if i < 0 || i >= int64(len(s)) {
+					return object.Nil, nil
+				}
+				return object.StringOf(k, s[i:i+1]), nil
+			}
 			// A US-ASCII string holds 7-bit bytes alone, which are
 			// UTF-8 as they are: the method runs on them, and what
 			// it makes is US-ASCII while it holds nothing else, and

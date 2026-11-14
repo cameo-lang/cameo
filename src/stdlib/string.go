@@ -587,35 +587,39 @@ func translate(s, from, to string) (string, int) {
 
 // stringIndex is String#[] with an index, a start and length, a range, or a
 // substring.
-func stringIndex(ctx object.Context, s string, args []object.Value) (object.Value, error) {
-	runes := []rune(s)
-	n := len(runes)
-	switch len(args) {
-	case 1:
+func stringIndex(ctx object.Context, self object.Value, args []object.Value) (object.Value, error) {
+	s := self.Str()
+	if len(args) == 1 {
 		switch args[0].Kind() {
 		case object.KindInt:
-			a := args[0].Int()
-			i := int(a)
-			if i < 0 {
-				i += n
-			}
-			if i < 0 || i >= n {
-				return object.Nil, nil
-			}
-			return object.StringOfChars(string(runes[i]), 1), nil
+			return charAt(self, args[0].Int()), nil
 		case object.KindString, object.KindBytes, object.KindASCII:
 			a := args[0].Str()
 			if strings.Contains(s, string(a)) {
 				return object.String(a), nil
 			}
 			return object.Nil, nil
+		}
+	}
+	// The characters of a string of ASCII alone are its bytes, which
+	// are sliced as they are; any other string is decoded first.
+	n := len(s)
+	sub := func(from, to int) object.Value { return object.ASCIIString(s[from:to]) }
+	if !self.KnownASCII() {
+		runes := []rune(s)
+		n = len(runes)
+		sub = func(from, to int) object.Value { return object.StringOfChars(string(runes[from:to]), to-from) }
+	}
+	switch len(args) {
+	case 1:
+		switch args[0].Kind() {
 		case object.KindRange:
 			a := args[0].Range()
 			start, length, ok := rangeBounds(ctx, a, n)
 			if !ok {
 				return object.Nil, nil
 			}
-			return object.StringOfChars(string(runes[start:start+length]), length), nil
+			return sub(start, start+length), nil
 		}
 		return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into Integer", KindName(args[0]))
 	case 2:
@@ -637,9 +641,63 @@ func stringIndex(ctx object.Context, s string, args []object.Value) (object.Valu
 		if end > int64(n) {
 			end = int64(n)
 		}
-		return object.StringOfChars(string(runes[start:end]), int(end-start)), nil
+		return sub(int(start), int(end)), nil
 	}
 	return object.Value{}, ArgError(ctx, len(args), "1..2")
+}
+
+// charAt returns the character at index i of the UTF-8 string self, a
+// negative i counting from the end, or nil past either end. A string
+// known to be ASCII alone answers from its bytes at once. Any other is
+// walked from the nearer end, a character at a time and without a copy,
+// so the time is that of the characters passed, not of the string.
+func charAt(self object.Value, i int64) object.Value {
+	s := self.Str()
+	if self.KnownASCII() {
+		if i < 0 {
+			i += int64(len(s))
+		}
+		if i < 0 || i >= int64(len(s)) {
+			return object.Nil
+		}
+		return object.ASCIIString(s[i : i+1])
+	}
+	if n, known := self.Chars(); known {
+		if i < 0 {
+			i += int64(n)
+		}
+		if i < 0 || i >= int64(n) {
+			return object.Nil
+		}
+		if i > int64(n)/2 {
+			i -= int64(n) // nearer the end: count back from it
+		}
+	}
+	if i < 0 {
+		end := len(s)
+		for ; end > 0; i++ {
+			_, size := utf8.DecodeLastRuneInString(s[:end])
+			if i == -1 {
+				return object.StringOfChars(s[end-size:end], 1)
+			}
+			end -= size
+		}
+		return object.Nil
+	}
+	at := 0
+	for ; i > 0 && at < len(s); i-- {
+		if s[at] < utf8.RuneSelf {
+			at++
+			continue
+		}
+		_, size := utf8.DecodeRuneInString(s[at:])
+		at += size
+	}
+	if at >= len(s) {
+		return object.Nil
+	}
+	_, size := utf8.DecodeRuneInString(s[at:])
+	return object.StringOfChars(s[at:at+size], 1)
 }
 
 // rangeBounds resolves a range over a sequence of length n into a start and

@@ -81,7 +81,7 @@ func installSymbol() {
 	strArg("start_with?", strings.HasPrefix)
 	strArg("end_with?", strings.HasSuffix)
 	def(c, "[]", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return stringIndex(ctx, sym(self), args)
+		return stringIndex(ctx, object.String(sym(self)), args)
 	})
 	def(c, "hash", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Int(hashString(object.Key(self))), nil

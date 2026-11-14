@@ -174,7 +174,7 @@ func installStringPatterns() {
 				return object.Nil, nil
 			}
 		}
-		return stringIndex(ctx, str(self), args)
+		return stringIndex(ctx, self, args)
 	})
 	def(c, "slice", -1, c.Methods["[]"].Native)
 	def(c, "start_with?", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
