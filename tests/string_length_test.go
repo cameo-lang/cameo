@@ -32,9 +32,9 @@ p (a + b).length, (a * 3).length, "#{a} #{b}".length, "#{a}#{n}#{1.5}#{:sým}#{n
 p a[1, 3].length, a[1..].length, a[1].length, a[-1].length, a.chars.map(&:length), a.chars.join.length
 p n.to_s.length, 1.5.to_s.length, (a + n.to_s).length, "#{a}".length, "#{n}".length
 p a.b.length, a.b.force_encoding("UTF-8").length, (a.b + "x").length
-p "#{a.b}x".length, a.dup.force_encoding("ASCII-8BIT").length
+p "#{a.b.force_encoding("UTF-8")}x".length, a.dup.force_encoding("ASCII-8BIT").length
 `)
-	assert.Equals(t, out, "10\n15\n11\n13\n3\n4\n1\n1\n[1, 1, 1, 1, 1]\n5\n2\n3\n7\n5\n2\n6\n5\n7\n7\n6\n")
+	assert.Equals(t, out, "10\n15\n11\n13\n3\n4\n1\n1\n[1, 1, 1, 1, 1]\n5\n2\n3\n7\n5\n2\n6\n5\n7\n6\n6\n")
 }
 
 // A string made by a method whose result has the characters of the

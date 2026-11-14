@@ -200,13 +200,15 @@ func InstallStringEncodings() {
 		// A pattern matches bytes as it matches characters.
 		bytes, joins := byteMethods[name] || patternMethods[name], joins[name]
 		index := name == "[]" || name == "slice"
+		// format says itself that it takes no binary string.
+		formats := name == "%" || name == "format"
 		c.Define(name, m.Arity, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			k := self.Kind()
 			if k == object.KindBytes {
 				if !bytes {
 					return object.Value{}, noCharacters(ctx, name)
 				}
-			} else if !joins {
+			} else if !joins && !formats {
 				if b, ok := binaryAmong(args); ok {
 					return object.Value{}, incompatible(ctx, self, b)
 				}
