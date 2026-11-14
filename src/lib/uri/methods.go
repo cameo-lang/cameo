@@ -1,6 +1,7 @@
 package uri
 
 import (
+	"github.com/cameo-lang/cameo/src/str"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -31,9 +32,9 @@ func installModule() {
 		c := make([]*string, 9)
 		for i := 0; i < 9 && i < len(args); i++ {
 			if s, ok := args[i].AsString(); ok {
-				c[i] = str(s)
+				c[i] = strOf(s)
 			} else if n, ok := args[i].AsInt(); ok {
-				c[i] = str(strconv.FormatInt(n, 10))
+				c[i] = strOf(strconv.FormatInt(n, 10))
 			}
 		}
 		cls := genericClass
@@ -54,7 +55,7 @@ func installModule() {
 	m.DefineSingleton("scheme_list", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		b := object.NewMapBuilder()
 		for _, name := range []string{"FILE", "FTP", "HTTP", "HTTPS", "LDAP", "LDAPS", "MAILTO", "WS", "WSS"} {
-			b.Set(object.String(name), object.ClassValue(schemes[name]))
+			b.Set(object.NewString(name, str.UTF8), object.ClassValue(schemes[name]))
 		}
 		return object.MapValue(b.Map()), nil
 	})
@@ -99,7 +100,7 @@ func strings9(c []*string) object.Value {
 		if s == nil {
 			out[i] = object.Nil
 		} else {
-			out[i] = object.String(*s)
+			out[i] = object.NewString(*s, str.UTF8)
 		}
 	}
 	return object.NewList(out...)
@@ -127,7 +128,7 @@ func join(ctx object.Context, args []object.Value) (object.Value, error) {
 // in a text: a scheme, a colon, and the characters a URI may hold.
 var extractRe = regexp.MustCompile(`[A-Za-z][A-Za-z0-9+.\-]*:(?:%[0-9A-Fa-f]{2}|[;/?:@&=+$,\[\]A-Za-z0-9\-_.!~*'()])+(?:#(?:%[0-9A-Fa-f]{2}|[;/?:@&=+$,\[\]A-Za-z0-9\-_.!~*'()])*)?`)
 
-// extract is URI.extract(str, schemes = nil): every absolute URI in the
+// extract is URI.extract(strOf, schemes = nil): every absolute URI in the
 // text, of the schemes named when any are, to the block or as an Array.
 func extract(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 	if len(args) < 1 || len(args) > 2 {
@@ -159,12 +160,12 @@ func extract(ctx object.Context, self object.Value, args []object.Value, kw *obj
 			continue
 		}
 		if !block.IsZero() {
-			if _, err := ctx.Yield(block, object.String(m)); err != nil {
+			if _, err := ctx.Yield(block, object.NewString(m, str.UTF8)); err != nil {
 				return object.Value{}, err
 			}
 			continue
 		}
-		found = append(found, object.String(m))
+		found = append(found, object.NewString(m, str.UTF8))
 	}
 	if !block.IsZero() {
 		return object.Nil, nil
@@ -244,7 +245,7 @@ func installGeneric() {
 		if strings.HasPrefix(h, "[") && strings.HasSuffix(h, "]") {
 			h = h[1 : len(h)-1]
 		}
-		return object.String(h), nil
+		return object.NewString(h, str.UTF8), nil
 	})
 	c.Define("default_port", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if dp := defaultPort(self.Instance().Cls); dp != nil {
@@ -289,10 +290,10 @@ func installGeneric() {
 	predicate("relative?", func(p parts) bool { return p.scheme == nil })
 	predicate("hierarchical?", func(p parts) bool { return p.path != nil })
 	c.Define("to_s", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(toS(self)), nil
+		return object.NewString(toS(self), str.UTF8), nil
 	})
 	c.Define("inspect", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String("#<" + self.Instance().Cls.QualifiedName() + " " + toS(self) + ">"), nil
+		return object.NewString("#<"+self.Instance().Cls.QualifiedName()+" "+toS(self)+">", str.UTF8), nil
 	})
 	c.Define("==", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		eq, err := equal(ctx, self, args[0])
@@ -353,9 +354,9 @@ func userPassword(p parts) (user, password *string) {
 	}
 	u, pw, found := strings.Cut(*p.userinfo, ":")
 	if !found {
-		return str(u), nil
+		return strOf(u), nil
 	}
-	return str(u), str(pw)
+	return strOf(u), strOf(pw)
 }
 
 func joinUserinfo(user, password *string) *string {
@@ -365,14 +366,14 @@ func joinUserinfo(user, password *string) *string {
 	if password == nil {
 		return user
 	}
-	return str(*user + ":" + *password)
+	return strOf(*user + ":" + *password)
 }
 
 func strOrNil(s *string) object.Value {
 	if s == nil {
 		return object.Nil
 	}
-	return object.String(*s)
+	return object.NewString(*s, str.UTF8)
 }
 
 // componentStrings reads new's nine positional components: a String, an
@@ -383,13 +384,13 @@ func componentStrings(ctx object.Context, args []object.Value) ([]*string, error
 		switch {
 		case a.IsNil():
 		case a.IsString() || a.Kind() == object.KindSymbol:
-			out[i] = str(a.Str())
+			out[i] = strOf(a.Str())
 		case i == 3:
 			n, err := stdlib.WantInt(ctx, a, "")
 			if err != nil {
 				return nil, err
 			}
-			out[i] = str(strconv.FormatInt(n, 10))
+			out[i] = strOf(strconv.FormatInt(n, 10))
 		default:
 			return nil, ctx.Raise(object.TypeError, "no implicit conversion of %s into String", stdlib.KindName(a))
 		}
@@ -439,7 +440,7 @@ func buildCall(ctx object.Context, cls *object.Class, arg object.Value) (object.
 		}
 		if i == 3 {
 			if num, isInt := v.AsInt(); isInt {
-				comps[i] = str(strconv.FormatInt(num, 10))
+				comps[i] = strOf(strconv.FormatInt(num, 10))
 				continue
 			}
 		}
@@ -447,7 +448,7 @@ func buildCall(ctx object.Context, cls *object.Class, arg object.Value) (object.
 		if err != nil {
 			return object.Value{}, err
 		}
-		comps[i] = str(s)
+		comps[i] = strOf(s)
 	}
 	// The scheme is the class's, whatever the components say, as Ruby's
 	// build makes it.
@@ -462,7 +463,7 @@ func schemeOf(cls *object.Class) *string {
 	for c := cls; c != nil; c = c.Super {
 		for name, sc := range schemes {
 			if sc == c {
-				return str(strings.ToLower(name))
+				return strOf(strings.ToLower(name))
 			}
 		}
 	}
@@ -484,10 +485,10 @@ func installSubclasses() {
 		if !strings.HasPrefix(url, "/") {
 			url = "/" + url
 		}
-		return object.String(url), nil
+		return object.NewString(url, str.UTF8), nil
 	})
 	h.Define("authority", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(authority(self)), nil
+		return object.NewString(authority(self), str.UTF8), nil
 	})
 	h.Define("origin", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		p := read(self)
@@ -495,7 +496,7 @@ func installSubclasses() {
 		if p.scheme != nil {
 			sch = *p.scheme
 		}
-		return object.String(sch + "://" + authority(self)), nil
+		return object.NewString(sch+"://"+authority(self), str.UTF8), nil
 	})
 
 	f := ftpClass
@@ -521,7 +522,7 @@ func installSubclasses() {
 	mt := mailtoClass
 	mt.Define("to", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		to, _ := mailto(self)
-		return object.String(to), nil
+		return object.NewString(to, str.UTF8), nil
 	})
 	mt.Define("headers", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		_, headers := mailto(self)
@@ -542,7 +543,7 @@ func installSubclasses() {
 				head.WriteString(capitalize(decodeComponent(h[0], true)) + ": " + decodeComponent(h[1], true) + "\n")
 			}
 		}
-		return object.String("To: " + toLine + "\n" + head.String() + "\n" + body.String() + "\n"), nil
+		return object.NewString("To: "+toLine+"\n"+head.String()+"\n"+body.String()+"\n", str.UTF8), nil
 	}
 	mt.Define("to_mailtext", 0, mailtext)
 	mt.Define("to_rfc822text", 0, mailtext)
@@ -567,11 +568,11 @@ func ftpSplit(p parts) (path, typecode *string) {
 	}
 	path = p.path
 	if i := strings.Index(*p.path, ";type="); i >= 0 {
-		path, typecode = str((*p.path)[:i]), str((*p.path)[i+len(";type="):])
+		path, typecode = strOf((*p.path)[:i]), strOf((*p.path)[i+len(";type="):])
 	}
 	// An absolute path is spelled %2F at the start, as RFC 1738 has it.
 	if len(*path) >= 3 && strings.EqualFold((*path)[:3], "%2F") {
-		path = str("/" + (*path)[3:])
+		path = strOf("/" + (*path)[3:])
 	}
 	return path, typecode
 }
@@ -581,12 +582,12 @@ func ftpSplit(p parts) (path, typecode *string) {
 func ldapSplit(p parts) [5]*string {
 	var out [5]*string
 	if p.path != nil && *p.path != "" {
-		out[0] = str(strings.TrimPrefix(*p.path, "/"))
+		out[0] = strOf(strings.TrimPrefix(*p.path, "/"))
 	}
 	if p.query != nil {
 		for i, part := range strings.SplitN(*p.query, "?", 4) {
 			if part != "" {
-				out[i+1] = str(part)
+				out[i+1] = strOf(part)
 			}
 		}
 	}
@@ -605,7 +606,7 @@ func newMailTo(ctx object.Context, cls *object.Class, args []object.Value) (obje
 	if err != nil {
 		return object.Value{}, err
 	}
-	comps[0] = str("mailto")
+	comps[0] = strOf("mailto")
 	opaque := ""
 	if comps[6] != nil {
 		opaque = *comps[6]
@@ -613,7 +614,7 @@ func newMailTo(ctx object.Context, cls *object.Class, args []object.Value) (obje
 	if comps[7] != nil {
 		opaque += "?" + *comps[7]
 	}
-	comps[6], comps[7] = str(opaque), nil
+	comps[6], comps[7] = strOf(opaque), nil
 	v, err := construct(ctx, cls, comps, false)
 	if err != nil {
 		return object.Value{}, err
@@ -699,8 +700,8 @@ func mailtoValue(cls *object.Class, p parts, to string, headers [][2]string) obj
 		}
 		opaque += "?" + strings.Join(hs, "&")
 	}
-	p.scheme = str("mailto")
-	p.opaque = str(opaque)
+	p.scheme = strOf("mailto")
+	p.opaque = strOf(opaque)
 	p.path, p.query, p.host, p.port, p.userinfo = nil, nil, nil, nil, nil
 	return build(cls, p)
 }
@@ -723,7 +724,7 @@ func installForms() {
 		if err != nil {
 			return object.Value{}, err
 		}
-		return object.String(encodeComponent(s, true)), nil
+		return object.NewString(encodeComponent(s, true), str.UTF8), nil
 	})
 	m.DefineSingleton("encode_uri_component", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) < 1 || len(args) > 2 {
@@ -733,7 +734,7 @@ func installForms() {
 		if err != nil {
 			return object.Value{}, err
 		}
-		return object.String(encodeComponent(s, false)), nil
+		return object.NewString(encodeComponent(s, false), str.UTF8), nil
 	})
 	decode := func(plus bool) fn {
 		return func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -747,7 +748,7 @@ func installForms() {
 			if badEscapeRe.MatchString(s) {
 				return object.Value{}, ctx.Raise(object.ArgumentError, "invalid %%-encoding (%s)", s)
 			}
-			return object.String(decodeComponent(s, plus)), nil
+			return stdlib.TextOf(ctx, "URI", decodeComponent(s, plus))
 		}
 	}
 	m.DefineSingleton("decode_www_form_component", -1, decode(true))
@@ -796,7 +797,7 @@ func installForms() {
 				out = append(out, key+"="+encodeComponent(vs, true))
 			}
 		}
-		return object.String(strings.Join(out, "&")), nil
+		return object.NewString(strings.Join(out, "&"), str.UTF8), nil
 	})
 	m.DefineSingleton("decode_www_form", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) < 1 || len(args) > 2 {
@@ -806,7 +807,7 @@ func installForms() {
 		if err != nil {
 			return object.Value{}, err
 		}
-		if !object.ASCIIOnly(s) {
+		if !str.ASCIIOnly(s) {
 			return object.Value{}, ctx.Raise(object.ArgumentError, "the input of URI.decode_www_form must be ASCII only string")
 		}
 		sep := "&"
@@ -834,7 +835,15 @@ func installForms() {
 				}
 				isindex = false
 			}
-			out = append(out, object.NewList(object.String(decodeComponent(key, true)), object.String(decodeComponent(val, true))))
+			k, err := stdlib.TextOf(ctx, "URI", decodeComponent(key, true))
+			if err != nil {
+				return object.Value{}, err
+			}
+			v, err := stdlib.TextOf(ctx, "URI", decodeComponent(val, true))
+			if err != nil {
+				return object.Value{}, err
+			}
+			out = append(out, object.NewList(k, v))
 		}
 		return object.NewList(out...), nil
 	})
@@ -944,7 +953,7 @@ func installParser() {
 		return join(ctx, args)
 	})
 	c.Define("inspect", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String("#<URI::RFC3986_Parser>"), nil
+		return object.NewString("#<URI::RFC3986_Parser>", str.ASCII), nil
 	})
 }
 

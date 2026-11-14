@@ -1,6 +1,7 @@
 package csv
 
 import (
+	"github.com/cameo-lang/cameo/src/str"
 	"strings"
 
 	"github.com/cameo-lang/cameo/src/object"
@@ -409,7 +410,7 @@ func installRow() {
 	})
 	def("inspect", 0, func(ctx object.Context, r *row, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		s, err := r.inspect(ctx)
-		return object.String(s), err
+		return object.NewString(s, str.UTF8), err
 	})
 	// The changing methods return the copy, for the variable to take:
 	// row = row << ["c", 3]; row["a"] = 5 rebinds row.

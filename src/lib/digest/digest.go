@@ -19,6 +19,7 @@ import (
 	"encoding"
 	"encoding/base64"
 	"encoding/hex"
+	"github.com/cameo-lang/cameo/src/str"
 	"hash"
 	"strings"
 
@@ -76,9 +77,11 @@ var encoders = []struct {
 	name   string
 	encode func([]byte) object.Value
 }{
-	{"hexdigest", func(b []byte) object.Value { return object.String(hex.EncodeToString(b)) }},
+	{"hexdigest", func(b []byte) object.Value { return object.NewString(hex.EncodeToString(b), str.ASCII) }},
 	{"digest", func(b []byte) object.Value { return object.Bytes(b) }},
-	{"base64digest", func(b []byte) object.Value { return object.String(base64.StdEncoding.EncodeToString(b)) }},
+	{"base64digest", func(b []byte) object.Value {
+		return object.NewString(base64.StdEncoding.EncodeToString(b), str.ASCII)
+	}},
 }
 
 // The fields of a digest object: the state of its hash after what it was
@@ -279,10 +282,10 @@ func installClasses() {
 	size("block_length", func(a algorithm) int { return a.block })
 	// name is OpenSSL::Digest's: the algorithm's name, "SHA256".
 	c.Define("name", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(algorithmOf(self).name), nil
+		return object.NewString(algorithmOf(self).name, str.UTF8), nil
 	})
 	c.Define("inspect", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String("#<" + self.Instance().Cls.QualifiedName() + ": " + hex.EncodeToString(hashOf(self).Sum(nil)) + ">"), nil
+		return object.NewString("#<"+self.Instance().Cls.QualifiedName()+": "+hex.EncodeToString(hashOf(self).Sum(nil))+">", str.UTF8), nil
 	})
 	// == takes another digest object, or the hex string of a digest.
 	c.Define("==", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -301,7 +304,7 @@ func installClasses() {
 		if err != nil {
 			return object.Value{}, err
 		}
-		return object.String(hex.EncodeToString([]byte(s))), nil
+		return object.NewString(hex.EncodeToString([]byte(s)), str.ASCII), nil
 	})
 	// Digest(:SHA256) is the class.
 	object.DefineFunction("Digest", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {

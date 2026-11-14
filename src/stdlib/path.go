@@ -1,6 +1,7 @@
 package stdlib
 
 import (
+	"github.com/cameo-lang/cameo/src/str"
 	"os"
 	"path"
 	"strings"
@@ -238,9 +239,9 @@ func PathNames(p string) (string, []string) {
 func installPaths() {
 	f := object.NewClass("File", object.ObjectClass)
 	object.ObjectClass.Consts["File"] = object.ClassValue(f)
-	f.Consts["SEPARATOR"] = object.String("/")
-	f.Consts["Separator"] = object.String("/")
-	f.Consts["PATH_SEPARATOR"] = object.String(":")
+	f.Consts["SEPARATOR"] = object.NewString("/", str.ASCII)
+	f.Consts["Separator"] = object.NewString("/", str.ASCII)
+	f.Consts["PATH_SEPARATOR"] = object.NewString(":", str.ASCII)
 	f.Consts["ALT_SEPARATOR"] = object.Nil
 	// The open, lock and fnmatch flags, with Linux's values. cameo opens
 	// files only to read them (Cameo::IO::FileIO, which takes a mode
@@ -253,7 +254,7 @@ func installPaths() {
 	} {
 		f.Consts[name] = object.Int(v)
 	}
-	str := func(ctx object.Context, v object.Value) (string, error) {
+	strOf := func(ctx object.Context, v object.Value) (string, error) {
 		if p, ok := PathnameOf(v); ok {
 			return p, nil
 		}
@@ -263,7 +264,7 @@ func installPaths() {
 		if len(args) < 1 || len(args) > 2 {
 			return object.Value{}, ArgError(ctx, len(args), "1..2")
 		}
-		p, err := str(ctx, args[0])
+		p, err := strOf(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -273,13 +274,13 @@ func installPaths() {
 				return object.Value{}, err
 			}
 		}
-		return object.String(Basename(p, suffix)), nil
+		return object.NewString(Basename(p, suffix), str.UTF8), nil
 	})
 	f.DefineSingleton("dirname", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) < 1 || len(args) > 2 {
 			return object.Value{}, ArgError(ctx, len(args), "1..2")
 		}
-		p, err := str(ctx, args[0])
+		p, err := strOf(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -295,21 +296,21 @@ func installPaths() {
 		for i := int64(0); i < levels; i++ {
 			p = Dirname(p)
 		}
-		return object.String(p), nil
+		return object.NewString(p, str.UTF8), nil
 	})
 	f.DefineSingleton("extname", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		p, err := str(ctx, args[0])
+		p, err := strOf(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
-		return object.String(Extname(p)), nil
+		return object.NewString(Extname(p), str.UTF8), nil
 	})
 	f.DefineSingleton("split", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		p, err := str(ctx, args[0])
+		p, err := strOf(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
-		return object.NewList(object.String(Dirname(p)), object.String(Basename(p, ""))), nil
+		return object.NewList(object.NewString(Dirname(p), str.UTF8), object.NewString(Basename(p, ""), str.UTF8)), nil
 	})
 	f.DefineSingleton("join", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		// An array joins into one part, as File.join(*array).
@@ -321,7 +322,7 @@ func installPaths() {
 				if l, ok := a.AsList(); ok {
 					parts[i], err = join(l.Elems)
 				} else {
-					parts[i], err = str(ctx, a)
+					parts[i], err = strOf(ctx, a)
 				}
 				if err != nil {
 					return "", err
@@ -333,30 +334,30 @@ func installPaths() {
 			return JoinPaths(parts), nil
 		}
 		s, err := join(args)
-		return object.String(s), err
+		return object.NewString(s, str.UTF8), err
 	})
 	expand := func(home bool) object.NativeFn {
 		return func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			if len(args) < 1 || len(args) > 2 {
 				return object.Value{}, ArgError(ctx, len(args), "1..2")
 			}
-			p, err := str(ctx, args[0])
+			p, err := strOf(ctx, args[0])
 			if err != nil {
 				return object.Value{}, err
 			}
 			dir := ""
 			if len(args) == 2 && !args[1].IsNil() {
-				if dir, err = str(ctx, args[1]); err != nil {
+				if dir, err = strOf(ctx, args[1]); err != nil {
 					return object.Value{}, err
 				}
 			}
-			return object.String(expandPath(p, dir, home)), nil
+			return object.NewString(expandPath(p, dir, home), str.UTF8), nil
 		}
 	}
 	f.DefineSingleton("expand_path", -1, expand(true))
 	f.DefineSingleton("absolute_path", -1, expand(false))
 	f.DefineSingleton("absolute_path?", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		p, err := str(ctx, args[0])
+		p, err := strOf(ctx, args[0])
 		return object.Bool(strings.HasPrefix(p, "/")), err
 	})
 }
@@ -372,5 +373,5 @@ func PathnameOf(v object.Value) (string, bool) {
 
 // PathnameValue makes a Pathname of a path.
 func PathnameValue(p string) object.Value {
-	return object.InstanceValue(&object.Instance{Cls: object.PathnameClass, Fields: []object.Value{object.String(p)}})
+	return object.InstanceValue(&object.Instance{Cls: object.PathnameClass, Fields: []object.Value{object.NewString(p, str.UTF8)}})
 }

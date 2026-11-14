@@ -12,6 +12,7 @@ package date
 
 import (
 	"fmt"
+	"github.com/cameo-lang/cameo/src/str"
 	"math"
 	"strconv"
 	"strings"
@@ -130,14 +131,14 @@ func Install() {
 	dateClass.Consts["ENGLAND"] = object.Int(england)
 	dateClass.Consts["JULIAN"] = object.Float(julianStart)
 	dateClass.Consts["GREGORIAN"] = object.Float(gregorianStart)
-	dateClass.Consts["VERSION"] = object.String("3.4.1")
+	dateClass.Consts["VERSION"] = object.NewString("3.4.1", str.ASCII)
 	names := func(ns []string, leadingNil bool) object.Value {
 		var out []object.Value
 		if leadingNil {
 			out = append(out, object.Nil)
 		}
 		for _, n := range ns {
-			out = append(out, object.String(n))
+			out = append(out, object.NewString(n, str.UTF8))
 		}
 		return object.NewList(out...)
 	}
@@ -713,7 +714,7 @@ func installReaders() {
 	treader("sec_fraction", func(d dt) object.Value { return ratio(float64(d.sf), nanos) })
 	treader("second_fraction", func(d dt) object.Value { return ratio(float64(d.sf), nanos) })
 	treader("offset", func(d dt) object.Value { return ratio(float64(d.of), daySecs) })
-	treader("zone", func(d dt) object.Value { return object.String(offsetString(d.of, true)) })
+	treader("zone", func(d dt) object.Value { return object.NewString(offsetString(d.of, true), str.UTF8) })
 	t.Define("new_offset", -1, func(ctx object.Context, self object.Value, a []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(a) > 1 {
 			return object.Value{}, stdlib.ArgError(ctx, len(a), "0..1")

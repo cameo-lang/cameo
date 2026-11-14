@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
+	"github.com/cameo-lang/cameo/src/str"
 	"math"
 	"math/big"
 	"strconv"
@@ -124,6 +125,16 @@ func textOf(ctx object.Context, v object.Value) (string, error) {
 
 // pack is Array#pack: the bytes of elems by format, after those of buffer
 // when it is a string.
+// allU returns true for a format of U directives alone.
+func allU(ds []directive) bool {
+	for _, d := range ds {
+		if d.letter != 'U' {
+			return false
+		}
+	}
+	return true
+}
+
 func pack(ctx object.Context, elems []object.Value, format string, buffer object.Value) (object.Value, error) {
 	ds, err := parseFormat(ctx, format)
 	if err != nil {
@@ -230,9 +241,22 @@ func pack(ctx object.Context, elems []object.Value, format string, buffer object
 	case !buffer.IsZero():
 		return labelled(ctx, buffer.Kind(), string(out))
 	case len(ds) == 0:
-		return object.StringOf(object.KindASCII, ""), nil
+		return object.NewString("", str.USASCII), nil
 	case ds[0].letter == 'U':
-		return object.Text(string(out)), nil
+		// A format that begins with U packs text. With U alone, bytes
+		// that are not UTF-8 come from a number that is no character,
+		// a surrogate.
+		// This deviates from Ruby's behaviour: where another directive
+		// put in bytes that are no characters, Ruby returns a UTF-8
+		// String that is not valid, cameo returns a binary String.
+		v, ok := object.TryUTF8(string(out))
+		switch {
+		case ok:
+			return v, nil
+		case allU(ds):
+			return object.Value{}, ctx.Raise(object.RangeError, "pack(U): a number that is no character")
+		}
+		return object.Bytes(out), nil
 	}
 	return object.Bytes(out), nil
 }
@@ -404,7 +428,7 @@ func unpack(ctx object.Context, data []byte, format string, start int) ([]object
 				bits[i] = '0' + bit
 			}
 			at += (n + 7) / 8
-			out = append(out, object.StringOf(object.KindASCII, string(bits)))
+			out = append(out, object.NewString(string(bits), str.USASCII))
 		case d.letter == 'm' && d.explicit && d.count == 0:
 			dec, ok := DecodeBase64Strict(string(data[at:]))
 			if !ok {
@@ -429,7 +453,7 @@ func unpack(ctx object.Context, data []byte, format string, start int) ([]object
 				s = s[:d.count]
 			}
 			at += (len(s) + 1) / 2
-			out = append(out, object.Text(s))
+			out = append(out, object.NewString(s, str.ASCII)) // hex digits
 		default:
 			n := len(data) - at
 			if d.count >= 0 && d.count < n {

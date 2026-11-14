@@ -52,7 +52,12 @@ end`)
 }
 
 func TestJSONParseDecodesAHighSurrogateWithAnyFollowingEscape(t *testing.T) {
-	assert.Equals(t, runScript(t, `p JSON.parse('"\\ud83d\\u0041"'), JSON.parse('"\\ude00"').bytes`), "\"👁\"\n[237, 184, 128]\n")
+	assert.Equals(t, runScript(t, `p JSON.parse('"\\ud83d\\u0041"')
+begin
+  JSON.parse('"\\ude00"')
+rescue JSON::ParserError => e
+  puts e.message
+end`), "\"👁\"\na string that is not UTF-8 at '\"\\ude00\"'\n")
 }
 
 func TestJSONNestingLimitsDifferInParseAndGenerate(t *testing.T) {

@@ -15,6 +15,7 @@ package strscan
 
 import (
 	"fmt"
+	"github.com/cameo-lang/cameo/src/str"
 	"strconv"
 	"strings"
 	"sync"
@@ -31,9 +32,21 @@ var (
 
 // scanner is a StringScanner's state. mu guards it: async tasks may share
 // a scanner.
+// text makes the String of s, a part of the string scanned, in that
+// string's encoding.
+func (sc *scanner) text(s string) object.Value {
+	if sc.enc == 0 {
+		return object.NewString(s, str.UTF8)
+	}
+	return object.NewString(s, sc.enc)
+}
+
 type scanner struct {
-	mu    sync.Mutex
-	s     string
+	mu sync.Mutex
+	s  string
+	// enc is the encoding of the string scanned: what is taken from it
+	// is made in it.
+	enc   str.Encoding
 	pos   int
 	prev  int // the position before the last match, for unscan
 	fixed bool
@@ -133,7 +146,7 @@ func (sc *scanner) run(ctx object.Context, pattern object.Value, anchored, advan
 		sc.pos = end
 	}
 	if returnString {
-		return object.String(sc.s[start:end]), nil
+		return sc.text(sc.s[start:end]), nil
 	}
 	return object.Int(end - start), nil
 }
@@ -146,7 +159,7 @@ func (sc *scanner) group(key object.Value) (object.Value, bool) {
 	}
 	if sc.hasLit {
 		if i, ok := key.AsInt(); ok && (i == 0 || i == -1) {
-			return object.String(sc.s[sc.lit[0]:sc.lit[1]]), true
+			return sc.text(sc.s[sc.lit[0]:sc.lit[1]]), true
 		}
 		return object.Nil, true
 	}
@@ -175,7 +188,7 @@ func (sc *scanner) group(key object.Value) (object.Value, bool) {
 	if !ok {
 		return object.Nil, true
 	}
-	return object.String(text), true
+	return sc.text(text), true
 }
 
 // inspect is StringScanner#inspect: the position, five characters before
@@ -242,8 +255,8 @@ func dump(s string) string {
 func Install() {
 	c := class
 	object.DefineNative("StringScanner", object.ClassValue(c))
-	c.Consts["Version"] = object.String("3.1.2")
-	c.Consts["Id"] = object.String("$Id$")
+	c.Consts["Version"] = object.NewString("3.1.2", str.ASCII)
+	c.Consts["Id"] = object.NewString("$Id$", str.ASCII)
 	errorClass.Lexical = c
 	c.Consts["Error"] = object.ClassValue(errorClass)
 	c.DefineSingleton("new", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -254,7 +267,7 @@ func Install() {
 		if err != nil {
 			return object.Value{}, err
 		}
-		sc := &scanner{s: s}
+		sc := &scanner{s: s, enc: object.EncodingOf(args[0].Kind())}
 		if kw != nil {
 			for _, k := range kw.Keys() {
 				if name, _ := k.AsSymbol(); name != "fixed_anchor" {
@@ -305,7 +318,7 @@ func Install() {
 		}
 		_, n := utf8.DecodeRuneInString(sc.s[sc.pos:])
 		sc.advance(n)
-		return object.String(sc.s[sc.lit[0]:sc.lit[1]]), nil
+		return sc.text(sc.s[sc.lit[0]:sc.lit[1]]), nil
 	})
 	def("get_byte", 0, func(ctx object.Context, sc *scanner, self object.Value, args []object.Value) (object.Value, error) {
 		sc.clear()
@@ -313,7 +326,7 @@ func Install() {
 			return object.Nil, nil
 		}
 		sc.advance(1)
-		return object.String(sc.s[sc.lit[0]:sc.lit[1]]), nil
+		return sc.text(sc.s[sc.lit[0]:sc.lit[1]]), nil
 	})
 	def("scan_byte", 0, func(ctx object.Context, sc *scanner, self object.Value, args []object.Value) (object.Value, error) {
 		sc.clear()
@@ -339,9 +352,9 @@ func Install() {
 			return object.Value{}, ctx.Raise(object.ArgumentError, "negative string size (or size too big)")
 		}
 		if sc.pos >= len(sc.s) {
-			return object.String(""), nil
+			return object.NewString("", str.ASCII), nil
 		}
-		return object.String(sc.s[sc.pos : sc.pos+int(min(n, int64(len(sc.s)-sc.pos)))]), nil
+		return sc.text(sc.s[sc.pos : sc.pos+int(min(n, int64(len(sc.s)-sc.pos)))]), nil
 	})
 	def("unscan", 0, func(ctx object.Context, sc *scanner, self object.Value, args []object.Value) (object.Value, error) {
 		if !sc.matched() {
@@ -367,7 +380,7 @@ func Install() {
 			return object.Nil, nil
 		}
 		a, b := sc.span()
-		return object.String(sc.s[a:b]), nil
+		return sc.text(sc.s[a:b]), nil
 	})
 	def("matched?", 0, func(ctx object.Context, sc *scanner, self object.Value, args []object.Value) (object.Value, error) {
 		return object.Bool(sc.matched()), nil
@@ -384,14 +397,14 @@ func Install() {
 			return object.Nil, nil
 		}
 		a, _ := sc.span()
-		return object.String(sc.s[:a]), nil
+		return sc.text(sc.s[:a]), nil
 	})
 	def("post_match", 0, func(ctx object.Context, sc *scanner, self object.Value, args []object.Value) (object.Value, error) {
 		if !sc.matched() {
 			return object.Nil, nil
 		}
 		_, b := sc.span()
-		return object.String(sc.s[b:]), nil
+		return sc.text(sc.s[b:]), nil
 	})
 	def("[]", 1, func(ctx object.Context, sc *scanner, self object.Value, args []object.Value) (object.Value, error) {
 		v, ok := sc.group(args[0])
@@ -440,9 +453,9 @@ func Install() {
 			for _, name := range sc.lastRe.UniqueNames() {
 				v := object.Nil
 				if sc.match != nil {
-					v, _ = sc.group(object.String(name))
+					v, _ = sc.group(object.NewString(name, str.UTF8))
 				}
-				m = m.Put(object.String(name), v)
+				m = m.Put(object.NewString(name, str.UTF8), v)
 			}
 		}
 		return object.MapValue(m), nil
@@ -479,20 +492,20 @@ func Install() {
 		return object.Bool(sc.pos < len(sc.s)), nil
 	})
 	def("rest", 0, func(ctx object.Context, sc *scanner, self object.Value, args []object.Value) (object.Value, error) {
-		return object.String(sc.s[min(sc.pos, len(sc.s)):]), nil
+		return sc.text(sc.s[min(sc.pos, len(sc.s)):]), nil
 	})
 	def("rest_size", 0, func(ctx object.Context, sc *scanner, self object.Value, args []object.Value) (object.Value, error) {
 		return object.Int(max(0, len(sc.s)-sc.pos)), nil
 	})
 	def("string", 0, func(ctx object.Context, sc *scanner, self object.Value, args []object.Value) (object.Value, error) {
-		return object.String(sc.s), nil
+		return sc.text(sc.s), nil
 	})
 	def("string=", 1, func(ctx object.Context, sc *scanner, self object.Value, args []object.Value) (object.Value, error) {
 		s, err := stdlib.WantString(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
-		sc.s, sc.pos = s, 0
+		sc.s, sc.pos, sc.enc = s, 0, object.EncodingOf(args[0].Kind())
 		sc.clear()
 		return self, nil
 	})
@@ -518,6 +531,6 @@ func Install() {
 		return object.Bool(sc.fixed), nil
 	})
 	def("inspect", 0, func(ctx object.Context, sc *scanner, self object.Value, args []object.Value) (object.Value, error) {
-		return object.String(sc.inspect()), nil
+		return object.NewString(sc.inspect(), str.UTF8), nil
 	})
 }

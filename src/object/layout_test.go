@@ -1,6 +1,7 @@
 package object
 
 import (
+	"github.com/cameo-lang/cameo/src/str"
 	"math"
 	"math/big"
 	"testing"
@@ -45,7 +46,10 @@ func TestStringsKeepTheirKindAndText(t *testing.T) {
 	long := string(make([]byte, 1<<20))
 	for _, k := range []Kind{KindString, KindASCII} {
 		for _, s := range []string{"", "a", "héllo", long} {
-			v := StringOf(k, s)
+			if k == KindASCII && s == "héllo" {
+				continue // not US-ASCII: NewString refuses it
+			}
+			v := NewString(s, EncodingOf(k))
 			assert.Equals(t, v.Kind(), k)
 			assert.True(t, v.Str() == s)
 		}
@@ -56,8 +60,8 @@ func TestStringsKeepTheirKindAndText(t *testing.T) {
 	assert.Equals(t, Bytes(nil).Kind(), KindBytes)
 	assert.Equals(t, len(Bytes(nil).Bytes()), 0)
 	assert.Equals(t, string(Bytes([]byte{0xff, 0}).Bytes()), "\xff\x00")
-	assert.False(t, Same(String(""), Symbol("")))
-	assert.False(t, Same(String(""), Nil))
+	assert.False(t, Same(NewString("", str.UTF8), Symbol("")))
+	assert.False(t, Same(NewString("", str.UTF8), Nil))
 	assert.False(t, Same(Int(0), False))
 	assert.False(t, Same(Int(0), Float(0)))
 }

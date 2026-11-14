@@ -6,6 +6,7 @@ package time
 
 import (
 	"errors"
+	"github.com/cameo-lang/cameo/src/str"
 	"strings"
 	gotime "time"
 
@@ -67,14 +68,14 @@ var errNoMatch = errors.New("no match")
 // once.
 func Install() {
 	c := object.TimeClass
-	str := func(ctx object.Context, args []object.Value, n string) (string, error) {
+	strOf := func(ctx object.Context, args []object.Value, n string) (string, error) {
 		if len(args) < 1 {
 			return "", stdlib.ArgError(ctx, len(args), n)
 		}
 		return stdlib.WantString(ctx, args[0])
 	}
 	c.DefineSingleton("parse", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		s, err := str(ctx, args, "1..2")
+		s, err := strOf(ctx, args, "1..2")
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -85,7 +86,7 @@ func Install() {
 		return object.TimeValue(t.At()), nil
 	})
 	iso := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		s, err := str(ctx, args, "1")
+		s, err := strOf(ctx, args, "1")
 		if err != nil {
 			return object.Value{}, err
 		}
@@ -133,9 +134,9 @@ func Install() {
 			out += "." + stdlib.PadDigits(int64(t.Nanosecond()), 9)[:min(n, 9)] + strings.Repeat("0", int(max(n-9, 0)))
 		}
 		if t.Location() == gotime.UTC {
-			return object.String(out + "Z"), nil
+			return object.NewString(out+"Z", str.UTF8), nil
 		}
-		return object.String(out + stdlib.Strftime(t, "%:z")), nil
+		return object.NewString(out+stdlib.Strftime(t, "%:z"), str.UTF8), nil
 	}
 	c.Define("iso8601", -1, xml)
 	c.Define("xmlschema", -1, xml)

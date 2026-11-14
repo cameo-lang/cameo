@@ -16,6 +16,7 @@ package ipaddr
 
 import (
 	"fmt"
+	"github.com/cameo-lang/cameo/src/str"
 	"math/big"
 	"regexp"
 	"strconv"
@@ -82,7 +83,7 @@ func (a *ip) value() object.Value {
 	fields[fFamily] = object.Int(a.family)
 	fields[fAddr] = object.Bytes(a.addr.FillBytes(make([]byte, n)))
 	fields[fMask] = object.Bytes(a.mask.FillBytes(make([]byte, n)))
-	fields[fZone] = object.String(a.zone)
+	fields[fZone] = object.NewString(a.zone, str.UTF8)
 	return object.InstanceValue(&object.Instance{Cls: class, Fields: fields})
 }
 
@@ -573,7 +574,7 @@ func Install() {
 	declareFields()
 	object.DefineNative("IPAddr", object.ClassValue(c))
 	c.Include(object.Comparable)
-	c.Consts["VERSION"] = object.String("1.2.7")
+	c.Consts["VERSION"] = object.NewString("1.2.7", str.ASCII)
 	c.Consts["IN4MASK"] = object.BigInt(in4Mask)
 	c.Consts["IN6MASK"] = object.BigInt(in6Mask)
 	for _, e := range []*object.Class{errorClass, invalidAddr, invalidPrefix, familyError} {
@@ -639,17 +640,17 @@ func Install() {
 	c.DefineSingleton("ntop", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		b, ok := args[0].AsBytes()
 		if !ok {
-			str, err := stdlib.WantString(ctx, args[0])
+			strOf, err := stdlib.WantString(ctx, args[0])
 			if err != nil {
 				return object.Value{}, err
 			}
-			b = []byte(str)
+			b = []byte(strOf)
 		}
 		switch len(b) {
 		case 4:
-			return object.String((&ip{family: afInet, addr: new(big.Int).SetBytes(b)}).full(new(big.Int).SetBytes(b))), nil
+			return object.NewString((&ip{family: afInet, addr: new(big.Int).SetBytes(b)}).full(new(big.Int).SetBytes(b)), str.UTF8), nil
 		case 16:
-			return object.String((&ip{family: afInet6, addr: new(big.Int).SetBytes(b)}).full(new(big.Int).SetBytes(b))), nil
+			return object.NewString((&ip{family: afInet6, addr: new(big.Int).SetBytes(b)}).full(new(big.Int).SetBytes(b)), str.UTF8), nil
 		}
 		return object.Value{}, raise(familyError, "unsupported address family")
 	})
@@ -659,9 +660,9 @@ func Install() {
 			return f(ctx, ipOf(self), args)
 		})
 	}
-	str := func(f func(a *ip) string) func(ctx object.Context, a *ip, args []object.Value) (object.Value, error) {
+	strOf := func(f func(a *ip) string) func(ctx object.Context, a *ip, args []object.Value) (object.Value, error) {
 		return func(ctx object.Context, a *ip, args []object.Value) (object.Value, error) {
-			return object.StringOf(object.KindASCII, f(a)), nil
+			return object.NewString(f(a), str.USASCII), nil
 		}
 	}
 	pred := func(f func(a *ip) bool) func(ctx object.Context, a *ip, args []object.Value) (object.Value, error) {
@@ -669,11 +670,11 @@ func Install() {
 			return object.Bool(f(a)), nil
 		}
 	}
-	def("to_s", 0, str((*ip).short))
-	def("to_string", 0, str(func(a *ip) string { return a.full(a.addr) + a.zone }))
-	def("inspect", 0, str((*ip).inspect))
-	def("netmask", 0, str(func(a *ip) string { return a.full(a.mask) }))
-	def("reverse", 0, str((*ip).reverse))
+	def("to_s", 0, strOf((*ip).short))
+	def("to_string", 0, strOf(func(a *ip) string { return a.full(a.addr) + a.zone }))
+	def("inspect", 0, strOf((*ip).inspect))
+	def("netmask", 0, strOf(func(a *ip) string { return a.full(a.mask) }))
+	def("reverse", 0, strOf((*ip).reverse))
 	def("zone_id", 0, func(ctx object.Context, a *ip, args []object.Value) (object.Value, error) {
 		if err := wantIPv6(a); err != nil {
 			return object.Value{}, err
@@ -681,19 +682,19 @@ func Install() {
 		if a.zone == "" {
 			return object.Nil, nil
 		}
-		return object.String(a.zone), nil
+		return object.NewString(a.zone, str.UTF8), nil
 	})
 	def("ip6_arpa", 0, func(ctx object.Context, a *ip, args []object.Value) (object.Value, error) {
 		if err := wantIPv6(a); err != nil {
 			return object.Value{}, err
 		}
-		return object.String(a.ip6Arpa()), nil
+		return object.NewString(a.ip6Arpa(), str.ASCII), nil
 	})
 	def("ip6_int", 0, func(ctx object.Context, a *ip, args []object.Value) (object.Value, error) {
 		if err := wantIPv6(a); err != nil {
 			return object.Value{}, err
 		}
-		return object.String(a.ip6Int()), nil
+		return object.NewString(a.ip6Int(), str.ASCII), nil
 	})
 	def("to_i", 0, func(ctx object.Context, a *ip, args []object.Value) (object.Value, error) {
 		if a.addr.IsInt64() {

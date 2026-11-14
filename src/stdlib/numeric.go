@@ -1,6 +1,7 @@
 package stdlib
 
 import (
+	"github.com/cameo-lang/cameo/src/str"
 	"math"
 	"math/big"
 
@@ -170,7 +171,7 @@ func installFloat() {
 		return self, nil
 	})
 	def(c, "to_s", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.ASCIIString(object.FormatFloat(float64(self.Float()))), nil
+		return object.NewString(object.FormatFloat(float64(self.Float())), str.ASCII), nil
 	})
 	def(c, "inspect", 0, c.Methods["to_s"].Native)
 	def(c, "hash", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {

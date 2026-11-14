@@ -12,6 +12,7 @@ package delegate
 import (
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/stdlib"
+	"github.com/cameo-lang/cameo/src/str"
 )
 
 var (
@@ -71,7 +72,7 @@ func Install() {
 	d := delegatorClass
 	object.DefineNative("Delegator", object.ClassValue(d))
 	object.DefineNative("SimpleDelegator", object.ClassValue(simpleClass))
-	d.Consts["VERSION"] = object.String("0.4.0")
+	d.Consts["VERSION"] = object.NewString("0.4.0", str.ASCII)
 	d.DefineSingleton("new", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		cls := self.Cls()
 		if cls == delegatorClass {

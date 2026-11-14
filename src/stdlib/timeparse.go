@@ -1,6 +1,7 @@
 package stdlib
 
 import (
+	"github.com/cameo-lang/cameo/src/str"
 	"regexp"
 	"strconv"
 	"strings"
@@ -83,7 +84,7 @@ func parseCivil(ctx object.Context, s string, loc *time.Location) (time.Time, er
 		return n
 	}
 	if m[8] != "" {
-		z, err := zoneArg(ctx, object.String(m[8]))
+		z, err := zoneArg(ctx, object.NewString(m[8], str.UTF8))
 		if err != nil {
 			return time.Time{}, err
 		}

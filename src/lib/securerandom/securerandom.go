@@ -18,6 +18,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
+	"github.com/cameo-lang/cameo/src/str"
 	"math/big"
 	"strings"
 	"time"
@@ -115,7 +116,7 @@ func ofBytes(ctx object.Context, self object.Value) *fromBytes {
 func Install() {
 	m := module
 	object.DefineNative("SecureRandom", object.ClassValue(m))
-	m.Consts["VERSION"] = object.String("0.4.1")
+	m.Consts["VERSION"] = object.NewString("0.4.1", str.ASCII)
 	define(func(name string, arity int, f method) {
 		m.DefineSingleton(name, arity, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			src := secure()
@@ -186,14 +187,14 @@ func define(def func(name string, arity int, f method)) {
 		if err != nil {
 			return object.Value{}, err
 		}
-		return object.String(hex.EncodeToString(src.bytes(n))), nil
+		return object.NewString(hex.EncodeToString(src.bytes(n)), str.ASCII), nil
 	})
 	def("base64", -1, func(ctx object.Context, src source, args []object.Value, kw *object.Map) (object.Value, error) {
 		n, err := count(ctx, args)
 		if err != nil {
 			return object.Value{}, err
 		}
-		return object.String(base64.StdEncoding.EncodeToString(src.bytes(n))), nil
+		return object.NewString(base64.StdEncoding.EncodeToString(src.bytes(n)), str.ASCII), nil
 	})
 	def("urlsafe_base64", -1, func(ctx object.Context, src source, args []object.Value, kw *object.Map) (object.Value, error) {
 		if len(args) > 2 {
@@ -208,13 +209,13 @@ func define(def func(name string, arity int, f method)) {
 		if !padding {
 			s = strings.TrimRight(s, "=")
 		}
-		return object.String(s), nil
+		return object.NewString(s, str.UTF8), nil
 	})
 	uuid4 := func(ctx object.Context, src source, args []object.Value, kw *object.Map) (object.Value, error) {
 		b := src.bytes(16)
 		b[6] = b[6]&0x0f | 0x40
 		b[8] = b[8]&0x3f | 0x80
-		return object.String(formatUUID(b)), nil
+		return object.NewString(formatUUID(b), str.ASCII), nil
 	}
 	def("uuid", 0, uuid4)
 	def("uuid_v4", 0, uuid4)
@@ -226,7 +227,7 @@ func define(def func(name string, arity int, f method)) {
 		}
 		b[6] = b[6]&0x0f | 0x70
 		b[8] = b[8]&0x3f | 0x80
-		return object.String(formatUUID(b)), nil
+		return object.NewString(formatUUID(b), str.ASCII), nil
 	})
 	number := func(ctx object.Context, src source, args []object.Value, kw *object.Map) (object.Value, error) {
 		return stdlib.RandomNumber(ctx, src, args)
@@ -253,7 +254,7 @@ func define(def func(name string, arity int, f method)) {
 				}
 			}
 		}
-		return object.String(choose(src, chars, n)), nil
+		return object.NewString(choose(src, chars, n), str.UTF8), nil
 	})
 }
 

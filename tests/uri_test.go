@@ -142,7 +142,9 @@ p URI.encode_www_form([["q", "ruby lang"], ["lang", "en"]]), URI.encode_www_form
 p URI.decode_www_form("a=1;b=2"), URI.decode_www_form("a=1;b=2", separator: ";"), URI.decode_www_form("")
 p URI.decode_www_form("&&a=1&&"), URI.decode_www_form("a=%ZZ"), URI.decode_www_form("=1"), URI.decode_www_form("a==1")
 p URI.encode_www_form_component("a\nb\tc\u0000"), URI.encode_www_form_component(123), URI.encode_www_form_component(nil)
-p URI.decode_www_form_component("%E2%82%AC"), URI.decode_www_form_component("%E2%82").valid_encoding?
+p URI.decode_www_form_component("%E2%82%AC")
+begin; URI.decode_www_form_component("%E2%82"); rescue Encoding::InvalidByteSequenceError => e; puts e.message; end
+begin; URI.decode_www_form("a=%FF"); rescue Encoding::InvalidByteSequenceError => e; puts e.class; end
 begin; URI.decode_www_form_component("abc%"); rescue ArgumentError => e; puts e.message; end
 p URI.extract("see http://a.com/x and ftp://b", ["http"])
 URI.extract("a http://x.org b") { |s| puts s }
@@ -160,7 +162,8 @@ URI.extract("a http://x.org b") { |s| puts s }
 "123"
 ""
 "€"
-false
+invalid byte sequence in UTF-8: URI returns text, and these bytes are none
+Encoding::InvalidByteSequenceError
 invalid %-encoding (abc%)
 ["http://a.com/x"]
 http://x.org

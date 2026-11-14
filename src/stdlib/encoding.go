@@ -2,6 +2,8 @@ package stdlib
 
 import (
 	"fmt"
+	"github.com/cameo-lang/cameo/src/internal/trusted"
+	"github.com/cameo-lang/cameo/src/str"
 	"strings"
 	"unicode/utf8"
 
@@ -69,15 +71,15 @@ func encodingArg(ctx object.Context, v object.Value) (object.Kind, error) {
 func labelled(ctx object.Context, k object.Kind, s string) (object.Value, error) {
 	switch k {
 	case object.KindBytes:
-		return object.StringOf(k, s), nil
+		return object.NewString(s, object.EncodingOf(k)), nil
 	case object.KindASCII:
-		if !object.ASCIIOnly(s) {
+		if !str.ASCIIOnly(s) {
 			return object.Value{}, ctx.Raise(object.InvalidByteSequenceError, "invalid byte sequence in US-ASCII: keep the bytes in a binary string")
 		}
-		return object.StringOf(k, s), nil
+		return object.NewString(s, object.EncodingOf(k)), nil
 	}
-	v := object.Text(s)
-	if v.Kind() != object.KindString {
+	v, ok := object.TryUTF8(s)
+	if !ok {
 		return object.Value{}, ctx.Raise(object.InvalidByteSequenceError, "invalid byte sequence in UTF-8: keep the bytes in a binary string")
 	}
 	return v, nil
@@ -89,46 +91,38 @@ func validIn(k object.Kind, s string) bool {
 	case object.KindBytes:
 		return true
 	case object.KindASCII:
-		return object.ASCIIOnly(s)
+		return str.ASCIIOnly(s)
 	}
 	return utf8.ValidString(s)
 }
 
 // compatible is the encoding of a string made from a and b, as Ruby's
-// rb_enc_compatible decides it: either's when they share it, the other's
-// when one is ASCII alone, and none when both hold other bytes in
-// different encodings.
+// rb_enc_compatible decides it (str.Shared): either's when they share
+// it, the other's when one is ASCII alone, and none when both hold
+// other bytes in different encodings.
 func compatible(a, b object.Value) (object.Kind, bool) {
-	ka, kb := a.Kind(), b.Kind()
-	switch {
-	case ka == kb:
-		return ka, true
-	case b.Str() == "":
-		return ka, true
-	case a.Str() == "":
-		return kb, true
-	case object.ASCIIOnly(b.Str()):
-		return ka, true
-	case object.ASCIIOnly(a.Str()):
-		return kb, true
-	}
-	return 0, false
+	ae, aEmpty, aASCII := given(a)
+	be, bEmpty, bASCII := given(b)
+	return kindOf(str.Shared(ae, aEmpty, aASCII, be, bEmpty, bASCII))
+}
+
+// given returns the string v as str.Shared takes one: its
+// encoding, whether it is empty and whether it is ASCII alone.
+func given(v object.Value) (enc str.Encoding, empty, ascii bool) {
+	s := v.Str()
+	return object.EncodingOf(v.Kind()), s == "", v.KnownASCII() || str.ASCIIOnly(s)
+}
+
+// kindOf is the kind of the strings of an encoding two strings go
+// together in, when they do.
+func kindOf(enc str.Encoding, ok bool) (object.Kind, bool) {
+	return object.KindOf(enc), ok
 }
 
 // CombineEncodings is compatible for a string being built: the encoding
 // so far and whether it is empty or ASCII so far, then the next part's.
 func CombineEncodings(acc object.Kind, accEmpty, accASCII bool, part object.Kind, partEmpty, partASCII bool) (object.Kind, bool) {
-	switch {
-	case acc == part, partEmpty:
-		return acc, true
-	case accEmpty:
-		return part, true
-	case partASCII:
-		return acc, true
-	case accASCII:
-		return part, true
-	}
-	return 0, false
+	return kindOf(str.Shared(object.EncodingOf(acc), accEmpty, accASCII, object.EncodingOf(part), partEmpty, partASCII))
 }
 
 // IncompatibleEncodings is the message for combining two strings of
@@ -147,7 +141,7 @@ func incompatible(ctx object.Context, a, b object.Value) error {
 // compatible in, starting from kind, as interpolation and join do.
 func joinEncoded(ctx object.Context, kind object.Kind, parts []object.Value) (object.Value, error) {
 	var b strings.Builder
-	acc := object.StringOf(kind, "")
+	acc := object.NewString("", object.EncodingOf(kind))
 	// chars is the characters of the parts so far, each counted that does
 	// not know its own; whole says no part begins inside a character,
 	// where it could complete the one before it (object.Joined).
@@ -158,7 +152,7 @@ func joinEncoded(ctx object.Context, kind object.Kind, parts []object.Value) (ob
 			return object.Value{}, incompatible(ctx, acc, p)
 		}
 		s := p.Str()
-		if n, ok := p.Chars(); ok {
+		if n := p.Chars(); n >= 0 {
 			chars += n
 		} else {
 			chars += utf8.RuneCountInString(s)
@@ -168,18 +162,18 @@ func joinEncoded(ctx object.Context, kind object.Kind, parts []object.Value) (ob
 		// The characters so far are counted already: the string is not
 		// read again for each part.
 		if k == object.KindString && whole {
-			acc = object.StringOfChars(b.String(), chars)
+			acc = object.TrustedString(trusted.Key{}, b.String(), str.UTF8, chars)
 		} else {
-			acc = object.StringOf(k, b.String())
+			acc = object.NewString(b.String(), object.EncodingOf(k))
 		}
 	}
 	switch {
 	case acc.Kind() != object.KindString:
 		return acc, nil
 	case whole:
-		return object.StringOfChars(acc.Str(), chars), nil
+		return object.TrustedString(trusted.Key{}, acc.Str(), str.UTF8, chars), nil
 	}
-	return object.Counted(acc.Str()), nil
+	return object.NewString(acc.Str(), str.UTF8), nil
 }
 
 // invalidRun is how many bytes from i on make one invalid sequence, the
@@ -350,7 +344,7 @@ func asciiLower(c byte) byte {
 func installEncodings() {
 	e := object.EncodingClass
 	for _, k := range []object.Kind{object.KindString, object.KindBytes, object.KindASCII} {
-		encodingValues[k] = object.InstanceValue(&object.Instance{Cls: e, Fields: []object.Value{object.String(encodingName(k))}})
+		encodingValues[k] = object.InstanceValue(&object.Instance{Cls: e, Fields: []object.Value{object.NewString(encodingName(k), str.UTF8)}})
 	}
 	e.Consts["UTF_8"] = encodingValue(object.KindString)
 	e.Consts["ASCII_8BIT"] = encodingValue(object.KindBytes)
@@ -374,7 +368,7 @@ func installEncodings() {
 		return labelled(ctx, k, self.Str())
 	})
 	def(s, "b", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.StringOf(object.KindBytes, self.Str()), nil
+		return object.NewString(self.Str(), str.Binary), nil
 	})
 	def(s, "valid_encoding?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Bool(validIn(self.Kind(), self.Str())), nil
@@ -403,7 +397,7 @@ func installEncodings() {
 			}
 			return WantString(ctx, v)
 		})
-		return object.StringOf(k, out), err
+		return object.NewString(out, object.EncodingOf(k)), err
 	})
 	// encode converts to an encoding, from another when a second one says
 	// what the bytes are, with invalid:, undef: and replace:.
@@ -441,6 +435,17 @@ func installEncodings() {
 		if err != nil {
 			return object.Value{}, err
 		}
-		return object.StringOf(to, out), nil
+		return object.NewString(out, object.EncodingOf(to)), nil
 	})
+}
+
+// TextOf makes the UTF-8 string a library returns as text, s, and
+// raises when its bytes are not UTF-8: what unescapes or decodes for a
+// reader returns text or nothing, never bytes. who names the library
+// in the message.
+func TextOf(ctx object.Context, who, s string) (object.Value, error) {
+	if !utf8.ValidString(s) {
+		return object.Value{}, ctx.Raise(object.InvalidByteSequenceError, "invalid byte sequence in UTF-8: %s returns text, and these bytes are none", who)
+	}
+	return object.NewString(s, str.UTF8), nil
 }

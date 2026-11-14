@@ -1,6 +1,7 @@
 package object
 
 import (
+	"github.com/cameo-lang/cameo/src/str"
 	"math/big"
 	"testing"
 
@@ -12,21 +13,21 @@ import (
 func TestQuickKeyIsKey(t *testing.T) {
 	long := string(make([]byte, quickKeySize))
 	values := []Value{Symbol(""), Symbol("name"), Symbol("héllo"),
-		String(""), String("a"), String("héllo"), String("12:34"), String(long[:quickKeySize-24])}
+		NewString("", str.UTF8), NewString("a", str.UTF8), NewString("héllo", str.UTF8), NewString("12:34", str.UTF8), NewString(long[:quickKeySize-24], str.UTF8)}
 	for _, v := range values {
 		var buf [quickKeySize]byte
 		key, ok := quickKey(buf[:0], v)
 		assert.True(t, ok)
 		assert.Equals(t, string(key), Key(v))
 	}
-	for _, v := range []Value{Int(0), Int(-1), Float(1), Nil, True, String(long), StringOf(KindASCII, "a"), Bytes([]byte("a")), NewList(Int(1))} {
+	for _, v := range []Value{Int(0), Int(-1), Float(1), Nil, True, NewString(long, str.UTF8), NewString("a", str.USASCII), Bytes([]byte("a")), NewList(Int(1))} {
 		var buf [quickKeySize]byte
 		_, ok := quickKey(buf[:0], v)
 		assert.False(t, ok)
 	}
 
-	m := MapOf(Int(1), Int(10), Symbol("a"), Int(20), String("a"), Int(30), Float(1), Int(40), String(long), Int(50))
-	for i, k := range []Value{Int(1), Symbol("a"), String("a"), Float(1), String(long)} {
+	m := MapOf(Int(1), Int(10), Symbol("a"), Int(20), NewString("a", str.UTF8), Int(30), Float(1), Int(40), NewString(long, str.UTF8), Int(50))
+	for i, k := range []Value{Int(1), Symbol("a"), NewString("a", str.UTF8), Float(1), NewString(long, str.UTF8)} {
 		v, ok := m.Get(k)
 		assert.True(t, ok)
 		assert.Equals(t, v.Int(), int64(10*(i+1)))
@@ -46,7 +47,7 @@ func TestQuickKeyIsKey(t *testing.T) {
 func TestIntegerKeysAreFoundByNumber(t *testing.T) {
 	assert.Equals(t, canon(Int(7)), "")
 	big := BigInt(new(big.Int).Lsh(big.NewInt(1), 70))
-	m := NewMap().Put(Int(3), String("three")).Put(Float(3), String("float")).Put(Int(-1<<63), String("min")).Put(big, String("big")).Put(Int(1), String("one"))
+	m := NewMap().Put(Int(3), NewString("three", str.UTF8)).Put(Float(3), NewString("float", str.UTF8)).Put(Int(-1<<63), NewString("min", str.UTF8)).Put(big, NewString("big", str.UTF8)).Put(Int(1), NewString("one", str.UTF8))
 	for k, want := range map[int64]string{3: "three", -1 << 63: "min", 1: "one"} {
 		v, ok := m.Get(Int(k))
 		assert.True(t, ok)
@@ -60,7 +61,7 @@ func TestIntegerKeysAreFoundByNumber(t *testing.T) {
 	assert.False(t, m.Has(Int(2)))
 
 	// A key set again keeps its place; one deleted and added goes last.
-	m = m.Put(Int(3), String("again")).Without(Int(1)).Put(Int(1), String("back"))
+	m = m.Put(Int(3), NewString("again", str.UTF8)).Without(Int(1)).Put(Int(1), NewString("back", str.UTF8))
 	keys := m.Keys()
 	assert.Equals(t, Key(keys[0]), Key(Int(3)))
 	assert.Equals(t, Key(keys[len(keys)-1]), Key(Int(1)))

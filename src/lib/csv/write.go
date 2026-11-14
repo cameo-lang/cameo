@@ -2,6 +2,7 @@ package csv
 
 import (
 	"encoding/csv"
+	"github.com/cameo-lang/cameo/src/str"
 	"strings"
 	"unicode/utf8"
 
@@ -128,5 +129,5 @@ func generateLine(ctx object.Context, o *options, row object.Value) (object.Valu
 	if err := w.add(row); err != nil {
 		return object.Value{}, err
 	}
-	return object.String(w.b.String()), nil
+	return object.NewString(w.b.String(), str.UTF8), nil
 }

@@ -1,6 +1,7 @@
 package eval
 
 import (
+	"github.com/cameo-lang/cameo/src/str"
 	"reflect"
 	"testing"
 
@@ -17,7 +18,7 @@ func TestAReleasedMachineHoldsNothing(t *testing.T) {
 	in := New(nil, nil)
 	m := in.machine()
 	m.kind, m.fr, m.env = actMethod, &Frame{}, NewEnv(nil)
-	m.push(object.String("kept alive"))
+	m.push(object.NewString("kept alive", str.UTF8))
 	m.push(object.Int(1))
 	m.pop()
 	m.cursors = append(m.cursors, cursor{pending: ErrStopped})

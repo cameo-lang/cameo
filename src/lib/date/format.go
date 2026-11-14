@@ -2,6 +2,7 @@ package date
 
 import (
 	"fmt"
+	"github.com/cameo-lang/cameo/src/str"
 	"math"
 	"strings"
 	"time"
@@ -148,18 +149,18 @@ func jisx0301(d dt) string {
 
 func installFormatting() {
 	c := dateClass
-	str := func(name string, f func(d dt, v object.Value) string) {
+	strOf := func(name string, f func(d dt, v object.Value) string) {
 		c.Define(name, 0, func(ctx object.Context, self object.Value, a []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-			return object.String(f(read(self), self)), nil
+			return object.NewString(f(read(self), self), str.UTF8), nil
 		})
 	}
-	str("to_s", func(d dt, v object.Value) string { return toS(v) })
-	str("inspect", func(d dt, v object.Value) string { return inspect(v) })
-	str("asctime", func(d dt, v object.Value) string { return strftime(d, "%a %b %e %H:%M:%S %Y") })
-	str("ctime", func(d dt, v object.Value) string { return strftime(d, "%a %b %e %H:%M:%S %Y") })
-	str("rfc2822", func(d dt, v object.Value) string { return strftime(d, "%a, %-d %b %Y %T %z") })
-	str("rfc822", func(d dt, v object.Value) string { return strftime(d, "%a, %-d %b %Y %T %z") })
-	str("httpdate", func(d dt, v object.Value) string {
+	strOf("to_s", func(d dt, v object.Value) string { return toS(v) })
+	strOf("inspect", func(d dt, v object.Value) string { return inspect(v) })
+	strOf("asctime", func(d dt, v object.Value) string { return strftime(d, "%a %b %e %H:%M:%S %Y") })
+	strOf("ctime", func(d dt, v object.Value) string { return strftime(d, "%a %b %e %H:%M:%S %Y") })
+	strOf("rfc2822", func(d dt, v object.Value) string { return strftime(d, "%a, %-d %b %Y %T %z") })
+	strOf("rfc822", func(d dt, v object.Value) string { return strftime(d, "%a, %-d %b %Y %T %z") })
+	strOf("httpdate", func(d dt, v object.Value) string {
 		d.of = 0
 		return strftime(d, "%a, %d %b %Y %T GMT")
 	})
@@ -172,7 +173,7 @@ func installFormatting() {
 				if len(a) > 0 {
 					return object.Value{}, stdlib.ArgError(ctx, len(a), "0")
 				}
-				return object.String(date(d)), nil
+				return object.NewString(date(d), str.UTF8), nil
 			}
 			n := int64(0)
 			if len(a) > 1 {
@@ -184,7 +185,7 @@ func installFormatting() {
 					return object.Value{}, err
 				}
 			}
-			return object.String(datetime(d, n)), nil
+			return object.NewString(datetime(d, n), str.UTF8), nil
 		})
 	}
 	iso := func(d dt, n int64) string {
@@ -210,7 +211,7 @@ func installFormatting() {
 				return object.Value{}, err
 			}
 		}
-		return object.String(strftime(read(self), f)), nil
+		return object.NewString(strftime(read(self), f), str.UTF8), nil
 	})
 	c.Define("deconstruct_keys", 1, func(ctx object.Context, self object.Value, a []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		d := read(self)
@@ -226,7 +227,7 @@ func installFormatting() {
 			h, min, s := d.clock()
 			all["hour"], all["min"], all["sec"] = object.Int(h), object.Int(min), object.Int(s)
 			all["sec_fraction"] = ratio(float64(d.sf), nanos)
-			all["zone"] = object.String(offsetString(d.of, true))
+			all["zone"] = object.NewString(offsetString(d.of, true), str.UTF8)
 			order = append(order, "hour", "min", "sec", "sec_fraction", "zone")
 		}
 		b := object.NewMapBuilder()

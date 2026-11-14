@@ -10,6 +10,7 @@
 package logger
 
 import (
+	"github.com/cameo-lang/cameo/src/str"
 	"os"
 	"strconv"
 	"strings"
@@ -164,7 +165,7 @@ func (l *logger) add(ctx object.Context, sev int, message, progname, block objec
 			return err
 		}
 	} else {
-		v, err := ctx.Yield(l.formatter, object.String(label(sev)), object.TimeValue(now), progname, message)
+		v, err := ctx.Yield(l.formatter, object.NewString(label(sev), str.UTF8), object.TimeValue(now), progname, message)
 		if err != nil {
 			return err
 		}
@@ -196,14 +197,14 @@ func streamOf(ctx object.Context, v object.Value) (int, error) {
 func Install() {
 	c := class
 	object.DefineNative("Logger", object.ClassValue(c))
-	c.Consts["VERSION"] = object.String("1.6.4")
+	c.Consts["VERSION"] = object.NewString("1.6.4", str.ASCII)
 	for i, name := range []string{"DEBUG", "INFO", "WARN", "ERROR", "FATAL", "UNKNOWN"} {
 		c.Consts[name] = object.Int(i)
 		severity.Consts[name] = object.Int(i)
 	}
 	sevLabels := make([]object.Value, len(labels))
 	for i, l := range labels {
-		sevLabels[i] = object.String(l)
+		sevLabels[i] = object.NewString(l, str.UTF8)
 	}
 	c.Consts["SEV_LABEL"] = object.NewList(sevLabels...)
 	for _, k := range []*object.Class{formatterClass, severity, errorClass} {
@@ -333,7 +334,7 @@ func Install() {
 		if l.datetimeFormat == "" {
 			return object.Nil, nil
 		}
-		return object.String(l.datetimeFormat), nil
+		return object.NewString(l.datetimeFormat, str.UTF8), nil
 	})
 	def("datetime_format=", 1, func(ctx object.Context, l *logger, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if args[0].IsNil() {
@@ -353,7 +354,7 @@ func Install() {
 		})
 	}
 	def("inspect", 0, func(ctx object.Context, l *logger, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String("#<Logger level:" + strings.ToLower(label(l.level)) + ">"), nil
+		return object.NewString("#<Logger level:"+strings.ToLower(label(l.level))+">", str.UTF8), nil
 	})
 
 	// Logger::Formatter, the default format as a value a script can call
@@ -375,13 +376,13 @@ func Install() {
 		if err != nil {
 			return object.Value{}, err
 		}
-		return object.String(s), nil
+		return object.NewString(s, str.UTF8), nil
 	})
 	f.Define("datetime_format", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if formatterOf(self).datetimeFormat == "" {
 			return object.Nil, nil
 		}
-		return object.String(formatterOf(self).datetimeFormat), nil
+		return object.NewString(formatterOf(self).datetimeFormat, str.UTF8), nil
 	})
 	f.Define("datetime_format=", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		s, err := stdlib.WantString(ctx, args[0])

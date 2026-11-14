@@ -317,6 +317,9 @@ type Match struct {
 	Input string
 	Caps  []int
 	Re    *Regexp
+	// Binary says the input is a binary string: what matched, and what
+	// is before and after it, are bytes.
+	Binary bool
 }
 
 // Groups is the number of groups, not counting the whole match.

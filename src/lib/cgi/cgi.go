@@ -9,6 +9,7 @@ package cgi
 
 import (
 	"fmt"
+	"github.com/cameo-lang/cameo/src/str"
 	"strconv"
 	"strings"
 
@@ -20,28 +21,28 @@ import (
 func Install() {
 	m := object.NewModule("CGI")
 	object.DefineNative("CGI", object.ClassValue(m))
-	str := func(f func(string) string) object.NativeFn {
+	strOf := func(f func(string) string) object.NativeFn {
 		return func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			s, err := stdlib.WantString(ctx, args[0])
 			if err != nil {
 				return object.Value{}, err
 			}
-			return object.String(f(s)), nil
+			return stdlib.TextOf(ctx, "CGI", f(s))
 		}
 	}
 	for _, name := range []string{"escapeHTML", "escape_html", "h"} {
-		m.DefineSingleton(name, 1, str(escapeHTML))
+		m.DefineSingleton(name, 1, strOf(escapeHTML))
 	}
 	for _, name := range []string{"unescapeHTML", "unescape_html"} {
-		m.DefineSingleton(name, 1, str(unescapeHTML))
+		m.DefineSingleton(name, 1, strOf(unescapeHTML))
 	}
-	m.DefineSingleton("escape", 1, str(func(s string) string { return urlEscape(s, "+") }))
-	m.DefineSingleton("unescape", 1, str(func(s string) string { return urlUnescape(s, true) }))
+	m.DefineSingleton("escape", 1, strOf(func(s string) string { return urlEscape(s, "+") }))
+	m.DefineSingleton("unescape", 1, strOf(func(s string) string { return urlUnescape(s, true) }))
 	for _, name := range []string{"escapeURIComponent", "escape_uri_component"} {
-		m.DefineSingleton(name, 1, str(func(s string) string { return urlEscape(s, "%20") }))
+		m.DefineSingleton(name, 1, strOf(func(s string) string { return urlEscape(s, "%20") }))
 	}
 	for _, name := range []string{"unescapeURIComponent", "unescape_uri_component"} {
-		m.DefineSingleton(name, 1, str(func(s string) string { return urlUnescape(s, false) }))
+		m.DefineSingleton(name, 1, strOf(func(s string) string { return urlUnescape(s, false) }))
 	}
 	elementFn := func(f func(s string, elements []string) string) object.NativeFn {
 		return func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -62,7 +63,7 @@ func Install() {
 					return object.Value{}, err
 				}
 			}
-			return object.String(f(s, elements)), nil
+			return stdlib.TextOf(ctx, "CGI", f(s, elements))
 		}
 	}
 	for _, name := range []string{"escapeElement", "escape_element"} {
@@ -76,7 +77,7 @@ func Install() {
 		if !ok {
 			return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into Time", stdlib.KindName(args[0]))
 		}
-		return object.String(t.UTC().Format("Mon, 02 Jan 2006 15:04:05 GMT")), nil
+		return object.NewString(t.UTC().Format("Mon, 02 Jan 2006 15:04:05 GMT"), str.UTF8), nil
 	})
 	m.DefineSingleton("pretty", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) < 1 || len(args) > 2 {
@@ -92,7 +93,7 @@ func Install() {
 				return object.Value{}, err
 			}
 		}
-		return object.String(prettyHTML(s, shift)), nil
+		return object.NewString(prettyHTML(s, shift), str.UTF8), nil
 	})
 }
 

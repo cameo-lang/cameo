@@ -1,6 +1,7 @@
 package csv
 
 import (
+	"github.com/cameo-lang/cameo/src/str"
 	"strconv"
 
 	"github.com/cameo-lang/cameo/src/object"
@@ -192,7 +193,7 @@ func (t *table) toCSV(ctx object.Context, kw *object.Map) (object.Value, error) 
 			return object.Value{}, err
 		}
 	}
-	return object.String(w.b.String()), nil
+	return object.NewString(w.b.String(), str.UTF8), nil
 }
 
 func installTable() {
@@ -290,7 +291,7 @@ func installTable() {
 		if err != nil {
 			return object.Value{}, err
 		}
-		return object.String("#<CSV::Table mode:" + t.mode + " row_count:" + strconv.Itoa(len(t.toArray())) + ">\n" + body.Str()), nil
+		return object.NewString("#<CSV::Table mode:"+t.mode+" row_count:"+strconv.Itoa(len(t.toArray()))+">\n"+body.Str(), str.UTF8), nil
 	})
 	def("each", 0, func(ctx object.Context, t *table, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		var items []object.Value

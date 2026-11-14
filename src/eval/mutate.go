@@ -1,6 +1,7 @@
 package eval
 
 import (
+	"github.com/cameo-lang/cameo/src/str"
 	"strings"
 	"unicode/utf8"
 
@@ -324,7 +325,7 @@ func init() {
 				at = len(string([]rune(text)[:i]))
 			}
 			// The three pieces in the encoding they are compatible in.
-			return appendStrings(in, object.StringOf(k, text[:at]), []object.Value{args[1], object.StringOf(k, text[at:])}, line)
+			return appendStrings(in, object.NewString(text[:at], object.EncodingOf(k)), []object.Value{args[1], object.NewString(text[at:], object.EncodingOf(k))}, line)
 		}),
 		"replace": returnsSelf(func(in *Interp, fr *Frame, cur object.Value, args []object.Value, block object.Value, line int) (object.Value, error) {
 			if err := wantArgs(in, args, 1, line); err != nil {
@@ -336,7 +337,7 @@ func init() {
 			return args[0], nil
 		}),
 		"clear": returnsSelf(func(in *Interp, fr *Frame, cur object.Value, args []object.Value, block object.Value, line int) (object.Value, error) {
-			return object.String(""), nil
+			return object.NewString("", str.ASCII), nil
 		}),
 	}
 	hash := map[string]mutation{
@@ -498,11 +499,11 @@ func takeEnd(end bool) mutation {
 func appendStrings(in *Interp, cur object.Value, args []object.Value, line int) (object.Value, error) {
 	var b strings.Builder
 	b.WriteString(cur.Str())
-	kind, ascii := cur.Kind(), object.ASCIIOnly(cur.Str())
+	kind, ascii := cur.Kind(), str.ASCIIOnly(cur.Str())
 	for _, a := range args {
 		switch a.Kind() {
 		case object.KindString, object.KindBytes, object.KindASCII:
-			partASCII := object.ASCIIOnly(a.Str())
+			partASCII := str.ASCIIOnly(a.Str())
 			next, ok := stdlib.CombineEncodings(kind, b.Len() == 0, ascii, a.Kind(), a.Str() == "", partASCII)
 			if !ok {
 				return object.Value{}, in.raise(object.CompatibilityError, line, "%s", stdlib.IncompatibleEncodings(kind, a.Kind()))
@@ -520,7 +521,7 @@ func appendStrings(in *Interp, cur object.Value, args []object.Value, line int) 
 			return object.Value{}, in.raise(object.TypeError, line, "no implicit conversion of %s into String", typeName(a))
 		}
 	}
-	return object.StringOf(kind, b.String()), nil
+	return object.NewString(b.String(), object.EncodingOf(kind)), nil
 }
 
 // elemsOf is the elements of a list, set, range or map, as Set#subtract

@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/cameo-lang/cameo/src/str"
 	"io"
 	"math/big"
 	"os"
@@ -116,10 +117,11 @@ func Load(file, src string, stdout, stderr io.Writer) (*Program, error) {
 
 // Args sets ARGV, the script's arguments: what follows the script on the
 // cameo command line, or what the host gives it. It is empty by default.
+// An argument is text: Args panics for one that is not UTF-8.
 func (p *Program) Args(args []string) {
 	elems := make([]object.Value, len(args))
 	for i, a := range args {
-		elems[i] = object.Text(a)
+		elems[i] = object.NewString(a, str.UTF8)
 	}
 	p.in.SetConst("ARGV", object.NewList(elems...))
 }
@@ -383,7 +385,7 @@ func (c conv) toValue(v any) (object.Value, error) {
 	case float64:
 		return object.Float(v), nil
 	case string:
-		return object.Text(v), nil
+		return textOf(v)
 	case []byte:
 		return object.Bytes(v), nil
 	case time.Time:
@@ -401,7 +403,11 @@ func (c conv) toValue(v any) (object.Value, error) {
 	case []string:
 		elems := make([]object.Value, len(v))
 		for i, e := range v {
-			elems[i] = object.String(e)
+			val, err := textOf(e)
+			if err != nil {
+				return object.Value{}, err
+			}
+			elems[i] = val
 		}
 		return object.NewList(elems...), nil
 	case map[string]any:
@@ -416,7 +422,11 @@ func (c conv) toValue(v any) (object.Value, error) {
 			if err != nil {
 				return object.Value{}, err
 			}
-			b.Set(object.String(k), val)
+			key, err := textOf(k)
+			if err != nil {
+				return object.Value{}, err
+			}
+			b.Set(key, val)
 		}
 		return object.MapValue(b.Map()), nil
 	case map[any]any:
@@ -652,4 +662,16 @@ func ParseIOFlags(args []string) (allow, rest []string, err error) {
 		args = args[1:]
 	}
 	return allow, args, nil
+}
+
+// textOf makes the String of a Go string, which is text: a script
+// gets a UTF-8 String. Bytes that are not UTF-8 are an error; a host
+// that means bytes gives a []byte, which a script gets as a binary
+// String.
+func textOf(s string) (object.Value, error) {
+	v, ok := object.TryUTF8(s)
+	if !ok {
+		return object.Value{}, fmt.Errorf("a Go string that is not UTF-8: %q; give a []byte for bytes", s)
+	}
+	return v, nil
 }
