@@ -307,9 +307,11 @@ sets the fields, and `p a` prints `Point(x: 1, y: 2)` where Ruby prints
   file that is not UTF-8 and such bytes from the host are a binary
   String, and `force_encoding("UTF-8")` of such bytes raises
   Encoding::InvalidByteSequenceError, where Ruby makes a String whose
-  `valid_encoding?` is false. `CGI.unescape` and
-  `URI.decode_www_form_component` of bytes that are not UTF-8 return a
-  binary String for the same reason.
+  `valid_encoding?` is false. What `CGI` unescapes and
+  `URI.decode_www_form` and `decode_www_form_component` decode is text:
+  they return a UTF-8 String, and raise
+  Encoding::InvalidByteSequenceError for bytes that are not UTF-8
+  (`CGI.unescape("%E9")`), where Ruby returns the invalid String.
 - A binary String has bytes and no characters. A method that reads
   characters (`upcase`, `strip`, `chars`, `to_i`, `split`, `reverse`,
   `center`, `tr`) raises Encoding::CompatibilityError for one, where Ruby

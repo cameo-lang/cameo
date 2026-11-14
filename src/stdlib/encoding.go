@@ -492,3 +492,14 @@ func formatText(ctx object.Context, f object.Value, args []object.Value) (object
 	s, err := format(ctx, f.Str(), args)
 	return object.NewString(s, object.UTF8), err
 }
+
+// TextOf makes the UTF-8 string a library returns as text, s, and
+// raises when its bytes are not UTF-8: what unescapes or decodes for a
+// reader returns text or nothing, never bytes. who names the library
+// in the message.
+func TextOf(ctx object.Context, who, s string) (object.Value, error) {
+	if !utf8.ValidString(s) {
+		return object.Value{}, ctx.Raise(object.InvalidByteSequenceError, "invalid byte sequence in UTF-8: %s returns text, and these bytes are none", who)
+	}
+	return object.NewString(s, object.UTF8), nil
+}

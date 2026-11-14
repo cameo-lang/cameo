@@ -747,7 +747,7 @@ func installForms() {
 			if badEscapeRe.MatchString(s) {
 				return object.Value{}, ctx.Raise(object.ArgumentError, "invalid %%-encoding (%s)", s)
 			}
-			return object.NewString(decodeComponent(s, plus), object.UTF8), nil
+			return stdlib.TextOf(ctx, "URI", decodeComponent(s, plus))
 		}
 	}
 	m.DefineSingleton("decode_www_form_component", -1, decode(true))
@@ -834,7 +834,15 @@ func installForms() {
 				}
 				isindex = false
 			}
-			out = append(out, object.NewList(object.NewString(decodeComponent(key, true), object.UTF8), object.NewString(decodeComponent(val, true), object.UTF8)))
+			k, err := stdlib.TextOf(ctx, "URI", decodeComponent(key, true))
+			if err != nil {
+				return object.Value{}, err
+			}
+			v, err := stdlib.TextOf(ctx, "URI", decodeComponent(val, true))
+			if err != nil {
+				return object.Value{}, err
+			}
+			out = append(out, object.NewList(k, v))
 		}
 		return object.NewList(out...), nil
 	})

@@ -26,7 +26,7 @@ func Install() {
 			if err != nil {
 				return object.Value{}, err
 			}
-			return object.NewString(f(s), object.UTF8), nil
+			return stdlib.TextOf(ctx, "CGI", f(s))
 		}
 	}
 	for _, name := range []string{"escapeHTML", "escape_html", "h"} {
@@ -62,7 +62,7 @@ func Install() {
 					return object.Value{}, err
 				}
 			}
-			return object.NewString(f(s, elements), object.UTF8), nil
+			return stdlib.TextOf(ctx, "CGI", f(s, elements))
 		}
 	}
 	for _, name := range []string{"escapeElement", "escape_element"} {

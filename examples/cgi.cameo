@@ -8,7 +8,13 @@ p CGI.escape("a b+c~*'()!/é?=&#"), CGI.escapeURIComponent("a b+c~*'()!/é?=&#")
 p CGI.escape_uri_component("x y")
 # An invalid percent sequence stays as it is, and only unescape reads + as
 # a space.
-p CGI.unescape("a+b%20c%zz%4%%41%e9%C3%A9"), CGI.unescapeURIComponent("a+b%20c%zz%4%%41")
+p CGI.unescape("a+b%20c%zz%4%%41%C3%A9"), CGI.unescapeURIComponent("a+b%20c%zz%4%%41")
+# What is unescaped is text: bytes that are not UTF-8 raise.
+begin
+  CGI.unescape("%e9")
+rescue Encoding::InvalidByteSequenceError => e
+  p e.message
+end
 p CGI.unescape_uri_component("+%2B")
 
 p CGI.escapeHTML("<a href='x'>\"&</a>é"), CGI.escape_html("x"), CGI.h("<")
