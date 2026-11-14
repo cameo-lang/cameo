@@ -145,6 +145,7 @@ cameo script.cameo            # run; an uncaught exception prints script:line: m
 cameo --io=file script.cameo  # the same, with File.read and File.write allowed
 cameo check script.cameo      # parse and check only, report every error with its line
 cameo proto script.cameo      # the .proto files of the script's classes
+cameo ir script.cameo         # the IR, the instructions the script compiles to
 cameo debug script.cameo      # run under a debugger with the commands of Ruby's debug
 ```
 
