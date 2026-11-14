@@ -4,9 +4,9 @@
 // It follows date 3.4.1, the version Ruby 3.4 ships. A Date is an instance
 // with the fields Ruby keeps: the Julian Day Number and the seconds and
 // nanoseconds of the day in UTC, the offset, and the start of the
-// Gregorian calendar; a DateTime is the same with a time of day. Where
-// Ruby returns a Rational, cameo returns an Integer when the value is
-// whole and a Float otherwise: Date - Date, ajd, day_fraction,
+// Gregorian calendar; a DateTime is the same with a time of day.
+// This deviates from Ruby's behaviour: Ruby returns a Rational, cameo
+// returns an Integer when the value is whole and a Float otherwise: Date - Date, ajd, day_fraction,
 // sec_fraction and offset.
 package date
 

@@ -72,9 +72,11 @@ func Shared(a Encoding, aEmpty, aASCII bool, b Encoding, bEmpty, bASCII bool) (E
 
 // Joined is the encoding of a string made by joining two. Binary joined
 // with anything is binary, whatever either holds: bytes do not become
-// characters by standing beside some. Ruby makes text of the two when
-// the binary one is ASCII alone, and raises when both hold other bytes.
-// Text of two encodings goes together as Shared has it.
+// characters by standing beside some.
+// This deviates from Ruby's behaviour: Ruby makes text of the two when
+// the binary one is ASCII alone and raises when both hold other bytes,
+// cameo makes a binary string of them always. Text of two encodings
+// goes together as Shared has it.
 func Joined(a Encoding, aEmpty, aASCII bool, b Encoding, bEmpty, bASCII bool) (Encoding, bool) {
 	if a == Binary || b == Binary {
 		return Binary, true

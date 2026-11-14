@@ -17,9 +17,10 @@ import (
 //
 // A UTF-8 or US-ASCII string takes no binary string with bytes above 127
 // as an argument: the method would put those bytes, which are no
-// characters, into a string of characters. It raises
-// Encoding::CompatibilityError, also where Ruby makes a binary string of
-// an ASCII receiver. +, << and concat say themselves what they join.
+// characters, into a string of characters.
+// This deviates from Ruby's behaviour: Ruby makes a binary string when
+// the receiver is ASCII alone, cameo raises Encoding::CompatibilityError
+// for any receiver. +, << and concat say themselves what they join.
 //
 // Most methods see a binary string through latin1: each byte as the
 // character of the same number, so that UTF-8 code counting characters
@@ -42,10 +43,11 @@ var ownEncoding = map[string]bool{
 
 // byteMethods are the methods a binary string answers: those that read
 // or make bytes, compare, and say what the string is. A binary string
-// has bytes and no characters, so a method that needs to know what
-// character a byte is (its case, whether it is a space or a digit, where
-// a line ends) raises for one, where Ruby reads the bytes as ASCII: the
-// script says what the bytes are first, with force_encoding.
+// has bytes and no characters. This deviates from Ruby's behaviour: for
+// a method that needs to know what character a byte is (its case,
+// whether it is a space or a digit, where a line ends) Ruby reads the
+// bytes as ASCII, cameo raises: the script says what the bytes are
+// first, with force_encoding.
 var byteMethods = map[string]bool{
 	"encoding": true, "force_encoding": true, "b": true, "valid_encoding?": true, "scrub": true,
 	"encode": true, "ascii_only?": true, "bytes": true, "bytesize": true, "byteindex": true,

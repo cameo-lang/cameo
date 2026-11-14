@@ -5,7 +5,8 @@
 // It follows digest 3.2.0, the version Ruby 3.4 ships. A digest object is
 // an instance that holds the state of its hash after what it was fed:
 // update and << return the copy with more fed, for the script to bind
-// (d = d << "x"), where Ruby feeds the object in place. RMD160 is left
+// (d = d << "x"). This deviates from Ruby's behaviour: Ruby feeds the
+// object in place, cameo returns a copy. RMD160 is left
 // out: Go's standard library has no RIPEMD-160. Digest::SHA256.file reads
 // a file, which cameo does not.
 package digest

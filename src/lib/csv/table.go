@@ -346,7 +346,8 @@ func installTable() {
 		return object.True, nil
 	})
 	// << and push return the table with the row added; delete returns it
-	// without a row or a column, where Ruby returns what it removed.
+	// without a row or a column. This deviates from Ruby's behaviour: Ruby's
+	// delete returns what it removed, cameo's returns the table.
 	push := func(ctx object.Context, t *table, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		rows := append([]object.Value(nil), t.rows...)
 		for _, a := range args {

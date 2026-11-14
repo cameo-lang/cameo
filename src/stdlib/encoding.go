@@ -65,9 +65,10 @@ func encodingArg(ctx object.Context, v object.Value) (object.Kind, error) {
 
 // labelled makes the string of bytes s a script says are of encoding k,
 // with force_encoding or by putting bytes into a string of that
-// encoding: it raises for bytes the encoding does not allow, where Ruby
-// makes a string that is not valid, since a string of an encoding of
-// characters is made of whole characters alone.
+// encoding. A string of an encoding of characters is made of whole
+// characters alone. This deviates from Ruby's behaviour: for bytes the
+// encoding does not allow Ruby makes a string that is not valid, cameo
+// raises.
 func labelled(ctx object.Context, k object.Kind, s string) (object.Value, error) {
 	switch k {
 	case object.KindBytes:

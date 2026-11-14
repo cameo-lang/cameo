@@ -9,9 +9,10 @@
 // precision and scale, and the errors. A BigDecimal is a value with its
 // digits as fields, a Hash key and a Set member; it is a Numeric, and an
 // Integer or Float on the left of an operator coerces to it. cameo has no
-// Rational, so to_r is left out, and the square root and BigMath give the
-// digits asked for, correctly rounded, where Ruby pads them with its own
-// extra digits.
+// Rational, so to_r is left out.
+// This deviates from Ruby's behaviour: in the square root and BigMath
+// Ruby pads the digits asked for with extra digits of its own, cameo
+// gives the digits asked for, correctly rounded.
 package bigdecimal
 
 import (

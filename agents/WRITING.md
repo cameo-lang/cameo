@@ -83,6 +83,12 @@ retyping it: `[cameo-lang/cameo#35](https://github.com/cameo-lang/cameo/pull/35)
 
 ## Comments in code
 
+A comment that states a difference from Ruby says so in one form, so
+that a search finds every one: "This deviates from Ruby's behaviour: Ruby
+does foo, cameo does bar." Not "…, where Ruby does foo". Keep "This
+deviates from Ruby's behaviour" on one line of the comment, or the
+search misses it.
+
 A comment states what the code cannot: a constraint, an invariant, an external
 behaviour (a git version difference, an API quirk), the one non-obvious reason
 a line is the way it is. Keep it concise and factual.
