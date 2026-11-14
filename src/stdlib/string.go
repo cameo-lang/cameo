@@ -646,9 +646,9 @@ func stringIndex(ctx object.Context, self object.Value, args []object.Value) (ob
 
 // charAt returns the character at index i of the UTF-8 string self, a
 // negative i counting from the end, or nil past either end. A string
-// known to be ASCII alone answers from its bytes at once. Any other is
-// walked from the nearer end, a character at a time and without a copy,
-// so the time is that of the characters passed, not of the string.
+// of ASCII alone answers from its bytes at once. Any other finds the
+// character through its index of characters (charOffset), so that a
+// loop over a string by index reads each character once.
 func charAt(self object.Value, i int64) object.Value {
 	s := self.Str()
 	if self.KnownASCII() {
@@ -660,42 +660,21 @@ func charAt(self object.Value, i int64) object.Value {
 		}
 		return object.NewString(s[i:i+1], object.ASCII)
 	}
-	if n, known := self.Chars(); known {
-		if i < 0 {
-			i += int64(n)
-		}
-		if i < 0 || i >= int64(n) {
-			return object.Nil
-		}
-		if i > int64(n)/2 {
-			i -= int64(n) // nearer the end: count back from it
-		}
+	n, known := self.Chars()
+	if !known { // a string too long to keep its count: count it
+		n = utf8.RuneCountInString(s)
 	}
 	if i < 0 {
-		end := len(s)
-		for ; end > 0; i++ {
-			_, size := utf8.DecodeLastRuneInString(s[:end])
-			if i == -1 {
-				return object.StringOfChars(s[end-size:end], 1)
-			}
-			end -= size
-		}
+		i += int64(n)
+	}
+	if i < 0 || i >= int64(n) {
 		return object.Nil
 	}
-	at := 0
-	for ; i > 0 && at < len(s); i-- {
-		if s[at] < utf8.RuneSelf {
-			at++
-			continue
-		}
-		_, size := utf8.DecodeRuneInString(s[at:])
-		at += size
-	}
-	if at >= len(s) {
+	at := charOffset(s, int(i))
+	if at < 0 {
 		return object.Nil
 	}
-	_, size := utf8.DecodeRuneInString(s[at:])
-	return object.StringOfChars(s[at:at+size], 1)
+	return object.StringOfChars(s[at:at+charSize(s, at)], 1)
 }
 
 // rangeBounds resolves a range over a sequence of length n into a start and

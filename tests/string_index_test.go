@@ -92,3 +92,58 @@ end
 `)
 	assert.Equals(t, out, "repeat: 300000 300000\nformat: 300000 300000\ninterpolated: 300001 300001\nbinary: 300000 300000\n")
 }
+
+// A long string with characters beyond ASCII is found through an index of
+// its characters. Every index gives the character chars gives, forwards,
+// backwards, from the end and out of order, for several strings at once,
+// for more strings than keep an index, and for slices that share bytes.
+func TestTheIndexOfCharactersFindsEachCharacter(t *testing.T) {
+	out := runScript(t, `s = "aé€😀b" * 300
+chars = s.chars
+n = chars.size
+p n, s.bytesize
+p (0...n).all? { |i| s[i] == chars[i] }
+p (1..n).all? { |i| s[-i] == chars[n - i] }
+p (0...n).to_a.reverse.all? { |i| s[i] == chars[i] }
+p [1499, 0, 700, 64, 63, 65, 1280, 3, 1498].map { |i| s[i] == chars[i] }.all?
+p s[n], s[n + 100], s[-n - 1], s[n - 1], s[-n]
+others = (1..12).map { |k| "é" * (300 + k) + k.to_s }
+p others.each_with_index.all? { |o, k| o[300 + k + 1] == (k + 1).to_s[0] && o[5] == "é" && s[k] == chars[k] }
+head, tail = s[0, 600], s[600..]
+p (0...600).all? { |i| head[i] == chars[i] }, (0...900).all? { |i| tail[i] == chars[600 + i] }, head[600], tail[900]
+`)
+	assert.Equals(t, out, "1500\n3300\ntrue\ntrue\ntrue\ntrue\nnil\nnil\nnil\n\"b\"\n\"a\"\ntrue\ntrue\ntrue\nnil\nnil\n")
+}
+
+// Reading a long string with characters beyond ASCII by index reads each
+// character once: this loop made a walk from the start for each index,
+// and took minutes at this length.
+func TestIndexingALongStringOfCharactersIsNotQuadratic(t *testing.T) {
+	out := runScript(t, `s = "é" + "ab " * 200_000
+i = 0
+i += 1 until s[i].nil?
+p i, s[i - 1], s[0]
+`)
+	assert.Equals(t, out, "600001\n\" \"\n\"é\"\n")
+}
+
+// Workers index strings at once: the index is one for all of them.
+func TestWorkersIndexStringsAtOnce(t *testing.T) {
+	out := runScript(t, `include Cameo
+class Reader
+  def count(k)
+    s = "é#{k}" + "aé" * 2_000
+    n = 0
+    i = 0
+    until s[i].nil?
+      n += 1 if s[i] == "é"
+      i += 1
+    end
+    n
+  end
+end
+r = Reader.new
+p await((1..8).map { |k| async r, :count, k })
+`)
+	assert.Equals(t, out, "[2001, 2001, 2001, 2001, 2001, 2001, 2001, 2001]\n")
+}
