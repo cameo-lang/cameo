@@ -85,8 +85,66 @@ func (in *Interp) pushAct(m *machine, site *cameopb.Code) error {
 
 // run runs the activations above floor until the one at floor ended, and
 // returns its value or the completion that ended it.
+//
+// A string made of bytes that are not what it was said to be panics
+// (object.NewString). The panic is caught here, outside the loop that
+// runs instructions, which is then entered again with an
+// ArgumentError as the completion of the instruction that ran: the
+// script can rescue it.
 func (in *Interp) run(floor int) (object.Value, error) {
 	var err error
+	for {
+		v, left, wrong := in.runGuarded(floor, err)
+		if !wrong {
+			return v, left
+		}
+		err = left
+	}
+}
+
+// runGuarded is runFrom, with the panic of a wrong encoding turned
+// into the ArgumentError it returns; wrong says that it was. Any
+// other panic goes on.
+func (in *Interp) runGuarded(floor int, err error) (v object.Value, left error, wrong bool) {
+	defer func() {
+		r := recover()
+		if r == nil {
+			return
+		}
+		w, ok := r.(*object.WrongEncoding)
+		if !ok {
+			panic(r)
+		}
+		left, wrong = in.raise(object.ArgumentError, in.lineRunning(), "%s", w.Error()), true
+	}()
+	v, left = in.runFrom(floor, err)
+	return v, left, false
+}
+
+// lineRunning is the line of the instruction the innermost activation
+// with code was running, 0 when none is known: where a panic that run
+// caught came from.
+func (in *Interp) lineRunning() int {
+	for i := len(in.acts) - 1; i >= 0; i-- {
+		m := in.acts[i]
+		if m.flat != nil && len(m.cursors) == 0 {
+			if at := m.pc - 1; at >= 0 && at < len(m.flat.code) && m.flat.code[at].src != nil {
+				return int(m.flat.code[at].src.Line)
+			}
+			continue
+		}
+		for c := len(m.cursors) - 1; c >= 0; c-- {
+			if cur := m.cursors[c]; cur.next > 0 && cur.next <= len(cur.code) {
+				return int(cur.code[cur.next-1].Line)
+			}
+		}
+	}
+	return 0
+}
+
+// runFrom is the loop of run: it goes on from the completion err that
+// left the last instruction, nil when none did.
+func (in *Interp) runFrom(floor int, err error) (object.Value, error) {
 	for {
 		m := in.acts[len(in.acts)-1]
 		if m.kind == actStep {

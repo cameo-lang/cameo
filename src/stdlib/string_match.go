@@ -1,6 +1,8 @@
 package stdlib
 
 import (
+	"github.com/cameo-lang/cameo/src/internal/trusted"
+	"github.com/cameo-lang/cameo/src/str"
 	"strings"
 	"unicode/utf8"
 
@@ -12,7 +14,7 @@ import (
 // slice, match, match?, =~, start_with?, partition and rpartition.
 func installStringPatterns() {
 	c := object.StringClass
-	str := func(self object.Value) string { return self.Str() }
+	strOf := func(self object.Value) string { return self.Str() }
 
 	def(c, "sub", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return substitute(ctx, self, args, kw, block, 1)
@@ -26,18 +28,18 @@ func installStringPatterns() {
 			return object.Value{}, err
 		}
 		var out []object.Value
-		for _, m := range p.findAll(str(self), -1) {
-			v := groupsOrText(m)
+		for _, m := range p.findAll(strOf(self), -1) {
+			v := groupsOrText(over(self, m))
 			// What matched in ASCII is ASCII.
 			if self.KnownASCII() {
 				if l, ok := v.AsList(); ok {
 					for i, g := range l.Elems {
 						if g.IsString() {
-							l.Elems[i] = object.ASCIIString(g.Str())
+							l.Elems[i] = object.NewString(g.Str(), str.ASCII)
 						}
 					}
 				} else {
-					v = object.ASCIIString(v.Str())
+					v = object.NewString(v.Str(), str.ASCII)
 				}
 			}
 			if block.IsZero() {
@@ -66,12 +68,12 @@ func installStringPatterns() {
 		}
 		// A match in a binary string is at a byte.
 		if self.Kind() == object.KindBytes {
-			if m := r.MatchAt(str(self), 0); m != nil {
+			if m := r.MatchAt(strOf(self), 0); m != nil {
 				return object.Int(m.Caps[0]), nil
 			}
 			return object.Nil, nil
 		}
-		return matchIndex(r, str(self)), nil
+		return matchIndex(r, strOf(self)), nil
 	})
 	asRegexp := func(ctx object.Context, v object.Value) (*object.Regexp, error) {
 		if r, ok := v.AsRegexp(); ok {
@@ -116,7 +118,7 @@ func installStringPatterns() {
 			if len(args) < 1 || len(args) > 2 {
 				return object.Value{}, ArgError(ctx, len(args), "1..2")
 			}
-			s := str(self)
+			s := strOf(self)
 			p, err := patternOf(ctx, args[0])
 			if err != nil {
 				return object.Value{}, err
@@ -153,7 +155,7 @@ func installStringPatterns() {
 	def(c, "[]", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) >= 1 {
 			if r, ok := args[0].AsRegexp(); ok {
-				m := r.MatchAt(str(self), 0)
+				m := r.MatchAt(strOf(self), 0)
 				if m == nil {
 					return object.Nil, nil
 				}
@@ -169,7 +171,7 @@ func installStringPatterns() {
 					}
 				}
 				if s, ok := m.Group(g); ok {
-					return object.String(s), nil
+					return object.NewString(s, str.UTF8), nil
 				}
 				return object.Nil, nil
 			}
@@ -180,7 +182,7 @@ func installStringPatterns() {
 	def(c, "start_with?", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		for _, a := range args {
 			if r, ok := a.AsRegexp(); ok {
-				if m := r.MatchHere(str(self), 0); m != nil {
+				if m := r.MatchHere(strOf(self), 0); m != nil {
 					return object.True, nil
 				}
 				continue
@@ -189,27 +191,27 @@ func installStringPatterns() {
 			if err != nil {
 				return object.Value{}, err
 			}
-			if strings.HasPrefix(str(self), p) {
+			if strings.HasPrefix(strOf(self), p) {
 				return object.True, nil
 			}
 		}
 		return object.False, nil
 	})
 	parts := func(m *object.Match) object.Value {
-		return object.NewList(object.String(m.Input[:m.Caps[0]]), matchText(m), object.String(m.Input[m.Caps[1]:]))
+		return object.NewList(part(m, m.Input[:m.Caps[0]]), matchText(m), part(m, m.Input[m.Caps[1]:]))
 	}
 	def(c, "partition", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		p, err := patternOf(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
 		}
-		if m := p.findAt(str(self), 0); m != nil {
+		if m := over(self, p.findAt(strOf(self), 0)); m != nil {
 			return parts(m), nil
 		}
-		return object.NewList(self, object.String(""), object.String("")), nil
+		return object.NewList(self, object.NewString("", str.ASCII), object.NewString("", str.ASCII)), nil
 	})
 	def(c, "rpartition", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		s := str(self)
+		s := strOf(self)
 		p, err := patternOf(ctx, args[0])
 		if err != nil {
 			return object.Value{}, err
@@ -229,8 +231,9 @@ func installStringPatterns() {
 			}
 		}
 		if last == nil {
-			return object.NewList(object.String(""), object.String(""), self), nil
+			return object.NewList(object.NewString("", str.ASCII), object.NewString("", str.ASCII), self), nil
 		}
+		over(self, last)
 		return parts(last), nil
 	})
 }
@@ -255,7 +258,7 @@ func substitute(ctx object.Context, self object.Value, args []object.Value, kw *
 		switch args[1].Kind() {
 		case object.KindString, object.KindASCII, object.KindMap:
 		case object.KindBytes:
-			args = []object.Value{args[0], object.String(string(args[1].Bytes()))}
+			args = []object.Value{args[0], object.NewString(string(args[1].Bytes()), str.UTF8)}
 		default:
 			return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into String", KindName(args[1]))
 		}
@@ -270,6 +273,11 @@ func substitute(ctx object.Context, self object.Value, args []object.Value, kw *
 		return matchText(m)
 	}
 	textOrToS := func(v object.Value) (string, error) {
+		// Bytes that are no characters do not go into text, from a block
+		// or a hash as little as from an argument.
+		if !binary && v.Kind() == object.KindBytes && !str.ASCIIOnly(v.Str()) {
+			return "", incompatible(ctx, self, v)
+		}
 		if b, ok := v.AsBytes(); ok {
 			return string(b), nil
 		}
@@ -281,7 +289,7 @@ func substitute(ctx object.Context, self object.Value, args []object.Value, kw *
 	// replaces it begins or ends inside a character, where the count of
 	// the parts is not that of the whole (object.Joined).
 	chars := -1
-	if n, ok := self.Chars(); ok {
+	if n := self.Chars(); n >= 0 {
 		chars = n
 	}
 	starts := func(s string, i int) bool { return i == len(s) || utf8.RuneStart(s[i]) }
@@ -323,9 +331,9 @@ func substitute(ctx object.Context, self object.Value, args []object.Value, kw *
 	case binary:
 		return object.Bytes([]byte(b.String())), nil
 	case chars >= 0:
-		return object.StringOfChars(b.String(), chars), nil
+		return object.TrustedString(trusted.Key{}, b.String(), str.UTF8, chars), nil
 	}
-	return object.String(b.String()), nil
+	return object.NewString(b.String(), str.UTF8), nil
 }
 
 // split is String#split: on whitespace by default (and for " "), into

@@ -4,6 +4,7 @@ import (
 	"github.com/cameo-lang/cameo/src/lib"
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/stdlib"
+	"github.com/cameo-lang/cameo/src/str"
 	"github.com/cameo-lang/cameo/src/syntax"
 	"path/filepath"
 	"strings"
@@ -176,14 +177,14 @@ func init() {
 	// __FILE__ is the script's path as it was given, and __dir__ the
 	// absolute directory it is in.
 	object.DefineFunction("__FILE__", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(ctx.(*Interp).file), nil
+		return object.NewString(ctx.(*Interp).file, str.UTF8), nil
 	})
 	object.DefineFunction("__dir__", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		abs, err := filepath.Abs(ctx.(*Interp).file)
 		if err != nil {
 			return object.Nil, nil
 		}
-		return object.String(filepath.Dir(abs)), nil
+		return object.NewString(filepath.Dir(abs), str.UTF8), nil
 	})
 	object.ClassClass.Define("allocate", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Value{}, ctx.Raise(object.NoMethodError, "allocate is not supported: use new")

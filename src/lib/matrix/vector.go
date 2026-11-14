@@ -2,6 +2,7 @@ package matrix
 
 import (
 	"fmt"
+	"github.com/cameo-lang/cameo/src/str"
 	"math"
 	"strings"
 
@@ -471,7 +472,7 @@ func installVector() {
 				}
 				parts[i] = s
 			}
-			return object.String("Vector[" + strings.Join(parts, ", ") + "]"), nil
+			return object.NewString("Vector["+strings.Join(parts, ", ")+"]", str.UTF8), nil
 		}
 	}
 	defV("to_s", 0, render(false))

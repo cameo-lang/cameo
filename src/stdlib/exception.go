@@ -1,7 +1,11 @@
 package stdlib
 
 import (
+	"fmt"
 	"github.com/cameo-lang/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/str"
+	"strings"
+	"unicode/utf8"
 )
 
 // Exception's methods. new is the evaluator's: it makes the exception
@@ -9,18 +13,41 @@ import (
 // script's own or the ones below, which `super` from a script's reaches.
 // An initialize sets the exception it is given, which new alone hands it.
 
+// readable makes the text of a message: s when it is UTF-8, and
+// otherwise s with each byte that is part of no character written as
+// \xNN, as inspect writes it. A message is read by a person, and may
+// quote bytes a script was given.
+// This deviates from Ruby's behaviour: Ruby returns the bytes as they
+// are, in a String that is not valid, cameo writes them out.
+func readable(s string) object.Value {
+	if v, ok := object.TryUTF8(s); ok {
+		return v
+	}
+	var b strings.Builder
+	for i := 0; i < len(s); {
+		r, size := utf8.DecodeRuneInString(s[i:])
+		if r == utf8.RuneError && size == 1 {
+			fmt.Fprintf(&b, `\x%02X`, s[i])
+		} else {
+			b.WriteString(s[i : i+size])
+		}
+		i += size
+	}
+	return object.NewString(b.String(), str.UTF8)
+}
+
 func installException() {
 	c := object.ExceptionClass
 	exc := func(self object.Value) *object.Exception { return self.Exception() }
 	def(c, "message", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(exc(self).Message), nil
+		return readable(exc(self).Message), nil
 	})
 	def(c, "to_s", 0, c.Methods["message"].Native)
 	def(c, "full_message", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(exc(self).Message + " (" + exc(self).Cls.QualifiedName() + ")"), nil
+		return readable(exc(self).Message + " (" + exc(self).Cls.QualifiedName() + ")"), nil
 	})
 	def(c, "inspect", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String("#<" + exc(self).Cls.QualifiedName() + ": " + exc(self).Message + ">"), nil
+		return readable("#<" + exc(self).Cls.QualifiedName() + ": " + exc(self).Message + ">"), nil
 	})
 	def(c, "backtrace", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Nil, nil

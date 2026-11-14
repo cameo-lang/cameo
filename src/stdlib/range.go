@@ -2,6 +2,7 @@ package stdlib
 
 import (
 	"errors"
+	"github.com/cameo-lang/cameo/src/str"
 	"iter"
 	"math"
 	"math/big"
@@ -486,9 +487,9 @@ func installRange() {
 			}
 		}
 		if r(self).Exclusive {
-			return object.String(lo + "..." + hi), nil
+			return object.NewString(lo+"..."+hi, str.UTF8), nil
 		}
-		return object.String(lo + ".." + hi), nil
+		return object.NewString(lo+".."+hi, str.UTF8), nil
 	})
 }
 
@@ -539,7 +540,7 @@ func strValue(s string, sym bool) object.Value {
 	if sym {
 		return object.Symbol(s)
 	}
-	return object.String(s)
+	return object.NewString(s, str.UTF8)
 }
 
 // RangeElems expands a range of integers, strings or symbols into its

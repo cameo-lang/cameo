@@ -1,6 +1,7 @@
 package stdlib
 
 import (
+	"github.com/cameo-lang/cameo/src/str"
 	"sort"
 	"strings"
 	"unicode/utf8"
@@ -71,7 +72,7 @@ var patternMethods = map[string]bool{
 var joins = map[string]bool{"+": true, "<<": true, "concat": true}
 
 func toLatin1(s string) string {
-	if object.ASCIIOnly(s) {
+	if str.ASCIIOnly(s) {
 		return s
 	}
 	var b strings.Builder
@@ -82,7 +83,7 @@ func toLatin1(s string) string {
 }
 
 func fromLatin1(s string) string {
-	if object.ASCIIOnly(s) {
+	if str.ASCIIOnly(s) {
 		return s
 	}
 	var b strings.Builder
@@ -101,7 +102,7 @@ func fromLatin1(s string) string {
 func relabel(v object.Value, k object.Kind, f func(string) string) object.Value {
 	switch {
 	case v.IsString():
-		return object.StringOf(k, f(v.Str()))
+		return object.NewString(f(v.Str()), object.EncodingOf(k))
 	case v.Kind() == object.KindList:
 		elems := v.List().Elems
 		out := make([]object.Value, len(elems))
@@ -119,8 +120,8 @@ func relabel(v object.Value, k object.Kind, f func(string) string) object.Value 
 func asciiWhere(v object.Value) object.Value {
 	switch v.Kind() {
 	case object.KindString:
-		if object.ASCIIOnly(v.Str()) {
-			return object.StringOf(object.KindASCII, v.Str())
+		if str.ASCIIOnly(v.Str()) {
+			return object.NewString(v.Str(), str.USASCII)
 		}
 	case object.KindList:
 		elems := v.List().Elems
@@ -138,7 +139,7 @@ func viewArgs(args []object.Value) []object.Value {
 	for i, a := range args {
 		switch {
 		case a.IsString():
-			out[i] = object.String(toLatin1(a.Str()))
+			out[i] = object.NewString(toLatin1(a.Str()), str.UTF8)
 		case a.Kind() == object.KindList:
 			out[i] = object.NewList(viewArgs(a.List().Elems)...)
 		default:
@@ -154,7 +155,7 @@ func binaryAmong(args []object.Value) (object.Value, bool) {
 	for _, a := range args {
 		switch a.Kind() {
 		case object.KindBytes:
-			if !object.ASCIIOnly(a.Str()) {
+			if !str.ASCIIOnly(a.Str()) {
 				return a, true
 			}
 		case object.KindList:
@@ -226,7 +227,7 @@ func InstallStringEncodings() {
 				if i < 0 || i >= int64(len(s)) {
 					return object.Nil, nil
 				}
-				return object.StringOf(k, s[i:i+1]), nil
+				return object.NewString(s[i:i+1], object.EncodingOf(k)), nil
 			}
 			// A US-ASCII string holds 7-bit bytes alone, which are
 			// UTF-8 as they are: the method runs on them, and what
@@ -234,7 +235,7 @@ func InstallStringEncodings() {
 			// UTF-8 once an argument brought other characters in,
 			// as in Ruby.
 			if k == object.KindASCII && name != "inspect" && name != "dump" {
-				v, err := fn(ctx, object.ASCIIString(s), args, kw, block)
+				v, err := fn(ctx, object.NewString(s, str.ASCII), args, kw, block)
 				if err != nil {
 					return object.Value{}, err
 				}
@@ -245,9 +246,9 @@ func InstallStringEncodings() {
 				v, err := fn(ctx, self, args, kw, block)
 				return relabel(v, k, func(s string) string { return s }), err
 			case name == "inspect" || name == "dump":
-				return object.String(object.QuoteBytes([]byte(s))), nil
+				return object.NewString(object.QuoteBytes([]byte(s)), str.UTF8), nil
 			}
-			view := object.String(toLatin1(s))
+			view := object.NewString(toLatin1(s), str.UTF8)
 			v, err := fn(ctx, view, viewArgs(args), kw, block)
 			if err != nil {
 				return object.Value{}, err
@@ -269,7 +270,7 @@ func InstallStringEncodings() {
 			case object.KindBytes:
 				return object.Value{}, noCharacters(ctx, name)
 			}
-			return object.StringOf(self.Kind(), f(self.Str())), nil
+			return object.NewString(f(self.Str()), object.EncodingOf(self.Kind())), nil
 		})
 	}
 	asciiOnly("upcase", func(s string) string { return asciiCase(s, asciiUpper) })
@@ -302,7 +303,7 @@ func InstallStringEncodings() {
 				if k == object.KindString {
 					_, size = utf8.DecodeRuneInString(s[i:])
 				}
-				if err := yield(object.StringOf(k, s[i:i+size])); err != nil {
+				if err := yield(object.NewString(s[i:i+size], object.EncodingOf(k))); err != nil {
 					return err
 				}
 				i += size
@@ -336,7 +337,7 @@ func InstallStringEncodings() {
 			if line == "" {
 				continue
 			}
-			if _, err := ctx.Yield(block, object.StringOf(k, line)); err != nil {
+			if _, err := ctx.Yield(block, object.NewString(line, object.EncodingOf(k))); err != nil {
 				return object.Value{}, err
 			}
 		}
@@ -368,6 +369,6 @@ func InstallStringEncodings() {
 		if !ok {
 			return object.Value{}, incompatible(ctx, self, args[0])
 		}
-		return object.StringOf(k, self.Str()+args[0].Str()), nil
+		return object.NewString(self.Str()+args[0].Str(), object.EncodingOf(k)), nil
 	})
 }

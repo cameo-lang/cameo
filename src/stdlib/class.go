@@ -1,6 +1,7 @@
 package stdlib
 
 import (
+	"github.com/cameo-lang/cameo/src/str"
 	"maps"
 	"slices"
 
@@ -13,7 +14,7 @@ func installClass() {
 	m := object.ModuleClass
 	cls := func(self object.Value) *object.Class { return self.Cls() }
 	def(m, "name", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(cls(self).QualifiedName()), nil
+		return object.NewString(cls(self).QualifiedName(), str.UTF8), nil
 	})
 	def(m, "to_s", 0, m.Methods["name"].Native)
 	def(m, "inspect", 0, m.Methods["name"].Native)

@@ -2,6 +2,7 @@ package stdlib
 
 import (
 	"github.com/cameo-lang/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/str"
 )
 
 // IO is the class of STDOUT and STDERR, which $stdout and $stderr name:
@@ -19,8 +20,8 @@ var stdout, stderr object.Value
 func installIO() {
 	c := IOClass
 	object.ObjectClass.Consts["IO"] = object.ClassValue(c)
-	stdout = object.InstanceValue(&object.Instance{Cls: c, Fields: []object.Value{object.String("stdout")}})
-	stderr = object.InstanceValue(&object.Instance{Cls: c, Fields: []object.Value{object.String("stderr")}})
+	stdout = object.InstanceValue(&object.Instance{Cls: c, Fields: []object.Value{object.NewString("stdout", str.ASCII)}})
+	stderr = object.InstanceValue(&object.Instance{Cls: c, Fields: []object.Value{object.NewString("stderr", str.ASCII)}})
 	object.ObjectClass.Consts["STDOUT"] = stdout
 	object.ObjectClass.Consts["STDERR"] = stderr
 	// isErr returns whether self is the error stream.

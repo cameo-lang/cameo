@@ -217,7 +217,7 @@ each was measured, and [doc/coverage.md](doc/coverage.md) and
 
 | Path | Holds |
 |---|---|
-| `src/` | all Go code: `syntax` the front end, `ir` the instructions a script compiles to, `eval` the evaluator and the async scheduler, `object` the value model, `stdlib` the core classes, `lib` the libraries a script requires, `protogen` the descriptors and `.proto` text, `cameo` the host API, `cmd/cameo` the binary |
+| `src/` | all Go code: `syntax` the front end, `ir` the instructions a script compiles to, `eval` the evaluator and the async scheduler, `object` the value model, `str` what the bytes of a string are (encodings, the scan, the index of characters), `stdlib` the core classes, `lib` the libraries a script requires, `protogen` the descriptors and `.proto` text, `cameo` the host API, `cmd/cameo` the binary |
 | `examples/` | the specification: each `<name>.cameo` has the output it must print in `<name>.expected`, and `go test` holds it to that; the directories are Go programs that embed cameo |
 | `tests/`, `tests/integration/` | Go tests against the packages, and shell tests that drive the built binary |
 | `benchmarks/` | CRuby's benchmark suite sorted by what cameo runs, and the comparisons with other Rubies |

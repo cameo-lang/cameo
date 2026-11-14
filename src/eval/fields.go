@@ -2,6 +2,7 @@ package eval
 
 import (
 	"fmt"
+	"github.com/cameo-lang/cameo/src/str"
 	"math"
 	"slices"
 	"strconv"
@@ -331,7 +332,7 @@ func coerceScalar(t *object.ScalarType, v object.Value) (object.Value, bool) {
 		if !ok || v.Kind() != object.KindString && !utf8.ValidString(s) {
 			return object.Value{}, false
 		}
-		return object.String(s), true
+		return object.NewString(s, str.UTF8), true
 	case object.ScalarInteger:
 		return v, t.Fits(v)
 	case object.ScalarFloat:
@@ -429,7 +430,7 @@ func (in *Interp) coerceKey(kind string, k object.Value) (object.Value, bool) {
 	}
 	if t.Kind == object.ScalarString && k.Kind() == object.KindSymbol {
 		x := k.Str()
-		return object.String(x), true
+		return object.NewString(x, str.UTF8), true
 	}
 	return coerceScalar(t, k)
 }

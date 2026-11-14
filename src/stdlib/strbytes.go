@@ -1,6 +1,7 @@
 package stdlib
 
 import (
+	"github.com/cameo-lang/cameo/src/str"
 	"math/big"
 	"strings"
 	"unicode/utf8"
@@ -27,7 +28,7 @@ func installStringBytes() {
 		// returns the byte. A string that knows its characters says
 		// so at once; any other is read once.
 		if self.Kind() == object.KindString && !self.KnownASCII() {
-			if _, counted := self.Chars(); counted || !object.ASCIIOnly(s) {
+			if self.Chars() >= 0 || !str.ASCIIOnly(s) {
 				return object.Value{}, ctx.Raise(object.CompatibilityError, "getbyte reads a byte, and this UTF-8 string has characters beyond ASCII: call b first for its bytes, or read a character with []")
 			}
 		}
@@ -223,8 +224,8 @@ func byteRange(ctx object.Context, v object.Value, size int64) (int64, int64, er
 // checkBytes resolves a negative start and clamps the length to the
 // string, failing as Ruby's str_check_beg_len does, also when either end
 // falls inside a character of a UTF-8 string.
-func checkBytes(ctx object.Context, str object.Value, beg, n int64) (int64, int64, error) {
-	s := str.Str()
+func checkBytes(ctx object.Context, recv object.Value, beg, n int64) (int64, int64, error) {
+	s := recv.Str()
 	size := int64(len(s))
 	if n < 0 {
 		return 0, 0, ctx.Raise(object.IndexError, "negative length %d", n)
@@ -236,7 +237,7 @@ func checkBytes(ctx object.Context, str object.Value, beg, n int64) (int64, int6
 		beg += size
 	}
 	n = min(n, size-beg)
-	if str.Kind() == object.KindString && !object.ASCIIOnly(s) {
+	if recv.Kind() == object.KindString && !str.ASCIIOnly(s) {
 		for _, at := range []int64{beg, beg + n} {
 			if at < size && !utf8.RuneStart(s[at]) {
 				return 0, 0, ctx.Raise(object.IndexError, "offset %d does not land on character boundary", at)

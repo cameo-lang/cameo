@@ -22,9 +22,11 @@ package fileio
 
 import (
 	"errors"
+	"github.com/cameo-lang/cameo/src/str"
 	"io/fs"
 	"path/filepath"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/spf13/afero"
 
@@ -73,15 +75,15 @@ func Install() {
 	stringio.DefineReading(file)
 	file.Define("path", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		p, _ := stringio.ReaderInfo(self)
-		return object.String(p), nil
+		return object.NewString(p, str.UTF8), nil
 	})
 	file.Define("to_path", 0, file.Methods["path"].Native)
 	file.Define("inspect", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		p, closed := stringio.ReaderInfo(self)
 		if closed {
-			return object.String("#<File:" + p + " (closed)>"), nil
+			return object.NewString("#<File:"+p+" (closed)>", str.UTF8), nil
 		}
-		return object.String("#<File:" + p + ">"), nil
+		return object.NewString("#<File:"+p+">", str.UTF8), nil
 	})
 
 	// open(path, mode = "r", **opts) returns a handle reading the file,
@@ -105,6 +107,9 @@ func Install() {
 		data, err := readFile(ctx, name)
 		if err != nil {
 			return object.Value{}, err
+		}
+		if !binary && !utf8.Valid(data) {
+			return object.Value{}, notText(ctx, name)
 		}
 		h := stringio.NewReader(self.Cls(), name, data, stringKind(binary))
 		if block.IsZero() {
@@ -167,13 +172,19 @@ func Install() {
 		if binary {
 			return object.Bytes(data), nil
 		}
-		// A file that is not UTF-8 is read as bytes.
-		return object.Text(string(data)), nil
+		// A read without a length is of text, which is UTF-8; a file of
+		// other bytes is refused (notText).
+		v, ok := object.TryUTF8(string(data))
+		if !ok {
+			return object.Value{}, notText(ctx, name)
+		}
+		return v, nil
 	})
 
 	// write(path, data) and write(path) { data } write data, a String or
 	// what its to_s returns, to the file, creating it or replacing what it
-	// held, and return the String written, where Ruby's returns its length.
+	// held. This deviates from Ruby's behaviour: Ruby returns the length
+	// written, cameo returns the String written.
 	fileIO.Define("write", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if len(args) < 1 || len(args) > 2 {
 			return object.Value{}, stdlib.ArgError(ctx, len(args), "1..2")
@@ -204,7 +215,7 @@ func Install() {
 			if err != nil {
 				return object.Value{}, err
 			}
-			data = object.String(s)
+			data = object.NewString(s, str.UTF8)
 		}
 		if err := writeFile(ctx, name, []byte(data.Str())); err != nil {
 			return object.Value{}, err
@@ -351,4 +362,12 @@ func Resolve(dir, name string) string {
 		return filepath.Clean(name)
 	}
 	return filepath.Join(string(filepath.Separator), dir, name)
+}
+
+// notText is the error for a file read as text whose bytes are not
+// UTF-8.
+// This deviates from Ruby's behaviour: Ruby returns a String that is
+// not valid, cameo raises, and reads such a file in binary mode.
+func notText(ctx object.Context, name string) error {
+	return ctx.Raise(object.ArgumentError, "%s is not UTF-8: read its bytes with mode: \"rb\"", name)
 }

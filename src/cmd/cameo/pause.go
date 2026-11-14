@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync/atomic"
+	"unicode/utf8"
 
 	"github.com/cameo-lang/cameo/src/cameo"
 	"github.com/cameo-lang/cameo/src/syntax"
@@ -28,6 +29,13 @@ func runScript(path string, argv, allowIO []string, pause, ignoreMutations, keep
 	if err != nil {
 		fmt.Fprintln(stderr, err)
 		return 1
+	}
+	// An argument is text for the script.
+	for _, a := range argv {
+		if !utf8.ValidString(a) {
+			fmt.Fprintf(stderr, "cameo: the argument %q is not UTF-8\n", a)
+			return 2
+		}
 	}
 	prog, err := cameo.Load(path, string(src), stdout, stderr)
 	if err == nil {

@@ -11,6 +11,7 @@
 package forwardable
 
 import (
+	"github.com/cameo-lang/cameo/src/str"
 	"strings"
 
 	"github.com/cameo-lang/cameo/src/object"
@@ -125,8 +126,8 @@ func pairs(ctx object.Context, self object.Value, instance bool, args []object.V
 func Install() {
 	object.DefineNative("Forwardable", object.ClassValue(module))
 	object.DefineNative("SingleForwardable", object.ClassValue(single))
-	module.Consts["VERSION"] = object.String("1.3.3")
-	module.Consts["FORWARDABLE_VERSION"] = object.String("1.3.3")
+	module.Consts["VERSION"] = object.NewString("1.3.3", str.ASCII)
+	module.Consts["FORWARDABLE_VERSION"] = object.NewString("1.3.3", str.ASCII)
 	one := func(instance bool) object.NativeFn {
 		return func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 			if len(args) < 2 || len(args) > 3 {

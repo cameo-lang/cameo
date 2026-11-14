@@ -13,6 +13,7 @@ package uri
 
 import (
 	"fmt"
+	"github.com/cameo-lang/cameo/src/str"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -86,7 +87,7 @@ var components = map[*object.Class][]string{
 func Install() {
 	m := uriModule
 	object.DefineNative("URI", object.ClassValue(m))
-	m.Consts["VERSION"] = object.String("1.0.2")
+	m.Consts["VERSION"] = object.NewString("1.0.2", str.ASCII)
 	for _, c := range []*object.Class{errorClass, invalidURI, invalidComp, badURI, genericClass, httpClass, httpsClass, ftpClass, fileClass, wsClass, wssClass, ldapClass, ldapsClass, mailtoClass, parserClass} {
 		c.Lexical = m
 		m.Consts[c.Name] = object.ClassValue(c)
@@ -146,7 +147,7 @@ type parts struct {
 	port                                                  *int64
 }
 
-func str(s string) *string { return &s }
+func strOf(s string) *string { return &s }
 
 func read(v object.Value) parts {
 	f := v.Instance().Fields
@@ -154,7 +155,7 @@ func read(v object.Value) parts {
 		if f[i].IsZero() || f[i].IsNil() {
 			return nil
 		}
-		return str(f[i].Str())
+		return strOf(f[i].Str())
 	}
 	p := parts{scheme: get(fScheme), userinfo: get(fUserinfo), host: get(fHost), path: get(fPath), opaque: get(fOpaque), query: get(fQuery), fragment: get(fFragment)}
 	if n, ok := f[fPort].AsInt(); ok {
@@ -170,7 +171,7 @@ func build(cls *object.Class, p parts) object.Value {
 	}
 	set := func(i int, s *string) {
 		if s != nil {
-			fields[i] = object.String(*s)
+			fields[i] = object.NewString(*s, str.UTF8)
 		}
 	}
 	set(fScheme, p.scheme)
@@ -262,7 +263,7 @@ var (
 // opaque part with its query, and the path as written. The registry is
 // always nil.
 func split(ctx object.Context, s string) ([]*string, error) {
-	if !object.ASCIIOnly(s) {
+	if !str.ASCIIOnly(s) {
 		return nil, ctx.Raise(invalidURI, "URI must be ascii only %s", dump(s))
 	}
 	bad := func() error { return ctx.Raise(invalidURI, "bad URI (is not URI?): %s", object.QuoteString(s)) }
@@ -278,12 +279,12 @@ func split(ctx object.Context, s string) ([]*string, error) {
 	out := make([]*string, 9)
 	rest := s
 	if u.Scheme != "" {
-		out[0] = str(s[:len(u.Scheme)])
+		out[0] = strOf(s[:len(u.Scheme)])
 		rest = s[len(u.Scheme)+1:]
 	}
 	fragment := func() *string {
 		if i := strings.IndexByte(s, '#'); i >= 0 {
-			return str(s[i+1:])
+			return strOf(s[i+1:])
 		}
 		return nil
 	}
@@ -292,24 +293,24 @@ func split(ctx object.Context, s string) ([]*string, error) {
 		if u.ForceQuery || u.RawQuery != "" {
 			opaque += "?" + u.RawQuery
 		}
-		out[6] = str(opaque)
+		out[6] = strOf(opaque)
 		out[8] = fragment()
 		return out, nil
 	}
 	if strings.HasPrefix(rest, "//") {
 		if u.User != nil {
-			out[1] = str(u.User.String())
+			out[1] = strOf(u.User.String())
 		}
 		host := u.Host
 		if i := strings.LastIndexByte(host, ':'); i >= 0 && !strings.HasSuffix(host, "]") {
-			out[3] = str(host[i+1:])
+			out[3] = strOf(host[i+1:])
 			host = host[:i]
 		}
-		out[2] = str(host)
+		out[2] = strOf(host)
 	}
-	out[5] = str(u.EscapedPath())
+	out[5] = strOf(u.EscapedPath())
 	if u.ForceQuery || u.RawQuery != "" {
-		out[7] = str(u.RawQuery)
+		out[7] = strOf(u.RawQuery)
 	}
 	out[8] = fragment()
 	return out, nil
@@ -383,7 +384,7 @@ func construct(ctx object.Context, cls *object.Class, c []*string, argCheck bool
 				err = checkScheme(ctx, v)
 			}
 			if v != nil {
-				v = str(strings.ToLower(*v))
+				v = strOf(strings.ToLower(*v))
 			}
 			p.scheme = v
 		case 1:
@@ -399,7 +400,7 @@ func construct(ctx object.Context, cls *object.Class, c []*string, argCheck bool
 				err = checkHost(ctx, p, v)
 			}
 			if cls.IsA(fileClass) && (v == nil || *v == "localhost") {
-				v = str("")
+				v = strOf("")
 			}
 			p.host = v
 		case 3:
@@ -437,12 +438,12 @@ func construct(ctx object.Context, cls *object.Class, c []*string, argCheck bool
 				if qErr != nil {
 					return qErr
 				}
-				v = str(q)
+				v = strOf(q)
 			}
 			p.query = v
 		case 8:
 			if v != nil {
-				v = str(escapeFragment(*v))
+				v = strOf(escapeFragment(*v))
 			}
 			p.fragment = v
 		}
@@ -462,13 +463,13 @@ func construct(ctx object.Context, cls *object.Class, c []*string, argCheck bool
 		return object.Value{}, ctx.Raise(invalidURI, "the scheme %s does not accept registry part: %s (or bad hostname?)", sch, *c[4])
 	}
 	if p.path == nil && p.opaque == nil {
-		p.path = str("")
+		p.path = strOf("")
 	}
 	if dp := defaultPort(cls); dp != nil && p.port == nil {
 		p.port = dp
 	}
 	if cls.IsA(ftpClass) && p.path != nil {
-		p.path = str(ftpPath(*p.path))
+		p.path = strOf(ftpPath(*p.path))
 	}
 	return build(cls, p), nil
 }
@@ -657,13 +658,13 @@ func toS(v object.Value) string {
 func normalize(v object.Value) object.Value {
 	p := read(v)
 	if p.path != nil && *p.path == "" {
-		p.path = str("/")
+		p.path = strOf("/")
 	}
 	if p.scheme != nil {
-		p.scheme = str(strings.ToLower(*p.scheme))
+		p.scheme = strOf(strings.ToLower(*p.scheme))
 	}
 	if p.host != nil {
-		p.host = str(strings.ToLower(*p.host))
+		p.host = strOf(strings.ToLower(*p.host))
 	}
 	return build(v.Instance().Cls, p)
 }
@@ -712,7 +713,7 @@ func toURI(ctx object.Context, v object.Value) (object.Value, error) {
 		return v, nil
 	}
 	if v.IsString() || v.Kind() == object.KindSymbol {
-		return parse(ctx, object.String(v.Str()))
+		return parse(ctx, object.NewString(v.Str(), str.UTF8))
 	}
 	shown, err := ctx.Inspect(v)
 	if err != nil {
@@ -809,14 +810,14 @@ func routeFrom(ctx object.Context, self, other object.Value) (object.Value, erro
 	}
 	rel.userinfo, rel.host, rel.port = nil, nil, nil
 	if rel.path != nil && o.path != nil && *rel.path == *o.path {
-		rel.path = str("")
+		rel.path = strOf("")
 		if sameStr(rel.query, o.query) {
 			rel.query = nil
 		}
 		return build(genericClass, rel), nil
 	}
 	if rel.opaque != nil && o.opaque != nil && *rel.opaque == *o.opaque {
-		rel.opaque = str("")
+		rel.opaque = strOf("")
 		if sameStr(rel.query, o.query) {
 			rel.query = nil
 		}
@@ -829,9 +830,9 @@ func routeFrom(ctx object.Context, self, other object.Value) (object.Value, erro
 	if s.path != nil {
 		sp = *s.path
 	}
-	rel.path = str(routeFromPath(op, sp))
+	rel.path = strOf(routeFromPath(op, sp))
 	if *rel.path == "./" && s.query != nil {
-		rel.path = str("")
+		rel.path = strOf("")
 	}
 	return build(genericClass, rel), nil
 }
@@ -928,7 +929,7 @@ func mailtoToS(v object.Value) string {
 func headersValue(headers [][2]string) object.Value {
 	out := make([]object.Value, len(headers))
 	for i, h := range headers {
-		out[i] = object.NewList(object.String(h[0]), object.String(h[1]))
+		out[i] = object.NewList(object.NewString(h[0], str.UTF8), object.NewString(h[1], str.UTF8))
 	}
 	return object.NewList(out...)
 }

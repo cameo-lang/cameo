@@ -22,6 +22,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/cameo-lang/cameo/src/str"
 	"hash/adler32"
 	"hash/crc32"
 	"io"
@@ -56,8 +57,8 @@ func raise(cls *object.Class, msg string) error { return &object.Exception{Cls: 
 func Install() {
 	m := module
 	object.DefineNative("Zlib", object.ClassValue(m))
-	m.Consts["VERSION"] = object.String("3.2.1")
-	m.Consts["ZLIB_VERSION"] = object.String("1.3.1")
+	m.Consts["VERSION"] = object.NewString("3.2.1", str.ASCII)
+	m.Consts["ZLIB_VERSION"] = object.NewString("1.3.1", str.ASCII)
 	for name, v := range map[string]int64{
 		"NO_COMPRESSION": 0, "BEST_SPEED": 1, "BEST_COMPRESSION": 9, "DEFAULT_COMPRESSION": -1,
 		"FILTERED": 1, "HUFFMAN_ONLY": 2, "RLE": 3, "FIXED": 4, "DEFAULT_STRATEGY": 0,
@@ -85,7 +86,7 @@ func Install() {
 		})
 	}
 	m.DefineSingleton("zlib_version", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String("1.3.1"), nil
+		return object.NewString("1.3.1", str.ASCII), nil
 	})
 
 	// crc32(string = "", crc = 0) and adler32(string = "", adler = 1).

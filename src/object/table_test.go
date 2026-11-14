@@ -1,6 +1,7 @@
 package object
 
 import (
+	"github.com/cameo-lang/cameo/src/str"
 	"strings"
 	"sync"
 	"testing"
@@ -38,30 +39,30 @@ func TestMapVersionsStayAsTheyWere(t *testing.T) {
 	// Writing through an old version branches: neither branch sees the
 	// other's key.
 	old := versions[10]
-	a, b := old.Put(String("a"), Int(1)), old.Put(String("b"), Int(2))
-	if a.Has(String("b")) || b.Has(String("a")) || old.Has(String("a")) || a.Len() != 11 || b.Len() != 11 {
+	a, b := old.Put(NewString("a", str.UTF8), Int(1)), old.Put(NewString("b", str.UTF8), Int(2))
+	if a.Has(NewString("b", str.UTF8)) || b.Has(NewString("a", str.UTF8)) || old.Has(NewString("a", str.UTF8)) || a.Len() != 11 || b.Len() != 11 {
 		t.Fatal("branches from one version see each other's keys")
 	}
 }
 
 func TestMapOverwriteDeleteAndOrder(t *testing.T) {
-	m := MapOf(String("a"), Int(1), String("b"), Int(2), String("c"), Int(3))
-	over := m.Put(String("a"), Int(9))
+	m := MapOf(NewString("a", str.UTF8), Int(1), NewString("b", str.UTF8), Int(2), NewString("c", str.UTF8), Int(3))
+	over := m.Put(NewString("a", str.UTF8), Int(9))
 	if got := keysOf(over); got != `s1:a=i9,s1:b=i2,s1:c=i3,` {
 		t.Fatalf("overwriting moves the key: %s", got)
 	}
 	if got := keysOf(m); got != `s1:a=i1,s1:b=i2,s1:c=i3,` {
 		t.Fatalf("overwriting changed the original: %s", got)
 	}
-	gone := over.Without(String("a"))
-	if gone.Has(String("a")) || gone.Len() != 2 || !over.Has(String("a")) {
+	gone := over.Without(NewString("a", str.UTF8))
+	if gone.Has(NewString("a", str.UTF8)) || gone.Len() != 2 || !over.Has(NewString("a", str.UTF8)) {
 		t.Fatal("Without changed the wrong version")
 	}
-	back := gone.Put(String("a"), Int(5))
+	back := gone.Put(NewString("a", str.UTF8), Int(5))
 	if got := keysOf(back); got != `s1:b=i2,s1:c=i3,s1:a=i5,` {
 		t.Fatalf("a key added after its deletion goes last: %s", got)
 	}
-	if same := m.Put(String("a"), Int(1)); same.Len() != 3 || keysOf(same) != keysOf(m) {
+	if same := m.Put(NewString("a", str.UTF8), Int(1)); same.Len() != 3 || keysOf(same) != keysOf(m) {
 		t.Fatal("setting a key to its value changes nothing")
 	}
 }
@@ -70,12 +71,12 @@ func TestMapCompactsOverwrites(t *testing.T) {
 	// Overwriting one key many times keeps the table near the live size.
 	m := NewMap()
 	for i := 0; i < 10000; i++ {
-		m = m.Put(String("k"), Int(i))
+		m = m.Put(NewString("k", str.UTF8), Int(i))
 	}
 	if n := len(m.t.entries); n > 64 {
 		t.Fatalf("the table holds %d entries for one key", n)
 	}
-	if v, _ := m.Get(String("k")); !Equal(v, Int(9999)) || m.Len() != 1 {
+	if v, _ := m.Get(NewString("k", str.UTF8)); !Equal(v, Int(9999)) || m.Len() != 1 {
 		t.Fatal("compaction lost the latest value")
 	}
 }
@@ -143,23 +144,23 @@ func TestMapShiftWalksForward(t *testing.T) {
 
 func TestMapAddFillsAMapInPlace(t *testing.T) {
 	m := NewMapSized(2)
-	m.Add(String("a"), Int(1))
-	m.Add(String("b"), Int(2))
+	m.Add(NewString("a", str.UTF8), Int(1))
+	m.Add(NewString("b", str.UTF8), Int(2))
 	if got := keysOf(m); got != `s1:a=i1,s1:b=i2,` || m.Len() != 2 {
 		t.Fatalf("Add: %s", got)
 	}
 	// A repeated key keeps its place, as in a literal {a: 1, b: 2, a: 3}.
-	m.Add(String("a"), Int(3))
+	m.Add(NewString("a", str.UTF8), Int(3))
 	if got := keysOf(m); got != `s1:a=i3,s1:b=i2,` || m.Len() != 2 {
 		t.Fatalf("Add of a key it has: %s", got)
 	}
 	// More keys than the room it was made with.
-	m.Add(String("c"), Int(4))
+	m.Add(NewString("c", str.UTF8), Int(4))
 	if got := keysOf(m); got != `s1:a=i3,s1:b=i2,s1:c=i4,` {
 		t.Fatalf("Add past its size: %s", got)
 	}
 	// Once built, the map is immutable again: Put leaves it as it was.
-	p := m.Put(String("d"), Int(5))
+	p := m.Put(NewString("d", str.UTF8), Int(5))
 	if got := keysOf(m); got != `s1:a=i3,s1:b=i2,s1:c=i4,` || p.Len() != 4 {
 		t.Fatalf("Put after Add changed the map: %s", got)
 	}

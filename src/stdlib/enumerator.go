@@ -1,6 +1,7 @@
 package stdlib
 
 import (
+	"github.com/cameo-lang/cameo/src/str"
 	"iter"
 	"math"
 	"math/big"
@@ -418,7 +419,7 @@ func installEnumerator() {
 	})
 	inspect := func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		s, err := EnumeratorInspect(ctx, en(self))
-		return object.String(s), err
+		return object.NewString(s, str.UTF8), err
 	}
 	def(c, "inspect", 0, inspect)
 	def(c, "to_s", 0, inspect)

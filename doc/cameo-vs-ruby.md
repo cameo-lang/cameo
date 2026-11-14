@@ -303,11 +303,30 @@ sets the fields, and `p a` prints `Point(x: 1, y: 2)` where Ruby prints
   false. Such bytes are written as a binary string literal, `b"\xFF"`,
   which Ruby reads as a call of `b`; it takes escapes as `"..."` does, or
   none as `b'...'`, and no interpolation.
-- A UTF-8 String holds whole characters alone, and none is invalid. A
-  file that is not UTF-8 and such bytes from the host are a binary
-  String, and `force_encoding("UTF-8")` of such bytes raises
-  Encoding::InvalidByteSequenceError, where Ruby makes a String whose
-  `valid_encoding?` is false.
+- A UTF-8 String holds whole characters alone, and none is invalid.
+  What gives a script text raises for bytes that are not UTF-8, where
+  Ruby makes a String whose `valid_encoding?` is false:
+  `force_encoding("UTF-8")` (Encoding::InvalidByteSequenceError),
+  `File.read` (ArgumentError; `mode: "rb"` reads the bytes as a binary
+  String), `JSON.parse` of a lone surrogate (`JSON::ParserError`) and
+  `pack("U")` of a number that is no character (RangeError). A Go host
+  gives text as a `string`, which must be UTF-8, and bytes as a
+  `[]byte`, which a script gets as a binary String. Where no method
+  has an error of its own, as for a `StringIO` of text read from the
+  middle of a character, the error is an ArgumentError, "invalid byte
+  sequence in UTF-8: … is not text".
+- An exception's `message`, `to_s`, `inspect` and `full_message` are text
+  for a reader: a byte of the message that is part of no character is
+  written as `\xNN`, where Ruby returns the bytes in a String that is
+  not valid.
+- `pack` with a format that begins with `U` returns a binary String when
+  another directive put in bytes that are no characters
+  (`[233, 255].pack("UC")`), where Ruby returns a UTF-8 String that is
+  not valid. What `CGI` unescapes and
+  `URI.decode_www_form` and `decode_www_form_component` decode is text:
+  they return a UTF-8 String, and raise
+  Encoding::InvalidByteSequenceError for bytes that are not UTF-8
+  (`CGI.unescape("%E9")`), where Ruby returns the invalid String.
 - A binary String has bytes and no characters. A method that reads
   characters (`upcase`, `strip`, `chars`, `to_i`, `split`, `reverse`,
   `center`, `tr`) raises Encoding::CompatibilityError for one, where Ruby

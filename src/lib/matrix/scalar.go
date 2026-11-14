@@ -3,6 +3,7 @@ package matrix
 import (
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/stdlib"
+	"github.com/cameo-lang/cameo/src/str"
 )
 
 // scalarClass is Matrix::Scalar, what Matrix#coerce and Vector#coerce
@@ -42,7 +43,7 @@ func installScalar() {
 		if err != nil {
 			return object.Value{}, err
 		}
-		return object.String("#<Matrix::Scalar value=" + s + ">"), nil
+		return object.NewString("#<Matrix::Scalar value="+s+">", str.UTF8), nil
 	})
 	matrixClass.Define("coerce", 1, coerce)
 	vectorClass.Define("coerce", 1, coerce)

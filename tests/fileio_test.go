@@ -204,3 +204,24 @@ func (f *noMkdirFs) OpenFile(name string, flag int, perm os.FileMode) (afero.Fil
 	}
 	return f.Fs.OpenFile(name, flag, perm)
 }
+
+// A file read or opened as text is UTF-8: one of other bytes is refused,
+// with how to read its bytes, and read in binary mode it is a binary
+// String.
+func TestAFileThatIsNotUTF8IsReadAsBytesAlone(t *testing.T) {
+	fsys := testFiles(t)
+	assert.NoError(t, afero.WriteFile(fsys, "/raw.bin", []byte("a\xffb\n"), 0o644))
+	out := runWithFiles(t, `def try
+  yield
+rescue ArgumentError => e
+  puts e.message
+end
+try { File.read("/raw.bin") }
+try { File.open("/raw.bin") { |f| f.gets } }
+try { File.open("/raw.bin").each_line.to_a }
+p File.read("/raw.bin", mode: "rb"), File.read("/raw.bin", mode: "rb").encoding
+File.open("/raw.bin", "rb") { |f| p f.gets }
+`, fsys, "/", "file")
+	const no = "/raw.bin is not UTF-8: read its bytes with mode: \"rb\"\n"
+	assert.Equals(t, out, no+no+no+"\"a\\xFFb\\n\"\n#<Encoding:BINARY (ASCII-8BIT)>\n\"a\\xFFb\\n\"\n")
+}

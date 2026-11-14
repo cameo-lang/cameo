@@ -355,6 +355,7 @@ import (
 	"fmt"
 
 	"github.com/cameo-lang/cameo/src/object"
+	"github.com/cameo-lang/cameo/src/str"
 )
 
 // MoneyClass is Money: an amount in cents, held as its instance's one field.
@@ -393,10 +394,10 @@ func installMoney() {
 	})
 	// puts and p call a builtin class's own to_s and inspect.
 	def(c, "to_s", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String(dollars(self)), nil
+		return object.NewString(dollars(self), str.UTF8), nil
 	})
 	def(c, "inspect", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.String("#&lt;Money " + dollars(self) + "&gt;"), nil
+		return object.NewString("#&lt;Money "+dollars(self)+"&gt;", str.UTF8), nil
 	})
 }</code></pre>
 

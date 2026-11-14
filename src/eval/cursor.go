@@ -1,6 +1,8 @@
 package eval
 
 import (
+	"github.com/cameo-lang/cameo/src/internal/trusted"
+	"github.com/cameo-lang/cameo/src/str"
 	"unicode/utf8"
 	"unsafe"
 
@@ -162,7 +164,7 @@ func (m *machine) ended(cur *cursor) error {
 		return nil
 	case cameopb.Op_DEFINED_CONST:
 		m.pop()
-		m.push(object.String("constant"))
+		m.push(object.NewString("constant", str.ASCII))
 		return nil
 	case cameopb.Op_DEFINED_METHOD:
 		m.definedMethod(c, m.pop())
@@ -381,7 +383,7 @@ func (m *machine) rescue(cur *cursor, i int) {
 // is on the stack under each part while the part is evaluated, and a part
 // is made a string before the next one is evaluated.
 func (m *machine) interp(c *cameopb.Code) {
-	m.push(object.String(""))
+	m.push(object.NewString("", str.ASCII))
 	if len(c.Code) > 0 {
 		m.enter(c, 0, phasePart, len(m.stack), false)
 	}
@@ -420,7 +422,7 @@ func (m *machine) interpAdd(c *cameopb.Code, last bool) error {
 	// parts alone, the usual case, need no looking at.
 	kind, pk := sofar.Kind(), v.Kind()
 	if v.IsString() && (pk != kind || kind != object.KindString) {
-		next, ok := stdlib.CombineEncodings(kind, sofar.Str() == "", object.ASCIIOnly(sofar.Str()), pk, s == "", object.ASCIIOnly(s))
+		next, ok := stdlib.CombineEncodings(kind, sofar.Str() == "", str.ASCIIOnly(sofar.Str()), pk, s == "", str.ASCIIOnly(s))
 		if !ok {
 			return in.raise(object.CompatibilityError, line, "%s", stdlib.IncompatibleEncodings(kind, pk))
 		}
@@ -429,13 +431,13 @@ func (m *machine) interpAdd(c *cameopb.Code, last bool) error {
 	// A part that knows its characters, or is a number, whose text is
 	// ASCII, keeps the string knowing its own (object.Joined): chars
 	// is their number, -1 when one of the two does not know.
-	chars := -1
-	if n, ok := sofar.Chars(); ok && kind == object.KindString {
+	chars := str.UnknownLength
+	if n := sofar.Chars(); n >= 0 && kind == object.KindString {
 		switch pk {
 		case object.KindInt, object.KindFloat:
 			chars = n + len(s)
 		case object.KindString:
-			if pn, ok := v.Chars(); ok && (pn == 0 || utf8.RuneStart(s[0])) {
+			if pn := v.Chars(); pn == 0 || pn > 0 && utf8.RuneStart(s[0]) {
 				chars = n + pn
 			}
 		}
@@ -445,9 +447,9 @@ func (m *machine) interpAdd(c *cameopb.Code, last bool) error {
 	case len(prev) == 0 && last:
 		// One part: the string is the part.
 		if chars >= 0 {
-			m.push(object.StringOfChars(s, chars))
+			m.push(object.TrustedString(trusted.Key{}, s, str.UTF8, chars))
 		} else {
-			m.push(object.StringOf(kind, s))
+			m.push(object.NewString(s, object.EncodingOf(kind)))
 		}
 		return nil
 	case len(prev) > 0 && len(prev) == len(m.sofar) && unsafe.StringData(prev) == unsafe.SliceData(m.sofar):
@@ -460,9 +462,9 @@ func (m *machine) interpAdd(c *cameopb.Code, last bool) error {
 		m.sofar = append(append(make([]byte, 0, max(2*(len(prev)+len(s)), 32)), prev...), s...)
 	}
 	if all := unsafe.String(unsafe.SliceData(m.sofar), len(m.sofar)); chars >= 0 {
-		m.push(object.StringOfChars(all, chars))
+		m.push(object.TrustedString(trusted.Key{}, all, str.UTF8, chars))
 	} else {
-		m.push(object.StringOf(kind, all))
+		m.push(object.NewString(all, object.EncodingOf(kind)))
 	}
 	if last {
 		m.sofar = nil
@@ -482,7 +484,7 @@ func (m *machine) regexp(c *cameopb.Code) error {
 		m.enter(c, 0, phaseStatic, len(m.stack), false)
 		return nil
 	}
-	m.push(object.String(""))
+	m.push(object.NewString("", str.ASCII))
 	return m.regexpNext(c, 0)
 }
 
@@ -501,7 +503,7 @@ func (m *machine) regexpPart(c *cameopb.Code, i int) error {
 			return err
 		}
 	}
-	m.push(object.String(sofar.Str() + s))
+	m.push(object.NewString(sofar.Str()+s, str.UTF8))
 	return m.regexpNext(c, i+1)
 }
 
@@ -622,7 +624,7 @@ func (m *machine) caseInFrom(c *cameopb.Code, i int) error {
 // names on recv.
 func (m *machine) definedMethod(c *cameopb.Code, recv object.Value) {
 	if recv.Class().Lookup(m.name(c, 0)) != nil {
-		m.push(object.String("method"))
+		m.push(object.NewString("method", str.ASCII))
 	} else {
 		m.push(object.Nil)
 	}

@@ -2,6 +2,7 @@ package protogen
 
 import (
 	"fmt"
+	"github.com/cameo-lang/cameo/src/str"
 	"sort"
 
 	"google.golang.org/protobuf/proto"
@@ -200,7 +201,7 @@ func scalarToProto(s *object.ScalarType, v object.Value) protoreflect.Value {
 func scalarFromProto(s *object.ScalarType, pv protoreflect.Value) (object.Value, error) {
 	switch s.Kind {
 	case object.ScalarString:
-		return object.String(pv.String()), nil
+		return object.NewString(pv.String(), str.UTF8), nil
 	case object.ScalarBytes:
 		return object.Bytes(append([]byte{}, pv.Bytes()...)), nil
 	case object.ScalarBool:

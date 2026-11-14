@@ -2,6 +2,7 @@ package protogen
 
 import (
 	"fmt"
+	"github.com/cameo-lang/cameo/src/str"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -233,7 +234,7 @@ func (d *Decoder) Exception(cls *object.Class, msg protoreflect.Message) (*objec
 		var v object.Value
 		switch p.kind {
 		case partString:
-			v = object.String(pv.String())
+			v = object.NewString(pv.String(), str.UTF8)
 		case partSymbol:
 			v = object.Symbol(pv.String())
 		case partInt:

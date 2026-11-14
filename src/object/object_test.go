@@ -1,47 +1,48 @@
 package object
 
 import (
+	"github.com/cameo-lang/cameo/src/str"
 	"math"
 	"math/big"
 	"testing"
 )
 
 func TestKeyIsStructural(t *testing.T) {
-	a := NewList(Int(1), String("x"), MapValue(MapOf(Symbol("k"), Float(2.5))))
-	b := NewList(Int(1), String("x"), MapValue(MapOf(Symbol("k"), Float(2.5))))
+	a := NewList(Int(1), NewString("x", str.UTF8), MapValue(MapOf(Symbol("k"), Float(2.5))))
+	b := NewList(Int(1), NewString("x", str.UTF8), MapValue(MapOf(Symbol("k"), Float(2.5))))
 	if Key(a) != Key(b) {
 		t.Fatalf("equal lists have different keys: %s %s", Key(a), Key(b))
 	}
 	if Key(Int(1)) == Key(Float(1)) {
 		t.Fatal("1 and 1.0 are different keys")
 	}
-	if Key(String("a")) == Key(Symbol("a")) {
+	if Key(NewString("a", str.UTF8)) == Key(Symbol("a")) {
 		t.Fatal(`"a" and :a are different keys`)
 	}
 	if Key(SetValue(NewSet(Int(1), Int(2)))) != Key(SetValue(NewSet(Int(2), Int(1)))) {
 		t.Fatal("a set's key does not depend on insertion order")
 	}
-	if !Equal(Int(1), Float(1)) || Equal(Int(1), String("1")) {
+	if !Equal(Int(1), Float(1)) || Equal(Int(1), NewString("1", str.UTF8)) {
 		t.Fatal("Equal: numbers compare across kinds, nothing else does")
 	}
 }
 
 func TestMapKeepsOrderAndIsImmutable(t *testing.T) {
-	m := MapOf(String("b"), Int(1), String("a"), Int(2), String("b"), Int(3))
+	m := MapOf(NewString("b", str.UTF8), Int(1), NewString("a", str.UTF8), Int(2), NewString("b", str.UTF8), Int(3))
 	if m.Len() != 2 {
 		t.Fatalf("len %d", m.Len())
 	}
-	if !Equal(m.Keys()[0], String("b")) || !Equal(m.Values()[0], Int(3)) {
+	if !Equal(m.Keys()[0], NewString("b", str.UTF8)) || !Equal(m.Values()[0], Int(3)) {
 		t.Fatalf("a repeated key keeps its place and takes the last value: %v %v", m.Keys(), m.Values())
 	}
-	m2 := m.Put(String("c"), Int(4))
+	m2 := m.Put(NewString("c", str.UTF8), Int(4))
 	if m.Len() != 2 || m2.Len() != 3 {
 		t.Fatal("Put changed the original")
 	}
-	if m3 := m.Without(String("b")); m3.Len() != 1 || m.Len() != 2 {
+	if m3 := m.Without(NewString("b", str.UTF8)); m3.Len() != 1 || m.Len() != 2 {
 		t.Fatal("Without changed the original")
 	}
-	if v, ok := m2.Get(String("c")); !ok || !Equal(v, Int(4)) {
+	if v, ok := m2.Get(NewString("c", str.UTF8)); !ok || !Equal(v, Int(4)) {
 		t.Fatal("Get after Put")
 	}
 }
@@ -158,17 +159,17 @@ func TestValuesAreTagged(t *testing.T) {
 	if allocs := testing.AllocsPerRun(10, func() { _ = Float(2.5) }); allocs != 0 {
 		t.Fatalf("Float allocates (%v per run)", allocs)
 	}
-	if Int(7).Int() != 7 || Float(2.5).Float() != 2.5 || !True.Bool() || String("ab").Str() != "ab" || Symbol("k").Str() != "k" {
+	if Int(7).Int() != 7 || Float(2.5).Float() != 2.5 || !True.Bool() || NewString("ab", str.UTF8).Str() != "ab" || Symbol("k").Str() != "k" {
 		t.Fatal("round trips")
 	}
-	if String("ab").Kind() != KindString || Symbol("ab").Kind() != KindSymbol || Equal(String("ab"), Symbol("ab")) {
+	if NewString("ab", str.UTF8).Kind() != KindString || Symbol("ab").Kind() != KindSymbol || Equal(NewString("ab", str.UTF8), Symbol("ab")) {
 		t.Fatal("a string and a symbol of the same text are different values")
 	}
 	var zero Value
 	if !Same(Nil, Nil) || Same(Nil, zero) || !zero.IsZero() || zero.IsNil() || zero.Truthy() {
 		t.Fatal("nil and the zero value are distinct, and both are falsy")
 	}
-	if s := "hello"; Same(String(s), String(s)) != true || Same(String(s), String(s[:5]+"")) != true {
+	if s := "hello"; Same(NewString(s, str.UTF8), NewString(s, str.UTF8)) != true || Same(NewString(s, str.UTF8), NewString(s[:5]+"", str.UTF8)) != true {
 		t.Fatal("strings sharing bytes are the same")
 	}
 	if Equal(Int(1), Float(1)) != true || Equal(Int(2), Float(1)) {
@@ -183,13 +184,13 @@ func TestValuesAreTagged(t *testing.T) {
 func TestStringsCompareAcrossEncodings(t *testing.T) {
 	// ASCII alone is the same string in every encoding; other bytes are
 	// their encoding's, as in Ruby.
-	if !Equal(String("ab"), Bytes([]byte("ab"))) || !Equal(String("ab"), StringOf(KindASCII, "ab")) || Key(String("ab")) != Key(Bytes([]byte("ab"))) {
+	if !Equal(NewString("ab", str.UTF8), Bytes([]byte("ab"))) || !Equal(NewString("ab", str.UTF8), NewString("ab", str.USASCII)) || Key(NewString("ab", str.UTF8)) != Key(Bytes([]byte("ab"))) {
 		t.Fatal(`"ab" is "ab".b`)
 	}
-	if Equal(String("é"), Bytes([]byte("é"))) {
+	if Equal(NewString("é", str.UTF8), Bytes([]byte("é"))) {
 		t.Fatal(`"é" is not "é".b`)
 	}
-	if Bytes([]byte{0xff}).Class() != StringClass || StringOf(KindASCII, "x").Str() != "x" {
+	if Bytes([]byte{0xff}).Class() != StringClass || NewString("x", str.USASCII).Str() != "x" {
 		t.Fatal("a binary or US-ASCII string is a String")
 	}
 }
@@ -199,7 +200,7 @@ func TestListKinds(t *testing.T) {
 	if KindProc >= 30 {
 		t.Fatalf("Kind %d does not fit in Kinds", KindProc)
 	}
-	l := NewList(Int(1), Float(2), StringOf(KindASCII, "a"), Nil).List()
+	l := NewList(Int(1), Float(2), NewString("a", str.USASCII), Nil).List()
 	if want := Kinds(1<<KindInt | 1<<KindFloat | 1<<KindASCII | 1<<KindNil); l.Kinds() != want || l.Kinds() != want {
 		t.Fatalf("kinds %b, want %b", l.Kinds(), want)
 	}

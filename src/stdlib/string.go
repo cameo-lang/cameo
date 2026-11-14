@@ -1,6 +1,7 @@
 package stdlib
 
 import (
+	"github.com/cameo-lang/cameo/src/internal/trusted"
 	"github.com/cameo-lang/cameo/src/str"
 	"math/big"
 	"strings"
@@ -12,13 +13,13 @@ import (
 
 func installString() {
 	c := object.StringClass
-	str := func(self object.Value) string { return string(self.Str()) }
+	strOf := func(self object.Value) string { return string(self.Str()) }
 	def(c, "+", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		o, ok := args[0].AsString()
 		if !ok {
 			return object.Value{}, ctx.Raise(object.TypeError, "no implicit conversion of %s into String", KindName(args[0]))
 		}
-		return object.Joined(str(self)+string(o), self, args[0]), nil
+		return object.Joined(strOf(self)+string(o), self, args[0]), nil
 	})
 	def(c, "*", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		n, err := WantInt(ctx, args[0], "")
@@ -30,10 +31,10 @@ func installString() {
 		}
 		// Copies of a string that begins at a character have its
 		// characters each.
-		if chars, ok := self.Chars(); ok && chars > 0 && utf8.RuneStart(str(self)[0]) {
-			return object.StringOfChars(strings.Repeat(str(self), int(n)), chars*int(n)), nil
+		if chars := self.Chars(); chars > 0 && utf8.RuneStart(strOf(self)[0]) {
+			return object.TrustedString(trusted.Key{}, strings.Repeat(strOf(self), int(n)), str.UTF8, chars*int(n)), nil
 		}
-		return object.String(strings.Repeat(str(self), int(n))), nil
+		return object.NewString(strings.Repeat(strOf(self), int(n)), str.UTF8), nil
 	})
 	def(c, "%", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		var fargs []object.Value
@@ -42,8 +43,8 @@ func installString() {
 		} else {
 			fargs = args
 		}
-		s, err := format(ctx, str(self), fargs)
-		return object.String(s), err
+		s, err := format(ctx, strOf(self), fargs)
+		return object.NewString(s, str.UTF8), err
 	})
 	def(c, "==", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		o, ok := args[0].AsString()
@@ -54,27 +55,27 @@ func installString() {
 		if !ok {
 			return object.Nil, nil
 		}
-		return object.Int(strings.Compare(str(self), string(o))), nil
+		return object.Int(strings.Compare(strOf(self), string(o))), nil
 	})
 	def(c, "eql?", 1, c.Methods["=="].Native)
 	def(c, "===", 1, c.Methods["=="].Native)
 	def(c, "length", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		// A string that was made with its characters counted has them.
-		if n, ok := self.Chars(); ok {
+		if n := self.Chars(); n >= 0 {
 			return object.Int(n), nil
 		}
-		return object.Int(utf8.RuneCountInString(str(self))), nil
+		return object.Int(utf8.RuneCountInString(strOf(self))), nil
 	})
 	def(c, "size", 0, c.Methods["length"].Native)
 	def(c, "bytesize", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Int(len(str(self))), nil
+		return object.Int(len(strOf(self))), nil
 	})
 	def(c, "empty?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Bool(str(self) == ""), nil
+		return object.Bool(strOf(self) == ""), nil
 	})
 	mapStr := func(name string, f func(string) string) {
 		def(c, name, 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-			return object.String(f(str(self))), nil
+			return object.NewString(f(strOf(self)), str.UTF8), nil
 		})
 	}
 	// alike makes a method whose result has a character for each of the
@@ -83,12 +84,14 @@ func installString() {
 	// receiver does.
 	counted := func(name string, f func(string) string, chars func(n int, in, out string) int) {
 		def(c, name, 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-			in := str(self)
+			in := strOf(self)
 			out := f(in)
-			if n, ok := self.Chars(); ok {
-				return object.StringOfChars(out, chars(n, in, out)), nil
+			if n := self.Chars(); n >= 0 {
+				return object.TrustedString(trusted.Key{}, out, str.UTF8, chars(n, in, out)), nil
 			}
-			return object.String(out), nil
+			// A receiver without a count is of another encoding, or too
+			// long to keep one: the result is of the receiver's.
+			return object.NewString(out, object.EncodingOf(self.Kind())), nil
 		})
 	}
 	alike := func(name string, f func(string) string) {
@@ -140,11 +143,11 @@ func installString() {
 		}
 		if suffix == "" {
 			// Line endings are a byte each.
-			out := strings.TrimRight(str(self), "\r\n")
-			if n, ok := self.Chars(); ok {
-				return object.StringOfChars(out, n-(len(str(self))-len(out))), nil
+			out := strings.TrimRight(strOf(self), "\r\n")
+			if n := self.Chars(); n >= 0 {
+				return object.TrustedString(trusted.Key{}, out, str.UTF8, n-(len(strOf(self))-len(out))), nil
 			}
-			return object.String(out), nil
+			return object.NewString(out, str.UTF8), nil
 		}
 		return lessSuffix(self, suffix), nil
 	})
@@ -172,7 +175,7 @@ func installString() {
 			return enumFor(self, "upto", args, nil), nil
 		}
 		for s := range stringsUpto(self.Str(), hi, exclusive, false) {
-			if _, err := ctx.Yield(block, object.String(s)); err != nil {
+			if _, err := ctx.Yield(block, object.NewString(s, str.UTF8)); err != nil {
 				return object.Value{}, err
 			}
 		}
@@ -186,24 +189,24 @@ func installString() {
 		var b strings.Builder
 		var last rune = -1
 		kept := 0
-		for _, r := range str(self) {
+		for _, r := range strOf(self) {
 			if r != last {
 				b.WriteRune(r)
 				kept++
 			}
 			last = r
 		}
-		return object.StringOfChars(b.String(), kept), nil
+		return object.TrustedString(trusted.Key{}, b.String(), str.UTF8, kept), nil
 	})
 	def(c, "to_sym", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if !validIn(self.Kind(), str(self)) {
-			quoted := object.QuoteString(str(self))
+		if !validIn(self.Kind(), strOf(self)) {
+			quoted := object.QuoteString(strOf(self))
 			if self.Kind() == object.KindASCII {
-				quoted = object.QuoteBytes([]byte(str(self)))
+				quoted = object.QuoteBytes([]byte(strOf(self)))
 			}
 			return object.Value{}, ctx.Raise(object.EncodingError, "invalid symbol in encoding %s :%s", encodingName(self.Kind()), quoted)
 		}
-		return object.Symbol(str(self)), nil
+		return object.Symbol(strOf(self)), nil
 	})
 	def(c, "intern", 0, c.Methods["to_sym"].Native)
 	def(c, "to_i", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -212,31 +215,31 @@ func installString() {
 			if err != nil {
 				return object.Value{}, err
 			}
-			i, ok := parseIntBase(strings.TrimSpace(str(self)), int(base))
+			i, ok := parseIntBase(strings.TrimSpace(strOf(self)), int(base))
 			if !ok {
 				return object.Int(0), nil
 			}
 			return i, nil
 		}
-		return leadingInt(str(self)), nil
+		return leadingInt(strOf(self)), nil
 	})
 	def(c, "to_f", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Float(leadingFloat(str(self))), nil
+		return object.Float(leadingFloat(strOf(self))), nil
 	})
 	def(c, "hex", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if i, ok := parseIntBase(strings.TrimPrefix(strings.TrimSpace(str(self)), "0x"), 16); ok {
+		if i, ok := parseIntBase(strings.TrimPrefix(strings.TrimSpace(strOf(self)), "0x"), 16); ok {
 			return i, nil
 		}
 		return object.Int(0), nil
 	})
 	def(c, "oct", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if i, ok := parseIntBase(strings.TrimSpace(str(self)), 8); ok {
+		if i, ok := parseIntBase(strings.TrimSpace(strOf(self)), 8); ok {
 			return i, nil
 		}
 		return object.Int(0), nil
 	})
 	def(c, "ord", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		s := str(self)
+		s := strOf(self)
 		if s == "" {
 			return object.Value{}, ctx.Raise(object.ArgumentError, "empty string")
 		}
@@ -256,19 +259,19 @@ func installString() {
 		return object.Int(r), nil
 	})
 	def(c, "chr", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		if str(self) == "" {
-			return object.String(""), nil
+		if strOf(self) == "" {
+			return object.NewString("", str.ASCII), nil
 		}
-		r, _ := utf8.DecodeRuneInString(str(self))
-		return object.String(string(r)), nil
+		r, _ := utf8.DecodeRuneInString(strOf(self))
+		return object.NewString(string(r), str.UTF8), nil
 	})
 	def(c, "hash", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		return object.Int(hashString(object.Key(self))), nil
 	})
 	def(c, "chars", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		elems := []object.Value{}
-		for _, r := range str(self) {
-			elems = append(elems, object.StringOfChars(string(r), 1))
+		for _, r := range strOf(self) {
+			elems = append(elems, object.TrustedString(trusted.Key{}, string(r), str.UTF8, 1))
 		}
 		return object.NewList(elems...), nil
 	})
@@ -278,23 +281,23 @@ func installString() {
 				return ctx.Call(self, "size")
 			}), nil
 		}
-		for _, r := range str(self) {
-			if _, err := ctx.Yield(block, object.StringOfChars(string(r), 1)); err != nil {
+		for _, r := range strOf(self) {
+			if _, err := ctx.Yield(block, object.TrustedString(trusted.Key{}, string(r), str.UTF8, 1)); err != nil {
 				return object.Value{}, err
 			}
 		}
 		return self, nil
 	})
 	def(c, "bytes", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		elems := make([]object.Value, len(str(self)))
-		for i := 0; i < len(str(self)); i++ {
-			elems[i] = object.Int(str(self)[i])
+		elems := make([]object.Value, len(strOf(self)))
+		for i := 0; i < len(strOf(self)); i++ {
+			elems[i] = object.Int(strOf(self)[i])
 		}
 		return object.NewList(elems...), nil
 	})
 	def(c, "codepoints", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		elems := []object.Value{}
-		for _, r := range str(self) {
+		for _, r := range strOf(self) {
 			elems = append(elems, object.Int(r))
 		}
 		return object.NewList(elems...), nil
@@ -309,7 +312,7 @@ func installString() {
 		if err != nil {
 			return object.Value{}, err
 		}
-		s, off := str(self), int64(0)
+		s, off := strOf(self), int64(0)
 		if len(args) == 2 {
 			if off, err = WantInt(ctx, args[1], ""); err != nil {
 				return object.Value{}, err
@@ -338,13 +341,13 @@ func installString() {
 	def(c, "+@", 0, c.Methods["-@"].Native)
 	def(c, "dedup", 0, c.Methods["-@"].Native)
 	def(c, "lines", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.NewList(lines(str(self))...), nil
+		return object.NewList(lines(strOf(self))...), nil
 	})
 	def(c, "each_line", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		if block.IsZero() {
 			return enumFor(self, "each_line", args, nil), nil
 		}
-		for _, l := range lines(str(self)) {
+		for _, l := range lines(strOf(self)) {
 			if _, err := ctx.Yield(block, l); err != nil {
 				return object.Value{}, err
 			}
@@ -357,7 +360,7 @@ func installString() {
 			if err != nil {
 				return object.Value{}, err
 			}
-			return f(str(self), arg), nil
+			return f(strOf(self), arg), nil
 		})
 	}
 	strArg("include?", func(s, a string) object.Value { return object.Bool(strings.Contains(s, a)) })
@@ -367,14 +370,14 @@ func installString() {
 		if err != nil {
 			return object.Value{}, err
 		}
-		s := str(self)
+		s := strOf(self)
 		out := strings.TrimPrefix(s, prefix)
 		// The rest has the receiver's characters less the prefix's,
 		// unless it begins inside a character (object.Joined).
-		if n, ok := self.Chars(); ok && (out == "" || utf8.RuneStart(out[0])) {
-			return object.StringOfChars(out, n-utf8.RuneCountInString(s[:len(s)-len(out)])), nil
+		if n := self.Chars(); n >= 0 && (out == "" || utf8.RuneStart(out[0])) {
+			return object.TrustedString(trusted.Key{}, out, str.UTF8, n-utf8.RuneCountInString(s[:len(s)-len(out)])), nil
 		}
-		return object.String(out), nil
+		return object.NewString(out, str.UTF8), nil
 	})
 	def(c, "delete_suffix", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		suffix, err := WantString(ctx, args[0])
@@ -407,7 +410,8 @@ func installString() {
 		if err != nil {
 			return object.Value{}, err
 		}
-		return object.StringOfChars(translate(str(self), from, to)), nil
+		out, chars := translate(strOf(self), from, to)
+		return object.TrustedString(trusted.Key{}, out, str.UTF8, chars), nil
 	})
 	pad := func(name string, place func(s, fill string, n int) string) {
 		def(c, name, -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
@@ -431,16 +435,16 @@ func installString() {
 			// padding's, which the method counts to pad: unless
 			// the receiver begins inside a character, which
 			// padding before it could complete (object.Joined).
-			s := str(self)
-			have, ok := self.Chars()
-			if !ok {
+			s := strOf(self)
+			have := self.Chars()
+			if have == str.UnknownLength {
 				have = utf8.RuneCountInString(s)
 			}
 			out := place(s, fill, max(int(n)-have, 0))
 			if s == "" || utf8.RuneStart(s[0]) {
-				return object.StringOfChars(out, max(int(n), have)), nil
+				return object.TrustedString(trusted.Key{}, out, str.UTF8, max(int(n), have)), nil
 			}
-			return object.String(out), nil
+			return object.NewString(out, str.UTF8), nil
 		})
 	}
 	pad("ljust", func(s, fill string, total int) string { return s + Padding(fill, total) })
@@ -452,19 +456,19 @@ func installString() {
 		return Padding(fill, total/2) + s + Padding(fill, total-total/2)
 	})
 	def(c, "format", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		s, err := format(ctx, str(self), args)
-		return object.String(s), err
+		s, err := format(ctx, strOf(self), args)
+		return object.NewString(s, str.UTF8), err
 	})
 	def(c, "ascii_only?", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		for i := 0; i < len(str(self)); i++ {
-			if str(self)[i] >= 0x80 {
+		for i := 0; i < len(strOf(self)); i++ {
+			if strOf(self)[i] >= 0x80 {
 				return object.False, nil
 			}
 		}
 		return object.True, nil
 	})
 	def(c, "b", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Bytes([]byte(str(self))), nil
+		return object.Bytes([]byte(strOf(self))), nil
 	})
 
 }
@@ -489,10 +493,10 @@ func lines(s string) []object.Value {
 	for s != "" {
 		i := strings.IndexByte(s, '\n')
 		if i < 0 {
-			out = append(out, object.String(s))
+			out = append(out, object.NewString(s, str.UTF8))
 			break
 		}
-		out = append(out, object.String(s[:i+1]))
+		out = append(out, object.NewString(s[:i+1], str.UTF8))
 		s = s[i+1:]
 	}
 	return out
@@ -507,25 +511,25 @@ func lines(s string) []object.Value {
 func lessSuffix(v object.Value, suffix string) object.Value {
 	s := v.Str()
 	out := strings.TrimSuffix(s, suffix)
-	n, ok := v.Chars()
+	n := v.Chars()
 	switch {
-	case !ok:
-		return object.String(out)
+	case n == str.UnknownLength:
+		return object.NewString(out, str.UTF8)
 	case len(out) == len(s):
-		return object.StringOfChars(out, n)
+		return object.TrustedString(trusted.Key{}, out, str.UTF8, n)
 	case utf8.RuneStart(suffix[0]):
-		return object.StringOfChars(out, n-utf8.RuneCountInString(suffix))
+		return object.TrustedString(trusted.Key{}, out, str.UTF8, n-utf8.RuneCountInString(suffix))
 	}
-	return object.String(out)
+	return object.NewString(out, str.UTF8)
 }
 
 // partOf makes a string of s, which is cut out of v: of ASCII when v is
 // known to be.
 func partOf(v object.Value, s string) object.Value {
 	if v.KnownASCII() {
-		return object.ASCIIString(s)
+		return object.NewString(s, str.ASCII)
 	}
-	return object.String(s)
+	return object.NewString(s, str.UTF8)
 }
 
 // translate is String#tr, and the number of characters of its result,
@@ -597,7 +601,7 @@ func stringIndex(ctx object.Context, self object.Value, args []object.Value) (ob
 		case object.KindString, object.KindBytes, object.KindASCII:
 			a := args[0].Str()
 			if strings.Contains(s, string(a)) {
-				return object.String(a), nil
+				return object.NewString(a, str.UTF8), nil
 			}
 			return object.Nil, nil
 		}
@@ -605,11 +609,15 @@ func stringIndex(ctx object.Context, self object.Value, args []object.Value) (ob
 	// The characters of a string of ASCII alone are its bytes, which
 	// are sliced as they are; any other string is decoded first.
 	n := len(s)
-	sub := func(from, to int) object.Value { return object.ASCIIString(s[from:to]) }
+	sub := func(from, to int) object.Value {
+		return object.TrustedString(trusted.Key{}, s[from:to], str.ASCII, to-from)
+	}
 	if !self.KnownASCII() {
 		runes := []rune(s)
 		n = len(runes)
-		sub = func(from, to int) object.Value { return object.StringOfChars(string(runes[from:to]), to-from) }
+		sub = func(from, to int) object.Value {
+			return object.TrustedString(trusted.Key{}, string(runes[from:to]), str.UTF8, to-from)
+		}
 	}
 	switch len(args) {
 	case 1:
@@ -661,10 +669,10 @@ func charAt(self object.Value, i int64) object.Value {
 		if i < 0 || i >= int64(len(s)) {
 			return object.Nil
 		}
-		return object.ASCIIString(s[i : i+1])
+		return object.TrustedString(trusted.Key{}, s[i:i+1], str.ASCII, 1)
 	}
-	n, known := self.Chars()
-	if !known { // a string too long to keep its count: count it
+	n := self.Chars()
+	if n == str.UnknownLength { // a string too long to keep its count: count it
 		n = utf8.RuneCountInString(s)
 	}
 	if i < 0 {
@@ -677,7 +685,7 @@ func charAt(self object.Value, i int64) object.Value {
 	if at < 0 {
 		return object.Nil
 	}
-	return object.StringOfChars(s[at:at+str.CharSize(s, at)], 1)
+	return object.TrustedString(trusted.Key{}, s[at:at+str.CharSize(s, at)], str.UTF8, 1)
 }
 
 // rangeBounds resolves a range over a sequence of length n into a start and

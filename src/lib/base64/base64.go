@@ -12,6 +12,7 @@ package base64
 
 import (
 	"encoding/base64"
+	"github.com/cameo-lang/cameo/src/str"
 	"slices"
 	"strings"
 
@@ -29,7 +30,7 @@ var (
 func Install() {
 	m := module
 	object.DefineNative("Base64", object.ClassValue(m))
-	m.Consts["VERSION"] = object.String("0.2.0")
+	m.Consts["VERSION"] = object.NewString("0.2.0", str.ASCII)
 	// def defines a method on the module and as a module function, taking
 	// the string and, where keywords is set, the keywords it allows; a
 	// keyword elsewhere is one argument too many, as it is in Ruby.
@@ -61,7 +62,7 @@ func Install() {
 		m.DefineSingleton(name, -1, fn)
 		m.Define(name, -1, fn)
 	}
-	ascii := func(s string) object.Value { return object.StringOf(object.KindASCII, s) }
+	ascii := func(s string) object.Value { return object.NewString(s, str.USASCII) }
 	def("encode64", nil, func(ctx object.Context, s string, kw *object.Map) (object.Value, error) {
 		return ascii(stdlib.Base64Lines(base64.StdEncoding.EncodeToString([]byte(s)), 60)), nil
 	})

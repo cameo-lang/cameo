@@ -1,6 +1,7 @@
 package object
 
 import (
+	"github.com/cameo-lang/cameo/src/str"
 	"strconv"
 	"strings"
 )
@@ -299,7 +300,7 @@ func writeKey(b *strings.Builder, v Value) {
 		switch {
 		case v.kind() == KindSymbol:
 			b.WriteString("y")
-		case v.kind() == KindString || ASCIIOnly(v.Str()):
+		case v.kind() == KindString || str.ASCIIOnly(v.Str()):
 			b.WriteString("s")
 		case v.kind() == KindBytes:
 			b.WriteString("b")

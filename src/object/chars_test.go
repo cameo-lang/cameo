@@ -1,6 +1,7 @@
 package object
 
 import (
+	"github.com/cameo-lang/cameo/src/str"
 	"strings"
 	"testing"
 
@@ -12,17 +13,17 @@ import (
 // neither the string, its length, its kind nor what it is equal to and
 // the same as.
 func TestAStringKnownToBeASCII(t *testing.T) {
-	plain, known := String("abc"), ASCIIString("abc")
+	plain, known := NewString("abc", str.UTF8), NewString("abc", str.ASCII)
 	assert.True(t, plain.KnownASCII())
-	assert.False(t, String("abé").KnownASCII())
-	assert.True(t, StringOf(KindString, "abc").KnownASCII())
+	assert.False(t, NewString("abé", str.UTF8).KnownASCII())
+	assert.True(t, NewString("abc", str.UTF8).KnownASCII())
 	assert.True(t, known.KnownASCII())
-	assert.True(t, Counted("abc").KnownASCII())
-	assert.False(t, Counted("abé").KnownASCII())
-	assert.True(t, ASCIIString("").KnownASCII())
-	assert.True(t, String("").KnownASCII())
+	assert.True(t, NewString("abc", str.UTF8).KnownASCII())
+	assert.False(t, NewString("abé", str.UTF8).KnownASCII())
+	assert.True(t, NewString("", str.ASCII).KnownASCII())
+	assert.True(t, NewString("", str.UTF8).KnownASCII())
 	assert.False(t, Bytes([]byte("abc")).KnownASCII())
-	assert.False(t, StringOf(KindASCII, "abc").KnownASCII())
+	assert.False(t, NewString("abc", str.USASCII).KnownASCII())
 	assert.False(t, Symbol("abc").KnownASCII())
 	assert.False(t, Int(1<<55).KnownASCII())
 	assert.False(t, Int(-1).KnownASCII())
@@ -32,7 +33,7 @@ func TestAStringKnownToBeASCII(t *testing.T) {
 	assert.True(t, Equal(plain, known))
 	assert.Equals(t, Key(plain), Key(known))
 	s := "shared"
-	assert.True(t, Same(String(s), ASCIIString(s)))
+	assert.True(t, Same(NewString(s, str.UTF8), NewString(s, str.ASCII)))
 	assert.False(t, Same(Int(0), Int(1<<55)))
 	assert.False(t, Same(Int(0), Int(1<<40)))
 	m := MapOf(known, Int(1))
@@ -45,50 +46,40 @@ func TestAStringKnownToBeASCII(t *testing.T) {
 // it, and one made of two has the sum; a string in another encoding has
 // no count, nor has a value that is no string.
 func TestAStringThatKnowsItsCharacters(t *testing.T) {
-	chars := func(v Value) int {
-		n, ok := v.Chars()
-		if !ok {
-			return -1
-		}
-		return n
-	}
-	assert.Equals(t, chars(String("héllo")), 5)
-	assert.Equals(t, chars(Counted("héllo")), 5)
-	assert.Equals(t, chars(StringOfChars("héllo", 5)), 5)
-	assert.Equals(t, chars(ASCIIString("abc")), 3)
-	assert.Equals(t, chars(String("")), 0)
+	chars := func(v Value) int { return v.Chars() }
+	assert.Equals(t, chars(NewString("héllo", str.UTF8)), 5)
+	assert.Equals(t, chars(NewString("héllo", str.UTF8)), 5)
+	assert.Equals(t, chars(stringOfChars("héllo", 5)), 5)
+	assert.Equals(t, chars(NewString("abc", str.ASCII)), 3)
+	assert.Equals(t, chars(NewString("", str.UTF8)), 0)
 	assert.Equals(t, chars(Bytes([]byte("abc"))), -1)
-	assert.Equals(t, chars(StringOf(KindASCII, "abc")), -1)
+	assert.Equals(t, chars(NewString("abc", str.USASCII)), -1)
 	assert.Equals(t, chars(Symbol("abc")), -1)
 	assert.Equals(t, chars(Int(-1)), -1)
 	assert.Equals(t, chars(Int(5<<32)), -1)
 
-	known := Counted("héllo")
+	known := NewString("héllo", str.UTF8)
 	assert.Equals(t, known.Str(), "héllo")
 	assert.Equals(t, known.Kind(), KindString)
 	assert.False(t, known.KnownASCII())
-	assert.True(t, Equal(known, String("héllo")))
-	assert.Equals(t, Key(known), Key(String("héllo")))
+	assert.True(t, Equal(known, NewString("héllo", str.UTF8)))
+	assert.Equals(t, Key(known), Key(NewString("héllo", str.UTF8)))
 	s := "shéred"
-	assert.True(t, Same(String(s), Counted(s)))
-	assert.False(t, Same(String(s), Symbol(s)))
+	assert.True(t, Same(NewString(s, str.UTF8), NewString(s, str.UTF8)))
+	assert.False(t, Same(NewString(s, str.UTF8), Symbol(s)))
 
-	assert.Equals(t, chars(Joined("héllowörld", known, Counted("wörld"))), 10)
-	assert.Equals(t, chars(Joined("héllo", known, String(""))), 5)
-	assert.Equals(t, chars(Joined("héllox", known, String("x"))), 6)
+	assert.Equals(t, chars(Joined("héllowörld", known, NewString("wörld", str.UTF8))), 10)
+	assert.Equals(t, chars(Joined("héllo", known, NewString("", str.UTF8))), 5)
+	assert.Equals(t, chars(Joined("héllox", known, NewString("x", str.UTF8))), 6)
 	// Half a character and its other half are one character together.
-	assert.Equals(t, chars(Joined("\xc3\xa9", Counted("\xc3"), Counted("\xa9"))), 1)
-	assert.Equals(t, chars(Joined("\xc3a", Counted("\xc3"), Counted("a"))), 2)
+	assert.Equals(t, chars(Joined("\xc3\xa9", stringOfChars("\xc3", 1), stringOfChars("\xa9", 1))), 1)
+	assert.Equals(t, chars(Joined("\xc3a", stringOfChars("\xc3", 1), stringOfChars("a", 1))), 2)
 }
 
 // A count too far from the length in bytes to fit beside it is dropped.
 func TestACountThatDoesNotFitIsDropped(t *testing.T) {
 	long := strings.Repeat("é", 1<<24)
-	_, ok := StringOfChars(long, 1<<24).Chars()
-	assert.False(t, ok)
-	n, ok := StringOfChars(long[:len(long)-4], 1<<24-2).Chars()
-	assert.True(t, ok)
-	assert.Equals(t, n, 1<<24-2)
-	_, ok = StringOfChars("abc", 4).Chars()
-	assert.False(t, ok)
+	assert.Equals(t, stringOfChars(long, 1<<24).Chars(), str.UnknownLength)
+	assert.Equals(t, stringOfChars(long[:len(long)-4], 1<<24-2).Chars(), 1<<24-2)
+	assert.Equals(t, stringOfChars("abc", 4).Chars(), str.UnknownLength)
 }

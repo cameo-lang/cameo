@@ -6,6 +6,7 @@
 package pathname
 
 import (
+	"github.com/cameo-lang/cameo/src/str"
 	"strings"
 
 	"github.com/cameo-lang/cameo/src/object"
@@ -43,9 +44,9 @@ func Install() {
 			return f(self(s)), nil
 		})
 	}
-	unary("to_s", func(p string) object.Value { return object.String(p) })
-	unary("inspect", func(p string) object.Value { return object.String("#<Pathname:" + p + ">") })
-	unary("to_path", func(p string) object.Value { return object.String(p) })
+	unary("to_s", func(p string) object.Value { return object.NewString(p, str.UTF8) })
+	unary("inspect", func(p string) object.Value { return object.NewString("#<Pathname:"+p+">", str.UTF8) })
+	unary("to_path", func(p string) object.Value { return object.NewString(p, str.UTF8) })
 	unary("absolute?", func(p string) object.Value { return object.Bool(strings.HasPrefix(p, "/")) })
 	unary("relative?", func(p string) object.Value { return object.Bool(!strings.HasPrefix(p, "/")) })
 	unary("root?", func(p string) object.Value {
@@ -56,7 +57,7 @@ func Install() {
 	unary("parent", func(p string) object.Value { return stdlib.PathnameValue(stdlib.PlusPath(p, "..")) })
 	unary("basename", func(p string) object.Value { return stdlib.PathnameValue(stdlib.Basename(p, "")) })
 	unary("dirname", func(p string) object.Value { return stdlib.PathnameValue(stdlib.Dirname(p)) })
-	unary("extname", func(p string) object.Value { return object.String(stdlib.Extname(p)) })
+	unary("extname", func(p string) object.Value { return object.NewString(stdlib.Extname(p), str.UTF8) })
 	unary("each_filename", func(p string) object.Value {
 		_, ns := stdlib.PathNames(p)
 		return stdlib.StringList(ns)
