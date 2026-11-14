@@ -37,7 +37,7 @@ var mutatorCases = []struct{ recv, before, call, name, result, rubyAfter string 
 	{"\"ab\"", "\"ab\"", "x.insert(1, \"y\")", "insert", "\"ayb\"", "\"ayb\""},
 	{"\"ab\"", "\"ab\"", "x.replace(\"q\")", "replace", "\"q\"", "\"q\""},
 	{"\"ab\"", "\"ab\"", "x.clear", "clear", "\"\"", "\"\""},
-	{"\"ab\"", "\"ab\"", "x.setbyte(0, 65)", "setbyte", "65", "\"Ab\""},
+	{"b\"ab\"", "\"ab\"", "x.setbyte(0, 65)", "setbyte", "65", "\"Ab\""},
 	{"\"ab\"", "\"ab\"", "x.bytesplice(0, 1, \"Z\")", "bytesplice", "\"Zb\"", "\"Zb\""},
 	{"\"ab\"", "\"ab\"", "x.append_as_bytes(\"!\")", "append_as_bytes", "\"ab!\"", "\"ab!\""},
 	{"{a: 1}", "{a: 1}", "x.store(:b, 2)", "store", "2", "{a: 1, b: 2}"},
