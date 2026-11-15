@@ -48,8 +48,9 @@ file is copied into every directory that needs it.
 
 ## Running the specs
 
-[run.rb](run.rb) runs ruby/spec's `language/` and `core/` under cameo, or
-the directories and files it is given:
+[run.rb](run.rb) runs all of ruby/spec under cameo, `language/`, `core/`,
+`library/`, `command_line/`, `security/` and `optional/`, or the
+directories and files it is given:
 
 ```sh
 ruby run.rb --ruby ruby --out /tmp/spec-run
@@ -67,34 +68,46 @@ counts.
 
 `before`, `after`, shared examples, `mock`, `should_receive`, `ScratchPad`,
 `fixture` and `ruby_exe` need state or I/O an example cannot keep in cameo,
-and are not in the prelude. `--ruby` runs each program under CRuby as well,
+and are not in the prelude. A spec's `require` of a library stays: under
+cameo it loads the library cameo builds in, or stops the file with a
+LoadError. `--ruby` runs each program under CRuby as well,
 which shows what the harness can run: the summary counts how many of the
-examples CRuby passes also pass under cameo.
+examples CRuby passes also pass under cameo. The full run takes under a
+minute on four cores, the spec files running on as many threads as
+there are cores.
 
 [test/](test) holds the tests of run.rb itself; `make spec-tests` runs
 them with the built cameo. Like run.rb, they need a Ruby with Prism.
 
 ## Which examples pass, and which should
 
-[status.tsv](status.tsv) has one row per example of `language/` and
-`core/`, and one row, with the example `*`, per file that did not run.
-Its status is one of:
+[status.tsv](status.tsv) has one row per example of all of ruby/spec,
+and one row, with the example `*`, per file that did not run; its
+`stage` column says what stopped that file: `check` (cameo's checker
+refused it), `crash` (it stopped before its first example), `timeout`,
+or `rewrite` (Prism could not parse it). Its status is one of:
 
 | Status | Means |
 |---|---|
-| `pass` | passes under cameo |
-| `expected` | stopped by something cameo leaves out on purpose: mutation, instance variables, object identity, threads, I/O, `Rational`; the `reason` column names it |
-| `harness` | needs a part of mspec the prelude does not have, or fails under CRuby in this harness too |
+| `pass` | passes under cameo, as under CRuby |
+| `expected` | stopped by something cameo leaves out on purpose: mutation, instance variables, object identity, threads, I/O, `Rational`, a part of a library that [stdlib.md](../doc/stdlib.md) leaves out; the `reason` column names it |
+| `harness` | CRuby does not pass it in this harness: it fails there too (`fails under Ruby too`, or `fails under Ruby` where cameo passes it), or CRuby does not run it (`not run under Ruby`), mostly an example ruby/spec guards for a newer Ruby; or it needs `before`, `after` or a shared example |
 | `bug` | anything else: cameo should pass it |
 
 [runner/classify.rb](runner/classify.rb) maps the message that stopped
-an example to its status; a message it does not know is a bug. Regenerate
-the file after a change, and its diff shows what the change fixed and
-broke:
+an example to its status; a message it does not know is a bug.
+[compatibility.rb](compatibility.rb) writes
+[COMPATIBILITY.md](../COMPATIBILITY.md) from status.tsv: the counts for
+each category of ruby/spec, the reasons, and where the bugs are.
+Regenerate both after a change, and the diff of status.tsv shows what
+the change fixed and broke:
 
 ```sh
 make spec-status
 ```
+
+It runs the copy of ruby/spec at the commit [COUNTS.md](COUNTS.md)
+names, the one the files here were sorted at.
 
 ## Where the files come from
 

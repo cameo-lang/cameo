@@ -74,6 +74,27 @@ module Classify
     [/fork is not supported/, "expected", "process"],
     # initialize runs in new alone; send cannot reach it
     [/send\(:initialize\): initialize runs only in new/, "expected", "metaprogramming"],
+    # an Enumerator is not external: it has no next, peek or rewind
+    [/undefined method '(next|peek|rewind|next_values|peek_values|feed)' for an instance of Enumerator/, "expected", "enumerator-next"],
+    # OptionParser's into: fills a Hash in place
+    [/into: fills a Hash in place, which a value cannot be/, "expected", "mutation"],
+    # optional/capi loads C extensions, and cameo runs no C
+    [/undefined method 'load_extension'/, "expected", "c-api"],
+    # The parts of the libraries cameo builds in that doc/stdlib.md leaves
+    # out, each with its reason in the library's row there.
+    [Regexp.union(
+      /is not supported: a stream fed piece by piece/, # Zlib::Deflate.new, Inflate.new
+      /uninitialized constant Zlib::Gzip(Reader|Writer)\b/,
+      /Operation\(\*\*\) not implemented: Matrix op Float/,
+      /undefined method '(eigensystem|eigen|lup|lup_decomposition|coerce)' for an instance of Matrix/,
+      /uninitialized constant Matrix::(EigenvalueDecomposition|LUPDecomposition)\b/,
+      /is obsolete in Ruby and not in cameo/, # URI.regexp
+      /uninitialized constant Date::Infinity\b/,
+      /strptime: Go's time has no layout for/,
+      /uninitialized constant CGI::(Cookie|Session)\b/,
+      /uninitialized constant OpenSSL::(?!Digest\b|HMAC\b)\w+|undefined method '\w+' for module OpenSSL\b/,
+      /undefined method '(pwd|getwd|glob|realpath|realdirpath|exist\?|read|children|entries)' for (class|an instance of) Pathname/,
+    ), "expected", "library-left-out"],
   ].freeze
 
   # Examples whose name says they test something cameo leaves out, where

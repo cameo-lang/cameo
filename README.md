@@ -204,14 +204,15 @@ category. Measured on 2026-11-13 on a laptop (Apple M4), against CRuby 3.4.1.
 |---|---|---|
 | CRuby's benchmark suite | cases that run with Ruby's output | 781 of 1318 |
 | ruby/spec, all of it | spec files the checker accepts | 1855 of 3858 |
-| ruby/spec, `language/` and `core/` | examples that pass, of those CRuby passes in the same harness | 990 of 2073 |
+| ruby/spec, all of it | examples that pass, of those CRuby passes in the same harness | 1558 of 2897 |
 | Ruby 3.4's standard library | libraries built in | 32 of 87 |
 
 Most of what does not run uses something cameo leaves out on purpose:
 mutation, instance variables, metaprogramming, I/O. The site's
 [numbers page](https://cameo-lang.github.io/cameo/numbers.html) says how
-each was measured, and [doc/coverage.md](doc/coverage.md) and
-[doc/stdlib.md](doc/stdlib.md) have the detail.
+each was measured, and [COMPATIBILITY.md](COMPATIBILITY.md),
+[doc/coverage.md](doc/coverage.md) and [doc/stdlib.md](doc/stdlib.md)
+have the detail.
 
 ## Repository
 
@@ -221,7 +222,7 @@ each was measured, and [doc/coverage.md](doc/coverage.md) and
 | `examples/` | the specification: each `<name>.cameo` has the output it must print in `<name>.expected`, and `go test` holds it to that; the directories are Go programs that embed cameo |
 | `tests/`, `tests/integration/` | Go tests against the packages, and shell tests that drive the built binary |
 | `benchmarks/` | CRuby's benchmark suite sorted by what cameo runs, and the comparisons with other Rubies |
-| `specs/` | ruby/spec sorted by what cameo's checker accepts |
+| `specs/`, [COMPATIBILITY.md](COMPATIBILITY.md) | ruby/spec sorted by what cameo's checker accepts, the harness that runs it, and what of it cameo passes |
 | `doc/gh_pages/` | the site, deployed by the Pages workflow on every change; `go test ./tests` runs its samples |
 | `doc/design/` | the design: the language, the IR, exceptions, pause and resume |
 | `doc/history/` | how cameo came to be, one document per step; up to v0.1.1 cameo was called amber |

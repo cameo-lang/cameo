@@ -96,9 +96,8 @@ in <a href="https://github.com/cameo-lang/cameo/blob/main/benchmarks/compare/REA
 output</td><td>781 of 1318</td></tr>
 <tr><td>ruby/spec, all of it</td><td>spec files cameo's checker
 accepts</td><td>1855 of 3858</td></tr>
-<tr><td>ruby/spec, <code>language/</code> and
-<code>core/</code></td><td>examples that pass, of those CRuby passes in
-the same harness</td><td>990 of 2073</td></tr>
+<tr><td>ruby/spec, all of it</td><td>examples that pass, of those CRuby
+passes in the same harness</td><td>1558 of 2897</td></tr>
 <tr><td>Ruby 3.4's standard library</td><td>libraries built
 in</td><td>32 of 87</td></tr>
 </table>
@@ -114,13 +113,15 @@ in</td><td>32 of 87</td></tr>
   spec, on 2026-11-13. Most of the rest use an instance variable (1021
   files), mostly in mspec's own <code>before</code> blocks, or require a
   library cameo does not build in (375).</li>
-  <li><strong>ruby/spec, the examples.</strong> Run on 2026-11-13.
-  The run of 2026-11-05 passed 1045: since then bytes that are not
-  UTF-8 have to be a binary String, and the 57 examples that stopped
-  passing all stop at that rule.
-  <a href="https://github.com/cameo-lang/cameo/blob/main/doc/coverage.md">doc/coverage.md</a>
-  says what stops each example that does not pass, and which of those
-  are bugs.</li>
+  <li><strong>ruby/spec, the examples.</strong> Run on 2026-11-15
+  against CRuby 3.3.6, every directory: 946 of 2017 pass in
+  <code>language/</code> and <code>core/</code>, 610 of 877 in
+  <code>library/</code>. An example counts only when CRuby passes it
+  in the same harness, so the examples ruby/spec guards for Ruby 3.4
+  do not count.
+  <a href="https://github.com/cameo-lang/cameo/blob/main/COMPATIBILITY.md">COMPATIBILITY.md</a>
+  says, for each part of ruby/spec, what stops each example that does
+  not pass, and which of those are bugs.</li>
   <li><strong>The standard library.</strong> Ruby 3.4.1 ships 58
   default gems and 29 bundled ones. A library goes in when its work is
   computation on values, and stays out when it is the file system,

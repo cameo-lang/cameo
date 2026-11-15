@@ -182,8 +182,13 @@ def __spec_guard(run, &block)
   nil
 end
 
-def ruby_version_is(requirement, &block)
-  current = __spec_version(RUBY_VERSION)
+def ruby_version_is(requirement, &block) = version_is(RUBY_VERSION, requirement, &block)
+
+# version_is runs its block when version meets requirement: a version it
+# is at least, or a Range of them. The library specs guard on a library's
+# own version with it.
+def version_is(version, requirement, &block)
+  current = __spec_version(version)
   run = if requirement.is_a?(Range)
     low = __spec_version(requirement.begin)
     high = __spec_version(requirement.end)
@@ -236,6 +241,13 @@ def extended_on(*impls, &block) = __spec_guard(false, &block)
 def kernel_version_is(*args, &block) = __spec_guard(false, &block)
 
 def suppress_warning(&block) = block.call
+
+# new_datetime is mspec's: a DateTime of the parts opts gives, the others
+# those of -4712-01-01T00:00:00+00:00. The spec requires date.
+def new_datetime(opts = {})
+  v = { year: -4712, month: 1, day: 1, hour: 0, minute: 0, second: 0, offset: 0 }.merge(opts)
+  DateTime.new(v[:year], v[:month], v[:day], v[:hour], v[:minute], v[:second], v[:offset])
+end
 
 # Numeric helpers, as mspec defines them on a 64-bit platform.
 

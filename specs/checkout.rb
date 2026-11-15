@@ -5,8 +5,9 @@
 # repository, or pulls into the copy that is there already, and prints its
 # path. Every worktree of the repository shares that one copy, so the default
 # directory comes from git's common directory, not from the worktree the
-# script runs in. With --commit, the copy is fetched and that commit checked
-# out in place of a pull.
+# script runs in. With --commit, that commit is checked out in place of a
+# pull, and the copy is fetched first when it does not hold the commit.
+# run.rb asks for the commit COUNTS.md names.
 #
 #   ruby specs/checkout.rb [--dir DIR] [--commit SHA]
 #
@@ -43,16 +44,29 @@ def git(dir, *args)
   system("git", "-C", dir, *args, out: :err) or abort "checkout.rb: git #{args.join(" ")} failed in #{dir}"
 end
 
+# at? returns true when the copy in dir has commit checked out.
+def at?(dir, commit)
+  out, status = Open3.capture2("git", "-C", dir, "rev-parse", "HEAD")
+  status.success? && out.strip == commit
+end
+
+# has? returns true when the copy in dir holds commit.
+def has?(dir, commit)
+  system("git", "-C", dir, "cat-file", "-e", "#{commit}^{commit}", err: File::NULL)
+end
+
 if !File.exist?(dir)
   system("git", "clone", "--quiet", URL, dir, out: :err) or abort "checkout.rb: git clone #{URL} failed"
 elsif !File.exist?(File.join(dir, ".git"))
   abort "checkout.rb: #{dir} exists but is not a git repository"
 elsif options[:commit]
-  git(dir, "fetch", "--quiet")
+  # A copy that holds the commit needs no fetch, so that a run at the
+  # commit it was sorted at works without the network.
+  git(dir, "fetch", "--quiet") unless has?(dir, options[:commit])
 else
   # --ff-only: a copy with local commits is left for its owner to reconcile.
   git(dir, "pull", "--quiet", "--ff-only")
 end
-git(dir, "checkout", "--quiet", options[:commit]) if options[:commit]
+git(dir, "checkout", "--quiet", options[:commit]) if options[:commit] && !at?(dir, options[:commit])
 
 puts dir

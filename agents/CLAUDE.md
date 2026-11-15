@@ -50,7 +50,7 @@ is not finished until the documents say so, in the same pull request:
 |---|---|
 | what a script may write: a construct, a builtin, a library, an error message a script sees | [agents.md](../agents.md), the guide for models that write cameo; `doc/cameo-vs-ruby.md`; the site's `ruby.html` and `examples.html` |
 | the `cameo` Go package, a command or a flag | the site's `go.html`, `native.html`, `pause.html` or `io.html`, and the README's commands |
-| what is measured: speed, the benchmark cases that work, ruby/spec, the libraries | the numbers in the README, the site's `numbers.html` and `doc/cameo-vs-ruby.md`, from a run you made |
+| what is measured: speed, the benchmark cases that work, ruby/spec, the libraries | the numbers in the README, the site's `numbers.html`, `doc/cameo-vs-ruby.md` and `doc/coverage.md`, from a run you made; for ruby/spec, `make spec-status` rewrites `specs/status.tsv` and `COMPATIBILITY.md` |
 | an example under `examples/` that the site shows | nothing by hand: a test holds the site's block to the file, so rerun it and fix what it names |
 
 [agents.md](../agents.md) matters most: a model reads it instead of the
