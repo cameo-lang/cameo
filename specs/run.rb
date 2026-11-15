@@ -114,6 +114,14 @@ class Rewriter
 
   def slice(src, from, to) = src.byteslice(from...to)
 
+  # end_offset returns the offset where node ends. Prism 0.19, which Ruby
+  # 3.3 ships, ends a call whose last argument is a block argument, as in
+  # m(3, &b), at the block argument, before the closing parenthesis.
+  def end_offset(node)
+    closing = node.respond_to?(:closing_loc) && node.closing_loc
+    closing ? [node.location.end_offset, closing.end_offset].max : node.location.end_offset
+  end
+
   # emit returns the source of node, rewritten.
   def emit(src, path, node)
     return "" if node.nil?
@@ -127,9 +135,9 @@ class Rewriter
     pos = loc.start_offset
     targets(node).sort_by { _1.location.start_offset }.each do |t|
       out << slice(src, pos, t.location.start_offset) << replace(src, path, t)
-      pos = t.location.end_offset
+      pos = end_offset(t)
     end
-    out << slice(src, pos, loc.end_offset)
+    out << slice(src, pos, end_offset(node))
   end
 
   # call returns name(negated, (receiver of should)prefix, arguments) and
