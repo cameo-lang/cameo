@@ -43,4 +43,22 @@ class RunTest < Minitest::Test
     assert_equal [["*", "expected", "instance-variables"]], rows.map { _1.first(3) }
     assert_includes rows.first[3], "…"
   end
+
+  def test_rewrites_a_receiver_that_ends_in_a_block_argument
+    # Prism 0.19 ends twice(0, &three) before its closing parenthesis.
+    rows = status(<<~RUBY)
+      def twice(x, &block)
+        block.call(x) * 2
+      end
+
+      describe "a" do
+        it "b" do
+          three = ->(x) { x + 3 }
+          twice(0, &three).should == 6
+          twice(1, &three).should_not.zero?
+        end
+      end
+    RUBY
+    assert_equal [["a b", "pass", ""]], rows.map { _1.first(3) }
+  end
 end
