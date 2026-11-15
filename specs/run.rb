@@ -38,7 +38,12 @@ require "tmpdir"
 require_relative "runner/classify"
 
 HERE = __dir__
-PRELUDE = File.read(File.join(HERE, "runner", "prelude.cameo"))
+PRELUDE = File.read(File.join(HERE, "runner", "prelude.cameo"), encoding: "UTF-8")
+
+# utf8 returns s read as UTF-8, its invalid bytes replaced. Ruby reads a
+# child's output in the locale's encoding, which is US-ASCII in the POSIX
+# locale, and cameo and its specs print UTF-8 whatever the locale.
+def utf8(s) = s.dup.force_encoding(Encoding::UTF_8).scrub
 
 options = { jobs: Etc.nprocessors, timeout: 20 }
 OptionParser.new do |o|
@@ -55,7 +60,7 @@ end.parse!
 spec = options[:spec] || begin
   out, status = Open3.capture2("ruby", File.join(HERE, "checkout.rb"))
   abort "run.rb: checkout.rb failed" unless status.success?
-  out.strip
+  utf8(out).strip
 end
 
 cameo = options[:cameo] || begin
@@ -201,6 +206,7 @@ def run_file(cameo, ruby, spec, path, timeout, out)
   File.write(prog, program)
 
   check_out, check_status = Open3.capture2e(cameo, "check", prog)
+  check_out = utf8(check_out)
   unless check_status.success?
     first = check_out.lines.first.to_s.strip.sub(/\A[^:]*:\d+: /, "")
     return row.merge(status: "check", message: first)
@@ -249,7 +255,7 @@ def run_with_timeout(command, timeout)
       Process.kill(:KILL, wait.pid)
       wait.join
     end
-    [out.value.force_encoding(Encoding::UTF_8).scrub, err.value.force_encoding(Encoding::UTF_8).scrub, wait.value, timed_out]
+    [utf8(out.value), utf8(err.value), wait.value, timed_out]
   end
 end
 
