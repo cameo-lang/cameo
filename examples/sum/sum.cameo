@@ -1,0 +1,27 @@
+# Adds up the numbers typed, one a line. A script reads no keyboard, so
+# the Go program gives it one: Keyboard.line returns a promise of the next
+# line, or of nil at the end of the input, and await waits for it. A
+# script waiting in await pauses there, and goes on waiting after a
+# resume.
+include Cameo
+
+def number(text)
+  Integer(text)
+rescue ArgumentError
+  Float(text)
+end
+
+total = 0
+count = 0
+while (line = await(Keyboard.line))
+  line = line.strip
+  next if line.empty?
+  begin
+    total += number(line)
+    count += 1
+    puts "#{count}: total #{total}"
+  rescue ArgumentError
+    puts "not a number: #{line}"
+  end
+end
+puts "the sum of #{count} numbers is #{total}"
