@@ -64,6 +64,11 @@ func (in *Interp) Dump(source string) (*cameopb.Dump, error) {
 		// A class Go defined or the host registered, under its own name,
 		// is there in the run that resumes.
 		if cls, ok := v.AsClass(); ok && cls.Name == name && !classes.carried(cls) {
+			// A module the host gave this program is the host's to give
+			// again, but a value may refer to it before it does.
+			if hostModule(cls) {
+				d.HostModules = append(d.HostModules, name)
+			}
 			continue
 		}
 		d.Constants = append(d.Constants, classes.binding(enc, name, v))
@@ -250,6 +255,14 @@ func (in *Interp) Resume(prog *syntax.Program, d *cameopb.Dump) error {
 		in.mainClass.Include(object.CameoModule)
 		in.cameoTop = true
 	}
+	// The host gives its modules again once Resume returns; what refers
+	// to one restores now, so each is there already, and the host's
+	// Module finds it.
+	for _, name := range d.GetHostModules() {
+		if _, ok := in.consts[name]; !ok {
+			in.SetConst(name, object.ClassValue(object.NewModule(name)))
+		}
+	}
 	if err := in.restoreClasses(d); err != nil {
 		return err
 	}
@@ -423,6 +436,13 @@ func (in *Interp) classNamed(name string) *object.Class {
 		return cls
 	}
 	return find(object.ObjectClass.Consts)
+}
+
+// hostModule reports whether cls is a module the host gave the program,
+// as cameo.Program.Module makes one: Go made it, and it is this
+// program's alone, not one of the modules every program has.
+func hostModule(cls *object.Class) bool {
+	return cls.IsModule && cls.Digest == "" && nativeNamed(cls.Name) != cls
 }
 
 // restorePromise puts a settled promise back into the run's table.

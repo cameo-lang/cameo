@@ -102,6 +102,7 @@ The dump is the protobuf message `cameo.Dump`, written in
 | `promises` | every promise: its id, the method `async` ran, and its result or the exception it failed with; or that it is pending, for one made by hand and for a call that had not ended |
 | `workers`, `calls` | the calls `async` started that had not ended: a worker's activations with their scopes and frames, for one that was running, and the receiver, method and arguments, for one no worker had taken |
 | `handles` | the library values that change which the run held, a StringIO, each once, as its class and what its library saved of it |
+| `host_modules` | the names of the modules the host gave the program with `cameo.Program.Module` |
 | `loaded` | the libraries `require` loaded |
 | `rand` | the state of the random number generator, so a seeded script draws on as if it had not paused |
 | `at_exit` | the blocks `at_exit` registered, in order, which a resumed run runs when it ends |
@@ -163,6 +164,14 @@ included. So the dump carries every class something of the dump refers to,
 and a class its name is no longer bound to has its digest in its id,
 `Base@8d03a7c54a9d2803`. A class Go defined or the host registered is the
 process's and is not in the dump; a reference names it.
+
+A module the host gave the program, with `cameo.Program.Module`, is the
+host's to give the resumed run too. But the host gives it once `Resume`
+has returned, and `Resume` restores the values, a variable that holds the
+module or a method's argument that is one. So the dump names those modules
+in `host_modules`, and the resumed run makes each, without methods, before
+it restores anything; the host's `Module` finds it there and gives it its
+methods again before `Run`.
 
 A library written in cameo is the script's code once it is required: its
 classes and methods are in the dump, and its unit. Where it added to a

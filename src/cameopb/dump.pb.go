@@ -200,7 +200,12 @@ type Dump struct {
 	// handles are the library values that change which the run held: a
 	// StringIO. Each is here once, and a value that is one refers to it by
 	// its index, so what held one handle holds one after the resume.
-	Handles       []*Dump_Handle `protobuf:"bytes,22,rep,name=handles,proto3" json:"handles,omitempty"`
+	Handles []*Dump_Handle `protobuf:"bytes,22,rep,name=handles,proto3" json:"handles,omitempty"`
+	// host_modules names the modules the host gave the run that paused
+	// (cameo.Program.Module). The resumed run has each under its name from
+	// the start, without methods, so that what refers to one restores; the
+	// host gives it its methods again before the run goes on.
+	HostModules   []string `protobuf:"bytes,23,rep,name=host_modules,json=hostModules,proto3" json:"host_modules,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -385,6 +390,13 @@ func (x *Dump) GetCalls() []*Dump_Call {
 func (x *Dump) GetHandles() []*Dump_Handle {
 	if x != nil {
 		return x.Handles
+	}
+	return nil
+}
+
+func (x *Dump) GetHostModules() []string {
+	if x != nil {
+		return x.HostModules
 	}
 	return nil
 }
@@ -2060,7 +2072,7 @@ var File_cameo_dump_proto protoreflect.FileDescriptor
 
 const file_cameo_dump_proto_rawDesc = "" +
 	"\n" +
-	"\x10cameo/dump.proto\x12\x05cameo\x1a\x0ecameo/ir.proto\x1a\x11cameo/value.proto\"\xf4$\n" +
+	"\x10cameo/dump.proto\x12\x05cameo\x1a\x0ecameo/ir.proto\x1a\x11cameo/value.proto\"\x97%\n" +
 	"\x04Dump\x12\x12\n" +
 	"\x04file\x18\x01 \x01(\tR\x04file\x12\x16\n" +
 	"\x06source\x18\x02 \x01(\tR\x06source\x12\x12\n" +
@@ -2084,7 +2096,8 @@ const file_cameo_dump_proto_rawDesc = "" +
 	"\x06frames\x18\x13 \x03(\v2\x11.cameo.Dump.FrameR\x06frames\x12,\n" +
 	"\aworkers\x18\x14 \x03(\v2\x12.cameo.Dump.WorkerR\aworkers\x12&\n" +
 	"\x05calls\x18\x15 \x03(\v2\x10.cameo.Dump.CallR\x05calls\x12,\n" +
-	"\ahandles\x18\x16 \x03(\v2\x12.cameo.Dump.HandleR\ahandles\x1a\xa1\x01\n" +
+	"\ahandles\x18\x16 \x03(\v2\x12.cameo.Dump.HandleR\ahandles\x12!\n" +
+	"\fhost_modules\x18\x17 \x03(\tR\vhostModules\x1a\xa1\x01\n" +
 	"\aBinding\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\"\n" +
 	"\x05value\x18\x02 \x01(\v2\f.cameo.ValueR\x05value\x12\x14\n" +
