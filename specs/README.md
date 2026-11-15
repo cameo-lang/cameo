@@ -71,6 +71,9 @@ and are not in the prelude. `--ruby` runs each program under CRuby as well,
 which shows what the harness can run: the summary counts how many of the
 examples CRuby passes also pass under cameo.
 
+[test/](test) holds the tests of run.rb itself; `make spec-tests` runs
+them with the built cameo. Like run.rb, they need a Ruby with Prism.
+
 ## Which examples pass, and which should
 
 [status.tsv](status.tsv) has one row per example of `language/` and

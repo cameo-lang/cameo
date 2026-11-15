@@ -5,7 +5,7 @@
 
 BINARY := bin/cameo
 
-.PHONY: default help prerequisites deps build tests integration-tests lint check ruby-spec spec-status clean install proto proto-check
+.PHONY: default help prerequisites deps build tests integration-tests lint check ruby-spec spec-status spec-tests clean install proto proto-check
 
 
 # Every test runs in UTC, the Go tests and the shell tests alike: a test
@@ -58,6 +58,12 @@ check: lint tests integration-tests ## Everything CI runs
 # Not part of check: it needs a Ruby and a ruby/spec copy.
 spec-status: build ## Run ruby/spec's language and core, and rewrite specs/status.tsv
 	ruby specs/run.rb --cameo $(BINARY) --ruby ruby --status specs/status.tsv
+
+# Not part of check: it needs a Ruby with Prism, 3.3 or later.
+spec-tests: build ## Test specs/run.rb, the harness of spec-status
+	@for t in specs/test/*_test.rb; do \
+	  echo "==> $$t"; CAMEO_BIN=$(CURDIR)/$(BINARY) ruby $$t || exit 1; \
+	done
 
 # Not part of check either: it clones or pulls github.com/ruby/spec.
 ruby-spec: ## Clone ruby/spec into ruby-spec/ of the main repository, or pull it
