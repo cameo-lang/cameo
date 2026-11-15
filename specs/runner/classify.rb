@@ -48,6 +48,14 @@ module Classify
     [/scoped constant/, "expected", "scoped-constants"],
     [/undefined method '(const_set|initialize_copy|initialize_clone|initialize_dup)'/, "expected", "metaprogramming"],
     [/undefined method '(to_r|rationalize)'/, "expected", "rational-complex"],
+    # The rules for Strings, before the encodings rule: their messages
+    # name force_encoding as the way out.
+    # A UTF-8 String holds characters alone: bytes that are not UTF-8 are
+    # a binary String, written b"...", and what makes text refuses them.
+    [/is a binary string and is written b"|keep the bytes in a binary string|keep such bytes in a binary string|returns text, and these bytes are none/, "expected", "invalid-strings"],
+    # A binary String has bytes and no characters, and a UTF-8 String
+    # with characters beyond ASCII has no bytes alone.
+    [/(reads characters|makes text), and a binary string has bytes alone|only a binary string has bytes alone|getbyte reads a byte, and this UTF-8 string has characters beyond ASCII/, "expected", "binary-strings"],
     [/undefined method '(list|aliases|name_list|find|default_external|default_internal|compatible\?)' for class Encoding|uninitialized constant Encoding::(?!UTF_8\b|BINARY\b|ASCII_8BIT\b|US_ASCII\b)|fixed_encoding\?|FIXEDENCODING|force_encoding|unknown encoding name/, "expected", "encodings"],
     [/undefined method 'last_match' for class Regexp/, "expected", "globals"],
     # cameo's own refusal, which names the alternative
@@ -64,8 +72,6 @@ module Classify
     [/undefined method '(private|public|protected)_(instance_)?methods'/, "expected", "visibility"],
     [/(imaginary|rational) literals are not supported|undefined method '(to_c|i)' for/, "expected", "rational-complex"],
     [/fork is not supported/, "expected", "process"],
-    # bytes that are not UTF-8 live in a binary string, written b"..."
-    [/is a binary string and is written b"|keep the bytes in a binary string/, "expected", "binary-strings"],
     # initialize runs in new alone; send cannot reach it
     [/send\(:initialize\): initialize runs only in new/, "expected", "metaprogramming"],
   ].freeze
