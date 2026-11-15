@@ -34,6 +34,38 @@ class ClassifyTest < Minitest::Test
     BINARY.each { assert_equal ["expected", "binary-strings"], Classify.status(_1), _1 }
   end
 
+  # Parts of the libraries that doc/stdlib.md leaves out, in the messages
+  # cameo prints for them.
+  LIBRARY = [
+    "Zlib::Deflate.new is not supported: a stream fed piece by piece; use Zlib::Deflate.deflate on the whole string (NotImplementedError)",
+    "uninitialized constant Zlib::GzipReader (NameError)",
+    "undefined method 'eigensystem' for an instance of Matrix (NoMethodError)",
+    "uninitialized constant Matrix::LUPDecomposition (NameError)",
+    "Sorry, Operation(**) not implemented: Matrix op Float (ExceptionForMatrix::ErrOperationNotImplemented)",
+    "URI.regexp is obsolete in Ruby and not in cameo; use URI.extract (NotImplementedError)",
+    "uninitialized constant Date::Infinity (NameError)",
+    "strptime: Go's time has no layout for %U (ArgumentError)",
+    "uninitialized constant CGI::Cookie (NameError)",
+    "uninitialized constant OpenSSL::X509 (NameError)",
+    "undefined method 'secure_compare' for module OpenSSL (NoMethodError)",
+    "undefined method 'pwd' for class Pathname (NoMethodError)",
+  ].freeze
+
+  def test_a_part_a_library_leaves_out_is_expected
+    LIBRARY.each { assert_equal ["expected", "library-left-out"], Classify.status(_1), _1 }
+  end
+
+  def test_what_a_library_leaves_out_on_purpose_is_expected
+    assert_equal ["expected", "mutation"], Classify.status("into: fills a Hash in place, which a value cannot be; read options after the parse, or use getopts, which returns the Hash (ArgumentError)")
+    assert_equal ["expected", "enumerator-next"], Classify.status("undefined method 'next' for an instance of Enumerator (NoMethodError)")
+    assert_equal ["expected", "c-api"], Classify.status("undefined method 'load_extension' for main (NoMethodError)")
+  end
+
+  def test_a_missing_method_of_a_library_is_a_bug
+    assert_equal ["bug", ""], Classify.status("undefined method 'ascend' for an instance of Pathname (NoMethodError)")
+    assert_equal ["bug", ""], Classify.status("uninitialized constant OpenSSL::Digest (NameError)")
+  end
+
   def test_an_unknown_message_is_a_bug
     assert_equal ["bug", ""], Classify.status("Expected 1 == 2 to be truthy but was false")
   end

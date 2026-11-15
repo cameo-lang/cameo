@@ -56,8 +56,9 @@ lint: prerequisites ## Run static checks
 check: lint tests integration-tests ## Everything CI runs
 
 # Not part of check: it needs a Ruby and a ruby/spec copy.
-spec-status: build ## Run ruby/spec's language and core, and rewrite specs/status.tsv
+spec-status: build ## Run all of ruby/spec, and rewrite specs/status.tsv and COMPATIBILITY.md
 	ruby specs/run.rb --cameo $(BINARY) --ruby ruby --status specs/status.tsv
+	ruby specs/compatibility.rb --ruby ruby
 
 # Not part of check: it needs a Ruby with Prism, 3.3 or later.
 spec-tests: build ## Test specs/run.rb, the harness of spec-status

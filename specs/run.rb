@@ -14,20 +14,24 @@
 #   ruby run.rb [--spec DIR] [--cameo BIN] [--jobs N] [--timeout SECONDS]
 #               [--ruby RUBY] [--out DIR] [--status FILE] [DIR_OR_FILE ...]
 #
-# The default --spec is the copy checkout.rb returns, and the default
-# targets are its language/ and core/. --ruby runs each program that cameo
-# runs under that Ruby as well: the prelude is Ruby, so the examples that
-# pass there are the ones this harness can run, and the summary counts how
-# many of them pass under cameo. --out keeps each rewritten program and its
+# The default --spec is the copy checkout.rb returns at the commit
+# COUNTS.md names, the one specs/ was sorted at, and the default targets
+# are all of its directories: language/, core/, library/, command_line/,
+# security/ and optional/. --ruby runs each program that cameo runs under
+# that Ruby as well: the prelude is Ruby, so the examples that pass there
+# are the ones this harness can run, and the summary counts how many of
+# them pass under cameo. --out keeps each rewritten program and its
 # output, and writes results.tsv, one row per spec file, and failures.tsv,
 # one row per example that failed or raised under cameo.
 #
 # --status writes the status of every example, one row each, and of every
-# file that did not run, one row with the example "*": pass, or what
-# runner/classify.rb makes of the message that stopped it. An example that
-# does not pass under --ruby either is the harness's. specs/status.tsv is
-# that file for language/ and core/, kept in the repository so a change
-# shows which examples it fixes and which it breaks.
+# file that did not run, one row with the example "*" and the stage that
+# stopped it: check, crash, timeout or rewrite. The status is pass, or
+# what runner/classify.rb makes of the message that stopped it. With
+# --ruby, an example passes only when it passes under that Ruby too, and
+# one that does not pass there is the harness's. specs/status.tsv is that
+# file, kept in the repository so a change shows which examples it fixes
+# and which it breaks, and compatibility.rb writes COMPATIBILITY.md from it.
 
 require "etc"
 require "fileutils"
@@ -58,7 +62,8 @@ OptionParser.new do |o|
 end.parse!
 
 spec = options[:spec] || begin
-  out, status = Open3.capture2("ruby", File.join(HERE, "checkout.rb"))
+  commit = File.read(File.join(HERE, "COUNTS.md"))[/commit `(\h{40})`/, 1] or abort "run.rb: COUNTS.md names no commit"
+  out, status = Open3.capture2("ruby", File.join(HERE, "checkout.rb"), "--commit", commit)
   abort "run.rb: checkout.rb failed" unless status.success?
   utf8(out).strip
 end
@@ -69,7 +74,8 @@ cameo = options[:cameo] || begin
   bin
 end
 
-targets = ARGV.empty? ? %w[language core].map { File.join(spec, _1) } : ARGV.map { File.expand_path(_1) }
+DIRECTORIES = %w[language core library command_line security optional].freeze
+targets = ARGV.empty? ? DIRECTORIES.map { File.join(spec, _1) }.select { File.directory?(_1) } : ARGV.map { File.expand_path(_1) }
 files = targets.flat_map { |t| File.directory?(t) ? Dir.glob(File.join(t, "**", "*_spec.rb")) : [t] }.sort
 abort "run.rb: no spec files under #{targets.join(", ")}" if files.empty?
 
@@ -144,12 +150,23 @@ class Rewriter
   # the block of rest_call, rewritten.
   def call(name, src, path, should, rest_call, prefix)
     out = +"#{name}(#{should.name == :should_not}, (#{emit(src, path, should.receiver)})#{prefix}"
-    out << ", " << emit(src, path, rest_call.arguments) if rest_call.arguments
+    out << ", " << arguments(src, path, rest_call.arguments) if rest_call.arguments
     block = rest_call.block
     out << ", " << emit(src, path, block) if block.is_a?(Prism::BlockArgumentNode)
     out << ")"
     out << " " << emit(src, path, block) if block.is_a?(Prism::BlockNode)
     out
+  end
+
+  # arguments returns the arguments of a should, rewritten. One that is a
+  # call without parentheses, as in a.should output "x", is put in
+  # parentheses, since it becomes one argument of several.
+  def arguments(src, path, node)
+    args = node.arguments
+    if args.size == 1 && args[0].is_a?(Prism::CallNode) && args[0].arguments && args[0].opening_loc.nil?
+      return "(#{emit(src, path, node)})"
+    end
+    emit(src, path, node)
   end
 
   def replace(src, path, node)
@@ -226,10 +243,12 @@ def run_file(cameo, ruby, spec, path, timeout, out)
   lines = examples(stdout)
   if ruby
     ruby_out, = run_with_timeout([ruby, prog], timeout)
-    on_ruby = passed(examples(ruby_out))
+    ruby_lines = examples(ruby_out)
+    on_ruby = passed(ruby_lines)
     row[:ruby_passed] = on_ruby.values.sum
     row[:both_passed] = passed(lines).sum { |name, n| [n, on_ruby.fetch(name, 0)].min }
     row[:on_ruby] = on_ruby
+    row[:ruby_ran] = ruby_lines.filter_map { |kind, name, _| name if kind != "U" }.tally
   end
   lines.each do |kind, name, message|
     case kind
@@ -298,41 +317,62 @@ if options[:out]
 end
 
 # status_rows returns the rows of --status for one file's result.
-def status_rows(r)
-  # A time or a temporary path in a message is masked, so that a rerun
-  # does not change the row.
+STATUS_COLUMNS = %w[file example status reason stage message].freeze
+
+# status_rows returns the rows of --status for one file's result, in the
+# order of STATUS_COLUMNS. The stage is empty for an example, and names
+# what stopped a file that did not run.
+def status_rows(r, spec, out)
+  # A time, a temporary path or the path of the ruby/spec copy in a
+  # message is masked, so that a rerun does not change the row; a control
+  # character is written as an escape.
+  programs = out && File.join(out, "programs", File.dirname(r[:file]))
   clean = lambda do |s|
-    s.to_s.gsub(/[\t\n]/, " ").gsub("\\n", " ").gsub(/\d{4}-\d\d-\d\d \d\d:\d\d:\d\d(\.\d+)? ?([+-]\d{4}|UTC)/, "<time>").gsub(%r{[^\s"=~]*cameo\\?-spec\d{8}\\?-\d+\\?-\w+}, "<tmp>")[0, 240]
+    s = s.to_s.gsub(/[\t\n]/, " ").gsub("\\n", " ").gsub(/[\x00-\x1f\x7f]/) { format("\\x%02X", _1.ord) }
+    s = s.gsub(programs, "<tmp>") if programs
+    s.gsub("#{spec}/", "<spec>/").gsub(/\d{4}-\d\d-\d\d \d\d:\d\d:\d\d(\.\d+)? ?([+-]\d{4}|UTC)/, "<time>").gsub(%r{[^\s"=~]*cameo\\?-spec\d{8}\\?-\d+\\?-\w+}, "<tmp>")[0, 240]
   end
   rows = []
   on_ruby = (r[:on_ruby] || {}).dup
   (r[:lines] || []).each do |kind, name, message|
+    ruby_passed = on_ruby.fetch(name, 0).positive?
     status, reason =
-      case kind
-      when "P" then ["pass", ""]
-      when "U" then ["harness", name.split.last(2).join(" ")]
-      else
-        if r[:on_ruby] && on_ruby.fetch(name, 0).zero?
-          ["harness", "fails under Ruby too"]
-        else
-          Classify.status(message, name)
+      if kind == "U"
+        ["harness", name.split.last(2).join(" ")]
+      elsif r[:on_ruby] && !ruby_passed
+        # A guard for a newer Ruby than --ruby runs an example under cameo
+        # alone.
+        if !r[:ruby_ran].key?(name) then ["harness", "not run under Ruby"]
+        elsif kind == "P" then ["harness", "fails under Ruby"]
+        else ["harness", "fails under Ruby too"]
         end
+      elsif kind == "P"
+        ["pass", ""]
+      else
+        Classify.status(message, name)
       end
-    on_ruby[name] -= 1 if kind != "U" && on_ruby.fetch(name, 0).positive?
-    rows << [r[:file], clean.(name), status, reason, clean.(message)]
+    on_ruby[name] -= 1 if kind != "U" && ruby_passed
+    rows << [r[:file], clean.(name), status, reason, "", clean.(message)]
   end
   unless r[:status] == "ran"
     message = r[:status] == "timeout" ? "timeout #{r[:message]}" : r[:message]
-    status, reason = r[:status] == "timeout" ? ["bug", "timeout"] : Classify.status(message.to_s)
-    rows << [r[:file], "*", status, reason, clean.(message)]
+    # A file Prism cannot parse, such as a fixture that holds a syntax
+    # error on purpose, is the harness's: cameo never saw it.
+    status, reason =
+      case r[:status]
+      when "timeout" then ["bug", "timeout"]
+      when "rewrite" then ["harness", "rewrite"]
+      else Classify.status(message.to_s)
+      end
+    rows << [r[:file], "*", status, reason, r[:status], clean.(message)]
   end
   rows
 end
 
 if options[:status]
-  rows = results.flat_map { status_rows(_1) }
+  rows = results.flat_map { status_rows(_1, spec, options[:out]) }
   File.open(options[:status], "w") do |f|
-    f.puts %w[file example status reason message].join("\t")
+    f.puts STATUS_COLUMNS.join("\t")
     rows.each { f.puts _1.join("\t") }
   end
   counts = rows.group_by { _1[2] }.transform_values(&:size)

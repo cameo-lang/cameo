@@ -49,12 +49,14 @@ each:
 [ruby/spec](https://github.com/ruby/spec) by what cameo's checker accepts:
 1855 are accepted. Most of the rest use an instance variable (1021),
 mostly in mspec's own `before` blocks, or require a library cameo does
-not build in (375). [specs/run.rb](../specs/run.rb) runs
-`language/` and `core/` under cameo and under CRuby, after rewriting
-mspec's idioms into calls of its prelude, which is why it accepts more
-files than the sort does: of the 2073 examples both Rubies ran, CRuby
-passes all and cameo 990, and [coverage.md](coverage.md) says what stops
-each of the others, and which of those are bugs.
+not build in (375). [specs/run.rb](../specs/run.rb) runs all of
+ruby/spec under cameo and under CRuby, after rewriting mspec's idioms
+into calls of its prelude, which is why it accepts more files than the
+sort does: of the 2897 examples CRuby passes in that harness, cameo
+passes 1558, 946 of the 2017 in `language/` and `core/` and 610 of the
+877 in `library/`. [COMPATIBILITY.md](../COMPATIBILITY.md) says, for
+each part of ruby/spec, what stops each of the others, and which of
+those are bugs.
 
 ## The same as in Ruby
 
