@@ -56,7 +56,7 @@ lint: prerequisites ## Run static checks
 check: lint tests integration-tests ## Everything CI runs
 
 # Not part of check: it needs a Ruby and a ruby/spec copy.
-spec-status: build ## Run all of ruby/spec, and rewrite specs/status.tsv and COMPATIBILITY.md
+spec-status: build ## Run all of ruby/spec, and rewrite specs/status.tsv, COMPATIBILITY.md and the site's compatibility.html
 	ruby specs/run.rb --cameo $(BINARY) --ruby ruby --status specs/status.tsv
 	ruby specs/compatibility.rb --ruby ruby
 

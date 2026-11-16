@@ -190,6 +190,9 @@ th, td {
 
 th { font-weight: 600; }
 
+/* A column of counts, as compatibility.html has. */
+th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
 .callout {
   border-left: 4px solid var(--accent);
   background: var(--accent-soft);

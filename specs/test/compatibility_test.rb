@@ -23,16 +23,23 @@ class CompatibilityTest < Minitest::Test
     ["library/csv/a_spec.rb", "*", "expected", "require", "crash", "cannot load such file -- x (LoadError)"],
   ].freeze
 
-  def compatibility
+  # written returns COMPATIBILITY.md and the site's page that
+  # compatibility.rb writes from ROWS.
+  def written
     Dir.mktmpdir("compatibility-test") do |dir|
       status = File.join(dir, "status.tsv")
       File.write(status, ROWS.map { _1.join("\t") }.join("\n") + "\n")
       out = File.join(dir, "COMPATIBILITY.md")
-      log, st = Open3.capture2e("ruby", SCRIPT, "--status", status, "--out", out, "--commit", "abc", "--date", "2026-01-02")
+      html = File.join(dir, "compatibility.html")
+      log, st = Open3.capture2e("ruby", SCRIPT, "--status", status, "--out", out, "--html", html,
+                                "--commit", "abc", "--date", "2026-01-02")
       assert st.success?, "compatibility.rb failed:\n#{log}"
-      File.read(out, encoding: "UTF-8")
+      [File.read(out, encoding: "UTF-8"), File.read(html, encoding: "UTF-8")]
     end
   end
+
+  def compatibility = written.first
+  def page = written.last
 
   def test_writes_the_header
     md = compatibility
@@ -59,5 +66,34 @@ class CompatibilityTest < Minitest::Test
 
   def test_lists_the_bugs_by_category
     assert_includes compatibility, "| core/string | 1 | 0 | `Expected 1 == 2` |"
+  end
+
+  # The site's page is the site's index.html around the same content.
+  def test_writes_the_sites_page_in_the_sites_frame
+    html = page
+    assert_includes html, "<title>cameo — compatibility</title>"
+    assert_includes html, %(<a href="compatibility.html" aria-current="page">Compatibility</a>)
+    assert_equal 1, html.scan('aria-current="page"').size
+    assert_includes html, %(<script type="module" src="site.js"></script>)
+    assert_includes html, %(<h1 id="compatibility">Compatibility</h1>\n\n<p class="lead">How much of)
+    assert_includes html, %(<footer class="site">)
+    refute_includes html, "<!--"
+  end
+
+  def test_the_sites_page_has_the_same_tables
+    html = page
+    assert_includes html, %(<tr><td><a href="#core">core</a></td><td class="num">4</td><td class="num">3</td>) +
+                          %(<td class="num">1 (33%)</td>)
+    assert_includes html, %(<tr><td><strong>all</strong></td><td class="num">5</td>)
+    assert_includes html, %(<td>core/string</td><td class="num">1</td><td class="num">0</td><td><code>Expected 1 == 2</code></td>)
+    assert_includes html, %(<h3 id="core">core</h3>)
+  end
+
+  # A file of the repository is a link to it on GitHub; an anchor stays.
+  def test_the_sites_page_links_files_on_github
+    html = page
+    assert_includes html, %(<a href="https://github.com/cameo-lang/cameo/blob/main/specs/run.rb">specs/run.rb</a>)
+    assert_includes html, %(<a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#different-in-cameo">mutation</a>)
+    assert_includes html, %(<a href="#not-expected-to-work">reasons</a>)
   end
 end

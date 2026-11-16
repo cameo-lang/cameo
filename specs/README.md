@@ -98,8 +98,11 @@ or `rewrite` (Prism could not parse it). Its status is one of:
 an example to its status; a message it does not know is a bug.
 [compatibility.rb](compatibility.rb) writes
 [COMPATIBILITY.md](../COMPATIBILITY.md) from status.tsv: the counts for
-each category of ruby/spec, the reasons, and where the bugs are.
-Regenerate both after a change, and the diff of status.tsv shows what
+each category of ruby/spec, the reasons, and where the bugs are. It
+writes the same as the site's
+[compatibility.html](../doc/gh_pages/compatibility.html), in the frame of
+the site's index.html, through [runner/site_page.rb](runner/site_page.rb).
+Regenerate them after a change, and the diff of status.tsv shows what
 the change fixed and broke:
 
 ```sh
