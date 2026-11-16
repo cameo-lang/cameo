@@ -3,6 +3,7 @@ package cameo
 import (
 	"errors"
 	"fmt"
+	"reflect"
 
 	"github.com/cameo-lang/cameo/src/eval"
 	"github.com/cameo-lang/cameo/src/object"
@@ -18,7 +19,11 @@ type Module struct {
 // Func is a host method. It gets the call's positional arguments and its
 // keyword arguments as plain Go values: what ToGo gives, but a Symbol is a
 // String, as everywhere a value leaves cameo, a Hash whose keys are all
-// Strings or Symbols is a map[string]any, and a Proc is a *Block. block is
+// Strings or Symbols is a map[string]any, and a Proc is a *Block. A Hash
+// with other keys is a map[any]any, and the call raises an ArgumentError
+// when a key is not comparable in Go, as a binary String's []byte is not,
+// or when two keys are one in Go; so does a keyword, as f(1 => 2) passes,
+// that is not a String or a Symbol. block is
 // the block the call gave, or nil. What it returns comes back through
 // ToValue, a *Block as the Proc it came from. An error raises an
 // exception: an *Exception's class, or a RuntimeError with the error's
@@ -81,6 +86,13 @@ func hostCall(ctx object.Context, c conv, args []object.Value, kw *object.Map, b
 	kwargs := map[string]any{}
 	if kw != nil {
 		for i, k := range kw.Keys() {
+			// f(1 => 2) passes its pairs as keywords, as Ruby does, but
+			// kwargs names them by Strings.
+			_, str := k.AsString()
+			_, sym := k.AsSymbol()
+			if !str && !sym {
+				return object.Value{}, ctx.Raise(object.ArgumentError, "a keyword of class %s cannot reach a host method, whose keywords are names: pass a Hash in braces", k.Class().QualifiedName())
+			}
 			g, err := c.toHost(kw.Values()[i])
 			if err != nil {
 				return object.Value{}, ctx.Raise(object.ArgumentError, "%s", err)
@@ -193,9 +205,13 @@ func (c conv) toHost(v object.Value) (any, error) {
 			if err != nil {
 				return nil, err
 			}
-			switch key.(type) {
-			case []any, map[string]any, map[any]any:
-				return nil, fmt.Errorf("a Hash with %s keys cannot leave cameo", k.Class().QualifiedName())
+			// A binary String is a []byte, an Array a []any: keys a Go
+			// map would panic on. ToGo checks its keys the same way.
+			if key != nil && !reflect.TypeOf(key).Comparable() {
+				return nil, fmt.Errorf("a Hash key of class %s is a %T in Go, which a Go map cannot hold as a key", k.Class().QualifiedName(), key)
+			}
+			if _, taken := out[key]; taken {
+				return nil, fmt.Errorf("two keys of a Hash are both %#v in Go", key)
 			}
 			g, err := c.toHost(m.Values()[i])
 			if err != nil {
