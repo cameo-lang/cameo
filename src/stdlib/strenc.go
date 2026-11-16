@@ -6,6 +6,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/cameo-lang/cameo/src/codes"
 	"github.com/cameo-lang/cameo/src/object"
 )
 
@@ -181,7 +182,7 @@ func hasRegexp(args []object.Value) bool {
 // noCharacters is the error of the method name called on a binary
 // string, which it would have to read as characters.
 func noCharacters(ctx object.Context, name string) error {
-	return ctx.Raise(object.CompatibilityError, "%s reads characters, and a binary string has bytes alone: say what they are with force_encoding first", name)
+	return ctx.Raise(object.CompatibilityError, "%s", codes.Link(name+" reads characters, and a binary string has bytes alone: say what they are with force_encoding first", "bin"))
 }
 
 // InstallStringEncodings gives each String method one wrapper at most,

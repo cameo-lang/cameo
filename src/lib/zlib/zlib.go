@@ -29,6 +29,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cameo-lang/cameo/src/codes"
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/stdlib"
 )
@@ -82,7 +83,7 @@ func Install() {
 	for _, c := range []*object.Class{deflateCls, inflateCls} {
 		name := c.Name
 		c.DefineSingleton("new", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-			return object.Value{}, ctx.Raise(object.NotImplementedErr, "Zlib::%s.new is not supported: a stream fed piece by piece; use Zlib::%s.%s on the whole string", name, name, strings.ToLower(name))
+			return object.Value{}, ctx.Raise(object.NotImplementedErr, "%s", codes.Link(fmt.Sprintf("Zlib::%s.new is not supported: a stream fed piece by piece; use Zlib::%s.%s on the whole string", name, name, strings.ToLower(name)), "lib"))
 		})
 	}
 	m.DefineSingleton("zlib_version", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {

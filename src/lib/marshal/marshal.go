@@ -21,6 +21,9 @@
 package marshal
 
 import (
+	"strings"
+
+	"github.com/cameo-lang/cameo/src/codes"
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/protogen"
 	"github.com/cameo-lang/cameo/src/stdlib"
@@ -105,7 +108,11 @@ func Install() {
 		}
 		v, err := env.Decoder().Decode(data)
 		if err != nil {
-			return object.Value{}, ctx.Raise(object.ArgumentError, "incompatible marshal data: %s", err.Error())
+			// protobuf-go writes a space or a no-break space after
+			// "proto:", by build, so that no one matches its text; the
+			// message a script sees is the same from build to build.
+			why := strings.ReplaceAll(err.Error(), " ", " ")
+			return object.Value{}, ctx.Raise(object.ArgumentError, "%s", codes.Link("incompatible marshal data: "+why, "mar"))
 		}
 		return v, nil
 	})

@@ -26,6 +26,6 @@ end
 	assert.NoError(t, err)
 	prog.IgnoreMutationErrors(true)
 	assert.NoError(t, prog.Run())
-	refusal := "setbyte sets a byte, and only a binary string has bytes alone: call b first\n"
+	refusal := "setbyte sets a byte, and only a binary string has bytes alone: call b first (see https://15b.it/bin)\n"
 	assert.Equals(t, stdout.String(), "65\n"+refusal+refusal+refusal)
 }

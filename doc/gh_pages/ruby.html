@@ -172,7 +172,7 @@ rescue CameoError =&gt; e
 end
 a += [3]
 p a, b</code></pre>
-<pre class="output"><code>cameo does not support mutating calls without rebinding; use a = a &lt;&lt; 1, +, or append
+<pre class="output"><code>cameo does not support mutating calls without rebinding; use a = a &lt;&lt; 1, +, or append (see https://15b.it/mut)
 [1, 2, 3]
 [1, 2]</code></pre>
 </div>
@@ -390,7 +390,7 @@ end
 puts "v=#{bytes.force_encoding("UTF-8")}"</code></pre>
 <pre class="output"><code>#&lt;Encoding:BINARY (ASCII-8BIT)&gt;
 #&lt;Encoding:BINARY (ASCII-8BIT)&gt;
-an interpolation makes text, and a binary string has bytes alone: say what they are with force_encoding first, or join bytes with +
+an interpolation makes text, and a binary string has bytes alone: say what they are with force_encoding first, or join bytes with + (see https://15b.it/bin)
 v=ab</code></pre>
 
 <pre class="cameo"><code>bytes = b"\xFFab"
@@ -414,7 +414,7 @@ p b"caf\xC3\xA9".force_encoding("UTF-8").upcase</code></pre>
 <pre class="output"><code>#&lt;Encoding:BINARY (ASCII-8BIT)&gt;
 3
 "\xFFabc"
-upcase reads characters, and a binary string has bytes alone: say what they are with force_encoding first
+upcase reads characters, and a binary string has bytes alone: say what they are with force_encoding first (see https://15b.it/bin)
 Encoding::InvalidByteSequenceError
 "CAFÉ"</code></pre>
 
@@ -532,7 +532,7 @@ p item.qty</code></pre>
 rescue LoadError =&gt; e
   puts e.message
 end</code></pre>
-<pre class="output"><code>cannot load such file -- resolv</code></pre>
+<pre class="output"><code>cannot load such file -- resolv (see https://15b.it/req)</code></pre>
 
 <p>Ruby's version constants describe cameo: <code>RUBY_ENGINE</code> is
 <code>"cameo"</code>, <code>RUBY_VERSION</code> is the Ruby cameo follows,

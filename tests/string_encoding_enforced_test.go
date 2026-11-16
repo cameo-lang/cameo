@@ -22,7 +22,7 @@ rescue ArgumentError => e
 end
 puts "went on"
 `)
-	assert.Equals(t, out, "invalid byte sequence in UTF-8: \"\\xffabc\" is not text; keep such bytes in a binary string\nwent on\n")
+	assert.Equals(t, out, "invalid byte sequence in UTF-8: \"\\xffabc\" is not text; keep such bytes in a binary string (see https://15b.it/inv)\nwent on\n")
 }
 
 // A Go host gives text as a string, which must be UTF-8, and bytes as a

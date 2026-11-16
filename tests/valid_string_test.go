@@ -32,7 +32,7 @@ end
 ["\xC3"]
 "é"
 true
-invalid byte sequence in UTF-8: keep the bytes in a binary string
-invalid byte sequence in US-ASCII: keep the bytes in a binary string
+invalid byte sequence in UTF-8: keep the bytes in a binary string (see https://15b.it/inv)
+invalid byte sequence in US-ASCII: keep the bytes in a binary string (see https://15b.it/inv)
 `)
 }

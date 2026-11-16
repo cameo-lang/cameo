@@ -3,7 +3,7 @@
 "x%20y"
 "a b c%zz%4%Aé"
 "a+b c%zz%4%A"
-"invalid byte sequence in UTF-8: CGI returns text, and these bytes are none"
+"invalid byte sequence in UTF-8: CGI returns text, and these bytes are none (see https://15b.it/inv)"
 "++"
 "&lt;a href=&#39;x&#39;&gt;&quot;&amp;&lt;/a&gt;é"
 "x"

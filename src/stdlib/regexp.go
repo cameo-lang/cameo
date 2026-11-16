@@ -7,6 +7,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/cameo-lang/cameo/src/codes"
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/rx"
 )
@@ -225,7 +226,7 @@ func compileRegexp(ctx object.Context, source string, options int) (object.Value
 func RegexpFailure(ctx object.Context, err error, source string) error {
 	var unsupported *rx.Unsupported
 	if errors.As(err, &unsupported) {
-		return ctx.Raise(object.NotImplementedErr, "%s", unsupported.Error())
+		return ctx.Raise(object.NotImplementedErr, "%s", codes.Link(unsupported.Error(), "re"))
 	}
 	return ctx.Raise(object.RegexpError, "%s: /%s/", err.Error(), source)
 }

@@ -63,8 +63,8 @@ true
 #<Encoding:BINARY (ASCII-8BIT)>
 true
 #<Encoding:UTF-8>
-"invalid byte sequence in UTF-8: keep the bytes in a binary string"
-"unknown encoding name - EBCDIC"
+"invalid byte sequence in UTF-8: keep the bytes in a binary string (see https://15b.it/inv)"
+"unknown encoding name - EBCDIC (see https://15b.it/enc)"
 "ab<c\u2028d>ab<c\u2028d>"
 "x&lt;y"
 "x[1]y"

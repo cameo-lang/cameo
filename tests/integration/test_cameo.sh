@@ -328,7 +328,7 @@ p a
 CAMEO
   out=$("$CAMEO_BIN" "$script" 2>&1) || rc=$?
   assert_neq 0 "$rc" "a mutator ran without an error"
-  assert_contains "$out" "cameo does not support mutating calls without rebinding; use last and take (CameoError)"
+  assert_contains "$out" "cameo does not support mutating calls without rebinding; use last and take (see https://15b.it/mut) (CameoError)"
   out=$("$CAMEO_BIN" --ignore-mutation-errors "$script")
   assert_eq $'2\n[1, 2]' "$out"
 }

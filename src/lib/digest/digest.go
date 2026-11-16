@@ -24,6 +24,7 @@ import (
 	"hash"
 	"strings"
 
+	"github.com/cameo-lang/cameo/src/codes"
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/stdlib"
 )
@@ -227,7 +228,7 @@ func installClasses() {
 		})
 	}
 	c.DefineSingleton("file", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Value{}, ctx.Raise(object.NotImplementedErr, "%s.file reads a file, which cameo does not; digest the string instead", self.Cls().QualifiedName())
+		return object.Value{}, ctx.Raise(object.NotImplementedErr, "%s", codes.Link(self.Cls().QualifiedName()+".file reads a file, which cameo does not; digest the string instead", "io"))
 	})
 
 	// The instance methods: hexdigest and kin of what was fed, or of the
@@ -270,7 +271,7 @@ func installClasses() {
 		return build(inst.Cls, int(bits), nil), nil
 	})
 	c.Define("file", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Value{}, ctx.Raise(object.NotImplementedErr, "%s#file reads a file, which cameo does not; digest the string instead", self.Instance().Cls.QualifiedName())
+		return object.Value{}, ctx.Raise(object.NotImplementedErr, "%s", codes.Link(self.Instance().Cls.QualifiedName()+"#file reads a file, which cameo does not; digest the string instead", "io"))
 	})
 	size := func(name string, f func(a algorithm) int) {
 		c.Define(name, 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {

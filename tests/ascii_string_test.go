@@ -34,5 +34,5 @@ tests.each do |name, f|
   end
 end
 `)
-	assert.Equals(t, out, "#<Encoding:US-ASCII>\n3\n\"ABC\"\n#<Encoding:US-ASCII>\n#<Encoding:UTF-8>\n#<Encoding:US-ASCII>\ninvalid byte sequence in US-ASCII: keep the bytes in a binary string\ntr: \"ébc\" UTF-8 valid=true\ncenter: \"ééabcéé\" UTF-8 valid=true\nsub: \"aéc\" UTF-8 valid=true\ngsub: \"aéc\" UTF-8 valid=true\n*: \"abcabc\" US-ASCII valid=true\nljust: \"abcüü\" UTF-8 valid=true\ninterp: \"abcé\" UTF-8 valid=true\njoin: \"abcé\" UTF-8 valid=true\n%: \"abc\" US-ASCII valid=true\ndelete_suffix: \"abc\" US-ASCII valid=true\nencode: Encoding::UndefinedConversionError: U+00E9 from UTF-8 to US-ASCII\n")
+	assert.Equals(t, out, "#<Encoding:US-ASCII>\n3\n\"ABC\"\n#<Encoding:US-ASCII>\n#<Encoding:UTF-8>\n#<Encoding:US-ASCII>\ninvalid byte sequence in US-ASCII: keep the bytes in a binary string (see https://15b.it/inv)\ntr: \"ébc\" UTF-8 valid=true\ncenter: \"ééabcéé\" UTF-8 valid=true\nsub: \"aéc\" UTF-8 valid=true\ngsub: \"aéc\" UTF-8 valid=true\n*: \"abcabc\" US-ASCII valid=true\nljust: \"abcüü\" UTF-8 valid=true\ninterp: \"abcé\" UTF-8 valid=true\njoin: \"abcé\" UTF-8 valid=true\n%: \"abc\" US-ASCII valid=true\ndelete_suffix: \"abc\" US-ASCII valid=true\nencode: Encoding::UndefinedConversionError: U+00E9 from UTF-8 to US-ASCII\n")
 }

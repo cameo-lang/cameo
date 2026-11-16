@@ -45,7 +45,7 @@ x = x.prepend("a", "b")
 p x
 `)
 	const no = "incompatible character encodings: UTF-8 and BINARY (ASCII-8BIT)\n"
-	const noText = "format makes text, and a binary string has bytes alone: say what they are with force_encoding first, or join bytes with +\n"
+	const noText = "format makes text, and a binary string has bytes alone: say what they are with force_encoding first, or join bytes with + (see https://15b.it/bin)\n"
 	assert.Equals(t, out, "delete_suffix: "+no+"delete_prefix: "+no+"sub: "+no+"gsub: "+no+
 		"split: "+no+"partition: "+no+"chomp: "+no+"tr: "+no+"center: "+no+"slice: "+no+
 		"%: "+noText+"% list: "+noText+"format: "+noText+

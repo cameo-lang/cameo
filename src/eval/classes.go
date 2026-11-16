@@ -3,6 +3,7 @@ package eval
 import (
 	"strings"
 
+	"github.com/cameo-lang/cameo/src/codes"
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/syntax"
 )
@@ -100,7 +101,7 @@ func (in *Interp) lookupConst(name string, fr *Frame, line int) (object.Value, e
 // uninitialized makes the NameError for a constant scope lacks, which
 // the message names as shown.
 func uninitialized(scope *object.Class, name, shown string, line int) error {
-	return &object.Exception{Cls: object.NameError, Line: line, Message: "uninitialized constant " + shown,
+	return &object.Exception{Cls: object.NameError, Line: line, Message: codes.Link("uninitialized constant "+shown, constantCode(shown)),
 		Attrs: map[string]object.Value{"name": object.Symbol(name), "receiver": object.ClassValue(scope)}}
 }
 
@@ -165,7 +166,7 @@ func (in *Interp) newClass(args []object.Value, block object.Value) (object.Valu
 		super = s
 	}
 	if msg, refused := subclassRefused(super); refused {
-		return object.Value{}, in.raise(object.CameoError, 0, "Class.new(%s): %s", super.Name, msg)
+		return object.Value{}, in.raise(object.CameoError, 0, "Class.new(%s): %s", super.Name, codes.Link(msg, "bobj"))
 	}
 	cls := object.NewClass("", super)
 	cls.Digest = "new:" + super.QualifiedName()
@@ -279,7 +280,7 @@ func (in *Interp) defineClass(n classDecl, v object.Value, hasSuper bool, body b
 		super = cls
 	}
 	if msg, refused := subclassRefused(super); refused {
-		return object.Value{}, in.raise(object.CameoError, n.Line(), "class %s < %s: %s", n.Name, super.Name, msg)
+		return object.Value{}, in.raise(object.CameoError, n.Line(), "class %s < %s: %s", n.Name, super.Name, codes.Link(msg, "bobj"))
 	}
 	previous, bound := table[n.Name]
 	existing, _ := previous.AsClass()

@@ -5,6 +5,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/cameo-lang/cameo/src/codes"
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/stdlib"
 	"github.com/cameo-lang/cameo/src/syntax"
@@ -36,10 +37,10 @@ func (in *Interp) mutating(fr *Frame, recv object.Value, recvName, name string, 
 		return object.Value{}, false, nil
 	}
 	if syntax.IsBang(name) {
-		return object.Value{}, true, in.raise(object.CameoError, line, "%s", syntax.BangMessage(recvName, name))
+		return object.Value{}, true, in.raise(object.CameoError, line, "%s", codes.Link(syntax.BangMessage(recvName, name), "mut"))
 	}
 	if !in.IgnoreMutationErrors && !rebinds {
-		return object.Value{}, true, in.raise(object.CameoError, line, "%s", syntax.MutationMessage(name))
+		return object.Value{}, true, in.raise(object.CameoError, line, "%s", codes.Link(syntax.MutationMessage(name), "mut"))
 	}
 	_, result, err := m(in, fr, recv, args, kw, block, line)
 	return result, true, withLine(err, line)

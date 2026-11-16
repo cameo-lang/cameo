@@ -30,6 +30,7 @@ import (
 
 	"github.com/spf13/afero"
 
+	"github.com/cameo-lang/cameo/src/codes"
 	"github.com/cameo-lang/cameo/src/lib/stringio"
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/stdlib"
@@ -303,7 +304,7 @@ func readFile(ctx object.Context, name string) ([]byte, error) {
 	if fsys == nil || !ctx.IOAllowed("file") {
 		// File's methods are gone without both; a method kept from before
 		// cannot reach here, but a library calling in can.
-		return nil, ctx.Raise(object.IOError, "the host allows no file I/O")
+		return nil, ctx.Raise(object.IOError, "%s", codes.Link("the host allows no file I/O", "io"))
 	}
 	p := Resolve(dir, name)
 	info, err := fsys.Stat(p)
@@ -333,7 +334,7 @@ func readFile(ctx object.Context, name string) ([]byte, error) {
 func writeFile(ctx object.Context, name string, data []byte) error {
 	fsys, dir := ctx.FileSystem()
 	if fsys == nil || !ctx.IOAllowed("file") {
-		return ctx.Raise(object.IOError, "the host allows no file I/O")
+		return ctx.Raise(object.IOError, "%s", codes.Link("the host allows no file I/O", "io"))
 	}
 	p := Resolve(dir, name)
 	if info, err := fsys.Stat(p); err == nil && info.IsDir() {

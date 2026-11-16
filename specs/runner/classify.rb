@@ -113,7 +113,13 @@ module Classify
 
   # status returns [status, reason] for a message that stopped a spec, the
   # example's name, if there is one, deciding first.
+  # CODE_LINK is how cameo ends the message of something it leaves out on
+  # purpose: the link to the page of its code. The rules read the message
+  # without it.
+  CODE_LINK = %r{ \(see https://15b\.it/\w+\)}
+
   def self.status(message, name = "")
+    message = message.gsub(CODE_LINK, "")
     NAME_RULES.each { |pattern, status, reason| return [status, reason] if name.match?(pattern) }
     if (called = message[/undefined (?:local variable or )?method '([^']+)' for/, 1]) && HARNESS.include?(called)
       return ["harness", called]

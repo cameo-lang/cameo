@@ -38,10 +38,10 @@
 <p>A method that reads characters raises <code>Encoding::CompatibilityError</code> for a binary String, and <code>getbyte</code> raises for a UTF-8 String with characters beyond ASCII.</p>
 
 <pre class="cameo rejected"><code>p b&quot;\xFF\x41&quot;.upcase</code></pre>
-<pre class="output error"><code>script.cameo:1: upcase reads characters, and a binary string has bytes alone: say what they are with force_encoding first (Encoding::CompatibilityError)</code></pre>
+<pre class="output error"><code>script.cameo:1: upcase reads characters, and a binary string has bytes alone: say what they are with force_encoding first (see https://15b.it/bin) (Encoding::CompatibilityError)</code></pre>
 
 <pre class="cameo rejected"><code>p &quot;é&quot;.getbyte(0)</code></pre>
-<pre class="output error"><code>script.cameo:1: getbyte reads a byte, and this UTF-8 string has characters beyond ASCII: call b first for its bytes, or read a character with [] (Encoding::CompatibilityError)</code></pre>
+<pre class="output error"><code>script.cameo:1: getbyte reads a byte, and this UTF-8 string has characters beyond ASCII: call b first for its bytes, or read a character with [] (see https://15b.it/bin) (Encoding::CompatibilityError)</code></pre>
 
 <h2 id="why">Why</h2>
 

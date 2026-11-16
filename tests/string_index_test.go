@@ -72,7 +72,7 @@ p format("%s", "abc").getbyte(1), "#{:a}b".getbyte(1)
   end
 end
 `)
-	refusal := "getbyte reads a byte, and this UTF-8 string has characters beyond ASCII: call b first for its bytes, or read a character with []\n"
+	refusal := "getbyte reads a byte, and this UTF-8 string has characters beyond ASCII: call b first for its bytes, or read a character with [] (see https://15b.it/bin)\n"
 	assert.Equals(t, out, "97\n99\nnil\n195\n97\n98\n98\n98\n"+refusal+refusal+refusal+refusal)
 }
 

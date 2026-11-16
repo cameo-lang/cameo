@@ -23,6 +23,7 @@ require "fileutils"
 require "open3"
 require "optparse"
 require "tmpdir"
+require_relative "runner/classify"
 
 HERE = __dir__
 options = { out: HERE }
@@ -35,10 +36,6 @@ end.parse!
 abort "sort.rb: --spec is required" unless options[:spec]
 SPEC = options[:spec]
 OUT = options[:out]
-
-# CODE_LINK is how cameo check ends a refusal: the link to the page of the
-# site that explains its code. MANIFEST.tsv keeps the message without it.
-CODE_LINK = %r{ \(see https://15b\.it/\w+\)$}
 
 cameo = options[:cameo] || begin
   bin = File.join(Dir.tmpdir, "cameo-sort")
@@ -95,7 +92,7 @@ end
 
 def classify(cameo, file)
   out, = Open3.capture2e(cameo, "check", file, chdir: SPEC)
-  messages = out.force_encoding("UTF-8").scrub.lines.filter_map { _1[/\A[^:]+:\d+: (.*)$/, 1]&.sub(CODE_LINK, "") }
+  messages = out.force_encoding("UTF-8").scrub.lines.filter_map { _1[/\A[^:]+:\d+: (.*)$/, 1]&.gsub(Classify::CODE_LINK, "") } # MANIFEST.tsv keeps the message without the link of its code
   lib = requires(File.join(SPEC, file)).find { !BUILTIN[_1] }
   messages.each do |msg|
     why = reason(msg)

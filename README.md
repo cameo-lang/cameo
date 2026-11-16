@@ -114,7 +114,7 @@ cameo(main):003> inc(x)
 cameo(main):004> a = [1, 2]
 => [1, 2]
 cameo(main):005> a << 3
-(irb):1: cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)
+(irb):1: cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (see https://15b.it/mut) (CameoError)
 cameo(main):006> a += [3]
 => [1, 2, 3]
 ```

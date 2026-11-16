@@ -1898,15 +1898,15 @@ core/marshal/float_spec.rb	Marshal.dump with Float represents a Float much less 
 core/marshal/float_spec.rb	Marshal.dump with Float represents a Float greater than 1	expected	marshal		Expected "\x19\x96\fVUUUE@" == "\u0004\bf\u001142.666666667" to be truthy but was false
 core/marshal/float_spec.rb	Marshal.dump with Float represents a Float much greater than 1	expected	marshal		Expected "\x19\xC0x\x0E\xB9\xA1s\xD6B" == "\u0004\bf\u001398743561239011" to be truthy but was false
 core/marshal/float_spec.rb	Marshal.dump with Float represents a Float much greater than 1 with a very small fractional part	expected	marshal		Expected "\x19\x00`\xA4\xD9\x97CgB" == "\u0004\bf\u0011799346183459" to be truthy but was false
-core/marshal/float_spec.rb	Marshal.load with Float loads NaN	expected	marshal		incompatible marshal data: proto: cannot parse invalid wire-format data (ArgumentError)
-core/marshal/float_spec.rb	Marshal.load with Float loads +Infinity	expected	marshal		incompatible marshal data: proto: cannot parse invalid wire-format data (ArgumentError)
-core/marshal/float_spec.rb	Marshal.load with Float loads -Infinity	expected	marshal		incompatible marshal data: proto: cannot parse invalid wire-format data (ArgumentError)
-core/marshal/float_spec.rb	Marshal.load with Float loads zero	expected	marshal		incompatible marshal data: proto: cannot parse invalid wire-format data (ArgumentError)
-core/marshal/float_spec.rb	Marshal.load with Float loads a Float less than 1	expected	marshal		incompatible marshal data: proto: cannot parse invalid wire-format data (ArgumentError)
-core/marshal/float_spec.rb	Marshal.load with Float loads a Float much less than 1	expected	marshal		incompatible marshal data: proto: cannot parse invalid wire-format data (ArgumentError)
-core/marshal/float_spec.rb	Marshal.load with Float loads a Float greater than 1	expected	marshal		incompatible marshal data: proto: cannot parse invalid wire-format data (ArgumentError)
-core/marshal/float_spec.rb	Marshal.load with Float loads a Float much greater than 1	expected	marshal		incompatible marshal data: proto: cannot parse invalid wire-format data (ArgumentError)
-core/marshal/float_spec.rb	Marshal.load with Float loads a Float much greater than 1 with a very small fractional part	expected	marshal		incompatible marshal data: proto: cannot parse invalid wire-format data (ArgumentError)
+core/marshal/float_spec.rb	Marshal.load with Float loads NaN	expected	marshal		incompatible marshal data: proto: cannot parse invalid wire-format data (ArgumentError)
+core/marshal/float_spec.rb	Marshal.load with Float loads +Infinity	expected	marshal		incompatible marshal data: proto: cannot parse invalid wire-format data (ArgumentError)
+core/marshal/float_spec.rb	Marshal.load with Float loads -Infinity	expected	marshal		incompatible marshal data: proto: cannot parse invalid wire-format data (ArgumentError)
+core/marshal/float_spec.rb	Marshal.load with Float loads zero	expected	marshal		incompatible marshal data: proto: cannot parse invalid wire-format data (ArgumentError)
+core/marshal/float_spec.rb	Marshal.load with Float loads a Float less than 1	expected	marshal		incompatible marshal data: proto: cannot parse invalid wire-format data (ArgumentError)
+core/marshal/float_spec.rb	Marshal.load with Float loads a Float much less than 1	expected	marshal		incompatible marshal data: proto: cannot parse invalid wire-format data (ArgumentError)
+core/marshal/float_spec.rb	Marshal.load with Float loads a Float greater than 1	expected	marshal		incompatible marshal data: proto: cannot parse invalid wire-format data (ArgumentError)
+core/marshal/float_spec.rb	Marshal.load with Float loads a Float much greater than 1	expected	marshal		incompatible marshal data: proto: cannot parse invalid wire-format data (ArgumentError)
+core/marshal/float_spec.rb	Marshal.load with Float loads a Float much greater than 1 with a very small fractional part	expected	marshal		incompatible marshal data: proto: cannot parse invalid wire-format data (ArgumentError)
 core/marshal/load_spec.rb	*	expected	attr-accessor	check	attr_reader is not supported: a field declaration defines its reader, and there are no setters
 core/marshal/major_version_spec.rb	Marshal::MAJOR_VERSION is 4	expected	marshal		uninitialized constant Marshal::MAJOR_VERSION (NameError)
 core/marshal/minor_version_spec.rb	Marshal::MINOR_VERSION is 8	expected	marshal		uninitialized constant Marshal::MINOR_VERSION (NameError)

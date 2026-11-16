@@ -181,7 +181,7 @@ io = StringIO.new("héllo")
 io.read(2)
 io.gets
 `
-	const message = `invalid byte sequence in UTF-8: "\xa9llo" is not text; keep such bytes in a binary string`
+	const message = `invalid byte sequence in UTF-8: "\xa9llo" is not text; keep such bytes in a binary string (see https://15b.it/inv)`
 	var stdout, stderr bytes.Buffer
 	err := cameo.Run("t.cameo", script, &stdout, &stderr)
 	assert.NotNil(t, err)

@@ -50,7 +50,7 @@ true
 32
 "ungWv48Bz+pBQUDeXa4iI7ADYaOWF3qctBD/YfIAFa0="
 true
-Digest::SHA256.file reads a file, which cameo does not; digest the string instead
+Digest::SHA256.file reads a file, which cameo does not; digest the string instead (see https://15b.it/io)
 Digest::Class is an abstract class
 unsupported bit length: 224
 library not found for class Digest::Nope -- digest/nope

@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/cameo-lang/cameo/src/codes"
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/stdlib"
 )
@@ -61,7 +62,7 @@ func installModule() {
 	})
 	m.DefineSingleton("extract", -1, extract)
 	m.DefineSingleton("regexp", -1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Value{}, ctx.Raise(object.NotImplementedErr, "URI.regexp is obsolete in Ruby and not in cameo; use URI.extract")
+		return object.Value{}, ctx.Raise(object.NotImplementedErr, "%s", codes.Link("URI.regexp is obsolete in Ruby and not in cameo; use URI.extract", "lib"))
 	})
 
 	// Kernel#URI: a URI as it is, a String parsed.
