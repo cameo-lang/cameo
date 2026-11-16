@@ -13,15 +13,15 @@ true
 true
 "h\xC3\xA9llo"
 104
-upcase reads characters, and a binary string has bytes alone: say what they are with force_encoding first
-downcase reads characters, and a binary string has bytes alone: say what they are with force_encoding first
-chars reads characters, and a binary string has bytes alone: say what they are with force_encoding first
-reverse reads characters, and a binary string has bytes alone: say what they are with force_encoding first
-strip reads characters, and a binary string has bytes alone: say what they are with force_encoding first
-to_i reads characters, and a binary string has bytes alone: say what they are with force_encoding first
-ord reads characters, and a binary string has bytes alone: say what they are with force_encoding first
-center reads characters, and a binary string has bytes alone: say what they are with force_encoding first
-split reads characters, and a binary string has bytes alone: say what they are with force_encoding first
+upcase reads characters, and a binary string has bytes alone: say what they are with force_encoding first (see https://15b.it/bin)
+downcase reads characters, and a binary string has bytes alone: say what they are with force_encoding first (see https://15b.it/bin)
+chars reads characters, and a binary string has bytes alone: say what they are with force_encoding first (see https://15b.it/bin)
+reverse reads characters, and a binary string has bytes alone: say what they are with force_encoding first (see https://15b.it/bin)
+strip reads characters, and a binary string has bytes alone: say what they are with force_encoding first (see https://15b.it/bin)
+to_i reads characters, and a binary string has bytes alone: say what they are with force_encoding first (see https://15b.it/bin)
+ord reads characters, and a binary string has bytes alone: say what they are with force_encoding first (see https://15b.it/bin)
+center reads characters, and a binary string has bytes alone: say what they are with force_encoding first (see https://15b.it/bin)
+split reads characters, and a binary string has bytes alone: say what they are with force_encoding first (see https://15b.it/bin)
 "CAFÉ"
 true
 false
@@ -42,7 +42,7 @@ Encoding::CompatibilityError
 true
 #<Encoding:UTF-8>
 #<Encoding:US-ASCII>
-"invalid byte sequence in US-ASCII: keep the bytes in a binary string"
+"invalid byte sequence in US-ASCII: keep the bytes in a binary string (see https://15b.it/inv)"
 "A"
 #<Encoding:US-ASCII>
 "\xE9"
@@ -74,7 +74,7 @@ nil
 #<Encoding:UTF-8>
 #<Encoding:US-ASCII>
 233
-"to_sym reads characters, and a binary string has bytes alone: say what they are with force_encoding first"
+"to_sym reads characters, and a binary string has bytes alone: say what they are with force_encoding first (see https://15b.it/bin)"
 :AbC
 :Äöü
 :äöü

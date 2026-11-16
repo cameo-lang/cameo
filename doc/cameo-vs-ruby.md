@@ -422,7 +422,11 @@ leaves out, why, and what to write instead. The codes are those of
 
 ## Missing builtins
 
-These are absent, and a script that uses one fails when it reaches it:
+These are absent, and a script that uses one fails when it reaches it.
+The error of one left out on purpose ends with the link to the page of its
+code, as a refusal of the checker does: `uninitialized constant Thread (see
+https://15b.it/thr) (NameError)`. So do cameo's own refusals when the
+script runs, a mutator's `CameoError` among them.
 
 - **Left out by design**: `Struct` and `Data` (classes declare typed
   fields; see above for Data), `Rational` and `Complex`, `ObjectSpace`, `GC`, `ENV`, `Module.new`,

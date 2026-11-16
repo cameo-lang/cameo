@@ -309,5 +309,5 @@ rescue CameoError => e
   puts e.message
 end
 `)
-	assert.Equals(t, out, "#<CSV::Row \"a\":1 \"b\":2>\n#<CSV::Row \"a\":1>\nsend(:[]=): []= is not supported; use assignment, which copies\n")
+	assert.Equals(t, out, "#<CSV::Row \"a\":1 \"b\":2>\n#<CSV::Row \"a\":1>\nsend(:[]=): []= is not supported; use assignment, which copies (see https://15b.it/mut)\n")
 }

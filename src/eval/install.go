@@ -1,6 +1,7 @@
 package eval
 
 import (
+	"github.com/cameo-lang/cameo/src/codes"
 	"github.com/cameo-lang/cameo/src/lib"
 	"github.com/cameo-lang/cameo/src/object"
 	"github.com/cameo-lang/cameo/src/stdlib"
@@ -128,7 +129,7 @@ func init() {
 			}
 		}
 		if name == "initialize" {
-			return object.Value{}, ctx.Raise(object.CameoError, "send(:initialize): initialize runs only in new")
+			return object.Value{}, ctx.Raise(object.CameoError, "%s", codes.Link("send(:initialize): initialize runs only in new", "meta"))
 		}
 		// A bang method a class defines is a call like any other, and so
 		// is the []= of a class that defines one, which copies, as
@@ -136,10 +137,11 @@ func init() {
 		defined := strings.HasSuffix(name, "!") && self.Class().Lookup(name) != nil ||
 			name == "[]=" && userMethod(self, "[]=") != nil
 		if msg, refused := syntax.Refused(name); (refused || name == "[]=") && !defined {
+			code := syntax.RefusedCode(name)
 			if !refused {
-				msg = "[]= is not supported; use assignment, which copies"
+				msg, code = "[]= is not supported; use assignment, which copies", "mut"
 			}
-			return object.Value{}, ctx.Raise(object.CameoError, "send(:%s): %s", name, msg)
+			return object.Value{}, ctx.Raise(object.CameoError, "send(:%s): %s", name, codes.Link(msg, code))
 		}
 		if v, handled, err := ctx.(*Interp).mutating(nil, self, "x", name, args[1:], kw, block, false, 0); handled {
 			return v, err
@@ -187,7 +189,7 @@ func init() {
 		return object.NewString(filepath.Dir(abs), str.UTF8), nil
 	})
 	object.ClassClass.Define("allocate", 0, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return object.Value{}, ctx.Raise(object.NoMethodError, "allocate is not supported: use new")
+		return object.Value{}, ctx.Raise(object.NoMethodError, "%s", codes.Link("allocate is not supported: use new", "meta"))
 	})
 }
 
@@ -201,7 +203,7 @@ func (in *Interp) newInstance(cls *object.Class, args []object.Value, kw *object
 		return object.Value{}, in.raise(object.NoMethodError, 0, "undefined method 'new' for module %s", cls.QualifiedName())
 	}
 	if cls.Digest == "" && cls != object.ObjectClass {
-		return object.Value{}, in.raise(object.NoMethodError, 0, "undefined method 'new' for class %s: use a literal", cls.QualifiedName())
+		return object.Value{}, in.raise(object.NoMethodError, 0, "%s", codes.Link("undefined method 'new' for class "+cls.QualifiedName()+": use a literal", "lit"))
 	}
 	inst := allocate(cls)
 	if m := cls.Lookup("initialize"); m != nil && m.Body != nil {
@@ -306,7 +308,7 @@ func (in *Interp) require(name object.Value) (object.Value, error) {
 	also, builtin := libraryAlso(s)
 	source, written := lib.Sources[s]
 	if !builtin && !written {
-		return object.Value{}, in.raise(object.LoadError, 0, "cannot load such file -- %s", s)
+		return object.Value{}, in.raise(object.LoadError, 0, "%s", codes.Link("cannot load such file -- "+s, "req"))
 	}
 	if in.loaded[s] {
 		return object.False, nil

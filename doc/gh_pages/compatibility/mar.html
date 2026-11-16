@@ -38,7 +38,7 @@
 <p>Loading Ruby's bytes raises an ArgumentError, as Ruby's <code>Marshal.load</code> does for data it cannot read.</p>
 
 <pre class="cameo rejected"><code>p Marshal.load(&quot;\x04\bi\x06&quot;.b)</code></pre>
-<pre class="output error"><code>script.cameo:1: incompatible marshal data: proto: cannot parse invalid wire-format data (ArgumentError)</code></pre>
+<pre class="output error"><code>script.cameo:1: incompatible marshal data: proto: cannot parse invalid wire-format data (see https://15b.it/mar) (ArgumentError)</code></pre>
 
 <h2 id="why">Why</h2>
 

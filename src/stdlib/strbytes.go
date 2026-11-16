@@ -6,6 +6,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/cameo-lang/cameo/src/codes"
 	"github.com/cameo-lang/cameo/src/object"
 )
 
@@ -30,7 +31,7 @@ func installStringBytes() {
 		// once; any other is read once.
 		if self.Kind() == object.KindString && !self.KnownASCII() {
 			if self.Chars() >= 0 || !str.ASCIIOnly(s) {
-				return object.Value{}, ctx.Raise(object.CompatibilityError, "getbyte reads a byte, and this UTF-8 string has characters beyond ASCII: call b first for its bytes, or read a character with []")
+				return object.Value{}, ctx.Raise(object.CompatibilityError, "%s", codes.Link("getbyte reads a byte, and this UTF-8 string has characters beyond ASCII: call b first for its bytes, or read a character with []", "bin"))
 			}
 		}
 		if i < 0 {
@@ -83,7 +84,7 @@ func SetByte(ctx object.Context, self object.Value, args []object.Value) (object
 	// of characters too, and may leave a broken character, cameo raises
 	// for one.
 	if self.Kind() != object.KindBytes {
-		return object.Value{}, ctx.Raise(object.CompatibilityError, "setbyte sets a byte, and only a binary string has bytes alone: call b first")
+		return object.Value{}, ctx.Raise(object.CompatibilityError, "%s", codes.Link("setbyte sets a byte, and only a binary string has bytes alone: call b first", "bin"))
 	}
 	s := self.Str()
 	if i < -int64(len(s)) || i >= int64(len(s)) {

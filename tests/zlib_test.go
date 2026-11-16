@@ -130,7 +130,7 @@ unknown keyword: :levl
 25
 2
 4
-Zlib::Deflate.new is not supported: a stream fed piece by piece; use Zlib::Deflate.deflate on the whole string
+Zlib::Deflate.new is not supported: a stream fed piece by piece; use Zlib::Deflate.deflate on the whole string (see https://15b.it/lib)
 Zlib::NeedDict: need dictionary
 true
 `)

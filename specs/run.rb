@@ -80,11 +80,6 @@ files = targets.flat_map { |t| File.directory?(t) ? Dir.glob(File.join(t, "**", 
 abort "run.rb: no spec files under #{targets.join(", ")}" if files.empty?
 
 OPERATORS = %i[== != < <= > >= =~ !~ ===].freeze
-
-# CODE_LINK is how cameo check ends a refusal: the link to the page of the
-# site that explains its code.
-CODE_LINK = %r{ \(see https://15b\.it/\w+\)\z}
-
 # Rewriter turns one spec file and the fixtures it loads into one program.
 class Rewriter
   def initialize
@@ -239,7 +234,7 @@ def run_file(cameo, ruby, spec, path, timeout, out)
   unless check_status.success?
     # The page of the site a refusal links is left out: the reason
     # status.tsv gives says the same.
-    first = check_out.lines.first.to_s.strip.sub(/\A[^:]*:\d+: /, "").sub(CODE_LINK, "")
+    first = check_out.lines.first.to_s.strip.sub(/\A[^:]*:\d+: /, "").gsub(Classify::CODE_LINK, "")
     return row.merge(status: "check", message: first)
   end
 
@@ -331,10 +326,11 @@ STATUS_COLUMNS = %w[file example status reason stage message].freeze
 def status_rows(r, spec, out)
   # A time, a temporary path or the path of the ruby/spec copy in a
   # message is masked, so that a rerun does not change the row; a control
-  # character is written as an escape.
+  # character is written as an escape. The link to the page of a code is
+  # left out, since the reason gives the code.
   programs = out && File.join(out, "programs", File.dirname(r[:file]))
   clean = lambda do |s|
-    s = s.to_s.gsub(/[\t\n]/, " ").gsub("\\n", " ").gsub(/[\x00-\x1f\x7f]/) { format("\\x%02X", _1.ord) }
+    s = s.to_s.gsub(Classify::CODE_LINK, "").gsub(/[\t\n]/, " ").gsub("\\n", " ").gsub(/[\x00-\x1f\x7f]/) { format("\\x%02X", _1.ord) }
     s = s.gsub(programs, "<tmp>") if programs
     s.gsub("#{spec}/", "<spec>/").gsub(/\d{4}-\d\d-\d\d \d\d:\d\d:\d\d(\.\d+)? ?([+-]\d{4}|UTC)/, "<time>").gsub(%r{[^\s"=~]*cameo\\?-spec\d{8}\\?-\d+\\?-\w+}, "<tmp>")[0, 240]
   end

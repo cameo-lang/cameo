@@ -61,7 +61,7 @@ rescue NoMethodError =&gt; e
 end</code></pre>
 <pre class="output"><code>false
 "notes.txt"
-undefined method 'read' for class File: the host allows no file I/O; run the script with cameo --io=file, or let the program say AllowIO("file") and give it a file system with FileSystem</code></pre>
+undefined method 'read' for class File: the host allows no file I/O; run the script with cameo --io=file, or let the program say AllowIO("file") and give it a file system with FileSystem (see https://15b.it/io)</code></pre>
 
 <p>So a script from an untrusted source can be run as it is: the worst
 it does is compute for too long, and

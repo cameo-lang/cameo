@@ -7,6 +7,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/cameo-lang/cameo/src/codes"
 	"github.com/cameo-lang/cameo/src/object"
 )
 
@@ -60,7 +61,7 @@ func encodingArg(ctx object.Context, v object.Value) (object.Kind, error) {
 	if k, ok := encodings[strings.ToUpper(s)]; ok {
 		return k, nil
 	}
-	return 0, ctx.Raise(object.ArgumentError, "unknown encoding name - %s", s)
+	return 0, ctx.Raise(object.ArgumentError, "%s", codes.Link("unknown encoding name - "+s, "enc"))
 }
 
 // labelled makes the string of bytes s a script says are of encoding k,
@@ -75,13 +76,13 @@ func labelled(ctx object.Context, k object.Kind, s string) (object.Value, error)
 		return object.NewString(s, object.EncodingOf(k)), nil
 	case object.KindASCII:
 		if !str.ASCIIOnly(s) {
-			return object.Value{}, ctx.Raise(object.InvalidByteSequenceError, "invalid byte sequence in US-ASCII: keep the bytes in a binary string")
+			return object.Value{}, ctx.Raise(object.InvalidByteSequenceError, "%s", codes.Link("invalid byte sequence in US-ASCII: keep the bytes in a binary string", "inv"))
 		}
 		return object.NewString(s, object.EncodingOf(k)), nil
 	}
 	v, ok := object.TryUTF8(s)
 	if !ok {
-		return object.Value{}, ctx.Raise(object.InvalidByteSequenceError, "invalid byte sequence in UTF-8: keep the bytes in a binary string")
+		return object.Value{}, ctx.Raise(object.InvalidByteSequenceError, "%s", codes.Link("invalid byte sequence in UTF-8: keep the bytes in a binary string", "inv"))
 	}
 	return v, nil
 }
@@ -451,7 +452,7 @@ func installEncodings() {
 // for a reader, format or an interpolation: its bytes are no
 // characters until the script says what they are.
 func NoText(what string) string {
-	return what + " makes text, and a binary string has bytes alone: say what they are with force_encoding first, or join bytes with +"
+	return codes.Link(what+" makes text, and a binary string has bytes alone: say what they are with force_encoding first, or join bytes with +", "bin")
 }
 
 // formatText is format for a script: it refuses a binary string as
@@ -470,7 +471,7 @@ func formatText(ctx object.Context, f object.Value, args []object.Value) (object
 // in the message.
 func TextOf(ctx object.Context, who, s string) (object.Value, error) {
 	if !utf8.ValidString(s) {
-		return object.Value{}, ctx.Raise(object.InvalidByteSequenceError, "invalid byte sequence in UTF-8: %s returns text, and these bytes are none", who)
+		return object.Value{}, ctx.Raise(object.InvalidByteSequenceError, "%s", codes.Link("invalid byte sequence in UTF-8: "+who+" returns text, and these bytes are none", "inv"))
 	}
 	return object.NewString(s, str.UTF8), nil
 }

@@ -6,6 +6,7 @@ package object
 
 import (
 	"fmt"
+	"github.com/cameo-lang/cameo/src/codes"
 	"github.com/cameo-lang/cameo/src/internal/trusted"
 	"github.com/cameo-lang/cameo/src/str"
 	"math"
@@ -310,7 +311,7 @@ func (e *WrongEncoding) Error() string {
 	if len(shown) > 40 {
 		shown = shown[:40]
 	}
-	return "invalid byte sequence in " + name + ": " + strconv.Quote(shown) + " is not text; keep such bytes in a binary string"
+	return codes.Link("invalid byte sequence in "+name+": "+strconv.Quote(shown)+" is not text; keep such bytes in a binary string", "inv")
 }
 
 // NewString makes a string value sharing s's bytes, which are what enc

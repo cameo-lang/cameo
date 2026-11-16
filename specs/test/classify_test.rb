@@ -66,6 +66,14 @@ class ClassifyTest < Minitest::Test
     assert_equal ["bug", ""], Classify.status("uninitialized constant OpenSSL::Digest (NameError)")
   end
 
+  # cameo ends the message of what it leaves out with the link to the page
+  # of its code; the rules read the message without it.
+  def test_reads_a_message_without_the_link_of_its_code
+    assert_equal ["expected", "literal-only"], Classify.status("undefined method 'new' for class Range: use a literal (see https://15b.it/lit) (NoMethodError)")
+    assert_equal ["expected", "threads"], Classify.status("uninitialized constant Thread (see https://15b.it/thr) (NameError)")
+    assert_equal ["expected", "mutation"], Classify.status("cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (see https://15b.it/mut) (CameoError)")
+  end
+
   def test_an_unknown_message_is_a_bug
     assert_equal ["bug", ""], Classify.status("Expected 1 == 2 to be truthy but was false")
   end

@@ -811,6 +811,15 @@ var unsupported = map[string]string{
 	"exit!":                 "exit",
 }
 
+// RefusedCode is the code of a method Refused refuses: mut for a bang
+// method, the reason cameo leaves out the others.
+func RefusedCode(name string) string {
+	if IsBang(name) {
+		return "mut"
+	}
+	return refusedCodes[name]
+}
+
 // refusedCodes are the codes of the methods in unsupported: why cameo
 // leaves each out, the page its refusal links.
 var refusedCodes = map[string]string{

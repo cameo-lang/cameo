@@ -39,9 +39,9 @@ func TestNewStringRefusesBytesThatAreNotTheEncoding(t *testing.T) {
 	assert.NotNil(t, wrongEncoding("\xed\xa0\x80", str.UTF8)) // a surrogate
 	assert.Nil(t, wrongEncoding("\xff\x00", str.Binary))
 
-	assert.Equals(t, wrongEncoding("h\xc3\xa9", str.ASCII).Error(), `invalid byte sequence in ASCII: "hé" is not text; keep such bytes in a binary string`)
-	assert.Equals(t, wrongEncoding("a\xff", str.USASCII).Error(), `invalid byte sequence in US-ASCII: "a\xff" is not text; keep such bytes in a binary string`)
-	assert.Equals(t, wrongEncoding("a\xff", str.UTF8).Error(), `invalid byte sequence in UTF-8: "a\xff" is not text; keep such bytes in a binary string`)
+	assert.Equals(t, wrongEncoding("h\xc3\xa9", str.ASCII).Error(), `invalid byte sequence in ASCII: "hé" is not text; keep such bytes in a binary string (see https://15b.it/inv)`)
+	assert.Equals(t, wrongEncoding("a\xff", str.USASCII).Error(), `invalid byte sequence in US-ASCII: "a\xff" is not text; keep such bytes in a binary string (see https://15b.it/inv)`)
+	assert.Equals(t, wrongEncoding("a\xff", str.UTF8).Error(), `invalid byte sequence in UTF-8: "a\xff" is not text; keep such bytes in a binary string (see https://15b.it/inv)`)
 }
 
 // A string made as UTF-8 knows whether it is ASCII alone, and one made

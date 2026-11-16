@@ -162,7 +162,7 @@ URI.extract("a http://x.org b") { |s| puts s }
 "123"
 ""
 "€"
-invalid byte sequence in UTF-8: URI returns text, and these bytes are none
+invalid byte sequence in UTF-8: URI returns text, and these bytes are none (see https://15b.it/inv)
 Encoding::InvalidByteSequenceError
 invalid %-encoding (abc%)
 ["http://a.com/x"]

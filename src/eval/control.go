@@ -5,6 +5,7 @@ import (
 	"maps"
 	"slices"
 
+	"github.com/cameo-lang/cameo/src/codes"
 	"github.com/cameo-lang/cameo/src/lib"
 	"github.com/cameo-lang/cameo/src/object"
 )
@@ -105,11 +106,17 @@ func (in *Interp) noMethod(recv object.Value, name string, args []object.Value, 
 	attrs := map[string]object.Value{"name": object.Symbol(name), "receiver": recv}
 	if vcall {
 		return &object.Exception{Cls: object.NameError, Line: line, Attrs: attrs,
-			Message: fmt.Sprintf("undefined local variable or method '%s' for %s", name, typeName(recv))}
+			Message: codes.Link(fmt.Sprintf("undefined local variable or method '%s' for %s", name, typeName(recv)), methodCode(recv, name))}
 	}
 	attrs["args"] = object.NewList(append([]object.Value{}, args...)...)
+	// A method cameo leaves out, or an I/O the host did not allow, links
+	// the page of its code.
+	code, io := methodCode(recv, name), ioHint(recv, name)
+	if io != "" {
+		code = "io"
+	}
 	return &object.Exception{Cls: object.NoMethodError, Line: line, Attrs: attrs,
-		Message: fmt.Sprintf("undefined method '%s' for %s%s%s", name, typeName(recv), in.requireHint(name), ioHint(recv, name))}
+		Message: codes.Link(fmt.Sprintf("undefined method '%s' for %s%s%s", name, typeName(recv), in.requireHint(name), io), code)}
 }
 
 // ioHint says how to allow the I/O a class method of a module of I/O

@@ -38,7 +38,7 @@
 <p>Without the host's leave, <code>File.read</code> is an undefined method, and its message says how a program allows it.</p>
 
 <pre class="cameo rejected"><code>puts File.read(&quot;notes.txt&quot;)</code></pre>
-<pre class="output error"><code>script.cameo:1: undefined method &#39;read&#39; for class File: the host allows no file I/O; run the script with cameo --io=file, or let the program say AllowIO(&quot;file&quot;) and give it a file system with FileSystem (NoMethodError)</code></pre>
+<pre class="output error"><code>script.cameo:1: undefined method &#39;read&#39; for class File: the host allows no file I/O; run the script with cameo --io=file, or let the program say AllowIO(&quot;file&quot;) and give it a file system with FileSystem (see https://15b.it/io) (NoMethodError)</code></pre>
 
 <h2 id="why">Why</h2>
 

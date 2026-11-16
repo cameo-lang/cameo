@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/cameo-lang/cameo/src/codes"
 	"github.com/go-ruby-parser/parser"
 	"github.com/go-ruby-parser/parser/ast"
 	"github.com/go-ruby-parser/parser/lexer"
@@ -29,33 +30,15 @@ type Error struct {
 // Error is the message, after the file and line, and for a refusal the
 // link to the page that explains its code.
 func (e *Error) Error() string {
-	msg := e.Msg
-	if e.Code != "" {
-		msg = WithCode(msg, e.Code)
-	}
+	msg := codes.Link(e.Msg, e.Code)
 	if e.Line > 0 {
 		return fmt.Sprintf("%s:%d: %s", e.File, e.Line, msg)
 	}
 	return fmt.Sprintf("%s: %s", e.File, msg)
 }
 
-// SiteURL is the address of cameo's site.
-const SiteURL = "https://cameo-lang.github.io/cameo/"
-
-// CodeURL is the short link a message gives for the code of a refusal. It
-// leads to CodePage, the page that says what cameo leaves out, why, and
-// what to write instead.
-func CodeURL(code string) string { return "https://15b.it/" + code }
-
-// CodePage is the page of the site that explains a code.
-func CodePage(code string) string { return SiteURL + "compatibility/" + code + ".html" }
-
-// WithCode ends msg, a refusal's, with the link to the page of its code:
-// "global variables are not supported (see https://15b.it/glob)".
-func WithCode(msg, code string) string { return msg + " (see " + CodeURL(code) + ")" }
-
 // Codes are the codes the checker gives its refusals, each with a page of
-// the site, CodePage.
+// the site, codes.Page.
 var Codes = []string{"attr", "blk", "bobj", "cvar", "glob", "inv", "ivar", "meta", "mut", "proc", "rat", "re", "req", "scope", "vis"}
 
 // ErrorList is every error found in a script, in source order.

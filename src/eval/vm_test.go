@@ -474,5 +474,5 @@ f(1)
 `, "t.cameo:2: undefined local variable or method 'nope' for main (NameError)\n")
 	prints(t, "x = 1\ny = x.missing(2)\n", "t.cameo:2: undefined method 'missing' for an instance of Integer (NoMethodError)\n")
 	prints(t, "def f = yield\nf\n", "t.cameo:1: no block given (yield) (LocalJumpError)\n")
-	prints(t, "a = [1]\na << 2\n", "t.cameo:2: cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (CameoError)\n")
+	prints(t, "a = [1]\na << 2\n", "t.cameo:2: cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (see https://15b.it/mut) (CameoError)\n")
 }

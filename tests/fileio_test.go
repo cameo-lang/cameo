@@ -55,7 +55,7 @@ rescue NoMethodError => e
   puts e.message
 end
 `
-	without := "false\nfalse\nfalse\nfalse\nundefined method 'read' for class File: the host allows no file I/O; run the script with cameo --io=file, or let the program say AllowIO(\"file\") and give it a file system with FileSystem\n"
+	without := "false\nfalse\nfalse\nfalse\nundefined method 'read' for class File: the host allows no file I/O; run the script with cameo --io=file, or let the program say AllowIO(\"file\") and give it a file system with FileSystem (see https://15b.it/io)\n"
 	assert.Equals(t, runWithFiles(t, src, nil, "/"), without)
 	assert.Equals(t, runWithFiles(t, src, nil, "/", "file"), without)
 	assert.Equals(t, runWithFiles(t, src, testFiles(t), "/"), without)

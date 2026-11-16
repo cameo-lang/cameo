@@ -1,7 +1,7 @@
-cameo does not support mutating calls without rebinding; use a = a << 1, +, or append
-cameo does not support mutating calls without rebinding; use a = a.push(x), +, or append
-cameo does not support mutating calls without rebinding; use last and take
-cameo does not support mutating calls without rebinding; use without, or - on a set
+cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (see https://15b.it/mut)
+cameo does not support mutating calls without rebinding; use a = a.push(x), +, or append (see https://15b.it/mut)
+cameo does not support mutating calls without rebinding; use last and take (see https://15b.it/mut)
+cameo does not support mutating calls without rebinding; use without, or - on a set (see https://15b.it/mut)
 [1, 2]
 [1, 2]
 [1, 2, 3]
@@ -11,21 +11,21 @@ cameo does not support mutating calls without rebinding; use without, or - on a 
 [2, 3]
 [0, 2, 3]
 [1, 2]
-cameo does not support mutating calls without rebinding; use a = a << 1, +, or append
-cameo does not support mutating calls without rebinding; use a = a.prepend(x), +
-cameo does not support mutating calls without rebinding; use byteslice and +
+cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (see https://15b.it/mut)
+cameo does not support mutating calls without rebinding; use a = a.prepend(x), + (see https://15b.it/mut)
+cameo does not support mutating calls without rebinding; use byteslice and + (see https://15b.it/mut)
 "abc"
-cameo does not support mutating calls without rebinding; use put
-cameo does not support mutating calls without rebinding; use without, or - on a set
-cameo does not support mutating calls without rebinding; use a = a.update(x), merge
+cameo does not support mutating calls without rebinding; use put (see https://15b.it/mut)
+cameo does not support mutating calls without rebinding; use without, or - on a set (see https://15b.it/mut)
+cameo does not support mutating calls without rebinding; use a = a.update(x), merge (see https://15b.it/mut)
 {a: 1, b: 2}
 {a: 1, b: 2, c: 3}
 {b: 2}
 {a: 1, b: 2, d: 4}
 {a: 1, b: 2}
-cameo does not support mutating calls without rebinding; use a = a << 1, +, or append
-cameo does not support mutating calls without rebinding; use a = a.add(x), | [x]
-cameo does not support mutating calls without rebinding; use a = a.merge(x), |
+cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (see https://15b.it/mut)
+cameo does not support mutating calls without rebinding; use a = a.add(x), | [x] (see https://15b.it/mut)
+cameo does not support mutating calls without rebinding; use a = a.merge(x), | (see https://15b.it/mut)
 #<Set: {1, 2, 3}>
 #<Set: {2}>
 #<Set: {1, 2}>

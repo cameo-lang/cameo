@@ -48,8 +48,8 @@ try { sprintf("%d %s", 1, b"\xFF") }
 p "v=#{bin.force_encoding("UTF-8")}", format("%s", "é"), "#{1}#{:a}#{nil}"
 puts bin
 `)
-	const interpolation = "an interpolation makes text, and a binary string has bytes alone: say what they are with force_encoding first, or join bytes with +\n"
-	const format = "format makes text, and a binary string has bytes alone: say what they are with force_encoding first, or join bytes with +\n"
+	const interpolation = "an interpolation makes text, and a binary string has bytes alone: say what they are with force_encoding first, or join bytes with + (see https://15b.it/bin)\n"
+	const format = "format makes text, and a binary string has bytes alone: say what they are with force_encoding first, or join bytes with + (see https://15b.it/bin)\n"
 	assert.Equals(t, out, interpolation+interpolation+format+format+format+format+format+"\"v=ab\"\n\"é\"\n\"1a\"\nab\n")
 }
 
