@@ -345,6 +345,9 @@ func (in *Interp) unit(c *cameopb.Closure) (*cameopb.Unit, error) {
 	if digest != c.GetUnit() {
 		return nil, fmt.Errorf("the Proc names unit %s and carries unit %s", c.GetUnit(), digest)
 	}
+	if err := in.allow(unit, digest); err != nil {
+		return nil, err
+	}
 	actual, _ := in.code.units.LoadOrStore(digest, unit)
 	return actual.(*cameopb.Unit), nil
 }

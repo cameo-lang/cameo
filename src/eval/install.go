@@ -297,6 +297,10 @@ func libraryAlso(name string) ([]string, bool) {
 	return also, ok
 }
 
+// libraryFile returns the file name require compiles the library name
+// written in cameo as, which its unit carries.
+func libraryFile(name string) string { return name + ".cameo" }
+
 // require loads a library cameo builds in, true the first time and false
 // after, as Ruby's does; any other name is a LoadError, since a script is
 // one file.
@@ -332,7 +336,7 @@ func (in *Interp) require(name object.Value) (object.Value, error) {
 			delete(in.loaded, s)
 			return object.Value{}, in.raise(object.LoadError, 0, "cannot load %s from an async call: a library written in cameo is required at the top level", s)
 		}
-		file := s + ".cameo"
+		file := libraryFile(s)
 		prog, err := syntax.Parse(file, source)
 		if err != nil {
 			delete(in.loaded, s)

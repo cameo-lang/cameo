@@ -15,8 +15,14 @@ import (
 // pause, so the pause lands before the statement after the call.
 func pausing(t *testing.T, src string) (*Program, *bytes.Buffer) {
 	t.Helper()
+	return pausingAs(t, "t.cameo", src)
+}
+
+// pausingAs is pausing with the script's file name.
+func pausingAs(t *testing.T, file, src string) (*Program, *bytes.Buffer) {
+	t.Helper()
 	var out bytes.Buffer
-	prog, err := Load("t.cameo", src, &out, &out)
+	prog, err := Load(file, src, &out, &out)
 	if err != nil {
 		t.Fatal(err)
 	}
