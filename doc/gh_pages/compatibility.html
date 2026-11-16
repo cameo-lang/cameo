@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cameo — compatibility</title>
+<meta name="description" content="How much of ruby/spec cameo passes, by part of Ruby, and why it does not pass the rest.">
+<link rel="stylesheet" href="style.css">
+<script type="module" src="site.js"></script>
+</head>
+<body>
+<header class="site"><div class="inner">
+  <a class="name" href="index.html">cameo</a>
+  <nav>
+    <a href="index.html">Overview</a>
+    <a href="examples.html">Examples</a>
+    <a href="go.html">Embedding in Go</a>
+    <a href="grpc.html">gRPC</a>
+    <a href="pause.html">Pause and resume</a>
+    <a href="async.html">Async</a>
+    <a href="io.html">I/O</a>
+    <a href="ruby.html">Ruby vs cameo</a>
+    <a href="numbers.html">Numbers</a>
+    <a href="compatibility.html" aria-current="page">Compatibility</a>
+    <a href="native.html">Native code</a>
+    <a href="https://github.com/cameo-lang/cameo">GitHub</a>
+  </nav>
+</div></header>
+
+<main>
+<h1 id="compatibility">Compatibility</h1>
+
+<p class="lead">How much of <a href="https://github.com/ruby/spec">ruby/spec</a>, the specification
+of the Ruby language and its core and standard libraries, cameo passes,
+and why it does not pass the rest.</p>
+
+<ul>
+  <li>ruby/spec at commit <code>47b10f1d7b1c29bda01d6903cceddd5b0b4c857d</code></li>
+  <li>CRuby 3.3.6 (x86_64-linux), which runs every program as well</li>
+  <li>run on 2026-11-15</li>
+  <li>regenerate with <code>make spec-status</code>, which needs a Ruby with Prism and the copy of ruby/spec that <code>make ruby-spec</code> makes: it runs <a href="https://github.com/cameo-lang/cameo/blob/main/specs/run.rb">specs/run.rb</a>, which writes <a href="https://github.com/cameo-lang/cameo/blob/main/specs/status.tsv">specs/status.tsv</a>, and then <a href="https://github.com/cameo-lang/cameo/blob/main/specs/compatibility.rb">specs/compatibility.rb</a>, which writes this page</li>
+</ul>
+
+<p><a href="https://github.com/cameo-lang/cameo/blob/main/specs/run.rb">specs/run.rb</a> rewrites each spec file&#39;s mspec idioms into
+calls of <a href="https://github.com/cameo-lang/cameo/blob/main/specs/runner/prelude.cameo">a prelude</a> and runs it under cameo
+and under CRuby. Each example has one status:</p>
+
+<table>
+<tr><th>Status</th><th>Means</th></tr>
+<tr><td>pass</td><td>passes under cameo, as under CRuby</td></tr>
+<tr><td>not expected</td><td>stopped by something cameo leaves out on purpose; the <a href="#not-expected-to-work">reasons</a> say what</td></tr>
+<tr><td>bug</td><td>CRuby passes it and cameo does not, for no reason cameo states: cameo should pass it</td></tr>
+<tr><td>harness</td><td>CRuby does not pass it in this harness either, or it needs <code>before</code>, <code>after</code> or a shared example, which the prelude does not run</td></tr>
+</table>
+
+<p>Only an example CRuby passes in this harness counts as one cameo should
+match. CRuby&#39;s own failures, mostly examples that need a part of mspec
+the prelude lacks (<code>mock</code>, <code>should_receive</code>, <code>ruby_exe</code>), and the
+examples CRuby does not run, which ruby/spec guards for a newer Ruby
+than CRuby 3.3.6, count as harness.
+<em>Should match</em> below is pass, not expected and bug together.</p>
+
+<p>A spec file that did not run has no examples here. It counts once, under
+<em>files not run</em>, with what stopped it: <code>cameo check</code> refused it (check),
+it stopped before its first example (crash), it ran out of time
+(timeout), or Prism could not parse it for the rewrite (rewrite).
+<a href="https://github.com/cameo-lang/cameo/blob/main/specs/runner/classify.rb">specs/runner/classify.rb</a> gives a
+status and a reason from the message that stopped an example or a file.</p>
+
+<h2 id="summary">Summary</h2>
+
+<table>
+<tr><th>Directory</th><th class="num">Examples</th><th class="num">Should match</th><th class="num">Pass</th><th class="num">Not expected</th><th class="num">Bug</th><th class="num">Harness</th><th class="num">Files not run</th></tr>
+<tr><td><a href="#language">language</a></td><td class="num">110</td><td class="num">92</td><td class="num">74 (80%)</td><td class="num">18</td><td class="num">0</td><td class="num">18</td><td class="num">72</td></tr>
+<tr><td><a href="#core">core</a></td><td class="num">2206</td><td class="num">1925</td><td class="num">872 (45%)</td><td class="num">994</td><td class="num">59</td><td class="num">281</td><td class="num">1475</td></tr>
+<tr><td><a href="#library">library</a></td><td class="num">998</td><td class="num">877</td><td class="num">610 (70%)</td><td class="num">186</td><td class="num">81</td><td class="num">121</td><td class="num">979</td></tr>
+<tr><td><a href="#command_line">command_line</a></td><td class="num">29</td><td class="num">0</td><td class="num">0 (–)</td><td class="num">0</td><td class="num">0</td><td class="num">29</td><td class="num">24</td></tr>
+<tr><td><a href="#security">security</a></td><td class="num">4</td><td class="num">3</td><td class="num">2 (67%)</td><td class="num">0</td><td class="num">1</td><td class="num">1</td><td class="num">10</td></tr>
+<tr><td><a href="#optional">optional</a></td><td class="num">0</td><td class="num">0</td><td class="num">0 (–)</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">49</td></tr>
+<tr><td><strong>all</strong></td><td class="num">3347</td><td class="num">2897</td><td class="num">1558 (54%)</td><td class="num">1198</td><td class="num">141</td><td class="num">450</td><td class="num">2609</td></tr>
+</table>
+
+<p>Of the 450 harness examples, 345 fail under CRuby, 97 CRuby does not run, and 8 need <code>before</code>, <code>after</code> or a shared example.</p>
+
+<h2 id="not-expected-to-work">Not expected to work</h2>
+
+<p>What cameo leaves out on purpose, each with the document that states the
+rule. <em>Examples</em> counts examples that ran and stopped on it; <em>files</em>
+counts spec files that did not run because of it.</p>
+
+<table>
+<tr><th>Code</th><th>Reason</th><th>Means</th><th class="num">Examples</th><th class="num">Files</th></tr>
+<tr><td>ivar</td><td><a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#rejected-before-the-script-runs">instance variables</a></td><td>cameo has no instance variables; a class declares fields. Most are mspec&#39;s <code>before</code> blocks, which set <code>@object</code></td><td class="num">0</td><td class="num">1465</td></tr>
+<tr><td>meta</td><td><a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#rejected-before-the-script-runs">metaprogramming</a></td><td><code>eval</code>, <code>instance_eval</code>, <code>define_method</code>, <code>instance_method</code>, <code>singleton_class</code>, <code>class &lt;&lt; self</code>, <code>send(:initialize)</code></td><td class="num">223</td><td class="num">127</td></tr>
+<tr><td>mut</td><td><a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#different-in-cameo">mutation</a></td><td>every value is immutable: <code>&lt;&lt;</code>, <code>[]=</code>, <code>push</code>, setters, bang methods and nested multiple assignment are refused or return a copy</td><td class="num">98</td><td class="num">246</td></tr>
+<tr><td>rat</td><td><a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#missing-builtins"><code>Rational</code>, <code>Complex</code></a></td><td><code>Rational</code>, <code>Complex</code>, <code>1r</code>, <code>2i</code>, <code>to_r</code>, <code>to_c</code></td><td class="num">238</td><td class="num">6</td></tr>
+<tr><td>vis</td><td><a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#rejected-before-the-script-runs">visibility</a></td><td><code>private</code>, <code>protected</code>, <code>module_function</code> and the method lists by visibility: every method a script defines is public</td><td class="num">14</td><td class="num">194</td></tr>
+<tr><td>attr</td><td><a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#rejected-before-the-script-runs"><code>attr_accessor</code></a></td><td><code>attr_reader</code>, <code>attr_writer</code>, <code>attr_accessor</code>: a field declaration defines its reader, and there are no setters</td><td class="num">0</td><td class="num">173</td></tr>
+<tr><td>proc</td><td><a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#missing-builtins">the process</a></td><td><code>Process</code>, <code>Signal</code>, <code>ENV</code>, <code>GC</code>, <code>ObjectSpace</code>, <code>fork</code>, <code>system</code>, backticks</td><td class="num">143</td><td class="num">24</td></tr>
+<tr><td>inv</td><td><a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#different-in-cameo">invalid strings</a></td><td>a UTF-8 String holds characters alone: bytes that are not UTF-8 are a binary String, written <code>b&quot;...&quot;</code>, and what makes text refuses them</td><td class="num">27</td><td class="num">118</td></tr>
+<tr><td>req</td><td><a href="https://github.com/cameo-lang/cameo/blob/main/doc/stdlib.md">libraries</a></td><td>a <code>require</code> of a library cameo does not build in, or <code>require_relative</code> and <code>load</code></td><td class="num">0</td><td class="num">135</td></tr>
+<tr><td>enc</td><td><a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#different-in-cameo">encodings</a></td><td>encodings other than UTF-8, binary and US-ASCII</td><td class="num">97</td><td class="num">0</td></tr>
+<tr><td>io</td><td><a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#missing-builtins">I/O</a></td><td><code>IO</code>, <code>File</code>, <code>Dir</code>, <code>ARGF</code> and the standard streams as objects, beyond writing to standard output and error</td><td class="num">96</td><td class="num">0</td></tr>
+<tr><td>lib</td><td><a href="https://github.com/cameo-lang/cameo/blob/main/doc/stdlib.md">parts of libraries</a></td><td>a part of a library cameo builds in that its row in stdlib.md leaves out: Zlib&#39;s streams, <code>Matrix#eigensystem</code>, <code>Date::Infinity</code>, OpenSSL beyond digests</td><td class="num">73</td><td class="num">0</td></tr>
+<tr><td>thr</td><td><a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#missing-builtins">threads</a></td><td><code>Thread</code>, <code>Mutex</code>, <code>Queue</code>, <code>Fiber</code>, <code>Ractor</code>: cameo has <code>async</code> and <code>await</code></td><td class="num">58</td><td class="num">0</td></tr>
+<tr><td>id</td><td><a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#different-in-cameo">identity, freezing</a></td><td><code>equal?</code>, <code>object_id</code>, <code>frozen?</code>, <code>FrozenError</code>: values are immutable and compared by what they hold</td><td class="num">46</td><td class="num">0</td></tr>
+<tr><td>blk</td><td><a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#rejected-before-the-script-runs">blocks capture values</a></td><td>a block captures the values its variables have, and cannot rebind a variable of the scope around it</td><td class="num">0</td><td class="num">45</td></tr>
+<tr><td>glob</td><td><a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#rejected-before-the-script-runs">global variables</a></td><td><code>$x</code>, <code>$~</code>, <code>Regexp.last_match</code></td><td class="num">7</td><td class="num">26</td></tr>
+<tr><td>lit</td><td><a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#missing-builtins">no constructor</a></td><td><code>Range.new</code>, <code>Proc.new</code>, <code>Enumerator.new</code>, <code>Module.new</code>, <code>String.new</code>: cameo makes these values with a literal</td><td class="num">33</td><td class="num">0</td></tr>
+<tr><td>scope</td><td><a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#rejected-before-the-script-runs">scoped constants</a></td><td><code>A::B = 1</code>: a constant is assigned inside its module</td><td class="num">0</td><td class="num">26</td></tr>
+<tr><td>mar</td><td><a href="https://github.com/cameo-lang/cameo/blob/main/doc/stdlib.md"><code>Marshal</code></a></td><td><code>Marshal</code> writes cameo&#39;s wire form, not Ruby&#39;s bytes</td><td class="num">20</td><td class="num">0</td></tr>
+<tr><td>struct</td><td><a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#missing-builtins"><code>Struct</code></a></td><td>a class declares typed fields instead</td><td class="num">16</td><td class="num">0</td></tr>
+<tr><td>data</td><td><a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#missing-builtins"><code>Data</code></a></td><td>a class with typed fields is cameo&#39;s Data</td><td class="num">1</td><td class="num">9</td></tr>
+<tr><td>re</td><td><a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#different-in-cameo">regexps</a></td><td>look-behind and back-references, which cameo&#39;s engine does not run</td><td class="num">0</td><td class="num">5</td></tr>
+<tr><td>bin</td><td><a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#different-in-cameo">binary strings</a></td><td>a binary String has bytes and no characters, and a UTF-8 String with characters beyond ASCII has no bytes alone (<code>getbyte</code>)</td><td class="num">4</td><td class="num">0</td></tr>
+<tr><td>r2k</td><td><a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#rejected-before-the-script-runs"><code>ruby2_keywords</code></a></td><td><code>ruby2_keywords</code></td><td class="num">3</td><td class="num">0</td></tr>
+<tr><td>cvar</td><td><a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#rejected-before-the-script-runs">class variables</a></td><td><code>@@x</code></td><td class="num">0</td><td class="num">2</td></tr>
+<tr><td>capi</td><td><a href="https://github.com/cameo-lang/cameo/blob/main/doc/stdlib.md">the C API</a></td><td>Ruby&#39;s C API: cameo builds its libraries in and loads no native code</td><td class="num">0</td><td class="num">1</td></tr>
+<tr><td>next</td><td><a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#different-in-cameo">external enumerators</a></td><td>an Enumerator has no <code>next</code>, <code>peek</code> or <code>rewind</code></td><td class="num">1</td><td class="num">0</td></tr>
+</table>
+
+<h2 id="where-the-bugs-are">Where the bugs are</h2>
+
+<p>The categories with the most bugs: examples CRuby passes and cameo does
+not, and files a bug stopped. <a href="https://github.com/cameo-lang/cameo/blob/main/specs/status.tsv">specs/status.tsv</a> lists
+each, with its message.</p>
+
+<table>
+<tr><th>Category</th><th class="num">Bug examples</th><th class="num">Bug files</th><th>The most common message</th></tr>
+<tr><td>library/matrix</td><td class="num">18</td><td class="num">0</td><td><code>Expected Matrix[[1, 0], [0, 1]].instance_of?(MatrixSub) to be truthy but was false</code></td></tr>
+<tr><td>library/datetime</td><td class="num">16</td><td class="num">0</td><td><code>invalid date (Date::Error)</code></td></tr>
+<tr><td>core/time</td><td class="num">11</td><td class="num">0</td><td><code>Expected 0 == -3600 to be truthy but was false</code></td></tr>
+<tr><td>library/date</td><td class="num">11</td><td class="num">0</td><td><code>invalid argument (not numeric) (TypeError)</code></td></tr>
+<tr><td>library/pathname</td><td class="num">9</td><td class="num">0</td><td><code>undefined method &#39;ascend&#39; for an instance of Pathname (NoMethodError)</code></td></tr>
+<tr><td>core/range</td><td class="num">7</td><td class="num">0</td><td><code>no implicit conversion of String into Integer (TypeError)</code></td></tr>
+<tr><td>core/numeric</td><td class="num">6</td><td class="num">0</td><td><code>undefined method &#39;quo&#39; for an instance of Integer (NoMethodError)</code></td></tr>
+<tr><td>core/enumerator</td><td class="num">5</td><td class="num">0</td><td><code>undefined method &#39;produce&#39; for class Enumerator (NoMethodError)</code></td></tr>
+<tr><td>library/bigdecimal</td><td class="num">5</td><td class="num">0</td><td><code>invalid value for BigDecimal(): &quot;1E11111111111111111111&quot; (ArgumentError)</code></td></tr>
+<tr><td>library/stringio</td><td class="num">5</td><td class="num">0</td><td><code>Expected &quot;#&lt;StringIO pos:0 size:7&gt;&quot; == &quot;StringIO()&quot; to be truthy but was false</code></td></tr>
+<tr><td>core/integer</td><td class="num">4</td><td class="num">0</td><td><code>comparison of Integer with String failed (ArgumentError)</code></td></tr>
+<tr><td>core/matchdata</td><td class="num">4</td><td class="num">0</td><td><code>wrong number of arguments (given 1, expected 0): MatchDataSpecs::MyString takes its fields as keywo…</code></td></tr>
+<tr><td>library/cgi</td><td class="num">4</td><td class="num">0</td><td><code>undefined method &#39;parse&#39; for module CGI (NoMethodError)</code></td></tr>
+<tr><td>library/time</td><td class="num">4</td><td class="num">0</td><td><code>undefined method &#39;rfc2822&#39; for class Time (NoMethodError)</code></td></tr>
+<tr><td>core/hash</td><td class="num">3</td><td class="num">0</td><td><code>Expected 1886929887414173010 == 8742159506943601042 to be truthy but was false</code></td></tr>
+<tr><td>core/io</td><td class="num">3</td><td class="num">0</td><td><code>undefined method &#39;path&#39; for an instance of IO (NoMethodError)</code></td></tr>
+<tr><td>core/random</td><td class="num">3</td><td class="num">0</td><td><code>undefined method &#39;state&#39; for an instance of Random (NoMethodError)</code></td></tr>
+<tr><td>core/symbol</td><td class="num">3</td><td class="num">0</td><td><code>undefined method &#39;all_symbols&#39; for class Symbol (NoMethodError)</code></td></tr>
+<tr><td>library/csv</td><td class="num">3</td><td class="num">0</td><td><code>undefined method &#39;liberal_parsing?&#39; for an instance of CSV (NoMethodError)</code></td></tr>
+<tr><td>core/encoding</td><td class="num">2</td><td class="num">0</td><td><code>undefined method &#39;ascii_compatible?&#39; for an instance of Encoding (NoMethodError)</code></td></tr>
+</table>
+
+<h2 id="by-category">By category</h2>
+
+<p>One row per category. <em>Why</em> gives the count for each reason by its code
+from the <a href="#not-expected-to-work">table above</a>; for a file that did not
+run, bug or harness when the message was not one cameo states.</p>
+
+<h3 id="language">language</h3>
+
+<table>
+<tr><th>Category</th><th class="num">Examples</th><th class="num">Pass</th><th class="num">Not expected</th><th>Why</th><th class="num">Bug</th><th class="num">Harness</th><th class="num">Files not run</th><th>Why not run</th></tr>
+<tr><td>language</td><td class="num">96</td><td class="num">74</td><td class="num">18</td><td>mut 14, lit 4</td><td class="num">0</td><td class="num">4</td><td class="num">61</td><td>check: meta 24, ivar 15, attr 5, blk 4, bug 2, cvar 2, mut 2, scope 2, vis 2, glob 1, inv 1, proc 1</td></tr>
+<tr><td>language/predefined</td><td class="num">14</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">14</td><td class="num">0</td><td></td></tr>
+<tr><td>language/regexp</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">11</td><td>check: meta 5, glob 2, re 2, inv 1, ivar 1</td></tr>
+</table>
+
+<h3 id="core">core</h3>
+
+<table>
+<tr><th>Category</th><th class="num">Examples</th><th class="num">Pass</th><th class="num">Not expected</th><th>Why</th><th class="num">Bug</th><th class="num">Harness</th><th class="num">Files not run</th><th>Why not run</th></tr>
+<tr><td>core/argf</td><td class="num">8</td><td class="num">0</td><td class="num">8</td><td>io 8</td><td class="num">0</td><td class="num">0</td><td class="num">28</td><td>check: ivar 26, attr 2</td></tr>
+<tr><td>core/array</td><td class="num">32</td><td class="num">17</td><td class="num">14</td><td>meta 10, id 3, enc 1</td><td class="num">0</td><td class="num">1</td><td class="num">118</td><td>check: ivar 118</td></tr>
+<tr><td>core/basicobject</td><td class="num">13</td><td class="num">1</td><td class="num">9</td><td>lit 5, vis 3, meta 1</td><td class="num">1</td><td class="num">2</td><td class="num">10</td><td>check: ivar 6, meta 4</td></tr>
+<tr><td>core/binding</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">12</td><td>check: ivar 7, meta 5</td></tr>
+<tr><td>core/builtin_constants</td><td class="num">17</td><td class="num">17</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td></tr>
+<tr><td>core/class</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">8</td><td>check: meta 5, ivar 2, vis 1</td></tr>
+<tr><td>core/comparable</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">7</td><td>check: attr 7</td></tr>
+<tr><td>core/complex</td><td class="num">100</td><td class="num">0</td><td class="num">75</td><td>rat 75</td><td class="num">0</td><td class="num">25</td><td class="num">8</td><td>check: ivar 4, rat 4</td></tr>
+<tr><td>core/conditionvariable</td><td class="num">2</td><td class="num">0</td><td class="num">2</td><td>thr 2</td><td class="num">0</td><td class="num">0</td><td class="num">2</td><td>check: blk 2</td></tr>
+<tr><td>core/data</td><td class="num">2</td><td class="num">0</td><td class="num">1</td><td>data 1</td><td class="num">0</td><td class="num">1</td><td class="num">12</td><td>check: meta 2, mut 1; crash: data 9</td></tr>
+<tr><td>core/dir</td><td class="num">5</td><td class="num">0</td><td class="num">5</td><td>io 5</td><td class="num">0</td><td class="num">0</td><td class="num">29</td><td>check: ivar 29</td></tr>
+<tr><td>core/encoding</td><td class="num">95</td><td class="num">2</td><td class="num">86</td><td>enc 85, meta 1</td><td class="num">2</td><td class="num">5</td><td class="num">25</td><td>check: inv 15, ivar 8, blk 1, mut 1</td></tr>
+<tr><td>core/enumerable</td><td class="num">8</td><td class="num">0</td><td class="num">8</td><td>meta 8</td><td class="num">0</td><td class="num">0</td><td class="num">53</td><td>check: ivar 53</td></tr>
+<tr><td>core/enumerator</td><td class="num">71</td><td class="num">34</td><td class="num">25</td><td>meta 16, lit 5, id 2, mut 1, vis 1</td><td class="num">5</td><td class="num">7</td><td class="num">40</td><td>check: ivar 33, meta 4, blk 3</td></tr>
+<tr><td>core/env</td><td class="num">23</td><td class="num">0</td><td class="num">21</td><td>proc 21</td><td class="num">0</td><td class="num">2</td><td class="num">29</td><td>check: ivar 25, mut 4</td></tr>
+<tr><td>core/exception</td><td class="num">26</td><td class="num">14</td><td class="num">10</td><td>io 6, lit 2, proc 2</td><td class="num">0</td><td class="num">2</td><td class="num">26</td><td>check: attr 15, ivar 3, meta 3, glob 2, blk 1, mut 1; rewrite: harness 1</td></tr>
+<tr><td>core/false</td><td class="num">12</td><td class="num">5</td><td class="num">5</td><td>meta 3, id 2</td><td class="num">0</td><td class="num">2</td><td class="num">1</td><td>check: meta 1</td></tr>
+<tr><td>core/fiber</td><td class="num">6</td><td class="num">0</td><td class="num">6</td><td>thr 6</td><td class="num">0</td><td class="num">0</td><td class="num">13</td><td>check: ivar 5, blk 4, attr 2, mut 1; crash: req 1</td></tr>
+<tr><td>core/file</td><td class="num">117</td><td class="num">42</td><td class="num">68</td><td>io 61, meta 3, enc 2, id 1, mut 1</td><td class="num">1</td><td class="num">6</td><td class="num">103</td><td>check: ivar 96, meta 4, proc 2, inv 1</td></tr>
+<tr><td>core/filetest</td><td class="num">1</td><td class="num">0</td><td class="num">1</td><td>io 1</td><td class="num">0</td><td class="num">0</td><td class="num">22</td><td>check: ivar 21, proc 1</td></tr>
+<tr><td>core/float</td><td class="num">142</td><td class="num">121</td><td class="num">19</td><td>rat 9, meta 8, id 2</td><td class="num">0</td><td class="num">2</td><td class="num">19</td><td>check: ivar 17, attr 1, meta 1</td></tr>
+<tr><td>core/gc</td><td class="num">22</td><td class="num">0</td><td class="num">21</td><td>proc 21</td><td class="num">0</td><td class="num">1</td><td class="num">8</td><td>check: ivar 6, mut 2</td></tr>
+<tr><td>core/hash</td><td class="num">37</td><td class="num">18</td><td class="num">15</td><td>meta 13, id 2</td><td class="num">3</td><td class="num">1</td><td class="num">51</td><td>check: mut 36, ivar 13, meta 2</td></tr>
+<tr><td>core/integer</td><td class="num">169</td><td class="num">128</td><td class="num">23</td><td>mut 8, rat 7, meta 5, id 3</td><td class="num">4</td><td class="num">14</td><td class="num">35</td><td>check: ivar 32, blk 1, meta 1, rat 1</td></tr>
+<tr><td>core/io</td><td class="num">31</td><td class="num">0</td><td class="num">20</td><td>io 15, meta 5</td><td class="num">3</td><td class="num">8</td><td class="num">98</td><td>check: mut 62, ivar 32, inv 4</td></tr>
+<tr><td>core/kernel</td><td class="num">26</td><td class="num">3</td><td class="num">17</td><td>meta 13, vis 4</td><td class="num">0</td><td class="num">6</td><td class="num">107</td><td>check: vis 85, ivar 10, meta 8, bug 2, attr 1, glob 1</td></tr>
+<tr><td>core/main</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">7</td><td>check: vis 6, meta 1</td></tr>
+<tr><td>core/marshal</td><td class="num">21</td><td class="num">0</td><td class="num">21</td><td>mar 20, meta 1</td><td class="num">0</td><td class="num">0</td><td class="num">2</td><td>check: attr 2</td></tr>
+<tr><td>core/matchdata</td><td class="num">142</td><td class="num">99</td><td class="num">4</td><td>meta 3, enc 1</td><td class="num">4</td><td class="num">35</td><td class="num">8</td><td>check: glob 3, ivar 2, meta 2, mut 1</td></tr>
+<tr><td>core/math</td><td class="num">10</td><td class="num">10</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">28</td><td>check: ivar 27, blk 1</td></tr>
+<tr><td>core/method</td><td class="num">4</td><td class="num">0</td><td class="num">4</td><td>meta 4</td><td class="num">0</td><td class="num">0</td><td class="num">23</td><td>check: attr 19, ivar 2, mut 2</td></tr>
+<tr><td>core/module</td><td class="num">18</td><td class="num">4</td><td class="num">11</td><td>meta 7, lit 4</td><td class="num">1</td><td class="num">2</td><td class="num">78</td><td>check: vis 62, meta 8, blk 3, ivar 2, scope 2, bug 1</td></tr>
+<tr><td>core/mutex</td><td class="num">7</td><td class="num">0</td><td class="num">7</td><td>thr 7</td><td class="num">0</td><td class="num">0</td><td class="num">5</td><td>check: attr 2, blk 2, ivar 1</td></tr>
+<tr><td>core/nil</td><td class="num">26</td><td class="num">14</td><td class="num">9</td><td>rat 5, id 2, meta 2</td><td class="num">0</td><td class="num">3</td><td class="num">1</td><td>check: meta 1</td></tr>
+<tr><td>core/numeric</td><td class="num">45</td><td class="num">13</td><td class="num">14</td><td>meta 7, id 4, rat 3</td><td class="num">6</td><td class="num">12</td><td class="num">26</td><td>check: ivar 25, meta 1</td></tr>
+<tr><td>core/objectspace</td><td class="num">49</td><td class="num">0</td><td class="num">47</td><td>proc 47</td><td class="num">0</td><td class="num">2</td><td class="num">9</td><td>check: ivar 7, blk 1, vis 1</td></tr>
+<tr><td>core/proc</td><td class="num">28</td><td class="num">7</td><td class="num">16</td><td>meta 8, lit 5, r2k 3</td><td class="num">2</td><td class="num">3</td><td class="num">15</td><td>check: ivar 8, meta 3, mut 3, blk 1</td></tr>
+<tr><td>core/process</td><td class="num">55</td><td class="num">0</td><td class="num">48</td><td>proc 45, meta 2, thr 1</td><td class="num">0</td><td class="num">7</td><td class="num">36</td><td>check: proc 19, glob 9, ivar 5, mut 2, blk 1</td></tr>
+<tr><td>core/queue</td><td class="num">13</td><td class="num">0</td><td class="num">9</td><td>thr 9</td><td class="num">0</td><td class="num">4</td><td class="num">9</td><td>check: ivar 9</td></tr>
+<tr><td>core/random</td><td class="num">33</td><td class="num">26</td><td class="num">3</td><td>rat 3</td><td class="num">3</td><td class="num">1</td><td class="num">3</td><td>check: ivar 3</td></tr>
+<tr><td>core/range</td><td class="num">122</td><td class="num">35</td><td class="num">15</td><td>id 4, lit 4, mut 4, meta 3</td><td class="num">7</td><td class="num">65</td><td class="num">23</td><td>check: ivar 11, attr 5, meta 5, mut 2</td></tr>
+<tr><td>core/rational</td><td class="num">75</td><td class="num">0</td><td class="num">68</td><td>rat 68</td><td class="num">0</td><td class="num">7</td><td class="num">10</td><td>check: ivar 9, meta 1</td></tr>
+<tr><td>core/refinement</td><td class="num">2</td><td class="num">0</td><td class="num">2</td><td>lit 2</td><td class="num">0</td><td class="num">0</td><td class="num">6</td><td>check: meta 3, blk 2, bug 1</td></tr>
+<tr><td>core/regexp</td><td class="num">78</td><td class="num">54</td><td class="num">20</td><td>glob 7, meta 6, enc 4, id 2, vis 1</td><td class="num">1</td><td class="num">3</td><td class="num">9</td><td>check: ivar 3, re 3, mut 2, inv 1</td></tr>
+<tr><td>core/ruby</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td>check: meta 1</td></tr>
+<tr><td>core/set</td><td class="num">70</td><td class="num">35</td><td class="num">26</td><td>meta 14, mut 10, vis 2</td><td class="num">2</td><td class="num">7</td><td class="num">26</td><td>check: ivar 24, meta 2</td></tr>
+<tr><td>core/signal</td><td class="num">8</td><td class="num">0</td><td class="num">5</td><td>proc 5</td><td class="num">0</td><td class="num">3</td><td class="num">1</td><td>check: ivar 1</td></tr>
+<tr><td>core/sizedqueue</td><td class="num">4</td><td class="num">0</td><td class="num">4</td><td>thr 4</td><td class="num">0</td><td class="num">0</td><td class="num">12</td><td>check: ivar 11, attr 1</td></tr>
+<tr><td>core/string</td><td class="num">153</td><td class="num">43</td><td class="num">108</td><td>mut 50, inv 26, rat 12, meta 10, id 5, bin 3, lit 2</td><td class="num">0</td><td class="num">2</td><td class="num">131</td><td>check: ivar 114, inv 14, meta 2, mut 1</td></tr>
+<tr><td>core/struct</td><td class="num">18</td><td class="num">0</td><td class="num">16</td><td>struct 16</td><td class="num">0</td><td class="num">2</td><td class="num">27</td><td>check: attr 26, ivar 1</td></tr>
+<tr><td>core/symbol</td><td class="num">66</td><td class="num">51</td><td class="num">11</td><td>meta 7, id 3, bin 1</td><td class="num">3</td><td class="num">1</td><td class="num">8</td><td>check: ivar 3, inv 2, glob 1, mut 1, vis 1</td></tr>
+<tr><td>core/systemexit</td><td class="num">6</td><td class="num">6</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td></tr>
+<tr><td>core/thread</td><td class="num">24</td><td class="num">0</td><td class="num">22</td><td>thr 22</td><td class="num">0</td><td class="num">2</td><td class="num">45</td><td>check: mut 27, meta 8, ivar 6, blk 4</td></tr>
+<tr><td>core/threadgroup</td><td class="num">5</td><td class="num">0</td><td class="num">5</td><td>thr 5</td><td class="num">0</td><td class="num">0</td><td class="num">2</td><td>check: mut 2</td></tr>
+<tr><td>core/time</td><td class="num">139</td><td class="num">68</td><td class="num">32</td><td>rat 15, meta 14, id 3</td><td class="num">11</td><td class="num">28</td><td class="num">19</td><td>check: ivar 11, meta 7, inv 1</td></tr>
+<tr><td>core/tracepoint</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">20</td><td>check: ivar 20</td></tr>
+<tr><td>core/true</td><td class="num">12</td><td class="num">5</td><td class="num">4</td><td>id 2, meta 2</td><td class="num">0</td><td class="num">3</td><td class="num">1</td><td>check: meta 1</td></tr>
+<tr><td>core/unboundmethod</td><td class="num">2</td><td class="num">0</td><td class="num">2</td><td>meta 2</td><td class="num">0</td><td class="num">0</td><td class="num">18</td><td>check: vis 13, mut 3, ivar 2</td></tr>
+<tr><td>core/warning</td><td class="num">6</td><td class="num">0</td><td class="num">2</td><td>proc 2</td><td class="num">0</td><td class="num">4</td><td class="num">2</td><td>check: glob 1, ivar 1</td></tr>
+</table>
+
+<h3 id="library">library</h3>
+
+<table>
+<tr><th>Category</th><th class="num">Examples</th><th class="num">Pass</th><th class="num">Not expected</th><th>Why</th><th class="num">Bug</th><th class="num">Harness</th><th class="num">Files not run</th><th>Why not run</th></tr>
+<tr><td>library/English</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">2</td><td>check: glob 2</td></tr>
+<tr><td>library/abbrev</td><td class="num">4</td><td class="num">4</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td></tr>
+<tr><td>library/base64</td><td class="num">20</td><td class="num">20</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td>check: inv 1</td></tr>
+<tr><td>library/bigdecimal</td><td class="num">86</td><td class="num">63</td><td class="num">17</td><td>rat 11, meta 4, id 2</td><td class="num">5</td><td class="num">1</td><td class="num">36</td><td>check: ivar 35, rat 1</td></tr>
+<tr><td>library/cgi</td><td class="num">28</td><td class="num">10</td><td class="num">14</td><td>lib 14</td><td class="num">4</td><td class="num">0</td><td class="num">74</td><td>check: mut 66, inv 4, ivar 4</td></tr>
+<tr><td>library/coverage</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">13</td><td>check: ivar 5, mut 3, meta 1, req 1; crash: req 3</td></tr>
+<tr><td>library/csv</td><td class="num">30</td><td class="num">27</td><td class="num">0</td><td></td><td class="num">3</td><td class="num">0</td><td class="num">1</td><td>crash: req 1</td></tr>
+<tr><td>library/date</td><td class="num">180</td><td class="num">142</td><td class="num">26</td><td>lib 19, meta 5, mut 1, rat 1</td><td class="num">11</td><td class="num">1</td><td class="num">9</td><td>check: ivar 6, blk 3</td></tr>
+<tr><td>library/datetime</td><td class="num">100</td><td class="num">62</td><td class="num">18</td><td>rat 14, meta 4</td><td class="num">16</td><td class="num">4</td><td class="num">2</td><td>check: ivar 2</td></tr>
+<tr><td>library/delegate</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">24</td><td>check: vis 22, ivar 1, meta 1</td></tr>
+<tr><td>library/digest</td><td class="num">8</td><td class="num">0</td><td class="num">7</td><td>meta 7</td><td class="num">1</td><td class="num">0</td><td class="num">60</td><td>check: inv 58, ivar 1; crash: req 1</td></tr>
+<tr><td>library/drb</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td>check: ivar 1</td></tr>
+<tr><td>library/erb</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">13</td><td>check: ivar 8, meta 3; crash: req 2</td></tr>
+<tr><td>library/etc</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">19</td><td>check: ivar 7, blk 1, glob 1, mut 1, proc 1; crash: req 8</td></tr>
+<tr><td>library/expect</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td>check: mut 1</td></tr>
+<tr><td>library/fiddle</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td>crash: req 1</td></tr>
+<tr><td>library/find</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">2</td><td>check: ivar 1; crash: req 1</td></tr>
+<tr><td>library/getoptlong</td><td class="num">3</td><td class="num">0</td><td class="num">2</td><td>meta 2</td><td class="num">0</td><td class="num">1</td><td class="num">7</td><td>check: ivar 4, blk 2, mut 1</td></tr>
+<tr><td>library/io-wait</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">3</td><td>check: attr 3</td></tr>
+<tr><td>library/ipaddr</td><td class="num">18</td><td class="num">17</td><td class="num">0</td><td></td><td class="num">1</td><td class="num">0</td><td class="num">2</td><td>check: blk 1, ivar 1</td></tr>
+<tr><td>library/irb</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td>crash: req 1</td></tr>
+<tr><td>library/logger</td><td class="num">1</td><td class="num">1</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">13</td><td>check: ivar 13</td></tr>
+<tr><td>library/matrix</td><td class="num">176</td><td class="num">115</td><td class="num">39</td><td>rat 15, lib 12, meta 10, mut 1, vis 1</td><td class="num">18</td><td class="num">4</td><td class="num">30</td><td>check: ivar 29, mut 1</td></tr>
+<tr><td>library/mkmf</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">1</td><td class="num">0</td><td></td></tr>
+<tr><td>library/monitor</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">6</td><td>check: ivar 1; crash: req 5</td></tr>
+<tr><td>library/net-ftp</td><td class="num">12</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">12</td><td class="num">49</td><td>check: attr 37, ivar 7; crash: req 5</td></tr>
+<tr><td>library/net-http</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">131</td><td>check: ivar 40, attr 31, meta 1, mut 1; crash: req 58</td></tr>
+<tr><td>library/objectspace</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">1</td><td class="num">6</td><td>check: attr 1, meta 1; crash: req 4</td></tr>
+<tr><td>library/observer</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">5</td><td>check: attr 5</td></tr>
+<tr><td>library/open3</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">11</td><td>crash: req 11</td></tr>
+<tr><td>library/openssl</td><td class="num">19</td><td class="num">3</td><td class="num">14</td><td>lib 14</td><td class="num">0</td><td class="num">2</td><td class="num">14</td><td>check: inv 10, ivar 4</td></tr>
+<tr><td>library/openstruct</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">13</td><td>check: ivar 8; crash: req 5</td></tr>
+<tr><td>library/optionparser</td><td class="num">4</td><td class="num">0</td><td class="num">4</td><td>mut 4</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td></tr>
+<tr><td>library/pathname</td><td class="num">61</td><td class="num">44</td><td class="num">7</td><td>lib 2, meta 2, vis 2, id 1</td><td class="num">9</td><td class="num">1</td><td class="num">2</td><td>check: ivar 2</td></tr>
+<tr><td>library/pp</td><td class="num">3</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">3</td><td class="num">0</td><td></td></tr>
+<tr><td>library/prime</td><td class="num">24</td><td class="num">20</td><td class="num">2</td><td>next 1, meta 1</td><td class="num">0</td><td class="num">2</td><td class="num">1</td><td>check: ivar 1</td></tr>
+<tr><td>library/random</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td>check: ivar 1</td></tr>
+<tr><td>library/rbconfig</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">5</td><td>check: glob 1; crash: req 4</td></tr>
+<tr><td>library/readline</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">12</td><td>check: mut 9, ivar 3</td></tr>
+<tr><td>library/resolv</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">4</td><td>crash: req 4</td></tr>
+<tr><td>library/ripper</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">2</td><td>crash: req 2</td></tr>
+<tr><td>library/rubygems</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">2</td><td>check: ivar 1; crash: req 1</td></tr>
+<tr><td>library/securerandom</td><td class="num">14</td><td class="num">10</td><td class="num">2</td><td>mut 2</td><td class="num">0</td><td class="num">2</td><td class="num">3</td><td>check: ivar 3</td></tr>
+<tr><td>library/shellwords</td><td class="num">7</td><td class="num">7</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td></tr>
+<tr><td>library/singleton</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">7</td><td>check: attr 7</td></tr>
+<tr><td>library/socket</td><td class="num">50</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">50</td><td class="num">163</td><td>check: ivar 163</td></tr>
+<tr><td>library/stringio</td><td class="num">35</td><td class="num">17</td><td class="num">11</td><td>enc 4, meta 4, id 2, inv 1</td><td class="num">5</td><td class="num">2</td><td class="num">40</td><td>check: ivar 37, blk 1, inv 1, meta 1</td></tr>
+<tr><td>library/stringscanner</td><td class="num">41</td><td class="num">9</td><td class="num">4</td><td>meta 4</td><td class="num">1</td><td class="num">27</td><td class="num">32</td><td>check: ivar 31, inv 1</td></tr>
+<tr><td>library/syslog</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">20</td><td>check: ivar 9, mut 3, glob 2; crash: req 6</td></tr>
+<tr><td>library/tempfile</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">10</td><td>check: ivar 8; crash: req 2</td></tr>
+<tr><td>library/thread</td><td class="num">2</td><td class="num">0</td><td class="num">2</td><td>thr 2</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td></tr>
+<tr><td>library/time</td><td class="num">7</td><td class="num">0</td><td class="num">2</td><td>meta 2</td><td class="num">4</td><td class="num">1</td><td class="num">0</td><td></td></tr>
+<tr><td>library/timeout</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">2</td><td>crash: req 2</td></tr>
+<tr><td>library/tmpdir</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">2</td><td>check: ivar 1; crash: req 1</td></tr>
+<tr><td>library/uri</td><td class="num">38</td><td class="num">27</td><td class="num">4</td><td>mut 2, id 1, lib 1</td><td class="num">2</td><td class="num">5</td><td class="num">10</td><td>check: ivar 7, blk 3</td></tr>
+<tr><td>library/weakref</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">5</td><td>check: blk 2, meta 1; crash: req 2</td></tr>
+<tr><td>library/win32ole</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">72</td><td>check: ivar 50, scope 22</td></tr>
+<tr><td>library/yaml</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">9</td><td>check: ivar 6; crash: req 3</td></tr>
+<tr><td>library/zlib</td><td class="num">25</td><td class="num">12</td><td class="num">11</td><td>lib 11</td><td class="num">1</td><td class="num">1</td><td class="num">25</td><td>check: ivar 22, inv 2, mut 1</td></tr>
+</table>
+
+<h3 id="command_line">command_line</h3>
+
+<table>
+<tr><th>Category</th><th class="num">Examples</th><th class="num">Pass</th><th class="num">Not expected</th><th>Why</th><th class="num">Bug</th><th class="num">Harness</th><th class="num">Files not run</th><th>Why not run</th></tr>
+<tr><td>command_line</td><td class="num">29</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">29</td><td class="num">24</td><td>check: ivar 22, mut 2</td></tr>
+</table>
+
+<h3 id="security">security</h3>
+
+<table>
+<tr><th>Category</th><th class="num">Examples</th><th class="num">Pass</th><th class="num">Not expected</th><th>Why</th><th class="num">Bug</th><th class="num">Harness</th><th class="num">Files not run</th><th>Why not run</th></tr>
+<tr><td>security</td><td class="num">4</td><td class="num">2</td><td class="num">0</td><td></td><td class="num">1</td><td class="num">1</td><td class="num">10</td><td>check: ivar 5, meta 3, inv 1, mut 1</td></tr>
+</table>
+
+<h3 id="optional">optional</h3>
+
+<table>
+<tr><th>Category</th><th class="num">Examples</th><th class="num">Pass</th><th class="num">Not expected</th><th>Why</th><th class="num">Bug</th><th class="num">Harness</th><th class="num">Files not run</th><th>Why not run</th></tr>
+<tr><td>optional/capi</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">48</td><td>check: ivar 44, attr 1, blk 1, vis 1; crash: capi 1</td></tr>
+<tr><td>optional/thread_safety</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td></td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td>check: ivar 1</td></tr>
+</table>
+
+</main>
+
+<footer class="site"><div class="inner">
+  cameo · <a href="https://github.com/cameo-lang/cameo">github.com/cameo-lang/cameo</a> ·
+  every sample on this site was run
+</div></footer>
+</body>
+</html>

@@ -16,8 +16,11 @@ Go. This file is the entry point for coding agents. Read it first, then:
 5. **[agents/stacks.md](agents/stacks.md)** — how we work with pull request
    stacks: small pull requests in one stack, CI on the top alone, where to
    fix a failing run.
-6. [README.md](README.md) — what cameo is and how to build it.
-7. [agents.md](agents.md) — how to write cameo programs: the guide a model
+6. **[agents/weekly.md](agents/weekly.md)** — what to rerun once a week,
+   such as the ruby/spec run behind COMPATIBILITY.md, and how to read
+   and land what it finds.
+7. [README.md](README.md) — what cameo is and how to build it.
+8. [agents.md](agents.md) — how to write cameo programs: the guide a model
    reads before it writes a script. Keep it current; agents/CLAUDE.md says
    when.
 

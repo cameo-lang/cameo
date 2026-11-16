@@ -2,15 +2,18 @@
 # frozen_string_literal: true
 
 # Writes COMPATIBILITY.md, how much of ruby/spec cameo passes, from
-# status.tsv, which run.rb writes. It runs no spec itself.
+# status.tsv, which run.rb writes, and the same as the site's page
+# compatibility.html. It runs no spec itself.
 #
-#   ruby compatibility.rb [--status FILE] [--out FILE] [--ruby RUBY]
-#                         [--commit SHA] [--date YYYY-MM-DD]
+#   ruby compatibility.rb [--status FILE] [--out FILE] [--html FILE]
+#                         [--ruby RUBY] [--commit SHA] [--date YYYY-MM-DD]
 #
 # The defaults are specs/status.tsv, COMPATIBILITY.md at the root of the
-# repository, the Ruby named ruby, the ruby/spec commit COUNTS.md names and
-# today: make spec-status runs run.rb and then this script, so the date is
-# that of the run and the Ruby the one run.rb compared with.
+# repository, doc/gh_pages/compatibility.html, the Ruby named ruby, the
+# ruby/spec commit COUNTS.md names and today: make spec-status runs run.rb
+# and then this script, so the date is that of the run and the Ruby the
+# one run.rb compared with. The page takes its header and footer from the
+# site's index.html.
 #
 # A category is a spec's directory two levels deep (core/string,
 # library/csv), or the top-level directory for a spec that sits in it
@@ -19,16 +22,19 @@
 require "date"
 require "open3"
 require "optparse"
+require_relative "runner/site_page"
 
 HERE = __dir__
 ROOT = File.expand_path("..", HERE)
 
-options = { status: File.join(HERE, "status.tsv"), out: File.join(ROOT, "COMPATIBILITY.md"), ruby: "ruby",
+options = { status: File.join(HERE, "status.tsv"), out: File.join(ROOT, "COMPATIBILITY.md"),
+            html: File.join(ROOT, "doc/gh_pages/compatibility.html"), ruby: "ruby",
             date: Date.today.iso8601 }
 OptionParser.new do |o|
   o.banner = "usage: ruby compatibility.rb [options]"
   o.on("--status FILE", "the status of every example, as run.rb writes it (default: specs/status.tsv)") { options[:status] = _1 }
   o.on("--out FILE", "where to write (default: COMPATIBILITY.md at the root)") { options[:out] = _1 }
+  o.on("--html FILE", "where to write the site's page (default: doc/gh_pages/compatibility.html)") { options[:html] = _1 }
   o.on("--ruby RUBY", "the Ruby run.rb compared with (default: ruby)") { options[:ruby] = _1 }
   o.on("--commit SHA", "the ruby/spec commit (default: the one COUNTS.md names)") { options[:commit] = _1 }
   o.on("--date DATE", "the date of the run (default: today)") { options[:date] = _1 }
@@ -285,3 +291,10 @@ dirs.each do |name|
 end
 
 File.write(options[:out], out)
+
+# The site's page is the same Markdown under a shorter title; its first
+# paragraph is the page's lead.
+site = out.sub(/\A# .*\n/, "# Compatibility\n")
+template = File.read(File.join(ROOT, "doc/gh_pages/index.html"), encoding: "UTF-8")
+File.write(options[:html], SitePage.page(site, template: template, name: "compatibility.html", title: "compatibility",
+                                         description: "How much of ruby/spec cameo passes, by part of Ruby, and why it does not pass the rest."))
