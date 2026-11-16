@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cameo — scope — scoped constants</title>
+<meta name="description" content="cameo refuses assignment to a scoped constant, A::B = 1: a constant is assigned inside its module.">
+<link rel="stylesheet" href="../style.css">
+<script type="module" src="../site.js"></script>
+</head>
+<body>
+<header class="site"><div class="inner">
+  <a class="name" href="../index.html">cameo</a>
+  <nav>
+    <a href="../index.html">Overview</a>
+    <a href="../examples.html">Examples</a>
+    <a href="../go.html">Embedding in Go</a>
+    <a href="../grpc.html">gRPC</a>
+    <a href="../pause.html">Pause and resume</a>
+    <a href="../async.html">Async</a>
+    <a href="../io.html">I/O</a>
+    <a href="../ruby.html">Ruby vs cameo</a>
+    <a href="../numbers.html">Numbers</a>
+    <a href="../compatibility.html" aria-current="page">Compatibility</a>
+    <a href="../native.html">Native code</a>
+    <a href="https://github.com/cameo-lang/cameo">GitHub</a>
+  </nav>
+</div></header>
+
+<main>
+<p class="crumbs"><a href="../compatibility.html#not-expected-to-work">Compatibility</a> › scope</p>
+
+<h1>scope — scoped constants</h1>
+<p class="lead">A constant is assigned inside its module. <code>A::B = 1</code> from outside <code>A</code> is refused.</p>
+
+<h2 id="refused">What cameo refuses</h2>
+
+<p>The assignment is refused before the script runs. Reading <code>A::B</code> works as in Ruby.</p>
+
+<pre class="cameo rejected"><code>module Config
+end
+Config::LIMIT = 10</code></pre>
+<pre class="output error"><code>script.cameo:3: assignment to a scoped constant is not supported: define it inside its module (see https://15b.it/scope)</code></pre>
+
+<h2 id="why">Why</h2>
+
+<p>A module, like a class, is built in its body and sealed when the body ends. An assignment from outside would add to it later, from anywhere in the script, so what a module holds would depend on what ran before.</p>
+
+
+<h2 id="instead">What to write instead</h2>
+
+<p>Assign the constant in the module's body.</p>
+
+<pre class="cameo"><code>module Config
+  LIMIT = 10
+end
+p Config::LIMIT</code></pre>
+<pre class="output"><code>10</code></pre>
+
+<p class="more">The rule: <a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#rejected-before-the-script-runs">cameo and Ruby, rejected before the script runs</a>. <a href="../compatibility.html#not-expected-to-work">Every code</a>, and how many examples of ruby/spec each stops.</p>
+</main>
+
+<footer class="site"><div class="inner">
+  cameo · <a href="https://github.com/cameo-lang/cameo">github.com/cameo-lang/cameo</a> ·
+  every sample on this site was run
+</div></footer>
+</body>
+</html>

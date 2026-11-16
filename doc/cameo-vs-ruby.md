@@ -395,7 +395,12 @@ sets the fields, and `p a` prints `Point(x: 1, y: 2)` where Ruby prints
 
 ## Rejected before the script runs
 
-The checker rejects these by name, with the line:
+The checker rejects these by name, with the line, and ends each message
+with a link to the page of its code on cameo's site, such as
+`(see https://15b.it/ivar)`, which leads to
+`https://cameo-lang.github.io/cameo/compatibility/ivar.html`: what cameo
+leaves out, why, and what to write instead. The codes are those of
+[COMPATIBILITY.md](../COMPATIBILITY.md#not-expected-to-work).
 
 | Construct | Instead |
 |---|---|

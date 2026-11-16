@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cameo — lib — parts of libraries</title>
+<meta name="description" content="Parts of the libraries cameo builds in are left out on purpose: Zlib&#39;s streams, Matrix#eigensystem, Date::Infinity, OpenSSL beyond digests.">
+<link rel="stylesheet" href="../style.css">
+<script type="module" src="../site.js"></script>
+</head>
+<body>
+<header class="site"><div class="inner">
+  <a class="name" href="../index.html">cameo</a>
+  <nav>
+    <a href="../index.html">Overview</a>
+    <a href="../examples.html">Examples</a>
+    <a href="../go.html">Embedding in Go</a>
+    <a href="../grpc.html">gRPC</a>
+    <a href="../pause.html">Pause and resume</a>
+    <a href="../async.html">Async</a>
+    <a href="../io.html">I/O</a>
+    <a href="../ruby.html">Ruby vs cameo</a>
+    <a href="../numbers.html">Numbers</a>
+    <a href="../compatibility.html" aria-current="page">Compatibility</a>
+    <a href="../native.html">Native code</a>
+    <a href="https://github.com/cameo-lang/cameo">GitHub</a>
+  </nav>
+</div></header>
+
+<main>
+<p class="crumbs"><a href="../compatibility.html#not-expected-to-work">Compatibility</a> › lib</p>
+
+<h1>lib — parts of libraries</h1>
+<p class="lead">cameo builds a library in without every part of it. Zlib's streams, <code>Matrix#eigensystem</code> and <code>lup</code>, <code>Date::Infinity</code>, <code>URI.regexp</code>, CGI cookies, OpenSSL beyond digests and Pathname's file system are left out.</p>
+
+<h2 id="refused">What cameo refuses</h2>
+
+<p>A part left out is an undefined method or constant, as for any method a class does not have.</p>
+
+<pre class="cameo rejected"><code>require &quot;matrix&quot;
+p Matrix[[2, 0], [0, 3]].eigensystem</code></pre>
+<pre class="output error"><code>script.cameo:2: undefined method &#39;eigensystem&#39; for an instance of Matrix (NoMethodError)</code></pre>
+
+<h2 id="why">Why</h2>
+
+<p>A library's row in <a href="https://github.com/cameo-lang/cameo/blob/main/doc/stdlib.md">stdlib.md</a> says what cameo builds in of it and what it leaves out, and why: a part that does I/O (Zlib's streams, Pathname's file system), keeps state that changes (CGI's cookie jar), or needs a value cameo does not have (<code>Date::Infinity</code>) does not fit; a part few scripts use was not worth its cost.</p>
+
+
+<h2 id="instead">What to write instead</h2>
+
+<p>Use the parts the library's row lists. <code>stdlib.md</code> names the alternative where there is one.</p>
+
+<pre class="cameo"><code>require &quot;matrix&quot;
+m = Matrix[[2, 0], [0, 3]]
+p m.determinant
+p m * m</code></pre>
+<pre class="output"><code>6
+Matrix[[4, 0], [0, 9]]</code></pre>
+
+<p class="more">The rule: <a href="https://github.com/cameo-lang/cameo/blob/main/doc/stdlib.md">the standard library in cameo</a>. <a href="../compatibility.html#not-expected-to-work">Every code</a>, and how many examples of ruby/spec each stops.</p>
+</main>
+
+<footer class="site"><div class="inner">
+  cameo · <a href="https://github.com/cameo-lang/cameo">github.com/cameo-lang/cameo</a> ·
+  every sample on this site was run
+</div></footer>
+</body>
+</html>

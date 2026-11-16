@@ -36,6 +36,10 @@ abort "sort.rb: --spec is required" unless options[:spec]
 SPEC = options[:spec]
 OUT = options[:out]
 
+# CODE_LINK is how cameo check ends a refusal: the link to the page of the
+# site that explains its code. MANIFEST.tsv keeps the message without it.
+CODE_LINK = %r{ \(see https://15b\.it/\w+\)$}
+
 cameo = options[:cameo] || begin
   bin = File.join(Dir.tmpdir, "cameo-sort")
   system("go", "build", "-o", bin, "./src/cmd/cameo", chdir: File.expand_path("..", HERE)) or abort "sort.rb: building cameo failed"
@@ -91,7 +95,7 @@ end
 
 def classify(cameo, file)
   out, = Open3.capture2e(cameo, "check", file, chdir: SPEC)
-  messages = out.force_encoding("UTF-8").scrub.lines.filter_map { _1[/\A[^:]+:\d+: (.*)$/, 1] }
+  messages = out.force_encoding("UTF-8").scrub.lines.filter_map { _1[/\A[^:]+:\d+: (.*)$/, 1]&.sub(CODE_LINK, "") }
   lib = requires(File.join(SPEC, file)).find { !BUILTIN[_1] }
   messages.each do |msg|
     why = reason(msg)

@@ -81,6 +81,10 @@ abort "run.rb: no spec files under #{targets.join(", ")}" if files.empty?
 
 OPERATORS = %i[== != < <= > >= =~ !~ ===].freeze
 
+# CODE_LINK is how cameo check ends a refusal: the link to the page of the
+# site that explains its code.
+CODE_LINK = %r{ \(see https://15b\.it/\w+\)\z}
+
 # Rewriter turns one spec file and the fixtures it loads into one program.
 class Rewriter
   def initialize
@@ -233,7 +237,9 @@ def run_file(cameo, ruby, spec, path, timeout, out)
   check_out, check_status = Open3.capture2e(cameo, "check", prog)
   check_out = utf8(check_out)
   unless check_status.success?
-    first = check_out.lines.first.to_s.strip.sub(/\A[^:]*:\d+: /, "")
+    # The page of the site a refusal links is left out: the reason
+    # status.tsv gives says the same.
+    first = check_out.lines.first.to_s.strip.sub(/\A[^:]*:\d+: /, "").sub(CODE_LINK, "")
     return row.merge(status: "check", message: first)
   end
 

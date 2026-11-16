@@ -26,8 +26,10 @@ cameo check script.cameo     # every error, with its line, without running
 cameo script.cameo           # run it
 ```
 
-`cameo check` names the construct it refuses and what to write instead.
-Fix what it says and check again; do not guess around it.
+`cameo check` names the construct it refuses and what to write instead,
+and ends the message with a link, `(see https://15b.it/mut)`, to a page
+that explains why and shows the cameo way with an example. Fix what it says and check
+again; do not guess around it.
 
 ## Leave these out
 

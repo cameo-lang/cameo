@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cameo — thr — threads</title>
+<meta name="description" content="cameo has no Thread, Mutex, Queue, Fiber or Ractor: async runs a method of a value on another goroutine, and await collects it.">
+<link rel="stylesheet" href="../style.css">
+<script type="module" src="../site.js"></script>
+</head>
+<body>
+<header class="site"><div class="inner">
+  <a class="name" href="../index.html">cameo</a>
+  <nav>
+    <a href="../index.html">Overview</a>
+    <a href="../examples.html">Examples</a>
+    <a href="../go.html">Embedding in Go</a>
+    <a href="../grpc.html">gRPC</a>
+    <a href="../pause.html">Pause and resume</a>
+    <a href="../async.html">Async</a>
+    <a href="../io.html">I/O</a>
+    <a href="../ruby.html">Ruby vs cameo</a>
+    <a href="../numbers.html">Numbers</a>
+    <a href="../compatibility.html" aria-current="page">Compatibility</a>
+    <a href="../native.html">Native code</a>
+    <a href="https://github.com/cameo-lang/cameo">GitHub</a>
+  </nav>
+</div></header>
+
+<main>
+<p class="crumbs"><a href="../compatibility.html#not-expected-to-work">Compatibility</a> › thr</p>
+
+<h1>thr — threads</h1>
+<p class="lead">cameo has no <code>Thread</code>, <code>Mutex</code>, <code>Queue</code>, <code>Fiber</code> or <code>Ractor</code>. It has <code>async</code>, which runs a method of a value on a worker, and <code>await</code>, which collects the result.</p>
+
+<h2 id="refused">What cameo refuses</h2>
+
+<p>The classes are absent, so a script fails when it reaches one.</p>
+
+<pre class="cameo rejected"><code>t = Thread.new { 1 + 1 }
+p t.value</code></pre>
+<pre class="output error"><code>script.cameo:1: uninitialized constant Thread (NameError)</code></pre>
+
+<h2 id="why">Why</h2>
+
+<p>Threads share state that changes, and need locks to do it safely. cameo has no state that changes, so a worker can run on its own goroutine with a copy of the values it was given and nothing to lock. A promise is an Integer, which a worker, the script or the Go host settles, so a run that waits for one can pause, and its dump resumes with the promise still pending.</p>
+
+
+<h2 id="instead">What to write instead</h2>
+
+<p><code>include Cameo</code>, then <code>async obj, :method, args</code> returns a promise, and <code>await</code> returns its value or raises its error; see <a href="../async.html">Async</a>.</p>
+
+<pre class="cameo"><code>include Cameo
+
+class Square
+  def run(n) = n * n
+end
+
+job = Square.new
+promises = (1..4).map { |n| async job, :run, n }
+p promises.map { |pr| await pr }</code></pre>
+<pre class="output"><code>[1, 4, 9, 16]</code></pre>
+
+<p class="more">The rule: <a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#missing-builtins">cameo and Ruby, missing builtins</a>. <a href="../compatibility.html#not-expected-to-work">Every code</a>, and how many examples of ruby/spec each stops.</p>
+</main>
+
+<footer class="site"><div class="inner">
+  cameo · <a href="https://github.com/cameo-lang/cameo">github.com/cameo-lang/cameo</a> ·
+  every sample on this site was run
+</div></footer>
+</body>
+</html>

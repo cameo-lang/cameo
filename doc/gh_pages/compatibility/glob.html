@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cameo — glob — global variables</title>
+<meta name="description" content="cameo refuses global variables, $1 and $~ among them: constants, locals and the MatchData of match take their place.">
+<link rel="stylesheet" href="../style.css">
+<script type="module" src="../site.js"></script>
+</head>
+<body>
+<header class="site"><div class="inner">
+  <a class="name" href="../index.html">cameo</a>
+  <nav>
+    <a href="../index.html">Overview</a>
+    <a href="../examples.html">Examples</a>
+    <a href="../go.html">Embedding in Go</a>
+    <a href="../grpc.html">gRPC</a>
+    <a href="../pause.html">Pause and resume</a>
+    <a href="../async.html">Async</a>
+    <a href="../io.html">I/O</a>
+    <a href="../ruby.html">Ruby vs cameo</a>
+    <a href="../numbers.html">Numbers</a>
+    <a href="../compatibility.html" aria-current="page">Compatibility</a>
+    <a href="../native.html">Native code</a>
+    <a href="https://github.com/cameo-lang/cameo">GitHub</a>
+  </nav>
+</div></header>
+
+<main>
+<p class="crumbs"><a href="../compatibility.html#not-expected-to-work">Compatibility</a> › glob</p>
+
+<h1>glob — global variables</h1>
+<p class="lead">cameo has no global variables, the special ones (<code>$~</code>, <code>$1</code>, <code>$!</code>) among them. <code>$stdout</code> and <code>$stderr</code> exist: they are <code>STDOUT</code> and <code>STDERR</code>.</p>
+
+<h2 id="refused">What cameo refuses</h2>
+
+<p>A global variable, read or assigned, is refused before the script runs.</p>
+
+<pre class="cameo rejected"><code>$count = 0</code></pre>
+<pre class="output error"><code>script.cameo:1: global variables are not supported (see https://15b.it/glob)</code></pre>
+
+<pre class="cameo rejected"><code>&quot;2026-11-16&quot; =~ /(\d+)-(\d+)/
+p $1</code></pre>
+<pre class="output error"><code>script.cameo:2: global variables are not supported (see https://15b.it/glob)</code></pre>
+
+<h2 id="why">Why</h2>
+
+<p>A global variable is state any method can change, which cameo has none of, and the special ones are set behind the script's back by a match or a rescue. Values that only flow through arguments and return values are what lets a run pause into a dump, and a worker run with a copy of what it was given.</p>
+
+
+<h2 id="instead">What to write instead</h2>
+
+<p>A constant for a value that does not change, a local or an argument for one that does, <code>rescue =&gt; e</code> for the exception, and the MatchData that <code>match</code> returns for the groups.</p>
+
+<pre class="cameo"><code>LIMIT = 3
+m = &quot;2026-11-16&quot;.match(/(\d+)-(\d+)/)
+p m[1], m[2]
+p LIMIT</code></pre>
+<pre class="output"><code>&quot;2026&quot;
+&quot;11&quot;
+3</code></pre>
+
+<p class="more">The rule: <a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#rejected-before-the-script-runs">cameo and Ruby, rejected before the script runs</a>. <a href="../compatibility.html#not-expected-to-work">Every code</a>, and how many examples of ruby/spec each stops.</p>
+</main>
+
+<footer class="site"><div class="inner">
+  cameo · <a href="https://github.com/cameo-lang/cameo">github.com/cameo-lang/cameo</a> ·
+  every sample on this site was run
+</div></footer>
+</body>
+</html>

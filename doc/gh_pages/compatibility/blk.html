@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cameo — blk — blocks capture values</title>
+<meta name="description" content="A cameo block captures the values its variables have when it is made, and cannot rebind a variable of the scope around it.">
+<link rel="stylesheet" href="../style.css">
+<script type="module" src="../site.js"></script>
+</head>
+<body>
+<header class="site"><div class="inner">
+  <a class="name" href="../index.html">cameo</a>
+  <nav>
+    <a href="../index.html">Overview</a>
+    <a href="../examples.html">Examples</a>
+    <a href="../go.html">Embedding in Go</a>
+    <a href="../grpc.html">gRPC</a>
+    <a href="../pause.html">Pause and resume</a>
+    <a href="../async.html">Async</a>
+    <a href="../io.html">I/O</a>
+    <a href="../ruby.html">Ruby vs cameo</a>
+    <a href="../numbers.html">Numbers</a>
+    <a href="../compatibility.html" aria-current="page">Compatibility</a>
+    <a href="../native.html">Native code</a>
+    <a href="https://github.com/cameo-lang/cameo">GitHub</a>
+  </nav>
+</div></header>
+
+<main>
+<p class="crumbs"><a href="../compatibility.html#not-expected-to-work">Compatibility</a> › blk</p>
+
+<h1>blk — blocks capture values</h1>
+<p class="lead">A block captures the values its variables have when it is made, not the variables. It cannot rebind a variable of the scope around it.</p>
+
+<h2 id="refused">What cameo refuses</h2>
+
+<p>An assignment inside a block to a variable of the scope around it is refused before the script runs, as is a block that reads a name bound after it, other than the lambda assigned to that name.</p>
+
+<pre class="cameo rejected"><code>total = 0
+[1, 2, 3].each { |n| total += n }
+p total</code></pre>
+<pre class="output error"><code>script.cameo:2: a block cannot rebind total, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while (see https://15b.it/blk)</code></pre>
+
+<h2 id="why">Why</h2>
+
+<p>Ruby's block shares its scope's variables, a reference to state that changes, which nothing else in cameo is. A block that copies its values can go to a worker or into a dump as it is. The checker refuses the rebinding so that the accumulation idiom fails before the script runs, instead of doing nothing or looping forever.</p>
+
+
+<h2 id="instead">What to write instead</h2>
+
+<p>Return the value instead of collecting it: <code>sum</code>, <code>reduce</code>, <code>each_with_object</code>, <code>map</code> or <code>count</code>, or a <code>while</code> loop, whose body shares the scope.</p>
+
+<pre class="cameo"><code>p [1, 2, 3].sum
+p [1, 2, 3].reduce(0) { |total, n| total + n }
+counts = %w[a b a].each_with_object(Hash.new(0)) { |w, h| h[w] += 1 }
+p counts</code></pre>
+<pre class="output"><code>6
+6
+{&quot;a&quot; =&gt; 2, &quot;b&quot; =&gt; 1}</code></pre>
+
+<p class="more">The rule: <a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#rejected-before-the-script-runs">cameo and Ruby, rejected before the script runs</a>. <a href="../compatibility.html#not-expected-to-work">Every code</a>, and how many examples of ruby/spec each stops.</p>
+</main>
+
+<footer class="site"><div class="inner">
+  cameo · <a href="https://github.com/cameo-lang/cameo">github.com/cameo-lang/cameo</a> ·
+  every sample on this site was run
+</div></footer>
+</body>
+</html>

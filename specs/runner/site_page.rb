@@ -11,6 +11,7 @@ require "cgi"
 # bold and italics, and HTML comments, which it drops.
 module SitePage
   REPOSITORY = "https://github.com/cameo-lang/cameo/blob/main/"
+  SITE = "https://cameo-lang.github.io/cameo/"
 
   module_function
 
@@ -99,8 +100,10 @@ module SitePage
   end
 
   # href returns where a link of COMPATIBILITY.md points from the site: a
-  # file of the repository on GitHub, an anchor or a URL as it is.
+  # page of the site relative to the page, a file of the repository on
+  # GitHub, an anchor or another URL as it is.
   def href(target)
+    return target.delete_prefix(SITE) if target.start_with?(SITE)
     return target if target.start_with?("#") || target.match?(%r{\A[a-z]+://})
 
     REPOSITORY + target

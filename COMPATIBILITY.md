@@ -57,38 +57,40 @@ Of the 450 harness examples, 345 fail under CRuby, 97 CRuby does not run, and 8 
 ## Not expected to work
 
 What cameo leaves out on purpose, each with the document that states the
-rule. *Examples* counts examples that ran and stopped on it; *files*
-counts spec files that did not run because of it.
+rule. Each code has a page on cameo's site that explains it, why cameo
+leaves it out and what to write instead, and `cameo check` links that
+page from each refusal. *Examples* counts examples that ran and stopped
+on it; *files* counts spec files that did not run because of it.
 
 | Code | Reason | Means | Examples | Files |
 |---|---|---|--:|--:|
-| ivar | [instance variables](doc/cameo-vs-ruby.md#rejected-before-the-script-runs) | cameo has no instance variables; a class declares fields. Most are mspec's `before` blocks, which set `@object` | 0 | 1465 |
-| meta | [metaprogramming](doc/cameo-vs-ruby.md#rejected-before-the-script-runs) | `eval`, `instance_eval`, `define_method`, `instance_method`, `singleton_class`, `class << self`, `send(:initialize)` | 223 | 127 |
-| mut | [mutation](doc/cameo-vs-ruby.md#different-in-cameo) | every value is immutable: `<<`, `[]=`, `push`, setters, bang methods and nested multiple assignment are refused or return a copy | 98 | 246 |
-| rat | [`Rational`, `Complex`](doc/cameo-vs-ruby.md#missing-builtins) | `Rational`, `Complex`, `1r`, `2i`, `to_r`, `to_c` | 238 | 6 |
-| vis | [visibility](doc/cameo-vs-ruby.md#rejected-before-the-script-runs) | `private`, `protected`, `module_function` and the method lists by visibility: every method a script defines is public | 14 | 194 |
-| attr | [`attr_accessor`](doc/cameo-vs-ruby.md#rejected-before-the-script-runs) | `attr_reader`, `attr_writer`, `attr_accessor`: a field declaration defines its reader, and there are no setters | 0 | 173 |
-| proc | [the process](doc/cameo-vs-ruby.md#missing-builtins) | `Process`, `Signal`, `ENV`, `GC`, `ObjectSpace`, `fork`, `system`, backticks | 143 | 24 |
-| inv | [invalid strings](doc/cameo-vs-ruby.md#different-in-cameo) | a UTF-8 String holds characters alone: bytes that are not UTF-8 are a binary String, written `b"..."`, and what makes text refuses them | 27 | 118 |
-| req | [libraries](doc/stdlib.md) | a `require` of a library cameo does not build in, or `require_relative` and `load` | 0 | 135 |
-| enc | [encodings](doc/cameo-vs-ruby.md#different-in-cameo) | encodings other than UTF-8, binary and US-ASCII | 97 | 0 |
-| io | [I/O](doc/cameo-vs-ruby.md#missing-builtins) | `IO`, `File`, `Dir`, `ARGF` and the standard streams as objects, beyond writing to standard output and error | 96 | 0 |
-| lib | [parts of libraries](doc/stdlib.md) | a part of a library cameo builds in that its row in stdlib.md leaves out: Zlib's streams, `Matrix#eigensystem`, `Date::Infinity`, OpenSSL beyond digests | 73 | 0 |
-| thr | [threads](doc/cameo-vs-ruby.md#missing-builtins) | `Thread`, `Mutex`, `Queue`, `Fiber`, `Ractor`: cameo has `async` and `await` | 58 | 0 |
-| id | [identity, freezing](doc/cameo-vs-ruby.md#different-in-cameo) | `equal?`, `object_id`, `frozen?`, `FrozenError`: values are immutable and compared by what they hold | 46 | 0 |
-| blk | [blocks capture values](doc/cameo-vs-ruby.md#rejected-before-the-script-runs) | a block captures the values its variables have, and cannot rebind a variable of the scope around it | 0 | 45 |
-| glob | [global variables](doc/cameo-vs-ruby.md#rejected-before-the-script-runs) | `$x`, `$~`, `Regexp.last_match` | 7 | 26 |
-| lit | [no constructor](doc/cameo-vs-ruby.md#missing-builtins) | `Range.new`, `Proc.new`, `Enumerator.new`, `Module.new`, `String.new`: cameo makes these values with a literal | 33 | 0 |
-| scope | [scoped constants](doc/cameo-vs-ruby.md#rejected-before-the-script-runs) | `A::B = 1`: a constant is assigned inside its module | 0 | 26 |
-| mar | [`Marshal`](doc/stdlib.md) | `Marshal` writes cameo's wire form, not Ruby's bytes | 20 | 0 |
-| struct | [`Struct`](doc/cameo-vs-ruby.md#missing-builtins) | a class declares typed fields instead | 16 | 0 |
-| data | [`Data`](doc/cameo-vs-ruby.md#missing-builtins) | a class with typed fields is cameo's Data | 1 | 9 |
-| re | [regexps](doc/cameo-vs-ruby.md#different-in-cameo) | look-behind and back-references, which cameo's engine does not run | 0 | 5 |
-| bin | [binary strings](doc/cameo-vs-ruby.md#different-in-cameo) | a binary String has bytes and no characters, and a UTF-8 String with characters beyond ASCII has no bytes alone (`getbyte`) | 4 | 0 |
-| r2k | [`ruby2_keywords`](doc/cameo-vs-ruby.md#rejected-before-the-script-runs) | `ruby2_keywords` | 3 | 0 |
-| cvar | [class variables](doc/cameo-vs-ruby.md#rejected-before-the-script-runs) | `@@x` | 0 | 2 |
-| capi | [the C API](doc/stdlib.md) | Ruby's C API: cameo builds its libraries in and loads no native code | 0 | 1 |
-| next | [external enumerators](doc/cameo-vs-ruby.md#different-in-cameo) | an Enumerator has no `next`, `peek` or `rewind` | 1 | 0 |
+| [ivar](https://cameo-lang.github.io/cameo/compatibility/ivar.html) | [instance variables](doc/cameo-vs-ruby.md#rejected-before-the-script-runs) | cameo has no instance variables; a class declares fields. Most are mspec's `before` blocks, which set `@object` | 0 | 1465 |
+| [meta](https://cameo-lang.github.io/cameo/compatibility/meta.html) | [metaprogramming](doc/cameo-vs-ruby.md#rejected-before-the-script-runs) | `eval`, `instance_eval`, `define_method`, `instance_method`, `singleton_class`, `class << self`, `send(:initialize)` | 223 | 127 |
+| [mut](https://cameo-lang.github.io/cameo/compatibility/mut.html) | [mutation](doc/cameo-vs-ruby.md#different-in-cameo) | every value is immutable: `<<`, `[]=`, `push`, setters, bang methods and nested multiple assignment are refused or return a copy | 98 | 246 |
+| [rat](https://cameo-lang.github.io/cameo/compatibility/rat.html) | [`Rational`, `Complex`](doc/cameo-vs-ruby.md#missing-builtins) | `Rational`, `Complex`, `1r`, `2i`, `to_r`, `to_c` | 238 | 6 |
+| [vis](https://cameo-lang.github.io/cameo/compatibility/vis.html) | [visibility](doc/cameo-vs-ruby.md#rejected-before-the-script-runs) | `private`, `protected`, `module_function` and the method lists by visibility: every method a script defines is public | 14 | 194 |
+| [attr](https://cameo-lang.github.io/cameo/compatibility/attr.html) | [`attr_accessor`](doc/cameo-vs-ruby.md#rejected-before-the-script-runs) | `attr_reader`, `attr_writer`, `attr_accessor`: a field declaration defines its reader, and there are no setters | 0 | 173 |
+| [proc](https://cameo-lang.github.io/cameo/compatibility/proc.html) | [the process](doc/cameo-vs-ruby.md#missing-builtins) | `Process`, `Signal`, `ENV`, `GC`, `ObjectSpace`, `fork`, `system`, backticks | 143 | 24 |
+| [inv](https://cameo-lang.github.io/cameo/compatibility/inv.html) | [invalid strings](doc/cameo-vs-ruby.md#different-in-cameo) | a UTF-8 String holds characters alone: bytes that are not UTF-8 are a binary String, written `b"..."`, and what makes text refuses them | 27 | 118 |
+| [req](https://cameo-lang.github.io/cameo/compatibility/req.html) | [libraries](doc/stdlib.md) | a `require` of a library cameo does not build in, or `require_relative` and `load` | 0 | 135 |
+| [enc](https://cameo-lang.github.io/cameo/compatibility/enc.html) | [encodings](doc/cameo-vs-ruby.md#different-in-cameo) | encodings other than UTF-8, binary and US-ASCII | 97 | 0 |
+| [io](https://cameo-lang.github.io/cameo/compatibility/io.html) | [I/O](doc/cameo-vs-ruby.md#missing-builtins) | `IO`, `File`, `Dir`, `ARGF` and the standard streams as objects, beyond writing to standard output and error | 96 | 0 |
+| [lib](https://cameo-lang.github.io/cameo/compatibility/lib.html) | [parts of libraries](doc/stdlib.md) | a part of a library cameo builds in that its row in stdlib.md leaves out: Zlib's streams, `Matrix#eigensystem`, `Date::Infinity`, OpenSSL beyond digests | 73 | 0 |
+| [thr](https://cameo-lang.github.io/cameo/compatibility/thr.html) | [threads](doc/cameo-vs-ruby.md#missing-builtins) | `Thread`, `Mutex`, `Queue`, `Fiber`, `Ractor`: cameo has `async` and `await` | 58 | 0 |
+| [id](https://cameo-lang.github.io/cameo/compatibility/id.html) | [identity, freezing](doc/cameo-vs-ruby.md#different-in-cameo) | `equal?`, `object_id`, `frozen?`, `FrozenError`: values are immutable and compared by what they hold | 46 | 0 |
+| [blk](https://cameo-lang.github.io/cameo/compatibility/blk.html) | [blocks capture values](doc/cameo-vs-ruby.md#rejected-before-the-script-runs) | a block captures the values its variables have, and cannot rebind a variable of the scope around it | 0 | 45 |
+| [glob](https://cameo-lang.github.io/cameo/compatibility/glob.html) | [global variables](doc/cameo-vs-ruby.md#rejected-before-the-script-runs) | `$x`, `$~`, `Regexp.last_match` | 7 | 26 |
+| [lit](https://cameo-lang.github.io/cameo/compatibility/lit.html) | [no constructor](doc/cameo-vs-ruby.md#missing-builtins) | `Range.new`, `Proc.new`, `Enumerator.new`, `Module.new`, `String.new`: cameo makes these values with a literal | 33 | 0 |
+| [scope](https://cameo-lang.github.io/cameo/compatibility/scope.html) | [scoped constants](doc/cameo-vs-ruby.md#rejected-before-the-script-runs) | `A::B = 1`: a constant is assigned inside its module | 0 | 26 |
+| [mar](https://cameo-lang.github.io/cameo/compatibility/mar.html) | [`Marshal`](doc/stdlib.md) | `Marshal` writes cameo's wire form, not Ruby's bytes | 20 | 0 |
+| [struct](https://cameo-lang.github.io/cameo/compatibility/struct.html) | [`Struct`](doc/cameo-vs-ruby.md#missing-builtins) | a class declares typed fields instead | 16 | 0 |
+| [data](https://cameo-lang.github.io/cameo/compatibility/data.html) | [`Data`](doc/cameo-vs-ruby.md#missing-builtins) | a class with typed fields is cameo's Data | 1 | 9 |
+| [re](https://cameo-lang.github.io/cameo/compatibility/re.html) | [regexps](doc/cameo-vs-ruby.md#different-in-cameo) | look-behind and back-references, which cameo's engine does not run | 0 | 5 |
+| [bin](https://cameo-lang.github.io/cameo/compatibility/bin.html) | [binary strings](doc/cameo-vs-ruby.md#different-in-cameo) | a binary String has bytes and no characters, and a UTF-8 String with characters beyond ASCII has no bytes alone (`getbyte`) | 4 | 0 |
+| [r2k](https://cameo-lang.github.io/cameo/compatibility/r2k.html) | [`ruby2_keywords`](doc/cameo-vs-ruby.md#rejected-before-the-script-runs) | `ruby2_keywords` | 3 | 0 |
+| [cvar](https://cameo-lang.github.io/cameo/compatibility/cvar.html) | [class variables](doc/cameo-vs-ruby.md#rejected-before-the-script-runs) | `@@x` | 0 | 2 |
+| [capi](https://cameo-lang.github.io/cameo/compatibility/capi.html) | [the C API](doc/stdlib.md) | Ruby's C API: cameo builds its libraries in and loads no native code | 0 | 1 |
+| [next](https://cameo-lang.github.io/cameo/compatibility/next.html) | [external enumerators](doc/cameo-vs-ruby.md#different-in-cameo) | an Enumerator has no `next`, `peek` or `rewind` | 1 | 0 |
 
 ## Where the bugs are
 

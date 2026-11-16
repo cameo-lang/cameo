@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cameo — inv — invalid strings</title>
+<meta name="description" content="A cameo UTF-8 String holds whole characters alone: bytes that are not UTF-8 are a binary String, written b&quot;...&quot;.">
+<link rel="stylesheet" href="../style.css">
+<script type="module" src="../site.js"></script>
+</head>
+<body>
+<header class="site"><div class="inner">
+  <a class="name" href="../index.html">cameo</a>
+  <nav>
+    <a href="../index.html">Overview</a>
+    <a href="../examples.html">Examples</a>
+    <a href="../go.html">Embedding in Go</a>
+    <a href="../grpc.html">gRPC</a>
+    <a href="../pause.html">Pause and resume</a>
+    <a href="../async.html">Async</a>
+    <a href="../io.html">I/O</a>
+    <a href="../ruby.html">Ruby vs cameo</a>
+    <a href="../numbers.html">Numbers</a>
+    <a href="../compatibility.html" aria-current="page">Compatibility</a>
+    <a href="../native.html">Native code</a>
+    <a href="https://github.com/cameo-lang/cameo">GitHub</a>
+  </nav>
+</div></header>
+
+<main>
+<p class="crumbs"><a href="../compatibility.html#not-expected-to-work">Compatibility</a> › inv</p>
+
+<h1>inv — invalid strings</h1>
+<p class="lead">A UTF-8 String holds whole characters, and none is invalid. Bytes that are not UTF-8 are a binary String, written <code>b"..."</code>, and what makes text refuses them.</p>
+
+<h2 id="refused">What cameo refuses</h2>
+
+<p>A string literal with bytes that are not UTF-8 is refused before the script runs. What would make such a String later, <code>force_encoding("UTF-8")</code> or <code>JSON.parse</code> of a lone surrogate, raises.</p>
+
+<pre class="cameo rejected"><code>data = &quot;\xFF\xFE&quot;</code></pre>
+<pre class="output error"><code>script.cameo:1: a string literal with bytes that are not UTF-8 is a binary string and is written b&quot;...&quot; (see https://15b.it/inv)</code></pre>
+
+<h2 id="why">Why</h2>
+
+<p>In Ruby a String can hold bytes that are not characters of its encoding, and every method that reads characters has to decide what to do with them, quietly or not. In cameo a String's encoding is a promise: a UTF-8 String is text a reader can read, and a binary String is bytes. A Go host gets text as a Go <code>string</code> and bytes as a <code>[]byte</code>, and a protobuf <code>string</code> field, which must be UTF-8, can always hold a cameo String.</p>
+
+
+<h2 id="instead">What to write instead</h2>
+
+<p>Write bytes as a binary string literal, <code>b"\xFF\xFE"</code>, which takes the escapes <code>"..."</code> takes. Ruby reads it as a call of <code>b</code> on the string, so the same file runs on both.</p>
+
+<pre class="cameo"><code>data = b&quot;\xFF\xFE&quot;
+p data.bytes
+p data.encoding</code></pre>
+<pre class="output"><code>[255, 254]
+#&lt;Encoding:BINARY (ASCII-8BIT)&gt;</code></pre>
+
+<p class="more">The rule: <a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#different-in-cameo">cameo and Ruby, different in cameo</a>. <a href="../compatibility.html#not-expected-to-work">Every code</a>, and how many examples of ruby/spec each stops.</p>
+</main>
+
+<footer class="site"><div class="inner">
+  cameo · <a href="https://github.com/cameo-lang/cameo">github.com/cameo-lang/cameo</a> ·
+  every sample on this site was run
+</div></footer>
+</body>
+</html>

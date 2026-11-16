@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cameo — enc — encodings</title>
+<meta name="description" content="A cameo String is UTF-8, binary or US-ASCII: other encodings do not exist.">
+<link rel="stylesheet" href="../style.css">
+<script type="module" src="../site.js"></script>
+</head>
+<body>
+<header class="site"><div class="inner">
+  <a class="name" href="../index.html">cameo</a>
+  <nav>
+    <a href="../index.html">Overview</a>
+    <a href="../examples.html">Examples</a>
+    <a href="../go.html">Embedding in Go</a>
+    <a href="../grpc.html">gRPC</a>
+    <a href="../pause.html">Pause and resume</a>
+    <a href="../async.html">Async</a>
+    <a href="../io.html">I/O</a>
+    <a href="../ruby.html">Ruby vs cameo</a>
+    <a href="../numbers.html">Numbers</a>
+    <a href="../compatibility.html" aria-current="page">Compatibility</a>
+    <a href="../native.html">Native code</a>
+    <a href="https://github.com/cameo-lang/cameo">GitHub</a>
+  </nav>
+</div></header>
+
+<main>
+<p class="crumbs"><a href="../compatibility.html#not-expected-to-work">Compatibility</a> › enc</p>
+
+<h1>enc — encodings</h1>
+<p class="lead">A String is UTF-8, binary (ASCII-8BIT) or US-ASCII. Other encodings, and converting between them, do not exist.</p>
+
+<h2 id="refused">What cameo refuses</h2>
+
+<p><code>encode</code> to another encoding raises, as does any encoding name cameo does not know.</p>
+
+<pre class="cameo rejected"><code>p &quot;héllo&quot;.encode(&quot;UTF-16LE&quot;)</code></pre>
+<pre class="output error"><code>script.cameo:1: unknown encoding name - UTF-16LE (ArgumentError)</code></pre>
+
+<h2 id="why">Why</h2>
+
+<p>Text that reaches a cameo script comes from a Go host, a protobuf message or a file, and all three carry UTF-8. Ruby's hundred encodings, and the converters between them, would be a large part of the interpreter for text that arrives already decoded. Three encodings are enough to tell text from bytes.</p>
+
+
+<h2 id="instead">What to write instead</h2>
+
+<p>Keep text in UTF-8, and bytes in a binary String: <code>b</code> gives the bytes of a String. A host converts text in another encoding before it gives it to the script.</p>
+
+<pre class="cameo"><code>s = &quot;héllo&quot;
+p s.encoding
+p s.bytesize
+p s.b.encoding</code></pre>
+<pre class="output"><code>#&lt;Encoding:UTF-8&gt;
+6
+#&lt;Encoding:BINARY (ASCII-8BIT)&gt;</code></pre>
+
+<p class="more">The rule: <a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#different-in-cameo">cameo and Ruby, different in cameo</a>. <a href="../compatibility.html#not-expected-to-work">Every code</a>, and how many examples of ruby/spec each stops.</p>
+</main>
+
+<footer class="site"><div class="inner">
+  cameo · <a href="https://github.com/cameo-lang/cameo">github.com/cameo-lang/cameo</a> ·
+  every sample on this site was run
+</div></footer>
+</body>
+</html>

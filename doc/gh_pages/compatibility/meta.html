@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cameo — meta — metaprogramming</title>
+<meta name="description" content="cameo leaves out eval, define_method, instance_eval, class &lt;&lt; self and singleton methods: methods are written with def.">
+<link rel="stylesheet" href="../style.css">
+<script type="module" src="../site.js"></script>
+</head>
+<body>
+<header class="site"><div class="inner">
+  <a class="name" href="../index.html">cameo</a>
+  <nav>
+    <a href="../index.html">Overview</a>
+    <a href="../examples.html">Examples</a>
+    <a href="../go.html">Embedding in Go</a>
+    <a href="../grpc.html">gRPC</a>
+    <a href="../pause.html">Pause and resume</a>
+    <a href="../async.html">Async</a>
+    <a href="../io.html">I/O</a>
+    <a href="../ruby.html">Ruby vs cameo</a>
+    <a href="../numbers.html">Numbers</a>
+    <a href="../compatibility.html" aria-current="page">Compatibility</a>
+    <a href="../native.html">Native code</a>
+    <a href="https://github.com/cameo-lang/cameo">GitHub</a>
+  </nav>
+</div></header>
+
+<main>
+<p class="crumbs"><a href="../compatibility.html#not-expected-to-work">Compatibility</a> › meta</p>
+
+<h1>meta — metaprogramming</h1>
+<p class="lead">cameo leaves out the parts of Ruby that write or change code while the script runs: <code>eval</code>, <code>instance_eval</code>, <code>class_eval</code>, <code>define_method</code>, <code>undef</code>, singleton classes and methods on one object.</p>
+
+<h2 id="refused">What cameo refuses</h2>
+
+<p>The checker refuses each by name. <code>send</code> stays: it calls a method by its name, and refuses <code>send(:initialize)</code>, which only <code>new</code> runs.</p>
+
+<pre class="cameo rejected"><code>class Greeter
+  %w[hello goodbye].each do |word|
+    define_method(word) { |name| &quot;#{word}, #{name}&quot; }
+  end
+end</code></pre>
+<pre class="output error"><code>script.cameo:3: define_method is not supported; use def (see https://15b.it/meta)</code></pre>
+
+<pre class="cameo rejected"><code>p eval(&quot;1 + 2&quot;)</code></pre>
+<pre class="output error"><code>script.cameo:1: eval is not supported; use nothing (see https://15b.it/meta)</code></pre>
+
+<h2 id="why">Why</h2>
+
+<p>A cameo script is checked before it runs, and pauses into a dump that another process resumes. Both need the code to be the code the file says: the checker can only refuse what it can see, and a resumed run finds every method where the script defined it. Code made from strings, or methods added to a class from a block, would be neither checked nor written into the dump.</p>
+<p>A class is a value bound to its name, built in its body and sealed when the body ends, so no later call adds a method to it.</p>
+
+
+<h2 id="instead">What to write instead</h2>
+
+<p>Write each method with <code>def</code>. When a method is chosen from data, <code>send</code> calls it by name, or a Hash maps the names to lambdas.</p>
+
+<pre class="cameo"><code>class Greeter
+  WORDS = %w[hello goodbye]
+
+  def greet(word, name)
+    raise ArgumentError, &quot;no word #{word}&quot; unless WORDS.include?(word)
+    &quot;#{word}, #{name}&quot;
+  end
+end
+
+g = Greeter.new
+puts g.greet(&quot;hello&quot;, &quot;Ada&quot;)
+puts g.send(:greet, &quot;goodbye&quot;, &quot;Ada&quot;)</code></pre>
+<pre class="output"><code>hello, Ada
+goodbye, Ada</code></pre>
+
+<p class="more">The rule: <a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#rejected-before-the-script-runs">cameo and Ruby, rejected before the script runs</a>. <a href="../compatibility.html#not-expected-to-work">Every code</a>, and how many examples of ruby/spec each stops.</p>
+</main>
+
+<footer class="site"><div class="inner">
+  cameo · <a href="https://github.com/cameo-lang/cameo">github.com/cameo-lang/cameo</a> ·
+  every sample on this site was run
+</div></footer>
+</body>
+</html>

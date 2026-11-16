@@ -45,6 +45,17 @@ class RunTest < Minitest::Test
     assert_includes rows.first["message"], "…"
   end
 
+  def test_leaves_the_link_of_a_refusal_out_of_the_message
+    # cameo check ends a refusal with the page of its code; status.tsv
+    # gives the reason instead.
+    rows = status(<<~RUBY)
+      describe "a" do
+        @x = 1
+      end
+    RUBY
+    assert_equal "@x = …: cameo has no instance variables; initialize sets a field with self.x = …", rows.first["message"]
+  end
+
   def test_rewrites_a_receiver_that_ends_in_a_block_argument
     # Prism 0.19 ends twice(0, &three) before its closing parenthesis.
     rows = status(<<~RUBY)

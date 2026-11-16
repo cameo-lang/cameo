@@ -15,6 +15,20 @@ import (
 	"github.com/cameo-lang/cameo/src/cameo"
 )
 
+// sitePages returns every page of the site: those at its top and those
+// under compatibility/, one for each code of a refusal.
+func sitePages(t *testing.T) []string {
+	t.Helper()
+	top, err := filepath.Glob("../doc/gh_pages/*.html")
+	assert.NoError(t, err)
+	codes, err := filepath.Glob("../doc/gh_pages/compatibility/*.html")
+	assert.NoError(t, err)
+	return append(top, codes...)
+}
+
+// sitePageName is a page's path within the site, as compatibility/mut.html.
+func sitePageName(page string) string { return strings.TrimPrefix(page, "../doc/gh_pages/") }
+
 // siteSample is a cameo sample on the site, and the output block that
 // follows it, if any. A sample marked rejected must fail the check with
 // the output block as its error.
@@ -23,8 +37,7 @@ var siteSample = regexp.MustCompile(`(?s)<pre class="cameo( rejected)?"><code>(.
 // TestSiteSamplesPrintTheirOutput runs every cameo sample on the GitHub
 // Pages site in doc/gh_pages and holds it to the output printed under it.
 func TestSiteSamplesPrintTheirOutput(t *testing.T) {
-	pages, err := filepath.Glob("../doc/gh_pages/*.html")
-	assert.NoError(t, err)
+	pages := sitePages(t)
 	samples := 0
 	for _, page := range pages {
 		src, err := os.ReadFile(page)
@@ -34,7 +47,7 @@ func TestSiteSamplesPrintTheirOutput(t *testing.T) {
 			rejected := m[1] != ""
 			script := html.UnescapeString(m[2])
 			want := html.UnescapeString(m[3])
-			name := filepath.Base(page) + "/" + strconv.Itoa(i+1)
+			name := sitePageName(page) + "/" + strconv.Itoa(i+1)
 			t.Run(name, func(t *testing.T) {
 				var stdout, stderr bytes.Buffer
 				err := cameo.Run("script.cameo", script, &stdout, &stderr)
@@ -94,14 +107,14 @@ func TestSiteBlocksNameAHighlightedLanguage(t *testing.T) {
 		_, err := os.Stat("../doc/gh_pages/hljs/" + file)
 		assert.NoError(t, err)
 	}
-	pages, err := filepath.Glob("../doc/gh_pages/*.html")
-	assert.NoError(t, err)
 	blocks := 0
-	for _, page := range pages {
+	for _, page := range sitePages(t) {
 		src, err := os.ReadFile(page)
 		assert.NoError(t, err)
-		name := filepath.Base(page)
-		assert.True(t, strings.Contains(string(src), `<script type="module" src="site.js"></script>`), "%s does not load site.js", name)
+		name := sitePageName(page)
+		// A page under compatibility/ loads it from the directory above.
+		siteJS := strings.Repeat("../", strings.Count(name, "/")) + "site.js"
+		assert.True(t, strings.Contains(string(src), `<script type="module" src="`+siteJS+`"></script>`), "%s does not load %s", name, siteJS)
 		for _, m := range sitePre.FindAllStringSubmatch(string(src), -1) {
 			blocks++
 			class := strings.Fields(m[1])[0]
@@ -120,10 +133,8 @@ var siteFile = regexp.MustCompile(`(?s)<pre data-file="([^"]+)" class="[^"]*"><c
 // file to that file, so a program or a script the site shows is the one
 // the example's own test runs.
 func TestSiteShowsItsExampleFilesAsTheyAre(t *testing.T) {
-	pages, err := filepath.Glob("../doc/gh_pages/*.html")
-	assert.NoError(t, err)
 	shown := 0
-	for _, page := range pages {
+	for _, page := range sitePages(t) {
 		src, err := os.ReadFile(page)
 		assert.NoError(t, err)
 		for _, m := range siteFile.FindAllStringSubmatch(string(src), -1) {

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cameo — vis — visibility</title>
+<meta name="description" content="cameo refuses private, protected, public and module_function: every method a script defines is public.">
+<link rel="stylesheet" href="../style.css">
+<script type="module" src="../site.js"></script>
+</head>
+<body>
+<header class="site"><div class="inner">
+  <a class="name" href="../index.html">cameo</a>
+  <nav>
+    <a href="../index.html">Overview</a>
+    <a href="../examples.html">Examples</a>
+    <a href="../go.html">Embedding in Go</a>
+    <a href="../grpc.html">gRPC</a>
+    <a href="../pause.html">Pause and resume</a>
+    <a href="../async.html">Async</a>
+    <a href="../io.html">I/O</a>
+    <a href="../ruby.html">Ruby vs cameo</a>
+    <a href="../numbers.html">Numbers</a>
+    <a href="../compatibility.html" aria-current="page">Compatibility</a>
+    <a href="../native.html">Native code</a>
+    <a href="https://github.com/cameo-lang/cameo">GitHub</a>
+  </nav>
+</div></header>
+
+<main>
+<p class="crumbs"><a href="../compatibility.html#not-expected-to-work">Compatibility</a> › vis</p>
+
+<h1>vis — visibility</h1>
+<p class="lead">Every method a script defines is public. The checker refuses <code>private</code>, <code>protected</code>, <code>public</code> and <code>module_function</code>, and the method lists by visibility do not exist.</p>
+
+<h2 id="refused">What cameo refuses</h2>
+
+<p>A visibility keyword, with or without method names, is refused by name.</p>
+
+<pre class="cameo rejected"><code>class Account
+  def balance = 10
+
+  private
+
+  def secret = 42
+end</code></pre>
+<pre class="output error"><code>script.cameo:4: private is not supported: every method is public (see https://15b.it/vis)</code></pre>
+
+<h2 id="why">Why</h2>
+
+<p>Visibility guards an object's state from callers that would change it. A cameo object's fields cannot change, so no caller can break one by calling a method, and a method a class keeps for itself does no harm when another calls it. One kind of method also keeps <code>send</code>, <code>respond_to?</code> and <code>methods</code> simple: what a value can do is what it lists.</p>
+<p>Kernel's functions, <code>puts</code> and <code>require</code> among them, are private, as in Ruby, so that they stay out of every value's methods.</p>
+
+
+<h2 id="instead">What to write instead</h2>
+
+<p>Drop the keyword. A method meant for the class alone says so in its name or its comment.</p>
+
+<pre class="cameo"><code>class Account
+  int :cents, default: 1050
+
+  def balance = format(&quot;%.2f&quot;, cents / 100.0)
+end
+
+puts Account.new.balance</code></pre>
+<pre class="output"><code>10.50</code></pre>
+
+<p class="more">The rule: <a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#rejected-before-the-script-runs">cameo and Ruby, rejected before the script runs</a>. <a href="../compatibility.html#not-expected-to-work">Every code</a>, and how many examples of ruby/spec each stops.</p>
+</main>
+
+<footer class="site"><div class="inner">
+  cameo · <a href="https://github.com/cameo-lang/cameo">github.com/cameo-lang/cameo</a> ·
+  every sample on this site was run
+</div></footer>
+</body>
+</html>
