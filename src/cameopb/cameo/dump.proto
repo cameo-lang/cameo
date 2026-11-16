@@ -115,6 +115,12 @@ message Dump {
   // its index, so what held one handle holds one after the resume.
   repeated Handle handles = 22;
 
+  // host_modules names the modules the host gave the run that paused
+  // (cameo.Program.Module). The resumed run has each under its name from
+  // the start, without methods, so that what refers to one restores; the
+  // host gives it its methods again before the run goes on.
+  repeated string host_modules = 23;
+
   // Handle is one such value: its class, and its state as the class's
   // library saved it.
   message Handle {

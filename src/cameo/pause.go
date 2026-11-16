@@ -76,6 +76,10 @@ func (p *Program) Dump() (*Dump, error) {
 // it paused: Run runs the statements after the pause point. The script's
 // classes and methods are in the dump, so nothing before the pause point
 // runs again. A dump resumes on a cameo of the IR version that wrote it.
+//
+// The dump holds nothing of the host: give the program the modules the
+// one that paused had, with Module, before Run. Each is there from Resume
+// on, without methods, so that the values that refer to one restore.
 func Resume(data []byte, stdout, stderr io.Writer) (*Program, error) {
 	d, err := readDump(data)
 	if err != nil {
