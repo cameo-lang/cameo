@@ -107,6 +107,10 @@ h4 { font-size: 13px; margin: 0 0 6px; text-transform: uppercase; letter-spacing
 
 .lead { font-size: 20px; color: var(--muted); margin-top: 0; }
 
+/* The pages under compatibility/: where a page sits, and where its rule is. */
+.crumbs { font-size: 14px; color: var(--muted); margin: 0 0 -8px; }
+.more { margin-top: 40px; padding-top: 12px; border-top: 1px solid var(--rule); color: var(--muted); font-size: 15px; }
+
 /* Code is set in the regular weight everywhere, in a heading, a
    definition term or strong text too. */
 code {
@@ -157,7 +161,7 @@ pre.output::before {
   color: var(--muted);
 }
 
-pre.output.error { background: var(--bad-bg); color: var(--bad-fg); }
+pre.output.error { background: var(--bad-bg); color: var(--bad-fg); white-space: pre-wrap; overflow-wrap: anywhere; }
 pre.output.error::before { content: "rejected"; }
 
 /* A Ruby sample beside the cameo way. */

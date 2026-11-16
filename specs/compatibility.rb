@@ -77,7 +77,6 @@ REASONS = {
   "regexp" => ["re", "regexps", "look-behind and back-references, which cameo's engine does not run", DIFFERENT],
   "scoped-constants" => ["scope", "scoped constants", "`A::B = 1`: a constant is assigned inside its module", REJECTED],
   "ruby2_keywords" => ["r2k", "`ruby2_keywords`", "`ruby2_keywords`", REJECTED],
-  "numeric-subclass" => ["num", "Numeric subclasses", "a subclass of `Numeric`", DIFFERENT],
   "basic-object-subclass" => ["bobj", "BasicObject subclasses", "a subclass of `BasicObject`: `method_missing` in an ordinary class instead", REJECTED],
   "enumerator-next" => ["next", "external enumerators", "an Enumerator has no `next`, `peek` or `rewind`", DIFFERENT],
   "require" => ["req", "libraries", "a `require` of a library cameo does not build in, or `require_relative` and `load`", STDLIB],
@@ -239,8 +238,10 @@ out << <<~MD
   ## Not expected to work
 
   What cameo leaves out on purpose, each with the document that states the
-  rule. *Examples* counts examples that ran and stopped on it; *files*
-  counts spec files that did not run because of it.
+  rule. Each code has a page on cameo's site that explains it, why cameo
+  leaves it out and what to write instead, and `cameo check` links that
+  page from each refusal. *Examples* counts examples that ran and stopped
+  on it; *files* counts spec files that did not run because of it.
 
   | Code | Reason | Means | Examples | Files |
   |---|---|---|--:|--:|
@@ -249,6 +250,7 @@ reasons = (total.reasons.keys | total.file_reasons.keys)
 reasons.sort_by { |r| [-(total.reasons[r] + total.file_reasons[r]), r] }.each do |r|
   c, name, means, link = REASONS[r] || [r, r, "", nil]
   name = "[#{name}](#{link})" if link
+  c = "[#{c}](#{SitePage::SITE}compatibility/#{c}.html)" if REASONS.key?(r)
   out << "| #{c} | #{name} | #{means} | #{total.reasons[r]} | #{total.file_reasons[r]} |\n"
 end
 

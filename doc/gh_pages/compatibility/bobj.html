@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cameo — bobj — BasicObject subclasses</title>
+<meta name="description" content="cameo refuses a subclass of BasicObject: method_missing in an ordinary class does what a BasicObject proxy does in Ruby.">
+<link rel="stylesheet" href="../style.css">
+<script type="module" src="../site.js"></script>
+</head>
+<body>
+<header class="site"><div class="inner">
+  <a class="name" href="../index.html">cameo</a>
+  <nav>
+    <a href="../index.html">Overview</a>
+    <a href="../examples.html">Examples</a>
+    <a href="../go.html">Embedding in Go</a>
+    <a href="../grpc.html">gRPC</a>
+    <a href="../pause.html">Pause and resume</a>
+    <a href="../async.html">Async</a>
+    <a href="../io.html">I/O</a>
+    <a href="../ruby.html">Ruby vs cameo</a>
+    <a href="../numbers.html">Numbers</a>
+    <a href="../compatibility.html" aria-current="page">Compatibility</a>
+    <a href="../native.html">Native code</a>
+    <a href="https://github.com/cameo-lang/cameo">GitHub</a>
+  </nav>
+</div></header>
+
+<main>
+<p class="crumbs"><a href="../compatibility.html#not-expected-to-work">Compatibility</a> › bobj</p>
+
+<h1>bobj — BasicObject subclasses</h1>
+<p class="lead">A class cannot subclass <code>BasicObject</code>.</p>
+
+<h2 id="refused">What cameo refuses</h2>
+
+<p><code>class X &lt; BasicObject</code> is refused before the script runs; inside a module, or with <code>Class.new(BasicObject)</code>, the refusal is a <code>CameoError</code> when the definition runs.</p>
+
+<pre class="cameo rejected"><code>class Proxy &lt; BasicObject
+end</code></pre>
+<pre class="output error"><code>script.cameo:1: class Proxy &lt; BasicObject: a subclass of BasicObject is not supported; use method_missing in an ordinary class (see https://15b.it/bobj)</code></pre>
+
+<h2 id="why">Why</h2>
+
+<p>A subclass of BasicObject is a blank slate without Object's methods, used mostly for proxies that forward every call. cameo does not make objects without Object's methods: every value can be compared, printed, and written into a dump.</p>
+
+
+<h2 id="instead">What to write instead</h2>
+
+<p><code>method_missing</code> in an ordinary class catches the calls a proxy forwards.</p>
+
+<pre class="cameo"><code>class Recorder
+  list :calls, of: :string
+
+  def method_missing(name, *args) = with(calls: calls + [name.to_s])
+  def respond_to_missing?(name, include_private = false) = true
+end
+
+r = Recorder.new.open.close
+p r.calls</code></pre>
+<pre class="output"><code>[&quot;open&quot;, &quot;close&quot;]</code></pre>
+
+<p class="more">The rule: <a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#rejected-before-the-script-runs">cameo and Ruby, rejected before the script runs</a>. <a href="../compatibility.html#not-expected-to-work">Every code</a>, and how many examples of ruby/spec each stops.</p>
+</main>
+
+<footer class="site"><div class="inner">
+  cameo · <a href="https://github.com/cameo-lang/cameo">github.com/cameo-lang/cameo</a> ·
+  every sample on this site was run
+</div></footer>
+</body>
+</html>

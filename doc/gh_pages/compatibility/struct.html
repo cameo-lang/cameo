@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cameo — struct — Struct</title>
+<meta name="description" content="cameo has no Struct: a class that declares typed fields is a struct, with keywords, equality and with.">
+<link rel="stylesheet" href="../style.css">
+<script type="module" src="../site.js"></script>
+</head>
+<body>
+<header class="site"><div class="inner">
+  <a class="name" href="../index.html">cameo</a>
+  <nav>
+    <a href="../index.html">Overview</a>
+    <a href="../examples.html">Examples</a>
+    <a href="../go.html">Embedding in Go</a>
+    <a href="../grpc.html">gRPC</a>
+    <a href="../pause.html">Pause and resume</a>
+    <a href="../async.html">Async</a>
+    <a href="../io.html">I/O</a>
+    <a href="../ruby.html">Ruby vs cameo</a>
+    <a href="../numbers.html">Numbers</a>
+    <a href="../compatibility.html" aria-current="page">Compatibility</a>
+    <a href="../native.html">Native code</a>
+    <a href="https://github.com/cameo-lang/cameo">GitHub</a>
+  </nav>
+</div></header>
+
+<main>
+<p class="crumbs"><a href="../compatibility.html#not-expected-to-work">Compatibility</a> › struct</p>
+
+<h1>struct — Struct</h1>
+<p class="lead">cameo has no <code>Struct</code>. A class with typed fields is one: it takes its fields as keywords, compares by them, and prints them.</p>
+
+<h2 id="refused">What cameo refuses</h2>
+
+<p><code>Struct</code> is absent, so a script fails when it reaches it.</p>
+
+<pre class="cameo rejected"><code>Point = Struct.new(:x, :y)</code></pre>
+<pre class="output error"><code>script.cameo:1: uninitialized constant Struct (NameError)</code></pre>
+
+<h2 id="why">Why</h2>
+
+<p>A Struct's members can be set after it is made, which no cameo value allows, and it is a class made at run time from a list of names (<a href="meta.html">meta</a>). A class body with field declarations says the same, with a type for each field.</p>
+
+
+<h2 id="instead">What to write instead</h2>
+
+<p>Declare a class with typed fields. <code>with</code> returns a copy with fields changed.</p>
+
+<pre class="cameo"><code>class Point
+  int :x, :y
+end
+
+pt = Point.new(x: 1, y: 2)
+p pt
+p pt.with(y: 5)</code></pre>
+<pre class="output"><code>Point(x: 1, y: 2)
+Point(x: 1, y: 5)</code></pre>
+
+<p class="more">The rule: <a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#missing-builtins">cameo and Ruby, missing builtins</a>. <a href="../compatibility.html#not-expected-to-work">Every code</a>, and how many examples of ruby/spec each stops.</p>
+</main>
+
+<footer class="site"><div class="inner">
+  cameo · <a href="https://github.com/cameo-lang/cameo">github.com/cameo-lang/cameo</a> ·
+  every sample on this site was run
+</div></footer>
+</body>
+</html>

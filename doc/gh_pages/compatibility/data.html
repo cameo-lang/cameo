@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cameo — data — Data</title>
+<meta name="description" content="cameo has no Data: a class with typed fields is cameo&#39;s Data, and with is Data&#39;s with.">
+<link rel="stylesheet" href="../style.css">
+<script type="module" src="../site.js"></script>
+</head>
+<body>
+<header class="site"><div class="inner">
+  <a class="name" href="../index.html">cameo</a>
+  <nav>
+    <a href="../index.html">Overview</a>
+    <a href="../examples.html">Examples</a>
+    <a href="../go.html">Embedding in Go</a>
+    <a href="../grpc.html">gRPC</a>
+    <a href="../pause.html">Pause and resume</a>
+    <a href="../async.html">Async</a>
+    <a href="../io.html">I/O</a>
+    <a href="../ruby.html">Ruby vs cameo</a>
+    <a href="../numbers.html">Numbers</a>
+    <a href="../compatibility.html" aria-current="page">Compatibility</a>
+    <a href="../native.html">Native code</a>
+    <a href="https://github.com/cameo-lang/cameo">GitHub</a>
+  </nav>
+</div></header>
+
+<main>
+<p class="crumbs"><a href="../compatibility.html#not-expected-to-work">Compatibility</a> › data</p>
+
+<h1>data — Data</h1>
+<p class="lead">cameo has no <code>Data</code>. A class with typed fields is cameo's Data, and its <code>with</code> is Data's.</p>
+
+<h2 id="refused">What cameo refuses</h2>
+
+<p><code>Data</code> is absent, so a script fails when it reaches it.</p>
+
+<pre class="cameo rejected"><code>Point = Data.define(:x, :y)</code></pre>
+<pre class="output error"><code>script.cameo:1: uninitialized constant Data (NameError)</code></pre>
+
+<h2 id="why">Why</h2>
+
+<p>Ruby's Data is an immutable value with named members, which is what every cameo instance already is. <code>Data.define</code> would be a second way to make one, without types, made at run time.</p>
+
+
+<h2 id="instead">What to write instead</h2>
+
+<p>Declare a class with typed fields. <code>Point.new(1, 2)</code> with positional arguments needs an <code>initialize</code> that sets the fields.</p>
+
+<pre class="cameo"><code>class Point
+  int :x, :y
+end
+
+a = Point.new(x: 1, y: 2)
+p a.with(y: 3)
+p a == Point.new(x: 1, y: 2)</code></pre>
+<pre class="output"><code>Point(x: 1, y: 3)
+true</code></pre>
+
+<p class="more">The rule: <a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#missing-builtins">cameo and Ruby, missing builtins</a>. <a href="../compatibility.html#not-expected-to-work">Every code</a>, and how many examples of ruby/spec each stops.</p>
+</main>
+
+<footer class="site"><div class="inner">
+  cameo · <a href="https://github.com/cameo-lang/cameo">github.com/cameo-lang/cameo</a> ·
+  every sample on this site was run
+</div></footer>
+</body>
+</html>

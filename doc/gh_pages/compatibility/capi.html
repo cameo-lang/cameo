@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cameo — capi — the C API</title>
+<meta name="description" content="cameo loads no native code: Ruby&#39;s C API and C extensions are left out, and a Go host gives a script native functions.">
+<link rel="stylesheet" href="../style.css">
+<script type="module" src="../site.js"></script>
+</head>
+<body>
+<header class="site"><div class="inner">
+  <a class="name" href="../index.html">cameo</a>
+  <nav>
+    <a href="../index.html">Overview</a>
+    <a href="../examples.html">Examples</a>
+    <a href="../go.html">Embedding in Go</a>
+    <a href="../grpc.html">gRPC</a>
+    <a href="../pause.html">Pause and resume</a>
+    <a href="../async.html">Async</a>
+    <a href="../io.html">I/O</a>
+    <a href="../ruby.html">Ruby vs cameo</a>
+    <a href="../numbers.html">Numbers</a>
+    <a href="../compatibility.html" aria-current="page">Compatibility</a>
+    <a href="../native.html">Native code</a>
+    <a href="https://github.com/cameo-lang/cameo">GitHub</a>
+  </nav>
+</div></header>
+
+<main>
+<p class="crumbs"><a href="../compatibility.html#not-expected-to-work">Compatibility</a> › capi</p>
+
+<h1>capi — the C API</h1>
+<p class="lead">cameo loads no native code. Ruby's C API and C extensions are left out, and so are Fiddle and FFI.</p>
+
+<h2 id="refused">What cameo refuses</h2>
+
+<p>A library that needs a C extension raises a <code>LoadError</code>, as any library cameo does not build in does.</p>
+
+<pre class="cameo rejected"><code>require &quot;fiddle&quot;</code></pre>
+<pre class="output error"><code>script.cameo:1: cannot load such file -- fiddle (LoadError)</code></pre>
+
+<h2 id="why">Why</h2>
+
+<p>cameo is an interpreter written in Go, embedded in Go programs, and builds its libraries in. Native code loaded by a script would escape every limit the host sets, and could not be paused or resumed.</p>
+
+
+<h2 id="instead">What to write instead</h2>
+
+<p>The Go program gives a script what native code would: a host module whose methods are Go functions; see <a href="../native.html">Native code</a>.</p>
+
+<pre class="cameo"><code>require &quot;digest&quot;
+p Digest::SHA256.hexdigest(&quot;cameo&quot;)[0, 16]</code></pre>
+<pre class="output"><code>&quot;85126641179f4032&quot;</code></pre>
+
+<p class="more">The rule: <a href="https://github.com/cameo-lang/cameo/blob/main/doc/stdlib.md">the standard library in cameo</a>. <a href="../compatibility.html#not-expected-to-work">Every code</a>, and how many examples of ruby/spec each stops.</p>
+</main>
+
+<footer class="site"><div class="inner">
+  cameo · <a href="https://github.com/cameo-lang/cameo">github.com/cameo-lang/cameo</a> ·
+  every sample on this site was run
+</div></footer>
+</body>
+</html>

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cameo — bin — binary strings</title>
+<meta name="description" content="A cameo binary String has bytes and no characters, and a UTF-8 String with characters beyond ASCII has no bytes alone.">
+<link rel="stylesheet" href="../style.css">
+<script type="module" src="../site.js"></script>
+</head>
+<body>
+<header class="site"><div class="inner">
+  <a class="name" href="../index.html">cameo</a>
+  <nav>
+    <a href="../index.html">Overview</a>
+    <a href="../examples.html">Examples</a>
+    <a href="../go.html">Embedding in Go</a>
+    <a href="../grpc.html">gRPC</a>
+    <a href="../pause.html">Pause and resume</a>
+    <a href="../async.html">Async</a>
+    <a href="../io.html">I/O</a>
+    <a href="../ruby.html">Ruby vs cameo</a>
+    <a href="../numbers.html">Numbers</a>
+    <a href="../compatibility.html" aria-current="page">Compatibility</a>
+    <a href="../native.html">Native code</a>
+    <a href="https://github.com/cameo-lang/cameo">GitHub</a>
+  </nav>
+</div></header>
+
+<main>
+<p class="crumbs"><a href="../compatibility.html#not-expected-to-work">Compatibility</a> › bin</p>
+
+<h1>bin — binary strings</h1>
+<p class="lead">A binary String has bytes and no characters, and a UTF-8 String with characters beyond ASCII has no bytes alone.</p>
+
+<h2 id="refused">What cameo refuses</h2>
+
+<p>A method that reads characters raises <code>Encoding::CompatibilityError</code> for a binary String, and <code>getbyte</code> raises for a UTF-8 String with characters beyond ASCII.</p>
+
+<pre class="cameo rejected"><code>p b&quot;\xFF\x41&quot;.upcase</code></pre>
+<pre class="output error"><code>script.cameo:1: upcase reads characters, and a binary string has bytes alone: say what they are with force_encoding first (Encoding::CompatibilityError)</code></pre>
+
+<pre class="cameo rejected"><code>p &quot;é&quot;.getbyte(0)</code></pre>
+<pre class="output error"><code>script.cameo:1: getbyte reads a byte, and this UTF-8 string has characters beyond ASCII: call b first for its bytes, or read a character with [] (Encoding::CompatibilityError)</code></pre>
+
+<h2 id="why">Why</h2>
+
+<p>Ruby reads a binary String's bytes as ASCII, and a UTF-8 String's bytes one by one, so a method can return part of a character or treat bytes as letters they are not. In cameo a String is text or bytes (<a href="inv.html">inv</a>), and a method that would mix them says so. The call that says which is meant is short.</p>
+
+
+<h2 id="instead">What to write instead</h2>
+
+<p>Read bytes with <code>bytes</code> or <code>getbyte</code> on a binary String; <code>b</code> gives a String's bytes, and <code>force_encoding("UTF-8")</code> says that bytes are text.</p>
+
+<pre class="cameo"><code>p b&quot;\xFF\x41&quot;.bytes
+p &quot;é&quot;.bytes
+p &quot;é&quot;.b.getbyte(0)</code></pre>
+<pre class="output"><code>[255, 65]
+[195, 169]
+195</code></pre>
+
+<p class="more">The rule: <a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#different-in-cameo">cameo and Ruby, different in cameo</a>. <a href="../compatibility.html#not-expected-to-work">Every code</a>, and how many examples of ruby/spec each stops.</p>
+</main>
+
+<footer class="site"><div class="inner">
+  cameo · <a href="https://github.com/cameo-lang/cameo">github.com/cameo-lang/cameo</a> ·
+  every sample on this site was run
+</div></footer>
+</body>
+</html>

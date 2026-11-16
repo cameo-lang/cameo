@@ -194,7 +194,7 @@ p a</code></pre>
 <pre class="cameo rejected"><code>a = [3, 1, 2]
 a.sort!
 p a</code></pre>
-<pre class="output error"><code>script.cameo:2: This is not supported, use a = a.sort instead</code></pre>
+<pre class="output error"><code>script.cameo:2: This is not supported, use a = a.sort instead (see https://15b.it/mut)</code></pre>
 <pre class="cameo"><code>a = [3, 1, 2]
 a = a.sort
 p a</code></pre>
@@ -235,7 +235,7 @@ p add.(1)</code></pre>
 <pre class="cameo rejected"><code>total = 0
 [1, 2, 3].each { |n| total += n }
 p total</code></pre>
-<pre class="output error"><code>script.cameo:2: a block cannot rebind total, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while</code></pre>
+<pre class="output error"><code>script.cameo:2: a block cannot rebind total, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while (see https://15b.it/blk)</code></pre>
 <pre class="cameo"><code>total = [1, 2, 3].reduce(0) { |sum, n| sum + n }
 p total
 
@@ -357,7 +357,7 @@ that are not UTF-8 are a binary String, written
 the script runs:</p>
 
 <pre class="cameo rejected"><code>s = "\xFF"</code></pre>
-<pre class="output error"><code>script.cameo:1: a string literal with bytes that are not UTF-8 is a binary string and is written b"..."</code></pre>
+<pre class="output error"><code>script.cameo:1: a string literal with bytes that are not UTF-8 is a binary string and is written b"..." (see https://15b.it/inv)</code></pre>
 
 <p>A binary String has bytes and no characters. The methods on bytes,
 comparison, <code>+</code>, <code>[]</code> and <code>length</code>
@@ -422,7 +422,12 @@ Encoding::InvalidByteSequenceError
 
 <p>cameo checks a whole script before it runs any of it, and reports every
 construct it leaves out, with its line. <code>cameo check script.cameo</code>
-runs the check alone.</p>
+runs the check alone. Each refusal ends with the page of its code, which
+says what cameo leaves out, why, and what to write instead:
+<a href="compatibility/ivar.html">ivar</a>,
+<a href="compatibility/mut.html">mut</a>,
+<a href="compatibility/blk.html">blk</a> and the
+<a href="compatibility.html#not-expected-to-work">others</a>.</p>
 
 <pre class="cameo rejected"><code>class Account
   attr_reader :balance
@@ -435,10 +440,10 @@ runs the check alone.</p>
 end
 
 $total = 0</code></pre>
-<pre class="output error"><code>script.cameo:2: attr_reader is not supported: a field declaration defines its reader, and there are no setters
-script.cameo:5: @balance = …: cameo has no instance variables; initialize sets a field with self.balance = …
-script.cameo:8: define_method is not supported; use def
-script.cameo:11: global variables are not supported</code></pre>
+<pre class="output error"><code>script.cameo:2: attr_reader is not supported: a field declaration defines its reader, and there are no setters (see https://15b.it/attr)
+script.cameo:5: @balance = …: cameo has no instance variables; initialize sets a field with self.balance = … (see https://15b.it/ivar)
+script.cameo:8: define_method is not supported; use def (see https://15b.it/meta)
+script.cameo:11: global variables are not supported (see https://15b.it/glob)</code></pre>
 
 <table>
 <thead><tr><th>Rejected</th><th>Write instead</th></tr></thead>

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cameo — next — external enumerators</title>
+<meta name="description" content="A cameo Enumerator has no next, peek or rewind, which advance it in place: iterate with a block, or take slices.">
+<link rel="stylesheet" href="../style.css">
+<script type="module" src="../site.js"></script>
+</head>
+<body>
+<header class="site"><div class="inner">
+  <a class="name" href="../index.html">cameo</a>
+  <nav>
+    <a href="../index.html">Overview</a>
+    <a href="../examples.html">Examples</a>
+    <a href="../go.html">Embedding in Go</a>
+    <a href="../grpc.html">gRPC</a>
+    <a href="../pause.html">Pause and resume</a>
+    <a href="../async.html">Async</a>
+    <a href="../io.html">I/O</a>
+    <a href="../ruby.html">Ruby vs cameo</a>
+    <a href="../numbers.html">Numbers</a>
+    <a href="../compatibility.html" aria-current="page">Compatibility</a>
+    <a href="../native.html">Native code</a>
+    <a href="https://github.com/cameo-lang/cameo">GitHub</a>
+  </nav>
+</div></header>
+
+<main>
+<p class="crumbs"><a href="../compatibility.html#not-expected-to-work">Compatibility</a> › next</p>
+
+<h1>next — external enumerators</h1>
+<p class="lead">An Enumerator has no <code>next</code>, <code>peek</code> or <code>rewind</code>.</p>
+
+<h2 id="refused">What cameo refuses</h2>
+
+<p>The methods are absent, so a script fails when it reaches one.</p>
+
+<pre class="cameo rejected"><code>e = [1, 2, 3].each
+p e.next</code></pre>
+<pre class="output error"><code>script.cameo:2: undefined method &#39;next&#39; for an instance of Enumerator (NoMethodError)</code></pre>
+
+<h2 id="why">Why</h2>
+
+<p><code>next</code> advances an enumerator in place: the same value returns a different element each time, which no cameo value does. An Enumerator in cameo is a value like any other, and its methods that take a block, or return arrays, work as in Ruby.</p>
+
+
+<h2 id="instead">What to write instead</h2>
+
+<p>Iterate with a block, or take what <code>next</code> would give with <code>first</code>, <code>take</code>, <code>each_slice</code>, <code>each_cons</code> or <code>zip</code>.</p>
+
+<pre class="cameo"><code>p [1, 2, 3].first
+p [1, 2, 3].each_slice(2).to_a
+p [1, 2, 3].each_cons(2).map { |a, b| b - a }</code></pre>
+<pre class="output"><code>1
+[[1, 2], [3]]
+[1, 1]</code></pre>
+
+<p class="more">The rule: <a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#different-in-cameo">cameo and Ruby, different in cameo</a>. <a href="../compatibility.html#not-expected-to-work">Every code</a>, and how many examples of ruby/spec each stops.</p>
+</main>
+
+<footer class="site"><div class="inner">
+  cameo · <a href="https://github.com/cameo-lang/cameo">github.com/cameo-lang/cameo</a> ·
+  every sample on this site was run
+</div></footer>
+</body>
+</html>

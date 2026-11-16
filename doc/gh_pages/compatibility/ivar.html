@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cameo — ivar — instance variables</title>
+<meta name="description" content="cameo has no instance variables: a class declares typed fields, initialize sets them, and with makes a changed copy.">
+<link rel="stylesheet" href="../style.css">
+<script type="module" src="../site.js"></script>
+</head>
+<body>
+<header class="site"><div class="inner">
+  <a class="name" href="../index.html">cameo</a>
+  <nav>
+    <a href="../index.html">Overview</a>
+    <a href="../examples.html">Examples</a>
+    <a href="../go.html">Embedding in Go</a>
+    <a href="../grpc.html">gRPC</a>
+    <a href="../pause.html">Pause and resume</a>
+    <a href="../async.html">Async</a>
+    <a href="../io.html">I/O</a>
+    <a href="../ruby.html">Ruby vs cameo</a>
+    <a href="../numbers.html">Numbers</a>
+    <a href="../compatibility.html" aria-current="page">Compatibility</a>
+    <a href="../native.html">Native code</a>
+    <a href="https://github.com/cameo-lang/cameo">GitHub</a>
+  </nav>
+</div></header>
+
+<main>
+<p class="crumbs"><a href="../compatibility.html#not-expected-to-work">Compatibility</a> › ivar</p>
+
+<h1>ivar — instance variables</h1>
+<p class="lead">cameo has no instance variables. A class declares its fields, with a type each, and an instance is a value whose fields never change.</p>
+
+<h2 id="refused">What cameo refuses</h2>
+
+<p>The checker refuses <code>@x</code>, read or assigned, anywhere in a script, and names the field that takes its place.</p>
+
+<pre class="cameo rejected"><code>class Counter
+  def initialize
+    @count = 0
+  end
+
+  def increment
+    @count += 1
+  end
+end</code></pre>
+<pre class="output error"><code>script.cameo:3: @count = …: cameo has no instance variables; initialize sets a field with self.count = … (see https://15b.it/ivar)
+script.cameo:7: @count = …: cameo has no instance variables; initialize sets a field with self.count = … (see https://15b.it/ivar)</code></pre>
+
+<h2 id="why">Why</h2>
+
+<p>Every cameo object is a protobuf message: its fields are declared, typed and numbered, so an instance can be written into a dump when the script pauses, sent to an <code>async</code> worker, or handed to a Go host, and read back as the same value. An instance variable that any method may create, with any value, has no place in such a message.</p>
+<p>The fields never change after <code>initialize</code>, so a value read from an object stays what it was. A changed object is a copy, which <code>with</code> makes.</p>
+
+
+<h2 id="instead">What to write instead</h2>
+
+<p>Declare each field with its type. <code>initialize</code> sets a field with <code>self.x = v</code>, a method reads it as <code>x</code>, and <code>with</code> returns a copy with fields changed. A class without <code>initialize</code> takes its fields as keywords.</p>
+
+<pre class="cameo"><code>class Counter
+  int :count, default: 0
+
+  def increment = with(count: count + 1)
+end
+
+c = Counter.new.increment.increment
+p c.count</code></pre>
+<pre class="output"><code>2</code></pre>
+
+<p class="more">The rule: <a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#rejected-before-the-script-runs">cameo and Ruby, rejected before the script runs</a>. <a href="../compatibility.html#not-expected-to-work">Every code</a>, and how many examples of ruby/spec each stops.</p>
+</main>
+
+<footer class="site"><div class="inner">
+  cameo · <a href="https://github.com/cameo-lang/cameo">github.com/cameo-lang/cameo</a> ·
+  every sample on this site was run
+</div></footer>
+</body>
+</html>

@@ -89,6 +89,14 @@ class CompatibilityTest < Minitest::Test
     assert_includes html, %(<h3 id="core">core</h3>)
   end
 
+  # A code links its page on the site: from COMPATIBILITY.md by its
+  # address, from the site's own page relative to it.
+  def test_links_each_code_to_its_page
+    md, html = written
+    assert_includes md, "| [mut](https://cameo-lang.github.io/cameo/compatibility/mut.html) | [mutation]("
+    assert_includes html, %(<tr><td><a href="compatibility/mut.html">mut</a></td>)
+  end
+
   # A file of the repository is a link to it on GitHub; an anchor stays.
   def test_the_sites_page_links_files_on_github
     html = page

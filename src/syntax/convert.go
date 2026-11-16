@@ -122,7 +122,14 @@ func isLambdaLiteral(n ast.Node) bool {
 }
 
 func (c *converter) fail(format string, args ...any) {
-	c.errs = append(c.errs, &Error{File: c.file, Line: c.line, Msg: fmt.Sprintf(format, args...)})
+	c.refuse("", format, args...)
+}
+
+// refuse records a construct of Ruby that cameo leaves out on purpose,
+// with the code of the reason, one of Codes, whose page the message
+// links.
+func (c *converter) refuse(code, format string, args ...any) {
+	c.errs = append(c.errs, &Error{File: c.file, Line: c.line, Msg: fmt.Sprintf(format, args...), Code: code})
 }
 
 func (c *converter) pos() Pos { return Pos{L: c.line} }
@@ -225,14 +232,14 @@ func (c *converter) expr(n ast.Node) Node {
 	case *ast.FloatLit:
 		return &Float{c.pos(), n.Value}
 	case *ast.RationalLit:
-		c.fail("rational literals are not supported")
+		c.refuse("rat", "rational literals are not supported")
 		return nil
 	case *ast.ImaginaryLit:
-		c.fail("imaginary literals are not supported")
+		c.refuse("rat", "imaginary literals are not supported")
 		return nil
 	case *ast.StringLit:
 		if !utf8.ValidString(n.Value) {
-			c.fail(`a string literal with bytes that are not UTF-8 is a binary string and is written b"..."`)
+			c.refuse("inv", `a string literal with bytes that are not UTF-8 is a binary string and is written b"..."`)
 			return nil
 		}
 		return &Str{c.pos(), n.Value}
@@ -243,7 +250,7 @@ func (c *converter) expr(n ast.Node) Node {
 	case *ast.RegexpLit:
 		return c.regexp(n)
 	case *ast.XStr:
-		c.fail("backtick commands are not supported: cameo has no shell")
+		c.refuse("proc", "backtick commands are not supported: cameo has no shell")
 		return nil
 	case *ast.ArrayLit:
 		return &List{c.pos(), c.exprs(n.Elems)}
@@ -271,7 +278,7 @@ func (c *converter) expr(n ast.Node) Node {
 		return c.opAssign(n)
 	case *ast.MultiAssign:
 		if n.Targets != nil {
-			c.fail("multiple assignment binds local variables only")
+			c.refuse("mut", "multiple assignment binds local variables only")
 			return nil
 		}
 		values := c.exprs(n.Values)
@@ -323,7 +330,7 @@ func (c *converter) expr(n ast.Node) Node {
 		}
 		return &ConstAssign{c.pos(), n.Name, c.expr(n.Value)}
 	case *ast.ScopedConstAssign:
-		c.fail("assignment to a scoped constant is not supported: define it inside its module")
+		c.refuse("scope", "assignment to a scoped constant is not supported: define it inside its module")
 		return nil
 	case *ast.GVarRef:
 		// $stdout and $stderr are the streams, STDOUT and STDERR; no
@@ -334,32 +341,32 @@ func (c *converter) expr(n ast.Node) Node {
 		case "$stderr":
 			return &Const{c.pos(), "STDERR"}
 		}
-		c.fail("global variables are not supported")
+		c.refuse("glob", "global variables are not supported")
 		return nil
 	case *ast.GVarAssign:
 		if n.Name == "$stdout" || n.Name == "$stderr" {
-			c.fail("%s cannot be reassigned: it is the script's own stream", n.Name)
+			c.refuse("glob", "%s cannot be reassigned: it is the script's own stream", n.Name)
 			return nil
 		}
-		c.fail("global variables are not supported")
+		c.refuse("glob", "global variables are not supported")
 		return nil
 	case *ast.CVarRef, *ast.CVarAssign:
-		c.fail("class variables are not supported")
+		c.refuse("cvar", "class variables are not supported")
 		return nil
 	case *ast.IvarRef:
 		name := strings.TrimPrefix(n.Name, "@")
-		c.fail("@%s: cameo has no instance variables; a field is read with its reader, %s or self.%s", name, name, name)
+		c.refuse("ivar", "@%s: cameo has no instance variables; a field is read with its reader, %s or self.%s", name, name, name)
 		return nil
 	case *ast.IvarAssign:
 		name := strings.TrimPrefix(n.Name, "@")
-		c.fail("@%s = …: cameo has no instance variables; initialize sets a field with self.%s = …", name, name)
+		c.refuse("ivar", "@%s = …: cameo has no instance variables; initialize sets a field with self.%s = …", name, name)
 		return nil
 	case *ast.ClassDef:
 		return c.classDef(n)
 	case *ast.ModuleDef:
 		return c.moduleDef(n)
 	case *ast.SingletonClassDef:
-		c.fail("class << self is not supported: define class methods with def self.name")
+		c.refuse("meta", "class << self is not supported: define class methods with def self.name")
 		return nil
 	case *ast.Super:
 		if _, inDef := c.enclosingDef(); !inDef {
@@ -399,7 +406,7 @@ func (c *converter) expr(n ast.Node) Node {
 		}
 		return &Alias{c.pos(), n.NewName, n.OldName}
 	case *ast.Undef:
-		c.fail("undef is not supported: a method is defined once")
+		c.refuse("meta", "undef is not supported: a method is defined once")
 		return nil
 	default:
 		c.fail("unsupported syntax: %T", n)
@@ -500,7 +507,7 @@ func (c *converter) scopedConst(n *ast.ScopedConst) Node {
 // class; anywhere else there is nothing to set.
 func (c *converter) fieldAssign(name string, value Node) Node {
 	if !c.inInitialize() && !c.buildingClass() {
-		c.fail("self.%s = …: a field is set in initialize, and a class attribute in a class body or a class method; elsewhere use with", name)
+		c.refuse("mut", "self.%s = …: a field is set in initialize, and a class attribute in a class body or a class method; elsewhere use with", name)
 		return nil
 	}
 	markRebinds(value, &Call{Recv: &Self{}, Name: name})
@@ -605,7 +612,7 @@ func (f frame) isBlock() bool { return f.kind == ctxBlock || f.closure }
 // end. Any other assignment binds the name in the innermost frame.
 func (c *converter) assignLocal(name string) {
 	if c.captured(name) {
-		c.fail("a block cannot rebind %s, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while", name)
+		c.refuse("blk", "a block cannot rebind %s, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while", name)
 		return
 	}
 	c.declare(name)
@@ -804,6 +811,23 @@ var unsupported = map[string]string{
 	"exit!":                 "exit",
 }
 
+// refusedCodes are the codes of the methods in unsupported: why cameo
+// leaves each out, the page its refusal links.
+var refusedCodes = map[string]string{
+	"fill":                  "mut",
+	"[]=":                   "mut",
+	"define_method":         "meta",
+	"instance_variable_set": "ivar",
+	"instance_variable_get": "ivar",
+	"instance_eval":         "meta",
+	"class_eval":            "meta",
+	"eval":                  "meta",
+	"require_relative":      "req",
+	"load":                  "req",
+	"fork":                  "proc",
+	"exit!":                 "proc",
+}
+
 // libraryFunctions are module functions of a library cameo builds in whose
 // names read as a mutating or unsupported call: JSON.parse! changes nothing,
 // and JSON.load and Marshal.load read a string, not a file.
@@ -856,7 +880,7 @@ func (c *converter) call(n *ast.Call) Node {
 			case p.lambda && c.stack[p.depth].kind == ctxBlock && !c.stack[p.depth].shared:
 				p.forward = true
 			default:
-				c.fail("%s is read in a block made before %s is bound: a block captures the values its variables have when it is made, and only the lambda or proc assigned to %s may read it", name, name, name)
+				c.refuse("blk", "%s is read in a block made before %s is bound: a block captures the values its variables have when it is made, and only the lambda or proc assigned to %s may read it", name, name, name)
 				return nil
 			}
 			return &Var{c.pos(), name}
@@ -904,10 +928,10 @@ func (c *converter) call(n *ast.Call) Node {
 		case "await":
 			return c.await(n, false)
 		case "attr_reader", "attr_writer", "attr_accessor", "attr":
-			c.fail("%s is not supported: a field declaration defines its reader, and there are no setters", name)
+			c.refuse("attr", "%s is not supported: a field declaration defines its reader, and there are no setters", name)
 			return nil
 		case "private", "protected", "public", "module_function":
-			c.fail("%s is not supported: every method is public", name)
+			c.refuse("vis", "%s is not supported: every method is public", name)
 			return nil
 		case "reserved":
 			if c.inClassBody() {
@@ -936,11 +960,11 @@ func (c *converter) call(n *ast.Call) Node {
 	}
 	lib := isLibraryFunction(n) || nonMutatingBangs[name]
 	if IsBang(name) && !lib && !c.bangs[name] {
-		c.fail("%s", BangMessage(receiverName(n.Recv), name))
+		c.refuse("mut", "%s", BangMessage(receiverName(n.Recv), name))
 		return nil
 	}
 	if msg, refused := Refused(name); refused && name != "[]=" && !lib && !c.bangs[name] {
-		c.fail("%s", msg)
+		c.refuse(refusedCodes[name], "%s", msg)
 		return nil
 	}
 	if isSetter(name) {
@@ -948,7 +972,7 @@ func (c *converter) call(n *ast.Call) Node {
 	}
 	if name == "tap" && n.Block != nil && len(n.Block.Body) > 0 {
 		if _, isHash := n.Block.Body[len(n.Block.Body)-1].(*ast.HashLit); isHash {
-			c.fail("tap returns its receiver unchanged; for a copy with changes use with")
+			c.refuse("mut", "tap returns its receiver unchanged; for a copy with changes use with")
 			return nil
 		}
 	}
@@ -1200,11 +1224,11 @@ func (c *converter) forLoop(n *ast.For) Node {
 
 func (c *converter) def(d *ast.MethodDef) Node {
 	if d.Recv != nil {
-		c.fail("def %s on an object: methods belong to classes", d.Name)
+		c.refuse("meta", "def %s on an object: methods belong to classes", d.Name)
 		return nil
 	}
 	if isSetter(d.Name) {
-		c.fail("def %s: setters are not supported; a field changes through with", d.Name)
+		c.refuse("mut", "def %s: setters are not supported; a field changes through with", d.Name)
 		return nil
 	}
 	if _, inDef := c.enclosingDef(); inDef {
@@ -1253,7 +1277,7 @@ func (c *converter) classDef(d *ast.ClassDef) Node {
 	// rebinds; inside a module the evaluator decides, once it knows.
 	if super, ok := out.Super.(*Const); ok && !c.insideClass() {
 		if msg, refused := SubclassRefused(super.Name); refused {
-			c.fail("class %s < %s: %s", d.Name, super.Name, msg)
+			c.refuse("bobj", "class %s < %s: %s", d.Name, super.Name, msg)
 			return nil
 		}
 	}
@@ -1403,7 +1427,7 @@ func (c *converter) assignment(n *ast.Call) Node {
 	var key, value Node
 	if n.Name == "[]=" {
 		if len(n.Args) != 2 {
-			c.fail("index assignment takes one index and one value")
+			c.refuse("mut", "index assignment takes one index and one value")
 			return nil
 		}
 		key, value = c.expr(n.Args[0]), c.expr(n.Args[1])
@@ -1416,7 +1440,7 @@ func (c *converter) assignment(n *ast.Call) Node {
 		value = c.expr(n.Args[0])
 	}
 	if n.Recv == nil {
-		c.fail("%s: cameo has no setters", n.Name)
+		c.refuse("mut", "%s: cameo has no setters", n.Name)
 		return nil
 	}
 	return c.update(n.Recv, key, n.Name != "[]=", value, n)
@@ -1431,19 +1455,19 @@ func (c *converter) update(recv ast.Node, key Node, attr bool, value Node, origi
 	switch r := recv.(type) {
 	case *ast.VarRef:
 		if slices.Contains(c.lent, r.Name) {
-			c.fail("Hash.new's block cannot store into its hash %s: cameo values are immutable; return the default instead", r.Name)
+			c.refuse("mut", "Hash.new's block cannot store into its hash %s: cameo values are immutable; return the default instead", r.Name)
 			return nil
 		}
 		c.assignLocal(r.Name)
 		return &Assign{Pos: c.pos(), Name: r.Name, Value: with(&Var{c.pos(), r.Name})}
 	case *ast.IvarRef:
 		name := strings.TrimPrefix(r.Name, "@")
-		c.fail("@%s: cameo has no instance variables; initialize sets a field with self.%s = …", name, name)
+		c.refuse("ivar", "@%s: cameo has no instance variables; initialize sets a field with self.%s = …", name, name)
 		return nil
 	case *ast.SelfLit:
 		// self.name = value, or the end of a chain such as self.a.b = value.
 		if !attr {
-			c.fail("self[…] = …: cameo has no setters; initialize sets a field by name, self.name = …")
+			c.refuse("mut", "self[…] = …: cameo has no setters; initialize sets a field by name, self.name = …")
 			return nil
 		}
 		return c.fieldAssign(key.(*Sym).Name, value)
@@ -1457,7 +1481,7 @@ func (c *converter) update(recv ast.Node, key Node, attr bool, value Node, origi
 			}
 		}
 	}
-	c.fail("%s: the left side of an assignment must start with a local variable, so the copy has somewhere to go", describeSetter(origin))
+	c.refuse("mut", "%s: the left side of an assignment must start with a local variable, so the copy has somewhere to go", describeSetter(origin))
 	return nil
 }
 
@@ -1841,7 +1865,7 @@ func (c *converter) regexp(n *ast.RegexpLit) Node {
 	if s, ok := parts[0].(*Str); ok && len(parts) == 1 {
 		var unsupported *rx.Unsupported
 		if _, _, err := rx.Translate(s.Value, options); errors.As(err, &unsupported) {
-			c.fail("%s", unsupported.Error())
+			c.refuse("re", "%s", unsupported.Error())
 			return nil
 		}
 	}

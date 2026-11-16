@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cameo — attr — attr_accessor</title>
+<meta name="description" content="cameo refuses attr_reader, attr_writer and attr_accessor: a field declaration defines its reader, and there are no setters.">
+<link rel="stylesheet" href="../style.css">
+<script type="module" src="../site.js"></script>
+</head>
+<body>
+<header class="site"><div class="inner">
+  <a class="name" href="../index.html">cameo</a>
+  <nav>
+    <a href="../index.html">Overview</a>
+    <a href="../examples.html">Examples</a>
+    <a href="../go.html">Embedding in Go</a>
+    <a href="../grpc.html">gRPC</a>
+    <a href="../pause.html">Pause and resume</a>
+    <a href="../async.html">Async</a>
+    <a href="../io.html">I/O</a>
+    <a href="../ruby.html">Ruby vs cameo</a>
+    <a href="../numbers.html">Numbers</a>
+    <a href="../compatibility.html" aria-current="page">Compatibility</a>
+    <a href="../native.html">Native code</a>
+    <a href="https://github.com/cameo-lang/cameo">GitHub</a>
+  </nav>
+</div></header>
+
+<main>
+<p class="crumbs"><a href="../compatibility.html#not-expected-to-work">Compatibility</a> › attr</p>
+
+<h1>attr — attr_accessor</h1>
+<p class="lead">The checker refuses <code>attr_reader</code>, <code>attr_writer</code>, <code>attr_accessor</code> and <code>attr</code>. A field declaration defines the reader, and there are no setters.</p>
+
+<h2 id="refused">What cameo refuses</h2>
+
+<p>Each is refused by name, with the field declaration to use.</p>
+
+<pre class="cameo rejected"><code>class Person
+  attr_accessor :name
+end</code></pre>
+<pre class="output error"><code>script.cameo:2: attr_accessor is not supported: a field declaration defines its reader, and there are no setters (see https://15b.it/attr)</code></pre>
+
+<h2 id="why">Why</h2>
+
+<p><code>attr_reader</code> reads an instance variable, which cameo does not have (<a href="ivar.html">ivar</a>), and a writer changes an object, which no cameo value allows (<a href="mut.html">mut</a>). A field declaration says what the reader would and more: the field's type, which every value is held to, and its place in the object's protobuf message.</p>
+
+
+<h2 id="instead">What to write instead</h2>
+
+<p>Declare the field with its type: <code>string :name</code> defines <code>name</code>. <code>with(name: …)</code> returns a copy with the field changed.</p>
+
+<pre class="cameo"><code>class Person
+  string :name
+end
+
+ada = Person.new(name: &quot;Ada&quot;)
+grace = ada.with(name: &quot;Grace&quot;)
+puts ada.name, grace.name</code></pre>
+<pre class="output"><code>Ada
+Grace</code></pre>
+
+<p class="more">The rule: <a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#rejected-before-the-script-runs">cameo and Ruby, rejected before the script runs</a>. <a href="../compatibility.html#not-expected-to-work">Every code</a>, and how many examples of ruby/spec each stops.</p>
+</main>
+
+<footer class="site"><div class="inner">
+  cameo · <a href="https://github.com/cameo-lang/cameo">github.com/cameo-lang/cameo</a> ·
+  every sample on this site was run
+</div></footer>
+</body>
+</html>

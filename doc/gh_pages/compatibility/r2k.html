@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cameo — r2k — ruby2_keywords</title>
+<meta name="description" content="cameo has no ruby2_keywords: a method that passes keywords on takes **kwargs.">
+<link rel="stylesheet" href="../style.css">
+<script type="module" src="../site.js"></script>
+</head>
+<body>
+<header class="site"><div class="inner">
+  <a class="name" href="../index.html">cameo</a>
+  <nav>
+    <a href="../index.html">Overview</a>
+    <a href="../examples.html">Examples</a>
+    <a href="../go.html">Embedding in Go</a>
+    <a href="../grpc.html">gRPC</a>
+    <a href="../pause.html">Pause and resume</a>
+    <a href="../async.html">Async</a>
+    <a href="../io.html">I/O</a>
+    <a href="../ruby.html">Ruby vs cameo</a>
+    <a href="../numbers.html">Numbers</a>
+    <a href="../compatibility.html" aria-current="page">Compatibility</a>
+    <a href="../native.html">Native code</a>
+    <a href="https://github.com/cameo-lang/cameo">GitHub</a>
+  </nav>
+</div></header>
+
+<main>
+<p class="crumbs"><a href="../compatibility.html#not-expected-to-work">Compatibility</a> › r2k</p>
+
+<h1>r2k — ruby2_keywords</h1>
+<p class="lead">cameo has no <code>ruby2_keywords</code>. A method that passes its arguments on takes keywords with <code>**</code>.</p>
+
+<h2 id="refused">What cameo refuses</h2>
+
+<p><code>ruby2_keywords</code> is an undefined method.</p>
+
+<pre class="cameo rejected"><code>class Wrapper
+  ruby2_keywords def call(*args)
+    args
+  end
+end</code></pre>
+<pre class="output error"><code>script.cameo:2: undefined method &#39;ruby2_keywords&#39; for class Wrapper (NoMethodError)</code></pre>
+
+<h2 id="why">Why</h2>
+
+<p><code>ruby2_keywords</code> lets Ruby 2 code that passed keywords as a trailing Hash keep working in Ruby 3. cameo accepts current Ruby alone, where keywords are passed with <code>**</code> or <code>key: value</code>, never as a trailing Hash, so there is nothing to bridge.</p>
+
+
+<h2 id="instead">What to write instead</h2>
+
+<p>Take <code>*args, **opts, &amp;block</code> and pass them on, or forward with <code>...</code>.</p>
+
+<pre class="cameo"><code>def inner(a, b: 2) = [a, b]
+def wrap(*args, **opts) = inner(*args, **opts)
+p wrap(1, b: 3)</code></pre>
+<pre class="output"><code>[1, 3]</code></pre>
+
+<p class="more">The rule: <a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#rejected-before-the-script-runs">cameo and Ruby, rejected before the script runs</a>. <a href="../compatibility.html#not-expected-to-work">Every code</a>, and how many examples of ruby/spec each stops.</p>
+</main>
+
+<footer class="site"><div class="inner">
+  cameo · <a href="https://github.com/cameo-lang/cameo">github.com/cameo-lang/cameo</a> ·
+  every sample on this site was run
+</div></footer>
+</body>
+</html>

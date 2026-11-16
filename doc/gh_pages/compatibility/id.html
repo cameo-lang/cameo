@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cameo — id — identity and freezing</title>
+<meta name="description" content="cameo values are compared by what they hold: equal?, object_id and __id__ do not exist, and frozen? is true for everything.">
+<link rel="stylesheet" href="../style.css">
+<script type="module" src="../site.js"></script>
+</head>
+<body>
+<header class="site"><div class="inner">
+  <a class="name" href="../index.html">cameo</a>
+  <nav>
+    <a href="../index.html">Overview</a>
+    <a href="../examples.html">Examples</a>
+    <a href="../go.html">Embedding in Go</a>
+    <a href="../grpc.html">gRPC</a>
+    <a href="../pause.html">Pause and resume</a>
+    <a href="../async.html">Async</a>
+    <a href="../io.html">I/O</a>
+    <a href="../ruby.html">Ruby vs cameo</a>
+    <a href="../numbers.html">Numbers</a>
+    <a href="../compatibility.html" aria-current="page">Compatibility</a>
+    <a href="../native.html">Native code</a>
+    <a href="https://github.com/cameo-lang/cameo">GitHub</a>
+  </nav>
+</div></header>
+
+<main>
+<p class="crumbs"><a href="../compatibility.html#not-expected-to-work">Compatibility</a> › id</p>
+
+<h1>id — identity and freezing</h1>
+<p class="lead">A value has no identity apart from what it holds. <code>equal?</code>, <code>object_id</code> and <code>__id__</code> do not exist, <code>frozen?</code> is true for everything, and <code>FrozenError</code> never happens.</p>
+
+<h2 id="refused">What cameo refuses</h2>
+
+<p>The methods are absent, so a script fails when it reaches one.</p>
+
+<pre class="cameo rejected"><code>a = &quot;x&quot;
+p a.equal?(a)</code></pre>
+<pre class="output error"><code>script.cameo:2: undefined method &#39;equal?&#39; for an instance of String (NoMethodError)</code></pre>
+
+<h2 id="why">Why</h2>
+
+<p>Identity matters when a value can change: two variables that hold the same object see each other's changes, and two equal objects do not. A cameo value never changes, so two equal values behave alike in every way, and the interpreter is free to copy one, as it does for a worker, or to share one, as a dump does. Asking which object a value is would answer differently from run to run.</p>
+
+
+<h2 id="instead">What to write instead</h2>
+
+<p>Compare with <code>==</code>: arrays, hashes and instances are equal when their contents are, and hash alike.</p>
+
+<pre class="cameo"><code>a = [1, 2]
+b = [1, 2]
+p a == b
+p a.eql?(b)
+p a.hash == b.hash</code></pre>
+<pre class="output"><code>true
+true
+true</code></pre>
+
+<p class="more">The rule: <a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#different-in-cameo">cameo and Ruby, different in cameo</a>. <a href="../compatibility.html#not-expected-to-work">Every code</a>, and how many examples of ruby/spec each stops.</p>
+</main>
+
+<footer class="site"><div class="inner">
+  cameo · <a href="https://github.com/cameo-lang/cameo">github.com/cameo-lang/cameo</a> ·
+  every sample on this site was run
+</div></footer>
+</body>
+</html>

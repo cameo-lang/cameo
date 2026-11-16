@@ -49,6 +49,7 @@ is not finished until the documents say so, in the same pull request:
 | What changed | Update |
 |---|---|
 | what a script may write: a construct, a builtin, a library, an error message a script sees | [agents.md](../agents.md), the guide for models that write cameo; `doc/cameo-vs-ruby.md`; the site's `ruby.html` and `examples.html` |
+| a refusal of the checker, or what cameo leaves out on purpose | the page of its code under `doc/gh_pages/compatibility/`, whose samples a test runs; a new refusal takes a code with `c.refuse` in `src/syntax/convert.go`, one of `syntax.Codes`, and a new code a page and an entry in `specs/compatibility.rb`'s `REASONS` |
 | the `cameo` Go package, a command or a flag | the site's `go.html`, `native.html`, `pause.html` or `io.html`, and the README's commands |
 | what is measured: speed, the benchmark cases that work, ruby/spec, the libraries | the numbers in the README, the site's `numbers.html`, `doc/cameo-vs-ruby.md` and `doc/coverage.md`, from a run you made; for ruby/spec, `make spec-status` rewrites `specs/status.tsv`, `COMPATIBILITY.md` and the site's `compatibility.html`, as [weekly.md](weekly.md) runs it once a week |
 | an example under `examples/` that the site shows | nothing by hand: a test holds the site's block to the file, so rerun it and fix what it names |

@@ -41,7 +41,6 @@ module Classify
     [/\Aattr(_reader|_writer|_accessor)? /, "expected", "attr-accessor"],
     [/\b(eval|instance_eval|class_eval|module_eval|instance_exec|class_exec|define_method|define_singleton_method|remove_method|undef_method|alias_method|instance_method|method_added|singleton_class|const_set|remove_const)\b.*(not supported|undefined method)|class << self|on an object: methods belong to classes|allocate is not supported|undef is not supported|\bundefined method '(instance_method|method|singleton_methods|define_method|public_method)'/, "expected", "metaprogramming"],
     [/undefined method '(equal\?|object_id|__id__|frozen\?)'|FrozenError|can't modify frozen/, "expected", "identity-and-freezing"],
-    [/a subclass of Numeric is not supported/, "expected", "numeric-subclass"],
     [/a subclass of BasicObject is not supported/, "expected", "basic-object-subclass"],
     [/cannot load such file|\A(load|require_relative) is not supported/, "expected", "require"],
     [/backtick commands|undefined method '(system|spawn|fork|exec|trap|at_exit|exit!|sleep|`)'/, "expected", "process"],

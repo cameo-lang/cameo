@@ -152,10 +152,8 @@ var siteSession = regexp.MustCompile(`(?s)<pre class="sh"><code>((?:cameo|go run
 // say, and an example prints what its page shows.
 func TestSiteSessionsPrintWhatThePagesShow(t *testing.T) {
 	bin := buildCameo(t)
-	pages, err := filepath.Glob("../doc/gh_pages/*.html")
-	assert.NoError(t, err)
 	ran := 0
-	for _, page := range pages {
+	for _, page := range sitePages(t) {
 		src, err := os.ReadFile(page)
 		assert.NoError(t, err)
 		commands := siteSession.FindAllStringSubmatch(string(src), -1)
