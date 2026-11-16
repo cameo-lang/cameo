@@ -125,28 +125,10 @@ func installKernel() {
 		return object.False, nil
 	})
 	object.DefineFunction("Integer", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		switch args[0].Kind() {
-		case object.KindInt, object.KindBig:
-			return args[0], nil
-		case object.KindFloat:
-			return floatToInteger(ctx, args[0].Float())
-		case object.KindString, object.KindBytes, object.KindASCII:
-			v := args[0].Str()
-			i, ok := parseInteger(strings.TrimSpace(v))
-			if !ok {
-				return object.Value{}, ctx.Raise(object.ArgumentError, "invalid value for Integer(): %s", object.QuoteString(v))
-			}
-			return i, nil
-		}
-		// A value of a library's numeric class converts through to_int, as
-		// a BigDecimal does.
-		if args[0].Kind() == object.KindInstance && ctx.RespondsTo(args[0], "to_int") {
-			return ctx.Call(args[0], "to_int")
-		}
-		return object.Value{}, ctx.Raise(object.TypeError, "can't convert %s into Integer", KindName(args[0]))
+		return convert(ctx, kw, args[0], toInteger)
 	})
 	object.DefineFunction("Float", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
-		return toFloat(ctx, args[0])
+		return convert(ctx, kw, args[0], toFloat)
 	})
 	object.DefineFunction("String", 1, func(ctx object.Context, self object.Value, args []object.Value, kw *object.Map, block object.Value) (object.Value, error) {
 		// A String is itself, in the encoding it has.
@@ -274,6 +256,58 @@ func plainException(cls *object.Class) bool {
 
 // systemExit makes the SystemExit for exit and abort.
 func systemExit(status int64, msg string) error { return object.NewSystemExit(status, msg) }
+
+// convert is Kernel#Integer and Kernel#Float: v converted by to, and nil
+// for a value that does not convert when the keyword exception: is false.
+// A StandardError raised on the way, by to_int or to_f included, counts as
+// a value that does not convert, as in Ruby.
+func convert(ctx object.Context, kw *object.Map, v object.Value, to func(object.Context, object.Value) (object.Value, error)) (object.Value, error) {
+	flag, err := keywordArg(ctx, kw, "exception")
+	if err != nil {
+		return object.Value{}, err
+	}
+	raise := true
+	if !flag.IsZero() {
+		b, ok := flag.AsBool()
+		if !ok {
+			text, err := ctx.Inspect(flag)
+			if err != nil {
+				return object.Value{}, err
+			}
+			return object.Value{}, ctx.Raise(object.ArgumentError, "expected true or false as exception: %s", text)
+		}
+		raise = b
+	}
+	out, err := to(ctx, v)
+	if exc, ok := err.(*object.Exception); ok && !raise && exc.Cls.IsA(object.StandardError) {
+		return object.Nil, nil
+	}
+	return out, err
+}
+
+// toInteger is Kernel#Integer of one value: an integer as it is, a float
+// truncated, or a string parsed as one.
+func toInteger(ctx object.Context, v object.Value) (object.Value, error) {
+	switch v.Kind() {
+	case object.KindInt, object.KindBig:
+		return v, nil
+	case object.KindFloat:
+		return floatToInteger(ctx, v.Float())
+	case object.KindString, object.KindBytes, object.KindASCII:
+		s := v.Str()
+		i, ok := parseInteger(strings.TrimSpace(s))
+		if !ok {
+			return object.Value{}, ctx.Raise(object.ArgumentError, "invalid value for Integer(): %s", object.QuoteString(s))
+		}
+		return i, nil
+	}
+	// A value of a library's numeric class converts through to_int, as
+	// a BigDecimal does.
+	if v.Kind() == object.KindInstance && ctx.RespondsTo(v, "to_int") {
+		return ctx.Call(v, "to_int")
+	}
+	return object.Value{}, ctx.Raise(object.TypeError, "can't convert %s into Integer", KindName(v))
+}
 
 // toFloat is Kernel#Float of one value: a number as a float, or a string
 // parsed as one.
