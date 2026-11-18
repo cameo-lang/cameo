@@ -72,6 +72,35 @@ func (p *Program) Dump() (*Dump, error) {
 	return out, nil
 }
 
+// ErrOtherCode is what Resume returns, wrapped, for a dump that holds or
+// refers to code OnlyCode does not allow, and what Decode of a program
+// resumed so returns for a message that holds such code.
+var ErrOtherCode = eval.ErrOtherCode
+
+// ResumeOption is an option of Resume.
+type ResumeOption func(*resumeOptions)
+
+type resumeOptions struct {
+	// only is the script OnlyCode named; nil without it.
+	only *onlyScript
+}
+
+// onlyScript is the script OnlyCode names, by its file name and source.
+type onlyScript struct{ file, code string }
+
+// OnlyCode makes Resume refuse a dump that runs code other than the script
+// file with the source code, and the libraries written in cameo that the
+// script may require: a dump of another script, a unit of other code in
+// the dump, and a closure of other code among its values, inside an
+// object's fields as well. The program then refuses a closure of other
+// code in a message it decodes, too. A host that resumes dumps it did not
+// write itself gives the script it ships, so a dump runs no other code.
+// Code the paused program compiled beyond the script and its libraries,
+// such as a line of a console, is in its dump, and is refused as well.
+func OnlyCode(file, code string) ResumeOption {
+	return func(o *resumeOptions) { o.only = &onlyScript{file, code} }
+}
+
 // Resume loads a dump as a program that continues the script from where
 // it paused: Run runs the statements after the pause point. The script's
 // classes and methods are in the dump, so nothing before the pause point
@@ -80,14 +109,29 @@ func (p *Program) Dump() (*Dump, error) {
 // The dump holds nothing of the host: give the program the modules the
 // one that paused had, with Module, before Run. Each is there from Resume
 // on, without methods, so that the values that refer to one restore.
-func Resume(data []byte, stdout, stderr io.Writer) (*Program, error) {
+func Resume(data []byte, stdout, stderr io.Writer, opts ...ResumeOption) (*Program, error) {
+	var o resumeOptions
+	for _, opt := range opts {
+		opt(&o)
+	}
 	d, err := readDump(data)
 	if err != nil {
 		return nil, err
 	}
+	if only := o.only; only != nil {
+		switch {
+		case d.File != only.file:
+			return nil, fmt.Errorf("%w: the dump is of the script %s, not %s", ErrOtherCode, d.File, only.file)
+		case d.Source != only.code:
+			return nil, fmt.Errorf("%w: the dump is of another source of %s than the one given", ErrOtherCode, d.File)
+		}
+	}
 	prog, err := Load(d.File, d.Source, stdout, stderr)
 	if err != nil {
 		return nil, err
+	}
+	if only := o.only; only != nil {
+		prog.in.OnlyCode(only.file, only.code)
 	}
 	if err := prog.in.Resume(prog.prog, d); err != nil {
 		return nil, conv{prog.in}.runError(err)

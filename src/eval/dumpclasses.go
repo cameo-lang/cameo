@@ -259,6 +259,9 @@ func (in *Interp) restoreUnits(units []*cameopb.Unit) error {
 		if digest != unit.GetDigest() {
 			return fmt.Errorf("the code of %s in the dump names digest %s and has %s", unit.GetFile(), unit.GetDigest(), digest)
 		}
+		if err := in.allow(unit, digest); err != nil {
+			return err
+		}
 		in.code.units.LoadOrStore(digest, unit)
 	}
 	return nil

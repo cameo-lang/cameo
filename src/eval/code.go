@@ -21,6 +21,9 @@ type code struct {
 	// compiled and the ones a closure it decoded carried. A closure names
 	// its code by the digest.
 	units sync.Map // string -> *cameopb.Unit
+	// only, when set, limits the units a dump or a closure may bring in;
+	// see OnlyCode.
+	only *onlyCode
 	// params holds the parameter lists bindParams reads, by proc.
 	params sync.Map // *cameopb.Proc -> *params
 	// flat holds the flat code of each list that was lowered, by its

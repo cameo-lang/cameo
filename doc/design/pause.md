@@ -156,6 +156,21 @@ every unit once. A resumed run compiles the script again, which gives the
 same unit, and takes every other unit from the dump; a unit whose
 instructions do not hash to its digest is refused.
 
+The digest proves a unit is whole, not that it is code the host means to
+run: a dump can be edited to hold other code, in `units` or in a closure,
+and a closure may sit inside an object's fields, which the dump keeps as
+the encoded message of the object's class. A host that resumes dumps it
+did not write passes `cameo.OnlyCode(file, source)` to `Resume`, naming the
+script it ships. `Resume` then refuses a dump of another script, and the
+run refuses every unit it takes from the dump or from a closure that is
+neither that script compiled nor a library of `lib.Sources` compiled as
+`require` compiles it, with `cameo.ErrOtherCode`. A unit is compared with
+the compiled one whole: its digest is 64 bits, too short to tell apart
+code made to collide. The check is where the unit is taken, so it covers a
+closure decoded from an object's fields, and a message the host decodes
+after the resume, as well. A dump of a program that compiled other code,
+a line of a console, holds that code too, and is refused.
+
 A class refers to another by its qualified name. That is not enough for
 every class a run holds: a `class` statement on a class that is there makes
 a new class and binds it to the name, and what was made of the class before
