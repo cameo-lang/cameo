@@ -21,8 +21,8 @@ Go. This file is the entry point for coding agents. Read it first, then:
    and land what it finds.
 7. [README.md](README.md) — what cameo is and how to build it.
 8. [agents.md](agents.md) — how to write cameo programs: the guide a model
-   reads before it writes a script. Keep it current; agents/CLAUDE.md says
-   when.
+   reads before it writes a script, in topics that `cameo agent-docs
+   [topic]` prints. Keep it current; agents/CLAUDE.md says when.
 
 ## Pull requests
 

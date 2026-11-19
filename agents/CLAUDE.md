@@ -48,15 +48,18 @@ is not finished until the documents say so, in the same pull request:
 
 | What changed | Update |
 |---|---|
-| what a script may write: a construct, a builtin, a library, an error message a script sees | [agents.md](../agents.md), the guide for models that write cameo; `doc/cameo-vs-ruby.md`; the site's `ruby.html` and `examples.html` |
+| what a script may write: a construct, a builtin, a library, an error message a script sees | the topics of [src/agentdocs/topics](../src/agentdocs/topics), the guide for models that write cameo (`cameo agent-docs`); `doc/cameo-vs-ruby.md`; the site's `ruby.html` and `examples.html` |
 | a refusal of the checker, or what cameo leaves out on purpose | the page of its code under `doc/gh_pages/compatibility/`, whose samples a test runs; a new refusal takes a code with `c.refuse` in `src/syntax/convert.go`, one of `syntax.Codes`; one met when the script runs ends its message with `codes.Link`, or is a constant or method in `src/eval/codes.go`; a new code takes a page and an entry in `specs/compatibility.rb`'s `REASONS` |
 | the `cameo` Go package, a command or a flag | the site's `go.html`, `native.html`, `pause.html` or `io.html`, and the README's commands |
 | what is measured: speed, the benchmark cases that work, ruby/spec, the libraries | the numbers in the README, the site's `numbers.html`, `doc/cameo-vs-ruby.md` and `doc/coverage.md`, from a run you made; for ruby/spec, `make spec-status` rewrites `specs/status.tsv`, `COMPATIBILITY.md` and the site's `compatibility.html`, as [weekly.md](weekly.md) runs it once a week |
 | an example under `examples/` that the site shows | nothing by hand: a test holds the site's block to the file, so rerun it and fix what it names |
 
-[agents.md](../agents.md) matters most: a model reads it instead of the
-rest, and writes what it says. When a rule of the language changes, change
-the table and the snippets there, and run every snippet again. The site is
+The agent docs matter most: a model reads them (`cameo agent-docs
+[topic]`, or `agentdocs.Text` in a program that embeds cameo) instead of
+the rest, and writes what they say. When a rule of the language changes,
+change the table of the topic `rules` and the snippets of the topics,
+and run every snippet again; a new topic takes an entry in
+`src/agentdocs/agentdocs.go` and a row in [agents.md](../agents.md). The site is
 [doc/gh_pages](../doc/gh_pages); `go test ./tests` runs its samples, so a
 sample that no longer prints what the page shows fails there.
 

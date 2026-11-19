@@ -147,6 +147,7 @@ cameo check script.cameo      # parse and check only, report every error with it
 cameo proto script.cameo      # the .proto files of the script's classes
 cameo ir script.cameo         # the IR, the instructions the script compiles to
 cameo debug script.cameo      # run under a debugger with the commands of Ruby's debug
+cameo agent-docs [topic]      # the guide for models that write cameo, as markdown
 ```
 
 ## Differences from Ruby
@@ -176,7 +177,9 @@ globals and `private` are left out.
 
 [Ruby vs cameo](https://cameo-lang.github.io/cameo/ruby.html) shows each
 difference beside its Ruby, and [doc/cameo-vs-ruby.md](doc/cameo-vs-ruby.md)
-is the full list. A model that writes cameo reads [agents.md](agents.md).
+is the full list. A model that writes cameo reads `cameo agent-docs`
+([agents.md](agents.md) lists its topics); a Go program hands the same
+text to its models with `agentdocs.Text`.
 
 ## Numbers
 
