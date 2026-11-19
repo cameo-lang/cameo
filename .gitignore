@@ -1,3 +1,8 @@
+# the guide for agents as the Pages workflow adds it to the site
+# (src/cmd/agentdocs-site); it is made from src/agentdocs/topics
+/doc/gh_pages/agent-docs/
+/doc/gh_pages/llms.txt
+
 # build output: `go build ./...` writes the single main package here
 /cameo
 /bin/

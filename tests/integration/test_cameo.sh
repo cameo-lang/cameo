@@ -15,6 +15,19 @@ test_version_prints_the_version() {
   assert_match '^[0-9]+\.[0-9]+\.[0-9]+' "$out"
 }
 
+test_agent_docs_prints_the_overview_and_a_topic() {
+  local out status
+  out=$("$CAMEO_BIN" agent-docs)
+  assert_contains "$out" "# cameo for agents"
+  assert_contains "$out" '- `async`: async and await'
+  out=$("$CAMEO_BIN" agent-docs async)
+  assert_contains "$out" "# async and await"
+  status=0
+  out=$("$CAMEO_BIN" agent-docs threads 2>&1) || status=$?
+  assert_eq 2 "$status"
+  assert_contains "$out" 'no topic "threads": the topics are overview, rules'
+}
+
 test_script_arguments_are_in_argv() {
   local script out
   script="$(mktemp -d)/argv.cameo"

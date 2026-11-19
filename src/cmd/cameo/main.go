@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/cameo-lang/cameo/src/agentdocs"
 	"github.com/cameo-lang/cameo/src/cameo"
 	"github.com/cameo-lang/cameo/src/ir"
 	"github.com/cameo-lang/cameo/src/syntax"
@@ -20,7 +21,7 @@ import (
 // commands are the words cameo takes before a script's path, which a
 // script cannot be named by; "--" too, so a mistyped command prints the
 // usage instead of opening a file by that name.
-var commands = map[string]bool{"check": true, "proto": true, "ir": true, "resume": true, "inspect": true, "irb": true, "debug": true, "version": true, "--version": true, "--": true}
+var commands = map[string]bool{"check": true, "proto": true, "ir": true, "resume": true, "inspect": true, "irb": true, "debug": true, "agent-docs": true, "version": true, "--version": true, "--": true}
 
 const usage = `usage: cameo [--no-pause] [--io] <script.cameo> [args...]
                                          run the script, with args in ARGV; ^C pauses it where it is
@@ -42,7 +43,9 @@ const usage = `usage: cameo [--no-pause] [--io] <script.cameo> [args...]
                                          run the script under the debugger, stopped before its first statement
        cameo check <script.cameo>        parse and check the script, report every error
        cameo proto <script.cameo> [dir]  print the .proto files of the script's classes, or write them into dir
-       cameo ir <script.cameo>           print the script's IR, the instructions it compiles to`
+       cameo ir <script.cameo>           print the script's IR, the instructions it compiles to
+       cameo agent-docs [topic]          print cameo's documentation for agents, as markdown: the overview
+                                         and the list of topics, or the topic named`
 
 func main() {
 	tuneGC()
@@ -114,6 +117,18 @@ flags:
 			fmt.Fprintln(os.Stderr, err)
 			return 1
 		}
+		return 0
+	case (len(args) == 1 || len(args) == 2) && args[0] == "agent-docs":
+		topic := ""
+		if len(args) == 2 {
+			topic = args[1]
+		}
+		text, err := agentdocs.Text(topic)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "cameo: %v\n", err)
+			return 2
+		}
+		fmt.Print(text)
 		return 0
 	case len(args) == 2 && args[0] == "ir":
 		if err := irListing(args[1], os.Stdout); err != nil {
