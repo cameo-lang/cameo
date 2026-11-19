@@ -17,8 +17,11 @@ cameo agent-docs <topic>     # one topic, such as rules, async or embedding
 
 A Go program that embeds cameo reaches the same text through
 `github.com/cameo-lang/cameo/src/agentdocs` (`agentdocs.Text(topic)`), to
-hand it to the models it runs. The topics are the files of
-[src/agentdocs/topics](src/agentdocs/topics):
+hand it to the models it runs, and the site publishes it:
+[llms.txt](https://cameo-lang.github.io/cameo/llms.txt) links each topic
+as markdown, such as
+[agent-docs/async.md](https://cameo-lang.github.io/cameo/agent-docs/async.md).
+The topics are the files of [src/agentdocs/topics](src/agentdocs/topics):
 
 | Topic | Says |
 |---|---|

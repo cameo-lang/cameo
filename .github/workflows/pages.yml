@@ -1,14 +1,18 @@
 name: Pages
 
 # Publishes the static site in doc/gh_pages to https://cameo-lang.github.io/cameo/,
-# this repository's own GitHub Pages site. The repository's Pages source must
-# be "GitHub Actions"; the deployment needs no token beyond the workflow's own.
+# this repository's own GitHub Pages site, with the guide for agents
+# (src/agentdocs) added as agent-docs/<topic>.md and llms.txt. The repository's
+# Pages source must be "GitHub Actions"; the deployment needs no token beyond
+# the workflow's own.
 
 on:
   push:
     branches: [main]
     paths:
       - doc/gh_pages/**
+      - src/agentdocs/**
+      - src/cmd/agentdocs-site/**
       - .github/workflows/pages.yml
   workflow_dispatch:
 
@@ -36,6 +40,15 @@ jobs:
       - uses: actions/configure-pages@v5
         with:
           enablement: true
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      # The guide for agents, the markdown cameo agent-docs prints, goes
+      # into the site as agent-docs/<topic>.md, linked from llms.txt.
+      - name: Add the guide for agents
+        run: go run ./src/cmd/agentdocs-site doc/gh_pages
 
       - uses: actions/upload-pages-artifact@v4
         with:
