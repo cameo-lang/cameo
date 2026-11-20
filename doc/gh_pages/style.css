@@ -138,6 +138,17 @@ pre {
 }
 
 pre code { font-size: 14px; }
+
+/* A block that is a file of its own, such as the script a Go program
+   loads, names the file above its code. */
+pre[data-title]::before {
+  content: attr(data-title);
+  display: block;
+  margin-bottom: 6px;
+  font: 600 12px/1.6 "Source Sans 3", "Source Sans Pro", -apple-system, "Segoe UI", sans-serif;
+  color: var(--muted);
+}
+
 figure { margin: 24px 0; }
 figure img { display: block; width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 6px; background: #fff; }
 figcaption { margin-top: 8px; font-size: 14px; color: var(--muted); }

@@ -19,6 +19,7 @@ import (
 
 	"github.com/cameo-lang/cameo/examples/ex1/greetpb"
 	"github.com/cameo-lang/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/cameoio"
 )
 
 //go:embed hello.cameo
@@ -48,7 +49,7 @@ func init() {
 // it. For the script that is built in, which defines welcome, run then
 // calls that method from Go and prints what it returns.
 func run(file, src string, stdout, stderr io.Writer) error {
-	prog, err := cameo.Load(file, src, stdout, stderr)
+	prog, err := cameo.LoadFromString(file, src, cameoio.Streams(stdout, stderr))
 	if err != nil {
 		return err
 	}

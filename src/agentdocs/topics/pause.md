@@ -16,7 +16,7 @@ From Go:
 go func() { done <- prog.Run() }()
 prog.Pause()                        // from any goroutine; Run returns cameo.ErrPaused
 dump, err := prog.Dump()            // dump.Data: the state as bytes
-cont, err := cameo.Resume(dump.Data, os.Stdout, os.Stderr)
+cont, err := cameo.Resume(dump.Data, cameoio.DefaultEnv()) // the host, as Load takes it
 // give cont the host's modules again, then:
 err = cont.Run()                    // goes on where the first run stopped
 ```
@@ -26,7 +26,7 @@ err = cont.Run()                    // goes on where the first run stopped
 - A run waiting on a host promise pauses at its `await`; the resumed run
   finds the promise pending, `cont.PendingPromise(id)`, for the host to
   resolve.
-- `cameo.Resume(data, out, err, cameo.OnlyCode(file, src))` refuses a
+- `cameo.Resume(data, env, cameo.OnlyCode(file, src))` refuses a
   dump whose code is not the script given, so a dump cannot be edited to
   run other code.
 

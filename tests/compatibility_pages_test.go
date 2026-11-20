@@ -11,6 +11,7 @@ import (
 
 	"github.com/cameo-lang/cameo/src/assert"
 	"github.com/cameo-lang/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/cameoio"
 	"github.com/cameo-lang/cameo/src/codes"
 	"github.com/cameo-lang/cameo/src/syntax"
 )
@@ -75,7 +76,7 @@ func TestRuntimeRefusalsLinkThePageOfTheirCode(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.code+"/"+c.script, func(t *testing.T) {
 			var stdout, stderr bytes.Buffer
-			err := cameo.Run("t.cameo", c.script, &stdout, &stderr)
+			err := cameo.RunFromString("t.cameo", c.script, cameoio.Streams(&stdout, &stderr))
 			assert.NotNil(t, err, "%q ran", c.script)
 			assert.True(t, strings.Contains(err.Error(), " (see "+codes.URL(c.code)+") ("), "%q: %v", c.script, err)
 			_, statErr := os.Stat("../doc/gh_pages/compatibility/" + c.code + ".html")
@@ -87,7 +88,7 @@ func TestRuntimeRefusalsLinkThePageOfTheirCode(t *testing.T) {
 	// which lacks its own method rather than cameo's Complex.
 	for _, script := range []string{"nope(1)", "class Money\nend\nMoney.new.to_c"} {
 		var stdout, stderr bytes.Buffer
-		err := cameo.Run("t.cameo", script, &stdout, &stderr)
+		err := cameo.RunFromString("t.cameo", script, cameoio.Streams(&stdout, &stderr))
 		assert.True(t, err != nil && !strings.Contains(err.Error(), "(see "), "%q: %v", script, err)
 	}
 }

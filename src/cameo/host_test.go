@@ -1,6 +1,8 @@
 package cameo
 
 import (
+	"github.com/cameo-lang/cameo/src/cameoio"
+
 	"bytes"
 	"errors"
 	"fmt"
@@ -17,7 +19,7 @@ import (
 func host(t *testing.T, src string) (*Program, *bytes.Buffer, *[][]any) {
 	t.Helper()
 	var out bytes.Buffer
-	prog, err := Load("t.cameo", src, &out, &out)
+	prog, err := LoadFromString("t.cameo", src, cameoio.Streams(&out, &out))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -114,10 +116,10 @@ p ps.map { |pr| await pr }`)
 // call as a *Block it can call with Go values, and nil without one.
 func TestHostMethodGetsItsBlock(t *testing.T) {
 	var out bytes.Buffer
-	prog, err := Load("t.cameo", `
+	prog, err := LoadFromString("t.cameo", `
 Spicy.twice(21) { |x| puts x * 2 }
 p Spicy.twice(1)
-`, &out, &out)
+`, cameoio.Streams(&out, &out))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -145,11 +147,11 @@ p Spicy.twice(1)
 // a *Block a host method returns is the Proc again.
 func TestProcArgumentIsABlockAndGoesBackAsAProc(t *testing.T) {
 	var out bytes.Buffer
-	prog, err := Load("t.cameo", `
+	prog, err := LoadFromString("t.cameo", `
 f = Spicy.keep(proc { |x| x + 1 })
 p f.call(41)
 p Spicy.run(2)
-`, &out, &out)
+`, cameoio.Streams(&out, &out))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -182,9 +184,9 @@ p Spicy.run(2)
 // comes back from Call as a RunError with the script's line.
 func TestBlockCallReportsTheException(t *testing.T) {
 	var out bytes.Buffer
-	prog, err := Load("t.cameo", `
+	prog, err := LoadFromString("t.cameo", `
 Spicy.later { |x| raise ArgumentError, "no #{x}" }
-`, &out, &out)
+`, cameoio.Streams(&out, &out))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -212,7 +214,7 @@ func TestABlocksErrorEndsTheHostCallAsTheScriptsOwn(t *testing.T) {
 	run := func(src string, fn Func) (string, error) {
 		t.Helper()
 		var out bytes.Buffer
-		prog, err := Load("t.cameo", src, &out, &out)
+		prog, err := LoadFromString("t.cameo", src, cameoio.Streams(&out, &out))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -251,7 +253,7 @@ func TestABlocksErrorEndsTheHostCallAsTheScriptsOwn(t *testing.T) {
 	// A stop while the host is inside the block ends the run; the rescue
 	// and the rest of the script do not run.
 	var stopped bytes.Buffer
-	prog, err := Load("t.cameo", "begin\n  Spicy.m { 1 }\nrescue => e\n  puts \"rescued\"\nend\nputs \"after\"\n", &stopped, &stopped)
+	prog, err := LoadFromString("t.cameo", "begin\n  Spicy.m { 1 }\nrescue => e\n  puts \"rescued\"\nend\nputs \"after\"\n", cameoio.Streams(&stopped, &stopped))
 	assert.NoError(t, err)
 	prog.Module("Spicy").Def("m", func(args []any, kwargs map[string]any, block *Block) (any, error) {
 		prog.in.Stop()

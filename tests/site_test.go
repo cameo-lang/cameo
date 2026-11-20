@@ -13,6 +13,7 @@ import (
 	"github.com/cameo-lang/cameo/src/assert"
 
 	"github.com/cameo-lang/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/cameoio"
 )
 
 // sitePages returns every page of the site: those at its top and those
@@ -50,7 +51,7 @@ func TestSiteSamplesPrintTheirOutput(t *testing.T) {
 			name := sitePageName(page) + "/" + strconv.Itoa(i+1)
 			t.Run(name, func(t *testing.T) {
 				var stdout, stderr bytes.Buffer
-				err := cameo.Run("script.cameo", script, &stdout, &stderr)
+				err := cameo.RunFromString("script.cameo", script, cameoio.Streams(&stdout, &stderr))
 				if rejected {
 					assert.NotNil(t, err, "a rejected sample ran:\n%s", script)
 					assert.Equals(t, err.Error(), want)
@@ -127,7 +128,7 @@ func TestSiteBlocksNameAHighlightedLanguage(t *testing.T) {
 
 // siteFile is a block on the site that shows a file of the repository
 // whole: its data-file names the file.
-var siteFile = regexp.MustCompile(`(?s)<pre data-file="([^"]+)" class="[^"]*"><code>(.*?)</code></pre>`)
+var siteFile = regexp.MustCompile(`(?s)<pre data-file="([^"]+)"(?: data-[a-z]+="[^"]*")* class="[^"]*"><code>(.*?)</code></pre>`)
 
 // TestSiteShowsItsExampleFilesAsTheyAre holds every block that names a
 // file to that file, so a program or a script the site shows is the one

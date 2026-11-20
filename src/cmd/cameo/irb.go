@@ -122,7 +122,7 @@ func loadIRB(path string, allowIO []string, stdout, stderr io.Writer) (prog *cam
 		}
 		src, file = string(data), path
 	}
-	prog, err := cameo.Load(file, src, stdout, stderr)
+	prog, err := cameo.LoadFromString(file, src, hostEnv(stdout, stderr))
 	if err != nil {
 		var errs syntax.ErrorList
 		if errors.As(err, &errs) {
@@ -132,7 +132,7 @@ func loadIRB(path string, allowIO []string, stdout, stderr io.Writer) (prog *cam
 		fmt.Fprintln(stderr, err)
 		return nil, 1, false
 	}
-	prog.AllowHostIO(allowIO...)
+	prog.AllowIO(allowIO...)
 	if path != "" {
 		if err := prog.Run(); err != nil {
 			// The script's exit ends the session with its status, as
@@ -156,7 +156,7 @@ func debugScript(path string, allowIO []string, pause bool, stdin io.Reader, std
 		fmt.Fprintln(stderr, err)
 		return 1
 	}
-	prog, err := cameo.Load(path, string(src), stdout, stderr)
+	prog, err := cameo.LoadFromString(path, string(src), hostEnv(stdout, stderr))
 	if err != nil {
 		var errs syntax.ErrorList
 		if errors.As(err, &errs) {

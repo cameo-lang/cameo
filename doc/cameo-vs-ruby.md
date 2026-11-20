@@ -446,8 +446,8 @@ script runs, a mutator's `CameoError` among them.
   `close`), with `path`. They exist only where the program allows file
   I/O and gave a file system: `cameo --io=file`, which gives the
   machine's, relative paths from the working directory, or
-  `AllowIO("file")` and `FileSystem(fsys, dir)` in a program that embeds
-  cameo, an `afero.Fs` (`github.com/spf13/afero`) whose paths the script
+  `AllowIO("file")` and a `cameo.Env` with files (`cameoio.New(fsys, dir, …)`)
+  in a program that embeds cameo, an `afero.Fs` (`github.com/spf13/afero`) whose paths the script
   sees as they are, `..` stopping at its root; a host shares one directory
   with `afero.NewBasePathFs`. Elsewhere `File.read` is an undefined method, as is
   `respond_to?(:read)` false. Unlike Ruby: `File.write` returns the String

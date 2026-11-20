@@ -6,6 +6,7 @@ import (
 
 	"github.com/cameo-lang/cameo/src/assert"
 	"github.com/cameo-lang/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/cameoio"
 )
 
 // A block captures the values of its variables when it is made, not the
@@ -106,7 +107,7 @@ p W.new.fan([1, 2, 3])
 
 func TestTheCheckerRefusesARebindingInABlock(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	err := cameo.Run("t.cameo", "total = 0\n[1, 2].each { |x| total += x }\n", &stdout, &stderr)
+	err := cameo.RunFromString("t.cameo", "total = 0\n[1, 2].each { |x| total += x }\n", cameoio.Streams(&stdout, &stderr))
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), "t.cameo:2: a block cannot rebind total, a variable of the scope around it: a block captures the values its variables have when it is made; bind a new name, or use reduce, each_with_object or while")
 }

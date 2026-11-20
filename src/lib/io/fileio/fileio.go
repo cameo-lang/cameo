@@ -5,7 +5,7 @@
 // The module's methods are there only in a program that allows file I/O
 // and has a file system: the cameo command with --io or --io=file, which
 // gives the script the machine's files, or a program that embeds cameo
-// and calls Program.AllowIO("file") and Program.FileSystem with an
+// and calls Program.AllowIO("file") with a cameo.Env whose Files is an
 // afero.Fs. Anywhere else
 // File.read is an undefined method, respond_to?(:read) is false and
 // File.methods leaves it out (object.Class.IOKind).

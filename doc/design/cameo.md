@@ -711,7 +711,8 @@ classes.
 **The Go host API**, package `cameo`:
 
 ```go
-prog, err := cameo.Load(file, src, stdout, stderr) // parse and check
+prog, err := cameo.Load(path, env)                 // read through env, parse and check; env is the host (cameo.Env)
+prog, err  = cameo.LoadFromString(file, src, env)  // the same for a script the program holds
 err        = prog.Run()                            // run once; the classes stay loaded
 err        = prog.RunContext(ctx)                  // the same, stopped when ctx ends
 value, err := prog.LastValue()                     // the last expression, as p shows it
@@ -720,7 +721,7 @@ msg       := runErr.Exception()                    // the exception that ended a
 text, err := prog.Proto("Geo::Point")              // the .proto text of a class
 files     := prog.ProtoFiles()                     // every package's .proto, and cameo/value.proto
 data, err := prog.Encode(v); v, err = prog.Decode(data)   // the envelope
-err        = cameo.Run(file, src, stdout, stderr)  // what the binary does
+err        = cameo.Run(path, env)                  // Load and Run: what the binary does, with cameoio.DefaultEnv()
 ```
 
 Go values convert to cameo values by the table under *Values*: nil, bool,
@@ -917,8 +918,8 @@ re-opened by accident:
 - **File I/O is a module the program grants.** `File.read`,
   `File.open` and `File.write` are the methods of `Cameo::IO::FileIO`, in `Cameo::IO`,
   which holds cameo's I/O, and `File` extends it. A program answers them
-  only where it allows file I/O and was given a file system, an
-  `afero.Fs` (`Program.FileSystem`), so a host chooses the disk, one
+  only where it allows file I/O and its `cameo.Env` has a file system,
+  an `afero.Fs` (`Env.Files`), so a host chooses the disk, one
   directory of it (`afero.NewBasePathFs`), or memory; with either missing they are undefined, not
   methods that raise, so `respond_to?`, `methods` and irb's Tab tell a
   script what it may do. The method tables are the process's, so a module

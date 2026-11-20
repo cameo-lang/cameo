@@ -6,6 +6,7 @@ import (
 
 	"github.com/cameo-lang/cameo/src/assert"
 	"github.com/cameo-lang/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/cameoio"
 )
 
 // Each test here is a path that handles a binary String, or bytes that
@@ -183,7 +184,7 @@ io.gets
 `
 	const message = `invalid byte sequence in UTF-8: "\xa9llo" is not text; keep such bytes in a binary string (see https://15b.it/inv)`
 	var stdout, stderr bytes.Buffer
-	err := cameo.Run("t.cameo", script, &stdout, &stderr)
+	err := cameo.RunFromString("t.cameo", script, cameoio.Streams(&stdout, &stderr))
 	assert.NotNil(t, err)
 	assert.Equals(t, err.Error(), "t.cameo:4: "+message+" (ArgumentError)")
 

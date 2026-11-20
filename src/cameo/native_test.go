@@ -1,6 +1,8 @@
 package cameo
 
 import (
+	"github.com/cameo-lang/cameo/src/cameoio"
+
 	"bytes"
 	"strings"
 	"testing"
@@ -97,7 +99,7 @@ func geoMessages() (protoreflect.MessageDescriptor, protoreflect.MessageDescript
 func native(t *testing.T, src string) string {
 	t.Helper()
 	var out bytes.Buffer
-	prog, err := Load("t.cameo", src, &out, &out)
+	prog, err := LoadFromString("t.cameo", src, cameoio.Streams(&out, &out))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,10 +139,10 @@ p longer.next.color, path.next
 
 func TestNativeInstancesCrossToGo(t *testing.T) {
 	var out bytes.Buffer
-	prog, err := Load("t.cameo", `
+	prog, err := LoadFromString("t.cameo", `
 def stamp = Google::Protobuf::Timestamp.new(seconds: 5, nanos: 500_000_000)
 def secs(t) = t.to_f
-`, &out, &out)
+`, cameoio.Streams(&out, &out))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -182,7 +184,7 @@ p await(async(job, :run, Shapes::Point.new(x: 1, y: 2)))
 func TestNativeNamespacesAreClosed(t *testing.T) {
 	for _, src := range []string{"module Shapes\nend\n", "class Shapes::Point\nend\n", "class Shapes::Point::Inner\nend\n", "module Math::Extra\nend\n"} {
 		var out bytes.Buffer
-		prog, err := Load("t.cameo", src, &out, &out)
+		prog, err := LoadFromString("t.cameo", src, cameoio.Streams(&out, &out))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -194,7 +196,7 @@ func TestNativeNamespacesAreClosed(t *testing.T) {
 
 func TestProgramModuleKeepsRegisteredClasses(t *testing.T) {
 	var out bytes.Buffer
-	prog, err := Load("t.cameo", "p Shapes.hello, Shapes::Point.origin.x\n", &out, &out)
+	prog, err := LoadFromString("t.cameo", "p Shapes.hello, Shapes::Point.origin.x\n", cameoio.Streams(&out, &out))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -254,7 +256,7 @@ func TestRegisterChecksNamesAndMessages(t *testing.T) {
 // class the Go binary binds.
 func TestARegisteredClassIsUnderCameoNative(t *testing.T) {
 	var out bytes.Buffer
-	prog, err := Load("t.cameo", "p Cameo::Native::Shapes::Point == Shapes::Point, Cameo::Native::Shapes == Shapes\n", &out, &out)
+	prog, err := LoadFromString("t.cameo", "p Cameo::Native::Shapes::Point == Shapes::Point, Cameo::Native::Shapes == Shapes\n", cameoio.Streams(&out, &out))
 	if err != nil {
 		t.Fatal(err)
 	}

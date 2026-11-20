@@ -70,6 +70,12 @@ for the script:</p>
   <code>RuntimeError</code> with the error's text.</li>
 </ul>
 
+<pre data-title="text.cameo" class="cameo hosted"><code>puts Text.shout(&quot;hello&quot;, times: 2)
+begin
+  Text.shout(42)
+rescue Text::Invalid =&gt; e
+  puts &quot;rescued: #{e.message}&quot;
+end</code></pre>
 <pre class="go"><code>package main
 
 import (
@@ -78,19 +84,11 @@ import (
 	&quot;strings&quot;
 
 	&quot;github.com/cameo-lang/cameo/src/cameo&quot;
+	&quot;github.com/cameo-lang/cameo/src/cameoio&quot;
 )
 
-const script = `
-puts Text.shout(&quot;hello&quot;, times: 2)
-begin
-  Text.shout(42)
-rescue Text::Invalid =&gt; e
-  puts &quot;rescued: #{e.message}&quot;
-end
-`
-
 func main() {
-	prog, err := cameo.Load(&quot;text.cameo&quot;, script, os.Stdout, os.Stderr)
+	prog, err := cameo.Load(&quot;text.cameo&quot;, cameoio.DefaultEnv())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -175,6 +173,11 @@ protoc --go_out=. --go_opt=module=example.com/geo geo.proto</code></pre>
 scripts as usual. Here the script uses <code>Geo::Point</code>, and Go
 creates one through <code>Call</code>:</p>
 
+<pre data-title="geo.cameo" class="cameo hosted"><code>pt = Geo::Point.new(x: 3, y: 4)
+p pt.norm2
+p pt.moved(1).x, pt.x
+p Geo::Point.origin.with(y: 2)
+p Geo::Point.new.x</code></pre>
 <pre class="go"><code>package main
 
 import (
@@ -184,6 +187,7 @@ import (
 
 	&quot;example.com/geo/geopb&quot;
 	&quot;github.com/cameo-lang/cameo/src/cameo&quot;
+	&quot;github.com/cameo-lang/cameo/src/cameoio&quot;
 )
 
 func init() {
@@ -200,16 +204,9 @@ func init() {
 		})
 }
 
-const script = `
-pt = Geo::Point.new(x: 3, y: 4)
-p pt.norm2
-p pt.moved(1).x, pt.x
-p Geo::Point.origin.with(y: 2)
-p Geo::Point.new.x
-`
 
 func main() {
-	prog, err := cameo.Load(&quot;geo.cameo&quot;, script, os.Stdout, os.Stderr)
+	prog, err := cameo.Load(&quot;geo.cameo&quot;, cameoio.DefaultEnv())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -269,20 +266,7 @@ Geo::Point(x: 0, y: 2)
 itself: a <code>proto.Message</code> whose descriptor is a loaded class's
 becomes an instance of that class.</p>
 
-<pre class="go"><code>package main
-
-import (
-	&quot;log&quot;
-	&quot;os&quot;
-
-	&quot;google.golang.org/protobuf/reflect/protoreflect&quot;
-	&quot;google.golang.org/protobuf/types/dynamicpb&quot;
-
-	&quot;github.com/cameo-lang/cameo/src/cameo&quot;
-)
-
-const script = `
-class User
+<pre data-title="users.cameo" class="cameo hosted"><code>class User
   string :name
   int :age
 
@@ -293,11 +277,22 @@ end
 
 user = Users.find(&quot;ada&quot;)
 puts user.greeting
-p user.with(age: user.age + 1)
-`
+p user.with(age: user.age + 1)</code></pre>
+<pre class="go"><code>package main
+
+import (
+	&quot;log&quot;
+	&quot;os&quot;
+
+	&quot;google.golang.org/protobuf/reflect/protoreflect&quot;
+	&quot;google.golang.org/protobuf/types/dynamicpb&quot;
+
+	&quot;github.com/cameo-lang/cameo/src/cameo&quot;
+	&quot;github.com/cameo-lang/cameo/src/cameoio&quot;
+)
 
 func main() {
-	prog, err := cameo.Load(&quot;users.cameo&quot;, script, os.Stdout, os.Stderr)
+	prog, err := cameo.Load(&quot;users.cameo&quot;, cameoio.DefaultEnv())
 	if err != nil {
 		log.Fatal(err)
 	}

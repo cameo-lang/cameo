@@ -62,28 +62,36 @@ without it the build fails with "missing go.sum entry". Neither needs cgo.</p>
 
 <h2 id="run">Load, Run and RunContext</h2>
 
-<p><code>cameo.Load(file, src, stdout, stderr)</code> parses and checks a
-script and returns a <code>*cameo.Program</code>; <code>file</code> names
-the script in error messages, and its <code>puts</code> and
-<code>warn</code> write to <code>stdout</code> and <code>stderr</code>.
-<code>Run</code> evaluates the script once, and its classes and methods
-stay loaded for <code>Call</code>. <code>LastValue</code> returns the
-script's last top-level expression as <code>p</code> shows it.
-<code>cameo.Run</code> does <code>Load</code> and <code>Run</code> in one
-call, as the <code>cameo</code> command does.</p>
+<p><code>cameo.Load(path, env)</code> loads the script at
+<code>path</code>, parses and checks it, and returns a
+<code>*cameo.Program</code>. <code>env</code>, a <code>cameo.Env</code>,
+is all of the host the program reaches: it reads the script
+(<code>LoadFile</code>), its <code>puts</code> and <code>warn</code> write
+to the Env's <code>Stdout</code> and <code>Stderr</code>, and the files it
+reads and writes, once <a href="io.html">file I/O is allowed</a>, are the
+Env's <code>Files</code>. Package <code>cameo</code> touches no file or
+stream of the host itself; the package <code>cameoio</code> has the Envs:
+<code>cameoio.DefaultEnv()</code>, the machine's files from the working
+directory and the standard streams,
+<code>cameoio.Streams(stdout, stderr)</code>, output alone, and
+<code>cameoio.New(fsys, dir, stdin, stdout, stderr)</code>. A program that
+does not import <code>cameoio</code> can show that no script reaches the
+host through cameo's defaults. <code>cameo.LoadFromString(file, src,
+env)</code> loads a script the program holds as a string, <code>file</code>
+naming it in error messages.</p>
 
-<pre class="go"><code>package main
+<p><code>Run</code> evaluates the script once, and its classes and
+methods stay loaded for <code>Call</code>. <code>LastValue</code> returns
+the script's last top-level expression as <code>p</code> shows it.
+<code>cameo.Run(path, env)</code> does <code>Load</code> and
+<code>Run</code> in one call, as the <code>cameo</code> command does, and
+<code>cameo.RunFromString(file, src, env)</code>
+<code>LoadFromString</code> and <code>Run</code>.</p>
 
-import (
-	&quot;fmt&quot;
-	&quot;log&quot;
-	&quot;os&quot;
+<p>The program below loads <code>point.cameo</code> from the working
+directory:</p>
 
-	&quot;github.com/cameo-lang/cameo/src/cameo&quot;
-)
-
-const script = `
-class Point
+<pre data-title="point.cameo" class="cameo hosted"><code>class Point
   int :x, :y
 
   def +(other)
@@ -96,11 +104,20 @@ def greet(name)
 end
 
 puts &quot;loaded&quot;
-Point.new(x: 1, y: 2)
-`
+Point.new(x: 1, y: 2)</code></pre>
+<pre class="go"><code>package main
+
+import (
+	&quot;fmt&quot;
+	&quot;log&quot;
+	&quot;os&quot;
+
+	&quot;github.com/cameo-lang/cameo/src/cameo&quot;
+	&quot;github.com/cameo-lang/cameo/src/cameoio&quot;
+)
 
 func main() {
-	prog, err := cameo.Load(&quot;point.cameo&quot;, script, os.Stdout, os.Stderr)
+	prog, err := cameo.Load(&quot;point.cameo&quot;, cameoio.DefaultEnv())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -149,10 +166,11 @@ import (
 	&quot;time&quot;
 
 	&quot;github.com/cameo-lang/cameo/src/cameo&quot;
+	&quot;github.com/cameo-lang/cameo/src/cameoio&quot;
 )
 
 func main() {
-	prog, err := cameo.Load(&quot;spin.cameo&quot;, &quot;loop { }&quot;, os.Stdout, os.Stderr)
+	prog, err := cameo.LoadFromString(&quot;spin.cameo&quot;, &quot;loop { }&quot;, cameoio.DefaultEnv())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -254,11 +272,19 @@ declared field. A field's number comes from a hash of its name, or from
   says what it accepts.</li>
 </ul>
 
+<pre data-title="geo.cameo" class="cameo hosted"><code>module Geo
+  class Point
+    int :x, :y
+
+    def norm2
+      x * x + y * y
+    end
+  end
+end</code></pre>
 <pre class="go"><code>package main
 
 import (
 	&quot;fmt&quot;
-	&quot;io&quot;
 	&quot;log&quot;
 	&quot;maps&quot;
 	&quot;slices&quot;
@@ -268,19 +294,8 @@ import (
 	&quot;google.golang.org/protobuf/types/dynamicpb&quot;
 
 	&quot;github.com/cameo-lang/cameo/src/cameo&quot;
+	&quot;github.com/cameo-lang/cameo/src/cameoio&quot;
 )
-
-const script = `
-module Geo
-  class Point
-    int :x, :y
-
-    def norm2
-      x * x + y * y
-    end
-  end
-end
-`
 
 func check(err error) {
 	if err != nil {
@@ -289,7 +304,7 @@ func check(err error) {
 }
 
 func main() {
-	prog, err := cameo.Load(&quot;geo.cameo&quot;, script, io.Discard, io.Discard)
+	prog, err := cameo.Load(&quot;geo.cameo&quot;, cameoio.DefaultEnv())
 	check(err)
 	check(prog.Run())
 
@@ -354,11 +369,12 @@ import (
 	&quot;io&quot;
 
 	&quot;github.com/cameo-lang/cameo/src/cameo&quot;
+	&quot;github.com/cameo-lang/cameo/src/cameoio&quot;
 	&quot;github.com/cameo-lang/cameo/src/syntax&quot;
 )
 
 func main() {
-	_, err := cameo.Load(&quot;bad.cameo&quot;, &quot;@count = 1\n$total = 2\n&quot;, io.Discard, io.Discard)
+	_, err := cameo.LoadFromString(&quot;bad.cameo&quot;, &quot;@count = 1\n$total = 2\n&quot;, cameoio.Streams(io.Discard, io.Discard))
 	var list syntax.ErrorList
 	if errors.As(err, &amp;list) {
 		for _, e := range list {
@@ -366,7 +382,7 @@ func main() {
 		}
 	}
 
-	err = cameo.Run(&quot;boom.cameo&quot;, &quot;def half(n)\n  n / 0\nend\nhalf(4)\n&quot;, io.Discard, io.Discard)
+	err = cameo.RunFromString(&quot;boom.cameo&quot;, &quot;def half(n)\n  n / 0\nend\nhalf(4)\n&quot;, cameoio.Streams(io.Discard, io.Discard))
 	var runErr *cameo.RunError
 	if errors.As(err, &amp;runErr) {
 		fmt.Println(runErr.Message)
@@ -385,19 +401,7 @@ host's modules, so a host method may run on several goroutines at once and
 must be safe for that. <code>RunContext</code> stops the workers with the
 script.</p>
 
-<pre class="go"><code>package main
-
-import (
-	&quot;fmt&quot;
-	&quot;log&quot;
-	&quot;os&quot;
-	&quot;sync/atomic&quot;
-
-	&quot;github.com/cameo-lang/cameo/src/cameo&quot;
-)
-
-const script = `
-include Cameo
+<pre data-title="fetch.cameo" class="cameo hosted"><code>include Cameo
 
 class Fetcher
   string :base
@@ -409,11 +413,21 @@ end
 
 f = Fetcher.new(base: &quot;https://example.com&quot;)
 jobs = [&quot;/a&quot;, &quot;/b&quot;, &quot;/c&quot;].map { |path| async f, :get, path }
-p jobs.map { |job| await job }
-`
+p jobs.map { |job| await job }</code></pre>
+<pre class="go"><code>package main
+
+import (
+	&quot;fmt&quot;
+	&quot;log&quot;
+	&quot;os&quot;
+	&quot;sync/atomic&quot;
+
+	&quot;github.com/cameo-lang/cameo/src/cameo&quot;
+	&quot;github.com/cameo-lang/cameo/src/cameoio&quot;
+)
 
 func main() {
-	prog, err := cameo.Load(&quot;fetch.cameo&quot;, script, os.Stdout, os.Stderr)
+	prog, err := cameo.Load(&quot;fetch.cameo&quot;, cameoio.DefaultEnv())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -446,28 +460,7 @@ timeline.
 once; a second call returns <code>cameo.ErrSettled</code>. This is
 <a href="https://github.com/cameo-lang/cameo/tree/main/examples/webfetch">examples/webfetch</a>:</p>
 
-<pre class="go"><code>// Command webfetch fetches web pages from a cameo script, one workflow per
-// page. cameo does no I/O, so the host gives the script a Web module whose
-// fetch starts the request on a goroutine and returns a promise at once; the
-// host settles the promise from outside the script when the response is
-// in. Each workflow awaits its own fetch, so every request is in flight
-// while the script waits, and await returns each page or raises
-// Web::FetchError.
-//
-//	go run ./examples/webfetch https://example.com https://example.org/missing
-package main
-
-import (
-	"fmt"
-	"io"
-	"net/http"
-	"os"
-
-	"github.com/cameo-lang/cameo/src/cameo"
-)
-
-const script = `
-include Cameo
+<pre data-file="examples/webfetch/webfetch.cameo" data-title="webfetch.cameo" class="cameo hosted"><code>include Cameo
 
 class Flow
   # One workflow: fetch the page, then measure it. await parks this
@@ -484,12 +477,40 @@ def fetch_all(urls)
   flow = Flow.new
   promises = urls.map { |url| async flow, :run, url }   # every workflow starts now
   await promises                                        # their lines, in order
-end
-`
+end</code></pre>
+<pre class="go"><code>// Command webfetch fetches web pages from a cameo script, one workflow per
+// page. cameo does no I/O, so the host gives the script a Web module whose
+// fetch starts the request on a goroutine and returns a promise at once; the
+// host settles the promise from outside the script when the response is
+// in. Each workflow awaits its own fetch, so every request is in flight
+// while the script waits, and await returns each page or raises
+// Web::FetchError.
+//
+// The script, webfetch.cameo, is built into the program, and cameo loads it
+// through an Env of the program's own files.
+//
+//	go run ./examples/webfetch https://example.com https://example.org/missing
+package main
+
+import (
+	"embed"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+
+	"github.com/cameo-lang/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/cameoio"
+	"github.com/spf13/afero"
+)
+
+//go:embed webfetch.cameo
+var scripts embed.FS
 
 // fetchAll runs the script's fetch_all over urls with client.
 func fetchAll(client *http.Client, urls []string) ([]any, error) {
-	prog, err := cameo.Load("webfetch.cameo", script, os.Stdout, os.Stderr)
+	env := cameoio.New(afero.FromIOFS{FS: scripts}, ".", nil, os.Stdout, os.Stderr)
+	prog, err := cameo.Load("webfetch.cameo", env)
 	if err != nil {
 		return nil, err
 	}

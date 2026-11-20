@@ -8,6 +8,7 @@ import (
 
 	"github.com/cameo-lang/cameo/src/assert"
 	"github.com/cameo-lang/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/cameoio"
 	"github.com/spf13/afero"
 )
 
@@ -31,12 +32,9 @@ func testFiles(t *testing.T) afero.Fs {
 func runWithFiles(t *testing.T, src string, fsys afero.Fs, dir string, io ...string) string {
 	t.Helper()
 	var stdout, stderr bytes.Buffer
-	prog, err := cameo.Load("t.cameo", src, &stdout, &stderr)
+	prog, err := cameo.LoadFromString("t.cameo", src, cameoio.New(fsys, dir, nil, &stdout, &stderr))
 	assert.NoError(t, err)
 	prog.AllowIO(io...)
-	if fsys != nil {
-		prog.FileSystem(fsys, dir)
-	}
 	if err := prog.Run(); err != nil {
 		t.Fatalf("%s\nfailed: %v\nstderr: %s", src, err, stderr.String())
 	}
@@ -55,7 +53,7 @@ rescue NoMethodError => e
   puts e.message
 end
 `
-	without := "false\nfalse\nfalse\nfalse\nundefined method 'read' for class File: the host allows no file I/O; run the script with cameo --io=file, or let the program say AllowIO(\"file\") and give it a file system with FileSystem (see https://15b.it/io)\n"
+	without := "false\nfalse\nfalse\nfalse\nundefined method 'read' for class File: the host allows no file I/O; run the script with cameo --io=file, or let the program say AllowIO(\"file\") and load it with a cameo.Env that has files (see https://15b.it/io)\n"
 	assert.Equals(t, runWithFiles(t, src, nil, "/"), without)
 	assert.Equals(t, runWithFiles(t, src, nil, "/", "file"), without)
 	assert.Equals(t, runWithFiles(t, src, testFiles(t), "/"), without)
