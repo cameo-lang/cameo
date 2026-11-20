@@ -1,6 +1,8 @@
 package cameo
 
 import (
+	"github.com/cameo-lang/cameo/src/cameoio"
+
 	"bytes"
 	"errors"
 	"testing"
@@ -11,14 +13,14 @@ func TestHostSettlesPromises(t *testing.T) {
 	// goroutine: Resolve with a Go value, Fail with an error, which raises
 	// its ExceptionClass or a RuntimeError.
 	var out bytes.Buffer
-	prog, err := Load("t.cameo", `include Cameo
+	prog, err := LoadFromString("t.cameo", `include Cameo
 p await(Later.value(41))
 [Later.broken, Later.oops].each do |promise|
   await promise
 rescue => e
   p [e.class, e.message]
 end
-`, &out, &out)
+`, cameoio.Streams(&out, &out))
 	if err != nil {
 		t.Fatal(err)
 	}

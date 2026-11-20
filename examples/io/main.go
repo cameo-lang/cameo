@@ -13,6 +13,7 @@ import (
 	"os"
 
 	"github.com/cameo-lang/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/cameoio"
 	"github.com/spf13/afero"
 )
 
@@ -22,16 +23,15 @@ var script string
 // run runs the script with the files of fsys, relative paths read from
 // dir.
 func run(fsys afero.Fs, dir string, stdout, stderr io.Writer) error {
-	prog, err := cameo.Load("notes.cameo", script, stdout, stderr)
+	// Both are needed: a file system in the Env, and the kind allowed.
+	// The file system may be the disk (afero.NewOsFs), one directory of
+	// it (afero.NewBasePathFs), a read-only view (afero.NewReadOnlyFs) or
+	// memory, as here.
+	prog, err := cameo.LoadFromString("notes.cameo", script, cameoio.New(fsys, dir, nil, stdout, stderr))
 	if err != nil {
 		return err
 	}
-	// Both are needed: the kind allowed, and a file system to read. The
-	// file system may be the disk (afero.NewOsFs), one directory of it
-	// (afero.NewBasePathFs), a read-only view (afero.NewReadOnlyFs) or
-	// memory, as here.
 	prog.AllowIO("file")
-	prog.FileSystem(fsys, dir)
 	return prog.Run()
 }
 

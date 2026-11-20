@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/cameo-lang/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/cameoio"
 )
 
 // pausedDump runs a script that pauses itself through a host method and
@@ -16,7 +17,7 @@ import (
 func pausedDump(t *testing.T) string {
 	t.Helper()
 	src := "n = 1\nputs n\nTest.pause\nputs n + 1\n"
-	prog, err := cameo.Load("count.cameo", src, &bytes.Buffer{}, &bytes.Buffer{})
+	prog, err := cameo.LoadFromString("count.cameo", src, cameoio.Streams(&bytes.Buffer{}, &bytes.Buffer{}))
 	if err != nil {
 		t.Fatal(err)
 	}

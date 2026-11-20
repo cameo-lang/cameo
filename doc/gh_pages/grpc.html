@@ -67,7 +67,7 @@ machine, so it needs no network.</p>
 request per name, and awaits the answers. Every call is on its way before
 the first answer is read.</p>
 
-<pre data-file="examples/grpc/hello.cameo" class="cameo hosted"><code># The messages of grpcb.in's hello.HelloService, declared as classes. A
+<pre data-file="examples/grpc/hello.cameo" data-title="hello.cameo" class="cameo hosted"><code># The messages of grpcb.in's hello.HelloService, declared as classes. A
 # class in the module Hello is the message hello.&lt;name&gt;, and number: sets
 # the field's number, so an instance is on the wire what the service
 # reads and writes.
@@ -135,7 +135,7 @@ as a <code>proto.Message</code>, sends it on a goroutine, and returns a
 promise at once. The answer is read into a message of the script's
 <code>Hello::HelloResponse</code>, which settles the promise.</p>
 
-<pre data-file="examples/grpc/main.go" class="go"><code>// Command grpc calls a gRPC service from a cameo script. A class of a
+<pre data-file="examples/grpc/main.go" data-title="main.go" class="go"><code>// Command grpc calls a gRPC service from a cameo script. A class of a
 // script is a protobuf message, so the request the script builds goes on
 // the wire as it is, and the response comes back as an instance of a
 // class of the script: no generated code and no conversion.
@@ -161,6 +161,7 @@ import (
 	"time"
 
 	"github.com/cameo-lang/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/cameoio"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
@@ -174,7 +175,7 @@ var script string
 // greetAll runs the script's greet_all over names, with conn as the
 // connection to the service, and returns the replies.
 func greetAll(ctx context.Context, conn grpc.ClientConnInterface, names []string, stdout, stderr io.Writer) ([]any, error) {
-	prog, err := cameo.Load("hello.cameo", script, stdout, stderr)
+	prog, err := cameo.LoadFromString("hello.cameo", script, cameoio.Streams(stdout, stderr))
 	if err != nil {
 		return nil, err
 	}

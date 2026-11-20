@@ -1,6 +1,8 @@
 package cameo
 
 import (
+	"github.com/cameo-lang/cameo/src/cameoio"
+
 	"io"
 	"testing"
 
@@ -17,7 +19,7 @@ end
 // bytes carry the code and the values the proc captured, its self among
 // them, and the other program has the class.
 func TestAHostEncodesAProcForAnotherProgram(t *testing.T) {
-	writer, err := Load("greeter.cameo", greeterScript, io.Discard, io.Discard)
+	writer, err := LoadFromString("greeter.cameo", greeterScript, cameoio.Streams(io.Discard, io.Discard))
 	assert.NoError(t, err)
 	assert.NoError(t, writer.Run())
 	greeter, err := writer.Call("Greeter", "new", map[string]any{"greeting": "hello"})
@@ -29,7 +31,7 @@ func TestAHostEncodesAProcForAnotherProgram(t *testing.T) {
 	data, err := writer.Encode(block)
 	assert.NoError(t, err)
 
-	reader, err := Load("greeter.cameo", greeterScript, io.Discard, io.Discard)
+	reader, err := LoadFromString("greeter.cameo", greeterScript, cameoio.Streams(io.Discard, io.Discard))
 	assert.NoError(t, err)
 	assert.NoError(t, reader.Run())
 	decoded, err := reader.Decode(data)
@@ -39,7 +41,7 @@ func TestAHostEncodesAProcForAnotherProgram(t *testing.T) {
 	assert.Equals(t, out, "hello ann!")
 
 	// A program without the class refuses the proc, and says which class.
-	empty, err := Load("empty.cameo", "", io.Discard, io.Discard)
+	empty, err := LoadFromString("empty.cameo", "", cameoio.Streams(io.Discard, io.Discard))
 	assert.NoError(t, err)
 	assert.NoError(t, empty.Run())
 	_, err = empty.Decode(data)

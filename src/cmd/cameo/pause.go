@@ -37,7 +37,7 @@ func runScript(path string, argv, allowIO []string, pause, ignoreMutations, keep
 			return 2
 		}
 	}
-	prog, err := cameo.Load(path, string(src), stdout, stderr)
+	prog, err := cameo.LoadFromString(path, string(src), hostEnv(stdout, stderr))
 	if err == nil {
 		prog.Args(argv)
 	}
@@ -69,7 +69,7 @@ func resume(path string, allowIO []string, pause, ignoreMutations, keepTail bool
 		fmt.Fprintln(stderr, err)
 		return 1
 	}
-	prog, err := cameo.Resume(data, stdout, stderr)
+	prog, err := cameo.Resume(data, hostEnv(stdout, stderr))
 	if err != nil {
 		fmt.Fprintln(stderr, err)
 		return 1
@@ -104,8 +104,9 @@ func inspect(path string, out io.Writer) error {
 // runs, ends the process. Without it, ^C ends the process as it does any
 // other.
 func runProgram(prog *cameo.Program, allowIO []string, pause bool, stderr io.Writer) int {
-	// The command is the host: a script it runs may do the I/O --io named.
-	prog.AllowHostIO(allowIO...)
+	// The command is the host: a script it runs may do the I/O --io named,
+	// on the machine's files (hostEnv).
+	prog.AllowIO(allowIO...)
 	// pausing is set from the ^C that pauses the script until its dump is
 	// written, or it goes on because it has none.
 	var pausing atomic.Bool

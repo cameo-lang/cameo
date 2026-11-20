@@ -1,6 +1,8 @@
 package cameo
 
 import (
+	"github.com/cameo-lang/cameo/src/cameoio"
+
 	"bytes"
 	"errors"
 	"testing"
@@ -25,7 +27,7 @@ p a, b, c, d, N
 	dump, err := prog.Dump()
 	assert.NoError(t, err)
 	var resumed bytes.Buffer
-	cont, err := Resume(dump.Data, &resumed, &resumed)
+	cont, err := Resume(dump.Data, cameoio.Streams(&resumed, &resumed))
 	assert.NoError(t, err)
 	assert.NoError(t, cont.Run())
 	assert.Equals(t, resumed.String(), "nil\nfalse\n\"\"\n[]\nnil\n")

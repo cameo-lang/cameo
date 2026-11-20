@@ -1,6 +1,8 @@
 package cameo
 
 import (
+	"github.com/cameo-lang/cameo/src/cameoio"
+
 	"bytes"
 	"errors"
 	"testing"
@@ -39,7 +41,7 @@ func field(t *testing.T, msg proto.Message, name string) protoreflect.Value {
 
 func TestARunErrorGivesTheHostTheExceptionAsAMessage(t *testing.T) {
 	var out bytes.Buffer
-	prog, err := Load("t.cameo", httpErrorScript+"fetch(404)\n", &out, &out)
+	prog, err := LoadFromString("t.cameo", httpErrorScript+"fetch(404)\n", cameoio.Streams(&out, &out))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,7 +70,7 @@ func TestARunErrorGivesTheHostTheExceptionAsAMessage(t *testing.T) {
 
 func TestARunErrorOfABuiltinExceptionCarriesWhatItCarries(t *testing.T) {
 	var out bytes.Buffer
-	prog, err := Load("t.cameo", "{a: 1}.fetch(:b)\n", &out, &out)
+	prog, err := LoadFromString("t.cameo", "{a: 1}.fetch(:b)\n", cameoio.Streams(&out, &out))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,7 +90,7 @@ func TestARunErrorOfABuiltinExceptionCarriesWhatItCarries(t *testing.T) {
 
 func TestCallReturnsAnExceptionAsAMessage(t *testing.T) {
 	var out bytes.Buffer
-	prog, err := Load("t.cameo", httpErrorScript, &out, &out)
+	prog, err := LoadFromString("t.cameo", httpErrorScript, cameoio.Streams(&out, &out))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -118,7 +120,7 @@ func TestCallReturnsAnExceptionAsAMessage(t *testing.T) {
 // script's or a builtin's does.
 func TestAHostExceptionGoesBackInAsItself(t *testing.T) {
 	var out bytes.Buffer
-	prog, err := Load("t.cameo", "def caught\n  Net.get\nrescue Net::Timeout => e\n  e\nend\n", &out, &out)
+	prog, err := LoadFromString("t.cameo", "def caught\n  Net.get\nrescue Net::Timeout => e\n  e\nend\n", cameoio.Streams(&out, &out))
 	if err != nil {
 		t.Fatal(err)
 	}

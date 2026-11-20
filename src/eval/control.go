@@ -130,7 +130,7 @@ func ioHint(recv object.Value, name string) string {
 	for k := cls; k != nil; k = k.Super {
 		for _, e := range k.Extends {
 			if e.IOKind != "" && e.Lookup(name) != nil {
-				return fmt.Sprintf(": the host allows no %s I/O; run the script with cameo --io=%s, or let the program say AllowIO(%q)%s", e.IOKind, e.IOKind, e.IOKind, map[bool]string{true: " and give it a file system with FileSystem"}[e.IOKind == "file"])
+				return fmt.Sprintf(": the host allows no %s I/O; run the script with cameo --io=%s, or let the program say AllowIO(%q)%s", e.IOKind, e.IOKind, e.IOKind, map[bool]string{true: " and load it with a cameo.Env that has files"}[e.IOKind == "file"])
 			}
 		}
 	}

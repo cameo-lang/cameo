@@ -6,6 +6,7 @@ import (
 
 	"github.com/cameo-lang/cameo/src/assert"
 	"github.com/cameo-lang/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/cameoio"
 	"github.com/cameo-lang/cameo/src/lib"
 )
 
@@ -38,7 +39,7 @@ func TestALibraryWrittenInCameoThatDoesNotParseIsASyntaxError(t *testing.T) {
 	lib.Sources["broken"] = "def oops(\n"
 	defer delete(lib.Sources, "broken")
 	var stdout, stderr bytes.Buffer
-	err := cameo.Run("t.cameo", `require "broken"`, &stdout, &stderr)
+	err := cameo.RunFromString("t.cameo", `require "broken"`, cameoio.Streams(&stdout, &stderr))
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), "broken.cameo:")
 	assert.Contains(t, err.Error(), "(SyntaxError)")
@@ -113,10 +114,10 @@ func TestAnErrorInALibraryWrittenInCameoNamesItsFile(t *testing.T) {
 	lib.Sources["lib"] = "module Lib\n  def self.go\n    raise ArgumentError, \"no\"\n  end\n\n  def self.each\n    yield 1\n  end\nend\n"
 	defer delete(lib.Sources, "lib")
 	var stdout, stderr bytes.Buffer
-	err := cameo.Run("t.cameo", "require \"lib\"\nLib.go\n", &stdout, &stderr)
+	err := cameo.RunFromString("t.cameo", "require \"lib\"\nLib.go\n", cameoio.Streams(&stdout, &stderr))
 	assert.NotNil(t, err)
 	assert.Equals(t, err.Error(), "lib.cameo:3: no (ArgumentError)")
-	err = cameo.Run("t.cameo", "require \"lib\"\nLib.each { |x| raise \"mine\" }\n", &stdout, &stderr)
+	err = cameo.RunFromString("t.cameo", "require \"lib\"\nLib.each { |x| raise \"mine\" }\n", cameoio.Streams(&stdout, &stderr))
 	assert.NotNil(t, err)
 	assert.Equals(t, err.Error(), "t.cameo:2: mine (RuntimeError)")
 }

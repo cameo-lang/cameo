@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>cameo — enabling I/O</title>
-<meta name="description" content="A cameo script does no I/O unless the program that runs it allows it: cameo --io on the command line, AllowIO and FileSystem from Go, or a module of Go functions.">
+<meta name="description" content="A cameo script does no I/O unless the program that runs it allows it: cameo --io on the command line, AllowIO and the files of a cameo.Env from Go, or a module of Go functions.">
 <link rel="stylesheet" href="style.css">
 <script type="module" src="site.js"></script>
 </head>
@@ -37,7 +37,7 @@ calls in the Go program that embeds it.</p>
 <ol>
   <li><a href="#default">What a script can do by default</a></li>
   <li><a href="#cli">On the command line: --io</a></li>
-  <li><a href="#go">From a Go program: AllowIO and FileSystem</a></li>
+  <li><a href="#go">From a Go program: AllowIO and the Env's files</a></li>
   <li><a href="#host">Everything else: a module of Go functions</a></li>
 </ol>
 </nav>
@@ -61,7 +61,7 @@ rescue NoMethodError =&gt; e
 end</code></pre>
 <pre class="output"><code>false
 "notes.txt"
-undefined method 'read' for class File: the host allows no file I/O; run the script with cameo --io=file, or let the program say AllowIO("file") and give it a file system with FileSystem (see https://15b.it/io)</code></pre>
+undefined method 'read' for class File: the host allows no file I/O; run the script with cameo --io=file, or let the program say AllowIO("file") and load it with a cameo.Env that has files (see https://15b.it/io)</code></pre>
 
 <p>So a script from an untrusted source can be run as it is: the worst
 it does is compute for too long, and
@@ -104,28 +104,30 @@ far.</td></tr>
 <p>Without the flag the same script stops at its first line, with the
 message above, and exits with status 1.</p>
 
-<h2 id="go">From a Go program: AllowIO and FileSystem</h2>
+<h2 id="go">From a Go program: AllowIO and the Env's files</h2>
 
-<p>A program that embeds cameo allows a kind with
-<code>prog.AllowIO("file")</code> and says which files with
-<code>prog.FileSystem(fsys, dir)</code>. Both are needed. The file
-system is an <a href="https://github.com/spf13/afero">afero</a>
-<code>Fs</code>: the disk, one directory of it, a read-only view, or
-memory. <code>prog.AllowHostIO("file")</code> is the short form for the
-machine's own files from the working directory, which is what the
-command line does.</p>
+<p>A program that embeds cameo says which files a script may use with
+the <code>cameo.Env</code> it loads the script with, and allows the kind
+with <code>prog.AllowIO("file")</code>. Both are needed. The Env's
+<code>Files</code> is an <a href="https://github.com/spf13/afero">afero</a>
+<code>Fs</code> and the directory a relative path starts at: the disk,
+one directory of it, a read-only view, or memory.
+<code>cameoio.New(fsys, dir, stdin, stdout, stderr)</code> makes such an
+Env, and <code>cameoio.DefaultEnv()</code> is the machine's own files from
+the working directory, which is what the command line runs scripts
+with.</p>
 
 <p>The example
 <a href="https://github.com/cameo-lang/cameo/tree/main/examples/io">examples/io</a>
 gives this script a file system in memory:</p>
 
-<pre data-file="examples/io/notes.cameo" class="cameo hosted"><code># The script reads and writes files as in Ruby. Which files those are is
+<pre data-file="examples/io/notes.cameo" data-title="notes.cameo" class="cameo hosted"><code># The script reads and writes files as in Ruby. Which files those are is
 # the Go program's choice.
 text = File.read("notes.txt")
 puts "#{text.lines.size} lines"
 File.write("shout.txt", text.upcase)
 File.open("shout.txt") { |f| puts f.gets }</code></pre>
-<pre data-file="examples/io/main.go" class="go"><code>// Command io lets a script read and write files, in a file system the Go
+<pre data-file="examples/io/main.go" data-title="main.go" class="go"><code>// Command io lets a script read and write files, in a file system the Go
 // program chooses. A script does no I/O unless the program that runs it
 // allows a kind of it: here the kind "file", with a file system in
 // memory that holds one file.
@@ -140,6 +142,7 @@ import (
 	"os"
 
 	"github.com/cameo-lang/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/cameoio"
 	"github.com/spf13/afero"
 )
 
@@ -149,16 +152,15 @@ var script string
 // run runs the script with the files of fsys, relative paths read from
 // dir.
 func run(fsys afero.Fs, dir string, stdout, stderr io.Writer) error {
-	prog, err := cameo.Load("notes.cameo", script, stdout, stderr)
+	// Both are needed: a file system in the Env, and the kind allowed.
+	// The file system may be the disk (afero.NewOsFs), one directory of
+	// it (afero.NewBasePathFs), a read-only view (afero.NewReadOnlyFs) or
+	// memory, as here.
+	prog, err := cameo.LoadFromString("notes.cameo", script, cameoio.New(fsys, dir, nil, stdout, stderr))
 	if err != nil {
 		return err
 	}
-	// Both are needed: the kind allowed, and a file system to read. The
-	// file system may be the disk (afero.NewOsFs), one directory of it
-	// (afero.NewBasePathFs), a read-only view (afero.NewReadOnlyFs) or
-	// memory, as here.
 	prog.AllowIO("file")
-	prog.FileSystem(fsys, dir)
 	return prog.Run()
 }
 

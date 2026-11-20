@@ -8,9 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cameo-lang/cameo/src/str"
-	"io"
 	"math/big"
-	"os"
 	"reflect"
 	"slices"
 	"sort"
@@ -18,7 +16,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/spf13/afero"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
@@ -30,24 +27,25 @@ import (
 	"github.com/cameo-lang/cameo/src/syntax"
 )
 
-// Run parses, checks and runs a script, writing its output to stdout and
-// stderr. It returns a syntax.ErrorList when the script does not check, or
-// a *RunError for the exception that ended it.
-func Run(file, src string, stdout, stderr io.Writer) error {
-	prog, err := Load(file, src, stdout, stderr)
+// Run loads the script at path through env, as Load does, and runs it. It
+// returns a syntax.ErrorList when the script does not check, or a
+// *RunError for the exception that ended it.
+func Run(path string, env Env) error {
+	prog, err := Load(path, env)
 	if err != nil {
 		return err
 	}
 	return prog.Run()
 }
 
-// RunFile runs the script at path.
-func RunFile(path string, stdout, stderr io.Writer) error {
-	src, err := os.ReadFile(path)
+// RunFromString runs the script src, as LoadFromString loads it, file
+// naming it in error messages.
+func RunFromString(file, src string, env Env) error {
+	prog, err := LoadFromString(file, src, env)
 	if err != nil {
 		return err
 	}
-	return Run(path, string(src), stdout, stderr)
+	return prog.Run()
 }
 
 // ExitStatus returns the status a script ended with by exit or abort, or
@@ -99,21 +97,46 @@ type Program struct {
 	src  string
 	prog *syntax.Program
 	in   *eval.Interp
+	env  Env
 	ran  bool
 }
 
-// Load parses and checks a script. The program's output goes to stdout and
-// stderr when it runs.
-func Load(file, src string, stdout, stderr io.Writer) (*Program, error) {
+// Load loads the script at path: env's LoadFile reads its source, and
+// LoadFromString parses and checks it, with env as its host.
+func Load(path string, env Env) (*Program, error) {
+	if env == nil {
+		return nil, ErrNoEnv
+	}
+	src, err := env.LoadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	return LoadFromString(path, src, env)
+}
+
+// LoadFromString parses and checks the script src, file naming it in
+// error messages, with env as its host: its output goes to env's Stdout
+// and Stderr when it runs, and the files it reads and writes, once
+// AllowIO allows file I/O, are env's Files.
+func LoadFromString(file, src string, env Env) (*Program, error) {
+	if env == nil {
+		return nil, ErrNoEnv
+	}
 	loaded.Store(true)
 	prog, err := syntax.Parse(file, src)
 	if err != nil {
 		return nil, err
 	}
-	p := &Program{file: file, src: src, prog: prog, in: eval.New(stdout, stderr)}
+	p := &Program{file: file, src: src, prog: prog, in: eval.New(env.Stdout(), env.Stderr()), env: env}
+	if fsys, dir := env.Files(); fsys != nil {
+		p.in.SetFileSystem(fsys, dir)
+	}
 	p.Args(nil)
 	return p, nil
 }
+
+// Env is the host the program was loaded with.
+func (p *Program) Env() Env { return p.env }
 
 // Args sets ARGV, the script's arguments: what follows the script on the
 // cameo command line, or what the host gives it. It is empty by default.
@@ -604,37 +627,10 @@ var builtinExceptions = sync.OnceValue(func() []*object.Class {
 // to each kind of I/O apart. Each of what is a kind, "network", "file"
 // or "popen", "all" for every kind, or a library's require path, which
 // allows that one library: AllowIO("network") lets every library that
-// reaches the network act, AllowIO("file") File.read and File.open, and
-// AllowIO("all") any I/O. The
-// cameo command allows what its --io flag names. Call it before Run.
+// reaches the network act, AllowIO("file") File.read, File.open and
+// File.write on the Env's Files, and AllowIO("all") any I/O. The cameo
+// command allows what its --io flag names. Call it before Run.
 func (p *Program) AllowIO(what ...string) { p.in.AllowIO(what...) }
-
-// FileSystem gives the script fsys to read and write files in, through
-// File.read, File.open and File.write, with a relative path starting at dir, an absolute path
-// in fsys ("" for its root); an absolute path is fsys's own, and ".."
-// stops at its root. The script reads and writes only where AllowIO allows
-// file I/O too: without both, File has no read, open or write. A host that
-// shares part of a disk confines the script there itself, with
-// afero.NewBasePathFs, and keeps it from writing with afero.NewReadOnlyFs. Call it before
-// Run.
-func (p *Program) FileSystem(fsys afero.Fs, dir string) { p.in.SetFileSystem(fsys, dir) }
-
-// AllowHostIO allows what AllowIO does, and gives file I/O, when what
-// allows it, the machine's file system, with relative paths from the
-// working directory: what the cameo command does with its --io flag. A
-// program that embeds cameo calls
-// AllowIO and FileSystem instead, with the files it means to share.
-func (p *Program) AllowHostIO(what ...string) {
-	p.AllowIO(what...)
-	if !slices.Contains(what, "all") && !slices.Contains(what, "file") {
-		return
-	}
-	dir, err := os.Getwd()
-	if err != nil {
-		dir = "/"
-	}
-	p.FileSystem(afero.NewOsFs(), dir)
-}
 
 // IOKinds are the kinds of I/O --io= and AllowIO name.
 var IOKinds = []string{"network", "file", "popen"}

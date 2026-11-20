@@ -1,6 +1,8 @@
 package cameo
 
 import (
+	"github.com/cameo-lang/cameo/src/cameoio"
+
 	"bytes"
 	"errors"
 	"testing"
@@ -25,7 +27,7 @@ func TestAResumedRunKeepsWhatRefersToAHostModule(t *testing.T) {
 		})
 	}
 	var out bytes.Buffer
-	prog, err := Load("t.cameo", src, &out, &out)
+	prog, err := LoadFromString("t.cameo", src, cameoio.Streams(&out, &out))
 	assert.NoError(t, err)
 	host(prog, true, 10)
 	assert.True(t, errors.Is(prog.Run(), ErrPaused), "the script did not pause")
@@ -38,7 +40,7 @@ func TestAResumedRunKeepsWhatRefersToAHostModule(t *testing.T) {
 	assert.Contains(t, text, "  model = Model\n")
 
 	var rest bytes.Buffer
-	cont, err := Resume(dump.Data, &rest, &rest)
+	cont, err := Resume(dump.Data, cameoio.Streams(&rest, &rest))
 	assert.NoError(t, err)
 	host(cont, false, 100)
 	assert.NoError(t, cont.Run())
