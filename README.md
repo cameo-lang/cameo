@@ -75,7 +75,7 @@ cameo.Register("Greeter", &greetpb.Greeter{}).
 		return fmt.Sprintf("%s, %s!", self.Greeting, name), nil
 	}).
 
-prog, err := cameo.Load(file, src, stdout, stderr)     // checks the script
+prog, err := cameo.LoadFromString(file, src, cameoio.Streams(stdout, stderr)) // checks the script
 if err := prog.Run(); err != nil {                     // runs it
 line, err := prog.Call(nil, "welcome", "Go")           // calls a method of the script
 ```

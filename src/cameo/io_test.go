@@ -1,6 +1,8 @@
 package cameo
 
 import (
+	"github.com/cameo-lang/cameo/src/cameoio"
+
 	"bytes"
 	"strings"
 	"testing"
@@ -12,7 +14,7 @@ import (
 func TestStdoutAndStderrAreStreams(t *testing.T) {
 	var out, errOut bytes.Buffer
 	src := "puts \"a\"\n$stderr.puts \"b\", [1, 2]\nSTDOUT.print \"c\", 1, \"\\n\"\nn = $stderr.write(\"e\\n\")\nputs n, $stdout.sync, STDERR.fileno, $stdout.flush == STDOUT\nwarn \"w\"\n"
-	prog, err := Load("t.cameo", src, &out, &errOut)
+	prog, err := LoadFromString("t.cameo", src, cameoio.Streams(&out, &errOut))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -30,7 +32,7 @@ func TestStdoutAndStderrAreStreams(t *testing.T) {
 		"$x = 1\n":        "global variables are not supported",
 		"p $x\n":          "global variables are not supported",
 	} {
-		_, err := Load("t.cameo", src, &out, &errOut)
+		_, err := LoadFromString("t.cameo", src, cameoio.Streams(&out, &errOut))
 		if err == nil || !strings.Contains(err.Error(), want) {
 			t.Errorf("%q: %v; want %q", src, err, want)
 		}

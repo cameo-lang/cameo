@@ -1,6 +1,8 @@
 package cameo
 
 import (
+	"github.com/cameo-lang/cameo/src/cameoio"
+
 	"bytes"
 	"testing"
 
@@ -13,13 +15,13 @@ import (
 // host can keep such a value, or its bytes, between two calls.
 func TestAnInstanceWithAProcFieldGoesToGoAndBack(t *testing.T) {
 	var out bytes.Buffer
-	prog, err := Load("t.cameo", `class Route
+	prog, err := LoadFromString("t.cameo", `class Route
   string :path
   proc :handler
 end
 def route(n) = Route.new(path: "/a", handler: proc { |x| x * n })
 def serve(route, x) = route.handler.call(x)
-`, &out, &out)
+`, cameoio.Streams(&out, &out))
 	if err != nil {
 		t.Fatal(err)
 	}

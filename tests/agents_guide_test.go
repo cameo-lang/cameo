@@ -9,6 +9,7 @@ import (
 	"github.com/cameo-lang/cameo/src/agentdocs"
 	"github.com/cameo-lang/cameo/src/assert"
 	"github.com/cameo-lang/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/cameoio"
 )
 
 // guideSnippet is a Ruby block of a topic of agentdocs.
@@ -27,7 +28,7 @@ func TestTheAgentDocsSnippetsRun(t *testing.T) {
 			count++
 			t.Run(topic.Name+"/"+strconv.Itoa(i+1), func(t *testing.T) {
 				var stdout, stderr bytes.Buffer
-				assert.NoError(t, cameo.Run(topic.Name+".md", m[1], &stdout, &stderr))
+				assert.NoError(t, cameo.RunFromString(topic.Name+".md", m[1], cameoio.Streams(&stdout, &stderr)))
 				assert.Equals(t, stderr.String(), "")
 			})
 		}

@@ -6,6 +6,7 @@ import (
 
 	"github.com/cameo-lang/cameo/src/assert"
 	"github.com/cameo-lang/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/cameoio"
 )
 
 // Class attributes are cameo's own; these outputs are their
@@ -117,7 +118,7 @@ nil
 		{"module M\n  attribute :x\nend\n", "attribute :x: an attribute belongs to a class body"},
 	} {
 		var stdout, stderr bytes.Buffer
-		err := cameo.Run("t.cameo", c.src, &stdout, &stderr)
+		err := cameo.RunFromString("t.cameo", c.src, cameoio.Streams(&stdout, &stderr))
 		assert.NotNil(t, err)
 		assert.Contains(t, err.Error(), c.want)
 	}

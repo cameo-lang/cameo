@@ -9,12 +9,13 @@ import (
 
 	"github.com/cameo-lang/cameo/src/assert"
 	"github.com/cameo-lang/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/cameoio"
 	"github.com/cameo-lang/cameo/src/irb"
 )
 
 func newIRBSession(t *testing.T, stdout io.Writer) *irb.Session {
 	t.Helper()
-	prog, err := cameo.Load("(irb)", "", stdout, stdout)
+	prog, err := cameo.LoadFromString("(irb)", "", cameoio.Streams(stdout, stdout))
 	assert.NoError(t, err)
 	return irb.NewSession(prog)
 }
@@ -98,7 +99,7 @@ func TestIRBTerminalEditsAndRunsLines(t *testing.T) {
 	st := newStream()
 	term := irb.NewTerminal(st)
 	term.SetSize(80, 24)
-	prog, err := cameo.Load("(irb)", "", term, term)
+	prog, err := cameo.LoadFromString("(irb)", "", cameoio.Streams(term, term))
 	assert.NoError(t, err)
 	ended := make(chan error, 1)
 	go func() { ended <- term.Run(irb.NewSession(prog)) }()
@@ -150,7 +151,7 @@ func TestIRBTerminalCompletesOnTab(t *testing.T) {
 	st := newStream()
 	term := irb.NewTerminal(st)
 	term.SetSize(80, 24)
-	prog, err := cameo.Load("(irb)", "", term, term)
+	prog, err := cameo.LoadFromString("(irb)", "", cameoio.Streams(term, term))
 	assert.NoError(t, err)
 	go term.Run(irb.NewSession(prog))
 
@@ -170,7 +171,7 @@ func TestIRBTerminalCompletesOnTab(t *testing.T) {
 func TestIRBTerminalKeepsTheKeysAfterACtrlC(t *testing.T) {
 	st := newStream()
 	term := irb.NewTerminal(st)
-	prog, err := cameo.Load("(irb)", "", term, term)
+	prog, err := cameo.LoadFromString("(irb)", "", cameoio.Streams(term, term))
 	assert.NoError(t, err)
 	go term.Run(irb.NewSession(prog))
 
@@ -203,7 +204,7 @@ func TestIRBTerminalTakesAltChords(t *testing.T) {
 	st := newStream()
 	term := irb.NewTerminal(st)
 	term.SetSize(80, 24)
-	prog, err := cameo.Load("(irb)", "", term, term)
+	prog, err := cameo.LoadFromString("(irb)", "", cameoio.Streams(term, term))
 	assert.NoError(t, err)
 	go term.Run(irb.NewSession(prog))
 

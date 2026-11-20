@@ -13,10 +13,21 @@ import (
 
 	"github.com/cameo-lang/cameo/src/agentdocs"
 	"github.com/cameo-lang/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/cameoio"
 	"github.com/cameo-lang/cameo/src/ir"
 	"github.com/cameo-lang/cameo/src/syntax"
+	"github.com/spf13/afero"
 	"golang.org/x/term"
 )
+
+// hostEnv is the Env the command runs scripts with: the machine's files,
+// relative paths from the working directory, its stdin, and the output
+// streams given. A script reads and writes the files only where --io
+// allows file I/O (Program.AllowIO).
+func hostEnv(stdout, stderr io.Writer) cameo.Env {
+	_, dir := cameoio.DefaultEnv().Files()
+	return cameoio.New(afero.NewOsFs(), dir, os.Stdin, stdout, stderr)
+}
 
 // commands are the words cameo takes before a script's path, which a
 // script cannot be named by; "--" too, so a mistyped command prints the
@@ -207,7 +218,7 @@ func protoFiles(path, dir string, out io.Writer) error {
 	if err != nil {
 		return fmt.Errorf("cameo: %w", err)
 	}
-	prog, err := cameo.Load(path, string(src), io.Discard, io.Discard)
+	prog, err := cameo.LoadFromString(path, string(src), cameoio.Streams(io.Discard, io.Discard))
 	if err != nil {
 		return err
 	}

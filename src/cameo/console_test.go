@@ -1,6 +1,8 @@
 package cameo
 
 import (
+	"github.com/cameo-lang/cameo/src/cameoio"
+
 	"bytes"
 	"errors"
 	"testing"
@@ -11,7 +13,7 @@ import (
 // method defined by one is callable from the next, and an exception comes
 // back as a RunError naming the script.
 func TestEvalKeepsTheTopLevel(t *testing.T) {
-	prog, err := Load("(irb)", "", &bytes.Buffer{}, &bytes.Buffer{})
+	prog, err := LoadFromString("(irb)", "", cameoio.Streams(&bytes.Buffer{}, &bytes.Buffer{}))
 	if err != nil {
 		t.Fatal(err)
 	}

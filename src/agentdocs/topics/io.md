@@ -15,9 +15,11 @@ p File.basename("/home/ada/notes.txt")      # a path is only a string
   reading and `File.write` on the machine's files, from the working
   directory; `cameo --io script.cameo` allows every kind. The flag goes
   before the script.
-- A Go program allows it with `prog.AllowIO("file")` and a file system
-  with `prog.FileSystem(fsys, dir)`, both; `prog.AllowHostIO("file")`
-  is the short form for the machine's own files.
+- A Go program allows it with `prog.AllowIO("file")`, and the files are
+  those of the `cameo.Env` it loaded the script with: both are needed.
+  `cameoio.New(fsys, dir, stdin, stdout, stderr)` shares an afero file
+  system, `cameoio.DefaultEnv()` the machine's own, and
+  `cameoio.Streams(stdout, stderr)` none.
 - Anything else a script reaches, the network, a database, a model, is a
   module of Go functions the host gives it (topic `embedding`). Such a
   function usually returns a promise: `page = await Web.fetch(url)`.

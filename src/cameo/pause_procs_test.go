@@ -1,6 +1,8 @@
 package cameo
 
 import (
+	"github.com/cameo-lang/cameo/src/cameoio"
+
 	"bytes"
 	"errors"
 	"strings"
@@ -41,7 +43,7 @@ puts scale.lambda?, scale.arity
 	assert.Equals(t, strings.Join(dump.Missing, ";"), "")
 
 	var resumed bytes.Buffer
-	cont, err := Resume(dump.Data, &resumed, &resumed)
+	cont, err := Resume(dump.Data, cameoio.Streams(&resumed, &resumed))
 	assert.NoError(t, err)
 	assert.NoError(t, cont.Run())
 	assert.Equals(t, resumed.String(), "6\n120\n21\n1\nX\n3\ntrue\n1\nlast registered\nfirst registered, factor 3\n")

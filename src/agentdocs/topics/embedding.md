@@ -4,11 +4,28 @@ The package `github.com/cameo-lang/cameo/src/cameo` loads a script, runs
 it, calls its methods and converts values both ways.
 
 ```go
-prog, err := cameo.Load("point.cameo", script, os.Stdout, os.Stderr) // parse and check
+prog, err := cameo.Load("point.cameo", cameoio.DefaultEnv()) // read, parse and check
 if err != nil { return err }
 if err := prog.Run(); err != nil { return err }  // RunContext(ctx) stops at ctx's end
 hello, err := prog.Call(nil, "greet", "Go")      // a top-level method; "Point" for a class method
 ```
+
+The last argument is a `cameo.Env`, all of the host the program reaches:
+the streams its `puts` and `warn` write to, the script files `LoadFile`
+reads, and the files a script may read and write. Package `cameo` touches
+no file or stream of the host itself. The package
+`github.com/cameo-lang/cameo/src/cameoio` has the Envs:
+
+- `cameoio.DefaultEnv()`: the machine's files, from the working
+  directory, and the process's standard streams;
+- `cameoio.Streams(stdout, stderr)`: output alone, for a host that hands
+  cameo the source, and for tests;
+- `cameoio.New(fsys, dir, stdin, stdout, stderr)`: the afero file system
+  and streams the host chooses.
+
+A program that does not import `cameoio` uses none of cameo's default
+I/O. `cameo.LoadFromString(file, src, env)` loads a script the program holds
+as a string.
 
 A host gives a script what it may reach as a module of Go functions,
 defined after `Load` and before `Run`:
@@ -40,8 +57,9 @@ web.Def("fetch", func(args []any, kw map[string]any, block *cameo.Block) (any, e
   await them together, and a run that waits on one can be paused (topic
   `pause`).
 - A script does no I/O unless the program allows it (topic `io`).
-- `cameo.Run(file, src, stdout, stderr)` is `Load` and `Run` in one call,
-  as the `cameo` command does.
+- `cameo.Run(path, env)` is `Load` and `Run` in one call, as the `cameo`
+  command does, and `cameo.RunFromString(file, src, env)`
+  `LoadFromString` and `Run`.
 
 More, with the mapping of every value and protobuf messages both ways:
 https://cameo-lang.github.io/cameo/go.html.

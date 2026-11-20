@@ -1,6 +1,8 @@
 package cameo
 
 import (
+	"github.com/cameo-lang/cameo/src/cameoio"
+
 	"bytes"
 	"context"
 	"errors"
@@ -27,7 +29,7 @@ puts "loaded"
 func load(t *testing.T) (*Program, *bytes.Buffer) {
 	t.Helper()
 	var out bytes.Buffer
-	prog, err := Load("t.cameo", script, &out, &out)
+	prog, err := LoadFromString("t.cameo", script, cameoio.Streams(&out, &out))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -120,7 +122,7 @@ func TestErrorsAreReported(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "undefined method 'nope'") {
 		t.Fatalf("error: %v", err)
 	}
-	if _, err := Load("t.cameo", "a = [2, 1]\na.sort!\n", nil, nil); err == nil {
+	if _, err := LoadFromString("t.cameo", "a = [2, 1]\na.sort!\n", cameoio.Streams(nil, nil)); err == nil {
 		t.Fatal("a rejected script does not load")
 	}
 	if _, err := prog.ToValue(struct{}{}); err == nil {
@@ -142,7 +144,7 @@ func TestRunContextStopsTheScript(t *testing.T) {
 	}
 	for name, src := range scripts {
 		var out bytes.Buffer
-		prog, err := Load(name+".cameo", src, &out, &out)
+		prog, err := LoadFromString(name+".cameo", src, cameoio.Streams(&out, &out))
 		if err != nil {
 			t.Fatalf("%s: %v", name, err)
 		}
@@ -164,7 +166,7 @@ func TestRunContextStopsTheScript(t *testing.T) {
 		}
 	}
 	// A script that ends returns as Run does.
-	prog, err := Load("ok.cameo", "puts 1\n", &bytes.Buffer{}, &bytes.Buffer{})
+	prog, err := LoadFromString("ok.cameo", "puts 1\n", cameoio.Streams(&bytes.Buffer{}, &bytes.Buffer{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -185,7 +187,7 @@ func TestLastValue(t *testing.T) {
 		"class P\n  int :x\nend\nP.new(x: 1)\n": "P(x: 1)",
 	}
 	for src, want := range cases {
-		prog, err := Load("t.cameo", src, &bytes.Buffer{}, &bytes.Buffer{})
+		prog, err := LoadFromString("t.cameo", src, cameoio.Streams(&bytes.Buffer{}, &bytes.Buffer{}))
 		if err != nil {
 			t.Fatalf("%q: %v", src, err)
 		}
@@ -202,7 +204,7 @@ func TestLastValue(t *testing.T) {
 }
 
 func TestCallReturnsAHashWithSymbolKeysWithStringKeys(t *testing.T) {
-	prog, err := Load("h.cameo", `def h = {a: 1, "b" => [2]}`, &bytes.Buffer{}, &bytes.Buffer{})
+	prog, err := LoadFromString("h.cameo", `def h = {a: 1, "b" => [2]}`, cameoio.Streams(&bytes.Buffer{}, &bytes.Buffer{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -220,11 +222,11 @@ func TestCallReturnsAHashWithSymbolKeysWithStringKeys(t *testing.T) {
 }
 
 func TestCallRefusesAHashWhoseKeysHaveNoGoMapForm(t *testing.T) {
-	prog, err := Load("h.cameo", `
+	prog, err := LoadFromString("h.cameo", `
 def symbol_and_string = {a: 1, "a" => 2}
 def range_key = {(1..2) => 1}
 def binary_key = {"k".b => 1}
-`, &bytes.Buffer{}, &bytes.Buffer{})
+`, cameoio.Streams(&bytes.Buffer{}, &bytes.Buffer{}))
 	if err != nil {
 		t.Fatal(err)
 	}

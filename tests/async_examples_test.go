@@ -12,6 +12,8 @@ import (
 
 	"github.com/cameo-lang/cameo/src/assert"
 	"github.com/cameo-lang/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/cameoio"
+	"github.com/spf13/afero"
 )
 
 // asyncExamples are the scripts of examples/async, which run unchanged on
@@ -37,7 +39,7 @@ func TestAsyncExamplesOnCameo(t *testing.T) {
 	for _, script := range asyncExamples(t) {
 		t.Run(filepath.Base(script), func(t *testing.T) {
 			var stdout, stderr bytes.Buffer
-			assert.NoError(t, cameo.RunFile(script, &stdout, &stderr))
+			assert.NoError(t, cameo.Run(script, cameoio.New(afero.NewOsFs(), ".", nil, &stdout, &stderr)))
 			assert.Equals(t, stderr.String(), "")
 			assert.Equals(t, stdout.String(), expectedOf(t, script))
 		})
@@ -77,12 +79,10 @@ func TestSiteShowsTheAsyncExamples(t *testing.T) {
 	shown := regexp.MustCompile(`(?s)<pre class="cameo"><code>(.*?)</code></pre>\s*<pre class="output"><code>(.*?)</code></pre>`).FindAllStringSubmatch(section, -1)
 	scripts := asyncExamples(t)
 	assert.Equals(t, len(shown), len(scripts))
-	// The webfetch workflow is the script of examples/webfetch/main.go.
-	mainGo, err := os.ReadFile("../examples/webfetch/main.go")
+	// The webfetch workflow is examples/webfetch/webfetch.cameo.
+	webfetch, err := os.ReadFile("../examples/webfetch/webfetch.cameo")
 	assert.NoError(t, err)
-	script := regexp.MustCompile("(?s)const script = `\n(.*?)\n`\n").FindStringSubmatch(string(mainGo))
-	assert.NotNil(t, script, "main.go has no script constant")
-	assert.True(t, strings.Contains(html.UnescapeString(string(page)), script[1]), "async.html does not show the webfetch script")
+	assert.True(t, strings.Contains(html.UnescapeString(string(page)), strings.TrimSuffix(string(webfetch), "\n")), "async.html does not show the webfetch script")
 	for i, script := range scripts {
 		src, err := os.ReadFile(script)
 		assert.NoError(t, err)

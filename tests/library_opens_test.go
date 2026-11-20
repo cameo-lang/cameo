@@ -6,6 +6,7 @@ import (
 
 	"github.com/cameo-lang/cameo/src/assert"
 	"github.com/cameo-lang/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/cameoio"
 	"github.com/cameo-lang/cameo/src/lib"
 )
 
@@ -71,7 +72,7 @@ p JSON.respond_to?(:greet)
 		"require \"test/string\"\n":   "t.cameo:1: cannot load test/string: test/string.cameo:1: cannot redefine the builtin class String (CameoError) (LoadError)",
 	} {
 		var stdout, stderr bytes.Buffer
-		err := cameo.Run("t.cameo", src, &stdout, &stderr)
+		err := cameo.RunFromString("t.cameo", src, cameoio.Streams(&stdout, &stderr))
 		assert.NotNil(t, err, src)
 		assert.Equals(t, err.Error(), want, src)
 	}

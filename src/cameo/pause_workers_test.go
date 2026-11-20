@@ -1,6 +1,8 @@
 package cameo
 
 import (
+	"github.com/cameo-lang/cameo/src/cameoio"
+
 	"bytes"
 	"errors"
 	"testing"
@@ -63,7 +65,7 @@ func TestAWorkerPausesInsideItsCall(t *testing.T) {
 		}
 	}
 	var rest bytes.Buffer
-	cont, err := Resume(dump.Data, &rest, &rest)
+	cont, err := Resume(dump.Data, cameoio.Streams(&rest, &rest))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -136,7 +138,7 @@ puts "after"
 		t.Fatalf("the dump holds %d workers and %d calls, want none", len(d.Workers), len(d.Calls))
 	}
 	var rest bytes.Buffer
-	cont, err := Resume(dump.Data, &rest, &rest)
+	cont, err := Resume(dump.Data, cameoio.Streams(&rest, &rest))
 	if err != nil {
 		t.Fatal(err)
 	}

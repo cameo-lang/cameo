@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/cameo-lang/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/cameoio"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
@@ -37,7 +38,7 @@ var script string
 // greetAll runs the script's greet_all over names, with conn as the
 // connection to the service, and returns the replies.
 func greetAll(ctx context.Context, conn grpc.ClientConnInterface, names []string, stdout, stderr io.Writer) ([]any, error) {
-	prog, err := cameo.Load("hello.cameo", script, stdout, stderr)
+	prog, err := cameo.LoadFromString("hello.cameo", script, cameoio.Streams(stdout, stderr))
 	if err != nil {
 		return nil, err
 	}

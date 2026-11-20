@@ -6,42 +6,31 @@
 // while the script waits, and await returns each page or raises
 // Web::FetchError.
 //
+// The script, webfetch.cameo, is built into the program, and cameo loads it
+// through an Env of the program's own files.
+//
 //	go run ./examples/webfetch https://example.com https://example.org/missing
 package main
 
 import (
+	"embed"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 
 	"github.com/cameo-lang/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/cameoio"
+	"github.com/spf13/afero"
 )
 
-const script = `
-include Cameo
-
-class Flow
-  # One workflow: fetch the page, then measure it. await parks this
-  # workflow until the host settles the promise; the others run meanwhile.
-  def run(url)
-    page = await Web.fetch(url)
-    "#{url}: #{page.size} bytes, #{page.lines.size} lines"
-  rescue Web::FetchError => e
-    "#{url}: #{e.message}"
-  end
-end
-
-def fetch_all(urls)
-  flow = Flow.new
-  promises = urls.map { |url| async flow, :run, url }   # every workflow starts now
-  await promises                                        # their lines, in order
-end
-`
+//go:embed webfetch.cameo
+var scripts embed.FS
 
 // fetchAll runs the script's fetch_all over urls with client.
 func fetchAll(client *http.Client, urls []string) ([]any, error) {
-	prog, err := cameo.Load("webfetch.cameo", script, os.Stdout, os.Stderr)
+	env := cameoio.New(afero.FromIOFS{FS: scripts}, ".", nil, os.Stdout, os.Stderr)
+	prog, err := cameo.Load("webfetch.cameo", env)
 	if err != nil {
 		return nil, err
 	}

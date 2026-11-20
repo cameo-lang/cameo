@@ -120,15 +120,16 @@ it ends any program.</p>
 any goroutine; <code>Run</code> then returns
 <code>cameo.ErrPaused</code>. <code>prog.Dump()</code> returns the state
 as bytes, to store wherever the program stores things.
-<code>cameo.Resume(data, stdout, stderr)</code> makes a new program of
-them, and its <code>Run</code> goes on where the first one stopped.</p>
+<code>cameo.Resume(data, env)</code> makes a new program of them, with
+<code>env</code> as its host as <code>cameo.Load</code> takes it, and its
+<code>Run</code> goes on where the first one stopped.</p>
 
 <p>The example
 <a href="https://github.com/cameo-lang/cameo/tree/main/examples/pause">examples/pause</a>
 runs this script, which tells the Go program after each step how far it
 is:</p>
 
-<pre data-file="examples/pause/steps.cameo" class="cameo hosted"><code># Five steps of work. After each, the script tells the Go program how
+<pre data-file="examples/pause/steps.cameo" data-title="steps.cameo" class="cameo hosted"><code># Five steps of work. After each, the script tells the Go program how
 # far it is; the Go program may pause the run there.
 total = 0
 n = 1
@@ -143,7 +144,7 @@ puts "done: #{total}"</code></pre>
 <p>The Go program pauses the run on step 3, takes the state, and
 continues it in a second program:</p>
 
-<pre data-file="examples/pause/main.go" class="go"><code>// Command pause stops a running script, keeps its state as bytes, and
+<pre data-file="examples/pause/main.go" data-title="main.go" class="go"><code>// Command pause stops a running script, keeps its state as bytes, and
 // continues it later in another interpreter, as a program would that
 // stores the bytes in a database and goes on after a restart.
 //
@@ -163,6 +164,7 @@ import (
 	"os"
 
 	"github.com/cameo-lang/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/cameoio"
 )
 
 //go:embed steps.cameo
@@ -187,7 +189,7 @@ func host(prog *cameo.Program, stop func(step int64)) {
 // firstHalf runs the script until it has reached step, pauses it there
 // and returns its state.
 func firstHalf(step int64, stdout, stderr io.Writer) ([]byte, error) {
-	prog, err := cameo.Load("steps.cameo", script, stdout, stderr)
+	prog, err := cameo.LoadFromString("steps.cameo", script, cameoio.Streams(stdout, stderr))
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +213,7 @@ func firstHalf(step int64, stdout, stderr io.Writer) ([]byte, error) {
 
 // secondHalf continues the run whose state is data, to its end.
 func secondHalf(data []byte, stdout, stderr io.Writer) error {
-	prog, err := cameo.Resume(data, stdout, stderr)
+	prog, err := cameo.Resume(data, cameoio.Streams(stdout, stderr))
 	if err != nil {
 		return err
 	}
