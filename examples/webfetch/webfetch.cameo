@@ -1,0 +1,18 @@
+include Cameo
+
+class Flow
+  # One workflow: fetch the page, then measure it. await parks this
+  # workflow until the host settles the promise; the others run meanwhile.
+  def run(url)
+    page = await Web.fetch(url)
+    "#{url}: #{page.size} bytes, #{page.lines.size} lines"
+  rescue Web::FetchError => e
+    "#{url}: #{e.message}"
+  end
+end
+
+def fetch_all(urls)
+  flow = Flow.new
+  promises = urls.map { |url| async flow, :run, url }   # every workflow starts now
+  await promises                                        # their lines, in order
+end

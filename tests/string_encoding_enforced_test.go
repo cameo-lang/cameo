@@ -6,6 +6,7 @@ import (
 
 	"github.com/cameo-lang/cameo/src/assert"
 	"github.com/cameo-lang/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/cameoio"
 )
 
 // A String made as text of bytes that are not UTF-8 is refused where it
@@ -29,7 +30,7 @@ puts "went on"
 // []byte, which the script gets as a binary String.
 func TestAHostGivesTextAsAStringAndBytesAsBytes(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	prog, err := cameo.Load("t.cameo", `def kind(s) = s.encoding.to_s`, &stdout, &stderr)
+	prog, err := cameo.LoadFromString("t.cameo", `def kind(s) = s.encoding.to_s`, cameoio.Streams(&stdout, &stderr))
 	assert.NoError(t, err)
 	assert.NoError(t, prog.Run())
 	got, err := prog.Call(nil, "kind", "héllo")

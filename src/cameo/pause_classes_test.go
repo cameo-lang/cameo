@@ -1,6 +1,8 @@
 package cameo
 
 import (
+	"github.com/cameo-lang/cameo/src/cameoio"
+
 	"bytes"
 	"errors"
 	"strings"
@@ -30,7 +32,7 @@ func resumed(t *testing.T, src string) (before, after string, dump *Dump) {
 		if dump == nil {
 			dump = d
 		}
-		cont, err := Resume(d.Data, &rest, &rest)
+		cont, err := Resume(d.Data, cameoio.Streams(&rest, &rest))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -53,7 +55,7 @@ func resumed(t *testing.T, src string) (before, after string, dump *Dump) {
 func whole(t *testing.T, src string) string {
 	t.Helper()
 	var out bytes.Buffer
-	prog, err := Load("t.cameo", src, &out, &out)
+	prog, err := LoadFromString("t.cameo", src, cameoio.Streams(&out, &out))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -332,17 +334,17 @@ func TestResumeRefusesAnotherIRVersion(t *testing.T) {
 		return data
 	}
 	version := d.Version
-	_, err = Resume(rewritten(func() { d.Version = version + 1 }), nil, nil)
+	_, err = Resume(rewritten(func() { d.Version = version + 1 }), cameoio.Streams(nil, nil))
 	if err == nil || !strings.Contains(err.Error(), "a dump resumes on a cameo of its version") {
 		t.Fatalf("resuming a dump of another version: %v", err)
 	}
 	// A dump from before the dump carried code has no version.
-	_, err = Resume(rewritten(func() { d.Version = 0 }), nil, nil)
+	_, err = Resume(rewritten(func() { d.Version = 0 }), cameoio.Streams(nil, nil))
 	if err == nil || !strings.Contains(err.Error(), "IR version 0") {
 		t.Fatalf("resuming a dump without a version: %v", err)
 	}
 	// Code that is not what its digest names is refused.
-	_, err = Resume(rewritten(func() { d.Version = version; d.Units[0].Procs[0].Line++ }), nil, nil)
+	_, err = Resume(rewritten(func() { d.Version = version; d.Units[0].Procs[0].Line++ }), cameoio.Streams(nil, nil))
 	if err == nil || !strings.Contains(err.Error(), "names digest") {
 		t.Fatalf("resuming a dump with changed code: %v", err)
 	}

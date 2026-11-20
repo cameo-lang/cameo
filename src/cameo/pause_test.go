@@ -1,6 +1,8 @@
 package cameo
 
 import (
+	"github.com/cameo-lang/cameo/src/cameoio"
+
 	"bytes"
 	"errors"
 	"strings"
@@ -22,7 +24,7 @@ func pausing(t *testing.T, src string) (*Program, *bytes.Buffer) {
 func pausingAs(t *testing.T, file, src string) (*Program, *bytes.Buffer) {
 	t.Helper()
 	var out bytes.Buffer
-	prog, err := Load(file, src, &out, &out)
+	prog, err := LoadFromString(file, src, cameoio.Streams(&out, &out))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,7 +83,7 @@ func TestPauseDumpsAndResumeContinues(t *testing.T) {
 		t.Fatalf("missing %q, want %q", got, want)
 	}
 	var resumed bytes.Buffer
-	cont, err := Resume(dump.Data, &resumed, &resumed)
+	cont, err := Resume(dump.Data, cameoio.Streams(&resumed, &resumed))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -155,7 +157,7 @@ func TestResumedRandomNumbersContinue(t *testing.T) {
 		t.Fatal(err)
 	}
 	var resumed bytes.Buffer
-	cont, err := Resume(dump.Data, &resumed, &resumed)
+	cont, err := Resume(dump.Data, cameoio.Streams(&resumed, &resumed))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -199,7 +201,7 @@ end
 		t.Fatal(err)
 	}
 	var resumed bytes.Buffer
-	cont, err := Resume(dump.Data, &resumed, &resumed)
+	cont, err := Resume(dump.Data, cameoio.Streams(&resumed, &resumed))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -230,7 +232,7 @@ func TestPauseAfterTheLastStatementEndsTheRun(t *testing.T) {
 // TestResumeRejectsWhatIsNotADump proves Resume and InspectDump fail on
 // bytes that are not a dump, rather than resuming an empty script.
 func TestResumeRejectsWhatIsNotADump(t *testing.T) {
-	if _, err := Resume([]byte("puts 1\n"), nil, nil); err == nil {
+	if _, err := Resume([]byte("puts 1\n"), cameoio.Streams(nil, nil)); err == nil {
 		t.Fatal("Resume of a script's text returned no error")
 	}
 	if _, err := InspectDump([]byte{0xff}); err == nil {
@@ -259,7 +261,7 @@ func TestResumeNamesARandomStateItCannotRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Resume(data, nil, nil); err == nil || !strings.Contains(err.Error(), "random number state") {
+	if _, err := Resume(data, cameoio.Streams(nil, nil)); err == nil || !strings.Contains(err.Error(), "random number state") {
 		t.Fatalf("Resume returned %v, want an error about the random number state", err)
 	}
 }

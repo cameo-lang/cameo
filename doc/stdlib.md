@@ -42,7 +42,7 @@ Files are the second: `File.read`, `File.open` and `File.write` are the methods
 of `Cameo::IO::FileIO`, in `Cameo::IO`, the module cameo's I/O is to live
 in, and `File` extends it. They need two things from the program, both:
 file I/O allowed, and a file system, an `afero.Fs`
-(`github.com/spf13/afero`) given with `Program.FileSystem(fsys, dir)`, which
+(`github.com/spf13/afero`) given by the program's `cameo.Env` (`Env.Files`, as `cameoio.New(fsys, dir, …)` makes it), which
 may be the disk, a directory of it (`afero.NewBasePathFs`), a read-only
 view (`afero.NewReadOnlyFs`) or memory; without either, `File` has no
 `read`, `open` or `write`, and `respond_to?`, `methods` and Tab in irb say so. `cameo --io`

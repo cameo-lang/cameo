@@ -9,6 +9,7 @@ import (
 
 	"github.com/cameo-lang/cameo/src/assert"
 	"github.com/cameo-lang/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/cameoio"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -23,7 +24,7 @@ import (
 // refuses the greeting "nobody". It returns a connection to the service.
 func serve(t *testing.T) *grpc.ClientConn {
 	t.Helper()
-	prog, err := cameo.Load("hello.cameo", script, io.Discard, io.Discard)
+	prog, err := cameo.LoadFromString("hello.cameo", script, cameoio.Streams(io.Discard, io.Discard))
 	assert.NoError(t, err)
 	assert.NoError(t, prog.Run())
 	request, err := prog.Descriptor("Hello::HelloRequest")

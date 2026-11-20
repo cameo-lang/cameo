@@ -1,6 +1,8 @@
 package cameo
 
 import (
+	"github.com/cameo-lang/cameo/src/cameoio"
+
 	"bytes"
 	"errors"
 	"strings"
@@ -18,7 +20,7 @@ func everyPauseLands(t *testing.T, src string) {
 	t.Helper()
 	calls := 0
 	var out bytes.Buffer
-	prog, err := Load("t.cameo", src, &out, &out)
+	prog, err := LoadFromString("t.cameo", src, cameoio.Streams(&out, &out))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -44,7 +46,7 @@ func everyPauseLands(t *testing.T, src string) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		cont, err := Resume(dump.Data, &out, &out)
+		cont, err := Resume(dump.Data, cameoio.Streams(&out, &out))
 		if err != nil {
 			t.Fatal(err)
 		}

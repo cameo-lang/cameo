@@ -6,6 +6,7 @@ import (
 
 	"github.com/cameo-lang/cameo/src/assert"
 	"github.com/cameo-lang/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/cameoio"
 )
 
 // setbyte sets a byte of a binary string and refuses a string of
@@ -14,7 +15,7 @@ import (
 // method.
 func TestSetbyteTakesABinaryStringAlone(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	prog, err := cameo.Load("t.cameo", `p b"ab".setbyte(0, 65)
+	prog, err := cameo.LoadFromString("t.cameo", `p b"ab".setbyte(0, 65)
 ["ab", "é", "ab".force_encoding("US-ASCII")].each do |s|
   begin
     s.setbyte(0, 65)
@@ -22,7 +23,7 @@ func TestSetbyteTakesABinaryStringAlone(t *testing.T) {
     puts e.message
   end
 end
-`, &stdout, &stderr)
+`, cameoio.Streams(&stdout, &stderr))
 	assert.NoError(t, err)
 	prog.IgnoreMutationErrors(true)
 	assert.NoError(t, prog.Run())

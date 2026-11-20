@@ -1,6 +1,8 @@
 package cameo
 
 import (
+	"github.com/cameo-lang/cameo/src/cameoio"
+
 	"bytes"
 	"errors"
 	"testing"
@@ -58,7 +60,7 @@ func resumeRun(t *testing.T, d *cameopb.Dump, opts ...ResumeOption) (string, err
 	data, err := proto.Marshal(d)
 	assert.NoError(t, err)
 	var out bytes.Buffer
-	prog, err := Resume(data, &out, &out, opts...)
+	prog, err := Resume(data, cameoio.Streams(&out, &out), opts...)
 	if err != nil {
 		return "", err
 	}
@@ -85,7 +87,7 @@ func TestOnlyCodeResumesAScriptNamedAsALibrary(t *testing.T) {
 	dump, err := prog.Dump()
 	assert.NoError(t, err)
 	var resumed bytes.Buffer
-	cont, err := Resume(dump.Data, &resumed, &resumed, OnlyCode("abbrev.cameo", src))
+	cont, err := Resume(dump.Data, cameoio.Streams(&resumed, &resumed), OnlyCode("abbrev.cameo", src))
 	assert.NoError(t, err)
 	assert.NoError(t, cont.Run())
 	assert.Equals(t, resumed.String(), "own\n3\n")
@@ -181,11 +183,11 @@ func TestOnlyCodeRefusesAProcOfOtherCodeInAMessage(t *testing.T) {
 	data, err := proto.Marshal(d)
 	assert.NoError(t, err)
 	var out bytes.Buffer
-	cont, err := Resume(data, &out, &out, OnlyCode("t.cameo", src))
+	cont, err := Resume(data, cameoio.Streams(&out, &out), OnlyCode("t.cameo", src))
 	assert.NoError(t, err)
 
 	encode := func(file, src string) []byte {
-		writer, err := Load(file, src, &out, &out)
+		writer, err := LoadFromString(file, src, cameoio.Streams(&out, &out))
 		assert.NoError(t, err)
 		writer.Module("Test").Def("pause", func([]any, map[string]any, *Block) (any, error) { return nil, nil })
 		assert.NoError(t, writer.Run())

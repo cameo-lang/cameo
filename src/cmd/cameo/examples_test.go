@@ -42,7 +42,7 @@ func TestExamples(t *testing.T) {
 				t.Fatalf("missing expected output: %v", err)
 			}
 			var stdout, stderr bytes.Buffer
-			runErr := cameo.RunFile(script, &stdout, &stderr)
+			runErr := cameo.Run(script, hostEnv(&stdout, &stderr))
 			if why, isPending := pending[name]; isPending {
 				if runErr == nil && stdout.String() == string(expected) {
 					t.Fatalf("passes, but is listed as pending (%s): take it off the list", why)
@@ -178,7 +178,7 @@ func TestRunReportsExceptions(t *testing.T) {
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
-	err := cameo.RunFile(script, &stdout, &stderr)
+	err := cameo.Run(script, hostEnv(&stdout, &stderr))
 	if err == nil {
 		t.Fatal("an uncaught exception did not fail the run")
 	}

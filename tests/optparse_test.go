@@ -6,6 +6,7 @@ import (
 
 	"github.com/cameo-lang/cameo/src/assert"
 	"github.com/cameo-lang/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/cameoio"
 )
 
 // The expected values are Ruby 3.4's, with optparse 0.6.0, but where a
@@ -15,7 +16,7 @@ import (
 func runArgs(t *testing.T, src string, args ...string) (string, string) {
 	t.Helper()
 	var stdout, stderr bytes.Buffer
-	prog, err := cameo.Load("t.cameo", src, &stdout, &stderr)
+	prog, err := cameo.LoadFromString("t.cameo", src, cameoio.Streams(&stdout, &stderr))
 	if err != nil {
 		t.Fatalf("%s\nfailed to load: %v", src, err)
 	}

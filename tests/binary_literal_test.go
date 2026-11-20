@@ -6,6 +6,7 @@ import (
 
 	"github.com/cameo-lang/cameo/src/assert"
 	"github.com/cameo-lang/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/cameoio"
 )
 
 // b"..." is a binary string whatever its bytes are, with the escapes of
@@ -39,7 +40,7 @@ true
 func TestAStringLiteralOfOtherBytesIsRefused(t *testing.T) {
 	for src, line := range map[string]string{`p "\xFF"`: "1", `p "a#{1}\xC3"`: "1", "puts 1\np \"\\xFF\"": "2"} {
 		var stdout, stderr bytes.Buffer
-		err := cameo.Run("t.cameo", src+"\n", &stdout, &stderr)
+		err := cameo.RunFromString("t.cameo", src+"\n", cameoio.Streams(&stdout, &stderr))
 		assert.Error(t, err, "t.cameo:"+line+`: a string literal with bytes that are not UTF-8 is a binary string and is written b"..."`)
 		assert.Equals(t, stdout.String(), "")
 	}

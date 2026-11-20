@@ -6,6 +6,7 @@ import (
 
 	"github.com/cameo-lang/cameo/src/assert"
 	"github.com/cameo-lang/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/cameoio"
 )
 
 // minispec is cameo's own, so these outputs are its specification; the
@@ -34,7 +35,7 @@ end
 
 func TestMinispecReportsFailuresErrorsAndSkipsWithTheirLineAndExits1(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	err := cameo.Run("t.cameo", `
+	err := cameo.RunFromString("t.cameo", `
 require "minispec"
 describe "Report" do
   it "fails" do
@@ -51,7 +52,7 @@ describe "Report" do
     pass
   end
 end
-`, &stdout, &stderr)
+`, cameoio.Streams(&stdout, &stderr))
 	status, ok := cameo.ExitStatus(err)
 	assert.True(t, ok, "the run ended with %v", err)
 	assert.Equals(t, status, 1)
@@ -238,7 +239,7 @@ func TestMinispecAnswersOnlyWhenRequired(t *testing.T) {
 	// A script that did not require minispec has no `it`, and is told
 	// where it is.
 	var stdout, stderr bytes.Buffer
-	err := cameo.Run("t.cameo", "it(\"x\") { }\n", &stdout, &stderr)
+	err := cameo.RunFromString("t.cameo", "it(\"x\") { }\n", cameoio.Streams(&stdout, &stderr))
 	assert.NotNil(t, err)
 	assert.Equals(t, err.Error(), "t.cameo:1: undefined method 'it' for main: require \"minispec\" first (NoMethodError)")
 	assert.Equals(t, stdout.String(), "")
@@ -295,7 +296,7 @@ end
 func runSpec(t *testing.T, src string) (string, int) {
 	t.Helper()
 	var stdout, stderr bytes.Buffer
-	err := cameo.Run("t.cameo", src, &stdout, &stderr)
+	err := cameo.RunFromString("t.cameo", src, cameoio.Streams(&stdout, &stderr))
 	status := 0
 	if err != nil {
 		s, ok := cameo.ExitStatus(err)

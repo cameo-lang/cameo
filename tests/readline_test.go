@@ -10,6 +10,7 @@ import (
 
 	"github.com/cameo-lang/cameo/src/assert"
 	"github.com/cameo-lang/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/cameoio"
 	"github.com/cameo-lang/cameo/src/readline"
 )
 
@@ -80,7 +81,7 @@ end
 p Cameo::Kernel::Readline.history
 `
 	var out bytes.Buffer
-	prog, err := cameo.Load("t.cameo", src, &out, &out)
+	prog, err := cameo.LoadFromString("t.cameo", src, cameoio.Streams(&out, &out))
 	assert.NoError(t, err)
 	prog.Terminal(readline.New(st))
 	go func() {
@@ -97,7 +98,7 @@ p Cameo::Kernel::Readline.history
 // and history is empty where the host gave the program no terminal.
 func TestReadlineScriptWithoutATerminalReadsNil(t *testing.T) {
 	var out strings.Builder
-	err := cameo.Run("t.cameo", "p Cameo::Kernel::Readline.readline(\"> \"), Cameo::Kernel::Readline.history\n", &out, &out)
+	err := cameo.RunFromString("t.cameo", "p Cameo::Kernel::Readline.readline(\"> \"), Cameo::Kernel::Readline.history\n", cameoio.Streams(&out, &out))
 	assert.NoError(t, err)
 	assert.Equals(t, out.String(), "nil\n[]\n")
 }

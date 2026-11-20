@@ -18,6 +18,7 @@ import (
 	"os"
 
 	"github.com/cameo-lang/cameo/src/cameo"
+	"github.com/cameo-lang/cameo/src/cameoio"
 )
 
 //go:embed steps.cameo
@@ -42,7 +43,7 @@ func host(prog *cameo.Program, stop func(step int64)) {
 // firstHalf runs the script until it has reached step, pauses it there
 // and returns its state.
 func firstHalf(step int64, stdout, stderr io.Writer) ([]byte, error) {
-	prog, err := cameo.Load("steps.cameo", script, stdout, stderr)
+	prog, err := cameo.LoadFromString("steps.cameo", script, cameoio.Streams(stdout, stderr))
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +67,7 @@ func firstHalf(step int64, stdout, stderr io.Writer) ([]byte, error) {
 
 // secondHalf continues the run whose state is data, to its end.
 func secondHalf(data []byte, stdout, stderr io.Writer) error {
-	prog, err := cameo.Resume(data, stdout, stderr)
+	prog, err := cameo.Resume(data, cameoio.Streams(stdout, stderr))
 	if err != nil {
 		return err
 	}

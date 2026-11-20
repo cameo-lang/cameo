@@ -2,7 +2,6 @@ package cameo
 
 import (
 	"fmt"
-	"io"
 	"strings"
 
 	"google.golang.org/protobuf/proto"
@@ -106,10 +105,14 @@ func OnlyCode(file, code string) ResumeOption {
 // classes and methods are in the dump, so nothing before the pause point
 // runs again. A dump resumes on a cameo of the IR version that wrote it.
 //
-// The dump holds nothing of the host: give the program the modules the
-// one that paused had, with Module, before Run. Each is there from Resume
-// on, without methods, so that the values that refer to one restore.
-func Resume(data []byte, stdout, stderr io.Writer, opts ...ResumeOption) (*Program, error) {
+// The dump holds nothing of the host: env is the resumed program's host,
+// as Load takes it, and the program gets the modules the one that paused
+// had, with Module, before Run. Each is there from Resume on, without
+// methods, so that the values that refer to one restore.
+func Resume(data []byte, env Env, opts ...ResumeOption) (*Program, error) {
+	if env == nil {
+		return nil, ErrNoEnv
+	}
 	var o resumeOptions
 	for _, opt := range opts {
 		opt(&o)
@@ -126,7 +129,7 @@ func Resume(data []byte, stdout, stderr io.Writer, opts ...ResumeOption) (*Progr
 			return nil, fmt.Errorf("%w: the dump is of another source of %s than the one given", ErrOtherCode, d.File)
 		}
 	}
-	prog, err := Load(d.File, d.Source, stdout, stderr)
+	prog, err := LoadFromString(d.File, d.Source, env)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +149,7 @@ func InspectDump(data []byte) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	prog, err := Resume(data, io.Discard, io.Discard)
+	prog, err := Resume(data, noHost{})
 	if err != nil {
 		return "", err
 	}

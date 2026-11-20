@@ -1,6 +1,8 @@
 package cameo
 
 import (
+	"github.com/cameo-lang/cameo/src/cameoio"
+
 	"bytes"
 	"strings"
 	"testing"
@@ -29,7 +31,7 @@ puts pt.x + pt.y
 func debugRun(t *testing.T, src, commands string) (console, output string, err error) {
 	t.Helper()
 	var out, con bytes.Buffer
-	prog, err := Load("t.cameo", src, &out, &out)
+	prog, err := LoadFromString("t.cameo", src, cameoio.Streams(&out, &out))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -115,7 +117,7 @@ func TestDebuggerBreaksOnALineAndListsAround(t *testing.T) {
 // the host so.
 func TestDebuggerQuitEndsTheRun(t *testing.T) {
 	var out, con bytes.Buffer
-	prog, err := Load("t.cameo", "puts 1\nputs 2\n", &out, &out)
+	prog, err := LoadFromString("t.cameo", "puts 1\nputs 2\n", cameoio.Streams(&out, &out))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -135,7 +137,7 @@ func TestDebuggerQuitEndsTheRun(t *testing.T) {
 func TestDebuggerFromRequire(t *testing.T) {
 	src := "require \"debug\"\na = 1\nbinding.break\nputs a\ndebugger\nputs a + 1\n"
 	var out, con bytes.Buffer
-	prog, err := Load("t.cameo", src, &out, &out)
+	prog, err := LoadFromString("t.cameo", src, cameoio.Streams(&out, &out))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -153,7 +155,7 @@ func TestDebuggerFromRequire(t *testing.T) {
 	}
 
 	out.Reset()
-	prog, err = Load("t.cameo", src, &out, &out)
+	prog, err = LoadFromString("t.cameo", src, cameoio.Streams(&out, &out))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -162,7 +164,7 @@ func TestDebuggerFromRequire(t *testing.T) {
 	}
 
 	out.Reset()
-	prog, err = Load("t.cameo", "debugger\n", &out, &out)
+	prog, err = LoadFromString("t.cameo", "debugger\n", cameoio.Streams(&out, &out))
 	if err != nil {
 		t.Fatal(err)
 	}

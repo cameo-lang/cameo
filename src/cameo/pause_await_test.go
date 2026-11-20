@@ -1,6 +1,8 @@
 package cameo
 
 import (
+	"github.com/cameo-lang/cameo/src/cameoio"
+
 	"bytes"
 	"errors"
 	"strings"
@@ -55,7 +57,7 @@ puts await(other), await(pr)
 		t.Fatalf("inspect:\n%s\nwant in it:\n%s", text, want)
 	}
 	var rest bytes.Buffer
-	cont, err := Resume(dump.Data, &rest, &rest)
+	cont, err := Resume(dump.Data, cameoio.Streams(&rest, &rest))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,7 +96,7 @@ puts gather(Work.new, pr) + "!"
 puts await(pr)
 `
 	var out watched
-	prog, err := Load("t.cameo", src, &out, &out)
+	prog, err := LoadFromString("t.cameo", src, cameoio.Streams(&out, &out))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -129,7 +131,7 @@ puts await(pr)
 		t.Fatalf("gather awaits %v", aw)
 	}
 	var rest bytes.Buffer
-	cont, err := Resume(dump.Data, &rest, &rest)
+	cont, err := Resume(dump.Data, cameoio.Streams(&rest, &rest))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -149,7 +151,7 @@ puts await(pr)
 // again.
 func TestARunThatAwaitedGoesOnWaiting(t *testing.T) {
 	var out watched
-	prog, err := Load("t.cameo", "include Cameo\npr = promise\nputs \"waiting\"\nputs await(pr) + 1\n", &out, &out)
+	prog, err := LoadFromString("t.cameo", "include Cameo\npr = promise\nputs \"waiting\"\nputs await(pr) + 1\n", cameoio.Streams(&out, &out))
 	if err != nil {
 		t.Fatal(err)
 	}
