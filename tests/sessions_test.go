@@ -184,8 +184,9 @@ func readmeBlock(t *testing.T, readme, first string) string {
 	return body
 }
 
-// irbPrompt is a line of an irb session: the prompt and what was typed.
-var irbPrompt = regexp.MustCompile(`^(cameo\(main\):\d+> )(.*)$`)
+// irbPrompt is a line of an irb session: the prompt, "*" when it continues
+// an unfinished expression, and what was typed.
+var irbPrompt = regexp.MustCompile(`^(cameo\(main\):\d+[>*] )(.*)$`)
 
 // TestReadmeIRBSessionIsWhatIRBPrints types the lines of the README's irb
 // session into cameo irb and holds its answers to the README's.

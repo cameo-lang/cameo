@@ -209,7 +209,9 @@ class Point
     Point.new(x + other.x, y + other.y)
   end
 
-  def to_s = "(#{x}, #{y})"
+  def to_s
+    "(#{x}, #{y})"
+  end
 end
 ```
 
@@ -472,7 +474,10 @@ def count(n, acc = 0)
 end
 count(10_000_000)            # 10000000
 
-def sum(n) = n == 0 ? 0 : n + sum(n - 1)   # no tail call: + runs after it
+def sum(n)
+  return 0 if n == 0
+  n + sum(n - 1)             # no tail call: + runs after it
+end
 ```
 
 This is part of the language, not an optimisation a script may or may

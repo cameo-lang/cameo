@@ -53,8 +53,13 @@ end</code></pre>
 <pre class="cameo"><code>class Recorder
   list :calls, of: :string
 
-  def method_missing(name, *args) = with(calls: calls + [name.to_s])
-  def respond_to_missing?(name, include_private = false) = true
+  def method_missing(name, *args)
+    with(calls: calls + [name.to_s])
+  end
+
+  def respond_to_missing?(name, include_private = false)
+    true
+  end
 end
 
 r = Recorder.new.open.close

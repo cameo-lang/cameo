@@ -38,13 +38,17 @@
 <p>A visibility keyword, with or without method names, is refused by name.</p>
 
 <pre class="cameo rejected"><code>class Account
-  def balance = 10
+  def balance
+    10
+  end
 
   private
 
-  def secret = 42
+  def secret
+    42
+  end
 end</code></pre>
-<pre class="output error"><code>script.cameo:4: private is not supported: every method is public (see https://15b.it/vis)</code></pre>
+<pre class="output error"><code>script.cameo:6: private is not supported: every method is public (see https://15b.it/vis)</code></pre>
 
 <h2 id="why">Why</h2>
 
@@ -59,7 +63,9 @@ end</code></pre>
 <pre class="cameo"><code>class Account
   int :cents, default: 1050
 
-  def balance = format(&quot;%.2f&quot;, cents / 100.0)
+  def balance
+    format(&quot;%.2f&quot;, cents / 100.0)
+  end
 end
 
 puts Account.new.balance</code></pre>

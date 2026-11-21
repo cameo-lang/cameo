@@ -83,8 +83,13 @@ them, and <code>with</code> returns a copy with some of them changed.</p>
   string :owner
   int :cents
 
-  def deposit(amount) = with(cents: cents + amount)
-  def to_s = format("%s: %.2f", owner, cents / 100.0)
+  def deposit(amount)
+    with(cents: cents + amount)
+  end
+
+  def to_s
+    format("%s: %.2f", owner, cents / 100.0)
+  end
 end
 
 a = Account.new(owner: "Ada", cents: 1_000)
@@ -221,7 +226,9 @@ immutable, so the calls share nothing and need no locks.</p>
 class Page
   string :name
 
-  def words = name.length * 100      # stands in for real work
+  def words
+    name.length * 100      # stands in for real work
+  end
 end
 
 pages = %w[home about pricing].map { |n| Page.new(name: n) }

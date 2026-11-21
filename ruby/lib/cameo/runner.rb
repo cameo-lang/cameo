@@ -9,8 +9,13 @@
 #   class Report
 #     include Cameo::Runner
 #
-#     def line(name) = "#{name}: ..."
-#     def build(names) = await(names.map { |name| async self, :line, name })
+#     def line(name)
+#       "#{name}: ..."
+#     end
+#
+#     def build(names)
+#       await(names.map { |name| async self, :line, name })
+#     end
 #   end
 #
 # cameo has the library built in, so the same file runs on both; on both,

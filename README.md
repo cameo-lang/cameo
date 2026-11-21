@@ -107,7 +107,9 @@ The other programs under `examples/` each show one thing:
 $ cameo irb
 cameo(main):001> x = 41
 => 41
-cameo(main):002> def inc(n) = n + 1
+cameo(main):002> def inc(n)
+cameo(main):002*   n + 1
+cameo(main):002* end
 => :inc
 cameo(main):003> inc(x)
 => 42

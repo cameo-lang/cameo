@@ -86,10 +86,14 @@ const script = `
 class Point
   int :x, :y
 
-  def +(other) = Point.new(x: x + other.x, y: y + other.y)
+  def +(other)
+    Point.new(x: x + other.x, y: y + other.y)
+  end
 end
 
-def greet(name) = &quot;hello, #{name}&quot;
+def greet(name)
+  &quot;hello, #{name}&quot;
+end
 
 puts &quot;loaded&quot;
 Point.new(x: 1, y: 2)
@@ -271,7 +275,9 @@ module Geo
   class Point
     int :x, :y
 
-    def norm2 = x * x + y * y
+    def norm2
+      x * x + y * y
+    end
   end
 end
 `
@@ -360,7 +366,7 @@ func main() {
 		}
 	}
 
-	err = cameo.Run(&quot;boom.cameo&quot;, &quot;def half(n) = n / 0\nhalf(4)\n&quot;, io.Discard, io.Discard)
+	err = cameo.Run(&quot;boom.cameo&quot;, &quot;def half(n)\n  n / 0\nend\nhalf(4)\n&quot;, io.Discard, io.Discard)
 	var runErr *cameo.RunError
 	if errors.As(err, &amp;runErr) {
 		fmt.Println(runErr.Message)
@@ -396,7 +402,9 @@ include Cameo
 class Fetcher
   string :base
 
-  def get(path) = Http.get(base + path)
+  def get(path)
+    Http.get(base + path)
+  end
 end
 
 f = Fetcher.new(base: &quot;https://example.com&quot;)

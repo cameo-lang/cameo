@@ -286,7 +286,9 @@ class User
   string :name
   int :age
 
-  def greeting = &quot;#{name} is #{age}&quot;
+  def greeting
+    &quot;#{name} is #{age}&quot;
+  end
 end
 
 user = Users.find(&quot;ada&quot;)

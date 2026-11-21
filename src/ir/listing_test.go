@@ -14,8 +14,12 @@ func intConst(i int64) *cameopb.Arg {
 	return &cameopb.Arg{Kind: &cameopb.Arg_Constant{Constant: &cameopb.Constant{Kind: &cameopb.Constant_IntValue{IntValue: i}}}}
 }
 
-// doubleAll is `def double_all(list) = list.map { |x| x * 2 }`, written
-// out by hand as the compiler is to emit it.
+// doubleAll is this method, written out by hand as the compiler is to
+// emit it:
+//
+//	def double_all(list)
+//	  list.map { |x| x * 2 }
+//	end
 func doubleAll() *cameopb.Unit {
 	const (
 		nDoubleAll = iota

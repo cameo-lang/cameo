@@ -112,6 +112,21 @@ Two placement rules keep comments short:
 Use the reader's vocabulary, one problem per paragraph, and no history that
 `git log` already carries.
 
+## Code examples
+
+A Ruby or cameo method in a doc or a comment uses the multi-line form:
+
+```ruby
+def total(items)
+  items.sum(&:price)
+end
+```
+
+not the endless form, `def total(items) = items.sum(&:price)`. The reader
+sees the body on a line of its own, and the example stays the same shape
+when it grows a second line. A doc that explains the endless form itself
+shows it; source code follows the component's own style.
+
 ## Commit messages
 
 The subject says what changed and why, and reads on its own in `git log

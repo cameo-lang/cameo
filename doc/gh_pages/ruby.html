@@ -281,7 +281,9 @@ p c.count</code></pre>
 <pre class="cameo"><code>class Counter
   int :count, default: 0
 
-  def increment = with(count: count + 1)
+  def increment
+    with(count: count + 1)
+  end
 end
 
 c = Counter.new
@@ -866,7 +868,9 @@ class cannot be passed to one.</p>
 class Worker
   int :factor
 
-  def times(n) = n * factor
+  def times(n)
+    n * factor
+  end
 
   def boom(msg)
     raise ArgumentError, msg
@@ -909,7 +913,9 @@ parallel. Each of these computes the 29th Fibonacci number the slow way:</p>
 include Cameo
 
 class Fib
-  def of(n) = n &lt; 2 ? n : of(n - 1) + of(n - 2)
+  def of(n)
+    n &lt; 2 ? n : of(n - 1) + of(n - 2)
+  end
 end
 
 fib = Fib.new
@@ -946,8 +952,13 @@ host</a>.</p>
 <pre class="cameo"><code>include Cameo
 
 class Courier
-  def deliver(promise, parcel) = resolve(promise, "#{parcel}, delivered")
-  def lose(promise, parcel) = fail(promise, KeyError, "#{parcel} is lost")
+  def deliver(promise, parcel)
+    resolve(promise, "#{parcel}, delivered")
+  end
+
+  def lose(promise, parcel)
+    fail(promise, KeyError, "#{parcel} is lost")
+  end
 end
 
 courier = Courier.new
