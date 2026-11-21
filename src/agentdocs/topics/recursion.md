@@ -12,7 +12,11 @@ def sum_to(n, acc = 0)
   sum_to(n - 1, acc + n)          # a tail call: any depth
 end
 
-def sum_slow(n) = n == 0 ? 0 : n + sum_slow(n - 1)   # the + runs after: SystemStackError when deep
+def sum_slow(n)
+  return 0 if n == 0
+
+  n + sum_slow(n - 1)             # the + runs after: SystemStackError when deep
+end
 
 puts sum_to(1_000_000)
 ```

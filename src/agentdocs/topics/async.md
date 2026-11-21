@@ -11,7 +11,9 @@ include Cameo                       # once, at the top level
 class Report
   string :name
 
-  def score = (1..200_000).sum { |n| n % 7 } + name.length
+  def score
+    (1..200_000).sum { |n| n % 7 } + name.length
+  end
 end
 
 reports = %w[north south east west].map { |n| Report.new(name: n) }
@@ -21,7 +23,9 @@ scores = jobs.map { |job| await job }          # then collect
 p reports.map(&:name).zip(scores).to_h
 
 class Flaky
-  def run = raise(ArgumentError, "bad input")
+  def run
+    raise ArgumentError, "bad input"
+  end
 end
 
 begin

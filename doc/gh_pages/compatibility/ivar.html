@@ -62,7 +62,9 @@ script.cameo:7: @count = …: cameo has no instance variables; initialize sets a
 <pre class="cameo"><code>class Counter
   int :count, default: 0
 
-  def increment = with(count: count + 1)
+  def increment
+    with(count: count + 1)
+  end
 end
 
 c = Counter.new.increment.increment
