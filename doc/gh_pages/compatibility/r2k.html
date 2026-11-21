@@ -53,8 +53,13 @@ end</code></pre>
 
 <p>Take <code>*args, **opts, &amp;block</code> and pass them on, or forward with <code>...</code>.</p>
 
-<pre class="cameo"><code>def inner(a, b: 2) = [a, b]
-def wrap(*args, **opts) = inner(*args, **opts)
+<pre class="cameo"><code>def inner(a, b: 2)
+  [a, b]
+end
+
+def wrap(*args, **opts)
+  inner(*args, **opts)
+end
 p wrap(1, b: 3)</code></pre>
 <pre class="output"><code>[1, 3]</code></pre>
 

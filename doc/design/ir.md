@@ -60,7 +60,9 @@ are in [src/cameopb/cameo/ir.proto](../../src/cameopb/cameo/ir.proto);
 `ir.Listing` prints a unit:
 
 ```ruby
-def double_all(list) = list.map { |x| x * 2 }
+def double_all(list)
+  list.map { |x| x * 2 }
+end
 ```
 
 ```

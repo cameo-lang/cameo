@@ -10,8 +10,13 @@ class Order
   list :items, of: :string
   int :total_cents, default: 0
 
-  def add(item, cents) = with(items: items + [item], total_cents: total_cents + cents)
-  def to_s = "#{customer}: #{items.join(", ")} (#{format("%.2f", total_cents / 100.0)})"
+  def add(item, cents)
+    with(items: items + [item], total_cents: total_cents + cents)
+  end
+
+  def to_s
+    "#{customer}: #{items.join(", ")} (#{format("%.2f", total_cents / 100.0)})"
+  end
 end
 
 order = Order.new(customer: "Ada", items: [])
