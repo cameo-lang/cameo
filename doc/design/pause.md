@@ -83,6 +83,40 @@ as the promises it waits for and the results it has. The resumed run
 waits again, for a call's result that is settled in the dump by then, or
 for a pending promise until something settles it.
 
+### The host's objects
+
+The dump holds nothing of the host, but a host module often deals from an
+object of its own: a deck of cards, a cursor, a counter. A host keeps such
+an object with `Program.Keep(name, obj)`, where `obj` is a
+`cameo.Stateful`:
+
+```go
+type Stateful interface {
+	Dehydrate() ([]byte, error)  // the state, for the dump
+	Rehydrate(data []byte) error // the state the dump held, back
+}
+```
+
+`Dump` calls `Dehydrate` on each object the program keeps, once the run
+paused and the calls `async` started settled, and stores the bytes by name
+in `host_state`; cameo does not read them. On the resumed program the host
+gives its modules again and keeps a fresh object under the same name:
+`Keep` hands it the bytes with `Rehydrate` before it returns. A name the
+dump holds nothing for rehydrates nothing, so the same code serves a
+program `Load` loaded and one `Resume` loaded.
+
+The order on resume is `Resume`, then `Module` and `Keep`, then settling
+the pending promises, then `Run`. `Rehydrate` may get a promise with
+`PendingPromise`, as an object that remembers the promise it handed the
+script does; it must not otherwise call into the program. `Run`, and
+`Call` and `RunContext` with it, refuse to go on while the dump holds
+state under a name no `Keep` claimed, naming it, so a host that forgot an
+object hears of it before the script goes on without it. `cameo inspect`
+lists the names the dump holds state for, with their sizes.
+
+`Keep` covers objects the host holds. A value the script holds that names
+something outside it is still a handle (below).
+
 ## What a dump holds
 
 The dump is the protobuf message `cameo.Dump`, written in
@@ -103,6 +137,7 @@ The dump is the protobuf message `cameo.Dump`, written in
 | `workers`, `calls` | the calls `async` started that had not ended: a worker's activations with their scopes and frames, for one that was running, and the receiver, method and arguments, for one no worker had taken |
 | `handles` | the library values that change which the run held, a StringIO, each once, as its class and what its library saved of it |
 | `host_modules` | the names of the modules the host gave the program with `cameo.Program.Module` |
+| `host_state` | the state of the host's objects, as the bytes each gave, by the name the host kept it under with `cameo.Program.Keep` |
 | `loaded` | the libraries `require` loaded |
 | `rand` | the state of the random number generator, so a seeded script draws on as if it had not paused |
 | `at_exit` | the blocks `at_exit` registered, in order, which a resumed run runs when it ends |

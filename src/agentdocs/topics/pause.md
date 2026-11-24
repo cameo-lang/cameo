@@ -23,6 +23,12 @@ err = cont.Run()                    // goes on where the first run stopped
 
 - A dump holds no host module: the resuming program defines them again
   before `Run`.
+- A host object the run needs, such as the deck a module deals from, is
+  a `cameo.Stateful` (`Dehydrate() ([]byte, error)`, `Rehydrate([]byte)
+  error`) the host keeps with `prog.Keep(name, obj)`. The dump stores its
+  bytes; on the resumed program, `cont.Keep(name, fresh)` hands them back
+  before it returns. `Run` refuses while the dump holds state no `Keep`
+  claimed. Order: `Resume`, `Module` and `Keep`, settle promises, `Run`.
 - A run waiting on a host promise pauses at its `await`; the resumed run
   finds the promise pending, `cont.PendingPromise(id)`, for the host to
   resolve.

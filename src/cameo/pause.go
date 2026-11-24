@@ -46,10 +46,14 @@ type Dump struct {
 }
 
 // Dump captures a paused script. It waits for the calls async started,
-// so their results travel settled.
+// so their results travel settled, then has each object the program keeps
+// (Keep) give its state.
 func (p *Program) Dump() (*Dump, error) {
 	d, err := p.in.Dump(p.src)
 	if err != nil {
+		return nil, err
+	}
+	if d.HostState, err = p.kept.dehydrate(); err != nil {
 		return nil, err
 	}
 	data, err := proto.Marshal(d)
@@ -108,7 +112,9 @@ func OnlyCode(file, code string) ResumeOption {
 // The dump holds nothing of the host: env is the resumed program's host,
 // as Load takes it, and the program gets the modules the one that paused
 // had, with Module, before Run. Each is there from Resume on, without
-// methods, so that the values that refer to one restore.
+// methods, so that the values that refer to one restore. The state of the
+// objects the host kept (Keep) is in the dump; the host keeps each object
+// again, which hands it its state, and Run refuses to go on before.
 func Resume(data []byte, env Env, opts ...ResumeOption) (*Program, error) {
 	if env == nil {
 		return nil, ErrNoEnv
@@ -139,11 +145,13 @@ func Resume(data []byte, env Env, opts ...ResumeOption) (*Program, error) {
 	if err := prog.in.Resume(prog.prog, d); err != nil {
 		return nil, conv{prog.in}.runError(err)
 	}
+	prog.kept.restore(d.GetHostState())
 	return prog, nil
 }
 
-// InspectDump describes a dump: the script, where it paused, and every
-// variable, constant and promise it holds, each as p would print it.
+// InspectDump describes a dump: the script, where it paused, every
+// variable, constant and promise it holds, each as p would print it, and
+// the names and sizes of the state the host kept.
 func InspectDump(data []byte) (string, error) {
 	d, err := readDump(data)
 	if err != nil {
@@ -267,6 +275,13 @@ func InspectDump(data []byte) (string, error) {
 	}
 	if n := len(d.AtExit); n > 0 {
 		fmt.Fprintf(&b, "at_exit: %d\n", n)
+	}
+	// The host's state is bytes cameo does not read: its names and sizes.
+	if state := d.GetHostState(); len(state) > 0 {
+		b.WriteString("kept:\n")
+		for _, name := range sortedNames(state) {
+			fmt.Fprintf(&b, "  %s (%d bytes)\n", name, len(state[name]))
+		}
 	}
 	return b.String(), nil
 }
