@@ -256,10 +256,16 @@ it.</p>
   <li><strong>The script and its values</strong>: the code, the stack of
   calls, local variables, constants, classes and methods, blocks and
   procs, and promises that are still pending.</li>
-  <li><strong>Nothing of the host.</strong> A module of Go functions is
-  given to the resumed program again, as the example does, and a promise
-  the host had not settled is reached with
-  <code>prog.PendingPromise(id)</code>.</li>
+  <li><strong>Nothing of the host</strong>, but what it keeps. A module of
+  Go functions is given to the resumed program again, as the example
+  does, and a promise the host had not settled is reached with
+  <code>prog.PendingPromise(id)</code>. An object of the host that the
+  run needs, such as the deck a module deals from, is kept with
+  <code>prog.Keep(name, obj)</code>: the dump stores the bytes its
+  <code>Dehydrate</code> returns, and <code>Keep</code> of the same name
+  on the resumed program hands them to its <code>Rehydrate</code>.
+  <code>Run</code> refuses to go on while the dump holds state no
+  <code>Keep</code> claimed.</li>
   <li><strong>No handles.</strong> A value that names something outside
   the script, such as a <code>Random</code>, is left out, and
   <code>dump.Missing</code> lists what was.</li>

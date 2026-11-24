@@ -99,6 +99,7 @@ type Program struct {
 	in   *eval.Interp
 	env  Env
 	ran  bool
+	kept kept
 }
 
 // Load loads the script at path: env's LoadFile reads its source, and
@@ -177,8 +178,12 @@ func (p *Program) File() string { return p.file }
 // Run evaluates the script once; its classes stay loaded for Call. It
 // returns ErrPaused when Pause asked it to pause. Run on a program that
 // paused goes on where it paused: a host that could not dump the script,
-// or did not want to, loses nothing.
+// or did not want to, loses nothing. On a resumed program, Run fails while
+// the dump holds state no Keep claimed.
 func (p *Program) Run() error {
+	if err := p.kept.checkClaimed(); err != nil {
+		return err
+	}
 	p.ran = true
 	err := p.in.Run(p.file, p.prog)
 	if err == nil || errors.Is(err, ErrPaused) {

@@ -121,6 +121,13 @@ message Dump {
   // host gives it its methods again before the run goes on.
   repeated string host_modules = 23;
 
+  // host_state is the state of the host's objects the run needs, by the
+  // name the host kept each under (cameo.Program.Keep): bytes the object
+  // gave when the dump was written, which cameo does not read. The host
+  // keeps the object again on the resumed program, which hands it back
+  // its bytes, and Run refuses to go on while one is unclaimed.
+  map<string, bytes> host_state = 24;
+
   // Handle is one such value: its class, and its state as the class's
   // library saved it.
   message Handle {
