@@ -1,0 +1,291 @@
+## Compatibility {#ch-compatibility}
+
+::: source
+from `doc/gh_pages/compatibility.html`
+:::
+
+How much of [ruby/spec](https://github.com/ruby/spec), the specification of
+the Ruby language and its core and standard libraries, cameo passes, and why
+it does not pass the rest.
+
+-   ruby/spec at commit `47b10f1d7b1c29bda01d6903cceddd5b0b4c857d`
+-   CRuby 3.3.6 (x86_64-linux), which runs every program as well
+-   run on 2026-11-15
+-   regenerate with `make spec-status`, which needs a Ruby with Prism and the
+    copy of ruby/spec that `make ruby-spec` makes: it runs
+    [specs/run.rb](https://github.com/cameo-lang/cameo/blob/main/specs/run.rb),
+    which writes
+    [specs/status.tsv](https://github.com/cameo-lang/cameo/blob/main/specs/status.tsv),
+    and then
+    [specs/compatibility.rb](https://github.com/cameo-lang/cameo/blob/main/specs/compatibility.rb),
+    which writes this page
+
+[specs/run.rb](https://github.com/cameo-lang/cameo/blob/main/specs/run.rb)
+rewrites each spec file's mspec idioms into calls of [a
+prelude](https://github.com/cameo-lang/cameo/blob/main/specs/runner/prelude.cameo)
+and runs it under cameo and under CRuby. Each example has one status:
+
+| Status       | Means                                                                                                                            |
+|--------------|----------------------------------------------------------------------------------------------------------------------------------|
+| pass         | passes under cameo, as under CRuby                                                                                               |
+| not expected | stopped by something cameo leaves out on purpose; the [reasons](#compatibility-not-expected-to-work) say what                    |
+| bug          | CRuby passes it and cameo does not, for no reason cameo states: cameo should pass it                                             |
+| harness      | CRuby does not pass it in this harness either, or it needs `before`, `after` or a shared example, which the prelude does not run |
+
+Only an example CRuby passes in this harness counts as one cameo should match.
+CRuby's own failures, mostly examples that need a part of mspec the prelude
+lacks (`mock`, `should_receive`, `ruby_exe`), and the examples CRuby does not
+run, which ruby/spec guards for a newer Ruby than CRuby 3.3.6, count as
+harness. *Should match* below is pass, not expected and bug together.
+
+A spec file that did not run has no examples here. It counts once, under
+*files not run*, with what stopped it: `cameo check` refused it (check), it
+stopped before its first example (crash), it ran out of time (timeout), or
+Prism could not parse it for the rewrite (rewrite).
+[specs/runner/classify.rb](https://github.com/cameo-lang/cameo/blob/main/specs/runner/classify.rb)
+gives a status and a reason from the message that stopped an example or a
+file.
+
+### Summary {#compatibility-summary}
+
+| Directory                                   | Examples | Should match | Pass       | Not expected | Bug | Harness | Files not run |
+|---------------------------------------------|----------|--------------|------------|--------------|-----|---------|---------------|
+| [language](#compatibility-language)         | 110      | 92           | 74 (80%)   | 18           | 0   | 18      | 72            |
+| [core](#compatibility-core)                 | 2206     | 1925         | 872 (45%)  | 994          | 59  | 281     | 1475          |
+| [library](#compatibility-library)           | 998      | 877          | 610 (70%)  | 186          | 81  | 121     | 979           |
+| [command_line](#compatibility-command_line) | 29       | 0            | 0 (–)      | 0            | 0   | 29      | 24            |
+| [security](#compatibility-security)         | 4        | 3            | 2 (67%)    | 0            | 1   | 1       | 10            |
+| [optional](#compatibility-optional)         | 0        | 0            | 0 (–)      | 0            | 0   | 0       | 49            |
+| **all**                                     | 3347     | 2897         | 1558 (54%) | 1198         | 141 | 450     | 2609          |
+
+Of the 450 harness examples, 345 fail under CRuby, 97 CRuby does not run, and
+8 need `before`, `after` or a shared example.
+
+### Not expected to work {#compatibility-not-expected-to-work}
+
+What cameo leaves out on purpose, each with the document that states the rule.
+Each code has a page on cameo's site that explains it, why cameo leaves it out
+and what to write instead, and `cameo check` links that page from each
+refusal. *Examples* counts examples that ran and stopped on it; *files* counts
+spec files that did not run because of it.
+
+| Code                                                                   | Reason                                                    | Means                                                                                                                                                    | Examples | Files |
+|------------------------------------------------------------------------|-----------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|----------|-------|
+| [ivar](https://cameo-lang.github.io/cameo/compatibility/ivar.html)     | [instance variables](#rejected-before-the-script-runs)    | cameo has no instance variables; a class declares fields. Most are mspec's `before` blocks, which set `@object`                                          | 0        | 1465  |
+| [meta](https://cameo-lang.github.io/cameo/compatibility/meta.html)     | [metaprogramming](#rejected-before-the-script-runs)       | `eval`, `instance_eval`, `define_method`, `instance_method`, `singleton_class`, `class << self`, `send(:initialize)`                                     | 223      | 127   |
+| [mut](https://cameo-lang.github.io/cameo/compatibility/mut.html)       | [mutation](#different-in-cameo)                           | every value is immutable: `<<`, `[]=`, `push`, setters, bang methods and nested multiple assignment are refused or return a copy                         | 98       | 246   |
+| [rat](https://cameo-lang.github.io/cameo/compatibility/rat.html)       | [`Rational`, `Complex`](#missing-builtins)                | `Rational`, `Complex`, `1r`, `2i`, `to_r`, `to_c`                                                                                                        | 238      | 6     |
+| [vis](https://cameo-lang.github.io/cameo/compatibility/vis.html)       | [visibility](#rejected-before-the-script-runs)            | `private`, `protected`, `module_function` and the method lists by visibility: every method a script defines is public                                    | 14       | 194   |
+| [attr](https://cameo-lang.github.io/cameo/compatibility/attr.html)     | [`attr_accessor`](#rejected-before-the-script-runs)       | `attr_reader`, `attr_writer`, `attr_accessor`: a field declaration defines its reader, and there are no setters                                          | 0        | 173   |
+| [proc](https://cameo-lang.github.io/cameo/compatibility/proc.html)     | [the process](#missing-builtins)                          | `Process`, `Signal`, `ENV`, `GC`, `ObjectSpace`, `fork`, `system`, backticks                                                                             | 143      | 24    |
+| [inv](https://cameo-lang.github.io/cameo/compatibility/inv.html)       | [invalid strings](#different-in-cameo)                    | a UTF-8 String holds characters alone: bytes that are not UTF-8 are a binary String, written `b"..."`, and what makes text refuses them                  | 27       | 118   |
+| [req](https://cameo-lang.github.io/cameo/compatibility/req.html)       | [libraries](#ch-reference-stdlib)                         | a `require` of a library cameo does not build in, or `require_relative` and `load`                                                                       | 0        | 135   |
+| [enc](https://cameo-lang.github.io/cameo/compatibility/enc.html)       | [encodings](#different-in-cameo)                          | encodings other than UTF-8, binary and US-ASCII                                                                                                          | 97       | 0     |
+| [io](https://cameo-lang.github.io/cameo/compatibility/io.html)         | [I/O](#missing-builtins)                                  | `IO`, `File`, `Dir`, `ARGF` and the standard streams as objects, beyond writing to standard output and error                                             | 96       | 0     |
+| [lib](https://cameo-lang.github.io/cameo/compatibility/lib.html)       | [parts of libraries](#ch-reference-stdlib)                | a part of a library cameo builds in that its row in stdlib.md leaves out: Zlib's streams, `Matrix#eigensystem`, `Date::Infinity`, OpenSSL beyond digests | 73       | 0     |
+| [thr](https://cameo-lang.github.io/cameo/compatibility/thr.html)       | [threads](#missing-builtins)                              | `Thread`, `Mutex`, `Queue`, `Fiber`, `Ractor`: cameo has `async` and `await`                                                                             | 58       | 0     |
+| [id](https://cameo-lang.github.io/cameo/compatibility/id.html)         | [identity, freezing](#different-in-cameo)                 | `equal?`, `object_id`, `frozen?`, `FrozenError`: values are immutable and compared by what they hold                                                     | 46       | 0     |
+| [blk](https://cameo-lang.github.io/cameo/compatibility/blk.html)       | [blocks capture values](#rejected-before-the-script-runs) | a block captures the values its variables have, and cannot rebind a variable of the scope around it                                                      | 0        | 45    |
+| [glob](https://cameo-lang.github.io/cameo/compatibility/glob.html)     | [global variables](#rejected-before-the-script-runs)      | `$x`, `$~`, `Regexp.last_match`                                                                                                                          | 7        | 26    |
+| [lit](https://cameo-lang.github.io/cameo/compatibility/lit.html)       | [no constructor](#missing-builtins)                       | `Range.new`, `Proc.new`, `Enumerator.new`, `Module.new`, `String.new`: cameo makes these values with a literal                                           | 33       | 0     |
+| [scope](https://cameo-lang.github.io/cameo/compatibility/scope.html)   | [scoped constants](#rejected-before-the-script-runs)      | `A::B = 1`: a constant is assigned inside its module                                                                                                     | 0        | 26    |
+| [mar](https://cameo-lang.github.io/cameo/compatibility/mar.html)       | [`Marshal`](#ch-reference-stdlib)                         | `Marshal` writes cameo's wire form, not Ruby's bytes                                                                                                     | 20       | 0     |
+| [struct](https://cameo-lang.github.io/cameo/compatibility/struct.html) | [`Struct`](#missing-builtins)                             | a class declares typed fields instead                                                                                                                    | 16       | 0     |
+| [data](https://cameo-lang.github.io/cameo/compatibility/data.html)     | [`Data`](#missing-builtins)                               | a class with typed fields is cameo's Data                                                                                                                | 1        | 9     |
+| [re](https://cameo-lang.github.io/cameo/compatibility/re.html)         | [regexps](#different-in-cameo)                            | look-behind and back-references, which cameo's engine does not run                                                                                       | 0        | 5     |
+| [bin](https://cameo-lang.github.io/cameo/compatibility/bin.html)       | [binary strings](#different-in-cameo)                     | a binary String has bytes and no characters, and a UTF-8 String with characters beyond ASCII has no bytes alone (`getbyte`)                              | 4        | 0     |
+| [r2k](https://cameo-lang.github.io/cameo/compatibility/r2k.html)       | [`ruby2_keywords`](#rejected-before-the-script-runs)      | `ruby2_keywords`                                                                                                                                         | 3        | 0     |
+| [cvar](https://cameo-lang.github.io/cameo/compatibility/cvar.html)     | [class variables](#rejected-before-the-script-runs)       | `@@x`                                                                                                                                                    | 0        | 2     |
+| [capi](https://cameo-lang.github.io/cameo/compatibility/capi.html)     | [the C API](#ch-reference-stdlib)                         | Ruby's C API: cameo builds its libraries in and loads no native code                                                                                     | 0        | 1     |
+| [next](https://cameo-lang.github.io/cameo/compatibility/next.html)     | [external enumerators](#different-in-cameo)               | an Enumerator has no `next`, `peek` or `rewind`                                                                                                          | 1        | 0     |
+
+### Where the bugs are {#compatibility-where-the-bugs-are}
+
+The categories with the most bugs: examples CRuby passes and cameo does not,
+and files a bug stopped.
+[specs/status.tsv](https://github.com/cameo-lang/cameo/blob/main/specs/status.tsv)
+lists each, with its message.
+
+| Category           | Bug examples | Bug files | The most common message                                                                                |
+|--------------------|--------------|-----------|--------------------------------------------------------------------------------------------------------|
+| library/matrix     | 18           | 0         | `Expected Matrix[[1, 0], [0, 1]].instance_of?(MatrixSub) to be truthy but was false`                   |
+| library/datetime   | 16           | 0         | `invalid date (Date::Error)`                                                                           |
+| core/time          | 11           | 0         | `Expected 0 == -3600 to be truthy but was false`                                                       |
+| library/date       | 11           | 0         | `invalid argument (not numeric) (TypeError)`                                                           |
+| library/pathname   | 9            | 0         | `undefined method 'ascend' for an instance of Pathname (NoMethodError)`                                |
+| core/range         | 7            | 0         | `no implicit conversion of String into Integer (TypeError)`                                            |
+| core/numeric       | 6            | 0         | `undefined method 'quo' for an instance of Integer (NoMethodError)`                                    |
+| core/enumerator    | 5            | 0         | `undefined method 'produce' for class Enumerator (NoMethodError)`                                      |
+| library/bigdecimal | 5            | 0         | `invalid value for BigDecimal(): "1E11111111111111111111" (ArgumentError)`                             |
+| library/stringio   | 5            | 0         | `Expected "#<StringIO pos:0 size:7>" == "StringIO()" to be truthy but was false`                       |
+| core/integer       | 4            | 0         | `comparison of Integer with String failed (ArgumentError)`                                             |
+| core/matchdata     | 4            | 0         | `wrong number of arguments (given 1, expected 0): MatchDataSpecs::MyString takes its fields as keywo…` |
+| library/cgi        | 4            | 0         | `undefined method 'parse' for module CGI (NoMethodError)`                                              |
+| library/time       | 4            | 0         | `undefined method 'rfc2822' for class Time (NoMethodError)`                                            |
+| core/hash          | 3            | 0         | `Expected 1886929887414173010 == 8742159506943601042 to be truthy but was false`                       |
+| core/io            | 3            | 0         | `undefined method 'path' for an instance of IO (NoMethodError)`                                        |
+| core/random        | 3            | 0         | `undefined method 'state' for an instance of Random (NoMethodError)`                                   |
+| core/symbol        | 3            | 0         | `undefined method 'all_symbols' for class Symbol (NoMethodError)`                                      |
+| library/csv        | 3            | 0         | `undefined method 'liberal_parsing?' for an instance of CSV (NoMethodError)`                           |
+| core/encoding      | 2            | 0         | `undefined method 'ascii_compatible?' for an instance of Encoding (NoMethodError)`                     |
+
+### By category {#compatibility-by-category}
+
+One row per category. *Why* gives the count for each reason by its code from
+the [table above](#compatibility-not-expected-to-work); for a file that did
+not run, bug or harness when the message was not one cameo states.
+
+#### language {#compatibility-language}
+
+| Category            | Examples | Pass | Not expected | Why           | Bug | Harness | Files not run | Why not run                                                                                         |
+|---------------------|----------|------|--------------|---------------|-----|---------|---------------|-----------------------------------------------------------------------------------------------------|
+| language            | 96       | 74   | 18           | mut 14, lit 4 | 0   | 4       | 61            | check: meta 24, ivar 15, attr 5, blk 4, bug 2, cvar 2, mut 2, scope 2, vis 2, glob 1, inv 1, proc 1 |
+| language/predefined | 14       | 0    | 0            |               | 0   | 14      | 0             |                                                                                                     |
+| language/regexp     | 0        | 0    | 0            |               | 0   | 0       | 11            | check: meta 5, glob 2, re 2, inv 1, ivar 1                                                          |
+
+#### core {#compatibility-core}
+
+| Category               | Examples | Pass | Not expected | Why                                                 | Bug | Harness | Files not run | Why not run                                                              |
+|------------------------|----------|------|--------------|-----------------------------------------------------|-----|---------|---------------|--------------------------------------------------------------------------|
+| core/argf              | 8        | 0    | 8            | io 8                                                | 0   | 0       | 28            | check: ivar 26, attr 2                                                   |
+| core/array             | 32       | 17   | 14           | meta 10, id 3, enc 1                                | 0   | 1       | 118           | check: ivar 118                                                          |
+| core/basicobject       | 13       | 1    | 9            | lit 5, vis 3, meta 1                                | 1   | 2       | 10            | check: ivar 6, meta 4                                                    |
+| core/binding           | 0        | 0    | 0            |                                                     | 0   | 0       | 12            | check: ivar 7, meta 5                                                    |
+| core/builtin_constants | 17       | 17   | 0            |                                                     | 0   | 0       | 0             |                                                                          |
+| core/class             | 0        | 0    | 0            |                                                     | 0   | 0       | 8             | check: meta 5, ivar 2, vis 1                                             |
+| core/comparable        | 0        | 0    | 0            |                                                     | 0   | 0       | 7             | check: attr 7                                                            |
+| core/complex           | 100      | 0    | 75           | rat 75                                              | 0   | 25      | 8             | check: ivar 4, rat 4                                                     |
+| core/conditionvariable | 2        | 0    | 2            | thr 2                                               | 0   | 0       | 2             | check: blk 2                                                             |
+| core/data              | 2        | 0    | 1            | data 1                                              | 0   | 1       | 12            | check: meta 2, mut 1; crash: data 9                                      |
+| core/dir               | 5        | 0    | 5            | io 5                                                | 0   | 0       | 29            | check: ivar 29                                                           |
+| core/encoding          | 95       | 2    | 86           | enc 85, meta 1                                      | 2   | 5       | 25            | check: inv 15, ivar 8, blk 1, mut 1                                      |
+| core/enumerable        | 8        | 0    | 8            | meta 8                                              | 0   | 0       | 53            | check: ivar 53                                                           |
+| core/enumerator        | 71       | 34   | 25           | meta 16, lit 5, id 2, mut 1, vis 1                  | 5   | 7       | 40            | check: ivar 33, meta 4, blk 3                                            |
+| core/env               | 23       | 0    | 21           | proc 21                                             | 0   | 2       | 29            | check: ivar 25, mut 4                                                    |
+| core/exception         | 26       | 14   | 10           | io 6, lit 2, proc 2                                 | 0   | 2       | 26            | check: attr 15, ivar 3, meta 3, glob 2, blk 1, mut 1; rewrite: harness 1 |
+| core/false             | 12       | 5    | 5            | meta 3, id 2                                        | 0   | 2       | 1             | check: meta 1                                                            |
+| core/fiber             | 6        | 0    | 6            | thr 6                                               | 0   | 0       | 13            | check: ivar 5, blk 4, attr 2, mut 1; crash: req 1                        |
+| core/file              | 117      | 42   | 68           | io 61, meta 3, enc 2, id 1, mut 1                   | 1   | 6       | 103           | check: ivar 96, meta 4, proc 2, inv 1                                    |
+| core/filetest          | 1        | 0    | 1            | io 1                                                | 0   | 0       | 22            | check: ivar 21, proc 1                                                   |
+| core/float             | 142      | 121  | 19           | rat 9, meta 8, id 2                                 | 0   | 2       | 19            | check: ivar 17, attr 1, meta 1                                           |
+| core/gc                | 22       | 0    | 21           | proc 21                                             | 0   | 1       | 8             | check: ivar 6, mut 2                                                     |
+| core/hash              | 37       | 18   | 15           | meta 13, id 2                                       | 3   | 1       | 51            | check: mut 36, ivar 13, meta 2                                           |
+| core/integer           | 169      | 128  | 23           | mut 8, rat 7, meta 5, id 3                          | 4   | 14      | 35            | check: ivar 32, blk 1, meta 1, rat 1                                     |
+| core/io                | 31       | 0    | 20           | io 15, meta 5                                       | 3   | 8       | 98            | check: mut 62, ivar 32, inv 4                                            |
+| core/kernel            | 26       | 3    | 17           | meta 13, vis 4                                      | 0   | 6       | 107           | check: vis 85, ivar 10, meta 8, bug 2, attr 1, glob 1                    |
+| core/main              | 0        | 0    | 0            |                                                     | 0   | 0       | 7             | check: vis 6, meta 1                                                     |
+| core/marshal           | 21       | 0    | 21           | mar 20, meta 1                                      | 0   | 0       | 2             | check: attr 2                                                            |
+| core/matchdata         | 142      | 99   | 4            | meta 3, enc 1                                       | 4   | 35      | 8             | check: glob 3, ivar 2, meta 2, mut 1                                     |
+| core/math              | 10       | 10   | 0            |                                                     | 0   | 0       | 28            | check: ivar 27, blk 1                                                    |
+| core/method            | 4        | 0    | 4            | meta 4                                              | 0   | 0       | 23            | check: attr 19, ivar 2, mut 2                                            |
+| core/module            | 18       | 4    | 11           | meta 7, lit 4                                       | 1   | 2       | 78            | check: vis 62, meta 8, blk 3, ivar 2, scope 2, bug 1                     |
+| core/mutex             | 7        | 0    | 7            | thr 7                                               | 0   | 0       | 5             | check: attr 2, blk 2, ivar 1                                             |
+| core/nil               | 26       | 14   | 9            | rat 5, id 2, meta 2                                 | 0   | 3       | 1             | check: meta 1                                                            |
+| core/numeric           | 45       | 13   | 14           | meta 7, id 4, rat 3                                 | 6   | 12      | 26            | check: ivar 25, meta 1                                                   |
+| core/objectspace       | 49       | 0    | 47           | proc 47                                             | 0   | 2       | 9             | check: ivar 7, blk 1, vis 1                                              |
+| core/proc              | 28       | 7    | 16           | meta 8, lit 5, r2k 3                                | 2   | 3       | 15            | check: ivar 8, meta 3, mut 3, blk 1                                      |
+| core/process           | 55       | 0    | 48           | proc 45, meta 2, thr 1                              | 0   | 7       | 36            | check: proc 19, glob 9, ivar 5, mut 2, blk 1                             |
+| core/queue             | 13       | 0    | 9            | thr 9                                               | 0   | 4       | 9             | check: ivar 9                                                            |
+| core/random            | 33       | 26   | 3            | rat 3                                               | 3   | 1       | 3             | check: ivar 3                                                            |
+| core/range             | 122      | 35   | 15           | id 4, lit 4, mut 4, meta 3                          | 7   | 65      | 23            | check: ivar 11, attr 5, meta 5, mut 2                                    |
+| core/rational          | 75       | 0    | 68           | rat 68                                              | 0   | 7       | 10            | check: ivar 9, meta 1                                                    |
+| core/refinement        | 2        | 0    | 2            | lit 2                                               | 0   | 0       | 6             | check: meta 3, blk 2, bug 1                                              |
+| core/regexp            | 78       | 54   | 20           | glob 7, meta 6, enc 4, id 2, vis 1                  | 1   | 3       | 9             | check: ivar 3, re 3, mut 2, inv 1                                        |
+| core/ruby              | 0        | 0    | 0            |                                                     | 0   | 0       | 1             | check: meta 1                                                            |
+| core/set               | 70       | 35   | 26           | meta 14, mut 10, vis 2                              | 2   | 7       | 26            | check: ivar 24, meta 2                                                   |
+| core/signal            | 8        | 0    | 5            | proc 5                                              | 0   | 3       | 1             | check: ivar 1                                                            |
+| core/sizedqueue        | 4        | 0    | 4            | thr 4                                               | 0   | 0       | 12            | check: ivar 11, attr 1                                                   |
+| core/string            | 153      | 43   | 108          | mut 50, inv 26, rat 12, meta 10, id 5, bin 3, lit 2 | 0   | 2       | 131           | check: ivar 114, inv 14, meta 2, mut 1                                   |
+| core/struct            | 18       | 0    | 16           | struct 16                                           | 0   | 2       | 27            | check: attr 26, ivar 1                                                   |
+| core/symbol            | 66       | 51   | 11           | meta 7, id 3, bin 1                                 | 3   | 1       | 8             | check: ivar 3, inv 2, glob 1, mut 1, vis 1                               |
+| core/systemexit        | 6        | 6    | 0            |                                                     | 0   | 0       | 0             |                                                                          |
+| core/thread            | 24       | 0    | 22           | thr 22                                              | 0   | 2       | 45            | check: mut 27, meta 8, ivar 6, blk 4                                     |
+| core/threadgroup       | 5        | 0    | 5            | thr 5                                               | 0   | 0       | 2             | check: mut 2                                                             |
+| core/time              | 139      | 68   | 32           | rat 15, meta 14, id 3                               | 11  | 28      | 19            | check: ivar 11, meta 7, inv 1                                            |
+| core/tracepoint        | 0        | 0    | 0            |                                                     | 0   | 0       | 20            | check: ivar 20                                                           |
+| core/true              | 12       | 5    | 4            | id 2, meta 2                                        | 0   | 3       | 1             | check: meta 1                                                            |
+| core/unboundmethod     | 2        | 0    | 2            | meta 2                                              | 0   | 0       | 18            | check: vis 13, mut 3, ivar 2                                             |
+| core/warning           | 6        | 0    | 2            | proc 2                                              | 0   | 4       | 2             | check: glob 1, ivar 1                                                    |
+
+#### library {#compatibility-library}
+
+| Category              | Examples | Pass | Not expected | Why                                   | Bug | Harness | Files not run | Why not run                                               |
+|-----------------------|----------|------|--------------|---------------------------------------|-----|---------|---------------|-----------------------------------------------------------|
+| library/English       | 0        | 0    | 0            |                                       | 0   | 0       | 2             | check: glob 2                                             |
+| library/abbrev        | 4        | 4    | 0            |                                       | 0   | 0       | 0             |                                                           |
+| library/base64        | 20       | 20   | 0            |                                       | 0   | 0       | 1             | check: inv 1                                              |
+| library/bigdecimal    | 86       | 63   | 17           | rat 11, meta 4, id 2                  | 5   | 1       | 36            | check: ivar 35, rat 1                                     |
+| library/cgi           | 28       | 10   | 14           | lib 14                                | 4   | 0       | 74            | check: mut 66, inv 4, ivar 4                              |
+| library/coverage      | 0        | 0    | 0            |                                       | 0   | 0       | 13            | check: ivar 5, mut 3, meta 1, req 1; crash: req 3         |
+| library/csv           | 30       | 27   | 0            |                                       | 3   | 0       | 1             | crash: req 1                                              |
+| library/date          | 180      | 142  | 26           | lib 19, meta 5, mut 1, rat 1          | 11  | 1       | 9             | check: ivar 6, blk 3                                      |
+| library/datetime      | 100      | 62   | 18           | rat 14, meta 4                        | 16  | 4       | 2             | check: ivar 2                                             |
+| library/delegate      | 0        | 0    | 0            |                                       | 0   | 0       | 24            | check: vis 22, ivar 1, meta 1                             |
+| library/digest        | 8        | 0    | 7            | meta 7                                | 1   | 0       | 60            | check: inv 58, ivar 1; crash: req 1                       |
+| library/drb           | 0        | 0    | 0            |                                       | 0   | 0       | 1             | check: ivar 1                                             |
+| library/erb           | 0        | 0    | 0            |                                       | 0   | 0       | 13            | check: ivar 8, meta 3; crash: req 2                       |
+| library/etc           | 0        | 0    | 0            |                                       | 0   | 0       | 19            | check: ivar 7, blk 1, glob 1, mut 1, proc 1; crash: req 8 |
+| library/expect        | 0        | 0    | 0            |                                       | 0   | 0       | 1             | check: mut 1                                              |
+| library/fiddle        | 0        | 0    | 0            |                                       | 0   | 0       | 1             | crash: req 1                                              |
+| library/find          | 0        | 0    | 0            |                                       | 0   | 0       | 2             | check: ivar 1; crash: req 1                               |
+| library/getoptlong    | 3        | 0    | 2            | meta 2                                | 0   | 1       | 7             | check: ivar 4, blk 2, mut 1                               |
+| library/io-wait       | 0        | 0    | 0            |                                       | 0   | 0       | 3             | check: attr 3                                             |
+| library/ipaddr        | 18       | 17   | 0            |                                       | 1   | 0       | 2             | check: blk 1, ivar 1                                      |
+| library/irb           | 0        | 0    | 0            |                                       | 0   | 0       | 1             | crash: req 1                                              |
+| library/logger        | 1        | 1    | 0            |                                       | 0   | 0       | 13            | check: ivar 13                                            |
+| library/matrix        | 176      | 115  | 39           | rat 15, lib 12, meta 10, mut 1, vis 1 | 18  | 4       | 30            | check: ivar 29, mut 1                                     |
+| library/mkmf          | 1        | 0    | 0            |                                       | 0   | 1       | 0             |                                                           |
+| library/monitor       | 0        | 0    | 0            |                                       | 0   | 0       | 6             | check: ivar 1; crash: req 5                               |
+| library/net-ftp       | 12       | 0    | 0            |                                       | 0   | 12      | 49            | check: attr 37, ivar 7; crash: req 5                      |
+| library/net-http      | 0        | 0    | 0            |                                       | 0   | 0       | 131           | check: ivar 40, attr 31, meta 1, mut 1; crash: req 58     |
+| library/objectspace   | 1        | 0    | 0            |                                       | 0   | 1       | 6             | check: attr 1, meta 1; crash: req 4                       |
+| library/observer      | 0        | 0    | 0            |                                       | 0   | 0       | 5             | check: attr 5                                             |
+| library/open3         | 0        | 0    | 0            |                                       | 0   | 0       | 11            | crash: req 11                                             |
+| library/openssl       | 19       | 3    | 14           | lib 14                                | 0   | 2       | 14            | check: inv 10, ivar 4                                     |
+| library/openstruct    | 0        | 0    | 0            |                                       | 0   | 0       | 13            | check: ivar 8; crash: req 5                               |
+| library/optionparser  | 4        | 0    | 4            | mut 4                                 | 0   | 0       | 0             |                                                           |
+| library/pathname      | 61       | 44   | 7            | lib 2, meta 2, vis 2, id 1            | 9   | 1       | 2             | check: ivar 2                                             |
+| library/pp            | 3        | 0    | 0            |                                       | 0   | 3       | 0             |                                                           |
+| library/prime         | 24       | 20   | 2            | next 1, meta 1                        | 0   | 2       | 1             | check: ivar 1                                             |
+| library/random        | 0        | 0    | 0            |                                       | 0   | 0       | 1             | check: ivar 1                                             |
+| library/rbconfig      | 0        | 0    | 0            |                                       | 0   | 0       | 5             | check: glob 1; crash: req 4                               |
+| library/readline      | 0        | 0    | 0            |                                       | 0   | 0       | 12            | check: mut 9, ivar 3                                      |
+| library/resolv        | 0        | 0    | 0            |                                       | 0   | 0       | 4             | crash: req 4                                              |
+| library/ripper        | 0        | 0    | 0            |                                       | 0   | 0       | 2             | crash: req 2                                              |
+| library/rubygems      | 0        | 0    | 0            |                                       | 0   | 0       | 2             | check: ivar 1; crash: req 1                               |
+| library/securerandom  | 14       | 10   | 2            | mut 2                                 | 0   | 2       | 3             | check: ivar 3                                             |
+| library/shellwords    | 7        | 7    | 0            |                                       | 0   | 0       | 0             |                                                           |
+| library/singleton     | 0        | 0    | 0            |                                       | 0   | 0       | 7             | check: attr 7                                             |
+| library/socket        | 50       | 0    | 0            |                                       | 0   | 50      | 163           | check: ivar 163                                           |
+| library/stringio      | 35       | 17   | 11           | enc 4, meta 4, id 2, inv 1            | 5   | 2       | 40            | check: ivar 37, blk 1, inv 1, meta 1                      |
+| library/stringscanner | 41       | 9    | 4            | meta 4                                | 1   | 27      | 32            | check: ivar 31, inv 1                                     |
+| library/syslog        | 0        | 0    | 0            |                                       | 0   | 0       | 20            | check: ivar 9, mut 3, glob 2; crash: req 6                |
+| library/tempfile      | 0        | 0    | 0            |                                       | 0   | 0       | 10            | check: ivar 8; crash: req 2                               |
+| library/thread        | 2        | 0    | 2            | thr 2                                 | 0   | 0       | 0             |                                                           |
+| library/time          | 7        | 0    | 2            | meta 2                                | 4   | 1       | 0             |                                                           |
+| library/timeout       | 0        | 0    | 0            |                                       | 0   | 0       | 2             | crash: req 2                                              |
+| library/tmpdir        | 0        | 0    | 0            |                                       | 0   | 0       | 2             | check: ivar 1; crash: req 1                               |
+| library/uri           | 38       | 27   | 4            | mut 2, id 1, lib 1                    | 2   | 5       | 10            | check: ivar 7, blk 3                                      |
+| library/weakref       | 0        | 0    | 0            |                                       | 0   | 0       | 5             | check: blk 2, meta 1; crash: req 2                        |
+| library/win32ole      | 0        | 0    | 0            |                                       | 0   | 0       | 72            | check: ivar 50, scope 22                                  |
+| library/yaml          | 0        | 0    | 0            |                                       | 0   | 0       | 9             | check: ivar 6; crash: req 3                               |
+| library/zlib          | 25       | 12   | 11           | lib 11                                | 1   | 1       | 25            | check: ivar 22, inv 2, mut 1                              |
+
+#### command_line {#compatibility-command_line}
+
+| Category     | Examples | Pass | Not expected | Why | Bug | Harness | Files not run | Why not run           |
+|--------------|----------|------|--------------|-----|-----|---------|---------------|-----------------------|
+| command_line | 29       | 0    | 0            |     | 0   | 29      | 24            | check: ivar 22, mut 2 |
+
+#### security {#compatibility-security}
+
+| Category | Examples | Pass | Not expected | Why | Bug | Harness | Files not run | Why not run                         |
+|----------|----------|------|--------------|-----|-----|---------|---------------|-------------------------------------|
+| security | 4        | 2    | 0            |     | 1   | 1       | 10            | check: ivar 5, meta 3, inv 1, mut 1 |
+
+#### optional {#compatibility-optional}
+
+| Category               | Examples | Pass | Not expected | Why | Bug | Harness | Files not run | Why not run                                         |
+|------------------------|----------|------|--------------|-----|-----|---------|---------------|-----------------------------------------------------|
+| optional/capi          | 0        | 0    | 0            |     | 0   | 0       | 48            | check: ivar 44, attr 1, blk 1, vis 1; crash: capi 1 |
+| optional/thread_safety | 0        | 0    | 0            |     | 0   | 0       | 1             | check: ivar 1                                       |

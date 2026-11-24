@@ -28,6 +28,7 @@ The documents in this directory are the reference behind the site:
 | [debugger.md](debugger.md) | the commands of `cameo debug` |
 | [design/](design) | the design: the language ([cameo.md](design/cameo.md)), the IR ([ir.md](design/ir.md)), exceptions ([exceptions.md](design/exceptions.md)), pause and resume ([pause.md](design/pause.md)) |
 | [history/](history) | how cameo came to be, one document per step |
+| [book/](book) | the documentation as one book, one markdown file per chapter, built into a PDF |
 
 ## Changing the site
 

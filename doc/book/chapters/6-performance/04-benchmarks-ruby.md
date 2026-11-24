@@ -1,0 +1,111 @@
+## CRuby's benchmarks, grouped by what cameo lacks {#ch-benchmarks-ruby}
+
+::: source
+from `benchmarks/ruby/README.md`
+:::
+
+CRuby's own benchmark suite, one runnable script per case, sorted by whether
+cameo runs it today and, when it does not, by the first thing that stops it.
+It shows what to build next and holds cameo to Ruby's behaviour where the two
+overlap.
+
+| Directory             | Holds                                                                                   |
+|-----------------------|-----------------------------------------------------------------------------------------|
+| `works/`              | runs under cameo with Ruby's result                                                     |
+| `bugs/`               | should run, and fails on a defect in cameo                                              |
+| `stdlib/<what>/`      | stops on a builtin class or method cameo is to have and does not yet; `<what>` names it |
+| `unsupported/<what>/` | uses a feature or builtin cameo leaves out by design; `<what>` names it                 |
+
+A builtin decided out, such as `Struct`, `Rational` and `Complex`, sits under
+`unsupported/`; the design document's "Decisions taken" says why.
+
+[MANIFEST.tsv](https://github.com/cameo-lang/cameo/blob/main/benchmarks/ruby/MANIFEST.tsv) gives every file its directory, the benchmark it
+came from and the reason it is where it is.
+
+### Where the files come from
+
+The `benchmark/` directory of [ruby/ruby](https://github.com/ruby/ruby) at
+commit `25fb329ec9ae07b804dfdb5e34f7c05dcc92186e` (2026-10-16). A `.rb`
+benchmark there is one file here under its own name, and a file of `gc/` takes
+the prefix `gc_`. Each entry of a `.yml` benchmark definition becomes
+`<definition>--<entry>.rb`: the definition's prelude followed by the entry's
+body, run once instead of in benchmark-driver's loop. A comment line,
+`#--- benchmark: the prelude above runs once, the script below in the loop ---`,
+marks where the prelude ends, an entry's own prelude included, so
+[../compare](https://github.com/cameo-lang/cameo/blob/main/benchmarks/compare) can run the prelude once and time the body in a loop,
+as benchmark-driver does; run directly, a file still runs top to bottom.
+
+The 24 `so_*` benchmarks, and the YAML entries of `so_count_words`,
+`so_k_nucleotide` and `so_reverse_complement`, are left out. They are old
+copies of the Computer Language Shootout programs, and CRuby's `LEGAL` file
+says their legal situation is unclear. Everything imported is under Ruby's
+license, [COPYING](https://github.com/cameo-lang/cameo/blob/main/benchmarks/ruby/COPYING), or at your choice the 2-clause BSD license,
+[BSDL](https://github.com/cameo-lang/cameo/blob/main/benchmarks/ruby/BSDL).
+
+### How each file was classified
+
+Every case ran under `cameo check`, under CRuby 3.3.6 and under cameo. A case
+works when cameo exits cleanly with Ruby's output. Most benchmarks print
+nothing, so a clean exit proves little: every YAML case that ran cleanly was
+run again printing its value, and the `.rb` benchmarks that ran cleanly were
+checked by hand with their result printed. A case CRuby 3.3 cannot run
+(master's benchmarks use Ruby 3.4 and later, such as `it` and the core `Set`)
+was classified by what cameo does with it.
+
+A case that draws random numbers cannot match Ruby's values, since cameo's
+generator is not Ruby's: it works when it runs cleanly and its result holds
+what holds for any draw (a sorted result is sorted, a sample has distinct
+elements of the array). A case that reads the clock works when its result has
+Ruby's form. `Time#subsec` returns a Float where Ruby returns a Rational,
+which cameo leaves out; the case that calls it never prints it.
+
+A failing case is filed under the first thing that stops it. Fixing that may
+uncover a second blocker, so a file can move from `stdlib/` to another
+directory rather than to `works/`.
+
+The script a case times is CRuby's. The code that only builds its data may
+differ: a YAML case's prelude, and the lines of a `.rb` benchmark before the
+loop it times. Where CRuby's version mutates in a way cameo refuses, a bang
+method or a block that assigns to a variable of the scope around it, it is
+rewritten to build the same value: `array1 = array1.map(&:to_i)` for
+`array1.map!(&:to_i)`, `each_with_object` for a hash filled in a block, and
+`except` for a run of `delete`s. CRuby's `except` copies the hash and deletes
+from the copy, so it leaves the same deleted entries behind. The cases
+rewritten so are the 161 `set--` cases in `works/`, `gc_hash1`,
+`hash_aref_array`, `hash_aref_dsym`, `hash_aref_fix`, `hash_first--*`,
+`hash_flatten`, `hash_ident_*`, `hash_keys`, `hash_to_proc`, `hash_values` and
+`vm_call_kw_and_kw_splat--*`. In `app_lc_fizzbuzz`, whose whole program is
+timed, `array.push(x)` is `array = array.push(x)`, which Ruby runs the same
+way, since `push` returns its receiver.
+
+A case whose timed script mutates, with a mutator, a bang method or a block
+that assigns to a variable around it, is under `unsupported/mutation/`.
+
+A case that calls a method that reads characters, such as `upcase`, on a
+binary string is under `unsupported/binary-strings/`: Ruby changes the ASCII
+letters among the bytes, and cameo raises `Encoding::CompatibilityError`.
+
+A case that writes bytes that are not UTF-8 in a string literal, `"\xff"`, is
+under `unsupported/invalid-strings/`: cameo writes such a string `b"\xff"`,
+which Ruby does not read.
+
+`bugs/` is empty: every case filed there has been fixed. A bare `Object`
+prints as `#<Object>`, without the address Ruby shows, since cameo values have
+no identity; the cases that print one count as working.
+
+Integers grow past 64 bits as Ruby's do, so `unsupported/bignum/` is gone; its
+rational and imaginary literal cases are under `unsupported/complex/`.
+
+### Running them
+
+``` sh
+ruby run.rb                 # every directory
+ruby run.rb works           # what must keep working; exits 1 when one fails
+ruby run.rb --cameo /path/to/cameo --jobs 8 --timeout 60 stdlib   # default: 4 jobs, 300 s
+```
+
+[run.rb](https://github.com/cameo-lang/cameo/blob/main/benchmarks/ruby/run.rb) builds cameo from this component unless `--cameo` names a
+binary, runs the files in parallel, prints the outcome and time of each, and
+lists the files outside `works/` that now run cleanly. Such a file is a
+candidate for `works/` once its result matches Ruby's; a clean exit alone is
+not enough: a wrong result exits cleanly too.

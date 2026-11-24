@@ -1,0 +1,19 @@
+# pandoc defaults for the book: `pandoc --defaults book.yaml chapters/...`.
+# The Makefile passes the chapters in file-name order; this file holds the
+# rest of the toolchain's settings.
+from: markdown
+to: html5
+standalone: true
+embed-resources: true
+table-of-contents: true
+toc-depth: 2
+highlight-style: null   # code stays plain: no colours, no line anchors
+css:
+  - book.css
+resource-path:
+  - .
+metadata:
+  title: cameo
+  subtitle: The documentation, as one book
+  lang: en
+  pagetitle: cameo

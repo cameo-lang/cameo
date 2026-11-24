@@ -1,0 +1,50 @@
+/* Print styles for the book. Chrome renders the HTML that pandoc writes
+   and prints it to PDF; the @page rules set the paper and page numbers. */
+@page { size: A4; margin: 18mm 17mm 20mm 17mm;
+  @bottom-center { content: counter(page); font: 9pt "DejaVu Sans", sans-serif; } }
+@page :first { @bottom-center { content: none; } }
+
+body { font: 10.5pt/1.45 "DejaVu Serif", Georgia, serif; color: #000; max-width: none; margin: 0; }
+code, pre { font-family: "DejaVu Sans Mono", Menlo, monospace; }
+code { font-size: 0.88em; }
+pre { font-size: 8.3pt; line-height: 1.35; background: #f4f4f4; border-left: 3px solid #bbb;
+  padding: 5pt 7pt; white-space: pre-wrap; overflow-wrap: anywhere; break-inside: avoid; }
+pre.output, div.output pre, .sourceCode.output { background: #fff; border-left: 3px solid #ddd; }
+a { color: inherit; text-decoration: none; }
+img { max-width: 100%; max-height: 190mm; }
+table { border-collapse: collapse; font-size: 9pt; margin: 6pt 0; }
+th, td { border: 1px solid #999; padding: 2pt 4pt; vertical-align: top; }
+
+/* title page and contents */
+header#title-block-header { break-after: page; padding-top: 70mm; }
+header#title-block-header .title { font-size: 36pt; margin: 0; }
+header#title-block-header .subtitle { font-size: 16pt; font-weight: normal; }
+nav#TOC { break-after: page; }
+nav#TOC > ul { list-style: none; padding-left: 0; }
+nav#TOC > ul > li { font-weight: bold; margin-top: 8pt; }
+nav#TOC > ul > li > ul { font-weight: normal; list-style: none; padding-left: 14pt; }
+
+/* a part starts on its own page; so does every chapter */
+h1 { font-size: 24pt; break-before: page; border-bottom: 2px solid #000; padding-bottom: 4pt; }
+h2 { font-size: 18pt; break-before: page; margin-top: 0; }
+h1 + h2, h1 + section > h2 { break-before: avoid; }
+h3 { font-size: 14pt; } h4 { font-size: 12pt; } h5, h6 { font-size: 11pt; }
+h1, h2, h3, h4, h5, h6 { break-after: avoid; }
+
+/* the source a chapter was made from */
+div.source { font: 8.5pt "DejaVu Sans Mono", monospace; color: #555; border: 1px solid #aaa;
+  background: #eee; padding: 3pt 6pt; margin-bottom: 8pt; }
+div.source p { margin: 0; }
+
+/* Ruby and cameo side by side */
+div.pair { display: flex; gap: 10pt; width: 100%; }
+.pair > .side { flex: 1 1 0; min-width: 0; }
+
+/* a refusal of the checker and what to write instead */
+div.rejected { border-top: 1px solid #999; padding-top: 4pt; margin-top: 8pt; }
+div.rejected p { margin: 2pt 0; }
+
+/* the reason cameo differs from Ruby: a box to fill in */
+div.why { border: 1.5px solid #000; min-height: 30mm; padding: 4pt 7pt; margin: 6pt 0 14pt;
+  break-inside: avoid; }
+div.why p:first-child { font: 8pt "DejaVu Sans", sans-serif; color: #444; margin: 0 0 4pt; }
