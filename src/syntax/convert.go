@@ -936,7 +936,17 @@ func (c *converter) call(n *ast.Call) Node {
 			return c.async(n, false)
 		case "await":
 			return c.await(n, false)
-		case "attr_reader", "attr_writer", "attr_accessor", "attr":
+		case "attr":
+			if hasKeyword(n.Args, "type") {
+				if !c.inClassBody() {
+					c.fail("attr%s declares a field, which only a class body can do", firstSymbol(n.Args))
+					return nil
+				}
+				return c.typedAttr(n)
+			}
+			c.refuse("attr", "attr without type: is not supported: declare the field with its type, attr :name, type: String, or string :name")
+			return nil
+		case "attr_reader", "attr_writer", "attr_accessor":
 			c.refuse("attr", "%s is not supported: a field declaration defines its reader, and there are no setters", name)
 			return nil
 		case "private", "protected", "public", "module_function":
@@ -1723,6 +1733,158 @@ func (c *converter) fieldDecl(n *ast.Call) Node {
 		}
 	}
 	return decl
+}
+
+// attrClassTypes are the core classes `attr :x, type:` takes for a scalar
+// field: `type: String` is `string :x`.
+var attrClassTypes = map[string]string{"String": "string", "Integer": "int", "Float": "float"}
+
+// hasKeyword returns true when a call's arguments pass the keyword key.
+func hasKeyword(args []ast.Node, key string) bool {
+	for _, a := range args {
+		h, ok := a.(*ast.HashLit)
+		if !ok || h.Braced {
+			continue
+		}
+		for _, k := range h.Keys {
+			if s, ok := k.(*ast.SymbolLit); ok && s.Name == key {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// firstSymbol is " :name" for a call whose first argument is :name, for
+// an error that names the declaration; "" otherwise.
+func firstSymbol(args []ast.Node) string {
+	if len(args) > 0 {
+		if s, ok := args[0].(*ast.SymbolLit); ok {
+			return " :" + s.Name
+		}
+	}
+	return ""
+}
+
+// typedAttr reads `attr :name, type: X`, a field declaration that names
+// its type by a class or by a class name: `type: UserName` and
+// `type: "UserName"` are `ref :name, UserName`, `type: String` is
+// `string :name`. It takes default: and number: as a field declaration
+// does.
+func (c *converter) typedAttr(n *ast.Call) Node {
+	decl := &FieldDecl{Pos: c.pos()}
+	args, kwargs, blockArg := c.args(n.Args)
+	if blockArg != nil || n.Block != nil {
+		c.fail("attr: a field declaration takes no block")
+		return nil
+	}
+	for _, a := range args {
+		s, ok := a.(*Sym)
+		if !ok {
+			c.fail("attr: a field is named by a symbol")
+			return nil
+		}
+		decl.Names = append(decl.Names, s.Name)
+	}
+	if len(decl.Names) == 0 {
+		c.fail("attr: a field declaration names at least one field")
+		return nil
+	}
+	for _, kw := range kwargs {
+		key, ok := kw.Key.(*Sym)
+		if !ok {
+			c.fail("attr: options are keywords")
+			return nil
+		}
+		switch key.Name {
+		case "type":
+			if !c.attrType(decl, kw.Value) {
+				return nil
+			}
+		case "default":
+			decl.Default = kw.Value
+		case "number":
+			num, ok := kw.Value.(*Int)
+			if !ok || num.Value < 1 || num.Value > maxDeclaredNumber {
+				c.fail("attr: number: is an integer from 1 to %d", maxDeclaredNumber)
+				return nil
+			}
+			decl.Number = num.Value
+		default:
+			c.fail("attr: unknown option %s:; attr takes type:, default: and number:", key.Name)
+			return nil
+		}
+	}
+	if decl.Number != 0 && len(decl.Names) > 1 {
+		c.fail("attr: number: belongs to a declaration of one field")
+		return nil
+	}
+	return decl
+}
+
+// attrType sets a declaration's type from attr's type: option: a class,
+// or a class name in a string, which may be scoped ("Shop::Item").
+func (c *converter) attrType(decl *FieldDecl, v Node) bool {
+	switch v := v.(type) {
+	case *Const:
+		if scalar, ok := attrClassTypes[v.Name]; ok {
+			decl.Type = scalar
+			return true
+		}
+		decl.Type, decl.Ref = "ref", v
+		return true
+	case *ScopedConst:
+		decl.Type, decl.Ref = "ref", v
+		return true
+	case *Str:
+		ref := c.constPath(v.Value)
+		if ref == nil {
+			c.fail("attr: type: %q is not a class name", v.Value)
+			return false
+		}
+		if k, ok := ref.(*Const); ok {
+			return c.attrType(decl, k)
+		}
+		decl.Type, decl.Ref = "ref", ref
+		return true
+	}
+	c.fail("attr: type: is a class or the name of a class: type: UserName, type: \"UserName\"")
+	return false
+}
+
+// constPath reads a class name such as "Shop::Item" or "::Item" into the
+// constant reference it names, or nil when it is not one.
+func (c *converter) constPath(name string) Node {
+	var out Node
+	top := strings.HasPrefix(name, "::")
+	parts := strings.Split(strings.TrimPrefix(name, "::"), "::")
+	for i, part := range parts {
+		if part == "" || !isConstName(part) {
+			return nil
+		}
+		switch {
+		case i == 0 && !top:
+			out = &Const{c.pos(), part}
+		default:
+			out = &ScopedConst{c.pos(), out, part}
+		}
+	}
+	return out
+}
+
+// isConstName returns true for a constant's name: a capital letter, then
+// letters, digits and underscores.
+func isConstName(s string) bool {
+	for i, r := range s {
+		switch {
+		case i == 0 && (r < 'A' || r > 'Z'):
+			return false
+		case r == '_' || r >= '0' && r <= '9' || r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z':
+		default:
+			return false
+		}
+	}
+	return s != ""
 }
 
 // elementType reads a type option (`of: :string`, `key: :int`, `of: Point`)

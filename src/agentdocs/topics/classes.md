@@ -27,6 +27,25 @@ puts order                 # Ada: tea, cake (8.50)
 The field types are `int`, `float`, `string`, `bool`, `bytes`, protobuf's
 sized numbers (`int32`, `uint64`, …), `list` and `set` with `of:`, `map`,
 `ref :name, OtherClass` and `enum`. A wrong type raises `TypeError`.
+`attr :name, type: Name` declares a field by its class, or by the class's
+name in a string (`type: "Shop::Item"`); `type: String`, `Integer` or
+`Float` is a scalar field. `with` also takes a block that gets the
+instance and returns the changes, for a field deep inside:
+
+```ruby
+class Name
+  string :value
+end
+
+class User
+  attr :name, type: Name
+end
+
+user = User.new(name: Name.new(value: " ada "))
+fixed = user.with { |u| { name: u.name.with(value: u.name.value.strip) } }
+p fixed.name.value         # "ada"
+```
+
 Inside `initialize`, set a field with `self.x = v`. Every object is a
 protobuf message: `cameo proto script.cameo` prints the `.proto` files of
 a script's classes.

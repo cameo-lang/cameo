@@ -406,7 +406,7 @@ leaves out, why, and what to write instead. The codes are those of
 |---|---|
 | instance variables, `@x` | `self.x = v` in `initialize`; read `x` or `self.x` |
 | class variables, `@@x`; global variables, `$x`, including `$!` and `$~` | a constant, a field or a local; `rescue => e`; the MatchData of `match`. `$stdout` and `$stderr` exist: they are `STDOUT` and `STDERR`, with `puts`, `print`, `write`, `flush` and `sync` |
-| setters, `def x=(v)`; `attr_reader`, `attr_writer`, `attr_accessor` | field declarations, which define readers, and `with` |
+| setters, `def x=(v)`; `attr_reader`, `attr_writer`, `attr_accessor`; `attr` without `type:` | field declarations (`string :x`, `attr :x, type: Point`), which define readers, and `with` |
 | `private`, `protected`, `public`, `module_function` | none: every method a script defines is public; only Kernel's functions are private |
 | `eval`, `instance_eval`, `class_eval`, `define_method`, `instance_variable_get` and `_set`, `undef` | a direct call or a `def` |
 | `def obj.x`, `class << self` | `def self.x` in a class body |
@@ -494,7 +494,13 @@ script runs, a mutator's `CameoError` among them.
   `from_proto`, and `Point.proto` for its `.proto` text. Every exception is
   a message too, of its message, line, cause and fields, and crosses to
   `await` and to a Go host with them.
-- `with`, which returns a copy with some fields changed.
+- `attr :name, type: X`, a typed field whose type is a class, the name of
+  one in a string (`type: "Shop::Item"`), or `String`, `Integer` or
+  `Float` for a scalar field. Ruby's `attr :name` defines a reader of an
+  instance variable; without `type:`, cameo refuses it.
+- `with`, which returns a copy with some fields changed: `with(name: v)`,
+  or `with { |u| { name: u.name.strip } }`, whose block returns the
+  changes.
 - Class attributes: `attribute :name, default: expr` in a class body
   declares a value the class itself holds, which the body, and the class
   methods it calls, set with `self.name = v` while the body runs; the
