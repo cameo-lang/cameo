@@ -17,6 +17,9 @@ PANDOC ?= pandoc
 CHROME ?= $(firstword $(foreach c,chromium chromium-browser google-chrome google-chrome-stable chrome,$(shell command -v $(c) 2>/dev/null)) \
             $(wildcard /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome))
 
+# Code stays plain: no colours, no line anchors. pandoc 3.8 renamed the flag.
+NOHIGHLIGHT := $(shell $(PANDOC) --help 2>/dev/null | grep -q -- --syntax-highlighting && echo --syntax-highlighting=none || echo --no-highlight)
+
 MD := $(patsubst chapters/%,$(OUT)/md/%,$(CHAPTERS))
 
 .PHONY: pdf html md check clean prerequisites pandoc install-prerequisites help
@@ -52,7 +55,7 @@ install-prerequisites: ## Install pandoc and Chrome, where they are missing
 
 $(OUT)/cameo.html: $(CHAPTERS) book.yaml book.css | prerequisites
 	@mkdir -p $(OUT)
-	$(PANDOC) --defaults book.yaml -o $@ $(CHAPTERS)
+	$(PANDOC) --defaults book.yaml $(NOHIGHLIGHT) -o $@ $(CHAPTERS)
 
 $(OUT)/cameo.pdf: $(OUT)/cameo.html
 	"$(CHROME)" --headless --disable-gpu --no-sandbox --no-pdf-header-footer \

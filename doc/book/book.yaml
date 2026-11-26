@@ -1,13 +1,13 @@
 # pandoc defaults for the book: `pandoc --defaults book.yaml chapters/...`.
 # The Makefile passes the chapters in file-name order; this file holds the
-# rest of the toolchain's settings.
+# rest of the toolchain's settings. The Makefile turns highlighting off, as
+# the flag for that changed in pandoc 3.8.
 from: markdown
 to: html5
 standalone: true
 embed-resources: true
 table-of-contents: true
 toc-depth: 2
-highlight-style: null   # code stays plain: no colours, no line anchors
 css:
   - book.css
 resource-path:
