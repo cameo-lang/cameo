@@ -1,1 +1,1 @@
-# Part 1. What cameo is for {.part}
+# Part 1. cameo - ruby, but immutable and build for embedding (in go) {.part}

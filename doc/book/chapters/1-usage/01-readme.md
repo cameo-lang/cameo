@@ -1,53 +1,102 @@
 ## cameo {#ch-readme}
 
 ::: source
-from `README.md`
+BOT: a shortened version of this goes into `README.md`
 :::
 
-cameo is a small programming language. It uses the syntax of Ruby. An
-interpreter that is written in Go runs it.
+If your love for Ruby goes so far, that you want to embed it somewhere, *critic* might be for you. It looks like ruby – each cameo program is a valid ruby program after all! – but it is different in some important aspects.
 
--   **Values do not change.** When you assign a value, cameo makes a copy
-    with the change and gives the variable the copy. Other references keep
-    the old value. A class declares fields with types, and each instance of
-    a class is a protobuf message.
--   **A script does no I/O.** A script only computes. It cannot read a file,
-    open a socket or start a process. The Go program that runs the script
-    can permit each kind of I/O, or it can give the script Go functions to
-    call.
--   **You can embed cameo in a Go program.** The interpreter is pure Go and
-    does not use cgo. A Go program loads a script, runs it and calls its
-    methods. Values and protobuf messages go in the two directions.
--   **A script can stop and continue later.** A running script can stop at
-    any point, also inside a method or a loop. Its state is a sequence of
-    bytes. You can keep these bytes and continue the run in a different
-    process.
+### It is immutable
+
+values – including objects – never change. Cameo guarantees that the object that you have passed into function has the same value even after the function returns. This has some interesting applications down the road:
+
+- sharing data (for example between threads) only shares read access. If an object never changes, no conflicting updates can occur, and synchronization is never necessary. 
+
+```ruby
+myObj = Klass.new(foo: "bar")
+some_func(myObj)
+# in ruby: the obj might or might not have changed. 
+# in cameo: no change to the obj.
+```
+
+- instance vars (`@ivar`) are irrelevant (and unsupported). Ruby needs these to allow mutating the state of an object; we replace these with read-only attributes. Also, these attributes are typed (more on that later.) If you need a changed object, you must create a new one. Setting attributes can only occur in the constructor:
+
+```ruby
+class UserName
+    string :user_name
+
+    def normalize() = UserName.new(user_name: user_name.trim)
+    
+    def initialize(user_name:)
+        self.user_name = user_name    
+    end
+end
+
+user_name = UserName.new(user_name: "hugo")
+
+# shortcut to update a nested slice of an object 
+normalized_user = user.with do |u| 
+    # return a update hash from the block
+    { name: u.name.normalized_user }
+end 
+```
+
+### No I/O by default.
+
+By default, a script doesn't have access to files, network, processes etc. The go program that . The Go program that runs the script can allow some kind of I/O, or it can give the script Go functions to  call.
+
+All I/O that comes with cameo is kept in a separate `cameoio` package. Not importing that package guarantees that I/O features are not present in an interpreter instance.
+
+### Embedding in a Go program uses protobuf.
+
+Embedding is a fairly straightforward process:
+
+- embed the cameo interpreter package;
+- (optional) add the cameo I/O package to give I/O capabilities for files, network, etc.
+- (optional) configure cameo to access classes that your host provides;
+- load scripts into the interpreter.
+
+cameo uses protobuf messages as its internal representation. That allows exchanging data between the golang host, and other (GRPC-related) services. This goes both ways:
+
+- a protobuf's message definition is automatically made available to a hosted cameo script. 
+- a cameo class can be exported into a .proto definition which can be compiled into the go host.
+
+Since protobuf requires types on its field names, cameo attributes must also be typed. We support all protobuf-native types for cameo attributes.   
+
+
+### Pausing and resuming. 
+
+Pausing and resuming a program requires to capture the state of a running program, and later reload the state and continue the execution. When all objects in a running process are immutable, that becomes trivial. cameo is also able to export the code that it is running, and this combinations makes it possible to stop a running script at any point and to dump its state. That state can later be loaded and resumed.
+
+This feature can be useful for apps on platforms that freely terminate applications running on it and don't support running in the background (looking at you, iOS).
+
+
+### async support
+
+We implement support for some parallelity via `async` and `await`. This can help you distribute a CPU-bound workload over multiple CPU cores. However, but high performance applications are not the main purpose for cameo.
+
+async support, however, makes it trivial to use `cameo` as a basis for persistent workflows. A script like the following can be put, for example, into an iOS app, which finishes the download task even when the host gets terminated and restarted.
+
+``` ruby
+include Cameo                  # async, await and promises
+
+urls = [
+  "http://foo.bar/1.html",
+  "http://foo.bar/2.html",
+  "http://foo.bar/3.html"
+]
+
+downloader = Downloader.new()
+
+downloads = urls.map { |url| async downloader, :fetch, url }
+await :downloads
+```
 
 The site [cameo-lang.github.io/cameo](#ch-overview) has more:
 [examples](#ch-examples), [embedding in Go](#ch-go), [gRPC](#ch-grpc),
 [pause and resume](#ch-pause), [async](#ch-async), [I/O](#ch-io),
 [Ruby vs cameo](#ch-ruby) and [numbers](#ch-numbers).
 
-``` ruby
-include Cameo                  # async, await and promises
-
-class Point
-  int :x, :y
-
-  def +(other)
-    Point.new(x: x + other.x, y: y + other.y)
-  end
-end
-
-a = Point.new(x: 1, y: 2)
-b = a
-a.x = 10                       # rebinds a to a copy; b keeps x: 1
-c = a.with { |p| { y: p.y * 5 } }
-
-p a, b, c                      # Point(x: 10, y: 2), Point(x: 1, y: 2), Point(x: 10, y: 10)
-job = async a, :+, c           # a.+(c) on a goroutine; job is its promise
-p await job                    # Point(x: 20, y: 12)
-```
 
 `include Cameo` gives the script the methods of the `Cameo` module:
 `async`, `await`, `promise`, `resolve` and `fail`. Without the include, these
