@@ -9,6 +9,7 @@ markdown file per chapter, built into one PDF.
 make            # build/cameo.pdf
 make html       # build/cameo.html
 make md         # build/md/: one GitHub markdown file per chapter
+make install-prerequisites   # pandoc and Chrome, with brew (macOS) or apt
 make help
 ```
 
