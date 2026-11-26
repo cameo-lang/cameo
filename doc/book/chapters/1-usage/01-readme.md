@@ -123,55 +123,6 @@ make check      # lint, the Go tests and the integration tests: what CI runs
 To use cameo in a Go module, run `go get github.com/cameo-lang/cameo`. This
 adds the package `github.com/cameo-lang/cameo/src/cameo`.
 
-### Play with it (interactive)
-
-`cameo irb` reads a line, evaluates it and prints its value:
-
-    $ cameo irb
-    cameo(main):001> x = 41
-    => 41
-    cameo(main):002> def inc(n)
-    cameo(main):002*   n + 1
-    cameo(main):002* end
-    => :inc
-    cameo(main):003> inc(x)
-    => 42
-    cameo(main):004> a = [1, 2]
-    => [1, 2]
-    cameo(main):005> a << 3
-    (irb):1: cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (see https://15b.it/mut) (CameoError)
-    cameo(main):006> a += [3]
-    => [1, 2, 3]
-
-To stop a script, press `^C`. You can continue it later. `count.cameo` is the
-script of [Pause and resume](#ch-pause):
-
-    $ cameo count.cameo
-    1: 1
-    2: 5
-    ^C
-    cameo: pausing; press ^C again to end the script
-    cameo: paused before line 3 of count.cameo
-    cameo: resume with: cameo resume /tmp/cameo-count-676897826.dump
-    $ cameo inspect /tmp/cameo-count-676897826.dump     # where it stopped, and its variables
-    $ cameo resume /tmp/cameo-count-676897826.dump
-    3: 14
-    4: 30
-    ...
-    done: 22140
-
-The other commands:
-
-``` sh
-cameo script.cameo            # run; an uncaught exception prints script:line: message (Class)
-cameo --io=file script.cameo  # the same, with File.read and File.write allowed
-cameo check script.cameo      # parse and check only, report every error with its line
-cameo proto script.cameo      # the .proto files of the script's classes
-cameo ir script.cameo         # the IR, the instructions the script compiles to
-cameo debug script.cameo      # run under a debugger with the commands of Ruby's debug
-cameo agent-docs [topic]      # the guide for models that write cameo, as markdown
-```
-
 ### Embedding: examples/ex1
 
 [examples/ex1](https://github.com/cameo-lang/cameo/blob/main/examples/ex1)
@@ -393,30 +344,21 @@ Measured on 2026-11-13 on a laptop (Apple M4), against CRuby 3.4.1.
 | ruby/spec, all of it        | examples that pass, of those CRuby passes in the same harness | 1558 of 2897 |
 | Ruby 3.4's standard library | libraries built in                                            | 32 of 87     |
 
-Most of what does not run uses something cameo leaves out on purpose:
-mutation, instance variables, metaprogramming, I/O. The site's [numbers
+What does not run falls into three groups. ruby/spec shows them best: of the
+2897 examples that CRuby passes in cameo's harness, cameo passes 1558.
+
+-   **Left out on purpose: 1198 examples.** They use something cameo does not
+    have by design: mutation, instance variables, metaprogramming, threads or
+    I/O.
+-   **Bugs: 141 examples.** cameo should pass them and does not.
+    COMPATIBILITY.md lists where they are.
+-   **Not done yet.** cameo builds in 32 of the 87 libraries of Ruby 3.4's
+    standard library. A script that requires one of the others does not run.
+ The site's [numbers
 page](#ch-numbers) says how each was
 measured, and [COMPATIBILITY.md](#ch-reference-compatibility),
 [doc/coverage.md](#ch-reference-coverage) and [doc/stdlib.md](#ch-reference-stdlib) have the
 detail.
-
-### Repository
-
-| Path                                           | Holds                                                                                                                                                                                                                                                                                                                                                                                                      |
-|------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `src/`                                         | all Go code: `syntax` the front end, `ir` the instructions a script compiles to, `eval` the evaluator and the async scheduler, `object` the value model, `str` what the bytes of a string are (encodings, the scan, the index of characters), `stdlib` the core classes, `lib` the libraries a script requires, `protogen` the descriptors and `.proto` text, `cameo` the host API, `cmd/cameo` the binary |
-| `examples/`                                    | the specification: each `<name>.cameo` has the output it must print in `<name>.expected`, and `go test` holds it to that; the directories are Go programs that embed cameo                                                                                                                                                                                                                                 |
-| `tests/`, `tests/integration/`                 | Go tests against the packages, and shell tests that drive the built binary                                                                                                                                                                                                                                                                                                                                 |
-| `benchmarks/`                                  | CRuby's benchmark suite sorted by what cameo runs, and the comparisons with other Rubies                                                                                                                                                                                                                                                                                                                   |
-| `specs/`, [COMPATIBILITY.md](#ch-reference-compatibility) | ruby/spec sorted by what cameo's checker accepts, the harness that runs it, and what of it cameo passes                                                                                                                                                                                                                                                                                                    |
-| `doc/gh_pages/`                                | the site, deployed by the Pages workflow on every change; `go test ./tests` runs its samples                                                                                                                                                                                                                                                                                                               |
-| `doc/design/`                                  | the design: the language, the IR, exceptions, pause and resume                                                                                                                                                                                                                                                                                                                                             |
-| `doc/history/`                                 | how cameo came to be, one document per step; up to v0.1.1 cameo was called amber                                                                                                                                                                                                                                                                                                                           |
-| `agents/`, [agents.md](#ch-agents)              | guidance for coding agents that work on cameo ([CLAUDE.md](https://github.com/cameo-lang/cameo/blob/main/CLAUDE.md)), and for models that write cameo                                                                                                                                                                                                                                                                                                    |
-
-A release is a tag `vMAJOR.MINOR.PATCH` on a commit of main, made by the Tag
-workflow ([.github/workflows/tag.yml](https://github.com/cameo-lang/cameo/blob/main/.github/workflows/tag.yml)) after
-`make check` passes on that commit.
 
 ### License
 

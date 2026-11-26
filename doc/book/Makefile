@@ -23,8 +23,9 @@ CHROME := $(shell { \
   } 2>/dev/null | head -n 1)
 endif
 
-# Code stays plain: no colours, no line anchors. pandoc 3.8 renamed the flag.
-NOHIGHLIGHT := $(shell $(PANDOC) --help 2>/dev/null | grep -q -- --syntax-highlighting && echo --syntax-highlighting=none || echo --no-highlight)
+# Code is highlighted in pandoc's pygments colours. pandoc 3.8 renamed the
+# flag. code.lua highlights cameo as Ruby.
+HIGHLIGHT := $(shell $(PANDOC) --help 2>/dev/null | grep -q -- --syntax-highlighting && echo --syntax-highlighting=pygments || echo --highlight-style=pygments)
 
 MD := $(patsubst chapters/%,$(OUT)/md/%,$(CHAPTERS))
 
@@ -59,9 +60,9 @@ install-prerequisites: ## Install pandoc and Chrome, where they are missing
 	elif command -v apt-get >/dev/null; then sudo apt-get install -y chromium; \
 	else echo "Install Chrome or Chromium by hand, or set CHROME=/path/to/chrome" >&2; exit 1; fi
 
-$(OUT)/cameo.html: $(CHAPTERS) book.yaml book.css | prerequisites
+$(OUT)/cameo.html: $(CHAPTERS) book.yaml book.css code.lua | prerequisites
 	@mkdir -p $(OUT)
-	$(PANDOC) --defaults book.yaml $(NOHIGHLIGHT) -o $@ $(CHAPTERS)
+	$(PANDOC) --defaults book.yaml $(HIGHLIGHT) --lua-filter code.lua -o $@ $(CHAPTERS)
 
 $(OUT)/cameo.pdf: $(OUT)/cameo.html
 	"$(CHROME)" --headless --disable-gpu --no-sandbox --no-pdf-header-footer \

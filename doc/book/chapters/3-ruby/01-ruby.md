@@ -1105,7 +1105,7 @@ and `await` are unknown; `Cameo.async` and `Cameo.await` work without it.
 
 `async receiver, :method, args…` runs one method call on a goroutine of its
 own, over copies of the receiver and the arguments, and returns the call's
-*promise* at once: an Integer that names the result to come. `await` returns
+*promise* at once: a value that names the result to come. `await` returns
 the result, or raises the exception the call raised. It takes a promise, a
 list of them, or `:all`, every call the current method started and has not
 awaited. A call shares no memory with the script that started it: its
@@ -1130,7 +1130,7 @@ end
 w = Worker.new(factor: 3)
 
 job = async w, :times, 4       # starts w.times(4) on a goroutine
-p job                          # the promise: an Integer
+p job                          # the promise
 p await job
 
 jobs = [1, 2, 3].map { |n| async w, :times, n }
@@ -1202,7 +1202,7 @@ sys 0m0.311s
 
 `promise` makes a pending promise, which `resolve promise, value` settles with
 a value and `fail promise, exception` with an exception, from the script or
-from a worker it was passed to: a promise is an Integer, so it travels like
+from a worker it was passed to: a promise is a value, so it travels like
 any other value. `fail` takes what `raise` takes after the promise; with
 anything but a promise first it raises, as Ruby's `fail` does. A promise is
 settled once. A Go host settles promises the same way when it does I/O for a

@@ -73,7 +73,7 @@ the host builds becomes an instance in the script.
 A script runs in its own interpreter, and `RunContext` stops it, with every
 worker it started, when the host's context ends.
 
-### How fast it is
+### Performance
 
 cameo runs the 781 cases of CRuby's own benchmark suite that use only what
 cameo supports, every one with Ruby's output. Over the 772 that CRuby 3.4 runs
@@ -83,7 +83,7 @@ too, on a laptop:
 > 0.88 times. It is faster than CRuby on strings, times and paths, and slowest
 > on hashes and on calls of small methods.
 
-[Numbers](#ch-numbers) has the table by category, how it was measured, and how
+[Part 6](#ch-numbers) has the table by category, how it was measured, and how
 much of Ruby cameo runs.
 
 ### Read on

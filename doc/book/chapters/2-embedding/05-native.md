@@ -1,18 +1,22 @@
-## Extending cameo with native code {#ch-native}
+## Extending cameo with Go code {#ch-native}
 
 ::: source
 from `doc/gh_pages/native.html`
 :::
 
-Go code reaches a script in three ways: a module the host gives one program, a
-class the host registers for every program in its process, and a builtin class
-in cameo's standard library.
+This chapter belongs with [loading and running a script](#go-run): once your
+program runs a script, it can give the script Go code to call. Find what you
+want to do, then do what the section says:
 
-1.  [From a host: modules of Go methods](#native-host)
-2.  [Classes from a host](#native-classes)
-3.  [Inside cameo: a builtin class](#native-stdlib)
+1.  If you want a script to call some Go functions, give the program
+    [a module of Go functions](#native-host). Only that program sees it.
+2.  If you want a script to use a class whose instances are your Go
+    protobuf messages, [register the class](#native-classes). Every program
+    in your process sees it.
+3.  If you want a class to be part of cameo itself, for every host, write
+    [a builtin class](#native-stdlib) in cameo's standard library.
 
-### From a host: modules of Go methods {#native-host}
+### To give a script Go functions: a module {#native-host}
 
 Between `Load` and `Run`, a host defines modules for the script:
 
@@ -103,7 +107,7 @@ this kind takes:
     `context.Context` to the tool call, so a cancelled run reaches a tool that
     is still working.
 
-### Classes from a host {#native-classes}
+### To give a script a class of Go messages: register it {#native-classes}
 
 A host registers a class of its own with `cameo.Register`. The class's data
 layout is a protobuf message, generated with `protoc-gen-go`, and its methods
@@ -208,7 +212,9 @@ Geo::Point(x: 0, y: 2)
 -   **The class's fields are the message's.** Every proto3 scalar type is
     supported. Repeated fields are lists, and maps take a scalar key. Enums
     must be numbered from 0 without a gap; their values become symbols
-    (`COLOR_RED` is `:red`). A field may hold a message whose class was
+    (`COLOR_RED` is `:red`). Do not give the value 0 a meaning: name it
+    `COLOR_UNSPECIFIED`, for example. An unset field reads as 0, so a
+    meaningful 0 cannot be told from a field that nobody set. A field may hold a message whose class was
     registered earlier, or the message itself. `oneof` is not supported.
 -   **Unset fields read as they do in Go.** A field without presence reads as
     its zero value, so `Geo::Point.new.x` is `0`. A field with presence
@@ -230,9 +236,16 @@ Geo::Point(x: 0, y: 2)
 
 #### Instances of a class the script declares
 
-A host can also return instances of a class the script declares itself: a
-`proto.Message` whose descriptor is a loaded class's becomes an instance of
-that class.
+A host method can also return an instance of a class that the script
+declares itself, not the host. The host does not have a Go type for such a
+class. It asks the program for the class's protobuf descriptor with
+`prog.Descriptor(name)`, builds a `dynamicpb` message from that descriptor,
+and returns the message. cameo sees that the message has the descriptor of a
+loaded class, so the script gets an instance of that class.
+
+In the example below, the script declares `User`, and the host's `Users.find`
+returns a `User`. The script calls `greeting` on it, as on any other
+`User`.
 
 ``` {.cameo .hosted data-title="users.cameo"}
 class User
@@ -290,7 +303,7 @@ ada is 36
 User(name: "ada", age: 37)
 ```
 
-### Inside cameo: a builtin class {#native-stdlib}
+### To add a class to cameo itself: a builtin class {#native-stdlib}
 
 cameo's builtin classes live in `src/stdlib`, one file per area. A class is an
 `*object.Class` from `object.NewClass(name, super)`:

@@ -5,7 +5,7 @@ from `doc/gh_pages/async.html`
 :::
 
 A cameo script hands a method call to a worker with `async` and collects its
-result with `await`. What `async` returns is a *promise*, a plain Integer: a
+result with `await`. What `async` returns is a *promise*: a
 name for a result to come, which a worker, the script itself or the Go host
 settles. This page explains the model, shows it on one core, walks through the
 examples in
@@ -13,11 +13,13 @@ examples in
 and shows the same scripts running on Ruby.
 
 1.  [How it works](#async-model)
-2.  [On one core](#async-one-core)
-3.  [Computing on every core](#async-cores)
+2.  [When it runs on one core](#async-one-core)
+3.  [When it runs on many cores](#async-cores)
 4.  [Many workflows, I/O in the host](#async-io)
 5.  [The examples](#async-examples)
 6.  [The same script on Ruby](#async-ruby)
+7.  [From a Go program: concurrency](#go-concurrency)
+8.  [From a Go program: promises for I/O in the host](#go-promises)
 
 ### How it works {#async-model}
 
@@ -49,8 +51,8 @@ level, which brings the module to every method, but only cameo has that;
 
 `promise`, `resolve promise, value`, `fail promise, exception`
 :   make a pending promise, and settle it with a value or an exception, once;
-    settling it again raises. A promise is an Integer, so it travels to a
-    worker, which may settle it, and to the Go host, which settles the
+    settling it again raises. A promise is a value like any other, so it
+    travels to a worker, which may settle it, and to the Go host, which settles the
     promises its methods return when their I/O is done; see [promises in the
     host](#go-promises). `fail` with anything but a promise first raises, as
     Ruby's `fail` does.
@@ -63,7 +65,7 @@ itself, on the goroutine that awaits it. A run ends when the script's top
 level has and every call it started has; a call that failed and was never
 awaited is reported on standard error.
 
-### On one core {#async-one-core}
+### When it runs on one core {#async-one-core}
 
 With one core, `async` cannot make calls that compute run faster: one of them
 has the core at a time. What it buys is overlap with waiting. The timeline
@@ -91,7 +93,7 @@ source</a>)</figcaption>
     wakes the script.
 5.  The script awaits `price`, which is done, and prints the bill.
 
-### Computing on every core {#async-cores}
+### When it runs on many cores {#async-cores}
 
 With more cores, calls that compute run at the same time. Each queued call is
 taken by a runner of its own, up to one per core, and Go spreads the runners
@@ -171,7 +173,7 @@ runs on Ruby; see [the next section](#async-ruby).
 
 #### one call {#async-01_one_call}
 
-async starts one method call on a worker and returns its promise, an Integer,
+async starts one method call on a worker and returns its promise
 at once; await waits for the call and returns its result. A class includes
 Cameo::Runner to run its work so.
 
@@ -329,7 +331,7 @@ the list raised: no chairs left
 #### promises {#async-05_promises}
 
 A promise made by hand: promise makes one, and resolve or fail settles it,
-once. A promise is an Integer, so it travels to a worker like any other value,
+once. A promise is a value like any other, so it travels to a worker,
 and the worker settles it while the caller awaits it.
 
 ``` {.ruby .cameo}
@@ -535,3 +537,195 @@ at a time, so calls that compute take turns on one core, as in the timeline
 above, where cameo spreads them over the cores. A call that waits, for the
 network or a sleep, lets the others run on both. The library is for running a
 cameo script where cameo is not embedded; it does not make Ruby parallel.
+
+### From a Go program: concurrency {#go-concurrency}
+
+Inside a script that includes `Cameo`, `async` runs a method call on another
+goroutine, over copies of its receiver and arguments; see [async, await and
+promises](#ruby-async). Every worker reaches the host's modules, so a host
+method may run on several goroutines at once and must be safe for that.
+`RunContext` stops the workers with the script.
+
+``` {.cameo .hosted data-title="fetch.cameo"}
+include Cameo
+
+class Fetcher
+  string :base
+
+  def get(path)
+    Http.get(base + path)
+  end
+end
+
+f = Fetcher.new(base: "https://example.com")
+jobs = ["/a", "/b", "/c"].map { |path| async f, :get, path }
+p jobs.map { |job| await job }
+```
+
+``` go
+package main
+
+import (
+    "fmt"
+    "log"
+    "os"
+    "sync/atomic"
+
+    "github.com/cameo-lang/cameo/src/cameo"
+    "github.com/cameo-lang/cameo/src/cameoio"
+)
+
+func main() {
+    prog, err := cameo.Load("fetch.cameo", cameoio.DefaultEnv())
+    if err != nil {
+        log.Fatal(err)
+    }
+    var calls atomic.Int64
+    prog.Module("Http").Def("get", func(args []any, kwargs map[string]any, block *cameo.Block) (any, error) {
+        calls.Add(1) // runs on each worker's goroutine
+        return "body of " + args[0].(string), nil
+    })
+    if err := prog.Run(); err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(calls.Load(), "calls")
+}
+```
+
+``` output
+["body of https://example.com/a", "body of https://example.com/b", "body of https://example.com/c"]
+3 calls
+```
+
+### From a Go program: promises for I/O in the host {#go-promises}
+
+cameo does no I/O. A host method that does some, such as fetching a web page,
+can return a *promise* instead of blocking: it makes one with
+`prog.Promise()`, starts the work on a goroutine, and returns the promise at
+once. The script holds the promise and awaits it; the goroutine
+settles it with `Resolve`, with a Go value that converts as a host method's
+result does, or with `Fail`, with an error that `await` raises. The script
+below runs one workflow per page, each awaiting its own fetch, so every
+request is in flight while the workflows wait; [the async guide](#async-io)
+shows the timeline. `Resolve` and `Fail` may be called from any goroutine,
+once; a second call returns `cameo.ErrSettled`. This is
+[examples/webfetch](https://github.com/cameo-lang/cameo/tree/main/examples/webfetch):
+
+``` {.cameo .hosted file="examples/webfetch/webfetch.cameo" data-title="webfetch.cameo"}
+include Cameo
+
+class Flow
+  # One workflow: fetch the page, then measure it. await parks this
+  # workflow until the host settles the promise; the others run meanwhile.
+  def run(url)
+    page = await Web.fetch(url)
+    "#{url}: #{page.size} bytes, #{page.lines.size} lines"
+  rescue Web::FetchError => e
+    "#{url}: #{e.message}"
+  end
+end
+
+def fetch_all(urls)
+  flow = Flow.new
+  promises = urls.map { |url| async flow, :run, url }   # every workflow starts now
+  await promises                                        # their lines, in order
+end
+```
+
+``` go
+// Command webfetch fetches web pages from a cameo script, one workflow per
+// page. cameo does no I/O, so the host gives the script a Web module whose
+// fetch starts the request on a goroutine and returns a promise at once; the
+// host settles the promise from outside the script when the response is
+// in. Each workflow awaits its own fetch, so every request is in flight
+// while the script waits, and await returns each page or raises
+// Web::FetchError.
+//
+// The script, webfetch.cameo, is built into the program, and cameo loads it
+// through an Env of the program's own files.
+//
+//  go run ./examples/webfetch https://example.com https://example.org/missing
+package main
+
+import (
+    "embed"
+    "fmt"
+    "io"
+    "net/http"
+    "os"
+
+    "github.com/cameo-lang/cameo/src/cameo"
+    "github.com/cameo-lang/cameo/src/cameoio"
+    "github.com/spf13/afero"
+)
+
+//go:embed webfetch.cameo
+var scripts embed.FS
+
+// fetchAll runs the script's fetch_all over urls with client.
+func fetchAll(client *http.Client, urls []string) ([]any, error) {
+    env := cameoio.New(afero.FromIOFS{FS: scripts}, ".", nil, os.Stdout, os.Stderr)
+    prog, err := cameo.Load("webfetch.cameo", env)
+    if err != nil {
+        return nil, err
+    }
+    web := prog.Module("Web")
+    fetchError := web.Exception("FetchError")
+    web.Def("fetch", func(args []any, kwargs map[string]any, block *cameo.Block) (any, error) {
+        url, ok := args[0].(string)
+        if !ok {
+            return nil, fmt.Errorf("Web.fetch takes a URL, not %v", args[0])
+        }
+        promise := prog.Promise()
+        go func() {
+            resp, err := client.Get(url)
+            if err != nil {
+                promise.Fail(fetchError.New("%v", err))
+                return
+            }
+            defer resp.Body.Close()
+            if resp.StatusCode != http.StatusOK {
+                promise.Fail(fetchError.New("%s", resp.Status))
+                return
+            }
+            body, err := io.ReadAll(resp.Body)
+            if err != nil {
+                promise.Fail(fetchError.New("%v", err))
+                return
+            }
+            promise.Resolve(string(body))
+        }()
+        return promise, nil
+    })
+    lines, err := prog.Call(nil, "fetch_all", urls)
+    if err != nil {
+        return nil, err
+    }
+    return lines.([]any), nil
+}
+
+func main() {
+    lines, err := fetchAll(http.DefaultClient, os.Args[1:])
+    if err != nil {
+        fmt.Fprintln(os.Stderr, err)
+        os.Exit(1)
+    }
+    for _, line := range lines {
+        fmt.Println(line)
+    }
+}
+```
+
+``` sh
+$ go run ./examples/webfetch \
+    https://raw.githubusercontent.com/cameo-lang/cameo/main/README.md \
+    https://raw.githubusercontent.com/cameo-lang/cameo/main/LICENSE \
+    https://raw.githubusercontent.com/cameo-lang/cameo/main/MISSING.md
+https://raw.githubusercontent.com/cameo-lang/cameo/main/README.md: 8781 bytes, 177 lines
+https://raw.githubusercontent.com/cameo-lang/cameo/main/LICENSE: 1465 bytes, 28 lines
+https://raw.githubusercontent.com/cameo-lang/cameo/main/MISSING.md: 404 Not Found
+```
+
+The host API makes no promise that one `Program` can be used from several
+goroutines at once. Give each goroutine of the host its own `Program`; loading
+one takes microseconds.

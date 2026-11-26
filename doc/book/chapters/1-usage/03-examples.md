@@ -7,13 +7,14 @@ from `doc/gh_pages/examples.html`
 Seven short programs, each with what it prints. If you know Ruby you can read
 all of them; the comments say where cameo goes its own way.
 
-1.  [Methods and blocks](#examples-hello)
-2.  [A class with typed fields](#examples-classes)
-3.  [Nothing changes in place](#examples-immutable)
-4.  [Collections](#examples-collections)
-5.  [Pattern matching](#examples-patterns)
-6.  [Exceptions](#examples-exceptions)
-7.  [Async](#examples-async)
+1.  [Play with it (interactive)](#examples-irb)
+2.  [Methods and blocks](#examples-hello)
+3.  [A class with typed fields](#examples-classes)
+4.  [Nothing changes in place](#examples-immutable)
+5.  [Collections](#examples-collections)
+6.  [Pattern matching](#examples-patterns)
+7.  [Exceptions](#examples-exceptions)
+8.  [Async and await](#examples-async)
 
 To run one, save it as `hello.cameo` and say `cameo hello.cameo`, or type it
 into `cameo irb`. Building the binary needs Go alone:
@@ -22,6 +23,41 @@ into `cameo irb`. Building the binary needs Go alone:
 git clone https://github.com/cameo-lang/cameo
 cd cameo
 make install        # puts cameo into GOBIN
+```
+
+### Play with it (interactive) {#examples-irb}
+
+`cameo irb` reads a line, evaluates it and prints its value:
+
+    $ cameo irb
+    cameo(main):001> x = 41
+    => 41
+    cameo(main):002> def inc(n)
+    cameo(main):002*   n + 1
+    cameo(main):002* end
+    => :inc
+    cameo(main):003> inc(x)
+    => 42
+    cameo(main):004> a = [1, 2]
+    => [1, 2]
+    cameo(main):005> a << 3
+    (irb):1: cameo does not support mutating calls without rebinding; use a = a << 1, +, or append (see https://15b.it/mut) (CameoError)
+    cameo(main):006> a += [3]
+    => [1, 2, 3]
+
+To stop a running script with `^C` and continue it later, see
+[Pause and resume](#pause-hand).
+
+The other commands:
+
+``` sh
+cameo script.cameo            # run; an uncaught exception prints script:line: message (Class)
+cameo --io=file script.cameo  # the same, with File.read and File.write allowed
+cameo check script.cameo      # parse and check only, report every error with its line
+cameo proto script.cameo      # the .proto files of the script's classes
+cameo ir script.cameo         # the IR, the instructions the script compiles to
+cameo debug script.cameo      # run under a debugger with the commands of Ruby's debug
+cameo agent-docs [topic]      # the guide for models that write cameo, as markdown
 ```
 
 ### Methods and blocks {#examples-hello}
@@ -211,7 +247,7 @@ no tea left (tea)
 {"tea" => 0}
 ```
 
-### Async {#examples-async}
+### Async and await {#examples-async}
 
 `async` starts a method call on a goroutine of its own and returns a promise;
 `await` waits for the result. Values are immutable, so the calls share nothing
@@ -241,3 +277,11 @@ The [async page](#ch-async) has the model and eight more examples. The scripts
 under [examples/](https://github.com/cameo-lang/cameo/tree/main/examples) in
 the repository, 74 of them, are cameo's specification: each has the output it
 must print beside it, and the tests run them all.
+
+### Next: embed cameo in your program
+
+These examples run with the `cameo` command. To run scripts inside your own
+Go program, build an interpreter there and extend it with your own Go code.
+[Part 2](#ch-go) shows how, one step at a time: add the package, give the
+script I/O, give it your classes and modules, and pass protobuf messages in
+and out.

@@ -31,6 +31,7 @@ names another.
 | `chapters/<n>-<part>/<nn>-<name>.md` | a chapter: its title is the `##` heading, its sections `###` and below |
 | `book.yaml` | pandoc's settings: title, contents, the stylesheet |
 | `book.css` | the page: paper, page numbers, page breaks, code, boxes |
+| `code.lua` | a pandoc filter of the PDF: cameo code is highlighted as Ruby |
 | `Makefile` | pandoc to HTML, Chrome to PDF, and pandoc to one GitHub markdown file per chapter |
 | `gfm.lua`, `ids.lua` | the pandoc filters of `make md`: links between chapters become links between files |
 

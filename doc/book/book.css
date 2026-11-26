@@ -48,3 +48,12 @@ div.rejected p { margin: 2pt 0; }
 div.why { border: 1.5px solid #000; min-height: 30mm; padding: 4pt 7pt; margin: 6pt 0 14pt;
   break-inside: avoid; }
 div.why p:first-child { font: 8pt "DejaVu Sans", sans-serif; color: #444; margin: 0 0 4pt; }
+
+/* Highlighted code: pandoc's colours, without its line anchors and spacing,
+   so that a highlighted block looks like a plain one. */
+div.sourceCode { margin: 0 0 0.8em; background: none; overflow: visible; }
+pre.sourceCode { margin: 0; }
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline; line-height: inherit; text-indent: 0; padding-left: 0; }
+code.sourceCode > span > a:first-child::before { content: none; }
+pre.numberSource { margin-left: 0; padding-left: 7pt; border-left: 3px solid #bbb; }

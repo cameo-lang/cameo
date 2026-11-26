@@ -520,7 +520,7 @@ them.
     syntax for. A subclass starts with a copy of its parent's.
 -   The Cameo module, which a script includes:
     `async receiver, :method, args…` runs a method concurrently and returns
-    its promise, an Integer; `await` collects a promise's result, or a list's,
+    its promise; `await` collects a promise's result, or a list's,
     and `await :all` every one the scope started; `promise`, `resolve` and
     `fail` make and settle a promise by hand, and a Go host settles the
     promises its methods return when their I/O is done. `Cameo::Runner` is the
