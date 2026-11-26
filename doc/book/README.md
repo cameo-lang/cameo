@@ -8,8 +8,15 @@ markdown file per chapter, built into one PDF.
 ```sh
 make            # build/cameo.pdf
 make html       # build/cameo.html
+make md         # build/md/: one GitHub markdown file per chapter
 make help
 ```
+
+`make md` is for a markdown preview, such as the one of VS Code or GitHub.
+The text, code, tables, images and links between chapters are those of the
+book. The layout is not: the boxes (`source`, `why`, `rejected`) are quotes,
+the two sides of a `pair` follow each other, and there are no pages. The PDF
+is the book as it prints.
 
 The build needs [pandoc](https://pandoc.org/installing.html) and Chrome or
 Chromium. `make` finds Chrome on `PATH` or in `/Applications`; `CHROME=…`
@@ -23,7 +30,8 @@ names another.
 | `chapters/<n>-<part>/<nn>-<name>.md` | a chapter: its title is the `##` heading, its sections `###` and below |
 | `book.yaml` | pandoc's settings: title, contents, the stylesheet |
 | `book.css` | the page: paper, page numbers, page breaks, code, boxes |
-| `Makefile` | pandoc to HTML, Chrome to PDF |
+| `Makefile` | pandoc to HTML, Chrome to PDF, and pandoc to one GitHub markdown file per chapter |
+| `gfm.lua`, `ids.lua` | the pandoc filters of `make md`: links between chapters become links between files |
 
 The book takes the chapters in file-name order, so a new chapter is a new
 file with the number of its place. A chapter's links to another chapter
