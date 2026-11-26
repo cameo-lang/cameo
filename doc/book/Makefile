@@ -13,9 +13,15 @@ CHAPTERS := $(shell find chapters -name '*.md' | LC_ALL=C sort)
 OUT      := build
 
 PANDOC ?= pandoc
-# Chrome or Chromium: the first one on PATH, or the macOS application.
-CHROME ?= $(firstword $(foreach c,chromium chromium-browser google-chrome google-chrome-stable chrome,$(shell command -v $(c) 2>/dev/null)) \
-            $(wildcard /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome))
+# Chrome or Chromium: the first one on PATH, or the macOS application. The
+# shell finds it, as make's own functions split a path at its spaces.
+ifndef CHROME
+CHROME := $(shell { \
+  for c in chromium chromium-browser google-chrome google-chrome-stable chrome; do command -v $$c; done; \
+  for a in "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+           "/Applications/Chromium.app/Contents/MacOS/Chromium"; do test -x "$$a" && echo "$$a"; done; \
+  } 2>/dev/null | head -n 1)
+endif
 
 # Code stays plain: no colours, no line anchors. pandoc 3.8 renamed the flag.
 NOHIGHLIGHT := $(shell $(PANDOC) --help 2>/dev/null | grep -q -- --syntax-highlighting && echo --syntax-highlighting=none || echo --no-highlight)
