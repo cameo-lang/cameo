@@ -1,8 +1,9 @@
 package tests
 
 import (
-	"github.com/cameo-lang/cameo/src/lib"
 	"testing"
+
+	"github.com/cameo-lang/cameo/src/lib"
 
 	"github.com/cameo-lang/cameo/src/assert"
 )

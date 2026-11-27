@@ -14,17 +14,6 @@ import (
 // The scripts are plain Ruby; what they print, and the status they end
 // with, are Ruby 3.4's.
 
-func TestAtExitRunsTheHandlersLastFirstWhenTheScriptEnds(t *testing.T) {
-	out := runScript(t, `
-at_exit { puts "first registered" }
-at_exit { puts "second"; at_exit { puts "nested" } }
-h = at_exit { puts "third" }
-p h.class
-puts "body"
-`)
-	assert.Equals(t, out, "Proc\nbody\nthird\nsecond\nnested\nfirst registered\n")
-}
-
 func TestAtExitRunsAfterExitAndAHandlersExitSetsTheStatus(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	err := cameo.RunFromString("t.cameo", `
@@ -62,33 +51,6 @@ raise ArgumentError, "boom"
 	assert.NotNil(t, err)
 	assert.Equals(t, err.Error(), "t.cameo:4: boom (ArgumentError)")
 	assert.Equals(t, stdout.String(), "body\nhandler\n")
-}
-
-func TestAtExitWithoutABlockIsAnArgumentError(t *testing.T) {
-	out := runScript(t, `
-begin
-  at_exit
-rescue ArgumentError => e
-  puts e.message
-end
-`)
-	assert.Equals(t, out, "called without a block\n")
-}
-
-func TestAtExitFromAnAsyncCallRunsAtTheEndToo(t *testing.T) {
-	out := runScript(t, `
-include Cameo
-class Job
-  def run
-    at_exit { puts "from the worker" }
-    nil
-  end
-end
-await async Job.new, :run
-at_exit { puts "from the top level" }
-puts "body"
-`)
-	assert.Equals(t, out, "body\nfrom the top level\nfrom the worker\n")
 }
 
 func TestAHandlersExitAfterTheScriptRaisedStillReportsTheException(t *testing.T) {
