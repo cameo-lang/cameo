@@ -31,7 +31,7 @@
 <p class="crumbs"><a href="../compatibility.html#not-expected-to-work">Compatibility</a> › attr</p>
 
 <h1>attr — attr_accessor</h1>
-<p class="lead">The checker refuses <code>attr_reader</code>, <code>attr_writer</code>, <code>attr_accessor</code> and <code>attr</code>. A field declaration defines the reader, and there are no setters.</p>
+<p class="lead">The checker refuses <code>attr_reader</code>, <code>attr_writer</code>, <code>attr_accessor</code>, and <code>attr</code> without <code>type:</code>. A field declaration defines the reader, and there are no setters.</p>
 
 <h2 id="refused">What cameo refuses</h2>
 
@@ -60,6 +60,20 @@ grace = ada.with(name: &quot;Grace&quot;)
 puts ada.name, grace.name</code></pre>
 <pre class="output"><code>Ada
 Grace</code></pre>
+<p><code>attr</code> declares a field too when it is given the type: a class, the name of a class in a string, or <code>String</code>, <code>Integer</code> or <code>Float</code> for a scalar field. <code>with</code> takes its changes from a block as well, which gets the instance and returns a map.</p>
+<pre class="cameo"><code>class Name
+  string :value
+end
+class User
+  attr :name, type: Name
+  attr :age, type: Integer, default: 0
+end
+user = User.new(name: Name.new(value: &quot; ada &quot;))
+fixed = user.with { |u| { name: u.name.with(value: u.name.value.strip) } }
+p user.name.value, fixed.name.value, fixed.age</code></pre>
+<pre class="output"><code>&quot; ada &quot;
+&quot;ada&quot;
+0</code></pre>
 
 <p class="more">The rule: <a href="https://github.com/cameo-lang/cameo/blob/main/doc/cameo-vs-ruby.md#rejected-before-the-script-runs">cameo and Ruby, rejected before the script runs</a>. <a href="../compatibility.html#not-expected-to-work">Every code</a>, and how many examples of ruby/spec each stops.</p>
 </main>
