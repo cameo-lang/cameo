@@ -20,6 +20,7 @@ src/cameopb/      cameo's own protobuf messages: .proto files under cameo/,
                   and the Go code `make proto` generates, committed
 src/assert/       the assertions the tests use, vendored
 tests/            Go tests against the packages, as a caller uses them
+tests/scripts/    cameo scripts with their expected output after __END__
 tests/integration/  shell tests that drive the built binary
 ```
 
@@ -36,6 +37,13 @@ make integration-tests # build, then run tests/integration/test_*.sh
 make lint              # go vet ./...
 make check             # lint, tests and integration tests: what CI runs
 ```
+
+A test that runs a script and compares what it prints is a file
+`tests/scripts/<area>_<behaviour>__test.cameo.rb`, not a Go test. It starts
+with a comment that says what it shows and the pull request that brought it
+in, and the output it prints follows an `__END__` line; `TestScripts` in
+`tests/scripts_test.go` runs every one under its base name. A test that
+checks an error, a file system or the host API stays in Go.
 
 Integration tests are bash scripts built on
 [tests/integration/testsh.inc](../tests/integration/testsh.inc): define
