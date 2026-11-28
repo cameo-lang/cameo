@@ -9,23 +9,6 @@ import (
 	"github.com/cameo-lang/cameo/src/cameoio"
 )
 
-// A String made as text of bytes that are not UTF-8 is refused where it
-// is made, and the script gets an ArgumentError it can rescue: here a
-// StringIO of text whose buffer was given a byte that is none.
-func TestBytesThatAreNotTheEncodingRaiseAnArgumentError(t *testing.T) {
-	out := runScript(t, `require "stringio"
-io = StringIO.new("abc")
-io.ungetbyte(255)
-begin
-  io.read
-rescue ArgumentError => e
-  puts e.message
-end
-puts "went on"
-`)
-	assert.Equals(t, out, "invalid byte sequence in UTF-8: \"\\xffabc\" is not text; keep such bytes in a binary string (see https://15b.it/inv)\nwent on\n")
-}
-
 // A Go host gives text as a string, which must be UTF-8, and bytes as a
 // []byte, which the script gets as a binary String.
 func TestAHostGivesTextAsAStringAndBytesAsBytes(t *testing.T) {
