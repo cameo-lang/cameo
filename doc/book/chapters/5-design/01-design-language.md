@@ -1,0 +1,1299 @@
+## cameo — the language {#ch-design-language}
+
+::: source
+from `doc/design/cameo.md`
+:::
+
+cameo is a small language with Ruby's syntax, run by an interpreter written in
+Go. Every value is immutable, every object is a protobuf message, and a script
+can hand work to other goroutines with `async` and collect it with `await`.
+This document is the design: what the language is, what it leaves out, how the
+interpreter is built, and in which order.
+
+The front end is `github.com/go-ruby-parser/parser`, a Ruby parser in pure Go
+(no cgo, BSD-3-Clause, tested against MRI). cameo adds no syntax of its own:
+everything below parses as Ruby, and cameo gives some of it a different
+meaning. The constructs cameo introduces — `with`, `async`, `await`, the typed
+field helpers — are ordinary method calls to the parser and intrinsics to the
+interpreter.
+
+### Source
+
+A script is a `.cameo` file. `cameo script.cameo` runs it. Only current Ruby
+syntax is accepted: keyword arguments are passed with `**kwargs` or
+`key: value`, never as a trailing positional hash; `=>` is accepted in hash
+literals. Legacy spellings the parser still accepts are rejected by cameo's
+checker, with the line and the construct named.
+
+What cameo keeps from Ruby:
+
+-   literals: `nil`, `true`, `false`, integers, floats, strings with
+    interpolation, symbols, arrays, hashes, ranges, `%w[]` and `%i[]`
+-   local variables and constants
+-   operators, `if`/`unless`/`elsif`/`else`, `case`/`when`, `case`/`in`
+    (pattern matching over immutable data is a natural fit), `while`/`until`,
+    modifier forms, `&&`/`||`/`!`, safe navigation `&.`, `redo`, `catch` and
+    `throw`
+-   `def` with positional, optional, `*rest`, keyword, `**kwrest` and `&block`
+    parameters; `return`, `yield`, `block_given?`
+-   blocks (`{ }` and `do … end`), `->` lambdas, `proc`, `.call`, `&:sym`
+-   `class` with single inheritance, method overriding and `super`; `module`
+    as a namespace and as a mixin through `include` and `extend`
+-   `begin`/`rescue`/`else`/`ensure`, `raise`, `retry`, exception classes;
+    `exit`, `abort` and `at_exit`
+-   sugar the checker rewrites: argument forwarding (`...`, and `*`, `**`, `&`
+    without a name), `for x in xs` (as `each`), `alias new old` for a name not
+    yet taken, `class A::B` inside an existing `A`, and a top-level
+    `def self.x`, which defines a top-level method
+-   `puts`, `print`, `p`, `warn`
+
+What cameo leaves out, and the checker rejects by name:
+
+-   any setter: `def x=(v)`, `attr_writer`, `attr_accessor`
+-   instance variables, so `@` is free for later use: `initialize` sets a
+    field with `self.x = v`, and a field is read with its reader; class
+    variables; global variables, but for `$stdout` and `$stderr`, which name
+    `STDOUT` and `STDERR`
+-   `define_method`, `instance_variable_set`, `eval`, `undef`, `extend` on an
+    object, singleton classes, `def self.x` on an instance
+-   mutating methods (`<<`, `push`, `pop`, `delete`, `merge!`, `map!`, every
+    bang method): a mutator raises when it runs and a bang method is refused
+    by the checker, see *Variables rebind*; `freeze` is accepted and changes
+    nothing, since everything already is frozen
+-   threads, fibers, `fork`, files, sockets, `require` of another file
+    (`require_relative`, `load`, a library cameo does not build in), `$stdin`.
+    Standard output and standard error are the whole of I/O.
+
+### Values
+
+Every value is immutable. The kinds of value are:
+
+| cameo                                                                                     | protobuf scalar or message                                                                                                                                                  |
+|-------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `nil`                                                                                     | absence (proto3 `optional` not set)                                                                                                                                         |
+| `true`, `false`                                                                           | `bool`                                                                                                                                                                      |
+| Integer                                                                                   | `int64`; arbitrary precision in cameo, so beyond 64 bits it travels in `cameo.Value` as `big_value`, its decimal digits, and an `int` field, a protobuf `int64`, refuses it |
+| Float                                                                                     | `double`                                                                                                                                                                    |
+| String                                                                                    | `string` for UTF-8, `bytes` for a binary string; a `string` field takes a string of any encoding whose bytes are UTF-8, a `bytes` field any string                          |
+| Symbol                                                                                    | an `enum` field's value where the class declares one; a `string` everywhere else, see *Symbols*                                                                             |
+| Array                                                                                     | `repeated`                                                                                                                                                                  |
+| Hash                                                                                      | `map<,>`; keys are String, Symbol (stored as `string`), Integer or `bool`, see *Symbols*                                                                                    |
+| Set                                                                                       | `repeated`, deduplicated on construction                                                                                                                                    |
+| Range                                                                                     | a `Range` message with `from`, `to`, `exclusive`                                                                                                                            |
+| Regexp                                                                                    | in `cameo.Value`, a `Regexp` message: source and options; a MatchData does not travel                                                                                       |
+| Time                                                                                      | in `cameo.Value`, a `Time` message: seconds, nanoseconds, UTC offset and zone; there is no field type for it yet                                                            |
+| an instance of a user class                                                               | the message that class declares                                                                                                                                             |
+| an exception                                                                              | the message its class is: its message, line and cause, what Ruby's exception of that class carries, and the fields the class declares; see [exceptions.md](#ch-design-exceptions)   |
+| Proc                                                                                      | a closure: its code and the values it captured; see [ir.md](#ch-design-ir)                                                                                                          |
+| Enumerator                                                                                | the call that made it: the receiver, the method, its arguments and, for a lazy one, its block; the reader makes it again                                                    |
+| Class, Random, Encoding, and an instance of a library's class (a Pathname, a Date, a URI) | not serialisable; see *Async*                                                                                                                                               |
+
+Equality is structural everywhere: two lists with equal elements are `==`, two
+instances of one class with equal fields are `==` and hash alike. There is no
+object identity to speak of, so `equal?` does not exist.
+
+#### Symbols
+
+Symbols are the language's names: method names in `async worker, :run`, hash
+keys, enum values. They are not a protobuf kind. A class stores a symbol only
+in an `enum` field, which declares the symbols it accepts (see *Classes*).
+Anywhere else a symbol meets protobuf — a Hash key, an Array element, an
+`async` argument — it is stored as a `string` and reads back as a String; a
+Hash with symbol keys is a `map<string, …>` and comes back with string keys.
+
+A Hash that is stored in a field or passed to `async` has keys of one type,
+and that type is String, Symbol, Integer or `true`/`false`, the keys
+protobuf's `map<,>` allows. Any other key raises `TypeError` at the field
+assignment or the `async` call. Inside a script a Hash accepts any immutable
+key.
+
+The standard library is written in Go and returns new values from everything
+that would mutate in Ruby: `list + [x]`, `list.append(x)`, `map.merge(other)`,
+`map.put(key, value)`, `map.without(key)`, `set | other`, `string + other`.
+`Enumerable` is one Go implementation over Array, Hash, Set and Range: `each`,
+`map`, `select`, `reject`, `reduce`, `inject`, `sum`, `min`, `max`, `sort`,
+`sort_by`, `group_by`, `each_with_index`, `each_with_object`, `zip`, `take`,
+`drop`, `first`, `last`, `find`, `any?`, `all?`, `none?`, `count`, `include?`,
+`flat_map`, `to_a`, `to_h`, `to_set`, `uniq`, `partition`, `min_by`, `max_by`,
+`each_slice`, `each_cons`, `tally`, `chunk_while`. A class that includes
+Enumerable and defines `each` gets the same methods, over what its `each`
+yields: one value as itself, several as a list of them, as in Ruby. `to_enum`
+and `enum_for` make an enumerator over any method that yields.
+`each_with_object` cannot rely on the memo changing, so the block's value
+becomes the next memo, as in `reduce`. A collection that Ruby would change in
+place returns a copy: `list.append(x)`, `list.prepend(x)`, `list.without(x)`,
+`list.without_at(i)`, `map.put(k, v)`, `map.without(k)`, `set.add(x)`,
+`set.without(x)`.
+
+### Variables rebind, objects do not change
+
+`a = 1; a = 2` is allowed: assignment binds a name to a value, and binding it
+again is the only mutation in the language. Nothing else in the program can
+observe the old value, since no value refers to a variable: a block, which in
+Ruby would, captures the values its variables have when it is made (see
+*Blocks capture values* below).
+
+Only assignment rebinds: `x = …`, `x += …`, `h[k] = v` and `x.a = v`. A call
+never does. A call that changes its receiver in Ruby -- `x << y`, `x.push(y)`,
+`x.pop`, `h.delete(k)`, `s.add(y)` -- raises a CameoError naming the
+non-mutating form, whatever its receiver. Whether a call is one depends on the
+receiver's kind, which the evaluator checks: `Integer#<<` shifts, and an
+instance's methods are its own. With IgnoreMutationErrors
+(`cameo --ignore-mutation-errors`) the call returns Ruby's value, computed on
+a copy -- the receiver for most, the removed element for `pop`, `shift` and
+`delete` -- and the receiver keeps its value. A bang method of Ruby's core is
+refused by the checker, with the copying form to assign: "This is not
+supported, use x = x.compact instead". `force_encoding` returns the relabelled
+copy, since nothing else reinterprets bytes; dropping its value raises.
+cameo's own `append`, `prepend`, `put` and `without` return a copy and change
+nothing.
+
+#### `with`
+
+`value.with(field: expr, …)` returns a copy of `value` with the named fields
+replaced. A block computes changes from the current value:
+`value.with { |v| { field: expr, … } }` receives the copy so far and returns a
+hash of the changes, applied after any keywords. On an instance of a class the
+keys must name declared fields and the values must have the declared types. On
+a Hash the hash is merged in. On an Array the keys are indices, so the block
+form is the one to use. On anything else `with` raises, and so does a block
+that returns something other than a hash.
+
+`with` never changes `value`; the caller binds the result:
+
+``` ruby
+pt = Point.new(x: 1, y: 2)
+pt = pt.with(x: 11)                   # Point(x: 11, y: 2); the old pt is gone
+pt = pt.with { |p| { y: p.y * 5 } }   # Point(x: 11, y: 10)
+```
+
+The keyword form is Ruby's own `Data#with`. `tap` is Ruby's too: it yields the
+receiver and returns it unchanged. A `tap` whose block ends in a hash literal
+is rejected by the checker, since it reads as the copy `with` makes.
+
+#### Chained assignment is sugar for `with`
+
+`a.x.y = 3` is not a setter call. The checker rewrites every
+`recv.f1.f2….fn = expr` whose leftmost receiver is a local variable into
+nested copies and a rebinding of that variable:
+
+``` ruby
+a.x.y = 3
+# is
+a = a.with { |a0| { x: a0.x.with { |a1| { y: 3 } } } }
+```
+
+The leftmost receiver must be a local variable (or `self` inside `initialize`,
+where `self.x.y = 3` sets field `x`), because the result has to be bound
+somewhere. `foo().x = 3` and `CONST.x = 3` are rejected by the checker with
+that reason. Index assignment `a[0] = 1` and `h[:k] = v` desugar the same way,
+with an index or key.
+
+### Classes
+
+A class declares typed fields, an optional `initialize`, and methods. A second
+`class X` reopens it as a copy, it has no setters, and its instances are
+protobuf messages.
+
+``` ruby
+class Point
+  int :x, :y
+  string :label, default: ""
+
+  def initialize(x, y, label: "")
+    self.x = x
+    self.y = y
+    self.label = label
+  end
+
+  def +(other)
+    Point.new(x + other.x, y + other.y)
+  end
+
+  def to_s
+    "(#{x}, #{y})"
+  end
+end
+```
+
+**Fields** are declared with typed helpers, which are class-body intrinsics.
+The scalar ones are proto3's scalar types under their own names, with three of
+cameo's beside them:
+
+| field type                    | holds                                                         | protobuf                     |
+|-------------------------------|---------------------------------------------------------------|------------------------------|
+| `string`, `bytes`, `bool`     | a String (UTF-8 for `string`), true or false                  | the same                     |
+| `int`                         | an Integer of 64 bits, Ruby's Integer as far as protobuf goes | `int64`                      |
+| `int32`, `sint32`, `sfixed32` | an Integer from -2³¹ to 2³¹-1                                 | the same                     |
+| `int64`, `sint64`, `sfixed64` | an Integer from -2⁶³ to 2⁶³-1                                 | the same                     |
+| `uint32`, `fixed32`           | an Integer from 0 to 2³²-1                                    | the same                     |
+| `uint64`, `fixed64`           | an Integer from 0 to 2⁶⁴-1                                    | the same                     |
+| `bignum`                      | an Integer of any size                                        | `string`, its decimal digits |
+| `float`, `double`             | a Float, Ruby's Float                                         | `double`                     |
+| `float32`                     | a Float rounded to 32 bits                                    | `float`                      |
+
+`float` keeps Ruby's meaning, so proto3's 32-bit `float` is spelled `float32`.
+An Integer outside its type's range, or a Float beyond `float32`'s, raises a
+`RangeError`; an Integer given to a float field becomes a Float, and a
+`float32` field keeps the rounded value, so it reads the same after a round
+trip. The composite helpers are `list :name, of: :int32`,
+`map :name, key: :string, value: :float`, `set :name, of: :string`,
+`ref :name, Point` for a nested message, and `enum :name, values: [:a, :b]`
+for a field that holds one of the listed symbols. An element type is any
+scalar type or a class; a map key is a `string`, a `bool` or an integer type
+of 32 or 64 bits, as protobuf requires. Each helper takes one or more names
+and an optional `default:`; a helper that declares one field also takes
+`number:`, its field number, from 1 to 4096 (see *Field numbers* under
+*Protobuf*). A field without a default is `nil` until `initialize` sets it.
+Every field gets a reader of the same name.
+
+`reserved <number> [, :name]` is the one other declaration a class body takes.
+It claims a field number, and optionally a field name, that no field may use,
+so a field that was removed leaves its number and name behind as protobuf
+requires:
+
+``` ruby
+class Person
+  string :name, number: 1    # = 1
+  reserved 2, :nickname      # was `string :nickname, number: 2`
+  int :age                   # = 15907, derived from "age"
+end
+```
+
+A `reserved` whose number a field already holds, or whose name a field
+declares, is an error at load time, and so is a `number:` that a field already
+holds or a `reserved` claims.
+
+**`initialize`** is the one place a field may be set: `self.x = v` there sets
+field `x`, and `self.x += 1`, `self.items << v` and `self.home.city = v` work
+as they do on a local. A name that is not a field, or a value of the wrong
+type, raises. While `initialize` runs, `self` is the instance being built, so
+its readers return what has been set so far. cameo has no instance variables:
+`@x` is rejected everywhere, which leaves `@` free for later use.
+`Class.new(…)` takes `initialize`'s parameters; a class without `initialize`
+takes its fields as keyword arguments. When `initialize` returns, the message
+is sealed and becomes the instance.
+
+**Methods** read fields and return values. `self` is the instance. A method
+body cannot set a field; the checker rejects `self.x = v` outside `initialize`
+at load time, and `with` makes the changed copy instead.
+
+**Attributes** belong to the class itself, not to its instances, and this is
+where a class is deliberately unlike an instance. An instance is built inside
+`initialize`, where `self.x = v` sets its fields, and it is sealed when
+`initialize` returns. A class is built inside its body, where `self.x = v`
+sets its attributes, and it is sealed when the body ends. The difference is
+where the building happens: an instance's `initialize` is a method, so only
+that method sets fields; a class's body is the class statement itself, and it
+calls class methods, so a class method called from the body sets attributes
+too. That is what lets a class body declare things in a library's words:
+
+``` ruby
+class Switches
+  attribute :switches, default: []
+
+  def self.on(name, &step)
+    self.switches += [Switch.new(name: name, step: step)]
+  end
+end
+
+class Options < Switches
+  on("--verbose") { |o, _| o.with(verbose: true) }
+end
+Options.switches      # the one switch; Switches.switches is still []
+```
+
+`attribute :name, default: expr` declares an attribute in a class body,
+untyped, holding its default or nil, with a class method of its name that
+reads it. `self.name = v` in the body, or in a class method the body calls,
+sets it; `self.name += v` and the other chained forms work as on a field. A
+subclass starts with a copy of its parent's attributes and sets its own, so
+`Options.on` records on `Options` and leaves `Switches` as it was. Once the
+body ends the class is sealed: `Options.on(…)` afterwards raises a
+`CameoError`, a name no `attribute` declared raises a `NameError`, and
+`self.x = v` in an instance method is rejected at load time as before.
+Reopening a class sets attributes on the copy the reopening makes, and a
+reopening body may declare an attribute the class has again, which keeps its
+value. An attribute is part of the class, not of any message: it is not in the
+`.proto`, and holds a Proc as readily as a number.
+
+**A class is a value, and `class X … end` binds the name `X` to it**, the way
+`x = …` binds a variable. The name is bound before the body runs, so the body
+can call the class's methods by its name, as in Ruby.
+
+**`class X … end` for an `X` already bound reopens it as a copy.** The body
+runs on a copy of the class, with its methods, constants, included modules and
+fields, and the copy replaces the class under the name. The first class is not
+changed, so instances made before keep it as their class, and keep its methods
+only; so do classes that inherit from it, where in Ruby both see what the
+reopening adds. A reopening body may declare a field the class has again, with
+the same type and default, which changes nothing. `class X < Y` for an `X`
+whose parent is not `Y` raises `TypeError`, as does `class X` for a module `X`
+and `module X` for a class. A body that raises leaves the name bound to what
+it was. The definition that last ran on a class, evaluated again, changes
+nothing, so the same file can be loaded twice and every async worker can load
+the same class source. Within one class body, or at the top level, a second
+`def` of a name replaces the first, as in Ruby; the same `def` evaluated
+again, as a loop around it does, changes nothing. There is no `remove_method`
+or `undef`. Modules reopen the same way.
+
+**A library written in cameo may open a module Go defined.** Its source,
+`module M … end` or `class M::C … end` where the library's Go package defined
+`M`, reopens the module on a copy, as a script reopens a module it defined,
+and the program binds the copy to the name in its own constants: so a library
+is part Go, what a script cannot write, and part cameo. The module Go defined
+is shared by every program in the process and stays as it was, so a program
+that did not require the library sees none of it. A script cannot open a
+module Go defined, nor a library a class: the instances Go makes would keep
+the class Go defined, without what the copy added.
+
+**Inheritance** is single, by `class Child < Parent`. A child inherits fields
+and methods, may add fields, and may define a method of a name its parent
+defines: a method is defined once *per class*, dispatch is Ruby's, and `super`
+calls the parent's. Since a class is a value, `Parent` names whichever class
+was bound when `Child` was evaluated; rebinding `Parent` later does not reach
+`Child`.
+
+#### Modules
+
+A module is a namespace and a mixin, as in Ruby, with the same rule as a
+class: it is a value bound to its name, and `include` and `extend` take the
+value bound at that moment. `module Geo; class Point; end; end` defines
+`Geo::Point`, whose protobuf message is `Point` in package `geo` (nested
+modules join with dots). A module may define methods and constants, but no
+fields: `string :name` in a module body is an error, since a module is not a
+message. `include M` adds `M`'s methods to a class with Ruby's method
+resolution order, so `super` in a mixin method reaches the next ancestor;
+`extend M` adds them to the class object. `is_a?` and `===` see included
+modules. A script's `self.included` and the other hooks are not called; a
+module written in Go may have the Go hooks `Included` and `Extended`, which
+`Singleton` uses to refuse what Ruby refuses.
+
+### Blocks, lambdas and control flow
+
+Blocks and lambdas are written as Ruby's: `yield` calls a block, `&block`
+captures it as a Proc, `proc.call` and `proc.()` invoke it. `return` inside a
+block returns from the enclosing method, and raises `LocalJumpError` once that
+method has returned, as in Ruby; `break` and `next` behave as in Ruby. A Proc
+is a value, and serialises as its code and the values it captured (see
+[ir.md](#ch-design-ir)): it crosses `async` and `to_value_proto`, and a pause dump
+carries it.
+
+#### Blocks capture values
+
+In Ruby a block is a closure over variables: it reads them when it runs, and
+an assignment inside it rebinds them for the scope around it. That is a
+reference to something that changes, the one thing cameo has no other way to
+express, so cameo's blocks close over values instead. **When a block is made,
+it copies the values its variables have at that moment**, and that copy is
+what its calls read:
+
+``` ruby
+a = 3
+l = proc { a }
+a = 4
+l.call                      # 3, where Ruby gives 4
+```
+
+Every block captures this way: a `proc` or `->`, and a block written on a call
+such as `each`, `map` or `app.get`. The consequences:
+
+-   **A block cannot rebind a variable of the scope around it.** With a copy,
+    `total += x` inside `list.each { |x| … }` could change nothing outside, so
+    the checker refuses it before the script runs, naming the variable: a Ruby
+    idiom that silently did nothing, or with `loop do i += 1 … end` never
+    ended, fails loudly instead. The value comes out of a block through its
+    result, and the method that calls the block keeps it:
+    `list.reduce(0) { |total, x| total + x }`,
+    `list.each_with_object({}) { |x, h| … }`, `map`, `sum`, `count`. A loop
+    that counts keeps its counter in a `while`, which is no block. A variable
+    the block binds first is the block's own, as in Ruby, and so is a
+    rebinding of its parameter.
+-   **A lambda may call itself by the name it is assigned to.** In
+    `fact = ->(n) { n <= 1 ? 1 : n * fact.(n - 1) }` the name is unbound when
+    the lambda copies its surroundings, so the assignment fills it in once it
+    is bound. Only the lambda or proc that is the assigned value may read the
+    name early; any other block that reads a name bound after it is refused by
+    the checker.
+-   **A `for` loop is Ruby's**: its body is not a block but part of the scope
+    around it, so `for x in list do total += x end` rebinds `total` and leaves
+    `x` bound after the loop.
+-   **`rescue => e` inside a block binds the block's own `e`**, whatever is
+    bound around it.
+-   **Procs are values.** Calling one twice gives the same answer, keeping it
+    in a field, a Hash or a route table changes nothing, and `async` started
+    inside a block still belongs to the method around it, which `await :all`
+    collects.
+
+The copy costs one pass over the visible variables per block made, not per
+call.
+
+Exceptions are Ruby's: `raise "msg"`, `raise ErrorClass, "msg"`,
+`rescue Class => e`, `ensure`, `retry`, `cause`. `StandardError`,
+`ArgumentError`, `TypeError`, `KeyError`, `IndexError`, `NoMethodError`,
+`ZeroDivisionError`, `RuntimeError`, `StopIteration` and `CameoError` (cameo's
+own, for checker and type violations) are predefined; a script can subclass
+`StandardError`. An exception class is a class: it declares typed fields, its
+`initialize` runs on `new` and on `raise` and sets them with `self.x = v`, and
+`super(msg)` sets the message. Every exception is a protobuf message, see
+[exceptions.md](#ch-design-exceptions):
+
+``` ruby
+class HTTPError < StandardError
+  int :status
+
+  def initialize(status)
+    super("HTTP #{status}")
+    self.status = status
+  end
+end
+
+begin
+  raise HTTPError.new(503)
+rescue HTTPError => e
+  e.status                                        # 503
+  e = e.with(status: 502, message: "bad gateway") # a copy, message included
+end
+```
+
+#### Tail calls
+
+A call whose value is the value of the method, block or lambda it is written
+in is a **tail call**, and does not keep the call that makes it on the stack.
+A method that ends by calling itself, or two that end by calling each other,
+run as a loop: any depth, no `SystemStackError`.
+
+``` ruby
+def count(n, acc = 0)
+  return acc if n == 0
+  count(n - 1, acc + 1)      # a tail call
+end
+count(10_000_000)            # 10000000
+
+def sum(n)
+  return 0 if n == 0
+  n + sum(n - 1)             # no tail call: + runs after it
+end
+```
+
+This is part of the language, not an optimisation a script may or may not get:
+a script can rely on it. Which calls are tail calls is decided when the script
+is compiled:
+
+-   the last expression of a method, a block or a lambda;
+-   through `if`/`unless`, the ternary, `case`/`when`, `case`/`in`, and the
+    right side of `&&`, `||` and `&.`, when that expression is in such a
+    position itself;
+-   the value given to `return` in a method;
+-   the body of a `begin` … `end` without clauses, and the `else` of a `begin`
+    without an `ensure`.
+
+These are not tail calls, and keep their caller:
+
+-   a call that passes a block, `list.each { … }` or `f(&blk)`: the block may
+    `return` from the method it is written in;
+-   a call in the body of a `begin` with a `rescue` or an `ensure`, and a call
+    in a `rescue` clause: the clause or the `ensure` runs after it;
+-   a call whose value is used, an operator (`a + b` is no call here), `super`
+    and `yield`;
+-   a call at the top level or in a class body;
+-   any call of a method that was given a block: a `break` in the block ends
+    the method, so the method stays until its last call returns.
+
+Two things differ from Ruby, which keeps every call:
+
+-   A dump and the debugger do not show a call that made a tail call.
+    `cameo --keep-tail-frames` (`Program.KeepTailFrames` from Go) keeps such
+    calls on the stack, the last 256 of a row of them, at times up to a
+    quarter more; older ones are dropped, so a loop of tail calls still runs
+    in a stack that does not grow. The debugger keeps them in the same way
+    without being asked.
+-   A `proc` whose `return` runs after its method made a tail call raises
+    `LocalJumpError`, as it does for any method that has ended:
+    `def f; pr = proc { return 1 }; g(pr); end` returns from `f` in Ruby when
+    `g` calls `pr`. Passing it as a block, `g(&pr)`, keeps `f`, and the
+    `return` works.
+
+### Async
+
+Concurrency is the Cameo module's, which a script includes, at the top level
+for every method or in a class body for that class; `Cameo.async` and
+`Cameo.await` need no include. `Cameo::Runner` is the same module under a
+second name, the one `ruby/lib/cameo/runner.rb` gives CRuby, so one script
+runs on both; `require "cameo/runner"` is built in. A class includes
+`Cameo::Runner`; the top level refuses it on both interpreters, and takes
+`Cameo` on cameo alone. A promise is a result to come, and the script holds it
+by its id, an Integer:
+
+``` ruby
+include Cameo
+job = async worker, :process, item, retries: 3   # starts worker.process(item, retries: 3)
+result = await job                                # the return value, or re-raises
+result = await worker, :process, item            # async + await in one step
+results = await [job1, job2]                      # each result, in order
+results = await :all                             # every call started in this scope
+p = promise                                      # a pending promise
+resolve p, value                                 # settles it with value
+fail p, ArgumentError, "no"                      # settles it with an exception
+```
+
+`async` runs one method call on one receiver concurrently, with its own
+interpreter state, over copies of the arguments, and returns the call's
+promise. `async` and `await` are intrinsics, not methods, so
+`async xxx, :yyy, *args` needs no parentheses. The receiver, the method name
+and the arguments are serialised through the protobuf value envelope at the
+`async` call, and deserialised on the other side; a Class, a handle such as a
+Random, or an instance of a library's class such as a Date among them is a
+`TypeError` at the `async` call site, not inside the job. A Proc among them
+crosses as its code and the values it captured; a proc a builtin made,
+`5.method(:+).to_proc`, does not. The receiver is a value (any serialisable
+value, including an instance of a class), and the method is looked up on its
+class in the worker. Classes are shared by every worker: the class table is
+built when the script loads and is immutable afterwards, so it needs no
+copying and no lock.
+
+A promise is an Integer so that it travels: a script passes one to a worker,
+which settles it with `resolve` or `fail`, and a Go host returns one from a
+method and settles it from a goroutine of its own when its I/O is done
+(`prog.Promise()`, `Resolve`, `Fail`). That is how a script waits for what
+cameo does not do itself: the host's method starts the work and returns at
+once, so a script that starts several before it awaits any has them run at the
+same time. Every promise of a run, the workers' included, is in one table; a
+promise is settled once, and settling it again raises.
+
+`await promise` blocks until the promise is settled and returns its value; if
+it failed, `await` raises the exception in the awaiting scope, read back from
+its message: the same class, message, line, cause and fields. Awaiting a
+promise twice returns the same result, as long as the method that started it
+has not returned.
+
+A promise `async` started lives as long as that method: when it returns, the
+table forgets the promises it awaited, and those it did not await are
+forgotten at their first `await`, wherever the id went. Awaiting a forgotten
+promise raises `ArgumentError` ("no promise 7"). The table therefore holds the
+promises still in use, not every one a run started, which a recursion that
+fans out at every level would fill with millions. `await [a, b]` waits for
+each and returns their results in order, raising the first failure once all
+are settled. A promise nobody settles blocks its `await` until the run is
+stopped.
+
+`await :all` waits for every promise `async` started in the current method
+(its blocks included, since a block is part of the method that runs it) or at
+the top level, that has not been awaited yet, and returns their results as a
+list in start order. If any raised, `await :all` waits for all of them first
+and then raises the first exception in start order. A scope that returns with
+calls still running leaves them running: a promise is a value, so a caller
+that receives one may still await it, and one nobody awaits is waited for when
+the run ends, with its failure written to standard error. `cameo` exits when
+the script's top-level scope finishes and every call `async` started has. A
+call's result has to be able to travel back, so a method that returns a class
+to a worker raises a `TypeError` there; `resolve` takes the same values. A
+Proc a worker returns is read from its wire form by the script that awaits it,
+so its self and its classes are that script's.
+
+A worker has no handle to its parent and no shared memory; what it sends back
+is its return value and the promises it settles. Starting calls from inside a
+worker is allowed and nests the same way.
+
+A call `async` started waits in the run's queue until one of up to GOMAXPROCS
+runner goroutines takes it, the oldest of its shard of the queue first, or
+until an `await` of its promise finds it still queued and runs it on its own
+goroutine. A goroutine per call would park, with its stack, every call whose
+awaiter runs it, and a recursion that fans out at every level parks millions.
+Two rules keep every call able to run: a goroutine about to block in `await`
+while calls are queued starts another runner, so runners that wait on promises
+only queued calls settle still leave one free; and a watchdog starts another
+runner when queued calls have waited 10 ms with no runner taking one, so calls
+that never end do not hold the queue up for good.
+
+### Protobuf
+
+Every class is a protobuf message, which is what makes a cameo value cheap to
+hand to Go, to another goroutine, or over a wire.
+
+**Representation.** When a class is loaded the interpreter builds a
+`FileDescriptorProto` for it from its field declarations (one message, one
+field per declared field, numbered as *Field numbers* says, `optional` for
+presence, nested `ref` fields as message fields, each `enum` field as a nested
+enum named after the field, with a `<NAME>_UNSPECIFIED = 0` value that stands
+for `nil` and the declared symbols upper-cased after it). An instance holds
+its fields as cameo values, and builds the `dynamicpb.Message` over that
+descriptor on first use and keeps it, which is sound because the fields never
+change: the evaluator reads fields without going through protobuf, and the
+host gets a `proto.Message` that is the instance. Lists, maps and sets of
+scalars map to `repeated` and `map<,>`. So an instance *is* a `proto.Message`,
+and `proto.Marshal` of it is the wire form of that class.
+
+**Field numbers** come from the field's name, unless its declaration gives one
+with `number:`. A field declared without `number:` is numbered
+
+    5535 + 60000 * fnv32a(name) / (2³² - 1)
+
+(`protogen.FieldNumber`): a number from 5535 to 65535, picked by the FNV-1a
+hash of its name. A number in 19000 to 19999, which protobuf reserves for
+itself, moves up by 1000, and a number that a field of the class already
+holds, or that `reserved` claims, moves to the next free one, wrapping from
+65535 to 5535. `number:` takes 1 to 4096, so a declared number never takes one
+derived from a name. A declared number is cheaper on the wire -- one byte of
+tag up to 15, two up to 2047, three above, where a derived one takes three --
+and is the choice for a message that is sent often, or one whose numbers
+another program fixed.
+
+So adding, removing or reordering fields does not renumber the others, and two
+programs that each add a field of a different name to the same class give it
+different numbers, but for a hash collision, which a host notices when it
+merges the definitions (below). Renaming a field is a schema change, as in
+protobuf: the field gets the number of its new name. A removed field leaves
+`reserved <number>, :name` behind, its number read off the class's `.proto`.
+
+**Merging two definitions.** Programs that keep messages in one store may each
+have a definition of a message of their own: an older one lacks a field a
+newer one added, and two may each add a field the other lacks.
+`protogen.Merge(registered, next)` returns the file of a definition that reads
+what both write. It matches fields by name, as protobuf JSON does:
+
+-   A field both have keeps the registered definition's number and type. The
+    other definition must give it the same type -- the same scalar kind, the
+    same enum with the same values, or the same message, which may lack fields
+    -- the same cardinality and the same oneof. Anything else fails.
+-   A field only the registered definition has stays.
+-   A field only the other definition has is added, numbered by
+    `protogen.FieldNumber` from its name, whatever number the other definition
+    gave it, with the enums and messages it uses and the imports they need. It
+    may not be in a oneof, nor have a name the registered definition reserves.
+
+When the other definition only lacks fields, the result is the registered
+file. The merged message reads the protobuf JSON of both definitions, and the
+wire form of both where their numbers agree, which numbers derived from names
+always do but for a collision. A host that stores schemas registers the merged
+file as its next version: ark's datastore does this for its document types,
+keeping the registered `.proto` source and appending the added fields to it.
+
+**Generating a schema.** `Point.proto` returns the `.proto` text of the class
+(for a class inside a module, starting with its `package` line), and
+`cameo proto script.cameo [dir]` prints, or writes into `dir`, one `.proto`
+file per package the script's classes belong to (package `cameo` for a
+top-level class), and the envelope's `cameo/value.proto`. A host that compiles
+those files with `protoc` gets generated Go types whose wire form matches what
+the interpreter produces, so a message can be marshalled on one side and
+unmarshalled on the other without any cameo code in between.
+`cameo/value.proto` names cameo's own package, `src/cameopb`, as its Go
+package: a Go program that embeds cameo imports the envelope's types from
+there and does not generate them again, since protobuf-go registers a message
+name once per process.
+
+**Exceptions** are messages too: an exception class's message holds the
+exception's message, line and cause, what Ruby's exception of that class
+carries (a KeyError's key and receiver), and the fields the class declares;
+[exceptions.md](#ch-design-exceptions) has the parts and their numbers.
+
+**The value envelope.** Values that are not instances — scalars, lists, maps,
+sets, ranges — travel in `cameo.Value`, a message with a `oneof` over the
+scalar kinds plus `List`, `Map`, `Set`, `Range`, `Time`, `Regexp`, `Object` (a
+class name and the packed message of an instance or an exception) and
+`Closure` (a Proc: the proc of a unit of code and the binding it runs in, see
+[ir.md](#ch-design-ir)). A symbol travels as a string, see *Symbols*. A hash's default
+travels with it, a value or the block that computes it. It is what `async`
+serialises, what the Go host API takes and returns, and what `cameo proto`
+emits alongside the classes.
+
+**The Go host API**, package `cameo`:
+
+``` go
+prog, err := cameo.Load(path, env)                 // read through env, parse and check; env is the host (cameo.Env)
+prog, err  = cameo.LoadFromString(file, src, env)  // the same for a script the program holds
+err        = prog.Run()                            // run once; the classes stay loaded
+err        = prog.RunContext(ctx)                  // the same, stopped when ctx ends
+value, err := prog.LastValue()                     // the last expression, as p shows it
+out, err  := prog.Call(recv, "method", args...)    // recv: a Go value, a class name, a proto.Message
+msg       := runErr.Exception()                    // the exception that ended a run, as its message
+text, err := prog.Proto("Geo::Point")              // the .proto text of a class
+files     := prog.ProtoFiles()                     // every package's .proto, and cameo/value.proto
+data, err := prog.Encode(v); v, err = prog.Decode(data)   // the envelope
+err        = cameo.Run(path, env)                  // Load and Run: what the binary does, with cameoio.DefaultEnv()
+```
+
+Go values convert to cameo values by the table under *Values*: nil, bool, the
+integer and float kinds and `*big.Int`, string, `[]byte`, `[]any`,
+`map[string]any`, and a `proto.Message` whose full name is a loaded class's
+message. Results come back as nil, bool, int64 (a `*big.Int` beyond 64 bits),
+float64, string, `[]byte`, `[]any`, `map[any]any`, and a `proto.Message` for
+an instance or an exception; a symbol, range or class stays an `object.Value`.
+A Proc comes back as a `*cameo.Block`, which `Encode` writes as a closure, its
+code and the values it captured, and `Decode` of another program reads back as
+a block to call. A Hash's Symbol keys become strings, as symbols do wherever a
+value leaves cameo; a Hash whose keys have no Go map form (a key not
+comparable in Go, or `:a` beside `"a"`) is an error.
+
+**Host modules.** A host gives the script what cameo does not have, a service
+or a tool, through a module of its own, defined after `Load` and before `Run`:
+
+``` go
+mod := prog.Module("Spicy")                       // the constant Spicy, at the top level
+toolError := mod.Exception("ToolError")           // Spicy::ToolError, a StandardError
+mod.Def("tools", func(args []any, kwargs map[string]any, block *cameo.Block) (any, error) {
+    return nil, toolError.New("no tool %v", args[0]) // raises Spicy::ToolError
+})
+```
+
+The script calls `Spicy.tools("search", query: "x")`. A host method gets its
+arguments as results come back, but with a symbol as a string, as everywhere a
+value leaves cameo, a hash with string or symbol keys as a `map[string]any`,
+and a Proc as a `*cameo.Block`; the block of the call is `block`, nil without
+one, and `block.Call(args...)` runs either with Go values. What it returns
+converts as `Call`'s arguments do. An error it returns raises an exception, of
+the class an `Exception` names or `RuntimeError`. A host module is a value
+like a builtin one: no script redefines or reopens it. Workers that `async`
+started reach it too, each on its own goroutine, so a host method may run on
+several at once.
+
+**Native classes.** A host gives the script a class of its own whose data
+layout is a protobuf message. The message is written in a `.proto` file and
+generated with `protoc-gen-go`. The host registers the generated type under a
+name and adds methods in Go:
+
+``` proto
+// geo.proto
+syntax = "proto3";
+package example.geo;
+option go_package = "example.com/geo/geopb";
+
+message Point { int64 x = 1; int64 y = 2; }
+```
+
+``` go
+func init() {
+    cameo.Register("Geo::Point", &geopb.Point{}).
+        DefineMethod("norm2", func(p *geopb.Point, args []any, kwargs map[string]any, block *cameo.Block) (any, error) {
+            return p.X*p.X + p.Y*p.Y, nil
+        }).
+        DefineMethod("moved", func(p *geopb.Point, args []any, kwargs map[string]any, block *cameo.Block) (any, error) {
+            p.X += args[0].(int64) // p is a copy; the changed copy is the result
+            return p, nil
+        }).
+        DefineClassMethod("origin", func(args []any, kwargs map[string]any, block *cameo.Block) (any, error) {
+            return &geopb.Point{}, nil
+        })
+}
+```
+
+``` ruby
+pt = Geo::Point.new(x: 3, y: 4)   # the fields as keywords, as for any class without initialize
+pt.norm2                          # 25
+pt.moved(1).x                     # 4; pt.x is still 3
+Geo::Point.origin.with(y: 2)      # with, ==, inspect, to_proto: what every instance has
+```
+
+Registration rules:
+
+-   **The class's fields are the message's**: every proto3 scalar type,
+    repeated fields as lists, maps with a scalar key, enums numbered from 0
+    without a gap (their values become symbols, lowercase, without the prefix
+    the names share: `COLOR_RED` is `:red`), and fields of messages whose
+    class was registered before, or of the message itself. A `oneof` is not
+    supported.
+-   **Unset fields read as Go does.** A field without presence that is not set
+    reads as its zero value, so `Point.new.x` is `0`. A field with presence
+    (`optional`, a message) reads as `nil`.
+-   **Methods get copies.** A method gets `self` as the generated type, a copy
+    it may change without changing the instance. The arguments, keywords,
+    result and errors convert as a host method's do. A returned message of a
+    registered type becomes an instance of its class, so a "changed" instance
+    is a returned copy.
+-   **Instances leave cameo as the generated type.** `ToGo` and `Call`'s
+    results give a `*geopb.Point`, and a `*geopb.Point` passed in becomes an
+    instance. `async` carries instances to workers like any other.
+-   **Names make modules.** A qualified name makes the modules it needs, and
+    classes registered under one namespace share its module.
+-   **Registered names are closed.** As builtin ones are, a registered class
+    or module is a constant of every program in the process. No script
+    redefines it, nor defines anything inside it: `class Geo::Point … end` and
+    `module Math::Extra … end` are errors. `Program.Module("Geo")` gives a
+    program a module with methods of its own that still holds the registered
+    classes.
+-   **Register before the first Load**, from an `init` function. `Register`
+    panics after that, and when a name or a message does not fit: both are
+    mistakes in the host's code, not in a script.
+
+**Two consequences of the wire form.** A protobuf map has no order and cannot
+tell an absent repeated field from an empty one. So a map's identity in cameo
+does not depend on insertion order, a decoded map comes back sorted by key,
+and a list, set or map field never holds nil: given nil it holds the empty
+collection. A value therefore survives `from_proto(to_proto)` equal to itself.
+
+### The Ruby adapter
+
+A script that uses only cameo's subset is valid Ruby, so it can run under MRI
+with a library that supplies cameo's intrinsics. That would be a gem with a
+`Cameo` module, explicitly second in line behind the Go interpreter, and it is
+not built. What exists is its concurrency part: `ruby/lib/cameo/runner.rb`
+gives CRuby `Cameo::Runner`, with `async`, `await` and promises on threads
+(see *Decisions taken*). The gem's shape:
+
+-   `Cameo::Object` as the base class: the typed field helpers (`string :name`
+    and the rest) define readers and a frozen initializer, `with` builds a
+    copy, `==` and `hash` are structural, and `to_proto` returns the message
+    through `google-protobuf`, built from the same descriptor the Go side
+    generates. Values are deep-frozen on construction, through a deep freeze
+    such as ark's `simple-immutable`.
+-   `Cameo::Kernel` with `async`, `await` and `await :all` on threads, with
+    the same serialisation rule enforced by marshalling the arguments through
+    the value envelope.
+-   `cameo-rb script.cameo` runs a script with the module loaded.
+
+What the adapter cannot provide is the `a.x.y = 3` rewrite, since a library
+cannot rebind a caller's local. Scripts that must run under both write the
+`with` form; the adapter may later gain a source rewriter.
+
+### Architecture
+
+One Go module, `github.com/cameo-lang/cameo`, with the packages under `src/`:
+
+| Package         | Does                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+|-----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `cameo`         | the host API: `Load`, `Run`, `Program`, `Value`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `rx`            | translates a Ruby regular expression into one for Go's regexp, and names what it uses that Go's cannot do                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `syntax`        | wraps the parser; normalises its tree into cameo's own AST, rewrites `a.x.y =` and index assignment into copies, rejects what cameo leaves out, with line numbers; hashes class bodies so equal definitions are one class                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `object`        | the value model: a `Value` is two words (a pointer, and an integer payload that carries the kind), so an integer, a float, a boolean and nil never touch the heap and a string shares its bytes; a UTF-8 string keeps the number of its characters beside its length in bytes when what made it knew the number (a literal, a sum, a repetition, an interpolation, a part of a string, a change of case, a trimmed string, a join, a substitution, a translation, padding, a part cut out of ASCII, a number or a symbol as text), and is counted when asked otherwise; kinds, structural equality, hashing, the class table, dynamic messages, conversion to and from `cameo.Value` and Go values |
+| `eval`          | the evaluator: `vm.go` runs the IR a program is compiled to; scopes, method dispatch with a per-class lookup cache, blocks, exceptions, intrinsics (`with`, `async`, `await`, the field helpers)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `stdlib`        | the core classes: Kernel, BasicObject, Object, Numeric, Integer, Float, String, Symbol, Array, Hash, Set, Range, Time, Math, Regexp, MatchData, Enumerable, Comparable, Enumerator, Proc, Random, Encoding, `STDOUT` and `STDERR`, the exception classes; and the helpers the libraries share                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `lib`           | Ruby's standard library as cameo builds it in: one Go package per library under `src/lib/<require path>`, registered in `lib.Libraries`; see [stdlib.md](#ch-reference-stdlib)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `eval/async.go` | promises and the run's table of them, the per-scope list `await :all` reads, the worker interpreter a call runs in                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `eval/sched.go` | the queue of calls `async` started and the runner goroutines that take them                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `protogen`      | descriptors from class declarations, `.proto` text, values to and from the `cameo.Value` envelope                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `cameopb`       | cameo's own messages: the `.proto` files under `src/cameopb/cameo` and the Go code `make proto` generates from them, committed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `ir`            | the intermediate representation, whose messages are `cameo/ir.proto`: the compiler from the AST, and the listing of a unit; see [ir.md](#ch-design-ir)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `irb`           | the read-eval-print loop of `cameo irb`, and the line editor it runs on a terminal; see [debugger.md](#ch-reference-debugger)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `buildinfo`     | the version, commit and date the binary was built from, for `cameo version` and `RUBY_ENGINE_VERSION`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `cmd/cameo`     | the binary: `cameo script.cameo`, `check`, `proto`, `ir`, `debug`, `irb`, `resume` and `inspect` (see [pause.md](#ch-design-pause)), `version`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+
+Tests are the example corpus first: `examples/<name>.cameo` beside
+`examples/<name>.expected`, run by `go test` which executes each script and
+compares standard output; a script that must fail carries
+`examples/<name>.expected-error` with the expected error instead. The same
+corpus is the Ruby adapter's suite later, so the two implementations are held
+to one behaviour. Package tests cover what a script cannot reach: descriptor
+shapes, value conversion, the checker's rejection messages.
+
+### Milestones
+
+Each is a pull request that leaves `make check` green and the example corpus
+passing for what it covers. Milestones 0 to 6 have landed; 7 is not built.
+
+0.  **Skeleton** (this document): component, manifest, Makefile, the parser as
+    a dependency, `cameo check` that parses a script and reports syntax
+    errors, the example corpus as the specification, and a test that every
+    example parses.
+1.  **Front end**: `syntax` — cameo's AST, the rejection list, the copy
+    rewrite, with the checker's messages tested.
+2.  **Evaluator core**: literals, variables, operators, control flow, methods,
+    blocks, lambdas, exceptions, `puts`/`print`/`p`/`warn`.
+    `cameo script.cameo` runs scripts without classes.
+3.  **Standard library**: String, Integer, Float, Symbol, Array, Hash, Set,
+    Range, Enumerable.
+4.  **Classes**: typed fields as dynamic messages, `initialize`, readers,
+    `with`, chained assignment, classes as values bound to their name,
+    inheritance with overriding, modules as namespaces and mixins.
+5.  **Protobuf**: `.proto` generation with enums, packages and `reserved`, the
+    value envelope, the Go host API, `cameo proto`.
+6.  **Async**: the scheduler, `async`, `await`, `await :all`, the
+    serialisation rule.
+7.  **Ruby adapter**: the gem under `ruby/`, run against the same corpus.
+
+### Decisions taken
+
+Choices with real trade-offs, decided with the human so they are not re-opened
+by accident:
+
+-   **File I/O is a module the program grants.** `File.read`, `File.open` and
+    `File.write` are the methods of `Cameo::IO::FileIO`, in `Cameo::IO`, which
+    holds cameo's I/O, and `File` extends it. A program answers them only
+    where it allows file I/O and its `cameo.Env` has a file system, an
+    `afero.Fs` (`Env.Files`), so a host chooses the disk, one directory of it
+    (`afero.NewBasePathFs`), or memory; with either missing they are
+    undefined, not methods that raise, so `respond_to?`, `methods` and irb's
+    Tab tell a script what it may do. The method tables are the process's, so
+    a module carries its kind of I/O (`IOKind`) and each program asks at
+    lookup. `File.write(path, data)` and `File.write(path) { data }` write a
+    whole file and return the String written, which a script can pass on,
+    where Ruby's return its length; `File.open` only reads, and a host that
+    wants no writes gives an `afero.NewReadOnlyFs`. A path is never a command:
+    there is no pipe form, unlike the `open` and `IO.read` of older Rubies.
+    The cameo command gives the machine's file system, from the working
+    directory, for `--io=file`.
+-   **Kernel's functions are private, and nothing else is.** `puts`,
+    `require`, `raise`, `Integer()` and the other functions are private
+    methods of Kernel, as Ruby's `module_function` makes them, so a call
+    without a receiver or on `self` reaches them from any method, a call on
+    another receiver is refused with Ruby's NoMethodError, and `methods`,
+    `instance_methods`, `respond_to?` and Tab after a dot in irb leave them
+    out: `File.methods` lists what File can do, not forty functions every
+    value had. Kernel stays in Object's ancestors, as in Ruby. Rejected:
+    Kernel included only in the top-level object with a fallback for calls
+    without a receiver, which would have hidden the functions as well but
+    taken Kernel out of `Object.ancestors` and given a plain "undefined
+    method". This makes the core unlike a script, which still cannot declare a
+    private method: `private` stays refused.
+-   **Overriding** is per class: a child may define a method its parent
+    defines, and dispatch is dynamic. The alternative, one definition per
+    hierarchy with static dispatch, was rejected as too far from Ruby.
+-   **Modules** are in the first release as namespaces and mixins. Namespaces
+    alone would have been cheaper; mixins bring method resolution order, which
+    the evaluator has to implement anyway for inheritance.
+-   **Symbols** have no protobuf kind of their own. An `enum` field declares
+    the symbols it stores; everywhere else a symbol becomes a string at the
+    protobuf boundary.
+-   **Hash keys** are the four protobuf allows. A second representation for
+    arbitrary keys was rejected as not worth its cost.
+-   **Field numbers** come from a hash of the field's name, or from `number:`
+    (1 to 4096). Numbering in declaration order made the number depend on the
+    field's position, so reordering fields broke the wire form, and two
+    programs that each appended a field to a shared message gave two fields
+    one number. `reserved` keeps a removed field's number and name out of use.
+-   **`send`** calls a method by name, as Ruby's does, and so do `public_send`
+    and `__send__`, since every method is public. It reaches `method_missing`
+    and the top-level methods a bare call reaches. It refuses what a call
+    refuses, Ruby's mutators and bang methods among them, and `initialize`,
+    which only `new` runs on an instance under construction. Leaving it out
+    cost scripts that pick a method from data; the parser cannot see the name,
+    so the refusal happens when the call runs.
+-   **A bang method a script defines** (`def save!`) is a call like any other:
+    it returns its result, rebinds nothing, and may be called on any receiver.
+    The checker learns the names from the script's `def`s, so a bang method
+    the script does not define is one of Ruby's and refused.
+-   **A block captures values, not variables.** Ruby's shared binding is a
+    reference to state that changes, which nothing else in cameo is. A block
+    copies the values of its variables when it is made, and the checker
+    refuses a rebinding of a captured variable inside a block, so the
+    accumulation idiom fails before the script runs instead of doing nothing
+    or looping forever. The alternative, capturing values in `proc` and `->`
+    alone and sharing the scope with a block on a call, kept the idiom but
+    made two kinds of block that look the same. The lambda assigned to a name
+    may read that name, so it can recurse.
+-   **A class is built in its body, an instance in `initialize`.** Both are
+    sealed when that ends, but a class body calls class methods, so a class
+    method called from the body may set a class attribute while an instance
+    method never sets a field. This asymmetry is deliberate: it is what lets a
+    library give a class body declarations of its own, such as
+    `on("--verbose") { … }`, without metaprogramming. The alternative, a class
+    with no state of its own, left such a declaration nowhere to go but a
+    constant the body assembles by hand.
+-   **No call changes or rebinds its receiver.** Only assignment rebinds a
+    local. A call of one of Ruby's mutators raises, naming the non-mutating
+    form, unless the run ignores mutation errors, when it returns Ruby's value
+    computed on a copy; a bang method of Ruby's core is refused by the checker
+    whatever the setting. Rebinding the local a mutator was called on, which
+    cameo did before, was rejected: code read as Ruby changes a value it does
+    not change, and a call on anything but a local could not rebind at all.
+    `force_encoding` alone returns its copy, since nothing else reinterprets
+    bytes, and raises when its value is dropped.
+-   **Concurrency is a module a script includes.** `include Cameo` brings
+    `async`, `await`, `promise`, `resolve` and `fail`; without it they are
+    unknown, so a script states that it runs work concurrently. `async`
+    returns a promise's id, an Integer, rather than a process object, so a
+    promise travels to a worker or to the host like any other value, and
+    whoever has the work settles it: a worker by returning, a script with
+    `resolve` and `fail`, a Go host with `Promise.Resolve` and `Fail`. A
+    host's I/O goes through promises, since cameo does none itself. `fail`
+    with an Integer first settles a promise; with anything else it raises, as
+    Ruby's `fail` does.
+-   **`Cameo::Runner` and the Ruby library.** A script written for cameo
+    should run where cameo is not embedded. `ruby/lib/cameo/runner.rb` gives
+    CRuby `Cameo::Runner`, with cameo's `async`, `await`, `promise`, `resolve`
+    and `fail` on threads, copying values with `Marshal` as the envelope
+    copies them, with cameo's promise ids and error messages; cameo has the
+    module and `require "cameo/runner"` built in, so the same file runs on
+    both. The name is a second one for Cameo rather than Cameo itself because
+    a Ruby program's `include Cameo` at the top level would put every constant
+    of a future `Cameo` namespace into Object; for the same reason
+    `Cameo::Runner` goes into the class that runs the work, and the top level
+    refuses it on both interpreters. Ruby runs one thread's code at a time, so
+    the library gives a cameo script's semantics on Ruby, not its parallelism;
+    `examples/async` holds both interpreters to the same output.
+-   **Ruby's version constants** describe cameo rather than being left out, so
+    a version check written for Ruby runs. `RUBY_ENGINE` is `"cameo"`;
+    `RUBY_VERSION` is `"3.4.0"`, the Ruby whose language and libraries (json
+    2.9.1, benchmark 0.4.0) cameo follows, with `RUBY_PATCHLEVEL` 0 since
+    cameo takes none of CRuby's patch releases. A later CRuby 3.4.x would
+    claim bug fixes cameo has not checked. `RUBY_ENGINE_VERSION`,
+    `RUBY_REVISION` and `RUBY_RELEASE_DATE` come from the build
+    (`src/buildinfo`): the version set with `-ldflags -X` or Go's module
+    version, and the git commit and its date Go records, or `"unknown"`. A
+    script cannot assign them, nor any other builtin constant, at the top
+    level.
+-   **Every exception is a protobuf message**, and a script's exception
+    classes declare fields and run their `initialize`, on `new` and on
+    `raise`, as any class does. Errors that carry data matter most where they
+    cross, to an awaiting interpreter and to the Go host, and one model for
+    instances and exceptions serves both. The exception stays a Go struct,
+    which builds its message when it crosses, so a raise costs about what it
+    did; see [exceptions.md](#ch-design-exceptions).
+-   **No instance variables.** `initialize` sets a field with `self.x = v`,
+    and a field is read with its reader, so `@` is free for later use. Ruby
+    code that sets `@x` in `initialize` no longer runs unchanged; it never
+    could outside `initialize`.
+-   **Field types** are proto3's scalar types under their own names, except
+    that `float` keeps Ruby's meaning, a 64-bit `double`, and proto3's 32-bit
+    float is `float32`; following proto3 to the letter would have changed
+    every existing `float` field's precision and wire type. Integers stay of
+    any size, as in Ruby, and a `bignum` field holds one as its decimal
+    digits, the form the value envelope already uses; dropping big integers
+    was rejected, since 24 of the benchmark cases use them and the overflow
+    checks would stay to raise instead.
+-   **A `proc` field** holds a block, so a value can carry behaviour, such as
+    a route with its handler. In the class's message the field is a
+    `cameo.Closure` of the envelope's file: the proc of a unit the block runs,
+    and the values it captured ([ir.md](#ch-design-ir)). So the class has a `.proto`
+    like any other, and its instances cross to a host, to `async` and into a
+    dump with their blocks. The first closure of a message carries the code
+    for a reader that is another program, which is why the closures of a map
+    field are written and read in the order of their keys, and why a
+    subclass's instance in a field of its parent is written from the parent's
+    fields alone. A block that captured what cannot be serialised, an
+    Enumerator, keeps its instance from crossing, and the error names the
+    field. Everything else about the class is a class's: the field is typed,
+    the value immutable, `with` copies it.
+-   **Classes are values** bound to their name: a second definition with the
+    same body is the same class, and one with a different body reopens a copy
+    of the class and rebinds the name to it, which leaves instances made
+    before with the class they were made with. `Class.new(Base) { ... }`
+    builds one at run time: its block is the class body, it is identified by
+    the block's digest, and it takes the name of the first constant it is
+    bound to. `Module.new` stays out, since its use is to include or extend at
+    run time.
+-   **Numeric** is a builtin class above Integer and Float, and includes
+    Comparable for both, so the ancestors and the type checks
+    (`is_a?(Numeric)`, `when Numeric`) are Ruby's. `step`, `+@` and `nonzero?`
+    are Numeric's, as in Ruby. A script may subclass it, as `bigdecimal`'s
+    BigDecimal does in Go: Integer and Float follow Ruby's `coerce` protocol
+    for any value that answers `coerce`, which `bigdecimal` brought in, and
+    Numeric has Ruby's generic methods, each defined through the instance's
+    own operators as numeric.c defines them (`zero?` through `==`, `abs`
+    through `<=>`, `-@` through `coerce`, `floor` through `to_f`), which
+    Integer and Float override. The refusal that stood here before `coerce`
+    came in is lifted.
+-   **BasicObject** is the root class, above Object, with `==`, `!=`, `!`,
+    `__send__` and `method_missing`, so `ancestors`, `superclass` and
+    `is_a?(BasicObject)` are Ruby's. A script cannot subclass it: a subclass
+    is a blank-slate object without Object's methods, and the refusal names
+    `method_missing` in an ordinary class instead. `equal?` and `__id__` stay
+    out, since a value has no identity.
+-   **`Data`** stays out. A class with typed fields and `with` is cameo's
+    Data, and a `Data.define` member has no type, which a protobuf field
+    needs. `doc/cameo-vs-ruby.md` shows the translation.
+-   **Only current Ruby syntax**: keyword arguments are keywords, never a
+    trailing hash; `=>` stays for hash literals.
+-   **Native classes** take their fields from a generated protobuf message and
+    are registered for the whole process, as builtin classes are, before the
+    first program loads. Classes per program were left out: a class is a value
+    scripts and hosts pass around, and one class per name in a process keeps
+    `async` and the wire form simple. A registered namespace is closed to
+    scripts, and so, now, is a builtin one.
+-   **The standard library follows CRuby's benchmarks** (`benchmarks/ruby/`):
+    -   `Array` and `Hash` are the Ruby-visible names of cameo's lists and
+        maps, so `[].class`, inspect and error messages match Ruby; the field
+        types keep their protobuf names, `list` and `map`.
+    -   Random numbers come from MT19937, seeded and converted to floats and
+        integers as CRuby does, so a seeded script prints Ruby's numbers:
+        `Kernel#rand`, `shuffle` and `sample` draw from one generator per
+        interpreter, which `srand` reseeds, and an `async` process's generator
+        is seeded from its parent's when the process starts.
+    -   A `Random` is a handle on a generator, as a file handle is on a file:
+        each draw advances the generator for every holder of the handle. It
+        was the first exception to values never changing; the libraries add
+        `StringIO`, `StringScanner`, `Logger` and `CSV.new`, the same kind of
+        value (see *Ruby's standard library* below). A generator is a source,
+        like a file, and copying it would repeat its numbers, so a Random is
+        not copied: `dup`, `clone`, `async` and typed fields refuse it with a
+        `TypeError`, as they refuse a Proc.
+    -   `String#succ` follows Ruby's full rules, and ranges over strings
+        iterate with it: `include?` walks such a range, `cover?` and `===`
+        compare its ends.
+    -   `Time` is an immutable value with fixed UTC offsets and the local
+        zone. `utc` and `localtime`, which change their receiver in Ruby,
+        return a new time as `getutc` and `getlocal` do, and `subsec` is a
+        Float.
+    -   `Hash.new` takes a default value or a default block. The syntax check
+        rejects a block that stores into the hash, as it rejects any mutation;
+        the block returns the default instead. The default travels with the
+        copies `[]=`, `merge` and `compact` make, and a hash built anew has
+        none, as in Ruby.
+    -   `Process.clock_gettime` reads the realtime and the monotonic clock, in
+        any of Ruby's units, so a script can time itself; the rest of
+        `Process` stays out, since cameo starts no processes.
+    -   Left out: `Struct` (its members are untyped and its point is setters;
+        cameo classes declare typed fields), `Rational` and `Complex` (with
+        their literals).
+-   **The language follows CRuby's benchmarks too**, a second round over what
+    they use beyond the standard library:
+    -   Taken in: a mutating call on a local (`x << y`, `x.push(y)`, `x.map!`,
+        `s.add(y)`) rebinds the local, as `h[k] = v` already does (since
+        replaced: no call rebinds, see *Decisions taken*); `freeze`, `frozen?`
+        and `compare_by_identity` as no-ops, since values are immutable and
+        have no identity; argument forwarding (`...`, `*`, `**`, `&`); a
+        top-level `def self.x`; `:sym.to_proc` as a value;
+        `Class.new(Base) { ... }` as a class value; regular expressions, on
+        Go's regexp; integers of any size; lazy enumerators; `require` of a
+        library cameo builds in, with `CGI.escape` and its kin;
+        `method_missing`; string encodings to and from bytes; `pack`; `for`
+        loops, `alias` and `class A::B`; path arithmetic without I/O
+        (`File.join`, `Pathname`).
+    -   Regular expressions run on Go's regexp, RE2, which matches in linear
+        time and has no backtracking. `rx` translates Ruby's syntax: `^` and
+        `$` at every line, `m` as Go's `s`, `x`, `\h`, `{,n}`, `\e`, `\u{}`,
+        `\xHH` sequences, Ruby's property names; a named group alone captures.
+        A pattern that needs backtracking (a backreference, lookahead or
+        lookbehind, an atomic group, a possessive quantifier, a subexpression
+        call, `\G`, `\K`, `\Z`, class intersection) is refused with "This
+        regexp is not supported in Cameo": a literal by the syntax check, one
+        built at run time with a NotImplementedError. A Regexp is an immutable
+        value of source and options, and every String method that takes a
+        pattern takes a string or a regexp. There are no `$~` or `$1` globals:
+        a match is what `match` returns, or a block's argument. A search from
+        a position past 0 reads the text from there, so `^`, `\A` and `\b`
+        take that position for the start. An Onigmo engine (go-ruby-regexp)
+        was tried and set aside for now: it needs Go 1.27.
+    -   An Integer has two forms, `int64` and, once arithmetic leaves 64 bits,
+        a `big.Int`; a result that fits moves back, so a number has one form
+        and equality and hash keys need no conversion. The 64-bit fast paths
+        check for overflow and hand that case to the ordinary call.
+    -   An Enumerator produces its elements on demand, from a Go function that
+        hands them to a consumer one by one; a consumer that has had enough
+        returns a stop of its own from it, which only it recognises, so `take`
+        ends an endless source without ending a pipeline it is nested in.
+        `lazy` gives an `Enumerator::Lazy`, whose `map`, `select`, `take` and
+        the rest make another and do no work until `first`, `to_a`, `force` or
+        `each` asks; a blockless `cycle` or `then` gives an eager Enumerator.
+        There is no external iteration (`next`, `peek`), so an Enumerator has
+        no position and never changes. That makes it serialisable although it
+        is Go code: it records the call that made it
+        (`object.Enumerator.Make`), and a message carries that call, which the
+        reader makes again. Reading a message makes no call but one of a fixed
+        list of builtins that make an enumerator and do nothing else
+        (`object.MakesEnumerator`); an enumerator a library makes, a
+        StringIO's `each_line`, records none and does not travel.
+    -   A user class that includes Enumerable and defines `each` gets
+        Enumerable's methods. They run on an enumerator over its `each`, so
+        `first`, `find`, `take_while` and `lazy` stop once they have their
+        answer and an endless `each` works with them; the rest read all it
+        yields. A builtin passes a Go function as the block, which the
+        evaluator calls like any other.
+    -   `require` of a library cameo builds in (doc/stdlib.md lists them, with
+        each one's status) returns true the first time and false after, and
+        any other is a LoadError: a script is one file. The libraries are
+        there whether or not a script requires them; each is a Go package
+        under `src/lib/<require path>`. `time` brings `Time.parse`,
+        `Time.iso8601` and `Time.strptime`, and `Time.new` reads a string as
+        Ruby 3.2's does; `cgi` brings `CGI.escapeHTML`, `unescapeHTML`,
+        `escape`, `unescape`, the URI-component pair, `escapeElement`,
+        `unescapeElement`, `rfc1123_date` and `pretty`. Ruby writes the last
+        three with regexps that use lookaround, which cameo's regexps lack, so
+        they are scanned by hand in Go. `json` follows Ruby's json 2.9.1 to
+        its output and error messages. An instance of a cameo class without a
+        `to_json` of its own is written as an object of its fields: the fields
+        are typed and named, so that is what the value is, while Ruby's
+        fallback, the string of `to_s`, loses it. The values are cameo's, not
+        protojson's, which would quote 64-bit integers, rename fields and drop
+        defaults, so an instance and a Hash of its fields write the same JSON.
+        A class's own `to_json` gets the generator's options as a Hash, which
+        Ruby's `to_json` methods take as well, in place of a `JSON::State`.
+        `benchmark` follows Ruby's benchmark 0.4.0 to its output, in Go: it
+        reads getrusage(2) and the monotonic clock itself and collects garbage
+        between bmbm's rehearsal and its run, so a script needs neither
+        `Process.times` nor `GC`.
+    -   A call to a method a class lacks goes to the class's own
+        `method_missing`, with the name as a symbol, the arguments and the
+        block; `super` from it reaches Object's, which raises NoMethodError.
+        `respond_to?` asks `respond_to_missing?` for a name it does not find.
+    -   A String carries its encoding, as Ruby's does: UTF-8, ASCII-8BIT
+        (binary) or US-ASCII, the value's kind. A literal is UTF-8, and one
+        with bytes that are not UTF-8, `"\xFF"`, is a syntax error. A binary
+        string has a literal of its own, `b"\xFF"` or `b'...'`: the name `b`
+        with the quote right behind it and no receiver before it, without
+        interpolation. `.b`, `pack` and a protobuf `bytes` field make binary
+        strings too; `force_encoding` relabels the same bytes and `encode`
+        converts them. A US-ASCII string holds 7-bit characters alone, one per
+        byte, and gives its methods' results its encoding while they hold
+        nothing else: one that an argument brought other characters into is
+        UTF-8, as in Ruby. A binary string has bytes and no characters, unlike
+        Ruby's, which reads its bytes as ASCII: it answers the methods that
+        read, make and compare bytes (`bytes`, `getbyte`, `bytesize`,
+        `length`, `[]`, `+`, `*`, `==`, `index`, `start_with?`, `unpack`, and
+        a pattern, which matches bytes), and raises
+        Encoding::CompatibilityError for one that needs to know what character
+        a byte is (`upcase`, `strip`, `chars`, `to_i`, `split`, `reverse`), so
+        that a script says what its bytes are, with `force_encoding`, before
+        it reads them as text. It prints a byte past 7 bits as `\xNN`; `+`,
+        `<<`, `join` and interpolation take the encoding their parts are
+        compatible in, or raise Encoding::CompatibilityError. A UTF-8 string
+        is made of whole characters alone, and a US-ASCII one of ASCII, unlike
+        Ruby's, which may hold bytes their encoding does not allow: bytes that
+        are not UTF-8 are a binary string where they come in (a file, what the
+        host passes, `pack`), and `force_encoding`, `setbyte`, `bytesplice`
+        and `append_as_bytes` raise Encoding::InvalidByteSequenceError when
+        the bytes they would call UTF-8 or US-ASCII are not.
+        `encode("UTF-8", "UTF-8", invalid: :replace)` reads a binary string as
+        UTF-8 with what is not replaced. `force_encoding` returns the
+        relabelled string and leaves its receiver, and raises when its value
+        is dropped. Integer and Symbol `to_s` give UTF-8 where Ruby gives
+        US-ASCII; only `encoding` tells.
+    -   Paths are arithmetic, not I/O: `File.join`, `basename`, `dirname`,
+        `extname`, `split`, `expand_path` and `absolute_path`, and `Pathname`,
+        an immutable path whose `+`, `join`, `cleanpath`, `parent` and
+        `relative_path_from` follow Ruby's pathname.rb. `expand_path` reads
+        the working directory and `$HOME` to resolve a relative path or `~`;
+        nothing reads or writes a file but `File.read`, `File.open` and
+        `File.write` (*Decisions taken*). `__FILE__` is the script's path and
+        `__dir__` its directory.
+    -   `with` makes the copy with changes, from keywords (Ruby's `Data#with`)
+        or from the hash its block returns; `tap` is Ruby's, yielding the
+        receiver and returning it. Until this round `tap` made the copy, which
+        left Ruby's `tap` idiom out.
+    -   A mutating call on a temporary (`s.dup.merge!(x)`, `[1, 2].push(3)`,
+        `foo.bar[0] = 1`) stays rejected: the non-mutating form (`merge`, `+`,
+        `with`) says what is meant.
+    -   The `cameo` binary sets the collector to GOGC=400 with a soft memory
+        limit of 1 GB, unless the environment sets GOGC or GOMEMLIMIT. On
+        CRuby's benchmarks that takes a quarter off the total time (5000! in a
+        third of it) while the median script's memory is unchanged; the limit
+        keeps a large heap from growing fivefold. A program that embeds cameo
+        keeps Go's defaults.
+    -   Kept out: `GC`, `ENV`, metaprogramming (`define_method`, `eval`,
+        `instance_variable_set`; `send` came in later, see above), setters and
+        untyped fields, fibers and threads, and anything else that touches the
+        file system.
+    -   Maps and sets are versions of an append-only table
+        (`object/table.go`), so a copy with one more key costs O(1) and
+        building a map key by key is linear, not quadratic.
+    -   A list that `<<`, `push` or `append` makes has room behind its last
+        element (`object/append.go`), and the next of them on that list writes
+        there instead of copying the elements, so building a list element by
+        element is linear too. Appending to a list a second time copies, as do
+        `prepend` and `list + other`. `map` makes its list at its full length
+        and fills it as the block returns; no script has the list before `map`
+        returns.
+-   **Ruby's standard library** is built in one library at a time, each a Go
+    package under `src/lib/<require path>`, in the order and with the statuses
+    [stdlib.md](#ch-reference-stdlib) records. A library is computation on values; it
+    stays out when its work is one of the things cameo leaves out.
+    -   A library is built on Go's own packages, not on a parser carried
+        along: `csv` reads and writes through `encoding/csv`, `uri` parses and
+        resolves through `net/url`, `zlib` compresses through
+        `compress/flate`, and the reading of times and dates goes through Go's
+        time layouts. Where Go's package behaves differently from Ruby's
+        library, the library follows Go's and the difference is written down
+        (a one-character column separator in `csv`, `~` and `*` in `uri`'s
+        escaping, Go's deflate bytes in `zlib`).
+    -   A library with no Go package that does its work stays out until there
+        is one: `yaml` waits for a package that writes YAML as Psych does, and
+        `rexml` was withdrawn, since XML belongs behind a proper XML parser
+        chosen on its own terms. `psych` is not needed beside `yaml`, and
+        `rbconfig` describes a C Ruby's build, which a script has no use for.
+    -   A value a library makes is a value: a `URI` is made by `URI()`,
+        `URI.parse` or a subclass's `build` and has no setters, a `Date`, an
+        `IPAddr`, a `BigDecimal` and a `Matrix` are Hash keys. A library whose
+        purpose is a cursor, a buffer or a sink (`StringIO`, `StringScanner`,
+        `Logger`, `CSV.new`) is a handle, as `Random` is.
+    -   The libraries that do I/O come last: `resolv`, `net/http` and
+        `open-uri` reach the network only through what the Go host gives the
+        program, so an embedding program decides whether a script may.

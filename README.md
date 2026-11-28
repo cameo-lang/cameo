@@ -10,22 +10,31 @@
 [Ruby vs cameo](https://cameo-lang.github.io/cameo/ruby.html) ·
 [numbers](https://cameo-lang.github.io/cameo/numbers.html)
 
-cameo is a small language with Ruby's syntax, run by an interpreter
-written in Go.
+cameo is Ruby for embedding. A cameo program looks like Ruby and has
+Ruby's syntax, but some important things work differently. An interpreter
+written in pure Go runs it, inside your Go program.
 
-- **Ruby, but immutable.** Every value is immutable. An assignment makes
-  a changed copy and rebinds the variable; nothing changes behind
-  another reference. Classes declare typed fields, and every instance is
-  a protobuf message.
-- **I/O is separate.** A script computes. It reads no file, opens no
-  socket and starts no process unless the program that runs it allows
-  that, kind by kind, or gives it Go functions to call.
-- **Easy to embed in Go.** The interpreter is pure Go, with no cgo. A Go
-  program loads a script, runs it, calls its methods, and passes values
-  and protobuf messages both ways.
-- **Pause, dump, resume later.** A running script stops where it is,
-  inside a method or a loop. Its state is bytes: store them, and continue
-  the run in another process.
+- **It is immutable.** A value never changes, objects included. An object
+  that you pass into a method has the same value after the method returns.
+  Work that runs concurrently shares data only to read it, so it never
+  needs a lock. A class
+  declares typed fields instead of instance variables. To change an object,
+  make a new one, or a changed copy with `with`.
+- **No I/O by default.** A script cannot reach files, the network or
+  processes. The Go program that runs it can allow some kinds of I/O, or give
+  it Go functions to call. All of cameo's I/O is in the package `cameoio`: an
+  interpreter without it has none.
+- **Embedding in Go uses protobuf.** Add the interpreter package, optionally
+  add `cameoio` and your own classes, and load scripts. Every instance is a
+  protobuf message, so values cross between your Go program, the script and
+  gRPC services as they are.
+- **Pause and resume.** As nothing changes, the state of a running script is
+  easy to capture. A script can stop at any point, and its state is bytes.
+  Load them later, even in another process, and the script continues. This
+  helps on platforms that end apps without notice, such as iOS.
+- **async and await.** A script can spread work over the cores of the
+  machine. Together with pause and resume, this makes cameo a base for
+  workflows that survive a restart of their host.
 
 ```ruby
 include Cameo                  # async, await and promises
@@ -33,7 +42,9 @@ include Cameo                  # async, await and promises
 class Point
   int :x, :y
 
-  def +(other) = Point.new(x: x + other.x, y: y + other.y)
+  def +(other)
+    Point.new(x: x + other.x, y: y + other.y)
+  end
 end
 
 a = Point.new(x: 1, y: 2)
