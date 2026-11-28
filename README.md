@@ -96,6 +96,8 @@ go run ./examples/ex1 mine.cameo     # the same class, in a script of your own
 The other programs under `examples/` each show one thing:
 [io](examples/io) gives a script a file system,
 [pause](examples/pause) stops a run and continues it from its bytes,
+[sum](examples/sum) adds up numbers typed until `^C` pauses it, and
+continues from the dump,
 [webfetch](examples/webfetch) fetches web pages for a script, and
 [grpc](examples/grpc) calls a public gRPC service.
 
